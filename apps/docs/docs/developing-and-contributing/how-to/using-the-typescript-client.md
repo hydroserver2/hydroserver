@@ -367,36 +367,35 @@ await hs.units.update(created);
 await hs.units.delete("00000000-0000-0000-0000-000000000000");
 ```
 
-## Sensors
+## Methods
 
-### Example: Create and modify a sensor
+### Example: Create and modify a method
 
 ```ts
-import { Sensor } from "@hydroserver/client";
+import { Method } from "@hydroserver/client";
 
-const sensor = new Sensor();
-sensor.workspaceId = "00000000-0000-0000-0000-000000000000";
-sensor.name = "Environmental Sensor";
-sensor.description = "Records environmental observations.";
-sensor.encodingType = "application/json";
-sensor.manufacturer = "Campbell Scientific";
-sensor.model = "A";
-sensor.modelLink = "https://example.com/sensors/A";
-sensor.methodType = "Sensor";
-sensor.methodLink = "https://example.com/methods/sensor";
-sensor.methodCode = "SENSOR_A";
+const method = new Method();
+method.workspaceId = "00000000-0000-0000-0000-000000000000";
+method.name = "Environmental Instrument";
+method.description = "Records environmental observations.";
+method.type = "Instrument Deployment";
+method.code = "SENSOR_A";
+method.definition = "https://example.com/methods/sensor";
+method.sensorModel = "A";
+method.sensorModelManufacturer = "Campbell Scientific";
+method.sensorModelDefinition = "https://example.com/sensors/A";
 
-const created = await hs.sensors.createItem(sensor);
-if (!created) throw new Error("Unable to create sensor");
+const created = await hs.methods.createItem(method);
+if (!created) throw new Error("Unable to create method");
 
-created.name = "Environmental Sensor - Updated";
-await hs.sensors.update(created);
+created.name = "Environmental Instrument - Updated";
+await hs.methods.update(created);
 ```
 
-### Example: Delete a sensor
+### Example: Delete a method
 
 ```ts
-await hs.sensors.delete("00000000-0000-0000-0000-000000000000");
+await hs.methods.delete("00000000-0000-0000-0000-000000000000");
 ```
 
 ## Processing Levels
@@ -481,7 +480,7 @@ import { Datastream } from "@hydroserver/client";
 const datastream = new Datastream();
 datastream.workspaceId = "00000000-0000-0000-0000-000000000000";
 datastream.monitoringSiteId = "11111111-1111-1111-1111-111111111111";
-datastream.sensorId = "22222222-2222-2222-2222-222222222222";
+datastream.methodId = "22222222-2222-2222-2222-222222222222";
 datastream.observedPropertyId = "33333333-3333-3333-3333-333333333333";
 datastream.processingLevelId = "44444444-4444-4444-4444-444444444444";
 datastream.unitId = "55555555-5555-5555-5555-555555555555";
@@ -549,7 +548,7 @@ const res = await hs.datastreams.get(
 if (res.ok) {
   const datastream = res.data as unknown as DatastreamExtended;
   console.log(datastream.monitoringSite);
-  console.log(datastream.sensor);
+  console.log(datastream.method);
   console.log(datastream.observedProperty);
   console.log(datastream.unit);
   console.log(datastream.processingLevel);

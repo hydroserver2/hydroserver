@@ -30,16 +30,15 @@ logan_river_site = hs_api.monitoring_sites.create(
     country='US',
 )
 
-# Sensor
-usgs_sensor = hs_api.sensors.create(
+# Method
+usgs_method = hs_api.methods.create(
     workspace=workspace,
     name='USGS Pressure Transducer',
     description='Continuous water level sensor deployed by USGS.',
-    encoding_type='application/json',
-    manufacturer='USGS',
+    type='Instrument Deployment',
+    code='USGS_PRESSURE_TRANSDUCER',
     sensor_model='Pressure Transducer',
-    method_type='Instrument deployment',
-    method_code='USGS_PRESSURE_TRANSDUCER',
+    sensor_model_manufacturer='USGS',
 )
 
 # Observed property

@@ -8,7 +8,7 @@ Creating and managing datastreams is done on the landing page for a monitoring s
 
 In this form, you can create the basic metadata for a datastream. The following are included:
 
-* Sensor: The sensor or method used to create the observations.
+* Method: The instrument, procedure, computation, or other method used to create the observations.
 * Observed Property: The quantity or parameter that was observed.
 * Unit: The unit of measure for the observed values.
 * Processing Level: The degree of processing the observation values have undergone.
@@ -21,7 +21,7 @@ In this form, you can create the basic metadata for a datastream. The following 
 * Datastream name: A brief text name for the datastream.
 * Datastream Description: A longer text description for the datastream.
 
-Some attributes of a datastream are simple selections on the form and others are linked metadata objects describing the sensor, observed property, unit, and processing level. Linked metadata can be selected from a drop down list if they exist already, or they can be created by clicking on the green '+' next to the metadata element.
+Some attributes of a datastream are simple selections on the form and others are linked metadata objects describing the method, observed property, unit, and processing level. Linked metadata can be selected from a drop down list if they exist already, or they can be created by clicking on the green '+' next to the metadata element.
 
 For the `Datastream name` and `Datastream description` attributes, you can use the 'Auto-Fill from Form' button to automatically generate a name and description, or you can enter your own text.
 
@@ -35,19 +35,17 @@ Once the datastream is created, it will be displayed in the list of datastreams 
 
 ## Creating Linked Metadata for a Datastream
 
-When an item does not exist in the dropdown list for sensor, observed property, unit, or processing level, it must be created before it can be used. This can be done by clicking on the green '+' next to those attributes. Each one has a metadata entry form that will pop up. For example, the following is shown when creating a new Sensor:
+When an item does not exist in the dropdown list for method, observed property, unit, or processing level, it must be created before it can be used. This can be done by clicking on the green '+' next to those attributes. Each one has a metadata entry form that will pop up.
 
-<img src="/data-management-app/create-sensor.png" alt="Create sensor form" class="img-white-bg">
+It's helpful to consult the HydroServer data model and data dictionary documentation for help in better understanding the required and optional metadata for methods, observed properties, units, and processing levels.
 
-It's helpful to consult the HydroServer data model and data dictionary documentation for help in better understanding the required and optional metadata for sensors, observed properties, units, and processing levels.
+**NOTE**: Linked metadata can also be created via the Data Management --> Metadata management page in HydroServer. On the 'Manage metadata' page, you can set up all of your methods, observed properties, processing levels, and units before creating datastreams to make it easier and to enable choosing existing linked metadata from the drop down lists.
 
-**NOTE**: Linked metadata can also be created via the Data Management --> Metadata management page in HydroServer. On the 'Manage metadata' page, you can set up all of your sensors, observed properties, processing levels, and units before creating datastreams to make it easer and to enable choosing existing linked metadata from the drop down lists.
-
-**NOTE**: All metadata in a HydroServer instance is created within a workspace. If you have multiple workspaces and you want to be able to use the same list of sensors, observed properties, processing levels, and units across multiple workspaces, a HydroServer administrator can set these up as 'System metadata' for use across workspaces.
+**NOTE**: All metadata in a HydroServer instance is created within a workspace. If you have multiple workspaces and you want to be able to use the same list of methods, observed properties, processing levels, and units across multiple workspaces, a HydroServer administrator can set these up as 'System metadata' for use across workspaces.
 
 ## Creating a Datastream from a Template
 
-Because creating the metadata for a datastream can be a little tedious, we created a button to load a template for a datastream. If you have multiple monitoring sites with similar datastreams (e.g., multiple sites with the same installed sensors), you can choose a datastream from another site to serve as a template. 
+Because creating the metadata for a datastream can be a little tedious, we created a button to load a template for a datastream. If you have multiple monitoring sites with similar datastreams (e.g., multiple sites with the same installed instruments), you can choose a datastream from another site to serve as a template.
 
 To use this functionality, click the 'Add new datastream' button on the site landing  page, then select the 'Load template' button at the top right of the 'Create datastream' form. You will select a site and then you will see a list of existing datastreams you can choose from.
 

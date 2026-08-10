@@ -14,7 +14,7 @@ export const UNIT_ID = 'unit-meters'
 export const MONITORING_SITE_ID = 'monitoring-site-stream'
 export const PROC_LEVEL_ID = 'pl-raw'
 export const OBSERVED_PROP_ID = 'op-streamflow'
-export const SENSOR_ID = 'sensor-adv'
+export const METHOD_ID = 'sensor-adv'
 
 // Companion datastream fixtures used by the multi-datastream e2e
 // scenarios. Different unit + observed property so the secondary
@@ -23,7 +23,7 @@ export const SENSOR_ID = 'sensor-adv'
 export const DATASTREAM_ID_B = 'ds-qc-e2e-b'
 export const UNIT_ID_B = 'unit-celsius'
 export const OBSERVED_PROP_ID_B = 'op-water-temp'
-export const SENSOR_ID_B = 'sensor-temp'
+export const METHOD_ID_B = 'sensor-temp'
 
 /**
  * Synthetic-observation timing constants, anchored to "now" at module
@@ -142,7 +142,7 @@ export const datastreams = [
     monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID,
-    sensorId: SENSOR_ID,
+    methodId: METHOD_ID,
     phenomenonBeginTime: FIXTURE_OBS_START_ISO,
     phenomenonEndTime: FIXTURE_OBS_END_ISO,
     resultBeginTime: FIXTURE_OBS_START_ISO,
@@ -201,7 +201,7 @@ export const datastreams = [
     monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID_B,
-    sensorId: SENSOR_ID_B,
+    methodId: METHOD_ID_B,
     phenomenonBeginTime: FIXTURE_OBS_START_ISO,
     phenomenonEndTime: FIXTURE_OBS_END_ISO,
     resultBeginTime: FIXTURE_OBS_START_ISO,
@@ -305,25 +305,25 @@ export const resultQualifiers = [
   },
 ]
 
-export const sensors = [
+export const methods = [
   {
-    id: SENSOR_ID,
+    id: METHOD_ID,
     workspaceId: WORKSPACE_ID,
     name: 'ADVelocity Sensor',
     description: 'Synthetic sensor for tests',
-    manufacturer: 'E2E',
-    model: 'TestADV',
-    methodType: 'Instrument',
-    methodCode: 'ADV-01',
+    sensorModelManufacturer: 'E2E',
+    sensorModel: 'TestADV',
+    type: 'Instrument',
+    code: 'ADV-01',
   },
   {
-    id: SENSOR_ID_B,
+    id: METHOD_ID_B,
     workspaceId: WORKSPACE_ID,
     name: 'Thermistor Sensor',
     description: 'Synthetic temperature sensor for tests',
-    manufacturer: 'E2E',
-    model: 'TestTHERM',
-    methodType: 'Instrument',
-    methodCode: 'THERM-01',
+    sensorModelManufacturer: 'E2E',
+    sensorModel: 'TestTHERM',
+    type: 'Instrument',
+    code: 'THERM-01',
   },
 ]

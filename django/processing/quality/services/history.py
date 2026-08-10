@@ -34,12 +34,12 @@ class QCHistoryService(ServiceUtils):
         if expand_related:
             return queryset.select_related(
                 "managed_datastream__monitoring_site__workspace",
-                "managed_datastream__sensor",
+                "managed_datastream__method",
                 "managed_datastream__observed_property",
                 "managed_datastream__unit",
                 "managed_datastream__processing_level",
                 "source_datastream__monitoring_site__workspace",
-                "source_datastream__sensor",
+                "source_datastream__method",
                 "source_datastream__observed_property",
                 "source_datastream__unit",
                 "source_datastream__processing_level",

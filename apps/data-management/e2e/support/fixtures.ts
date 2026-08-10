@@ -92,13 +92,13 @@ export let fixtures = {
     },
   },
   metadata: {
-    privateAssignedSensor: {
+    privateAssignedMethod: {
       id: 'uninitialized',
-      name: 'Private Assigned Sensor',
+      name: 'Private Assigned Method',
     },
-    publicAssignedSensor: {
+    publicAssignedMethod: {
       id: 'uninitialized',
-      name: 'Public Assigned Sensor',
+      name: 'Public Assigned Method',
     },
     publicAssignedObservedProperty: {
       id: 'uninitialized',
@@ -112,9 +112,9 @@ export let fixtures = {
       id: 'uninitialized',
       name: 'Public Assigned Unit',
     },
-    systemSensor: {
+    systemMethod: {
       id: 'uninitialized',
-      name: 'System Sensor',
+      name: 'System Method',
     },
   },
   orchestration: {

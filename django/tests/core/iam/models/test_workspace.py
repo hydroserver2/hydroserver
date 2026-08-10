@@ -9,7 +9,7 @@ from core.sta.models import (
     Observation,
     ObservedProperty,
     ProcessingLevel,
-    Sensor,
+    Method,
     MonitoringSite,
     Unit,
 )
@@ -156,8 +156,8 @@ def test_delete_removes_workspace_tree_including_same_workspace_vocab_items():
     assert not Observation.objects.filter(datastream__monitoring_site__workspace_id=workspace.pk).exists()
     # These are CASCADE from Workspace but PROTECT from Datastream -- proving the
     # ordering issue (deleting a Workspace whose own Datastreams still reference
-    # its own Sensor/ObservedProperty/ProcessingLevel/Unit) no longer raises.
-    assert not Sensor.objects.filter(workspace_id=workspace.pk).exists()
+    # its own Method/ObservedProperty/ProcessingLevel/Unit) no longer raises.
+    assert not Method.objects.filter(workspace_id=workspace.pk).exists()
     assert not ObservedProperty.objects.filter(workspace_id=workspace.pk).exists()
     assert not ProcessingLevel.objects.filter(workspace_id=workspace.pk).exists()
     assert not Unit.objects.filter(workspace_id=workspace.pk).exists()

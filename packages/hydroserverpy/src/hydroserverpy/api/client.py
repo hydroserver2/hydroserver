@@ -9,7 +9,7 @@ from hydroserverpy.api.services import (
     UnitService,
     ProcessingLevelService,
     ResultQualifierService,
-    SensorService,
+    MethodService,
     DatastreamService,
     DataConnectionService,
     TaskService,
@@ -149,10 +149,10 @@ class HydroServer:
         return ResultQualifierService(self)
 
     @property
-    def sensors(self):
-        """Utilities for managing HydroServer sensors."""
+    def methods(self):
+        """Utilities for managing HydroServer methods."""
 
-        return SensorService(self)
+        return MethodService(self)
 
     @property
     def datastreams(self):

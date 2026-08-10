@@ -6,7 +6,7 @@ from django.conf import settings
 from core.iam.permissions.registry import register_resource_type
 
 from .monitoring_site import MonitoringSite
-from .sensor import Sensor
+from .method import Method
 from .unit import Unit
 from .processing_level import ProcessingLevel
 from .observed_property import ObservedProperty
@@ -32,8 +32,8 @@ class Datastream(models.Model):
     monitoring_site = models.ForeignKey(
         MonitoringSite, on_delete=models.CASCADE, related_name="datastreams"
     )
-    sensor = models.ForeignKey(
-        Sensor, on_delete=models.PROTECT, related_name="datastreams"
+    method = models.ForeignKey(
+        Method, on_delete=models.PROTECT, related_name="datastreams"
     )
     observed_property = models.ForeignKey(
         ObservedProperty, on_delete=models.PROTECT, related_name="datastreams"

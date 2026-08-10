@@ -18,7 +18,7 @@ if TYPE_CHECKING:
         MonitoringSiteSummaryResponse,
         ObservedPropertySummaryResponse,
         UnitSummaryResponse,
-        SensorSummaryResponse,
+        MethodSummaryResponse,
         ProcessingLevelSummaryResponse,
     )
 
@@ -49,7 +49,7 @@ class DatastreamFields(Schema):
 
 class DatastreamRelatedFields(Schema):
     monitoring_site_id: uuid.UUID
-    sensor_id: uuid.UUID
+    method_id: uuid.UUID
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
@@ -83,8 +83,8 @@ class DatastreamQueryParameters(CollectionQueryParameters):
         [], description="Filter datastreams by workspace ID.", alias="workspace_id"
     )
     monitoring_site_id: list[uuid.UUID] = Query([], description="Filter datastreams by monitoring_site ID.")
-    sensor_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by sensor ID."
+    method_id: list[uuid.UUID] = Query(
+        [], description="Filter datastreams by method ID."
     )
     observed_property_id: list[uuid.UUID] = Query(
         [], description="Filter datastreams by observed property ID."
@@ -232,7 +232,7 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
         ..., validation_alias=AliasPath("monitoring_site", "workspace")
     )
     monitoring_site: "MonitoringSiteSummaryResponse"
-    sensor: "SensorSummaryResponse"
+    method: "MethodSummaryResponse"
     observed_property: "ObservedPropertySummaryResponse"
     processing_level: "ProcessingLevelSummaryResponse"
     unit: "UnitSummaryResponse"

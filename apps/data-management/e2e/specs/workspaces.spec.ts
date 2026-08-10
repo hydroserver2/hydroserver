@@ -192,12 +192,12 @@ test.describe('workspace management', () => {
     await expect(page.getByTestId('add-workspace-metadata-item')).toHaveCount(0)
     await expect(
       page.getByTestId(
-        `edit-metadata-${fixtures.metadata.privateAssignedSensor.id}`
+        `edit-metadata-${fixtures.metadata.privateAssignedMethod.id}`
       )
     ).toHaveCount(0)
     await expect(
       page.getByTestId(
-        `delete-metadata-${fixtures.metadata.privateAssignedSensor.id}`
+        `delete-metadata-${fixtures.metadata.privateAssignedMethod.id}`
       )
     ).toHaveCount(0)
   })

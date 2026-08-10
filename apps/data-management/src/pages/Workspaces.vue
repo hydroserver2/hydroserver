@@ -697,7 +697,7 @@ const loadOverviewStats = async (workspaceId: string) => {
     hs.workspaces.getCollaborators(workspaceId),
     hs.monitoringSites.listSiteSummaries(workspaceId),
     serviceAccountRequest,
-    hs.sensors.list({ workspace_id: [workspaceId], fetch_all: true }),
+    hs.methods.list({ workspace_id: [workspaceId], fetch_all: true }),
     hs.observedProperties.list({
       workspace_id: [workspaceId],
       fetch_all: true,

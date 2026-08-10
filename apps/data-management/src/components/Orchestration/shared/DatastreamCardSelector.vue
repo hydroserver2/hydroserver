@@ -104,9 +104,9 @@ function searchText(datastream: Datastream): string {
     ds.processingLevel?.definition,
     ds.unit?.name,
     ds.unit?.symbol,
-    ds.sensor?.name,
-    ds.sensor?.methodCode,
-    ds.sensor?.methodType,
+    ds.method?.name,
+    ds.method?.code,
+    ds.method?.type,
   ]
 
   return [

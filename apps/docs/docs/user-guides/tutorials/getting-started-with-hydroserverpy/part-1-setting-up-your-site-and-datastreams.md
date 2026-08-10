@@ -67,24 +67,23 @@ The `code` is a short identifier for your site — something you'd use to refere
 
 ## Create linked metadata
 
-Before we can create a datastream, we need to define what's being measured and how. In HydroServer, that means creating four linked metadata records: a **sensor**, an **observed property**, a **unit**, and a **processing level**. These can be reused across multiple datastreams, so you only have to create them once.
+Before we can create a datastream, we need to define what's being measured and how. In HydroServer, that means creating four linked metadata records: a **method**, an **observed property**, a **unit**, and a **processing level**. These can be reused across multiple datastreams, so you only have to create them once.
 
-### Sensor
+### Method
 
-The sensor describes the instrument or method used to make the measurement.
+The method describes how observations are produced. Instrument-specific fields are optional.
 
 ```python
-discharge_sensor = hs_api.sensors.create(
+discharge_method = hs_api.methods.create(
     workspace=workspace,
     name='In-Situ Rugged TROLL 200',
     description='Submersible pressure transducer for water level measurement.',
-    encoding_type='application/json',
-    manufacturer='In-Situ',
+    type='Instrument Deployment',
+    code='PRESSURE_TRANSDUCER',
+    definition='https://in-situ.com/us/rugged-troll-200',
     sensor_model='Rugged TROLL 200',
-    sensor_model_link='https://in-situ.com/us/rugged-troll-200',
-    method_type='Instrument deployment',
-    method_code='PRESSURE_TRANSDUCER',
-    method_link='https://in-situ.com/us/rugged-troll-200',
+    sensor_model_manufacturer='In-Situ',
+    sensor_model_definition='https://in-situ.com/us/rugged-troll-200',
 )
 ```
 

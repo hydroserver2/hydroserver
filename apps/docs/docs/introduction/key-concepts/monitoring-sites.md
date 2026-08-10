@@ -4,7 +4,7 @@ A monitoring "site" refers to a single location where observations are recorded 
 
 A site encompasses both the physical location and the metadata describing the site such as site name, site code, any photos of the site, and a key:value tagging system to help you describe that location beyond what's available in the fields provided by the data model and API.
 
-A site is _not_ the physical sensors or instruments that are deployed at the site's location. That metadata lives in the Sensor table of HydroServer's database.
+A site is _not_ the physical instruments that are deployed at the site's location. Instrument and procedure metadata lives in the Method table of HydroServer's database.
 
 ::: tip MonitoringSite and SensorThings
 HydroServer's data model and Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing` and `Location` entities by deriving one of each from a monitoring site.

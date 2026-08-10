@@ -1,6 +1,6 @@
 from typing import Optional, Union, List, TYPE_CHECKING
 from uuid import UUID
-from hydroserverpy.api.models import Sensor
+from hydroserverpy.api.models import Method
 from hydroserverpy.api.utils import normalize_uuid
 from ..base import HydroServerBaseService
 
@@ -9,9 +9,9 @@ if TYPE_CHECKING:
     from hydroserverpy.api.models import Workspace, MonitoringSite, Datastream
 
 
-class SensorService(HydroServerBaseService):
+class MethodService(HydroServerBaseService):
     def __init__(self, client: "HydroServer"):
-        self.model = Sensor
+        self.model = Method
         super().__init__(client)
 
     def list(
@@ -22,12 +22,12 @@ class SensorService(HydroServerBaseService):
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
         datastream: Optional[Union["Datastream", UUID, str]] = ...,
-        encoding_type: str = ...,
-        manufacturer: Optional[str] = ...,
-        method_type: str = ...,
+        type: str = ...,
+        sensor_model: Optional[str] = ...,
+        sensor_model_manufacturer: Optional[str] = ...,
         fetch_all: bool = False,
-    ) -> List["Sensor"]:
-        """Fetch a collection of sensors."""
+    ) -> List["Method"]:
+        """Fetch a collection of methods."""
 
         return super().list(
             page=page,
@@ -36,9 +36,9 @@ class SensorService(HydroServerBaseService):
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),
             datastream_id=normalize_uuid(datastream),
-            encoding_type=encoding_type,
-            manufacturer=manufacturer,
-            method_type=method_type,
+            type=type,
+            sensor_model=sensor_model,
+            sensor_model_manufacturer=sensor_model_manufacturer,
             fetch_all=fetch_all,
         )
 
@@ -46,29 +46,27 @@ class SensorService(HydroServerBaseService):
         self,
         name: str,
         description: str,
-        encoding_type: str,
-        method_type: str,
-        manufacturer: Optional[str] = None,
+        type: str,
+        code: Optional[str] = None,
+        definition: Optional[str] = None,
         sensor_model: Optional[str] = None,
-        sensor_model_link: Optional[str] = None,
-        method_link: Optional[str] = None,
-        method_code: Optional[str] = None,
+        sensor_model_manufacturer: Optional[str] = None,
+        sensor_model_definition: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
-        uid: Optional[UUID] = None
-    ) -> "Sensor":
-        """Create a new sensor."""
+        uid: Optional[UUID] = None,
+    ) -> "Method":
+        """Create a new method."""
 
         body = {
             "id": normalize_uuid(uid),
             "name": name,
             "description": description,
-            "encodingType": encoding_type,
-            "methodType": method_type,
-            "manufacturer": manufacturer,
-            "model": sensor_model,
-            "modelLink": sensor_model_link,
-            "methodLink": method_link,
-            "methodCode": method_code,
+            "code": code,
+            "type": type,
+            "definition": definition,
+            "sensorModel": sensor_model,
+            "sensorModelManufacturer": sensor_model_manufacturer,
+            "sensorModelDefinition": sensor_model_definition,
             "workspaceId": normalize_uuid(workspace),
         }
 
@@ -79,26 +77,24 @@ class SensorService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str = ...,
         description: str = ...,
-        encoding_type: str = ...,
-        method_type: str = ...,
-        manufacturer: Optional[str] = ...,
+        type: str = ...,
+        code: Optional[str] = ...,
+        definition: Optional[str] = ...,
         sensor_model: Optional[str] = ...,
-        sensor_model_link: Optional[str] = ...,
-        method_link: Optional[str] = ...,
-        method_code: Optional[str] = ...,
-    ) -> "Sensor":
-        """Update a sensor."""
+        sensor_model_manufacturer: Optional[str] = ...,
+        sensor_model_definition: Optional[str] = ...,
+    ) -> "Method":
+        """Update a method."""
 
         body = {
             "name": name,
             "description": description,
-            "encodingType": encoding_type,
-            "methodType": method_type,
-            "manufacturer": manufacturer,
-            "model": sensor_model,
-            "modelLink": sensor_model_link,
-            "methodLink": method_link,
-            "methodCode": method_code,
+            "code": code,
+            "type": type,
+            "definition": definition,
+            "sensorModel": sensor_model,
+            "sensorModelManufacturer": sensor_model_manufacturer,
+            "sensorModelDefinition": sensor_model_definition,
         }
 
         return super().update(uid=str(uid), **body)

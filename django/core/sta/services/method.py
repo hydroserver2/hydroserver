@@ -7,28 +7,28 @@ from django.db import IntegrityError
 from django.db.models import QuerySet
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Sensor, SensorEncodingType, MethodType
+from core.sta.models import Method, MethodType
 from interfaces.api.schemas import (
-    SensorSummaryResponse,
-    SensorDetailResponse,
-    SensorPostBody,
-    SensorPatchBody,
+    MethodSummaryResponse,
+    MethodDetailResponse,
+    MethodPostBody,
+    MethodPatchBody,
 )
-from interfaces.api.schemas.sta.sensor import SensorFields, SensorOrderByFields
+from interfaces.api.schemas.sta.method import MethodFields, MethodOrderByFields
 from core.service import ServiceUtils
 
 User = get_user_model()
 
 
-class SensorService(ServiceUtils):
-    def get_sensor_for_action(
+class MethodService(ServiceUtils):
+    def get_method_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
-        queryset = Sensor.objects.filter(pk=uid)
+        queryset = Method.objects.filter(pk=uid)
 
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
@@ -36,17 +36,17 @@ class SensorService(ServiceUtils):
         queryset = principal.annotate_permissions(queryset)
 
         try:
-            sensor = queryset.get()
-        except Sensor.DoesNotExist:
-            raise HttpError(404, "Sensor does not exist")
+            method = queryset.get()
+        except Method.DoesNotExist:
+            raise HttpError(404, "Method does not exist")
 
-        if not principal.can_view(sensor):
-            raise HttpError(404, "Sensor does not exist")
+        if not principal.can_view(method):
+            raise HttpError(404, "Method does not exist")
 
-        if action != "view" and not getattr(principal, f"can_{action}")(sensor):
-            raise HttpError(403, f"You do not have permission to {action} this sensor")
+        if action != "view" and not getattr(principal, f"can_{action}")(method):
+            raise HttpError(403, f"You do not have permission to {action} this method")
 
-        return sensor
+        return method
 
     @staticmethod
     def select_expanded_fields(queryset: QuerySet) -> QuerySet:
@@ -62,15 +62,15 @@ class SensorService(ServiceUtils):
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
     ):
-        queryset = Sensor.objects
+        queryset = Method.objects
 
         for field in [
             "workspace_id",
             "datastreams__monitoring_site_id",
             "datastreams__id",
-            "encoding_type",
-            "manufacturer",
-            "method_type",
+            "type",
+            "sensor_model",
+            "sensor_model_manufacturer",
         ]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
@@ -79,8 +79,7 @@ class SensorService(ServiceUtils):
             queryset = self.apply_ordering(
                 queryset,
                 order_by,
-                list(get_args(SensorOrderByFields)),
-                {"model": "sensor_model"},
+                list(get_args(MethodOrderByFields)),
             )
         else:
             queryset = queryset.order_by("id")
@@ -94,11 +93,11 @@ class SensorService(ServiceUtils):
 
         return [
             (
-                SensorDetailResponse.model_validate(sensor)
+                MethodDetailResponse.model_validate(method)
                 if expand_related
-                else SensorSummaryResponse.model_validate(sensor)
+                else MethodSummaryResponse.model_validate(method)
             )
-            for sensor in queryset.all()
+            for method in queryset.all()
         ]
 
     def get(
@@ -107,20 +106,20 @@ class SensorService(ServiceUtils):
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
-        sensor = self.get_sensor_for_action(
+        method = self.get_method_for_action(
             principal=principal, uid=uid, action="view", expand_related=expand_related
         )
 
         return (
-            SensorDetailResponse.model_validate(sensor)
+            MethodDetailResponse.model_validate(method)
             if expand_related
-            else SensorSummaryResponse.model_validate(sensor)
+            else MethodSummaryResponse.model_validate(method)
         )
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        data: SensorPostBody,
+        data: MethodPostBody,
         expand_related: Optional[bool] = None,
     ):
         workspace, _ = (
@@ -132,56 +131,63 @@ class SensorService(ServiceUtils):
             )
         )
 
-        if not principal.can_create("Sensor", workspace=workspace):
-            raise HttpError(403, "You do not have permission to create this sensor")
+        if not principal.can_create("Method", workspace=workspace):
+            raise HttpError(403, "You do not have permission to create this method")
 
         try:
-            sensor = Sensor.objects.create(
+            method = Method.objects.create(
                 pk=data.id,
                 workspace=workspace,
-                **data.dict(include=set(SensorFields.model_fields.keys())),
+                **data.dict(include=set(MethodFields.model_fields.keys())),
             )
         except IntegrityError:
-            raise HttpError(409, "The operation could not be completed due to a resource conflict.")
+            raise HttpError(
+                409,
+                "The operation could not be completed due to a resource conflict.",
+            )
 
         return self.get(
-            principal=principal, uid=sensor.id, expand_related=expand_related
+            principal=principal, uid=method.id, expand_related=expand_related
         )
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        data: SensorPatchBody,
+        data: MethodPatchBody,
         expand_related: Optional[bool] = None,
     ):
-        sensor = self.get_sensor_for_action(principal=principal, uid=uid, action="edit")
-        sensor_data = data.dict(
-            include=set(SensorFields.model_fields.keys()), exclude_unset=True
+        method = self.get_method_for_action(principal=principal, uid=uid, action="edit")
+        method_data = data.dict(
+            include=set(MethodFields.model_fields.keys()), exclude_unset=True
         )
 
-        for field, value in sensor_data.items():
-            setattr(sensor, field, value)
+        for field, value in method_data.items():
+            setattr(method, field, value)
 
-        sensor.save()
+        method.save()
 
         return self.get(
-            principal=principal, uid=sensor.id, expand_related=expand_related
+            principal=principal, uid=method.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        sensor = self.get_sensor_for_action(
+    def delete(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+    ):
+        method = self.get_method_for_action(
             principal=principal, uid=uid, action="delete"
         )
 
-        if sensor.datastreams.exists():
-            raise HttpError(409, "Sensor in use by one or more datastreams")
+        if method.datastreams.exists():
+            raise HttpError(409, "Method in use by one or more datastreams")
 
-        sensor.delete()
+        method.delete()
 
-        return "Sensor deleted"
+        return "Method deleted"
 
-    def list_method_types(
+    def list_types(
         self,
         response: HttpResponse,
         page: Optional[int] = None,
@@ -189,20 +195,6 @@ class SensorService(ServiceUtils):
         order_desc: bool = False,
     ):
         queryset = MethodType.objects.order_by(f"{'-' if order_desc else ''}name")
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
-
-        return queryset.values_list("name", flat=True)
-
-    def list_encoding_types(
-        self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
-        order_desc: bool = False,
-    ):
-        queryset = SensorEncodingType.objects.order_by(
-            f"{'-' if order_desc else ''}name"
-        )
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
         return queryset.values_list("name", flat=True)

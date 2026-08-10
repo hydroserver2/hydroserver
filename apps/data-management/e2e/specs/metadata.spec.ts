@@ -52,7 +52,7 @@ test.describe('metadata management', () => {
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: fixtures.metadata.privateAssignedSensor.name })
+        .filter({ hasText: fixtures.metadata.privateAssignedMethod.name })
         .first()
     ).toBeVisible()
     await expect(page.getByTestId('system-metadata-table')).toHaveCount(0)
@@ -65,7 +65,7 @@ test.describe('metadata management', () => {
     await expect(
       systemTable
         .locator('tr')
-        .filter({ hasText: fixtures.metadata.systemSensor.name })
+        .filter({ hasText: fixtures.metadata.systemMethod.name })
         .first()
     ).toBeVisible()
     await expect(page.getByTestId('workspace-metadata-table')).toHaveCount(0)
@@ -87,7 +87,7 @@ test.describe('metadata management', () => {
       .getByRole('button', { name: /Add new method/i })
       .click()
 
-    await fillCombobox(page, 'Method Type *', 'E2E Method Type')
+    await fillCombobox(page, 'Type *', 'E2E Method Type')
     await page
       .getByLabel('Description *')
       .fill('Temporary method created by the Playwright metadata CRUD suite.')
@@ -317,11 +317,11 @@ test.describe('metadata management', () => {
       .first()
     await expect(searchBox).toBeVisible()
 
-    await searchBox.fill(fixtures.metadata.publicAssignedSensor.name)
+    await searchBox.fill(fixtures.metadata.publicAssignedMethod.name)
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: fixtures.metadata.publicAssignedSensor.name })
+        .filter({ hasText: fixtures.metadata.publicAssignedMethod.name })
         .first()
     ).toBeVisible()
 
@@ -329,7 +329,7 @@ test.describe('metadata management', () => {
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: fixtures.metadata.publicAssignedSensor.name })
+        .filter({ hasText: fixtures.metadata.publicAssignedMethod.name })
     ).toHaveCount(0)
 
     await searchBox.clear()
@@ -345,13 +345,13 @@ test.describe('metadata management', () => {
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await page.getByRole('tab', { name: 'Methods' }).click()
 
-    const assignedSensorRow = workspaceTable
+    const assignedMethodRow = workspaceTable
       .locator('tr')
-      .filter({ hasText: fixtures.metadata.privateAssignedSensor.name })
+      .filter({ hasText: fixtures.metadata.privateAssignedMethod.name })
       .first()
-    await expect(assignedSensorRow).toBeVisible()
+    await expect(assignedMethodRow).toBeVisible()
 
-    await assignedSensorRow.locator('.v-icon').nth(1).click()
+    await assignedMethodRow.locator('.v-icon').nth(1).click()
     await expect(
       page.getByText("cannot be deleted because it's being referenced")
     ).toBeVisible()

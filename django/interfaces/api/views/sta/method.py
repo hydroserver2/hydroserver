@@ -3,41 +3,47 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import (
+    session_auth,
+    oidc_auth,
+    apikey_auth,
+    basic_auth,
+    anonymous_auth,
+)
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
-    SensorSummaryResponse,
-    SensorDetailResponse,
-    SensorQueryParameters,
-    SensorPostBody,
-    SensorPatchBody,
+    MethodSummaryResponse,
+    MethodDetailResponse,
+    MethodQueryParameters,
+    MethodPostBody,
+    MethodPatchBody,
 )
-from core.sta.services import SensorService
+from core.sta.services import MethodService
 
-sensor_router = Router(tags=["Sensors"])
-sensor_service = SensorService()
+method_router = Router(tags=["Methods"])
+method_service = MethodService()
 
 
-@sensor_router.get(
+@method_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[SensorSummaryResponse] | list[SensorDetailResponse],
+        200: list[MethodSummaryResponse] | list[MethodDetailResponse],
         401: str,
     },
     by_alias=True,
 )
-def get_sensors(
+def get_methods(
     request: HydroServerHttpRequest,
     response: HttpResponse,
-    query: Query[SensorQueryParameters],
+    query: Query[MethodQueryParameters],
 ):
     """
-    Get public Sensors and Sensors associated with the authenticated user.
+    Get public Methods and Methods associated with the authenticated user.
     """
 
-    return 200, sensor_service.list(
+    return 200, method_service.list(
         principal=request.principal,
         response=response,
         page=query.page,
@@ -48,11 +54,11 @@ def get_sensors(
     )
 
 
-@sensor_router.post(
+@method_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: SensorSummaryResponse | SensorDetailResponse,
+        201: MethodSummaryResponse | MethodDetailResponse,
         400: str,
         401: str,
         403: str,
@@ -61,42 +67,24 @@ def get_sensors(
     by_alias=True,
 )
 @transaction.atomic
-def create_sensor(
+def create_method(
     request: HydroServerHttpRequest,
-    data: SensorPostBody,
+    data: MethodPostBody,
     expand_related: Optional[bool] = None,
 ):
     """
-    Create a new Sensor.
+    Create a new Method.
     """
 
-    return 201, sensor_service.create(
+    return 201, method_service.create(
         principal=request.principal,
         data=data,
         expand_related=expand_related,
     )
 
 
-@sensor_router.get("encoding-types", response={200: list[str]}, by_alias=True)
-def get_sensor_encoding_types(
-    request: HydroServerHttpRequest,
-    response: HttpResponse,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get sensor encoding types.
-    """
-
-    return 200, sensor_service.list_encoding_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
-        order_desc=query.order_desc,
-    )
-
-
-@sensor_router.get("method-types", response={200: list[str]}, by_alias=True)
-def get_method_types(
+@method_router.get("types", response={200: list[str]}, by_alias=True)
+def get_types(
     request: HydroServerHttpRequest,
     response: HttpResponse,
     query: Query[VocabularyQueryParameters],
@@ -105,7 +93,7 @@ def get_method_types(
     Get method types.
     """
 
-    return 200, sensor_service.list_method_types(
+    return 200, method_service.list_types(
         response=response,
         page=query.page,
         page_size=query.page_size,
@@ -113,36 +101,36 @@ def get_method_types(
     )
 
 
-@sensor_router.get(
-    "/{sensor_id}",
+@method_router.get(
+    "/{method_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: SensorSummaryResponse | SensorDetailResponse,
+        200: MethodSummaryResponse | MethodDetailResponse,
         401: str,
         403: str,
     },
     by_alias=True,
     exclude_unset=True,
 )
-def get_sensor(
+def get_method(
     request: HydroServerHttpRequest,
-    sensor_id: Path[uuid.UUID],
+    method_id: Path[uuid.UUID],
     expand_related: Optional[bool] = None,
 ):
     """
-    Get a Sensor.
+    Get a Method.
     """
 
-    return 200, sensor_service.get(
-        principal=request.principal, uid=sensor_id, expand_related=expand_related
+    return 200, method_service.get(
+        principal=request.principal, uid=method_id, expand_related=expand_related
     )
 
 
-@sensor_router.patch(
-    "/{sensor_id}",
+@method_router.patch(
+    "/{method_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: SensorSummaryResponse | SensorDetailResponse,
+        200: MethodSummaryResponse | MethodDetailResponse,
         400: str,
         401: str,
         403: str,
@@ -151,26 +139,26 @@ def get_sensor(
     by_alias=True,
 )
 @transaction.atomic
-def update_sensor(
+def update_method(
     request: HydroServerHttpRequest,
-    sensor_id: Path[uuid.UUID],
-    data: SensorPatchBody,
+    method_id: Path[uuid.UUID],
+    data: MethodPatchBody,
     expand_related: Optional[bool] = None,
 ):
     """
-    Update a Sensor.
+    Update a Method.
     """
 
-    return 200, sensor_service.update(
+    return 200, method_service.update(
         principal=request.principal,
-        uid=sensor_id,
+        uid=method_id,
         data=data,
         expand_related=expand_related,
     )
 
 
-@sensor_router.delete(
-    "/{sensor_id}",
+@method_router.delete(
+    "/{method_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -181,9 +169,9 @@ def update_sensor(
     by_alias=True,
 )
 @transaction.atomic
-def delete_sensor(request: HydroServerHttpRequest, sensor_id: Path[uuid.UUID]):
+def delete_method(request: HydroServerHttpRequest, method_id: Path[uuid.UUID]):
     """
-    Delete a Sensor.
+    Delete a Method.
     """
 
-    return 204, sensor_service.delete(principal=request.principal, uid=sensor_id)
+    return 204, method_service.delete(principal=request.principal, uid=method_id)

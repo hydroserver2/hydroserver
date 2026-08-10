@@ -60,11 +60,11 @@ function aggregationStatisticAndUnit() {
 }
 
 function sensorMethod() {
-  const sensor = (props.datastream as Datastream & Record<string, any>).sensor
-  if (!sensor) return props.datastream.sensorId || '-'
-  const method = sensor.methodCode || sensor.methodType
-  if (sensor.name && method) return `${sensor.name} (${method})`
-  return sensor.name || method || '-'
+  const method = (props.datastream as Datastream & Record<string, any>).method
+  if (!method) return props.datastream.methodId || '-'
+  const methodSummary = method.code || method.type
+  if (method.name && methodSummary) return `${method.name} (${methodSummary})`
+  return method.name || methodSummary || '-'
 }
 
 function spacing(

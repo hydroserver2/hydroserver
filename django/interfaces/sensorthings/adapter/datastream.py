@@ -12,7 +12,7 @@ datastream_service = DatastreamService()
 
 _GROUP_BY_PARTITION = {
     "thing": "monitoring_site_id",
-    "sensor": "sensor_id",
+    "sensor": "method_id",
     "observed_property": "observed_property_id",
 }
 
@@ -53,7 +53,9 @@ class DatastreamMixin(SensorThingsUtils):
             }
         elif group_by and (partition_field := _GROUP_BY_PARTITION.get(group_by[0])):
             group_field = (
-                "monitoring_site" if group_by[0] == "thing" else group_by[0]
+                "monitoring_site"
+                if group_by[0] == "thing"
+                else "method" if group_by[0] == "sensor" else group_by[0]
             )
             datastreams = datastreams.filter(**{f"{group_field}_id__in": group_by[1]})
             ds_counts = dict(
@@ -137,7 +139,7 @@ class DatastreamMixin(SensorThingsUtils):
                         if needs_properties else Absent
                     ),
                     thing_id=datastream.monitoring_site_id,
-                    sensor_id=datastream.sensor_id,
+                    sensor_id=datastream.method_id,
                     observed_property_id=datastream.observed_property_id,
                 )
                 for datastream in ds_list

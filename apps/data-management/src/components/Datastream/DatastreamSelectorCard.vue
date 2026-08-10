@@ -95,9 +95,9 @@
               {{ item.unit }}
             </span>
           </template>
-          <template #item.sensor="{ item }">
+          <template #item.methodName="{ item }">
             <span class="one-line">
-              {{ item.sensor }}
+              {{ item.methodName }}
             </span>
           </template>
         </v-data-table-virtual>
@@ -197,7 +197,7 @@ const headers = [
   { title: 'No-data value', key: 'noDataValue' },
   { title: 'Aggregation statistic', key: 'aggregationStatistic' },
   { title: 'Unit', key: 'unitName' },
-  { title: 'Method', key: 'sensorName' },
+  { title: 'Method', key: 'methodName' },
 
   { title: 'Phenomenon begin', key: 'phenomenonBeginTime', class: 'one-line' },
   { title: 'Phenomenon end', key: 'phenomenonEndTime' },
@@ -240,7 +240,7 @@ const tableItems = computed(() =>
   filteredDatastreams.value.map((ds) => ({
     ...ds,
     observedPropertyName: ds.observedProperty?.name,
-    sensorName: ds.sensor.name,
+    methodName: ds.method.name,
     processingLevelDefinition: ds.processingLevel.definition,
     unit: ds.unit.name,
     phenomenonBeginTime: formatTime(ds.phenomenonBeginTime),

@@ -34,7 +34,7 @@ Data Management app's authenticated session. Endpoint groups used:
 | Datastreams        | `/data/datastreams`                    | List + fetch metadata + observations + bulk replace.|
 | Observations       | `/data/datastreams/{id}/observations`  | Paged columnar read, bulk POST with `mode=replace`. |
 | Result qualifiers  | `/data/result-qualifiers`              | Qualifier code lookups per workspace.               |
-| Observed props / processing levels / units / sensors | `/data/observed-properties`, `/data/processing-levels`, `/data/units`, `/data/sensors` | Filter taxonomy. |
+| Observed props / processing levels / units / methods | `/data/observed-properties`, `/data/processing-levels`, `/data/units`, `/data/methods` | Filter taxonomy. |
 
 The QC App uses `@hydroserver/client` for these endpoints; the legacy
 qc-utils service layer lives under `packages/qc-utils/src/services/`.

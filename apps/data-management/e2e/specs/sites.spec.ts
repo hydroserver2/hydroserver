@@ -522,7 +522,7 @@ test.describe('sites and workspaces', () => {
     await chooseAutocompleteOption(
       page,
       'Select method *',
-      fixtures.metadata.publicAssignedSensor.name
+      fixtures.metadata.publicAssignedMethod.name
     )
     await chooseAutocompleteOption(
       page,

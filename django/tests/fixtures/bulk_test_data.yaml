@@ -26,14 +26,13 @@
     code: Test
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
-# Sensor
-- model: sta.sensor
+# Method
+- model: sta.method
   pk: c830a6b5-cb53-4596-90d9-b4d99bdc314d
   fields:
-    name: Test Sensor
-    description: Test Sensor
-    encoding_type: application/json
-    method_type: Test Method
+    name: Test Method
+    description: Test Method
+    type: Test Method
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Processing Level
