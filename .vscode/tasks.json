@@ -150,7 +150,7 @@
     {
       "label": "Start Backend",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/dev-api-command manage.py runserver 0.0.0.0:8000",
+      "command": "${workspaceFolder}/scripts/dev-api-command manage.py tailwind runserver 0.0.0.0:8000",
       "options": {
         "cwd": "${workspaceFolder}/django"
       },
