@@ -54,6 +54,9 @@
     "vue-tsc": "^3.3.7"
   },
   "optionalDependencies": {
-    "@rolldown/binding-linux-x64-gnu": "1.1.5"
+    "@parcel/watcher-linux-x64-glibc": "2.5.1",
+    "@rolldown/binding-linux-x64-gnu": "1.1.5",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.3.3",
+    "lightningcss-linux-x64-gnu": "1.32.0"
   }
 }
