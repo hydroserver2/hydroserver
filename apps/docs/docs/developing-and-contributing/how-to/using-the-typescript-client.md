@@ -21,7 +21,7 @@ The TypeScript client exposes these services:
 | Area | Services |
 | --- | --- |
 | Authentication and account | `session`, `user` |
-| Data management | `workspaces`, `monitoringSites`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
+| Data management | `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
 | Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
 | Files and quality control | `monitoringSiteFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
@@ -452,7 +452,7 @@ await hs.resultQualifiers.delete("00000000-0000-0000-0000-000000000000");
 
 ## Datastreams
 
-Datastreams group observations for one observed property, measured by one sensor, at one monitoringSite.
+Datastreams group observations for one observed property, produced by one method, at one monitoring site.
 
 ### Example: Get datastreams
 
