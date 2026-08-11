@@ -144,7 +144,7 @@ class DatastreamService(HydroServerBaseService):
             "resultEndTime": result_end_time,
             "isPrivate": is_private,
             "isVisible": is_visible,
-            "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
+            "tags": tags or {},
         }
 
         return super().create(**body)
@@ -185,6 +185,7 @@ class DatastreamService(HydroServerBaseService):
         result_end_time: Optional[datetime] = ...,
         is_private: bool = ...,
         is_visible: bool = ...,
+        tags: Dict[str, Optional[str]] = ...,
     ) -> "Datastream":
         """Update a datastream."""
 
@@ -217,9 +218,20 @@ class DatastreamService(HydroServerBaseService):
             "resultEndTime": result_end_time,
             "isPrivate": is_private,
             "isVisible": is_visible,
+            "tags": tags,
         }
 
         return super().update(uid=str(uid), **body)
+
+    def set_tag(self, uid: Union[UUID, str], key: str, value: str) -> "Datastream":
+        """Create or update a tag on a HydroServer datastream."""
+
+        return self.update(uid=uid, tags={key: value})
+
+    def delete_tag(self, uid: Union[UUID, str], key: str) -> "Datastream":
+        """Remove a tag from a HydroServer datastream."""
+
+        return self.update(uid=uid, tags={key: None})
 
     def get_observations(
         self,

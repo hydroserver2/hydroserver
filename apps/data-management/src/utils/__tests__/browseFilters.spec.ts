@@ -16,7 +16,7 @@ describe('filterMonitoringSiteMarkers', () => {
       latitude: 41.7,
       longitude: -111.8,
       code: 'LAKE-1',
-      tags: [{ key: 'Network', value: 'Primary' }],
+      tags: { Network: 'Primary' },
     },
     {
       id: 'monitoringSite-2',
@@ -27,7 +27,7 @@ describe('filterMonitoringSiteMarkers', () => {
       latitude: 41.8,
       longitude: -111.7,
       code: 'RIVER-1',
-      tags: [{ key: 'Network', value: 'Secondary' }],
+      tags: { Network: 'Secondary' },
     },
     {
       id: 'monitoringSite-3',
@@ -38,7 +38,7 @@ describe('filterMonitoringSiteMarkers', () => {
       latitude: 41.9,
       longitude: -111.6,
       code: 'SPRING-1',
-      tags: [{ key: 'Network', value: 'Primary' }],
+      tags: { Network: 'Primary' },
     },
     {
       id: 'monitoringSite-4',
@@ -49,7 +49,7 @@ describe('filterMonitoringSiteMarkers', () => {
       latitude: 42.0,
       longitude: -111.5,
       code: 'RESERVOIR-1',
-      tags: [{ key: 'Region', value: 'North' }],
+      tags: { Region: 'North' },
     },
   ]
 

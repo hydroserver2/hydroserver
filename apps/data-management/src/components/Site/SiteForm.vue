@@ -272,10 +272,10 @@ async function uploadMonitoringSite() {
 
   // Set the tag context to the current site so updateTags can compare
   // against what we already have if anything.
-  const tagRes = await hs.monitoringSites.getTags(storedMonitoringSite.value!.id)
-  tags.value = tagRes.ok ? tagRes.data : []
+  tags.value = monitoringSiteRes?.tags ?? {}
 
   await updateTags(storedMonitoringSite.value!.id)
+  if (storedMonitoringSite.value) storedMonitoringSite.value.tags = tags.value
   await updatePhotos(storedMonitoringSite.value!.id)
   const ratingCurveResult = await updateRatingCurves(storedMonitoringSite.value!.id)
   if (!ratingCurveResult.ok) {

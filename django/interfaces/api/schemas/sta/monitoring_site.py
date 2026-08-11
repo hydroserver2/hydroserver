@@ -12,12 +12,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import (
-    FileAttachmentGetResponse,
-    TagGetResponse,
-    TagPostBody,
-    tags_dict_to_list,
-)
+from interfaces.api.schemas.sta.attachment import FileAttachmentGetResponse
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -160,42 +155,32 @@ class MonitoringSiteMapSummaryResponse(BaseGetResponse):
     is_private: bool
     latitude: float
     longitude: float
-    tags: list[TagGetResponse]
+    tags: dict[str, str]
 
 
 class MonitoringSiteSummaryResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
-    tags: list[TagGetResponse] = []
+    tags: dict[str, str] = {}
     monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
-
-    @field_validator("tags", mode="before")
-    @classmethod
-    def _tags_dict_to_list(cls, value):
-        return tags_dict_to_list(value)
 
 
 class MonitoringSiteDetailResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse"
-    tags: list[TagGetResponse] = []
+    tags: dict[str, str] = {}
     monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
-
-    @field_validator("tags", mode="before")
-    @classmethod
-    def _tags_dict_to_list(cls, value):
-        return tags_dict_to_list(value)
 
 
 class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
-    tags: list[TagPostBody] = []
+    tags: dict[str, str] = {}
 
 
 class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
-    pass
+    tags: dict[str, str | None] = {}

@@ -173,14 +173,11 @@ export function filterMonitoringSiteMarkers(
     const inSelectedSiteType =
       selectedSiteTypes.length === 0 ||
       selectedSiteTypes.includes(monitoringSite.type)
-    const matchingTags = tagKey
-      ? monitoringSite.tags.filter((tag) => tag.key === tagKey)
-      : []
+    const tagValue = tagKey ? monitoringSite.tags[tagKey] : undefined
     const hasSelectedTag =
       !tagKey ||
-      (selectedTagValues.length === 0
-        ? matchingTags.length > 0
-        : matchingTags.some((tag) => selectedTagValues.includes(tag.value)))
+      (tagValue !== undefined &&
+        (selectedTagValues.length === 0 || selectedTagValues.includes(tagValue)))
 
     return (
       isSelectedSite &&

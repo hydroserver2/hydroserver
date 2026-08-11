@@ -4,7 +4,7 @@ from typing import Optional, Literal, Sequence, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models import QuerySet, Min, Max, Count
 from django.utils import timezone
 from django.http import StreamingHttpResponse
@@ -23,8 +23,6 @@ from core.sta.models import (
 from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
-    TagPostBody,
-    TagDeleteBody,
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
@@ -383,16 +381,10 @@ class DatastreamService(ServiceUtils):
                 400, "The given unit cannot be associated with this datastream"
             )
 
-        tag_keys = [tag.key for tag in data.tags]
-        if len(tag_keys) != len(set(tag_keys)):
-            raise HttpError(400, "Duplicate tag keys are not allowed")
-        tags = {tag.key: tag.value for tag in data.tags}
-
         try:
             datastream = Datastream.objects.create(
                 pk=data.id,
-                tags=tags,
-                **data.dict(include=set(DatastreamPostBody.model_fields.keys()) - {"tags"})
+                **data.dict(include=set(DatastreamPostBody.model_fields.keys()))
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
@@ -494,6 +486,11 @@ class DatastreamService(ServiceUtils):
                 400, "The given unit cannot be associated with this datastream"
             )
 
+        if (tags_payload := datastream_data.pop("tags", None)) is not None:
+            datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
+            merged_tags = {**(datastream.tags or {}), **tags_payload}
+            datastream.tags = {k: v for k, v in merged_tags.items() if v is not None}
+
         for field, value in datastream_data.items():
             setattr(datastream, field, value)
 
@@ -510,16 +507,6 @@ class DatastreamService(ServiceUtils):
         datastream.delete()
 
         return "Datastream deleted"
-
-    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="view"
-        )
-
-        return [
-            {"key": key, "value": value}
-            for key, value in (datastream.tags or {}).items()
-        ]
 
     @staticmethod
     def get_tag_keys(
@@ -541,53 +528,6 @@ class DatastreamService(ServiceUtils):
                 tag_keys[key].add(value)
 
         return {key: sorted(values) for key, values in tag_keys.items()}
-
-    @transaction.atomic
-    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-        datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
-
-        if data.key in (datastream.tags or {}):
-            raise HttpError(400, "Tag already exists")
-
-        datastream.tags = {**(datastream.tags or {}), data.key: data.value}
-        datastream.save(update_fields=["tags"])
-
-        return {"key": data.key, "value": data.value}
-
-    @transaction.atomic
-    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-        datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
-
-        if data.key not in (datastream.tags or {}):
-            raise HttpError(404, "Tag does not exist")
-
-        datastream.tags = {**datastream.tags, data.key: data.value}
-        datastream.save(update_fields=["tags"])
-
-        return {"key": data.key, "value": data.value}
-
-    @transaction.atomic
-    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-        datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
-
-        tags = dict(datastream.tags or {})
-        if data.key not in tags or (data.value is not None and tags[data.key] != data.value):
-            raise HttpError(404, "Tag does not exist")
-
-        del tags[data.key]
-        datastream.tags = tags
-        datastream.save(update_fields=["tags"])
-
-        return "1 tag(s) deleted"
 
     def get_file_attachments(
         self,

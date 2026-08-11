@@ -92,7 +92,7 @@ class TaskService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str,
         mappings: List[dict],
-        description: Optional[str] = None,
+        description: Optional[str] = ...,
         task_variables: Optional[Dict[str, Any]] = None,
         crontab: Optional[str] = ...,
         interval: Optional[int] = ...,

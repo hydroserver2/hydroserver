@@ -4,7 +4,7 @@ from typing import Optional, Literal, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models import Count, QuerySet, Q, FloatField, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
@@ -26,8 +26,6 @@ from interfaces.api.schemas import (
     MonitoringSiteDetailResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
-    TagPostBody,
-    TagDeleteBody,
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
@@ -256,10 +254,7 @@ class MonitoringSiteService(ServiceUtils):
                 "is_private": site["is_private"],
                 "latitude": site["latitude_value"],
                 "longitude": site["longitude_value"],
-                "tags": [
-                    {"key": key, "value": value}
-                    for key, value in (site["tags"] or {}).items()
-                ],
+                "tags": site["tags"] or {},
             }
             for site in site_rows
         ]
@@ -506,17 +501,12 @@ class MonitoringSiteService(ServiceUtils):
         if not principal.can_create("MonitoringSite", workspace=workspace):
             raise HttpError(403, "You do not have permission to create this MonitoringSite")
 
-        tag_keys = [tag.key for tag in data.tags]
-        if len(tag_keys) != len(set(tag_keys)):
-            raise HttpError(400, "Duplicate tag keys are not allowed")
-        tags = {tag.key: tag.value for tag in data.tags}
-
         try:
             monitoring_site = MonitoringSite.objects.create(
                 pk=data.id,
                 workspace=workspace,
-                tags=tags,
-                **data.dict(include=set(MonitoringSiteFields.model_fields.keys()) - {"tags"}),
+                tags=data.tags,
+                **data.dict(include=set(MonitoringSiteFields.model_fields.keys())),
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
@@ -534,8 +524,13 @@ class MonitoringSiteService(ServiceUtils):
     ):
         monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
         monitoring_site_data = data.dict(
-            include=set(MonitoringSiteFields.model_fields.keys()), exclude_unset=True
+            include=set(MonitoringSitePatchBody.model_fields.keys()), exclude_unset=True
         )
+
+        if (tags_payload := monitoring_site_data.pop("tags", None)) is not None:
+            monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
+            merged_tags = {**(monitoring_site.tags or {}), **tags_payload}
+            monitoring_site.tags = {k: v for k, v in merged_tags.items() if v is not None}
 
         for field, value in monitoring_site_data.items():
             setattr(monitoring_site, field, value)
@@ -553,14 +548,6 @@ class MonitoringSiteService(ServiceUtils):
         monitoring_site.delete()
 
         return "MonitoringSite deleted"
-
-    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="view")
-
-        return [
-            {"key": key, "value": value}
-            for key, value in (monitoring_site.tags or {}).items()
-        ]
 
     @staticmethod
     def get_tag_keys(
@@ -582,47 +569,6 @@ class MonitoringSiteService(ServiceUtils):
                 tag_keys[key].add(value)
 
         return {key: sorted(values) for key, values in tag_keys.items()}
-
-    @transaction.atomic
-    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
-        monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
-
-        if data.key in (monitoring_site.tags or {}):
-            raise HttpError(400, "Tag already exists")
-
-        monitoring_site.tags = {**(monitoring_site.tags or {}), data.key: data.value}
-        monitoring_site.save(update_fields=["tags"])
-
-        return {"key": data.key, "value": data.value}
-
-    @transaction.atomic
-    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
-        monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
-
-        if data.key not in (monitoring_site.tags or {}):
-            raise HttpError(404, "Tag does not exist")
-
-        monitoring_site.tags = {**monitoring_site.tags, data.key: data.value}
-        monitoring_site.save(update_fields=["tags"])
-
-        return {"key": data.key, "value": data.value}
-
-    @transaction.atomic
-    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
-        monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
-
-        tags = dict(monitoring_site.tags or {})
-        if data.key not in tags or (data.value is not None and tags[data.key] != data.value):
-            raise HttpError(404, "Tag does not exist")
-
-        del tags[data.key]
-        monitoring_site.tags = tags
-        monitoring_site.save(update_fields=["tags"])
-
-        return "1 tag(s) deleted"
 
     def get_file_attachments(
         self,

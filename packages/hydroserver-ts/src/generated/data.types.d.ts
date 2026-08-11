@@ -316,38 +316,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Tags
-         * @description Get all tags associated with a Datastream.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_tags"];
-        /**
-         * Edit Datastream Tag
-         * @description Edit a tag of a Datastream.
-         */
-        put: operations["interfaces_api_views_sta_datastream_edit_datastream_tag"];
-        /**
-         * Add Datastream Tag
-         * @description Add a tag to a Datastream.
-         */
-        post: operations["interfaces_api_views_sta_datastream_add_datastream_tag"];
-        /**
-         * Remove Datastream Tag
-         * @description Remove a tag from a Datastream.
-         */
-        delete: operations["interfaces_api_views_sta_datastream_remove_datastream_tag"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/etl/data-connections": {
         parameters: {
             query?: never;
@@ -803,38 +771,6 @@ export interface paths {
          * @description Remove a file attachment from a monitoring_site.
          */
         delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/{monitoring_site_id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Tags
-         * @description Get all tags associated with a MonitoringSite.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tags"];
-        /**
-         * Edit Monitoring Site Tag
-         * @description Edit a tag of a MonitoringSite.
-         */
-        put: operations["interfaces_api_views_sta_monitoring_site_edit_monitoring_site_tag"];
-        /**
-         * Add Monitoring Site Tag
-         * @description Add a tag to a MonitoringSite.
-         */
-        post: operations["interfaces_api_views_sta_monitoring_site_add_monitoring_site_tag"];
-        /**
-         * Remove Monitoring Site Tag
-         * @description Remove a tag from a MonitoringSite.
-         */
-        delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_tag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2603,8 +2539,13 @@ export interface components {
             sampledMedium: string;
             /** Status */
             status?: string | null;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
+            /**
+             * Tags
+             * @default {}
+             */
+            tags: {
+                [key: string]: string;
+            };
             /** Timeaggregationinterval */
             timeAggregationInterval: number;
             /**
@@ -2671,6 +2612,10 @@ export interface components {
             sampledMedium?: string;
             /** Status */
             status?: string | null;
+            /** Tags */
+            tags?: {
+                [key: string]: string | null;
+            };
             /** Timeaggregationinterval */
             timeAggregationInterval?: number;
             /**
@@ -2750,9 +2695,11 @@ export interface components {
             status?: string | null;
             /**
              * Tags
-             * @default []
+             * @default {}
              */
-            tags: components["schemas"]["TagPostBody"][];
+            tags: {
+                [key: string]: string;
+            };
             /** Timeaggregationinterval */
             timeAggregationInterval: number;
             /**
@@ -2985,8 +2932,13 @@ export interface components {
             sampledMedium: string;
             /** Status */
             status?: string | null;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
+            /**
+             * Tags
+             * @default {}
+             */
+            tags: {
+                [key: string]: string;
+            };
             /** Timeaggregationinterval */
             timeAggregationInterval: number;
             /**
@@ -3692,8 +3644,13 @@ export interface components {
             longitude: number;
             /** Name */
             name: string;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
+            /**
+             * Tags
+             * @default {}
+             */
+            tags: {
+                [key: string]: string;
+            };
             /** Type */
             type: string;
             workspace: components["schemas"]["WorkspaceSummaryResponse"];
@@ -3731,7 +3688,9 @@ export interface components {
             /** Name */
             name: string;
             /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
+            tags: {
+                [key: string]: string;
+            };
             /** Type */
             type: string;
             /**
@@ -3810,6 +3769,10 @@ export interface components {
             longitude?: number;
             /** Name */
             name?: string;
+            /** Tags */
+            tags?: {
+                [key: string]: string | null;
+            };
             /** Type */
             type?: string;
         };
@@ -3843,9 +3806,11 @@ export interface components {
             name: string;
             /**
              * Tags
-             * @default []
+             * @default {}
              */
-            tags: components["schemas"]["TagPostBody"][];
+            tags: {
+                [key: string]: string;
+            };
             /** Type */
             type: string;
             /**
@@ -3957,8 +3922,13 @@ export interface components {
             longitude: number;
             /** Name */
             name: string;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
+            /**
+             * Tags
+             * @default {}
+             */
+            tags: {
+                [key: string]: string;
+            };
             /** Type */
             type: string;
             /**
@@ -5489,27 +5459,6 @@ export interface components {
             /** Sitetypes */
             siteTypes: string[];
         };
-        /** TagDeleteBody */
-        TagDeleteBody: {
-            /** Key */
-            key: string;
-            /** Value */
-            value?: string | null;
-        };
-        /** TagGetResponse */
-        TagGetResponse: {
-            /** Key */
-            key: string;
-            /** Value */
-            value: string;
-        };
-        /** TagPostBody */
-        TagPostBody: {
-            /** Key */
-            key: string;
-            /** Value */
-            value: string;
-        };
         /**
          * TaskRunOrderBy
          * @enum {string}
@@ -6964,230 +6913,6 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_tags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_edit_datastream_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_add_datastream_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_remove_datastream_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8892,230 +8617,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FileAttachmentDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                monitoring_site_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_edit_monitoring_site_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                monitoring_site_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_add_monitoring_site_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                monitoring_site_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_remove_monitoring_site_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                monitoring_site_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagDeleteBody"];
             };
         };
         responses: {

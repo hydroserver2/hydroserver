@@ -10,19 +10,19 @@ const sites = [
     id: 'site-1',
     workspaceId: 'workspace-a',
     type: 'Stream',
-    tags: [{ key: 'Network', value: 'Primary' }],
+    tags: { Network: 'Primary' },
   },
   {
     id: 'site-2',
     workspaceId: 'workspace-a',
     type: 'Well',
-    tags: [{ key: 'Network', value: 'Secondary' }],
+    tags: { Network: 'Secondary' },
   },
   {
     id: 'site-3',
     workspaceId: 'workspace-b',
     type: 'Stream',
-    tags: [{ key: 'Network', value: 'Primary' }],
+    tags: { Network: 'Primary' },
   },
 ] as any[]
 

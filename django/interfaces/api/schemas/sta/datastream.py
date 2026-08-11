@@ -1,5 +1,5 @@
 import uuid
-from pydantic import AliasPath, AliasChoices, field_validator
+from pydantic import AliasPath, AliasChoices
 from ninja import Schema, Field, Query
 from typing import Optional, Literal, TYPE_CHECKING
 from core.types import ISODatetime
@@ -10,12 +10,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import (
-    TagGetResponse,
-    TagPostBody,
-    FileAttachmentGetResponse,
-    tags_dict_to_list,
-)
+from interfaces.api.schemas.sta.attachment import FileAttachmentGetResponse
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -225,15 +220,10 @@ class DatastreamSummaryResponse(
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
-    tags: list[TagGetResponse] = []
+    tags: dict[str, str] = {}
     datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
-
-    @field_validator("tags", mode="before")
-    @classmethod
-    def _tags_dict_to_list(cls, value):
-        return tags_dict_to_list(value)
 
 
 class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
@@ -246,21 +236,16 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
     observed_property: "ObservedPropertySummaryResponse"
     processing_level: "ProcessingLevelSummaryResponse"
     unit: "UnitSummaryResponse"
-    tags: list[TagGetResponse] = []
+    tags: dict[str, str] = {}
     datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
 
-    @field_validator("tags", mode="before")
-    @classmethod
-    def _tags_dict_to_list(cls, value):
-        return tags_dict_to_list(value)
-
 
 class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):
     id: Optional[uuid.UUID] = None
-    tags: list[TagPostBody] = []
+    tags: dict[str, str] = {}
 
 
 class DatastreamPatchBody(BasePatchBody, DatastreamFields, DatastreamRelatedFields):
-    pass
+    tags: dict[str, str | None] = {}
