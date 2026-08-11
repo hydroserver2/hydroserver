@@ -5,7 +5,7 @@
 At this point we have 15-minute gage height readings in feet flowing into HydroServer from the USGS API. Data product tasks let you define computations that run automatically on that raw data and write the results to a new output datastream — without touching the original. In this part we'll set up two:
 
 1. A **daily aggregation** that computes the mean gage height for each calendar day
-2. An **expression transformation** that converts the readings from feet to meters
+2. A **derivation transformation** that converts the readings from feet to meters
 
 Both tasks read from the `stage_datastream` we created in Part 3.
 
@@ -123,7 +123,7 @@ print(f"Message: {latest.message}")
 
 If it succeeds, the `daily_stage_datastream` will have one observation per calendar day.
 
-## Expression transformation task
+## Derivation transformation task
 
 For the feet-to-meters conversion, we want the output to stay in sync with the input, so we'll run this task every 15 minutes — the same frequency as the incoming USGS data.
 
@@ -138,10 +138,10 @@ meters_conversion_task = hs_api.dataproducttasks.create(
 )
 ```
 
-Attach an expression transformation. The formula is evaluated for each input observation, where `x` is the raw value. One foot equals 0.3048 meters.
+Attach a derivation transformation. The formula is evaluated for each input observation, where `x` is the raw value. One foot equals 0.3048 meters.
 
 ```python
-hs_api.dataproducttransformations.create_expression(
+hs_api.dataproducttransformations.create_derivation(
     task_id=meters_conversion_task.uid,
     output_datastream=stage_meters_datastream,
     input_datastream=stage_datastream,

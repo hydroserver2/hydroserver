@@ -961,7 +961,7 @@ task = hs_api.data_product_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Access inline transformation lists from the task response
 rating_curve_transforms = task.rating_curve_transformations
-expression_transforms = task.expression_transformations
+derivation_transforms = task.derivation_transformations
 aggregation_transforms = task.aggregation_transformations
 ```
 
@@ -1026,7 +1026,7 @@ task.delete()
 
 ### Transformations
 
-Transformations define the individual derivation rules within a data product task. HydroServer supports four transformation types: rating curve, expression, composite expression, and aggregation. All transformation operations are task-scoped and use `hs_api.transformations`.
+Transformations define the individual derivation rules within a data product task. HydroServer supports three transformation types: rating curve, derivation, and aggregation. All transformation operations are task-scoped and use `hs_api.transformations`.
 
 #### Example: Rating Curve Transformations
 ```python
@@ -1058,37 +1058,26 @@ hs_api.transformations.delete_rating_curve(
 )
 ```
 
-#### Example: Expression Transformations
+#### Example: Derivation Transformations
 ```python
-# Create an expression transformation (single input datastream with a formula)
-new_transformation = hs_api.transformations.create_expression(
+# Create a derivation transformation (one or more input datastreams with a formula).
+# Each item in input_datastreams needs 'datastream_id' and 'variable_name'; the
+# formula must reference at least one of those variable names.
+new_transformation = hs_api.transformations.create_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     output_datastream='00000000-0000-0000-0000-000000000000',
-    input_datastream='00000000-0000-0000-0000-000000000001',
+    input_datastreams=[
+        {'datastream_id': '00000000-0000-0000-0000-000000000001', 'variable_name': 'x'},
+    ],
     formula='x * 0.3048',  # feet to meters
-    variable_name='x'
+    stop_on_no_data=True,  # stop the run if an input holds its no-data value
+    stop_on_error=True,    # stop the run if the formula produces a non-finite result
 )
 
-# Update an expression transformation
-hs_api.transformations.update_expression(
-    task_id='00000000-0000-0000-0000-000000000000',
-    uid=new_transformation.id,
-    input_datastream='00000000-0000-0000-0000-000000000001',
-    formula='x * 0.3048',
-    variable_name='x'
-)
-
-# Delete an expression transformation
-hs_api.transformations.delete_expression(
-    task_id='00000000-0000-0000-0000-000000000000',
-    uid=new_transformation.id
-)
-```
-
-#### Example: Composite Expression Transformations
-```python
-# Create a composite expression transformation (multiple input datastreams)
-new_transformation = hs_api.transformations.create_composite_expression(
+# A derivation with multiple inputs works the same way, just with more entries.
+# Inputs are matched by exact timestamp; if they stop lining up, the run stops
+# there until they're back in sync.
+new_derived_transformation = hs_api.transformations.create_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     output_datastream='00000000-0000-0000-0000-000000000000',
     input_datastreams=[
@@ -1096,26 +1085,20 @@ new_transformation = hs_api.transformations.create_composite_expression(
         {'datastream_id': '00000000-0000-0000-0000-000000000002', 'variable_name': 'humidity'},
     ],
     formula='temp_c + 273.15',
-    output_interval=1,
-    output_interval_units='hours',
-    max_gap_interval=3,
-    max_gap_interval_units='hours'
 )
 
-# Update a composite expression transformation
-hs_api.transformations.update_composite_expression(
+# Update a derivation transformation
+hs_api.transformations.update_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     uid=new_transformation.id,
     input_datastreams=[
-        {'datastream_id': '00000000-0000-0000-0000-000000000001', 'variable_name': 'temp_c'},
+        {'datastream_id': '00000000-0000-0000-0000-000000000001', 'variable_name': 'x'},
     ],
-    formula='temp_c + 273.15',
-    output_interval=1,
-    output_interval_units='hours'
+    formula='x * 0.3048',
 )
 
-# Delete a composite expression transformation
-hs_api.transformations.delete_composite_expression(
+# Delete a derivation transformation
+hs_api.transformations.delete_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     uid=new_transformation.id
 )
