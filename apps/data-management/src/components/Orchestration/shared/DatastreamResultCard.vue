@@ -29,7 +29,7 @@ const details = computed(() => [
   { label: 'Unit', value: unit() },
   { label: 'Intended time spacing', value: spacing(props.datastream.intendedTimeSpacing, props.datastream.intendedTimeSpacingUnit) },
   { label: 'Aggregation statistic & unit', value: aggregationStatisticAndUnit() },
-  { label: 'Method', value: sensorMethod() },
+  { label: 'Method', value: methodSummary() },
   { label: 'Sampled medium', value: props.datastream.sampledMedium || '-' },
   { label: 'Value count', value: formatCount(props.datastream.valueCount) },
 ])
@@ -59,12 +59,12 @@ function aggregationStatisticAndUnit() {
   return [statistic, interval].filter(Boolean).join(', ') || '-'
 }
 
-function sensorMethod() {
+function methodSummary() {
   const method = (props.datastream as Datastream & Record<string, any>).method
   if (!method) return props.datastream.methodId || '-'
-  const methodSummary = method.code || method.type
-  if (method.name && methodSummary) return `${method.name} (${methodSummary})`
-  return method.name || methodSummary || '-'
+  const methodLabel = method.code || method.type
+  if (method.name && methodLabel) return `${method.name} (${methodLabel})`
+  return method.name || methodLabel || '-'
 }
 
 function spacing(

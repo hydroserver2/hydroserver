@@ -1,6 +1,6 @@
 # Part 1: Setting Up Your Site and Datastreams
 
-In this first part, we'll connect to HydroServer and create everything needed to represent a monitoring site: a workspace, a site, linked metadata (sensor, observed property, unit, and processing level), and a datastream. By the end you'll have a fully described datastream ready to receive observations in the next part.
+In this first part, we'll connect to HydroServer and create everything needed to represent a monitoring site: a workspace, a site, linked metadata (method, observed property, unit, and processing level), and a datastream. By the end you'll have a fully described datastream ready to receive observations in the next part.
 
 The site we'll be building throughout this tutorial is a fictional stream gauge station on the Cache River in northern Utah. We'll use it to measure water surface elevation (stage) — a common measurement at stream monitoring stations.
 
@@ -20,7 +20,7 @@ hs_api = HydroServer(
 
 ## Create a workspace
 
-All resources in HydroServer — sites, datastreams, sensors, and so on — belong to a workspace. Let's create one for this tutorial.
+All resources in HydroServer — sites, datastreams, methods, and so on — belong to a workspace. Let's create one for this tutorial.
 
 ```python
 workspace = hs_api.workspaces.create(
@@ -129,16 +129,16 @@ raw_processing_level = hs_api.processinglevels.create(
 
 ## Create a datastream
 
-Now we have everything we need to define our datastream. A datastream ties together a site, sensor, observed property, unit, and processing level, and also describes how observations are structured — their type, medium, aggregation, and time spacing.
+Now we have everything we need to define our datastream. A datastream ties together a site, method, observed property, unit, and processing level, and also describes how observations are structured — their type, medium, aggregation, and time spacing.
 
 Our gauge records instantaneous discharge measurements every 15 minutes.
 
 ```python
 discharge_datastream = hs_api.datastreams.create(
     name=f"{discharge_observed_property.name} measured in the {blacksmith_fork_site.name}",
-    description=f'{discharge_observed_property.name} created using a {discharge_sensor.name}',
+    description=f'{discharge_observed_property.name} created using {discharge_method.name}',
     monitoring_site=blacksmith_fork_site,
-    sensor=discharge_sensor,
+    method=discharge_method,
     observed_property=discharge_observed_property,
     processing_level=raw_processing_level,
     unit=discharge_unit,

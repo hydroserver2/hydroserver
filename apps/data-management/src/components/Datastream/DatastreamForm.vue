@@ -699,13 +699,13 @@ const generateDefaultDescription = () => {
   const PL = processingLevels.value.find(
     (pl) => pl.id === datastream.value.processingLevelId
   )?.code
-  const sensorName = methods.value.find(
+  const methodName = methods.value.find(
     (pl) => pl.id === datastream.value.methodId
   )?.name
   const unitName = units.value.find(
     (pl) => pl.id === datastream.value.unitId
   )?.name
-  return `A datastream of ${OP} at ${monitoringSite.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${sensorName} having units of ${unitName}`
+  return `A datastream of ${OP} at ${monitoringSite.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${methodName} having units of ${unitName}`
 }
 
 watch(selectedDatastreamID, async () => {

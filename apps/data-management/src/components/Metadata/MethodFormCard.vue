@@ -23,6 +23,7 @@
         />
 
         <v-text-field
+          v-if="!isInstrument"
           v-model="item.name"
           label="Name *"
           :rules="rules.requiredAndMaxLength255"
@@ -50,15 +51,15 @@
         <v-text-field
           v-if="isInstrument"
           v-model="item.sensorModelManufacturer"
-          label="Sensor Model Manufacturer"
-          :rules="rules.name"
+          label="Sensor Model Manufacturer *"
+          :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-if="isInstrument"
           v-model="item.sensorModel"
-          label="Sensor Model"
-          :rules="rules.name"
+          label="Sensor Model *"
+          :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
@@ -110,6 +111,14 @@ const isInstrument = computed(
 )
 
 async function onSubmit() {
+  const { type, sensorModelManufacturer, sensorModel } = item.value
+  if (
+    type === 'Instrument Deployment' &&
+    sensorModelManufacturer &&
+    sensorModel
+  ) {
+    item.value.name = `${sensorModelManufacturer}: ${sensorModel}`
+  }
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()

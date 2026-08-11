@@ -12,6 +12,7 @@ def split_key_prefix(apps, schema_editor):
         account.key_prefix = prefix
         account.key_hash = key_hash
         account.save(update_fields=['key_prefix', 'key_hash'])
+    schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def reverse_split_key_prefix(apps, schema_editor):
@@ -19,6 +20,7 @@ def reverse_split_key_prefix(apps, schema_editor):
     for account in ServiceAccount.objects.all():
         account.key_hash = f"{account.key_prefix}${account.key_hash}"
         account.save(update_fields=['key_hash'])
+    schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def add_service_account_email(apps, schema_editor):
@@ -27,11 +29,13 @@ def add_service_account_email(apps, schema_editor):
     for account in ServiceAccount.objects.all():
         account.email = f"{account.key_prefix}@service-accounts.{domain}"
         account.save(update_fields=['email'])
+    schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def reverse_add_service_account_email(apps, schema_editor):
     ServiceAccount = apps.get_model('iam', 'ServiceAccount')
     ServiceAccount.objects.update(email='')
+    schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def create_collaborators_for_service_accounts(apps, schema_editor):
@@ -43,11 +47,13 @@ def create_collaborators_for_service_accounts(apps, schema_editor):
             service_account_id=account.id,
             role_id=account.role_id,
         )
+    schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def reverse_create_collaborators_for_service_accounts(apps, schema_editor):
     Collaborator = apps.get_model('iam', 'Collaborator')
     Collaborator.objects.filter(service_account__isnull=False).delete()
+    schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 class Migration(migrations.Migration):
