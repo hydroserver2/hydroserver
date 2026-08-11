@@ -18,7 +18,7 @@ from core.sta.models import (
     ObservedProperty,
     ProcessingLevel,
     ResultQualifier,
-    Sensor,
+    Method,
     MonitoringSiteTag,
     Unit,
 )
@@ -29,7 +29,7 @@ from tests.core.sta.factories import (
     ObservedPropertyFactory,
     ProcessingLevelFactory,
     ResultQualifierFactory,
-    SensorFactory,
+    MethodFactory,
     MonitoringSiteFactory,
     UnitFactory,
 )
@@ -92,7 +92,7 @@ def _datastream(
     marker,
     *,
     name,
-    sensor,
+    method,
     observed_property,
     processing_level,
     unit,
@@ -104,7 +104,7 @@ def _datastream(
         monitoring_site=monitoring_site,
         name=_name(name, marker),
         description=f"E2E scenario datastream {marker}",
-        sensor=sensor,
+        method=method,
         observed_property=observed_property,
         processing_level=processing_level,
         unit=unit,
@@ -131,12 +131,12 @@ def _datastream(
 
 def _metadata(workspace, marker, scope):
     return {
-        "sensor": SensorFactory(
+        "method": MethodFactory(
             workspace=workspace,
-            name=_name(f"{scope} Assigned Sensor", marker),
-            description=f"E2E scenario sensor {marker}",
-            method_type=f"{scope} Assigned Method",
-            method_code=marker,
+            name=_name(f"{scope} Assigned Method", marker),
+            description=f"E2E scenario method {marker}",
+            type=f"{scope} Assigned Method",
+            code=marker,
         ),
         "observed_property": ObservedPropertyFactory(
             workspace=workspace,
@@ -163,11 +163,11 @@ def _metadata(workspace, marker, scope):
 
 
 def _additional_workspace_metadata(workspace, marker, scope):
-    SensorFactory(
+    MethodFactory(
         workspace=workspace,
-        name=_name(f"{scope} Sensor", marker),
-        description=f"E2E scenario sensor {marker}",
-        method_type=f"{scope} Method",
+        name=_name(f"{scope} Method", marker),
+        description=f"E2E scenario method {marker}",
+        type=f"{scope} Method",
     )
     ObservedPropertyFactory(
         workspace=workspace,
@@ -205,7 +205,7 @@ def cleanup_scenario(scenario_key):
     # idempotent when a test already deleted a user or transferred ownership.
     User.objects.filter(email__contains=f"+{marker}@example.com").delete()
 
-    Sensor.objects.filter(method_code=marker, workspace__isnull=True).delete()
+    Method.objects.filter(code=marker, workspace__isnull=True).delete()
     ObservedProperty.objects.filter(
         code=f"System-{marker}", workspace__isnull=True
     ).delete()
@@ -495,13 +495,13 @@ def create_scenario(scenario_key):
                 },
             },
             "metadata": {
-                "privateAssignedSensor": {
-                    "id": str(private_metadata["sensor"].id),
-                    "name": private_metadata["sensor"].name,
+                "privateAssignedMethod": {
+                    "id": str(private_metadata["method"].id),
+                    "name": private_metadata["method"].name,
                 },
-                "publicAssignedSensor": {
-                    "id": str(public_metadata["sensor"].id),
-                    "name": public_metadata["sensor"].name,
+                "publicAssignedMethod": {
+                    "id": str(public_metadata["method"].id),
+                    "name": public_metadata["method"].name,
                 },
                 "publicAssignedObservedProperty": {
                     "id": str(public_metadata["observed_property"].id),
@@ -515,9 +515,9 @@ def create_scenario(scenario_key):
                     "id": str(public_metadata["unit"].id),
                     "name": public_metadata["unit"].name,
                 },
-                "systemSensor": {
-                    "id": str(system_metadata["sensor"].id),
-                    "name": system_metadata["sensor"].name,
+                "systemMethod": {
+                    "id": str(system_metadata["method"].id),
+                    "name": system_metadata["method"].name,
                 },
             },
             "orchestration": {

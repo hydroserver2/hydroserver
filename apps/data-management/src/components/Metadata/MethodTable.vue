@@ -28,8 +28,8 @@
   </v-data-table-virtual>
 
   <v-dialog v-model="openEdit" width="60rem">
-    <SensorFormCard
-      :sensor="item"
+    <MethodFormCard
+      :method="item"
       @close="openEdit = false"
       @updated="onUpdate"
       v-bind="{
@@ -44,7 +44,7 @@
     <DeleteMetadataCard
       itemName="method"
       :itemID="item.id"
-      parameter-name="sensor_id"
+      parameter-name="method_id"
       @delete="onDelete"
       @close="openDelete = false"
     />
@@ -52,10 +52,10 @@
 </template>
 
 <script setup lang="ts">
-import SensorFormCard from '@/components/Metadata/SensorFormCard.vue'
+import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import MetadataScopeChip from '@/components/Metadata/MetadataScopeChip.vue'
-import hs, { Sensor } from '@hydroserver/client'
+import hs, { Method } from '@hydroserver/client'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { computed, toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
@@ -74,24 +74,24 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
   props.scope === 'all'
     ? useAllScopeTableLogic(
         async (wsId: string) =>
-          await hs.sensors.listAllItems({ workspace_id: [wsId] }),
-        () => hs.sensors.listAllItems({ workspace_id: ['null'] }),
-        hs.sensors.delete,
-        Sensor,
+          await hs.methods.listAllItems({ workspace_id: [wsId] }),
+        () => hs.methods.listAllItems({ workspace_id: ['null'] }),
+        hs.methods.delete,
+        Method,
         toRef(props, 'workspaceId')
       )
     : props.workspaceId
       ? useTableLogic(
           async (wsId: string) =>
-            await hs.sensors.listAllItems({ workspace_id: [wsId] }),
-          hs.sensors.delete,
-          Sensor,
+            await hs.methods.listAllItems({ workspace_id: [wsId] }),
+          hs.methods.delete,
+          Method,
           toRef(props, 'workspaceId')
         )
       : useSystemTableLogic(
-          () => hs.sensors.listAllItems({ workspace_id: ['null'] }),
-          (id: string) => hs.sensors.delete(id),
-          Sensor
+          () => hs.methods.listAllItems({ workspace_id: ['null'] }),
+          (id: string) => hs.methods.delete(id),
+          Method
         )
 
 const headers = computed(() => {
@@ -102,8 +102,8 @@ const headers = computed(() => {
     align?: 'end'
   }[] = [
     { title: 'Name', key: 'name' },
-    { title: 'Method Type', key: 'methodType' },
-    { title: 'Method Code', key: 'methodCode' },
+    { title: 'Type', key: 'type' },
+    { title: 'Code', key: 'code' },
     { title: 'UUID', key: 'id' },
   ]
   if (props.scope === 'all')

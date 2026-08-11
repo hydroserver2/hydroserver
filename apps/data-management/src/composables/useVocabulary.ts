@@ -6,7 +6,6 @@ import type { SiteTypeIcon } from '@hydroserver/client'
 export const useVocabularyStore = defineStore('vocabulary', () => {
   const siteTypes = ref<string[]>([])
   const siteTypeIcons = ref<SiteTypeIcon[]>([])
-  const sensorEncodingTypes = ref<string[]>([])
   const methodTypes = ref<string[]>([])
   const variableTypes = ref<string[]>([])
   const unitTypes = ref<string[]>([])
@@ -24,13 +23,8 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     if (res.ok) siteTypeIcons.value = res.data
   }
 
-  async function fetchSensorEncodingTypes() {
-    const res = await hs.sensors.getEncodingTypes()
-    if (res.ok) sensorEncodingTypes.value = res.data
-  }
-
   async function fetchMethodTypes() {
-    const res = await hs.sensors.getMethodTypes()
+    const res = await hs.methods.getTypes()
     if (res.ok) methodTypes.value = res.data
   }
 
@@ -64,7 +58,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     await Promise.all([
       fetchSiteTypes(),
       fetchSiteTypeIcons(),
-      fetchSensorEncodingTypes(),
       fetchMethodTypes(),
       fetchVariableTypes(),
       fetchUnitTypes(),
@@ -77,7 +70,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   return {
     siteTypes,
     siteTypeIcons,
-    sensorEncodingTypes,
     methodTypes,
     variableTypes,
     unitTypes,
@@ -87,7 +79,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
 
     fetchSiteTypes,
     fetchSiteTypeIcons,
-    fetchSensorEncodingTypes,
     fetchMethodTypes,
     fetchVariableTypes,
     fetchUnitTypes,

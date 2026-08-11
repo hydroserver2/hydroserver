@@ -48,18 +48,17 @@ class SensorThingsUtils:
         elif component.__name__ == "HistoricalLocation":
             return prop
 
-        elif component.__name__ == "Sensor":
+        elif component_name == "Sensor":
             return {
-                "encodingType": "encoding_type",
                 "properties__workspace__id": "workspace_id",
                 "properties__workspace__name": "workspace__name",
                 "properties__workspace__isPrivate": "workspace__is_private",
-                "metadata__methodCode": "method_code",
-                "metadata__methodType": "method_type",
-                "metadata__methodLink": "method_link",
-                "metadata__sensorModel__sensorModelName": "model",
-                "metadata__sensorModel__sensorModelUrl": "model_link",
-                "metadata__sensorModel__sensorManufacturer": "manufacturer",
+                "metadata__methodCode": "code",
+                "metadata__methodType": "type",
+                "metadata__methodLink": "definition",
+                "metadata__sensorModel__sensorModelName": "sensor_model",
+                "metadata__sensorModel__sensorModelUrl": "sensor_model_definition",
+                "metadata__sensorModel__sensorManufacturer": "sensor_model_manufacturer",
             }.get(prop, prop)
 
         elif component.__name__ == "ObservedProperty":
@@ -74,7 +73,7 @@ class SensorThingsUtils:
         elif component.__name__ == "Datastream":
             related = {
                 "Thing": "monitoring_site",
-                "Sensor": "sensor",
+                "Sensor": "method",
                 "ObservedProperty": "observed_property",
             }
             parent = prop.split("__")[0]
@@ -86,6 +85,8 @@ class SensorThingsUtils:
                         component=(
                             sta_models.MonitoringSite
                             if parent == "Thing"
+                            else sta_models.Method
+                            if parent == "Sensor"
                             else getattr(sta_models, parent)
                         ),
                         prop="__".join(prop.split("__")[1:]),

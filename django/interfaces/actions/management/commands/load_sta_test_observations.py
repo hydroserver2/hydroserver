@@ -42,7 +42,7 @@ class Command(BaseCommand):
             name=f"Test Datastream with {num_observations} observations.",
             description=f"Test Datastream with {num_observations} observations.",
             monitoring_site_id=UUID("97d08ec5-0c29-49e4-906a-9b3f7a09e5ac"),
-            sensor_id=UUID("c830a6b5-cb53-4596-90d9-b4d99bdc314d"),
+            method_id=UUID("c830a6b5-cb53-4596-90d9-b4d99bdc314d"),
             observed_property_id=UUID("ebc5664e-0e1c-48a0-8fe0-c64dae472e30"),
             processing_level_id=UUID("9ce74667-e709-416d-96e2-bf54db2025ed"),
             unit_id=UUID("41afe53b-2c81-499b-bab3-94cad15b0bd1"),

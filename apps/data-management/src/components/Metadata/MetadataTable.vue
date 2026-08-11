@@ -74,8 +74,8 @@
 
       <v-window v-model="tab" class="metadata-window">
         <v-window-item :value="0">
-          <SensorTable
-            :key="`${scope}-${sensorKey}`"
+          <MethodTable
+            :key="`${scope}-${methodKey}`"
             :search="search"
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
@@ -131,10 +131,10 @@
     </v-card>
   </div>
 
-  <v-dialog v-model="openSensorCreate" width="60rem">
-    <SensorFormCard
-      @close="openSensorCreate = false"
-      @created="refreshSensorTable"
+  <v-dialog v-model="openMethodCreate" width="60rem">
+    <MethodFormCard
+      @close="openMethodCreate = false"
+      @created="refreshMethodTable"
       :workspace-id="workspaceId"
     />
   </v-dialog>
@@ -174,12 +174,12 @@
 
 <script lang="ts" setup>
 import UnitTable from '@/components/Metadata/UnitTable.vue'
-import SensorTable from '@/components/Metadata/SensorTable.vue'
+import MethodTable from '@/components/Metadata/MethodTable.vue'
 import ResultQualifierTable from '@/components/Metadata/ResultQualifierTable.vue'
 import ProcessingLevelTable from '@/components/Metadata/ProcessingLevelTable.vue'
 import ObservedPropertyTable from '@/components/Metadata/ObservedPropertyTable.vue'
 import UnitFormCard from '@/components/Metadata/UnitFormCard.vue'
-import SensorFormCard from '@/components/Metadata/SensorFormCard.vue'
+import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCard.vue'
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
@@ -240,16 +240,16 @@ const openOPCreate = ref(false)
 const OPKey = ref(0)
 const refreshOPTable = () => (OPKey.value += 1)
 
-const openSensorCreate = ref(false)
-const sensorKey = ref(0)
-const refreshSensorTable = () => (sensorKey.value += 1)
+const openMethodCreate = ref(false)
+const methodKey = ref(0)
+const refreshMethodTable = () => (methodKey.value += 1)
 
 const metaMap: Record<string, any> = {
   0: {
     name: 'Methods',
-    openDialog: () => (openSensorCreate.value = true),
+    openDialog: () => (openMethodCreate.value = true),
     singularName: 'method',
-    resource: PermissionResource.Sensor,
+    resource: PermissionResource.Method,
   },
   1: {
     name: 'Observed properties',

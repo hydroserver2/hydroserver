@@ -137,15 +137,15 @@
           </v-expansion-panel-text>
         </v-expansion-panel>
 
-        <v-expansion-panel value="sensor">
+        <v-expansion-panel value="method">
           <v-expansion-panel-title>
             <template #default>
               <v-icon icon="mdi-gauge" color="primary" class="me-3" />
-              <span class="font-weight-medium">Sensor</span>
+              <span class="font-weight-medium">Method</span>
             </template>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
-            <MetadataList :items="sensorItems" />
+            <MetadataList :items="methodItems" />
           </v-expansion-panel-text>
         </v-expansion-panel>
 
@@ -349,19 +349,24 @@ const locationItems = computed(() => {
   ]
 })
 
-const sensorItems = computed(() => {
-  const s = d.value.sensor
-  if (!s) return []
+const methodItems = computed(() => {
+  const method = d.value.method
+  if (!method) return []
   return [
-    { label: 'Name', value: s.name },
-    { label: 'Description', value: s.description },
-    { label: 'Manufacturer', value: s.manufacturer },
-    { label: 'Model', value: s.model },
-    { label: 'Method Type', value: s.methodType },
-    { label: 'Method Code', value: s.methodCode },
-    { label: 'Method Link', value: s.methodLink },
-    { label: 'Encoding Type', value: s.encodingType },
-    { label: 'Model Link', value: s.modelLink },
+    { label: 'Name', value: method.name },
+    { label: 'Description', value: method.description },
+    { label: 'Type', value: method.type },
+    { label: 'Code', value: method.code },
+    { label: 'Definition', value: method.definition },
+    { label: 'Sensor model', value: method.sensorModel },
+    {
+      label: 'Sensor model manufacturer',
+      value: method.sensorModelManufacturer,
+    },
+    {
+      label: 'Sensor model definition',
+      value: method.sensorModelDefinition,
+    },
   ]
 })
 

@@ -1,6 +1,6 @@
 import pytest
 
-from tests.core.sta.factories import SensorFactory
+from tests.core.sta.factories import MethodFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -12,18 +12,18 @@ def _detail_url(sensor_id):
 
 
 def test_get_sensors_collection_returns_200(client):
-    sensor = SensorFactory()
+    method = MethodFactory()
 
     response = client.get(SENSORS_URL)
 
     assert response.status_code == 200
-    assert str(sensor.id) in [s["@iot.id"] for s in response.json()["value"]]
+    assert str(method.id) in [sensor["@iot.id"] for sensor in response.json()["value"]]
 
 
 def test_get_sensor_returns_200(client):
-    sensor = SensorFactory()
+    method = MethodFactory()
 
-    response = client.get(_detail_url(sensor.id))
+    response = client.get(_detail_url(method.id))
 
     assert response.status_code == 200
-    assert response.json()["@iot.id"] == str(sensor.id)
+    assert response.json()["@iot.id"] == str(method.id)

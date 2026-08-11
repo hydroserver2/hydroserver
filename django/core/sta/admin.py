@@ -4,7 +4,7 @@ from django.urls import path
 from django.core.management.base import CommandError
 from core.sta.models import (
     MonitoringSite,
-    Sensor,
+    Method,
     ObservedProperty,
     Datastream,
     Unit,
@@ -17,7 +17,6 @@ from core.sta.models import (
     Observation,
     SiteType,
     MethodType,
-    SensorEncodingType,
     VariableType,
     UnitType,
     DatastreamAggregation,
@@ -45,7 +44,7 @@ class MonitoringSiteTagAdmin(admin.ModelAdmin):
     list_display = ("id", "key", "value", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
-class SensorAdmin(admin.ModelAdmin):
+class MethodAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "workspace__name")
 
 
@@ -229,29 +228,6 @@ class MethodTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
         )
 
 
-class SensorEncodingTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
-    change_list_template = "admin/sta/sensorencodingtype/change_list.html"
-
-    def get_urls(self):
-        urls = super().get_urls()
-
-        return [
-            path(
-                "load-default-sensor-encoding-type-data/",
-                self.admin_site.admin_view(self.load_default_data),
-                name="sensor_encoding_type_load_default_data",
-            ),
-        ] + urls
-
-    def load_default_data(self, request):
-        return self.load_fixtures(
-            request,
-            "admin:sta_sensorencodingtype_changelist",
-            ["core/sta/fixtures/default_sensor_encoding_types.yaml"],
-        )
-
-
 class VariableTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
     list_display = ("id", "name")
     change_list_template = "admin/sta/variabletype/change_list.html"
@@ -393,7 +369,7 @@ class FileAttachmentTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 admin.site.register(MonitoringSite, MonitoringSiteAdmin)
 admin.site.register(MonitoringSiteFileAttachment, MonitoringSiteFileAttachmentAdmin)
 admin.site.register(MonitoringSiteTag, MonitoringSiteTagAdmin)
-admin.site.register(Sensor, SensorAdmin)
+admin.site.register(Method, MethodAdmin)
 admin.site.register(ObservedProperty, ObservedPropertyAdmin)
 admin.site.register(Unit, UnitAdmin)
 admin.site.register(ProcessingLevel, ProcessingLevelAdmin)
@@ -405,7 +381,6 @@ admin.site.register(ResultQualifier, ResultQualifierAdmin)
 admin.site.register(SiteType, SiteTypeAdmin)
 admin.site.register(MethodType, MethodTypeAdmin)
 admin.site.register(VariableType, VariableTypeAdmin)
-admin.site.register(SensorEncodingType, SensorEncodingTypeAdmin)
 admin.site.register(UnitType, UnitTypeAdmin)
 admin.site.register(DatastreamAggregation, DatastreamAggregationAdmin)
 admin.site.register(DatastreamStatus, DatastreamStatusAdmin)

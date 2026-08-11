@@ -8,25 +8,27 @@ Near the bottom of the site details page, there will be an empty datastreams tab
 
 ## Create linked metadata
 
-Fill out the new datastream form starting with the 'Linked metadata' fields. For the 'Sensor' and 'Observed Property' fields, click the green plus + button to the right and populate the fields for the new modal that displays on screen. Submitting this form will create a new workspace variable that can be reused for any datastream in this workspace.
+Fill out the new datastream form starting with the 'Linked metadata' fields. For the 'Method' and 'Observed Property' fields, click the green plus + button to the right and populate the fields for the new modal that displays on screen. Submitting this form will create new workspace metadata that can be reused for any datastream in this workspace.
 
 If you'd like to follow along exactly, we'll be creating a datastream that represents an Onset HOBO air temperature sensor which collects the daily high temperature. Fill the form out with the following fields:
 
-**Sensor**
+**Method**
 
-- Method Type:
+- Type:
   Instrument Deployment
-- Method Link:
+- Name:
+  Onset HOBO SD-TEMP
+- Definition:
   _leave blank_
-- Method Code:
+- Code:
   hobo-sd-temp
 - Description:
   Temperature sensor capable of measuring air temperature (°C), compatible with HOBO dataloggers.
-- Manufacturer:
+- Sensor Model Manufacturer:
   Onset HOBO
-- Model:
+- Sensor Model:
   SD‑TEMP
-- Model Link:
+- Sensor Model Definition:
   https://www.onsetcomp.com/products/sensors/tmcx-hd
 
 **Observed Property**

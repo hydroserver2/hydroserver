@@ -12,7 +12,13 @@ export ALLOWED_HOSTS="${ALLOWED_HOSTS:-127.0.0.1,localhost,host.docker.internal}
 export ANON_THROTTLE_RATE="${ANON_THROTTLE_RATE:-200/s}"
 export AUTH_THROTTLE_RATE="${AUTH_THROTTLE_RATE:-200/s}"
 
-PYTHON_BIN="${PYTHON_BIN:-python3.14}"
+if [[ -n "${PYTHON_BIN:-}" ]]; then
+  PYTHON_BIN="$PYTHON_BIN"
+elif [[ -x "$ROOT_DIR/.venv/bin/python" ]]; then
+  PYTHON_BIN="$ROOT_DIR/.venv/bin/python"
+else
+  PYTHON_BIN="python3.14"
+fi
 
 cd "$API_DIR"
 

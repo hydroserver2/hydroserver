@@ -119,7 +119,7 @@ export class Datastream {
   aggregationStatistic: string
   unitId: string
   observedPropertyId: string
-  sensorId: string
+  methodId: string
   processingLevelId: string
   isPrivate: boolean
   isVisible: boolean
@@ -144,7 +144,7 @@ export class Datastream {
     this.aggregationStatistic = ''
     this.unitId = ''
     this.observedPropertyId = ''
-    this.sensorId = ''
+    this.methodId = ''
     this.processingLevelId = ''
     this.timeAggregationInterval = null
     this.timeAggregationIntervalUnit = 'seconds'
@@ -178,7 +178,7 @@ export interface DatastreamExtended {
   workspace: Workspace
   unit: Unit
   observedProperty: ObservedProperty
-  sensor: Sensor
+  method: Method
   processingLevel: ProcessingLevel
 }
 
@@ -200,31 +200,29 @@ export class Unit {
   }
 }
 
-export class Sensor {
+export class Method {
   id: string
   workspaceId: string
   name: string
   description: string
-  manufacturer: string
-  model: string
-  methodType: string
-  methodCode: string
-  methodLink: string
-  encodingType: string
-  modelLink: string
+  code: string
+  type: string
+  definition: string
+  sensorModel: string
+  sensorModelManufacturer: string
+  sensorModelDefinition: string
 
   constructor() {
     this.id = ''
     this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.manufacturer = ''
-    this.model = ''
-    this.methodType = 'Instrument Deployment'
-    this.methodCode = ''
-    this.methodLink = ''
-    this.encodingType = 'application/json'
-    this.modelLink = ''
+    this.code = ''
+    this.type = 'Instrument Deployment'
+    this.definition = ''
+    this.sensorModel = ''
+    this.sensorModelManufacturer = ''
+    this.sensorModelDefinition = ''
   }
 }
 
@@ -358,7 +356,7 @@ export enum PermissionResource {
   ObservedProperty = 'ObservedProperty',
   ProcessingLevel = 'ProcessingLevel',
   ResultQualifier = 'ResultQualifier',
-  Sensor = 'Sensor',
+  Method = 'Method',
   Unit = 'Unit',
   Datastream = 'Datastream',
   Observation = 'Observation',

@@ -26,7 +26,7 @@
             >Method:</span
           >
           <span class="text-body-2">
-            {{ datastream.sensor.name }}
+            {{ datastream.method.name }}
           </span>
         </div>
 

@@ -26,12 +26,16 @@ import {
   observedProperties,
   processingLevels,
   resultQualifiers,
-  sensors,
+  methods,
   session,
   monitoringSites,
   units,
   workspaces,
 } from './fixtures'
+
+const appHost = process.env.E2E_APP_HOST || '127.0.0.1'
+const appPort = process.env.E2E_APP_PORT || '15173'
+const appOrigin = `http://${appHost}:${appPort}`
 
 export interface MockOptions {
   /**
@@ -105,6 +109,31 @@ export async function installMocks(
   const observations = options.observations ?? buildObservations()
   const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
+
+  // Session authentication is now read synchronously from the
+  // server-rendered `current-user` script tag. Vite serves a static shell in
+  // e2e, so mirror Django's shell by adding that tag before the application
+  // module runs.
+  await page.route(
+    (url) =>
+      url.origin === appOrigin &&
+      (url.pathname === '/' || url.pathname === '/qc/'),
+    async (route) => {
+      const response = await route.fetch()
+      let body = await response.text()
+      if (authenticated) {
+        const currentUser = JSON.stringify(session.data.user).replaceAll(
+          '<',
+          '\\u003c'
+        )
+        body = body.replace(
+          '</head>',
+          `<script id="current-user" type="application/json">${currentUser}</script></head>`
+        )
+      }
+      return route.fulfill({ response, body })
+    }
+  )
 
   // Match only real HydroServer API calls by pathname. A bare `**/api/**`
   // glob also catches the dev server's own source modules — the QC app
@@ -207,8 +236,8 @@ export async function installMocks(
     if (path.endsWith('/api/data/observed-properties') && method === 'GET') {
       return json(route, { data: observedProperties })
     }
-    if (path.endsWith('/api/data/sensors') && method === 'GET') {
-      return json(route, { data: sensors })
+    if (path.endsWith('/api/data/methods') && method === 'GET') {
+      return json(route, { data: methods })
     }
     if (path.endsWith('/api/data/result-qualifiers') && method === 'GET') {
       return json(route, { data: resultQualifiers })

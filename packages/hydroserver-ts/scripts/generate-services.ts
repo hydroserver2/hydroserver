@@ -192,7 +192,7 @@ const resources = [
   'monitoring-sites',
   'datastreams',
   'units',
-  'sensors',
+  'methods',
   'observed-properties',
   'processing-levels',
   'result-qualifiers',

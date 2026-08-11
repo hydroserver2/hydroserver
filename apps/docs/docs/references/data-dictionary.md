@@ -9,14 +9,14 @@ O = Optional
 
 ## Datastream
 
-A Datastream groups a collection of Observations measuring the same ObservedProperty and produced by the same Sensor. Each instance of a Datastream represents the properties for a time series of Observations.
+A Datastream groups a collection of Observations measuring the same ObservedProperty and produced by the same Method. Each instance of a Datastream represents the properties for a time series of Observations.
 
 | Required | Attribute                      | Definition                                                                                                         | Data Type |
 | -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------- |
 | M        | id                             | A primary key unique identifier for the Datastream.                                                                | UUID      |
 | M        | name                           | A text name for the Datastream.                                                                                    | String    |
 | M        | description                    | A text description for the Datastream.                                                                             | Text      |
-| M        | sensor_id                      | A foreign key identifier for the Sensor or method used to create the Datastream.                                   | UUID      |
+| M        | method_id                      | A foreign key identifier for the Method used to produce the Datastream.                                            | UUID      |
 | M        | monitoring_site_id              | A foreign key identifier for the MonitoringSite at which the Datastream was created.                               | UUID      |
 | M        | observed_property_id           | A foreign key identifier for the ObservedProperty associated with the Datastream.                                  | UUID      |
 | M        | unit_id                        | A foreign key identifier for the Unit used for Observations within the Datastream.                                 | UUID      |
@@ -135,25 +135,24 @@ Data qualifying comments added to individual data values to qualify their interp
 
 **NOTE**: The database enforces a unique constraint on `(code, workspace_id)`, including the system-wide `NULL` workspace scope.
 
-## Sensor
+## Method
 
-A Sensor is an instrument, method, or procedure used to produce Observations for a Datastream.
+A Method describes how a Datastream's Observations are produced, whether by an instrument, technician, laboratory procedure, simulation, or computation.
 
-| Required | Attribute         | Definition                                                                                                     | Data Type |
-| -------- | ----------------- | -------------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id                | A primary key unique identifier for the Sensor.                                                                | UUID      |
-| O        | workspace_id      | A foreign key identifier for the Workspace that owns the Sensor. If omitted, the Sensor is shared system-wide. | UUID      |
-| M        | name              | A descriptive name for the Sensor.                                                                             | String    |
-| M        | description       | A longer text description of the Sensor.                                                                       | Text      |
-| M        | encoding_type     | A string indicating how the Sensor information is encoded.                                                     | String    |
-| O        | method_code       | A brief text code identifying the Sensor or method.                                                            | String    |
-| M        | method_type       | A text string indicating the type of Sensor or method.                                                         | String    |
-| O        | method_link       | A URL pointing to documentation that defines or describes the Sensor or method.                                | String    |
-| O        | manufacturer      | The name of the Sensor manufacturer.                                                                           | String    |
-| O        | sensor_model      | The name of the Sensor model.                                                                                  | String    |
-| O        | sensor_model_link | A URL pointing to documentation for the Sensor model.                                                          | String    |
+| Required | Attribute                | Definition                                                                                                     | Data Type |
+| -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                       | A primary key unique identifier for the Method.                                                                | UUID      |
+| O        | workspace_id             | A foreign key identifier for the Workspace that owns the Method. If omitted, the Method is shared system-wide. | UUID      |
+| M        | name                     | A descriptive name for the Method.                                                                             | String    |
+| O        | code                     | A brief text code identifying the Method.                                                                      | String    |
+| M        | type                     | A controlled-vocabulary value identifying the kind of Method.                                                  | String    |
+| M        | description              | A longer text description of the Method.                                                                       | Text      |
+| O        | definition               | A URI pointing to documentation that defines or describes the Method.                                          | String    |
+| O        | sensor_model             | The model name when the Method represents an instrument.                                                       | String    |
+| O        | sensor_model_manufacturer | The model manufacturer when the Method represents an instrument.                                               | String    |
+| O        | sensor_model_definition  | A URI pointing to documentation for the sensor model.                                                          | String    |
 
-**NOTE**: HydroServer uses the Sensor entity for both physical instruments and derived methods or procedures, such as transformations or rating-curve-derived values.
+The SensorThings API continues to expose these records as Sensor entities for standards compatibility.
 
 ## MonitoringSite
 
@@ -240,7 +239,7 @@ A Permission associates a Role with the actions it may perform on a resource typ
 | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | M        | id            | A primary key unique identifier for the Permission.                                                                                                                                                                                                                                                                         | BigInteger |
 | M        | role_id       | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                                                                                                                      | UUID       |
-| M        | resource_type | The resource type to which the Permission applies. One of `*`, `Workspace`, `Role`, `ServiceAccount`, `Collaborator`, `MonitoringSite`, `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Sensor`, `Unit`, `Datastream`, `Observation`, `DataConnection`, `EtlTask`, `RatingCurve`, `DataProductTask`, or `MonitoringTask`. | String     |
+| M        | resource_type | The resource type to which the Permission applies. One of `*`, `Workspace`, `Role`, `ServiceAccount`, `Collaborator`, `MonitoringSite`, `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Method`, `Unit`, `Datastream`, `Observation`, `DataConnection`, `EtlTask`, `RatingCurve`, `DataProductTask`, or `MonitoringTask`. | String     |
 | M        | can_view      | Whether the Role may view this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
 | M        | can_create    | Whether the Role may create this resource type.                                                                                                                                                                                                                                                                             | Boolean    |
 | M        | can_edit      | Whether the Role may edit this resource type.                                                                                                                                                                                                                                                                               | Boolean    |

@@ -3,7 +3,7 @@ import hs, {
   ProcessingLevel,
   Unit,
   ObservedProperty,
-  Sensor,
+  Method,
   ResultQualifier,
   Workspace,
 } from '@hydroserver/client'
@@ -20,7 +20,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
 
   const workspaceId = computed(() => effectiveWorkspace.value?.id ?? null)
 
-  const sensors = ref<Sensor[]>([])
+  const methods = ref<Method[]>([])
   const units = ref<Unit[]>([])
   const resultQualifiers = ref<ResultQualifier[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
@@ -51,7 +51,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         unitsResponse,
         observedPropertiesResponse,
         processingLevelsResponse,
-        sensorsResponse,
+        methodsResponse,
         resultQualifiersResponse,
       ] = await Promise.all([
         hs.units.listAllItems({ order_by: ['name'], ...workspaceFilter }),
@@ -63,7 +63,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
           order_by: ['code'],
           ...workspaceFilter,
         }),
-        hs.sensors.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.methods.listAllItems({ order_by: ['name'], ...workspaceFilter }),
         hs.resultQualifiers.listAllItems({
           order_by: ['code'],
           ...workspaceFilter,
@@ -74,7 +74,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         (u) => u.workspaceId === id || u.type !== 'Time'
       )
 
-      sensors.value = sensorsResponse
+      methods.value = methodsResponse
       observedProperties.value = observedPropertiesResponse
       processingLevels.value = processingLevelsResponse
       resultQualifiers.value = resultQualifiersResponse
@@ -96,7 +96,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   )
 
   return {
-    sensors,
+    methods,
     units,
     observedProperties,
     formattedObservedProperties,

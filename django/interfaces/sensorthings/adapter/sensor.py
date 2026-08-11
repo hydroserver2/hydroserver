@@ -2,7 +2,7 @@ from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
 from sensorthings.types import Absent
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Sensor
+from core.sta.models import Method
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, SensorDTO
 from .utils import SensorThingsUtils
 
@@ -14,49 +14,51 @@ class SensorMixin(SensorThingsUtils):
         needs_properties = select is None or "properties" in select
         principal = context.principal if context else AnonymousPrincipal()
 
-        sensors = Sensor.objects
+        methods = Method.objects
         if needs_properties:
-            sensors = sensors.select_related("workspace")
-        sensors = principal.filter_by_permission(sensors, "can_view")
+            methods = methods.select_related("workspace")
+        methods = principal.filter_by_permission(methods, "can_view")
 
         if filters:
-            sensors = self.apply_filters(sensors, Sensor, filters)
+            methods = self.apply_filters(methods, Method, filters, entity_name="Sensor")
         if orderby:
-            sensors = self.apply_order(sensors, Sensor, orderby)
-        sensors = sensors.distinct()
+            methods = self.apply_order(methods, Method, orderby, entity_name="Sensor")
+        methods = methods.distinct()
 
         if group_by and group_by[0] == "sensor":
-            sensors = sensors.filter(pk__in=group_by[1])
-            sensor_list = list(sensors)
+            methods = methods.filter(pk__in=group_by[1])
+            method_list = list(methods)
             collections = {
-                "__UNGROUPED__": CollectionDTO(entity_ids=[sensor.id for sensor in sensor_list])
+                "__UNGROUPED__": CollectionDTO(entity_ids=[method.id for method in method_list])
             }
         else:
-            entity_count = sensors.count() if count else None
-            sensor_list = list(self.apply_pagination(sensors, top, skip))
+            entity_count = methods.count() if count else None
+            method_list = list(self.apply_pagination(methods, top, skip))
             collections = {
                 "__UNGROUPED__": CollectionDTO(
                     entity_count=entity_count,
-                    entity_ids=[sensor.id for sensor in sensor_list],
+                    entity_ids=[method.id for method in method_list],
                 )
             }
 
         try:
             entities = {
-                sensor.id: SensorDTO(
-                    id=self.select_field(select, "id", sensor.id),
-                    name=self.select_field(select, "name", sensor.name),
-                    description=self.select_field(select, "description", sensor.description),
-                    encoding_type=self.select_field(select, "encoding_type", sensor.encoding_type),
+                method.id: SensorDTO(
+                    id=self.select_field(select, "id", method.id),
+                    name=self.select_field(select, "name", method.name),
+                    description=self.select_field(select, "description", method.description),
+                    encoding_type=self.select_field(
+                        select, "encoding_type", "application/json"
+                    ),
                     metadata=(
                         {
-                            "method_code": sensor.method_code,
-                            "method_type": sensor.method_type,
-                            "method_link": sensor.method_link,
+                            "method_code": method.code,
+                            "method_type": method.type,
+                            "method_link": method.definition,
                             "sensor_model": {
-                                "sensor_model_name": sensor.sensor_model,
-                                "sensor_model_url": sensor.sensor_model_link,
-                                "sensor_manufacturer": sensor.manufacturer,
+                                "sensor_model_name": method.sensor_model,
+                                "sensor_model_url": method.sensor_model_definition,
+                                "sensor_manufacturer": method.sensor_model_manufacturer,
                             },
                         }
                         if select is None or "metadata" in select else Absent
@@ -65,17 +67,17 @@ class SensorMixin(SensorThingsUtils):
                         {
                             "workspace": (
                                 {
-                                    "id": sensor.workspace.id,
-                                    "name": sensor.workspace.name,
-                                    "is_private": sensor.workspace.is_private,
+                                    "id": method.workspace.id,
+                                    "name": method.workspace.name,
+                                    "is_private": method.workspace.is_private,
                                 }
-                                if sensor.workspace else None
+                                if method.workspace else None
                             ),
                         }
                         if needs_properties else Absent
                     ),
                 )
-                for sensor in sensor_list
+                for method in method_list
             }
         except (DataError, DatabaseError) as e:
             raise HttpError(400, str(e))

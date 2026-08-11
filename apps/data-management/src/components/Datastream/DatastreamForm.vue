@@ -63,10 +63,10 @@
 
           <v-card-text>
             <v-autocomplete
-              :key="datastream.sensorId"
-              v-model="datastream.sensorId"
+              :key="datastream.methodId"
+              v-model="datastream.methodId"
               label="Select method *"
-              :items="sensors"
+              :items="methods"
               item-title="name"
               item-value="id"
               :rules="rules.required"
@@ -99,16 +99,21 @@
                     :title="item.name"
                     :subtitle="{
                       label: 'Method type',
-                      value: item.methodType,
+                      value: item.type,
                     }"
                     :items="[
                       { label: 'Description', value: item.description },
-                      { label: 'Make', value: item.manufacturer },
-                      { label: 'Model', value: item.model },
-                      { label: 'Method Code', value: item.methodCode },
-                      { label: 'Method Link', value: item.methodLink },
-                      { label: 'Encoding Type', value: item.encodingType },
-                      { label: 'Model Link', value: item.modelLink },
+                      { label: 'Code', value: item.code },
+                      { label: 'Definition', value: item.definition },
+                      {
+                        label: 'Sensor model manufacturer',
+                        value: item.sensorModelManufacturer,
+                      },
+                      { label: 'Sensor model', value: item.sensorModel },
+                      {
+                        label: 'Sensor model definition',
+                        value: item.sensorModelDefinition,
+                      },
                     ]"
                     :isWorkspace="!!item.workspaceId"
                   />
@@ -119,7 +124,7 @@
                 v-slot:append
                 v-if="
                   hasPermission(
-                    PermissionResource.Sensor,
+                    PermissionResource.Method,
                     PermissionAction.Create,
                     workspace
                   )
@@ -128,14 +133,14 @@
                 <v-icon
                   :icon="mdiPlus"
                   color="secondary-darken-2"
-                  @click="showSensorModal = true"
+                  @click="showMethodModal = true"
                 />
-                <v-dialog v-model="showSensorModal" width="30rem">
-                  <SensorFormCard
+                <v-dialog v-model="showMethodModal" width="30rem">
+                  <MethodFormCard
                     v-if="workspace"
                     :workspace-id="workspace.id"
-                    @created="handleMetadataUploaded('sensorId', $event)"
-                    @close="showSensorModal = false"
+                    @created="handleMetadataUploaded('methodId', $event)"
+                    @close="showMethodModal = false"
                   />
                 </v-dialog>
               </template>
@@ -595,7 +600,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, toRef } from 'vue'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
-import SensorFormCard from '@/components/Metadata/SensorFormCard.vue'
+import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
 import UnitFormCard from '@/components/Metadata/UnitFormCard.vue'
 import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCard.vue'
@@ -647,7 +652,7 @@ const timeUnits = ['seconds', 'minutes', 'hours', 'days']
 const openUnitForm = ref(false)
 const isEdit = ref(!!props.datastream?.id)
 const showTemplateModal = ref(false)
-const showSensorModal = ref(false)
+const showMethodModal = ref(false)
 const showPLModal = ref(false)
 const showOPModal = ref(false)
 const showLinkedMetadataHelp = ref(false)
@@ -660,7 +665,7 @@ const intendedTimeSpacingRef = ref<VForm>()
 const { hasPermission } = useWorkspacePermissions()
 
 const {
-  sensors,
+  methods,
   units,
   observedProperties,
   processingLevels,
@@ -694,13 +699,13 @@ const generateDefaultDescription = () => {
   const PL = processingLevels.value.find(
     (pl) => pl.id === datastream.value.processingLevelId
   )?.code
-  const sensorName = sensors.value.find(
-    (pl) => pl.id === datastream.value.sensorId
+  const methodName = methods.value.find(
+    (pl) => pl.id === datastream.value.methodId
   )?.name
   const unitName = units.value.find(
     (pl) => pl.id === datastream.value.unitId
   )?.name
-  return `A datastream of ${OP} at ${monitoringSite.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${sensorName} having units of ${unitName}`
+  return `A datastream of ${OP} at ${monitoringSite.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${methodName} having units of ${unitName}`
 }
 
 watch(selectedDatastreamID, async () => {
@@ -709,7 +714,7 @@ watch(selectedDatastreamID, async () => {
     if (!fetchedDS) return
     Object.assign(datastream.value, {
       ...datastream.value,
-      sensorId: fetchedDS.sensorId,
+      methodId: fetchedDS.methodId,
       observedPropertyId: fetchedDS.observedPropertyId,
       processingLevelId: fetchedDS.processingLevelId,
       unitId: fetchedDS.unitId,

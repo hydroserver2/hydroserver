@@ -12,7 +12,7 @@ from interfaces.api.views import (
     observed_property_router,
     processing_level_router,
     result_qualifier_router,
-    sensor_router,
+    method_router,
     unit_router,
     datastream_router,
     data_connection_router,
@@ -48,7 +48,7 @@ api.add_router("monitoring-sites", monitoring_site_router)
 api.add_router("datastreams", datastream_router)
 api.add_router("observed-properties", observed_property_router)
 api.add_router("units", unit_router)
-api.add_router("sensors", sensor_router)
+api.add_router("methods", method_router)
 api.add_router("processing-levels", processing_level_router)
 api.add_router("result-qualifiers", result_qualifier_router)
 

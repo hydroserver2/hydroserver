@@ -1884,6 +1884,9 @@
             "title": "Isvisible",
             "type": "boolean"
           },
+          "method": {
+            "$ref": "#/components/schemas/MethodSummaryResponse"
+          },
           "monitoringSite": {
             "$ref": "#/components/schemas/MonitoringSiteSummaryResponse"
           },
@@ -1965,9 +1968,6 @@
             "title": "Sampledmedium",
             "type": "string"
           },
-          "sensor": {
-            "$ref": "#/components/schemas/SensorSummaryResponse"
-          },
           "status": {
             "anyOf": [
               {
@@ -2033,7 +2033,7 @@
           "id",
           "workspace",
           "monitoringSite",
-          "sensor",
+          "method",
           "observedProperty",
           "processingLevel",
           "unit",
@@ -2089,6 +2089,11 @@
           "isVisible": {
             "title": "Isvisible",
             "type": "boolean"
+          },
+          "methodId": {
+            "format": "uuid",
+            "title": "Methodid",
+            "type": "string"
           },
           "monitoringSiteId": {
             "format": "uuid",
@@ -2187,11 +2192,6 @@
           "sampledMedium": {
             "maxLength": 255,
             "title": "Sampledmedium",
-            "type": "string"
-          },
-          "sensorId": {
-            "format": "uuid",
-            "title": "Sensorid",
             "type": "string"
           },
           "status": {
@@ -2302,6 +2302,11 @@
             "title": "Isvisible",
             "type": "boolean"
           },
+          "methodId": {
+            "format": "uuid",
+            "title": "Methodid",
+            "type": "string"
+          },
           "monitoringSiteId": {
             "format": "uuid",
             "title": "Monitoringsiteid",
@@ -2401,11 +2406,6 @@
             "title": "Sampledmedium",
             "type": "string"
           },
-          "sensorId": {
-            "format": "uuid",
-            "title": "Sensorid",
-            "type": "string"
-          },
           "status": {
             "anyOf": [
               {
@@ -2460,7 +2460,7 @@
         },
         "required": [
           "monitoringSiteId",
-          "sensorId",
+          "methodId",
           "observedPropertyId",
           "processingLevelId",
           "unitId",
@@ -2501,6 +2501,16 @@
             ],
             "description": "Controls whether the datastreams should be private or public.",
             "title": "Is Private"
+          },
+          "method_id": {
+            "default": [],
+            "description": "Filter datastreams by method ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Method Id",
+            "type": "array"
           },
           "monitoring_site_id": {
             "default": [],
@@ -2766,16 +2776,6 @@
             "title": "Sampled Medium",
             "type": "array"
           },
-          "sensor_id": {
-            "default": [],
-            "description": "Filter datastreams by sensor ID.",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Sensor Id",
-            "type": "array"
-          },
           "status": {
             "default": [],
             "description": "Filter monitoring_sites by status.",
@@ -2903,6 +2903,11 @@
             "title": "Isvisible",
             "type": "boolean"
           },
+          "methodId": {
+            "format": "uuid",
+            "title": "Methodid",
+            "type": "string"
+          },
           "monitoringSiteId": {
             "format": "uuid",
             "title": "Monitoringsiteid",
@@ -2990,11 +2995,6 @@
             "title": "Sampledmedium",
             "type": "string"
           },
-          "sensorId": {
-            "format": "uuid",
-            "title": "Sensorid",
-            "type": "string"
-          },
           "status": {
             "anyOf": [
               {
@@ -3053,7 +3053,7 @@
         },
         "required": [
           "monitoringSiteId",
-          "sensorId",
+          "methodId",
           "observedPropertyId",
           "processingLevelId",
           "unitId",
@@ -3984,6 +3984,556 @@
           "timestampKey"
         ],
         "title": "JSONPayloadResponse",
+        "type": "object"
+      },
+      "MethodDetailResponse": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "sensorModel": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodel"
+          },
+          "sensorModelDefinition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodeldefinition"
+          },
+          "sensorModelManufacturer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodelmanufacturer"
+          },
+          "type": {
+            "maxLength": 100,
+            "title": "Type",
+            "type": "string"
+          },
+          "workspace": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceSummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "description",
+          "id",
+          "workspace"
+        ],
+        "title": "MethodDetailResponse",
+        "type": "object"
+      },
+      "MethodPatchBody": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "sensorModel": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodel"
+          },
+          "sensorModelDefinition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodeldefinition"
+          },
+          "sensorModelManufacturer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodelmanufacturer"
+          },
+          "type": {
+            "maxLength": 100,
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "title": "MethodPatchBody",
+        "type": "object"
+      },
+      "MethodPostBody": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "sensorModel": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodel"
+          },
+          "sensorModelDefinition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodeldefinition"
+          },
+          "sensorModelManufacturer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodelmanufacturer"
+          },
+          "type": {
+            "maxLength": 100,
+            "title": "Type",
+            "type": "string"
+          },
+          "workspaceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspaceid"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "description"
+        ],
+        "title": "MethodPostBody",
+        "type": "object"
+      },
+      "MethodQueryParameters": {
+        "properties": {
+          "datastream_id": {
+            "default": [],
+            "description": "Filter methods by datastream ID.",
+            "items": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Datastream Id",
+            "type": "array"
+          },
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
+          },
+          "monitoring_site_id": {
+            "default": [],
+            "description": "Filter methods by monitoring_site ID.",
+            "items": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Monitoring Site Id",
+            "type": "array"
+          },
+          "order_by": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "code",
+                    "type",
+                    "sensorModel",
+                    "sensorModelManufacturer",
+                    "-name",
+                    "-code",
+                    "-type",
+                    "-sensorModel",
+                    "-sensorModelManufacturer"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to order the response by.",
+            "title": "Order By"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          },
+          "sensor_model": {
+            "default": [],
+            "description": "Filter methods by sensor model",
+            "items": {
+              "type": "string"
+            },
+            "title": "Sensor Model",
+            "type": "array"
+          },
+          "sensor_model_manufacturer": {
+            "default": [],
+            "description": "Filter methods by sensor model manufacturer",
+            "items": {
+              "type": "string"
+            },
+            "title": "Sensor Model Manufacturer",
+            "type": "array"
+          },
+          "type": {
+            "default": [],
+            "description": "Filter methods by type",
+            "items": {
+              "type": "string"
+            },
+            "title": "Type",
+            "type": "array"
+          },
+          "workspace_id": {
+            "default": [],
+            "description": "Filter methods by workspace ID.",
+            "items": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Workspace Id",
+            "type": "array"
+          }
+        },
+        "title": "MethodQueryParameters",
+        "type": "object"
+      },
+      "MethodSummaryResponse": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "sensorModel": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodel"
+          },
+          "sensorModelDefinition": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodeldefinition"
+          },
+          "sensorModelManufacturer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensormodelmanufacturer"
+          },
+          "type": {
+            "maxLength": 100,
+            "title": "Type",
+            "type": "string"
+          },
+          "workspaceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspaceid"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "description",
+          "id",
+          "workspaceId"
+        ],
+        "title": "MethodSummaryResponse",
         "type": "object"
       },
       "MonitoredDatastreamResponse": {
@@ -6756,7 +7306,7 @@
               "ObservedProperty",
               "ProcessingLevel",
               "ResultQualifier",
-              "Sensor",
+              "Method",
               "Unit",
               "Datastream",
               "Observation",
@@ -8623,7 +9173,7 @@
           },
           "workspace_id": {
             "default": [],
-            "description": "Filter sensors by workspace ID.",
+            "description": "Filter result qualifiers by workspace ID.",
             "items": {
               "anyOf": [
                 {
@@ -9063,637 +9613,6 @@
           "enabled"
         ],
         "title": "ScheduleResponse",
-        "type": "object"
-      },
-      "SensorDetailResponse": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "encodingType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "application/pdf",
-                  "http://www.opengis.net/doc/IS/SensorML/2.0",
-                  "text/html",
-                  "text/plain",
-                  "application/json"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "maxLength": 255,
-            "title": "Encodingtype"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "manufacturer": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Manufacturer"
-          },
-          "methodCode": {
-            "anyOf": [
-              {
-                "maxLength": 50,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodcode"
-          },
-          "methodLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodlink"
-          },
-          "methodType": {
-            "maxLength": 100,
-            "title": "Methodtype",
-            "type": "string"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "modelLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modellink"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "workspace": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/WorkspaceSummaryResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "name",
-          "description",
-          "encodingType",
-          "methodType",
-          "id",
-          "workspace"
-        ],
-        "title": "SensorDetailResponse",
-        "type": "object"
-      },
-      "SensorPatchBody": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "encodingType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "application/pdf",
-                  "http://www.opengis.net/doc/IS/SensorML/2.0",
-                  "text/html",
-                  "text/plain",
-                  "application/json"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "maxLength": 255,
-            "title": "Encodingtype"
-          },
-          "manufacturer": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Manufacturer"
-          },
-          "methodCode": {
-            "anyOf": [
-              {
-                "maxLength": 50,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodcode"
-          },
-          "methodLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodlink"
-          },
-          "methodType": {
-            "maxLength": 100,
-            "title": "Methodtype",
-            "type": "string"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "modelLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modellink"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "title": "SensorPatchBody",
-        "type": "object"
-      },
-      "SensorPostBody": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "encodingType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "application/pdf",
-                  "http://www.opengis.net/doc/IS/SensorML/2.0",
-                  "text/html",
-                  "text/plain",
-                  "application/json"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "maxLength": 255,
-            "title": "Encodingtype"
-          },
-          "id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "manufacturer": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Manufacturer"
-          },
-          "methodCode": {
-            "anyOf": [
-              {
-                "maxLength": 50,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodcode"
-          },
-          "methodLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodlink"
-          },
-          "methodType": {
-            "maxLength": 100,
-            "title": "Methodtype",
-            "type": "string"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "modelLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modellink"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
-          }
-        },
-        "required": [
-          "name",
-          "description",
-          "encodingType",
-          "methodType"
-        ],
-        "title": "SensorPostBody",
-        "type": "object"
-      },
-      "SensorQueryParameters": {
-        "properties": {
-          "datastream_id": {
-            "default": [],
-            "description": "Filter sensors by datastream ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Datastream Id",
-            "type": "array"
-          },
-          "encoding_type": {
-            "default": [],
-            "description": "Filter sensors by encodingType",
-            "items": {
-              "type": "string"
-            },
-            "title": "Encoding Type",
-            "type": "array"
-          },
-          "expand_related": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expand Related"
-          },
-          "manufacturer": {
-            "default": [],
-            "description": "Filter sensors by manufacturer",
-            "items": {
-              "type": "string"
-            },
-            "title": "Manufacturer",
-            "type": "array"
-          },
-          "method_type": {
-            "default": [],
-            "description": "Filter sensors by methodType",
-            "items": {
-              "type": "string"
-            },
-            "title": "Method Type",
-            "type": "array"
-          },
-          "monitoring_site_id": {
-            "default": [],
-            "description": "Filter sensors by monitoring_site ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Monitoring Site Id",
-            "type": "array"
-          },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "encodingType",
-                    "manufacturer",
-                    "model",
-                    "methodType",
-                    "methodCode",
-                    "-name",
-                    "-encodingType",
-                    "-manufacturer",
-                    "-model",
-                    "-methodType",
-                    "-methodCode"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
-          },
-          "workspace_id": {
-            "default": [],
-            "description": "Filter sensors by workspace ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Workspace Id",
-            "type": "array"
-          }
-        },
-        "title": "SensorQueryParameters",
-        "type": "object"
-      },
-      "SensorSummaryResponse": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "encodingType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "application/pdf",
-                  "http://www.opengis.net/doc/IS/SensorML/2.0",
-                  "text/html",
-                  "text/plain",
-                  "application/json"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "maxLength": 255,
-            "title": "Encodingtype"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "manufacturer": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Manufacturer"
-          },
-          "methodCode": {
-            "anyOf": [
-              {
-                "maxLength": 50,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodcode"
-          },
-          "methodLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Methodlink"
-          },
-          "methodType": {
-            "maxLength": 100,
-            "title": "Methodtype",
-            "type": "string"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "modelLink": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modellink"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
-          }
-        },
-        "required": [
-          "name",
-          "description",
-          "encodingType",
-          "methodType",
-          "id",
-          "workspaceId"
-        ],
-        "title": "SensorSummaryResponse",
         "type": "object"
       },
       "ServiceAccountContactResponse": {
@@ -11507,18 +11426,18 @@
             }
           },
           {
-            "description": "Filter datastreams by sensor ID.",
+            "description": "Filter datastreams by method ID.",
             "in": "query",
-            "name": "sensor_id",
+            "name": "method_id",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by sensor ID.",
+              "description": "Filter datastreams by method ID.",
               "items": {
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Sensor Id",
+              "title": "Method Id",
               "type": "array"
             }
           },
@@ -16165,6 +16084,769 @@
         "summary": "Trigger Etl Task",
         "tags": [
           "ETL Tasks"
+        ]
+      }
+    },
+    "/api/data/methods": {
+      "get": {
+        "description": "Get public Methods and Methods associated with the authenticated user.",
+        "operationId": "interfaces_api_views_sta_method_get_methods",
+        "parameters": [
+          {
+            "description": "Page number (1-based).",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Page number (1-based).",
+              "title": "Page"
+            }
+          },
+          {
+            "description": "The number of items per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          },
+          {
+            "description": "Select one or more fields to order the response by.",
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "code",
+                      "type",
+                      "sensorModel",
+                      "sensorModelManufacturer",
+                      "-name",
+                      "-code",
+                      "-type",
+                      "-sensorModel",
+                      "-sensorModelManufacturer"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to order the response by.",
+              "title": "Order By"
+            }
+          },
+          {
+            "description": "Filter methods by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter methods by workspace ID.",
+              "items": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter methods by monitoring_site ID.",
+            "in": "query",
+            "name": "monitoring_site_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter methods by monitoring_site ID.",
+              "items": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
+              },
+              "title": "Monitoring Site Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter methods by datastream ID.",
+            "in": "query",
+            "name": "datastream_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter methods by datastream ID.",
+              "items": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
+              },
+              "title": "Datastream Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter methods by type",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter methods by type",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter methods by sensor model",
+            "in": "query",
+            "name": "sensor_model",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter methods by sensor model",
+              "items": {
+                "type": "string"
+              },
+              "title": "Sensor Model",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter methods by sensor model manufacturer",
+            "in": "query",
+            "name": "sensor_model_manufacturer",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter methods by sensor model manufacturer",
+              "items": {
+                "type": "string"
+              },
+              "title": "Sensor Model Manufacturer",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/MethodSummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/MethodDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Methods",
+        "tags": [
+          "Methods"
+        ]
+      },
+      "post": {
+        "description": "Create a new Method.",
+        "operationId": "interfaces_api_views_sta_method_create_method",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MethodSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MethodDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Method",
+        "tags": [
+          "Methods"
+        ]
+      }
+    },
+    "/api/data/methods/types": {
+      "get": {
+        "description": "Get method types.",
+        "operationId": "interfaces_api_views_sta_method_get_types",
+        "parameters": [
+          {
+            "description": "Page number (1-based).",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Page number (1-based).",
+              "title": "Page"
+            }
+          },
+          {
+            "description": "The number of items per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            }
+          },
+          {
+            "description": "Sort terms by descending.",
+            "in": "query",
+            "name": "order_desc",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "description": "Sort terms by descending.",
+              "title": "Order Desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Types",
+        "tags": [
+          "Methods"
+        ]
+      }
+    },
+    "/api/data/methods/{method_id}": {
+      "delete": {
+        "description": "Delete a Method.",
+        "operationId": "interfaces_api_views_sta_method_delete_method",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "method_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Method Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Method",
+        "tags": [
+          "Methods"
+        ]
+      },
+      "get": {
+        "description": "Get a Method.",
+        "operationId": "interfaces_api_views_sta_method_get_method",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "method_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Method Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MethodSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MethodDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Method",
+        "tags": [
+          "Methods"
+        ]
+      },
+      "patch": {
+        "description": "Update a Method.",
+        "operationId": "interfaces_api_views_sta_method_update_method",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "method_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Method Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MethodSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MethodDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Method",
+        "tags": [
+          "Methods"
         ]
       }
     },
@@ -26567,13 +27249,13 @@
             }
           },
           {
-            "description": "Filter sensors by workspace ID.",
+            "description": "Filter result qualifiers by workspace ID.",
             "in": "query",
             "name": "workspace_id",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter sensors by workspace ID.",
+              "description": "Filter result qualifiers by workspace ID.",
               "items": {
                 "anyOf": [
                   {
@@ -27328,859 +28010,6 @@
         "summary": "Get Role",
         "tags": [
           "Roles"
-        ]
-      }
-    },
-    "/api/data/sensors": {
-      "get": {
-        "description": "Get public Sensors and Sensors associated with the authenticated user.",
-        "operationId": "interfaces_api_views_sta_sensor_get_sensors",
-        "parameters": [
-          {
-            "description": "Page number (1-based).",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 1,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
-            }
-          },
-          {
-            "description": "The number of items per page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          },
-          {
-            "description": "Select one or more fields to order the response by.",
-            "in": "query",
-            "name": "order_by",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "encodingType",
-                      "manufacturer",
-                      "model",
-                      "methodType",
-                      "methodCode",
-                      "-name",
-                      "-encodingType",
-                      "-manufacturer",
-                      "-model",
-                      "-methodType",
-                      "-methodCode"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
-            }
-          },
-          {
-            "description": "Filter sensors by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter sensors by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter sensors by monitoring_site ID.",
-            "in": "query",
-            "name": "monitoring_site_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter sensors by monitoring_site ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Monitoring Site Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter sensors by datastream ID.",
-            "in": "query",
-            "name": "datastream_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter sensors by datastream ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Datastream Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter sensors by encodingType",
-            "in": "query",
-            "name": "encoding_type",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter sensors by encodingType",
-              "items": {
-                "type": "string"
-              },
-              "title": "Encoding Type",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter sensors by manufacturer",
-            "in": "query",
-            "name": "manufacturer",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter sensors by manufacturer",
-              "items": {
-                "type": "string"
-              },
-              "title": "Manufacturer",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter sensors by methodType",
-            "in": "query",
-            "name": "method_type",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter sensors by methodType",
-              "items": {
-                "type": "string"
-              },
-              "title": "Method Type",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "items": {
-                        "$ref": "#/components/schemas/SensorSummaryResponse"
-                      },
-                      "type": "array"
-                    },
-                    {
-                      "items": {
-                        "$ref": "#/components/schemas/SensorDetailResponse"
-                      },
-                      "type": "array"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Sensors",
-        "tags": [
-          "Sensors"
-        ]
-      },
-      "post": {
-        "description": "Create a new Sensor.",
-        "operationId": "interfaces_api_views_sta_sensor_create_sensor",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SensorPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/SensorSummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/SensorDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Create Sensor",
-        "tags": [
-          "Sensors"
-        ]
-      }
-    },
-    "/api/data/sensors/encoding-types": {
-      "get": {
-        "description": "Get sensor encoding types.",
-        "operationId": "interfaces_api_views_sta_sensor_get_sensor_encoding_types",
-        "parameters": [
-          {
-            "description": "Page number (1-based).",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 1,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
-            }
-          },
-          {
-            "description": "The number of items per page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "order_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Order Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Sensor Encoding Types",
-        "tags": [
-          "Sensors"
-        ]
-      }
-    },
-    "/api/data/sensors/method-types": {
-      "get": {
-        "description": "Get method types.",
-        "operationId": "interfaces_api_views_sta_sensor_get_method_types",
-        "parameters": [
-          {
-            "description": "Page number (1-based).",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 1,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
-            }
-          },
-          {
-            "description": "The number of items per page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "order_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Order Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Method Types",
-        "tags": [
-          "Sensors"
-        ]
-      }
-    },
-    "/api/data/sensors/{sensor_id}": {
-      "delete": {
-        "description": "Delete a Sensor.",
-        "operationId": "interfaces_api_views_sta_sensor_delete_sensor",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "sensor_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Sensor Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Conflict"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Delete Sensor",
-        "tags": [
-          "Sensors"
-        ]
-      },
-      "get": {
-        "description": "Get a Sensor.",
-        "operationId": "interfaces_api_views_sta_sensor_get_sensor",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "sensor_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Sensor Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/SensorSummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/SensorDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Sensor",
-        "tags": [
-          "Sensors"
-        ]
-      },
-      "patch": {
-        "description": "Update a Sensor.",
-        "operationId": "interfaces_api_views_sta_sensor_update_sensor",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "sensor_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Sensor Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SensorPatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/SensorSummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/SensorDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Update Sensor",
-        "tags": [
-          "Sensors"
         ]
       }
     },

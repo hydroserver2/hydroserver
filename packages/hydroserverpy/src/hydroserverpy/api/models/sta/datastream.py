@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from hydroserverpy.api.models import (
         Workspace,
         MonitoringSite,
-        Sensor,
+        Method,
         ObservedProperty,
         Unit,
         ProcessingLevel,
@@ -43,7 +43,7 @@ class Datastream(HydroServerBaseModel):
     ] = None
     monitoring_site_id: uuid.UUID
     workspace_id: uuid.UUID
-    sensor_id: uuid.UUID
+    method_id: uuid.UUID
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
@@ -55,7 +55,7 @@ class Datastream(HydroServerBaseModel):
         "time_aggregation_interval", "status", "result_type", "value_count", "phenomenon_begin_time",
         "phenomenon_end_time", "result_begin_time", "result_end_time", "is_private", "is_visible",
         "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
-        "sensor_id", "observed_property_id", "processing_level_id", "unit_id"
+        "method_id", "observed_property_id", "processing_level_id", "unit_id"
     }
 
     def __init__(self, client: "HydroServer", **data):
@@ -66,7 +66,7 @@ class Datastream(HydroServerBaseModel):
         self._observed_property = None
         self._unit = None
         self._processing_level = None
-        self._sensor = None
+        self._method = None
 
     @classmethod
     def get_route(cls):
@@ -99,21 +99,21 @@ class Datastream(HydroServerBaseModel):
             self._monitoring_site = None
 
     @property
-    def sensor(self) -> "Sensor":
-        """The sensor of this datastream."""
+    def method(self) -> "Method":
+        """The method of this datastream."""
 
-        if self._sensor is None:
-            self._sensor = self.client.sensors.get(uid=self.sensor_id)
+        if self._method is None:
+            self._method = self.client.methods.get(uid=self.method_id)
 
-        return self._sensor
+        return self._method
 
-    @sensor.setter
-    def sensor(self, sensor: Union["Sensor", UUID, str] = ...):
-        if not sensor:
-            raise ValueError("Sensor of datastream cannot be None.")
-        if normalize_uuid(sensor) != str(self.sensor_id):
-            self.sensor_id = normalize_uuid(sensor)
-            self._sensor = None
+    @method.setter
+    def method(self, method: Union["Method", UUID, str] = ...):
+        if not method:
+            raise ValueError("Method of datastream cannot be None.")
+        if normalize_uuid(method) != str(self.method_id):
+            self.method_id = normalize_uuid(method)
+            self._method = None
 
     @property
     def observed_property(self) -> "ObservedProperty":

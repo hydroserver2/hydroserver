@@ -7,7 +7,7 @@ from interfaces.api.views.sta.monitoring_site import monitoring_site_router
 from interfaces.api.views.sta.observed_property import observed_property_router
 from interfaces.api.views.sta.processing_level import processing_level_router
 from interfaces.api.views.sta.result_qualifier import result_qualifier_router
-from interfaces.api.views.sta.sensor import sensor_router
+from interfaces.api.views.sta.method import method_router
 from interfaces.api.views.sta.unit import unit_router
 from interfaces.api.views.sta.datastream import datastream_router
 from interfaces.api.views.sta.observation import observation_router

@@ -109,7 +109,7 @@ Returned by `trigger()` and `list_runs()` across ETL tasks, data product tasks, 
 | `observedproperties` | `List[ObservedProperty]` | No | Computed |
 | `units` | `List[Unit]` | No | Computed |
 | `processinglevels` | `List[ProcessingLevel]` | No | Computed |
-| `sensors` | `List[Sensor]` | No | Computed |
+| `methods` | `List[Method]` | No | Computed |
 | `dataconnections` | `List[DataConnection]` | No | Computed |
 | `tasks` | `List[EtlTask]` | No | Computed; ETL tasks only |
 
@@ -240,33 +240,32 @@ hs_api.monitoring_sites.create(workspace, name, description, code, type,
 
 ## Metadata
 
-Sensors, observed properties, units, processing levels, and result qualifiers all follow the same shape: a small set of editable fields, a read-only `workspace_id`, and a computed `workspace` property. They all support the standard `save()`, `refresh()`, and `delete()` model methods.
+Methods, observed properties, units, processing levels, and result qualifiers all follow the same shape: a small set of editable fields, a read-only `workspace_id`, and a computed `workspace` property. They all support the standard `save()`, `refresh()`, and `delete()` model methods.
 
-### Sensors
+### Methods
 
-**Property:** `hs_api.sensors`
+**Property:** `hs_api.methods`
 
 | Property | Type | Editable |
 |---|---|---|
 | `uid` | `UUID` | No |
 | `name` | `str` | Yes |
 | `description` | `str` | Yes |
-| `encoding_type` | `str` | Yes |
-| `manufacturer` | `str \| None` | Yes |
+| `code` | `str \| None` | Yes |
+| `type` | `str` | Yes |
 | `sensor_model` | `str \| None` | Yes |
-| `sensor_model_link` | `str \| None` | Yes |
-| `method_type` | `str` | Yes |
-| `method_link` | `str \| None` | Yes |
-| `method_code` | `str \| None` | Yes |
+| `sensor_model_manufacturer` | `str \| None` | Yes |
+| `sensor_model_definition` | `str \| None` | Yes |
+| `definition` | `str \| None` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
-hs_api.sensors.list(workspace=None) -> HydroServerCollection[Sensor]
-hs_api.sensors.get(uid) -> Sensor
-hs_api.sensors.create(workspace, name, description, encoding_type, method_type,
-                      manufacturer=None, sensor_model=None, sensor_model_link=None,
-                      method_link=None, method_code=None, uid=None) -> Sensor
+hs_api.methods.list(workspace=None) -> HydroServerCollection[Method]
+hs_api.methods.get(uid) -> Method
+hs_api.methods.create(name, description, type, code=None, definition=None,
+                      sensor_model=None, sensor_model_manufacturer=None,
+                      sensor_model_definition=None, workspace=None, uid=None) -> Method
 ```
 
 ### Observed Properties
@@ -379,7 +378,7 @@ hs_api.resultqualifiers.create(workspace, code, description, uid=None) -> Result
 | `is_private` | `bool` | Yes | |
 | `is_visible` | `bool` | Yes | |
 | `monitoring_site_id` | `UUID` | Yes | |
-| `sensor_id` | `UUID` | Yes | |
+| `method_id` | `UUID` | Yes | |
 | `observed_property_id` | `UUID` | Yes | |
 | `processing_level_id` | `UUID` | Yes | |
 | `unit_id` | `UUID` | Yes | |
@@ -388,15 +387,15 @@ hs_api.resultqualifiers.create(workspace, code, description, uid=None) -> Result
 | `file_attachments` | `Dict[str, dict]` | No | Use attachment methods to modify |
 | `workspace` | `Workspace` | No | Computed |
 | `monitoring_site` | `MonitoringSite` | No | Computed; also settable via assignment |
-| `sensor` | `Sensor` | No | Computed; also settable via assignment |
+| `method` | `Method` | No | Computed; also settable via assignment |
 | `observed_property` | `ObservedProperty` | No | Computed; also settable via assignment |
 | `unit` | `Unit` | No | Computed; also settable via assignment |
 | `processing_level` | `ProcessingLevel` | No | Computed; also settable via assignment |
 
-The computed relationship properties (`monitoring_site`, `sensor`, etc.) can be assigned directly — assigning a new value updates the corresponding `_id` field and clears the cache:
+The computed relationship properties (`monitoring_site`, `method`, etc.) can be assigned directly — assigning a new value updates the corresponding `_id` field and clears the cache:
 
 ```python
-datastream.sensor = new_sensor  # updates sensor_id and clears cached sensor
+datastream.method = new_method  # updates method_id and clears cached method
 datastream.save()
 ```
 
@@ -405,7 +404,7 @@ datastream.save()
 ```python
 hs_api.datastreams.list(workspace=None, monitoring_site=None) -> HydroServerCollection[Datastream]
 hs_api.datastreams.get(uid) -> Datastream
-hs_api.datastreams.create(name, description, monitoring_site, sensor, observed_property, processing_level,
+hs_api.datastreams.create(name, description, monitoring_site, method, observed_property, processing_level,
                           unit, observation_type, result_type, sampled_medium, no_data_value,
                           aggregation_statistic, time_aggregation_interval,
                           time_aggregation_interval_unit, intended_time_spacing=None,

@@ -66,12 +66,12 @@ from interfaces.api.schemas.sta.result_qualifier import (
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )
-from interfaces.api.schemas.sta.sensor import (
-    SensorSummaryResponse,
-    SensorDetailResponse,
-    SensorQueryParameters,
-    SensorPostBody,
-    SensorPatchBody,
+from interfaces.api.schemas.sta.method import (
+    MethodSummaryResponse,
+    MethodDetailResponse,
+    MethodQueryParameters,
+    MethodPostBody,
+    MethodPatchBody,
 )
 from interfaces.api.schemas.sta.unit import (
     UnitSummaryResponse,
@@ -129,7 +129,7 @@ MonitoringSiteDetailResponse.model_rebuild()
 ObservedPropertyDetailResponse.model_rebuild()
 ProcessingLevelDetailResponse.model_rebuild()
 ResultQualifierDetailResponse.model_rebuild()
-SensorDetailResponse.model_rebuild()
+MethodDetailResponse.model_rebuild()
 UnitDetailResponse.model_rebuild()
 DatastreamDetailResponse.model_rebuild()
 ObservationDetailResponse.model_rebuild()

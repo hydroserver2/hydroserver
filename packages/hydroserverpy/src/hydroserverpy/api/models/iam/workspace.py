@@ -13,7 +13,7 @@ if TYPE_CHECKING:
         Account,
         MonitoringSite,
         ObservedProperty,
-        Sensor,
+        Method,
         Unit,
         ProcessingLevel,
         ResultQualifier,
@@ -47,7 +47,7 @@ class Workspace(HydroServerBaseModel):
         self._processinglevels = None
         self._resultqualifiers = None
         self._units = None
-        self._sensors = None
+        self._methods = None
         self._datastreams = None
         self._orchestrationsystems = None
         self._dataconnections = None
@@ -139,13 +139,13 @@ class Workspace(HydroServerBaseModel):
         return self._units
 
     @property
-    def sensors(self) -> List["Sensor"]:
-        """The sensors associated with this workspace."""
+    def methods(self) -> List["Method"]:
+        """The methods associated with this workspace."""
 
-        if self._sensors is None:
-            self._sensors = self.client.sensors.list(workspace=self.uid, fetch_all=True).items
+        if self._methods is None:
+            self._methods = self.client.methods.list(workspace=self.uid, fetch_all=True).items
 
-        return self._sensors
+        return self._methods
 
     @property
     def datastreams(self) -> List["Datastream"]:

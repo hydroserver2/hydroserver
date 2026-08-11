@@ -8,7 +8,7 @@ from .monitoring_site import (
 from .observed_property import ObservedProperty, VariableType
 from .processing_level import ProcessingLevel
 from .result_qualifier import ResultQualifier
-from .sensor import Sensor, SensorEncodingType, MethodType
+from .method import Method, MethodType
 from .unit import Unit, UnitType
 from .datastream import (
     Datastream,

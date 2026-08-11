@@ -44,7 +44,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --host ${appHost} --port ${appPort}`,
+    command: `npm run dev -- --host ${appHost} --port ${appPort} --base /`,
     url: appBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

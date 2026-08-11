@@ -51,7 +51,7 @@ const loaded = ref(false)
 
 type DatastreamFilterKey =
   | 'unit_id'
-  | 'sensor_id'
+  | 'method_id'
   | 'observed_property_id'
   | 'processing_level_id'
   | 'result_qualifier_id'

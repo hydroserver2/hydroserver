@@ -13,9 +13,9 @@
     >
       <v-card-text>
         <v-combobox
-          v-model="item.methodType"
+          v-model="item.type"
           :items="vocabularyStore.methodTypes"
-          label="Method Type *"
+          label="Type *"
           hide-details
           density="comfortable"
           :rules="rules.required"
@@ -23,14 +23,15 @@
         />
 
         <v-text-field
-          v-model="item.methodLink"
-          label="Method Link"
-          :rules="item.methodLink ? rules.urlFormat : []"
+          v-if="!isInstrument"
+          v-model="item.name"
+          label="Name *"
+          :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
-          v-model="item.methodCode"
-          label="Method Code"
+          v-model="item.code"
+          label="Code"
           :rules="rules.name"
         />
 
@@ -42,31 +43,30 @@
         />
 
         <v-text-field
-          v-if="!isInstrument"
-          v-model="item.name"
-          label="Name *"
+          v-model="item.definition"
+          label="Definition"
+          :rules="item.definition ? rules.urlFormat : []"
+        />
+
+        <v-text-field
+          v-if="isInstrument"
+          v-model="item.sensorModelManufacturer"
+          label="Sensor Model Manufacturer *"
           :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-if="isInstrument"
-          v-model="item.manufacturer"
-          label="Manufacturer *"
+          v-model="item.sensorModel"
+          label="Sensor Model *"
           :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-if="isInstrument"
-          v-model="item.model"
-          label="Model *"
-          :rules="rules.requiredAndMaxLength255"
-        />
-
-        <v-text-field
-          v-if="isInstrument"
-          v-model="item.modelLink"
-          label="Model Link"
-          :rules="item.modelLink ? rules.urlFormat : []"
+          v-model="item.sensorModelDefinition"
+          label="Sensor Model Definition"
+          :rules="item.sensorModelDefinition ? rules.urlFormat : []"
         />
 
         <v-divider />
@@ -88,32 +88,36 @@ import { VForm } from 'vuetify/components'
 import { useFormLogic } from '@/composables/useFormLogic'
 import { rules } from '@/utils/rules'
 import { computed } from 'vue'
-import hs, { Sensor } from '@hydroserver/client'
+import hs, { Method } from '@hydroserver/client'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 
 const props = defineProps<{
-  sensor?: Sensor
+  method?: Method
   workspaceId?: string
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
 
 const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
-  hs.sensors.create,
-  hs.sensors.update,
-  Sensor,
-  props.sensor || undefined
+  hs.methods.create,
+  hs.methods.update,
+  Method,
+  props.method || undefined
 )
 const vocabularyStore = useVocabularyStore()
 
 const isInstrument = computed(
-  () => item.value.methodType === 'Instrument Deployment'
+  () => item.value.type === 'Instrument Deployment'
 )
 
 async function onSubmit() {
-  const { methodType, manufacturer, model } = item.value
-  if (methodType === 'Instrument Deployment' && manufacturer && model) {
-    item.value.name = `${manufacturer}: ${model}`
+  const { type, sensorModelManufacturer, sensorModel } = item.value
+  if (
+    type === 'Instrument Deployment' &&
+    sensorModelManufacturer &&
+    sensorModel
+  ) {
+    item.value.name = `${sensorModelManufacturer}: ${sensorModel}`
   }
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
@@ -125,7 +129,7 @@ async function onSubmit() {
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
-    console.error('Error uploading processing level', error)
+    console.error('Error uploading method', error)
   }
   emit('close')
 }

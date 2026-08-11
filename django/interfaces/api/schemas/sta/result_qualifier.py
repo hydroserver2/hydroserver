@@ -30,7 +30,7 @@ class ResultQualifierQueryParameters(CollectionQueryParameters):
         [], description="Select one or more fields to order the response by."
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter sensors by workspace ID."
+        [], description="Filter result qualifiers by workspace ID."
     )
     observations__datastream__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter result qualifiers by monitoring_site ID.", alias="monitoring_site_id"

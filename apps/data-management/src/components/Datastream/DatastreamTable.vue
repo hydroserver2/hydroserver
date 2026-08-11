@@ -133,7 +133,7 @@
             </p>
             <p class="datastream-line">
               <strong class="mr-2">Method:</strong>
-              <span>{{ item.sensorName }}</span>
+              <span>{{ item.methodName }}</span>
             </p>
             <p class="datastream-line">
               <strong class="mr-2">No data value:</strong>
@@ -605,7 +605,7 @@
             </p>
             <p class="datastream-line">
               <strong class="mr-2">Method:</strong>
-              <span>{{ item.sensorName }}</span>
+              <span>{{ item.methodName }}</span>
             </p>
             <p class="datastream-line">
               <strong class="mr-2">No data value:</strong>
@@ -1188,7 +1188,7 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
     monitoringSiteIdRef
   )
 
-const { sensors, units, observedProperties, processingLevels, fetchMetadata } =
+const { methods, units, observedProperties, processingLevels, fetchMetadata } =
   useMetadata(toRef(props, 'workspace'))
 
 const openCharts = reactive<Record<string, boolean>>({})
@@ -1232,7 +1232,7 @@ const latestStatusClass = (datastream: Datastream) => {
 
 const visibleDatastreams = computed(() => {
   const unitsById = new Map(units.value.map((u) => [u.id, u]))
-  const sensorsById = new Map(sensors.value.map((s) => [s.id, s]))
+  const methodsById = new Map(methods.value.map((method) => [method.id, method]))
   const opsById = new Map(observedProperties.value.map((o) => [o.id, o]))
   const processingLevelsById = new Map(
     processingLevels.value.map((p) => [p.id, p])
@@ -1250,7 +1250,7 @@ const visibleDatastreams = computed(() => {
     )
     .map((d) => {
       const unit = unitsById.get(d.unitId)
-      const sensor = sensorsById.get(d.sensorId)
+      const method = methodsById.get(d.methodId)
       const op = opsById.get(d.observedPropertyId)
       const pl = processingLevelsById.get(d.processingLevelId)
 
@@ -1259,7 +1259,7 @@ const visibleDatastreams = computed(() => {
         OPName: op ? `${op.name} (${op.code})` : '',
         processingLevelCode: pl?.code ?? '',
         processingLevelName: pl?.definition ?? '',
-        sensorName: sensor?.name ?? '',
+        methodName: method?.name ?? '',
         unitName: unit?.name ?? '',
         searchText: ',',
         beginDate: formatTime(d.phenomenonBeginTime),
@@ -1274,7 +1274,7 @@ const visibleDatastreams = computed(() => {
         mapped.id,
         mapped.processingLevelName,
         mapped.sampledMedium,
-        mapped.sensorName,
+        mapped.methodName,
         mapped.noDataValue,
         mapped.aggregationStatistic,
         mapped.unitName,

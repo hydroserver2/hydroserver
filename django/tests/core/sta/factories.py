@@ -11,7 +11,7 @@ from core.sta.models import (
     ObservedProperty,
     ProcessingLevel,
     ResultQualifier,
-    Sensor,
+    Method,
     MonitoringSite,
     Unit,
 )
@@ -39,21 +39,22 @@ class MonitoringSiteFactory(DjangoModelFactory):
         private = factory.Trait(is_private=True)
 
 
-class SensorFactory(DjangoModelFactory):
+class MethodFactory(DjangoModelFactory):
     class Meta:
-        model = Sensor
+        model = Method
 
     if TYPE_CHECKING:
 
-        def __new__(cls, *args, **kwargs) -> Sensor: ...
+        def __new__(cls, *args, **kwargs) -> Method: ...
 
     workspace = factory.SubFactory(WorkspaceFactory)
-    name = factory.Sequence(lambda seq: f"Sensor {seq}")
+    name = factory.Sequence(lambda seq: f"Method {seq}")
+    code = factory.Sequence(lambda seq: f"METHOD-{seq}")
+    type = "Instrument Deployment"
     description = factory.Faker("sentence")
-    encoding_type = "application/json"
-    manufacturer = factory.Faker("company")
     sensor_model = factory.Faker("word")
-    method_type = "Instrument deployment"
+    sensor_model_manufacturer = factory.Faker("company")
+    sensor_model_definition = factory.Faker("url")
 
     class Params:
         global_ = factory.Trait(workspace=None)
@@ -138,8 +139,8 @@ class DatastreamFactory(DjangoModelFactory):
         def __new__(cls, *args, **kwargs) -> Datastream: ...
 
     monitoring_site = factory.SubFactory(MonitoringSiteFactory)
-    sensor = factory.SubFactory(
-        SensorFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
+    method = factory.SubFactory(
+        MethodFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
     )
     observed_property = factory.SubFactory(
         ObservedPropertyFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")

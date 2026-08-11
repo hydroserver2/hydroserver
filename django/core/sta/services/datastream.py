@@ -38,7 +38,7 @@ from core.sta.services import (
     MonitoringSiteService,
     ObservedPropertyService,
     ProcessingLevelService,
-    SensorService,
+    MethodService,
     UnitService,
 )
 
@@ -47,7 +47,7 @@ User = get_user_model()
 monitoring_site_service = MonitoringSiteService()
 observed_property_service = ObservedPropertyService()
 processing_level_service = ProcessingLevelService()
-sensor_service = SensorService()
+method_service = MethodService()
 unit_service = UnitService()
 
 
@@ -100,7 +100,7 @@ class DatastreamService(ServiceUtils):
         return queryset.select_related(
             "monitoring_site__workspace",
             "monitoring_site",
-            "sensor",
+            "method",
             "observed_property",
             "unit",
             "processing_level",
@@ -136,7 +136,7 @@ class DatastreamService(ServiceUtils):
         for field in [
             "monitoring_site__workspace_id",
             "monitoring_site_id",
-            "sensor_id",
+            "method_id",
             "observed_property_id",
             "processing_level_id",
             "unit_id",
@@ -363,15 +363,15 @@ class DatastreamService(ServiceUtils):
                 "The given processing level cannot be associated with this datastream",
             )
 
-        sensor = self.handle_http_404_error(
-            sensor_service.get, principal=principal, uid=data.sensor_id
+        method = self.handle_http_404_error(
+            method_service.get, principal=principal, uid=data.method_id
         )
-        if sensor.workspace_id not in (
+        if method.workspace_id not in (
             monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
-                400, "The given sensor cannot be associated with this datastream"
+                400, "The given method cannot be associated with this datastream"
             )
 
         unit = self.handle_http_404_error(
@@ -469,19 +469,19 @@ class DatastreamService(ServiceUtils):
                 "The given processing level cannot be associated with this datastream",
             )
 
-        sensor = (
+        method = (
             self.handle_http_404_error(
-                sensor_service.get, principal=principal, uid=data.sensor_id
+                method_service.get, principal=principal, uid=data.method_id
             )
-            if data.sensor_id
+            if data.method_id
             else None
         )
-        if sensor and sensor.workspace_id not in (
+        if method and method.workspace_id not in (
             datastream.monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
-                400, "The given sensor cannot be associated with this datastream"
+                400, "The given method cannot be associated with this datastream"
             )
 
         unit = (
@@ -771,14 +771,14 @@ class DatastreamService(ServiceUtils):
             f"#\n"
             f"# Method Information:\n"
             f"# -------------------------------------\n"
-            f"# Name: {datastream.sensor.name}\n"
-            f"# Description: {datastream.sensor.description}\n"
-            f"# MethodCode: {datastream.sensor.method_code}\n"
-            f"# MethodType: {datastream.sensor.method_type}\n"
-            f"# MethodLink: {datastream.sensor.method_link}\n"
-            f"# SensorManufacturerName: {datastream.sensor.manufacturer}\n"
-            f"# SensorModelName: {datastream.sensor.sensor_model}\n"
-            f"# SensorModelLink: {datastream.sensor.sensor_model_link}\n"
+            f"# Name: {datastream.method.name}\n"
+            f"# Description: {datastream.method.description}\n"
+            f"# Code: {datastream.method.code}\n"
+            f"# Type: {datastream.method.type}\n"
+            f"# Definition: {datastream.method.definition}\n"
+            f"# SensorModelManufacturer: {datastream.method.sensor_model_manufacturer}\n"
+            f"# SensorModel: {datastream.method.sensor_model}\n"
+            f"# SensorModelDefinition: {datastream.method.sensor_model_definition}\n"
             f"#\n"
             f"# Observed Property Information:\n"
             f"# -------------------------------------\n"

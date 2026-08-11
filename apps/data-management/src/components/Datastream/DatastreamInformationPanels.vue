@@ -58,7 +58,7 @@
     <v-expansion-panel title="Method">
       <v-expansion-panel-text>
         <v-list dense>
-          <v-list-item v-for="(item, index) in sensorItems" :key="index">
+          <v-list-item v-for="(item, index) in methodItems" :key="index">
             <strong>{{ item.label }}</strong
             >: {{ item.value }}
           </v-list-item>
@@ -126,7 +126,7 @@ const expandedPanels = ref<number[]>([])
 const datastream = ref<any>()
 const generalItems = ref<ListItemArray>([])
 const locationItems = ref<ListItemArray>([])
-const sensorItems = ref<ListItemArray>([])
+const methodItems = ref<ListItemArray>([])
 const observedPropertyItems = ref<ListItemArray>([])
 const unitItems = ref<ListItemArray>([])
 const processingLevelItems = ref<ListItemArray>([])
@@ -233,17 +233,19 @@ onMounted(async () => {
     { label: 'Type', value: u.type },
   ]
 
-  const s = d.sensor
-  sensorItems.value = [
-    { label: 'Name', value: s.name },
-    { label: 'Description', value: s.description },
-    { label: 'Manufacturer', value: s.manufacturer },
-    { label: 'Model', value: s.model },
-    { label: 'Method Type', value: s.methodType },
-    { label: 'Method Code', value: s.methodCode },
-    { label: 'Method Link', value: s.methodLink },
-    { label: 'Encoding Type', value: s.encodingType },
-    { label: 'Model Link', value: s.modelLink },
+  const method = d.method
+  methodItems.value = [
+    { label: 'Name', value: method.name },
+    { label: 'Description', value: method.description },
+    { label: 'Type', value: method.type },
+    { label: 'Code', value: method.code },
+    { label: 'Definition', value: method.definition },
+    {
+      label: 'Sensor model manufacturer',
+      value: method.sensorModelManufacturer,
+    },
+    { label: 'Sensor model', value: method.sensorModel },
+    { label: 'Sensor model definition', value: method.sensorModelDefinition },
   ]
 
   const pl = d.processingLevel

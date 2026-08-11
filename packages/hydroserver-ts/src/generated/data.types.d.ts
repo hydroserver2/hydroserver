@@ -512,6 +512,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Methods
+         * @description Get public Methods and Methods associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_method_get_methods"];
+        put?: never;
+        /**
+         * Create Method
+         * @description Create a new Method.
+         */
+        post: operations["interfaces_api_views_sta_method_create_method"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/methods/types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Types
+         * @description Get method types.
+         */
+        get: operations["interfaces_api_views_sta_method_get_types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/methods/{method_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Method
+         * @description Get a Method.
+         */
+        get: operations["interfaces_api_views_sta_method_get_method"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Method
+         * @description Delete a Method.
+         */
+        delete: operations["interfaces_api_views_sta_method_delete_method"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Method
+         * @description Update a Method.
+         */
+        patch: operations["interfaces_api_views_sta_method_update_method"];
+        trace?: never;
+    };
     "/api/data/monitoring-sites": {
         parameters: {
             query?: never;
@@ -1640,98 +1712,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/sensors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Sensors
-         * @description Get public Sensors and Sensors associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_sensor_get_sensors"];
-        put?: never;
-        /**
-         * Create Sensor
-         * @description Create a new Sensor.
-         */
-        post: operations["interfaces_api_views_sta_sensor_create_sensor"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/sensors/encoding-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Sensor Encoding Types
-         * @description Get sensor encoding types.
-         */
-        get: operations["interfaces_api_views_sta_sensor_get_sensor_encoding_types"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/sensors/method-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Method Types
-         * @description Get method types.
-         */
-        get: operations["interfaces_api_views_sta_sensor_get_method_types"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/sensors/{sensor_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Sensor
-         * @description Get a Sensor.
-         */
-        get: operations["interfaces_api_views_sta_sensor_get_sensor"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Sensor
-         * @description Delete a Sensor.
-         */
-        delete: operations["interfaces_api_views_sta_sensor_delete_sensor"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Sensor
-         * @description Update a Sensor.
-         */
-        patch: operations["interfaces_api_views_sta_sensor_update_sensor"];
-        trace?: never;
-    };
     "/api/data/units": {
         parameters: {
             query?: never;
@@ -2599,6 +2579,7 @@ export interface components {
              * @default true
              */
             isVisible: boolean;
+            method: components["schemas"]["MethodSummaryResponse"];
             monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
             /** Name */
             name: string;
@@ -2620,7 +2601,6 @@ export interface components {
             resultType: string;
             /** Sampledmedium */
             sampledMedium: string;
-            sensor: components["schemas"]["SensorSummaryResponse"];
             /** Status */
             status?: string | null;
             /** Tags */
@@ -2651,6 +2631,11 @@ export interface components {
             isPrivate?: boolean;
             /** Isvisible */
             isVisible?: boolean;
+            /**
+             * Methodid
+             * Format: uuid
+             */
+            methodId?: string;
             /**
              * Monitoringsiteid
              * Format: uuid
@@ -2684,11 +2669,6 @@ export interface components {
             resultType?: string;
             /** Sampledmedium */
             sampledMedium?: string;
-            /**
-             * Sensorid
-             * Format: uuid
-             */
-            sensorId?: string;
             /** Status */
             status?: string | null;
             /** Timeaggregationinterval */
@@ -2729,6 +2709,11 @@ export interface components {
              */
             isVisible: boolean;
             /**
+             * Methodid
+             * Format: uuid
+             */
+            methodId: string;
+            /**
              * Monitoringsiteid
              * Format: uuid
              */
@@ -2761,11 +2746,6 @@ export interface components {
             resultType: string;
             /** Sampledmedium */
             sampledMedium: string;
-            /**
-             * Sensorid
-             * Format: uuid
-             */
-            sensorId: string;
             /** Status */
             status?: string | null;
             /**
@@ -2797,6 +2777,12 @@ export interface components {
              * @description Controls whether the datastreams should be private or public.
              */
             is_private?: boolean | null;
+            /**
+             * Method Id
+             * @description Filter datastreams by method ID.
+             * @default []
+             */
+            method_id: string[];
             /**
              * Monitoring Site Id
              * @description Filter datastreams by monitoring_site ID.
@@ -2898,12 +2884,6 @@ export interface components {
              */
             sampled_medium: string[];
             /**
-             * Sensor Id
-             * @description Filter datastreams by sensor ID.
-             * @default []
-             */
-            sensor_id: string[];
-            /**
              * Status
              * @description Filter monitoring_sites by status.
              * @default []
@@ -2966,6 +2946,11 @@ export interface components {
              */
             isVisible: boolean;
             /**
+             * Methodid
+             * Format: uuid
+             */
+            methodId: string;
+            /**
              * Monitoringsiteid
              * Format: uuid
              */
@@ -2998,11 +2983,6 @@ export interface components {
             resultType: string;
             /** Sampledmedium */
             sampledMedium: string;
-            /**
-             * Sensorid
-             * Format: uuid
-             */
-            sensorId: string;
             /** Status */
             status?: string | null;
             /** Tags */
@@ -3388,6 +3368,158 @@ export interface components {
              * @constant
              */
             type: "JSON";
+        };
+        /** MethodDetailResponse */
+        MethodDetailResponse: {
+            /** Code */
+            code?: string | null;
+            /** Definition */
+            definition?: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Sensormodel */
+            sensorModel?: string | null;
+            /** Sensormodeldefinition */
+            sensorModelDefinition?: string | null;
+            /** Sensormodelmanufacturer */
+            sensorModelManufacturer?: string | null;
+            /** Type */
+            type: string;
+            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
+        };
+        /** MethodPatchBody */
+        MethodPatchBody: {
+            /** Code */
+            code?: string | null;
+            /** Definition */
+            definition?: string | null;
+            /** Description */
+            description?: string;
+            /** Name */
+            name?: string;
+            /** Sensormodel */
+            sensorModel?: string | null;
+            /** Sensormodeldefinition */
+            sensorModelDefinition?: string | null;
+            /** Sensormodelmanufacturer */
+            sensorModelManufacturer?: string | null;
+            /** Type */
+            type?: string;
+        };
+        /** MethodPostBody */
+        MethodPostBody: {
+            /** Code */
+            code?: string | null;
+            /** Definition */
+            definition?: string | null;
+            /** Description */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name: string;
+            /** Sensormodel */
+            sensorModel?: string | null;
+            /** Sensormodeldefinition */
+            sensorModelDefinition?: string | null;
+            /** Sensormodelmanufacturer */
+            sensorModelManufacturer?: string | null;
+            /** Type */
+            type: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** MethodQueryParameters */
+        MethodQueryParameters: {
+            /**
+             * Datastream Id
+             * @description Filter methods by datastream ID.
+             * @default []
+             */
+            datastream_id: (string | "null")[];
+            /** Expand Related */
+            expand_related?: boolean | null;
+            /**
+             * Monitoring Site Id
+             * @description Filter methods by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: (string | "null")[];
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Sensor Model
+             * @description Filter methods by sensor model
+             * @default []
+             */
+            sensor_model: string[];
+            /**
+             * Sensor Model Manufacturer
+             * @description Filter methods by sensor model manufacturer
+             * @default []
+             */
+            sensor_model_manufacturer: string[];
+            /**
+             * Type
+             * @description Filter methods by type
+             * @default []
+             */
+            type: string[];
+            /**
+             * Workspace Id
+             * @description Filter methods by workspace ID.
+             * @default []
+             */
+            workspace_id: (string | "null")[];
+        };
+        /** MethodSummaryResponse */
+        MethodSummaryResponse: {
+            /** Code */
+            code?: string | null;
+            /** Definition */
+            definition?: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Sensormodel */
+            sensorModel?: string | null;
+            /** Sensormodeldefinition */
+            sensorModelDefinition?: string | null;
+            /** Sensormodelmanufacturer */
+            sensorModelManufacturer?: string | null;
+            /** Type */
+            type: string;
+            /** Workspaceid */
+            workspaceId: string | null;
         };
         /** MonitoredDatastreamResponse */
         MonitoredDatastreamResponse: {
@@ -4346,7 +4478,7 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Sensor" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Method" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
         };
         /** PlaceholderVariablePatchBody */
         PlaceholderVariablePatchBody: {
@@ -5050,7 +5182,7 @@ export interface components {
             page_size: number | null;
             /**
              * Workspace Id
-             * @description Filter sensors by workspace ID.
+             * @description Filter result qualifiers by workspace ID.
              * @default []
              */
             workspace_id: (string | "null")[];
@@ -5172,166 +5304,6 @@ export interface components {
             nextRunAt?: string | null;
             /** Starttime */
             startTime?: string | null;
-        };
-        /** SensorDetailResponse */
-        SensorDetailResponse: {
-            /** Description */
-            description: string;
-            /** Encodingtype */
-            encodingType: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Manufacturer */
-            manufacturer?: string | null;
-            /** Methodcode */
-            methodCode?: string | null;
-            /** Methodlink */
-            methodLink?: string | null;
-            /** Methodtype */
-            methodType: string;
-            /** Model */
-            model?: string | null;
-            /** Modellink */
-            modelLink?: string | null;
-            /** Name */
-            name: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
-        };
-        /** SensorPatchBody */
-        SensorPatchBody: {
-            /** Description */
-            description?: string;
-            /** Encodingtype */
-            encodingType?: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
-            /** Manufacturer */
-            manufacturer?: string | null;
-            /** Methodcode */
-            methodCode?: string | null;
-            /** Methodlink */
-            methodLink?: string | null;
-            /** Methodtype */
-            methodType?: string;
-            /** Model */
-            model?: string | null;
-            /** Modellink */
-            modelLink?: string | null;
-            /** Name */
-            name?: string;
-        };
-        /** SensorPostBody */
-        SensorPostBody: {
-            /** Description */
-            description: string;
-            /** Encodingtype */
-            encodingType: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
-            /** Id */
-            id?: string | null;
-            /** Manufacturer */
-            manufacturer?: string | null;
-            /** Methodcode */
-            methodCode?: string | null;
-            /** Methodlink */
-            methodLink?: string | null;
-            /** Methodtype */
-            methodType: string;
-            /** Model */
-            model?: string | null;
-            /** Modellink */
-            modelLink?: string | null;
-            /** Name */
-            name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
-        };
-        /** SensorQueryParameters */
-        SensorQueryParameters: {
-            /**
-             * Datastream Id
-             * @description Filter sensors by datastream ID.
-             * @default []
-             */
-            datastream_id: (string | "null")[];
-            /**
-             * Encoding Type
-             * @description Filter sensors by encodingType
-             * @default []
-             */
-            encoding_type: string[];
-            /** Expand Related */
-            expand_related?: boolean | null;
-            /**
-             * Manufacturer
-             * @description Filter sensors by manufacturer
-             * @default []
-             */
-            manufacturer: string[];
-            /**
-             * Method Type
-             * @description Filter sensors by methodType
-             * @default []
-             */
-            method_type: string[];
-            /**
-             * Monitoring Site Id
-             * @description Filter sensors by monitoring_site ID.
-             * @default []
-             */
-            monitoring_site_id: (string | "null")[];
-            /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "encodingType" | "manufacturer" | "model" | "methodType" | "methodCode" | "-name" | "-encodingType" | "-manufacturer" | "-model" | "-methodType" | "-methodCode")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
-            /**
-             * Workspace Id
-             * @description Filter sensors by workspace ID.
-             * @default []
-             */
-            workspace_id: (string | "null")[];
-        };
-        /** SensorSummaryResponse */
-        SensorSummaryResponse: {
-            /** Description */
-            description: string;
-            /** Encodingtype */
-            encodingType: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Manufacturer */
-            manufacturer?: string | null;
-            /** Methodcode */
-            methodCode?: string | null;
-            /** Methodlink */
-            methodLink?: string | null;
-            /** Methodtype */
-            methodType: string;
-            /** Model */
-            model?: string | null;
-            /** Modellink */
-            modelLink?: string | null;
-            /** Name */
-            name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** ServiceAccountContactResponse */
         ServiceAccountContactResponse: {
@@ -5949,8 +5921,8 @@ export interface operations {
                 workspace_id?: string[];
                 /** @description Filter datastreams by monitoring_site ID. */
                 monitoring_site_id?: string[];
-                /** @description Filter datastreams by sensor ID. */
-                sensor_id?: string[];
+                /** @description Filter datastreams by method ID. */
+                method_id?: string[];
                 /** @description Filter datastreams by observed property ID. */
                 observed_property_id?: string[];
                 /** @description Filter datastreams by processing level ID. */
@@ -7939,6 +7911,297 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_get_methods: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                expand_related?: boolean | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
+                /** @description Filter methods by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter methods by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
+                /** @description Filter methods by datastream ID. */
+                datastream_id?: (string | "null")[];
+                /** @description Filter methods by type */
+                type?: string[];
+                /** @description Filter methods by sensor model */
+                sensor_model?: string[];
+                /** @description Filter methods by sensor model manufacturer */
+                sensor_model_manufacturer?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MethodSummaryResponse"][] | components["schemas"]["MethodDetailResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_create_method: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MethodPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MethodSummaryResponse"] | components["schemas"]["MethodDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_get_types: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Sort terms by descending. */
+                order_desc?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_get_method: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                method_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MethodSummaryResponse"] | components["schemas"]["MethodDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_delete_method: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                method_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_update_method: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                method_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MethodPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MethodSummaryResponse"] | components["schemas"]["MethodDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12730,7 +12993,7 @@ export interface operations {
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("code" | "-code")[] | null;
-                /** @description Filter sensors by workspace ID. */
+                /** @description Filter result qualifiers by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter result qualifiers by monitoring_site ID. */
                 monitoring_site_id?: (string | "null")[];
@@ -13023,324 +13286,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_get_sensors: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "encodingType" | "manufacturer" | "model" | "methodType" | "methodCode" | "-name" | "-encodingType" | "-manufacturer" | "-model" | "-methodType" | "-methodCode")[] | null;
-                /** @description Filter sensors by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter sensors by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
-                /** @description Filter sensors by datastream ID. */
-                datastream_id?: (string | "null")[];
-                /** @description Filter sensors by encodingType */
-                encoding_type?: string[];
-                /** @description Filter sensors by manufacturer */
-                manufacturer?: string[];
-                /** @description Filter sensors by methodType */
-                method_type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SensorSummaryResponse"][] | components["schemas"]["SensorDetailResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_create_sensor: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SensorPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SensorSummaryResponse"] | components["schemas"]["SensorDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_get_sensor_encoding_types: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_get_method_types: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_get_sensor: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                sensor_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SensorSummaryResponse"] | components["schemas"]["SensorDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_delete_sensor: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sensor_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_sensor_update_sensor: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                sensor_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SensorPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SensorSummaryResponse"] | components["schemas"]["SensorDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -31,7 +31,7 @@ The hydroserverpy connection instance exposes the following types of core data a
 * workspaces
 * monitoring_sites
 * datastreams
-* sensors
+* methods
 * units
 * processinglevels
 * observedproperties
@@ -75,8 +75,8 @@ workspace_units = workspace.units
 # Get all processing levels within a workspace
 workspace_processing_levels = workspace.processinglevels
 
-# Get all sensors within a workspace
-workspace_sensors = workspace.sensors
+# Get all methods within a workspace
+workspace_methods = workspace.methods
 
 ```
 
@@ -373,69 +373,68 @@ unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
 unit.delete()
 ```
 
-### Sensors
+### Methods
 
-Sensors are used in HydroServer to describe the sensor/method used to make an environmental observation. The examples below demonstrate the actions you can take to manage sensors in HydroServer.
+Methods describe how a datastream's environmental observations are produced. The examples below demonstrate the actions you can take to manage methods in HydroServer.
 
-#### Example: Get Sensors
+#### Example: Get Methods
 ```python
-# Get all sensors
-sensors = hs_api.sensors.list()
+# Get all methods
+methods = hs_api.methods.list()
 
-# Get sensors belonging to a workspace
-workspace_sensors = hs_api.sensors.list(workspace="00000000-0000-0000-0000-000000000000")
+# Get methods belonging to a workspace
+workspace_methods = hs_api.methods.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get sensor with a given ID
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get method with a given ID
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
-#### Example: Create Sensor
+#### Example: Create Method
 ```python
-# Create a new sensor in HydroServer
-new_sensor = hs_api.sensors.create(
-    name='Environmental Sensor',
-    description='An environmental sensor.',
-    encoding_type='application/json',
-    manufacturer='Campbell Scientific',
+# Create a new method in HydroServer
+new_method = hs_api.methods.create(
+    name='Environmental Method',
+    description='An environmental method.',
+    type='Instrument Deployment',
+    code='SENSOR_A',
+    definition='https://link/to/method/info',
     sensor_model='A',
-    sensor_model_link='https://link/to/sensor/model/info',
-    method_type='Sensor',
-    method_link='https://link/to/method/info',
-    method_code='SENSOR_A',
+    sensor_model_manufacturer='Campbell Scientific',
+    sensor_model_definition='https://link/to/method/model/info',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```
 
-Each of the methods above will return one or more sensor objects. The examples below show the main properties and methods available to a sensor object.
+Each of the methods above will return one or more method objects. The examples below show the main properties and methods available to a method object.
 
-#### Example: Modify a Sensor
+#### Example: Modify a Method
 ```python
-# Get a sensor
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a method
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Update one or more properties of the Sensor.
-sensor.name = 'Updated Sensor Name'
+# Update one or more properties of the Method.
+method.name = 'Updated Method Name'
 
 # Save the changes back to HydroServer.
-sensor.save()
+method.save()
 ```
 
-#### Example: Refresh Sensor data from HydroServer
+#### Example: Refresh Method data from HydroServer
 ```python
-# Get a sensor
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a method
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Refresh sensor data from HydroServer
-sensor.refresh()
+# Refresh method data from HydroServer
+method.refresh()
 ```
 
-#### Example: Delete Sensor from HydroServer
+#### Example: Delete Method from HydroServer
 ```python
-# Get a sensor
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a method
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Delete the sensor from HydroServer
-sensor.delete()
+# Delete the method from HydroServer
+method.delete()
 ```
 
 ### Processing Levels
@@ -557,7 +556,7 @@ result_qualifier.delete()
 
 ### Datastreams
 
-Datastreams are used in HydroServer to represent a group of environmental observations of an observed property made by a sensor at a location and having a specific processing level. The examples below demonstrate the actions you can take to manage datastreams in HydroServer.
+Datastreams are used in HydroServer to represent a group of environmental observations of an observed property made by a method at a location and having a specific processing level. The examples below demonstrate the actions you can take to manage datastreams in HydroServer.
 
 #### Example: Get Datastreams
 ```python
@@ -599,7 +598,7 @@ new_datastream = hs_api.datastreams.create(
     is_visible=True,
     is_private=False,
     monitoring_site='00000000-0000-0000-0000-000000000000',
-    sensor='00000000-0000-0000-0000-000000000000',
+    method='00000000-0000-0000-0000-000000000000',
     observed_property='00000000-0000-0000-0000-000000000000',
     processing_level='00000000-0000-0000-0000-000000000000',
     unit='00000000-0000-0000-0000-000000000000',
@@ -631,8 +630,8 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 # Get the datastream's MonitoringSite/Site
 monitoring_site = datastream.monitoring_site
 
-# Get the datastream's Sensor
-sensor = datastream.sensor
+# Get the datastream's Method
+method = datastream.method
 
 # Get the datastream's Observed Property
 observed_property = datastream.observed_property

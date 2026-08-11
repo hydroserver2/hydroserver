@@ -5,7 +5,7 @@ from .sta.observed_property import ObservedPropertyService
 from .sta.unit import UnitService
 from .sta.processing_level import ProcessingLevelService
 from .sta.result_qualifier import ResultQualifierService
-from .sta.sensor import SensorService
+from .sta.method import MethodService
 from .sta.datastream import DatastreamService
 from .etl.data_connection import DataConnectionService
 from .etl.task import TaskService

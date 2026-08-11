@@ -5,7 +5,7 @@ import { UnitService } from './services/unit.service'
 import { ProcessingLevelService } from './services/processing-level.service'
 import { ResultQualifierService } from './services/result-qualifier.service'
 import { DatastreamService } from './services/datastream.service'
-import { SensorService } from './services/sensor.service'
+import { MethodService } from './services/method.service'
 import { DataConnectionService } from './services/data-connection.service'
 import { TaskService } from './services/task.service'
 import { MonitoringTaskService } from './services/monitoring-task.service'
@@ -45,7 +45,7 @@ export class HydroServer {
   private _units?: UnitService
   private _processingLevels?: ProcessingLevelService
   private _resultQualifiers?: ResultQualifierService
-  private _sensors?: SensorService
+  private _methods?: MethodService
   private _datastreams?: DatastreamService
   private _session?: SessionService
   private _user?: UserService
@@ -123,8 +123,8 @@ export class HydroServer {
   get resultQualifiers(): ResultQualifierService {
     return (this._resultQualifiers ??= new ResultQualifierService(this))
   }
-  get sensors(): SensorService {
-    return (this._sensors ??= new SensorService(this))
+  get methods(): MethodService {
+    return (this._methods ??= new MethodService(this))
   }
   get datastreams(): DatastreamService {
     return (this._datastreams ??= new DatastreamService(this))

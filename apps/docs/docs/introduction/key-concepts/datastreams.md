@@ -11,7 +11,7 @@ For example, you could have a datastream of:
 - a Sampled Medium of Surface Water
 - measured using A YSI EXO2 Multiparameter Water Quality Sonde sensor
 
-A datastream acts as the hub for understanding what's being measured at a given location. For example, if you want to know what's being measured, you'll ask the API for `datastream.observed_property` which will return 'Water temperature' along with metadata describing exactly what 'Water temperature' means to your organization. If you want to know what kind of instrument is making the measurements, you'd ask for `datastream.sensor` which will return the make and model of the sensor along with links and other metadata if provided. If you want the actual data, you'll call `datastream.observations`.
+A datastream acts as the hub for understanding what's being measured at a given location. For example, if you want to know what's being measured, you'll ask the API for `datastream.observed_property` which will return 'Water temperature' along with metadata describing exactly what 'Water temperature' means to your organization. If you want to know how the observations are produced, you'd ask for `datastream.method`, which may include instrument details when applicable. If you want the actual data, you'll call `datastream.observations`.
 
 ## Metadata Types
 
@@ -19,7 +19,7 @@ In HydroServer, we describe datastream metadata in two groups:
 
 1. Direct metadata are simple text fields that describe the datastream and are unique to this particular stream of data.
 
-2. Linked metadata are groups of metadata that can be reused across many datastreams. For example, if you were managing a large group of weather stations, you'd likely want to measure air temperature at each location, but you'd probably only want to define the unit 'degree celsius' once and reuse it. Linked metadata lets you define certain metadata once (units, sensors, observed properties, processing levels) and simply link your datastreams to them.
+2. Linked metadata are groups of metadata that can be reused across many datastreams. For example, if you were managing a large group of weather stations, you'd likely want to measure air temperature at each location, but you'd probably only want to define the unit 'degree celsius' once and reuse it. Linked metadata lets you define certain metadata once (units, methods, observed properties, processing levels) and simply link your datastreams to them.
 
 Below is a brief definition of each available linked metadata group a datastream can be linked to:
 
@@ -38,7 +38,7 @@ Below is a brief definition of each available linked metadata group a datastream
 **- Observed Property** is the specific characteristic or attribute being observed, like temperature or flow rate. As with Units, we have adopted
 [ODM2's Observed Property controlled vocabularies list](http://vocabulary.odm2.org/variablename/).
 
-**- Sensor** is the device or, more broadly, the methodology used to collect the data. The Sensor model captures details like type, manufacturer, and model, essential for understanding data collection methods. In some cases, observations do not result directly from a sensor measurement. For example a discharge value that is derived from a stage value using a site-specific rating curve. These cases can also be described using "Sensor" metadata, and we maintain this within the Sensor entity for consistency with SensorThings' conventions.
+**- Method** describes how observations are produced by an instrument, technician, laboratory procedure, simulation, or computation. Instrument methods can optionally record the sensor model, manufacturer, and a model definition link. The SensorThings API maps Method records to the standard Sensor entity for interoperability.
 
 **- Result Qualifier** provides additional information about the result of an observation, like its accuracy, reliability, or field conditions that may have impacted the observation result. Each result qualifier has a code and a description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a result qualifier with the code 'ICE' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
 

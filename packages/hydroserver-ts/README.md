@@ -32,7 +32,7 @@ Use `host: ""` for same-origin requests. Applications that prefer dependency inj
 ## Services
 
 - Account: `session`, `user`
-- Data management: `workspaces`, `monitoringSites`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers`
+- Data management: `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers`
 - Orchestration: `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves`
 - Files and QC: `monitoringSiteFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations`
 

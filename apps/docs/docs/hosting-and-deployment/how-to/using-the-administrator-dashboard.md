@@ -154,7 +154,7 @@ below.
 | --- | --- |
 | **Things** | Manage monitoring sites and their workspace/privacy metadata. |
 | **Locations** | Review or edit site location records. |
-| **Sensors** | Manage reusable sensor metadata. |
+| **Methods** | Manage reusable method metadata, including optional instrument details. |
 | **Observed Properties** | Manage reusable observed property metadata. |
 | **Units** | Manage reusable unit metadata. |
 | **Processing Levels** | Manage reusable processing level metadata. |
@@ -192,7 +192,6 @@ models below and click its **Load Default ...** button in the upper-right corner
 | **Measurement Data** | **Site Types** | Default monitoring site type vocabulary values. |
 | **Measurement Data** | **Sampling Feature Types** | Default sampling feature type vocabulary values. |
 | **Measurement Data** | **Method Types** | Default method type vocabulary values. |
-| **Measurement Data** | **Sensor Encoding Types** | Default sensor encoding type vocabulary values. |
 | **Measurement Data** | **Variable Types** | Default variable type vocabulary values. |
 | **Measurement Data** | **Unit Types** | Default unit type vocabulary values. |
 | **Measurement Data** | **Datastream Aggregations** | Default aggregation statistic vocabulary values. |
@@ -211,9 +210,9 @@ see in metadata forms:
 | Section | Models |
 | --- | --- |
 | **Identity and Access Management** | **User Types**, **Organization Types**, **Roles** |
-| **Measurement Data** | **Datastream Aggregations**, **Datastream Statuses**, **File Attachment Types**, **Method Types**, **Sampled Mediums**, **Sampling Feature Types**, **Sensor Encoding Types**, **Site Types**, **Unit Types**, **Variable Types** |
+| **Measurement Data** | **Datastream Aggregations**, **Datastream Statuses**, **File Attachment Types**, **Method Types**, **Sampled Mediums**, **Sampling Feature Types**, **Site Types**, **Unit Types**, **Variable Types** |
 
-Workspace-scoped metadata such as observed properties, units, processing levels, sensors, and result qualifiers can also
+Workspace-scoped metadata such as observed properties, units, processing levels, methods, and result qualifiers can also
 be reviewed in the admin dashboard. When a record has no workspace, it is available as system-level metadata.
 
 ## Third-Party Identity Providers

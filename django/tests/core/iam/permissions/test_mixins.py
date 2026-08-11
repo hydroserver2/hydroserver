@@ -5,7 +5,7 @@ import pytest
 from core.iam.models import Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.iam.permissions.mixins import ResourcePermissionMixin
-from core.sta.models import Sensor, MonitoringSite
+from core.sta.models import Method, MonitoringSite
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -14,7 +14,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import SensorFactory, MonitoringSiteFactory
+from tests.core.sta.factories import MethodFactory, MonitoringSiteFactory
 
 
 # --- is_superuser_principal --------------------------------------------------
@@ -66,8 +66,8 @@ def test_resolve_workspace_multi_hop():
 
 
 def test_resolve_workspace_returns_none_when_final_hop_is_unset_and_nullable():
-    sensor = Sensor()
-    assert ResourcePermissionMixin._resolve_workspace(sensor, "workspace") is None
+    method = Method()
+    assert ResourcePermissionMixin._resolve_workspace(method, "workspace") is None
 
 
 def test_resolve_workspace_short_circuits_on_none_intermediate():
@@ -137,24 +137,24 @@ def test_can_view_true_for_public_resource_via_privacy_chain():
 
 
 def test_can_view_true_for_workspace_less_resource():
-    sensor = Sensor()
+    method = Method()
     principal = AnonymousPrincipal()
 
-    assert principal.can_view(sensor) is True
+    assert principal.can_view(method) is True
 
 
 def test_can_edit_false_for_workspace_less_resource():
-    sensor = Sensor()
+    method = Method()
     principal = AnonymousPrincipal()
 
-    assert principal.can_edit(sensor) is False
+    assert principal.can_edit(method) is False
 
 
 def test_can_delete_false_for_workspace_less_resource():
-    sensor = Sensor()
+    method = Method()
     principal = AnonymousPrincipal()
 
-    assert principal.can_delete(sensor) is False
+    assert principal.can_delete(method) is False
 
 
 # --- can_create ---------------------------------------------------------------
@@ -385,21 +385,21 @@ def test_filter_by_permission_excludes_public_resources_for_edit():
 
 @pytest.mark.django_db
 def test_filter_by_permission_includes_global_vocabulary_for_view():
-    global_sensor = SensorFactory(global_=True)
-    SensorFactory(workspace=WorkspaceFactory(is_private=True))  # scoped elsewhere
+    global_sensor = MethodFactory(global_=True)
+    MethodFactory(workspace=WorkspaceFactory(is_private=True))  # scoped elsewhere
     outsider = UserFactory()
 
-    visible = outsider.filter_by_permission(Sensor.objects.all(), "can_view")
+    visible = outsider.filter_by_permission(Method.objects.all(), "can_view")
 
     assert list(visible) == [global_sensor]
 
 
 @pytest.mark.django_db
 def test_filter_by_permission_excludes_global_vocabulary_for_edit():
-    SensorFactory(global_=True)
+    MethodFactory(global_=True)
     outsider = UserFactory()
 
-    visible = outsider.filter_by_permission(Sensor.objects.all(), "can_edit")
+    visible = outsider.filter_by_permission(Method.objects.all(), "can_edit")
 
     assert list(visible) == []
 
