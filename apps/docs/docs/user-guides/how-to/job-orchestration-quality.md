@@ -6,11 +6,11 @@ To create a data quality monitoring task in the Job Orchestration System, in Hyd
 
 **NOTE**: The Job Orchestration System organizes tasks by Workspace. Before attempting to create new tasks, ensure that you have selected the correct workspace at the top of the Job Orchestration System page.
 
-Then, go to the **Quality** section in the Job Orchestration System by clicking on the **Quality** icon in the left most navigation rail. Data quality monitoring tasks are organized by monitoring site. You can set up any number of tasks per site. Select a site at which you want to set up a data monitoring task and then click **Add quality task** button.
+Then, go to the **Quality** section in the Job Orchestration System by clicking the **Quality** icon in the leftmost navigation rail. Data quality monitoring tasks are organized by monitoring site. You can set up any number of tasks per site. Select the site where you want to set up a monitoring task, then click **Add quality task**.
 
 <img src="/job-orchestration/quality_1_click_quality.png" alt="Open the Quality section and add a quality monitoring task" width="550">
 
-In the "Create quality monitoring task" form that pops up, enter a clear task name and description so users can understand what the task is checking. In this example, the task is named `Checking range of discharge`, and it is used to monitor the daily average discharge values for the `BC_CONF_A` site. An email address is also added to the "Notification recipients" so HydroServer can send an alert if the rule is triggered or violated. You can enter a list of email addresses for people who should receive notifications - they don't have to to HydroServer users.
+In the "Create quality monitoring task" form, enter a clear task name and description so users can understand what the task is checking. In this example, the task is named `Checking range of discharge`, and it monitors the daily average discharge values for the `BC_CONF_A` site. Add one or more email addresses under "Notification recipients" so HydroServer can send an alert if the rule is triggered. Recipients do not have to be HydroServer users.
 
 <img src="/job-orchestration/quality_2_create_quality_task.png" alt="Create a quality monitoring task with a range rule for discharge" width="550">
 
@@ -20,7 +20,7 @@ Under **Quality Rules**, select the datastream that should be monitored. In this
 
 The supported rule types include:
 
-* **Range**: Check incoming data values to ensure that they fall between a user-designated minimum and maxium value.
+* **Range**: Check incoming data values to ensure that they fall between user-designated minimum and maximum values.
 * **Rate of Change**: Check incoming data values to ensure that incoming data values do not exhibit a rate of change from previous values that exceeds a user-defined threshold value. Users can also set the time window over which the rule will operate.
 * **Persistence**: Check incoming data values to ensure that reported values that do not change for more than a user-designated time threshold are flagged.
-* **Missing data**: Check incoming data to ensure that new values are reported within a user-desginated time window (i.e., time since last reported observation).
+* **Missing data**: Check incoming data to ensure that new values are reported within a user-designated time window (i.e., time since the last reported observation).

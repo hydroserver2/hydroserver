@@ -16,7 +16,7 @@ In this section, we provide detailed documentation for all HydroServer functiona
 
 * **[Using the Streaming Data Loader](/user-guides/how-to/using-streaming-data-loader.md)**: Learn about how to use the Streaming Data Loader desktop app to load data into HydroServer from CSV files.
 
-* **[Using HydroServer's Job Orchestration System](/user-guides/how-to/using-job-Orchestration.md)**: Learn about how to use HydroServer's Job Orchestration to automate data loading from external files and APIs, automate data aggregation and transformation, and set up automated data quality monitoring tasks.
+* **[Using HydroServer's Job Orchestration System](/user-guides/how-to/using-job-orchestration.md)**: Learn how to use HydroServer's Job Orchestration System to automate data loading from external files and APIs, aggregate and transform data, and monitor data quality.
 
 * **[Visualizing Data](/user-guides/how-to/visualizing-data.md)**: Learn how to visualize data in HydroServer.
 

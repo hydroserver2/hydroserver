@@ -1,6 +1,6 @@
 # Job Orchestration System: Data Transformation Tasks
 
-HydroServer's Job Orchestration System allows you to define automated tasks the handle data aggregations (e.g., computing daily data from subdaily data) and data transformations (e.g., applying a rating curve or applying an expression to data values).
+HydroServer's Job Orchestration System allows you to define automated tasks that handle data aggregations (e.g., computing daily data from subdaily data) and data transformations (e.g., applying a rating curve or mathematical expression to data values).
 
 ## 1. Create a Data Aggregation Task
 
@@ -24,9 +24,9 @@ In the task form, enter a clear task name, such as `BC_CONF_A Discharge (15 mins
 
 <img src="/job-orchestration/aggregation_3_task.png" alt="Create an aggregation task to calculate daily average discharge" width="550">
 
-Next, select the input and output datastreams. The input datastream is the original 15-minute discharge datastream, and the output datastream is the new daily average discharge datastream. Under **Aggregation Settings**, set the aggregation method to `Arithmetic Mean`. This tells HydroServer to calculate a mean value for the available discharge values within each daily time bucket. If you click the drop down button then you will see other methods that you can choose from, which include Time Weighted Mean, Sum, Min, Max, First, and Last. Choose the option that reflects the what you want to be calculated/recorded for the daily values.
+Next, select the input and output datastreams. The input datastream is the original 15-minute discharge datastream, and the output datastream is the new daily average discharge datastream. Under **Aggregation Settings**, set the aggregation method to `Arithmetic Mean`. This tells HydroServer to calculate a mean value for the available discharge values within each daily time bucket. The dropdown also includes Time Weighted Mean, Sum, Min, Max, First, and Last. Choose the method that produces the daily values you need.
 
-Here, the output interval is set to `1 Day` so HydroServer writes one aggregated value for each day. In this example, the minimum values per bucket is set to `90`, which allows a small number of missing 15-minute values but prevents HydroServer from creating a daily average when too much data are missing. Where missing values are expected, using a Time Weighted Mean value to calculate the daily value might be a better option. For this example, the timezone is set to `UTC (Default)`, so the daily buckets are calculated using UTC day boundaries. This setting is important to ensure that the intervals over which the aggregated values are calcualted start and end where you want them to (i.e., for daily values - midnight to midnight UTC or midnight to midnight mountain standard time, etc.)
+Here, the output interval is set to `1 Day`, so HydroServer writes one aggregated value per day. In this example, the minimum values per bucket is set to `90`, which allows a small number of missing 15-minute values but prevents HydroServer from creating a daily average when too many data are missing. Where missing values are expected, Time Weighted Mean may be a better choice. The timezone is set to `UTC (Default)`, so the daily buckets use UTC day boundaries. Choose this setting carefully so aggregation intervals start and end at the intended time (for example, midnight-to-midnight in UTC or Mountain Standard Time).
 
 After the settings are complete, click **Create aggregation task**. The task will appear in the Aggregations & products task list. To test the task immediately, click **Run now**.
 
@@ -38,7 +38,7 @@ After the aggregation task runs successfully, return to the site details page an
 
 Derivation tasks are used to create a new datastream by applying a mathematical formula or expression to values from one or more input datastreams. This is useful when the original data are already stored in HydroServer, but the values need to be converted, adjusted, or recalculated before being used for analysis or reporting. For example, a derivation task can be used to convert discharge values from cubic feet per second (`cfs`) to cubic meters per second (`cms`).
 
-For derivation tasks, the output datastream uses the same time spacing as the input datastream(s), so all input datastreams must share the same time spacing. Derivations are appropriate for simple transformations such as unit conversions or for doing more complex derivations that may involved multiple input datastreams. For example, a derivation task can be used to calculate the difference between two temperature datastreams, combine measurements from multiple sensors, or calculate a basin sum from several streamflow datastreams. 
+For derivation tasks, the output datastream uses the same time spacing as the input datastreams, so all input datastreams must share the same time spacing. Derivations are appropriate for simple transformations such as unit conversions or for more complex calculations involving multiple input datastreams. For example, a derivation task can calculate the difference between two temperature datastreams, combine measurements from multiple sensors, or calculate a basin sum from several streamflow datastreams.
 
 Before creating a derivation task, make sure the output datastream already exists in the workspace. The derivation task needs a target datastream where HydroServer can save the calculated results. In this example, the input datastream contains daily average discharge values in `cfs`, and the output datastream is created to store the converted daily discharge values in `cms`.
 
@@ -79,7 +79,7 @@ In the task form, enter a clear task name that describes what the derivation wil
 
 Then select the input datastreams that will be used in the formula. Each input datastream must be assigned a variable name. For example, the first input datastream can be assigned the variable `a`, and the second input datastream can be assigned the variable `b`. Additional input datastreams can be added by clicking **Add input**. This allows the formula to use more than two variables if needed.
 
-In the formula section, use the assigned variables to define the exprerssion for the calculation. For example, if the goal is to calculate the difference between two input datastreams, the formula could be written as:
+In the formula section, use the assigned variables to define the expression for the calculation. For example, if the goal is to calculate the difference between two input datastreams, the formula could be written as:
 
 ```text
 a - b

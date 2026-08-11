@@ -1,11 +1,11 @@
 # Job Orchestration System: Data Ingestion (Loading Data)
 
-This guide explains how to use the **HydroServer Job Orchestration System** to load data from a remote data source. This type of task is an **ingestion task**, also called an **ETL data loading task**. HydroServer's Job Orchestration System runs these tasks offline to ensure that they can run on a user-defined schedule and to ensure that thier execution does not impact the performance of HydroServer's web server.
+This guide explains how to use the **HydroServer Job Orchestration System** to load data from a remote data source. This type of task is an **ingestion task**, also called an **ETL data loading task**. HydroServer's Job Orchestration System runs these tasks offline on a user-defined schedule so their execution does not affect the performance of HydroServer's web server.
 
 We illustrate data ingestion tasks with two specific examples: 
 
-1. loading data from a comma separated values (CSV), LoggerNet `.dat` file
-2. loading data from an application programming interface (API) data source into HydroServer datastreams. 
+1. Loading data from a comma-separated values (CSV) file or LoggerNet `.dat` file
+2. Loading data from an application programming interface (API) into HydroServer datastreams
 
 ETL means:
 
@@ -42,7 +42,7 @@ Before creating a data ingestion task, make sure the following items already exi
 
 **NOTE**: The Job Orchestration System assumes that you have created the metadata for your site and datastreams before you use ingestion tasks to load data. 
 
-**NOTE**: The Job Orchestration System is **not** set up to upload a file from your local computer. Instead, it reads data from a remote file available via a source URL or from an API endpoint. The source URL must point to data file that HydroServer can access online, such as a remote CSV file, a Caampbell Scientific LoggerNet `.dat` file, or web-accessible data API endpoint. If you want to load data from data files that are local to your computer, you should use [HydroServer's Streaming Data Loader](/user-guides/how-to/using-streaming-data-loader.md).
+**NOTE**: The Job Orchestration System is **not** set up to upload a file from your local computer. Instead, it reads data from a remote file available via a source URL or from an API endpoint. The source URL must point to a file or API endpoint that HydroServer can access online, such as a remote CSV file or a Campbell Scientific LoggerNet `.dat` file. To load files stored on your local computer, use [HydroServer's Streaming Data Loader](/user-guides/how-to/using-streaming-data-loader.md).
 
 Example source URL for a CSV data file:
 
@@ -60,7 +60,7 @@ http://example-server.org/data/CR800_Station_Data.dat
 
 In HydroServer, go to the top navigation menu and select: Data management → Job orchestration
 
-<img src="/job-orchestration/ingestion_3_job_orchestration.png" alt="Select Job Orchesgtration" width="750">
+<img src="/job-orchestration/ingestion_3_job_orchestration.png" alt="Select Job Orchestration" width="750">
 
 This opens the Job Orchestration page. On the left navigation rail, select **Ingestion**.
 
@@ -84,11 +84,11 @@ Next, select the file delimiter. Use `Comma` for comma-separated files and `Tab`
 
 ### Data Connection Timestamp Settings
 
-In the **Timestamp** section, enter the exact name of the timestamp column as it appears in the source file, such as `TIMESTAMP`, `ResultTime`, or `timestamp`. The capitalization must match the source file. If you a using the "Identify columns by index" option you will specify the column number containing the timestamp values. 
+In the **Timestamp** section, enter the exact name of the timestamp column as it appears in the source file, such as `TIMESTAMP`, `ResultTime`, or `timestamp`. The capitalization must match the source file. If you are using the "Identify columns by index" option, specify the column number containing the timestamp values.
 
 Select `ISO 8601` if the timestamps use the standard ISO 8601 date/time format. In the **Timezone** section, use `UTC (Default)` if the source file already uses UTC timestamps or includes a UTC offset. 
 
-**NOTE**: HydroServer stores all datetime values in its underlying database using UTC. Because of this, it is critical that you correlty specify the format and timezone of your input timestamps. For example, if the source file uses local time (e.g., Mountain Standard Time in the U.S.) without a timezone offset, the correct timezone or offset must be selected in the Timezone section so HydroServer can convert the timestamps correctly so they can be stored using UTC.
+**NOTE**: HydroServer stores all datetime values in its underlying database using UTC. Because of this, it is critical that you correctly specify the format and timezone of your input timestamps. For example, if the source file uses local time (e.g., Mountain Standard Time in the U.S.) without a timezone offset, select the correct timezone or offset so HydroServer can convert the timestamps to UTC.
 
 **NOTE**: You can choose "Custom format" for the Timestamp format setting if your data file contains non-standard timestamps. In this case, you must specify a valid Python strftime date format string that matches how the timestamps in your file are formatted.
 
@@ -114,13 +114,13 @@ Click the data connection you created. Then click the **Add task** button at the
 
 <img src="/job-orchestration/ingestion_7_add_task.png" alt="Add a new ingestion task under a data connection" width="750">
 
-Enter a clear task name that describes what data will be loaded, such as `Load Snow Depth Data` or `Load Discharge Data for BC_CONF_A`. The task name should be specific enough that users can understand its purpose later, especially when there are multiple ingestion tasks in the same workspace - or each multiple ingestions tasks for a single data connection (depending on the granularity you choose).
+Enter a clear task name that describes what data will be loaded, such as `Load Snow Depth Data` or `Load Discharge Data for BC_CONF_A`. The task name should be specific enough that users can understand its purpose later, especially when there are multiple ingestion tasks in the same workspace or for a single data connection.
 
 ### Task Scheduling
 
 In the schedule section, the task can either be run manually or on a repeating schedule. For initial testing, it is usually better to turn the schedule off and run the task manually first to make sure it works correctly. This allows you to confirm that the source URL, timestamp settings, and data mappings are correct before the task starts running automatically. After the task has been tested successfully, a schedule can be enabled, such as running every day, every hour, or using a crontab expression.
 
-Scheduled tasks can either be run on a user-defined interval (e.g., 1 hour or 1 day), or you can build a Crontab expression. If you choose the "Repeating interval" option, you will specify the interval, the units for the interval, and a start time when that task will begin. I will run continually on that interval until you either pause it or delete the task.
+Scheduled tasks can either run on a user-defined interval (e.g., 1 hour or 1 day), or use a crontab expression. If you choose the "Repeating interval" option, specify the interval, its units, and the task's start time. It will continue to run at that interval until you pause or delete the task.
 
 **NOTE:** HydroServer will execute the task on the interval that you set. However, networking delays or other issues in the way tasks are run may cause small amounts of time drift. After the first task run, subsequent runs may run close to, but not exactly on the interval you set.
 
@@ -224,7 +224,7 @@ You can set up the data connection URL to a file or API using placeholder variab
 https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites={USGS_SITE_ID}&parameterCd={PARAMETER_CODE}&startDT={START_DATE}&endDT={END_DATE}&siteStatus=all
 ```
 
-You will notice in this URL that there are multiple parameters placeholders within curly braces that need to be set to complete the URL for retrieving specific data. 
+This URL contains multiple parameter placeholders within curly braces that must be set to retrieve specific data.
 
 | Placeholder | Description |
 |---|---|
@@ -233,7 +233,7 @@ You will notice in this URL that there are multiple parameters placeholders with
 | `{START_DATE}` | First date of data to load |
 | `{END_DATE}` | Last date of data to load |
 
-When you put placeholders in curly braces in the URL, HydroServer will automatically detect them and provide you with options for setting those placeholders. For example, you can set placeholder variables to be defined per task. This is useful for things like USGS_SITE_ID and PARAMETER_CODE because you can have multiple tasks that use the same data connection but retrieve data for differnt USGS stations or paramter codes.
+When you put placeholders in curly braces in the URL, HydroServer will automatically detect them and provide options for setting those placeholders. For example, you can define placeholder variables per task. This is useful for values such as `USGS_SITE_ID` and `PARAMETER_CODE` because multiple tasks can use the same data connection while retrieving data for different USGS stations or parameter codes.
 
 <img src="/job-orchestration/ingestion_8_data_connection_placeholders.png" alt="Data connection placeholders" width="750">
 
@@ -247,9 +247,9 @@ When retrieving data from an API, you need to specify the type of payload return
 
 * **JMESPath**: this is the path to the data values within the JSON data structure. JMESPath is a query language for JSON data that allows you to extract and transform elements from a JSON document. See [https://jmespath.org/](https://jmespath.org/) for information on building JMESPath expressions.
 * **Timestamp**: Like CSV file payloads, you also need to specify the name of the element in the JSON payload that contains the timestamp values.
-* **Timestamp format**: Like the CSV payload you need to specify the timestamp format.
+* **Timestamp format**: As with a CSV payload, specify the timestamp format.
 * **Data ingestion window**: These options allow you to specify a starting date for data ingestion and an ending date for data ingestion. For example, by specifying a starting date, any data in the database already after that date will be replaced by what is newly retrieved. By setting an ending date, any data in the response after that date will be ignored and not added to the database. These settings are useful when loading data from data sources where data values may change. For example, data values may be transitioned from provisional to approved over time and you want to load the latest data, but reload data when the values have been approved.
-* **Timezone**: Like CSV payloads the timezone associated with the timestamps in the JSON payload.
+* **Timezone**: Specify the timezone associated with the timestamps in the JSON payload.
 
 <img src="/job-orchestration/ingestion_10_json_payload.png" alt="JSON Payload Options" width="750">
 
@@ -269,13 +269,13 @@ HydroServer will extract the source file, parse the configured timestamp and sou
 
 If the task does not succeed, the task status may show **Needs attention** or another warning. You can click on the "Details" link at the end of the task's row in the table to see additional information about the task run or any error messages.
 
-**NOTE**: You can use the Status Filter at the top of the table of tasks to review the status of task failure.
+**NOTE**: Use the status filter at the top of the task table to review failed task runs.
 
 ## 7. View Run Details
 
 Click **Details** on the row for a task run to view more information about that task and to view the log information about its runs.
 
-The run details includes:
+The run details include:
 
 - Number of observations loaded
 - Runtime source URL
