@@ -122,6 +122,26 @@ def test_create_observed_property_allows_omitting_definition(client):
     assert response.json()["definition"] is None
 
 
+@pytest.mark.parametrize("field", ["type", "code"])
+def test_create_observed_property_allows_500_character_type_and_code(client, field):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    value = "x" * 500
+
+    response = client.post(
+        OBSERVED_PROPERTIES_URL,
+        data=_observed_property_body(
+            workspaceId=str(workspace.id),
+            **{field: value},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()[field] == value
+
+
 def test_create_observed_property_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
 

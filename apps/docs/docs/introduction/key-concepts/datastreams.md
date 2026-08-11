@@ -23,7 +23,7 @@ In HydroServer, we describe datastream metadata in two groups:
 
 Below is a brief definition of each available linked metadata group a datastream can be linked to:
 
-**- Unit** refers to the measurement units of the data (like liters, meters, etc.). Each unit has a name, description, symbol (like 'C' for degrees celsius), and type. Units for HydroServer are derived from 
+**- Unit** refers to the measurement units of the data (like liters, meters, etc.). Each unit has a name, symbol (like 'C' for degrees Celsius), type, and optional external definition URI. Units for HydroServer are derived from
 [ODM2's Units controlled vocabularies list for Units](http://vocabulary.odm2.org/units/).
 
 **- Processing Level** indicates the degree of processing or analysis that the data within that datastream has undergone, which includes a code, name, description, and optional external definition URI. Users are free to use their own conventions, but a new HydroServer instance provides the following defaults that can be loaded from templates like the other linked metadata:
@@ -33,7 +33,7 @@ Below is a brief definition of each available linked metadata group a datastream
 - 2: Derived products
 - 3: Interpreted products
 - 4: Knowledge products
-- 9999: Unknown
+- -9999: Unknown
 
 **- Observed Property** is the specific characteristic or attribute being observed, like temperature or flow rate. As with Units, we have adopted
 [ODM2's Observed Property controlled vocabularies list](http://vocabulary.odm2.org/variablename/).

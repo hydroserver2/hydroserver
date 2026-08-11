@@ -6850,7 +6850,7 @@
       "ObservedPropertyDetailResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
@@ -6880,7 +6880,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -6909,7 +6909,7 @@
       "ObservedPropertyPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
@@ -6934,7 +6934,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           }
@@ -6945,7 +6945,7 @@
       "ObservedPropertyPostBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
@@ -6982,7 +6982,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -7145,7 +7145,7 @@
       "ObservedPropertySummaryResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
@@ -7175,7 +7175,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },

@@ -29,3 +29,12 @@ def test_get_observed_property_returns_200(client):
 
     assert response.status_code == 200
     assert response.json()["@iot.id"] == str(observed_property.id)
+
+
+def test_get_observed_property_without_definition_returns_200(client):
+    observed_property = ObservedPropertyFactory(definition=None)
+
+    response = client.get(_detail_url(observed_property.id))
+
+    assert response.status_code == 200
+    assert response.json()["definition"] == ""

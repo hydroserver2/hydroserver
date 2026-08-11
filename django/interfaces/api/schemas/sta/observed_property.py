@@ -16,8 +16,8 @@ class ObservedPropertyFields(Schema):
     name: str = Field(..., max_length=255)
     definition: Optional[str] = None
     description: str
-    type: str = Field(..., max_length=255)
-    code: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=500)
+    code: str = Field(..., max_length=500)
 
 
 _order_by_fields = (

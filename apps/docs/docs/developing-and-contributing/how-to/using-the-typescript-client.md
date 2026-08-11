@@ -322,7 +322,8 @@ import { ObservedProperty } from "@hydroserver/client";
 const observedProperty = new ObservedProperty();
 observedProperty.workspaceId = "00000000-0000-0000-0000-000000000000";
 observedProperty.name = "Temperature";
-observedProperty.definition = "Air temperature";
+observedProperty.definition =
+  "http://vocabulary.odm2.org/variablename/airTemperature/";
 observedProperty.description = "Near-surface air temperature";
 observedProperty.type = "Climate";
 observedProperty.code = "AirTemp";

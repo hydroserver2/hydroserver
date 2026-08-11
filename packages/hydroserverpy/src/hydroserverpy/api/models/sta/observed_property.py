@@ -12,8 +12,8 @@ class ObservedProperty(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     definition: Optional[str] = None
     description: str
-    type: str = Field(..., max_length=255)
-    code: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=500)
+    code: str = Field(..., max_length=500)
     workspace_id: Optional[uuid.UUID] = None
 
     _editable_fields: ClassVar[set[str]] = {"name", "definition", "description", "type", "code"}

@@ -182,7 +182,7 @@ test.describe('metadata management', () => {
 
     await fillCombobox(page, 'Variable Type *', 'E2E Variable Type')
     await page
-      .getByLabel('Definition *')
+      .getByLabel('Definition')
       .fill('https://www.example.com/e2e-observed-property')
     await page
       .getByLabel('Description *')
@@ -281,7 +281,9 @@ test.describe('metadata management', () => {
 
     await fillCombobox(page, 'Unit Type *', 'E2E Unit Type')
     await page.getByLabel('Symbol *').fill(`e2e${stamp}`)
-    await page.getByLabel('Definition *').fill('E2E unit definition')
+    await page
+      .getByLabel('Definition')
+      .fill(`https://example.com/units/e2e-${stamp}`)
     await page.getByLabel('Name *').fill(unitName)
     await page.getByRole('button', { name: 'Save' }).click()
 
