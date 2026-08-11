@@ -97,7 +97,7 @@ discharge_observed_property = hs_api.observedproperties.create(
     name='Discharge',
     definition='http://vocabulary.odm2.org/variablename/discharge/',
     description='Discharge is the flow rate of water per unit time.',
-    observed_property_type='Hydrology',
+    type='Hydrology',
     code='discharge'
 )
 ```
@@ -110,7 +110,7 @@ discharge_unit = hs_api.units.create(
     name='Cubic meters per second',
     symbol='m3^s',
     definition='https://qudt.org/vocab/unit/M3-PER-SEC',
-    unit_type='Flow rate'
+    type='Flow rate'
 )
 ```
 
@@ -122,8 +122,8 @@ Processing levels describe how much quality control or processing the data has b
 raw_processing_level = hs_api.processinglevels.create(
     workspace=workspace,
     code='0',
-    definition='Raw',
-    explanation='Data have not been processed or quality controlled.',
+    name='Raw',
+    description='Data have not been processed or quality controlled.',
 )
 ```
 

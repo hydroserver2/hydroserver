@@ -18,8 +18,8 @@ Each transformation needs an output datastream to write its results into. We'll 
 derived_processing_level = hs_api.processinglevels.create(
     workspace=workspace,
     code='1',
-    definition='Derived',
-    explanation='Data have been computed or derived from raw measurements.',
+    name='Derived',
+    description='Data have been computed or derived from raw measurements.',
 )
 
 # Meters unit for the unit conversion output
@@ -28,7 +28,7 @@ meters_unit = hs_api.units.create(
     name='Meter',
     symbol='m',
     definition='https://qudt.org/vocab/unit/M',
-    unit_type='Length',
+    type='Length',
 )
 
 # Output datastream for the daily aggregation

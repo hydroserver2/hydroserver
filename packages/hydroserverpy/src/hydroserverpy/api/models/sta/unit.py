@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 class Unit(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     symbol: str = Field(..., max_length=255)
-    definition: str
-    unit_type: str = Field(..., max_length=255, alias="type")
+    definition: Optional[str] = None
+    type: str = Field(..., max_length=255)
     workspace_id: Optional[uuid.UUID] = None
 
-    _editable_fields: ClassVar[set[str]] = {"name", "symbol", "definition", "unit_type"}
+    _editable_fields: ClassVar[set[str]] = {"name", "symbol", "definition", "type"}
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.units, **data)

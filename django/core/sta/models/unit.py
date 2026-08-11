@@ -18,8 +18,8 @@ class Unit(models.Model):
     )
     name = models.CharField(max_length=255)
     symbol = models.CharField(max_length=255)
-    definition = models.TextField()
-    unit_type = models.CharField(max_length=255)
+    definition = models.TextField(null=True, blank=True)
+    type = models.CharField(max_length=255)
 
     def __str__(self):
         return f"{self.name} — {self.id}"

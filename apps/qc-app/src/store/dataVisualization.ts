@@ -260,8 +260,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     datastream: Datastream & DatastreamExtended
   ) {
     if (selectedProcessingLevelNames.value.length === 0) return true
-    const def = datastream.processingLevel?.definition
-    return !!def && selectedProcessingLevelNames.value.includes(def)
+    const name = datastream.processingLevel?.name
+    return !!name && selectedProcessingLevelNames.value.includes(name)
   }
 
   function matchesSelectedMonitoringSite(datastream: Datastream & DatastreamExtended) {

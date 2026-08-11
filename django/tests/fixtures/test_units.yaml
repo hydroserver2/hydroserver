@@ -4,8 +4,7 @@
   fields:
     name: System Unit
     symbol: Sy
-    definition: System Unit
-    unit_type: System Unit
+    type: System Unit
 
 # System Assigned Unit
 - model: sta.unit
@@ -13,8 +12,7 @@
   fields:
     name: System Assigned Unit
     symbol: Sy
-    definition: System Assigned Unit
-    unit_type: System Assigned Unit
+    type: System Assigned Unit
 
 # Public Unit
 - model: sta.unit
@@ -22,8 +20,7 @@
   fields:
     name: Public Unit
     symbol: Pu
-    definition: Public Unit
-    unit_type: Public Unit
+    type: Public Unit
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Public Assigned Unit
@@ -32,8 +29,7 @@
   fields:
     name: Public Assigned Unit
     symbol: Pu
-    definition: Public Assigned Unit
-    unit_type: Public Assigned Unit
+    type: Public Assigned Unit
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Private Unit
@@ -42,8 +38,7 @@
   fields:
     name: Private Unit
     symbol: Pr
-    definition: Private Unit
-    unit_type: Private Unit
+    type: Private Unit
     workspace: b27c51a0-7374-462d-8a53-d97d47176c10
 
 # Private Assigned Unit
@@ -52,6 +47,5 @@
   fields:
     name: Private Assigned Unit
     symbol: Pr
-    definition: Private Assigned Unit
-    unit_type: Private Assigned Unit
+    type: Private Assigned Unit
     workspace: b27c51a0-7374-462d-8a53-d97d47176c10

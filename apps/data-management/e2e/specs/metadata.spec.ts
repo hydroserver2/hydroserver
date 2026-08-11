@@ -232,8 +232,14 @@ test.describe('metadata management', () => {
       .getByRole('button', { name: /Add new processing level/i })
       .click()
 
+    await page.getByLabel('Name *').fill('E2E Processing Level')
     await page.getByLabel('Code *').fill(levelCode)
-    await page.getByLabel('Definition').fill('E2E processing level definition')
+    await page
+      .getByLabel('Description *')
+      .fill('E2E processing level description')
+    await page
+      .getByLabel('Definition')
+      .fill('https://example.com/processing-levels/e2e')
     await page.getByRole('button', { name: 'Save' }).click()
 
     const levelRow = page.locator('tr').filter({ hasText: levelCode }).first()

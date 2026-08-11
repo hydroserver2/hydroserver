@@ -42,7 +42,7 @@ function relatedValue(relation: string, key: string): string {
 function processingLevel() {
   const pl = (props.datastream as Datastream & Record<string, any>).processingLevel
   if (!pl) return props.datastream.processingLevelId || '-'
-  return [pl.code, pl.definition].filter(Boolean).join(' - ') || '-'
+  return [pl.code, pl.name].filter(Boolean).join(' - ') || '-'
 }
 
 function unit() {

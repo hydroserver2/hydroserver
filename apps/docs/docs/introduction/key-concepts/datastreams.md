@@ -26,9 +26,9 @@ Below is a brief definition of each available linked metadata group a datastream
 **- Unit** refers to the measurement units of the data (like liters, meters, etc.). Each unit has a name, description, symbol (like 'C' for degrees celsius), and type. Units for HydroServer are derived from 
 [ODM2's Units controlled vocabularies list for Units](http://vocabulary.odm2.org/units/).
 
-**- Processing Level** indicates the degree of processing or analysis that the data within that datastream has undergone, which includes a code, definition, and explanation. Users are free to use their own conventions, but a new HydroServer instance provides the following defaults that can be loaded from templates like the other linked metadata:
+**- Processing Level** indicates the degree of processing or analysis that the data within that datastream has undergone, which includes a code, name, description, and optional external definition URI. Users are free to use their own conventions, but a new HydroServer instance provides the following defaults that can be loaded from templates like the other linked metadata:
 
-- 0: Raw data
+- 0: Raw
 - 1: Quality controlled data
 - 2: Derived products
 - 3: Interpreted products

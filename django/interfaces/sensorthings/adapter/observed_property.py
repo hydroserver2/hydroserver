@@ -55,7 +55,7 @@ class ObservedPropertyMixin(SensorThingsUtils):
                     properties=(
                         {
                             "variable_code": observed_property.code,
-                            "variable_type": observed_property.observed_property_type,
+                            "variable_type": observed_property.type,
                             "workspace": (
                                 {
                                     "id": observed_property.workspace.id,

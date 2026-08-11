@@ -20,9 +20,9 @@
   pk: ebc5664e-0e1c-48a0-8fe0-c64dae472e30
   fields:
     name: Test Observed Property
-    definition: Test Observed Property
+    definition: https://example.com/definitions/test-observed-property
     description: Test Observed Property
-    observed_property_type: Test
+    type: Test
     code: Test
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
@@ -40,8 +40,8 @@
   pk: 9ce74667-e709-416d-96e2-bf54db2025ed
   fields:
     code: TEST
-    definition: Test Processing Level
-    explanation: Test Processing Level
+    name: Test Processing Level
+    description: Test Processing Level
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Unit
@@ -50,6 +50,6 @@
   fields:
     name: Test Unit
     symbol: TEST
-    definition: Test Unit
-    unit_type: Test Unit
+    definition: https://example.com/definitions/test-unit
+    type: Test Unit
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f

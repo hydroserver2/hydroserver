@@ -136,8 +136,8 @@ const searchProcessingLevel = ref('')
 const sortedProcessingLevelNames = computed(() => {
   const filteredPLs = processingLevels.value.filter(
     (pl) =>
-      pl.definition
-        ?.toLowerCase()
+      pl.name
+        .toLowerCase()
         .includes(searchProcessingLevel.value.toLowerCase()) &&
       datastreams.value.some(
         (ds) =>
@@ -146,7 +146,7 @@ const sortedProcessingLevelNames = computed(() => {
           matchesSelectedObservedProperty(ds)
       )
   )
-  const names = filteredPLs.map((pl) => pl.definition)
+  const names = filteredPLs.map((pl) => pl.name)
   return [...new Set(names)].sort()
 })
 

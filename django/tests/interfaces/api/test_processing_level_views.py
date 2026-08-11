@@ -26,8 +26,9 @@ def _collaborator_with_permission(workspace, **permissions):
 
 def _processing_level_body(**overrides):
     body = {
-        "code": "New Level",
-        "definition": "A new processing level.",
+        "code": "0",
+        "name": "Raw",
+        "description": "A new processing level.",
     }
     body.update(overrides)
     return body
@@ -83,7 +84,10 @@ def test_create_processing_level_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["code"] == "New Level"
+    assert response.json()["code"] == "0"
+    assert response.json()["name"] == "Raw"
+    assert response.json()["description"] == "A new processing level."
+    assert response.json()["definition"] is None
 
 
 def test_create_processing_level_returns_401_when_unauthenticated(client):

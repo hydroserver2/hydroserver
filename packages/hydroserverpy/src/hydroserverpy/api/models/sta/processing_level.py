@@ -10,11 +10,17 @@ if TYPE_CHECKING:
 
 class ProcessingLevel(HydroServerBaseModel):
     code: str = Field(..., max_length=255)
+    name: str = Field(..., max_length=255)
+    description: str
     definition: Optional[str] = None
-    explanation: Optional[str] = None
     workspace_id: Optional[uuid.UUID] = None
 
-    _editable_fields: ClassVar[set[str]] = {"code", "definition", "explanation"}
+    _editable_fields: ClassVar[set[str]] = {
+        "code",
+        "name",
+        "description",
+        "definition",
+    }
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.processinglevels, **data)

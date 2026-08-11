@@ -14,11 +14,12 @@ if TYPE_CHECKING:
 
 class ProcessingLevelFields(Schema):
     code: str = Field(..., max_length=255)
+    name: str = Field(..., max_length=255)
+    description: str
     definition: Optional[str] = None
-    explanation: Optional[str] = None
 
 
-_order_by_fields = ("code",)
+_order_by_fields = ("code", "name")
 
 ProcessingLevelOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]

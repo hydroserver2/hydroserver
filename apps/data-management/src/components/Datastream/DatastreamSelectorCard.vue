@@ -190,7 +190,7 @@ const headers = [
   { title: 'ID', key: 'id' },
   { title: 'Name', key: 'name' },
   { title: 'Observed property', key: 'observedPropertyName' },
-  { title: 'Processing level', key: 'processingLevelDefinition' },
+  { title: 'Processing level', key: 'processingLevelName' },
   { title: 'Description', key: 'description', sortable: false },
   { title: 'Observation type', key: 'observationType' },
 
@@ -241,7 +241,7 @@ const tableItems = computed(() =>
     ...ds,
     observedPropertyName: ds.observedProperty?.name,
     methodName: ds.method.name,
-    processingLevelDefinition: ds.processingLevel.definition,
+    processingLevelName: ds.processingLevel.name,
     unit: ds.unit.name,
     phenomenonBeginTime: formatTime(ds.phenomenonBeginTime),
     phenomenonEndTime: formatTime(ds.phenomenonEndTime),

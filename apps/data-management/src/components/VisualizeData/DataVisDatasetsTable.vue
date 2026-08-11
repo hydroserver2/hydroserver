@@ -163,7 +163,7 @@
                 <span class="text-xs uppercase tracking-[0.04em] text-black/55"
                   >Processing level</span
                 >
-                <span>{{ item.qualityControlLevelDefinition || '—' }}</span>
+                <span>{{ item.processingLevelName || '—' }}</span>
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
                 <span class="text-xs uppercase tracking-[0.04em] text-black/55"
@@ -335,7 +335,7 @@ const tableItems = computed(() => {
       ...ds,
       siteCodeName: monitoringSite?.code,
       observedPropertyName: observedPropertyDisplay,
-      qualityControlLevelDefinition: processingLevel?.definition,
+      processingLevelName: processingLevel?.name,
     }
   })
 })
@@ -359,7 +359,7 @@ const selectableHeaders = computed(() => {
 const sortBy = [
   { key: 'siteCodeName' },
   { key: 'observedPropertyName' },
-  { key: 'qualityControlLevelDefinition' },
+  { key: 'processingLevelName' },
 ]
 const selectedHeaders = computed({
   get: () =>

@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class UnitFields(Schema):
     name: str = Field(..., max_length=255)
     symbol: str = Field(..., max_length=255)
-    definition: str
-    unit_type: str = Field(..., max_length=255, alias="type")
+    definition: Optional[str] = None
+    type: str = Field(..., max_length=255)
 
 
 _order_by_fields = (
@@ -42,7 +42,7 @@ class UnitQueryParameters(CollectionQueryParameters):
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter units by datastream ID.", alias="datastream_id"
     )
-    unit_type: list[str] = Query([], description="Filter units by type", alias="type")
+    type: list[str] = Query([], description="Filter units by type")
 
 
 class UnitSummaryResponse(BaseGetResponse, UnitFields):

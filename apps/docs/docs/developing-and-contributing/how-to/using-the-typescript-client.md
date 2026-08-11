@@ -351,7 +351,7 @@ const unit = new Unit();
 unit.workspaceId = "00000000-0000-0000-0000-000000000000";
 unit.name = "Degree Celsius";
 unit.symbol = "C";
-unit.definition = "Degree Celsius";
+unit.definition = "https://qudt.org/vocab/unit/DEG_C";
 unit.type = "Temperature";
 
 const created = await hs.units.createItem(unit);
@@ -408,8 +408,8 @@ import { ProcessingLevel } from "@hydroserver/client";
 const processingLevel = new ProcessingLevel();
 processingLevel.workspaceId = "00000000-0000-0000-0000-000000000000";
 processingLevel.code = "0";
-processingLevel.definition = "Raw";
-processingLevel.explanation =
+processingLevel.name = "Raw";
+processingLevel.description =
   "Data have not been processed or quality controlled.";
 
 const created = await hs.processingLevels.createItem(processingLevel);
