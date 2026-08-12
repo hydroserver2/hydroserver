@@ -3,7 +3,7 @@ Transformation service tests.
 
 Fixture transformations (both under TASK1, private workspace):
   T_RC  — rating_curve,  output=DS_OUT_RC,  input=DS_IN_RC,  rating_curve=RC1
-  T_EXP — expression,    output=DS_OUT_EXP, input=DS_IN_EXP, formula="x * 2.0"
+  T_EXP — derivation,    output=DS_OUT_EXP, input=DS_IN_EXP, formula="x * 2.0"
 
 These reference existing datastreams from test_datastreams.yaml so that no
 sta.* models need to be added to the shared fixture (which would break STA tests).
@@ -267,13 +267,13 @@ def test_get_transformation_includes_related_data(get_principal):
         ("unaffiliated", LookupError, "does not exist"),
     ],
 )
-def test_create_expression_transformation_permissions(get_principal, ds_free, principal, error, error_fragment):
+def test_create_derivation_transformation_permissions(get_principal, ds_free, principal, error, error_fragment):
     if error:
         with pytest.raises(error) as exc_info:
             transformation_service.create(
                 task=uuid.UUID(TASK1),
                 principal=get_principal(principal),
-                transformation_type="expression",
+                transformation_type="derivation",
                 output_datastream=ds_free,
                 formula="x * 3.0",
                 input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x")],
@@ -283,12 +283,12 @@ def test_create_expression_transformation_permissions(get_principal, ds_free, pr
         result = transformation_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal(principal),
-            transformation_type="expression",
+            transformation_type="derivation",
             output_datastream=ds_free,
             formula="x * 3.0",
             input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x")],
         )
-        assert result.transformation_type == "expression"
+        assert result.transformation_type == "derivation"
         assert result.formula == "x * 3.0"
 
 
@@ -335,21 +335,19 @@ def test_create_aggregation_transformation_time_weighted_mean(get_principal, ds_
     assert result.aggregation_method == "time_weighted_mean"
 
 
-def test_create_composite_expression_transformation(get_principal, ds_free):
+def test_create_derivation_transformation_with_multiple_inputs(get_principal, ds_free):
     result = transformation_service.create(
         task=uuid.UUID(TASK1),
         principal=get_principal("owner"),
-        transformation_type="composite_expression",
+        transformation_type="derivation",
         output_datastream=ds_free,
         formula="a + b",
-        output_interval_units="hours",
-        output_interval=1,
         input_datastreams=[
             TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="a"),
             TransformationInput(datastream=uuid.UUID(DS_OUT_RC), variable_name="b"),
         ],
     )
-    assert result.transformation_type == "composite_expression"
+    assert result.transformation_type == "derivation"
     assert result.input_datastreams.count() == 2
 
 
@@ -366,12 +364,12 @@ def test_create_rating_curve_requires_rating_curve(get_principal, ds_free):
         )
 
 
-def test_create_expression_requires_formula(get_principal, ds_free):
+def test_create_derivation_requires_formula(get_principal, ds_free):
     with pytest.raises(ValueError, match="formula"):
         transformation_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal("owner"),
-            transformation_type="expression",
+            transformation_type="derivation",
             output_datastream=ds_free,
             input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x")],
         )
@@ -393,11 +391,9 @@ def test_create_duplicate_variable_names_rejected(get_principal, ds_free):
         transformation_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal("owner"),
-            transformation_type="composite_expression",
+            transformation_type="derivation",
             output_datastream=ds_free,
             formula="x + x",
-            output_interval_units="hours",
-            output_interval=1,
             input_datastreams=[
                 TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x"),
                 TransformationInput(datastream=uuid.UUID(DS_OUT_RC), variable_name="x"),
@@ -688,7 +684,7 @@ def test_delete_transformation_nonexistent(get_principal):
 # the db transaction, which is rolled back after the test.
 # ============================================================
 
-def test_run_expression(run_context):
+def test_run_derivation(run_context):
     """formula "x * 2.0", inputs [2.0, 3.0] → outputs [4.0, 6.0]."""
     ctx = run_context
     ds_in  = _make_datastream(**{k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")})
@@ -703,7 +699,7 @@ def test_run_expression(run_context):
     t = transformation_service.create(
         task=uuid.UUID(TASK1),
         principal=ctx["owner"],
-        transformation_type="expression",
+        transformation_type="derivation",
         output_datastream=ds_out.pk,
         formula="x * 2.0",
         input_datastreams=[TransformationInput(datastream=ds_in.pk, variable_name="x")],
@@ -716,7 +712,7 @@ def test_run_expression(run_context):
     np.testing.assert_allclose(results, [4.0, 6.0])
 
 
-def test_run_expression_idempotent(run_context):
+def test_run_derivation_idempotent(run_context):
     """Running a second time after output is populated loads 0."""
     ctx = run_context
     ds_in  = _make_datastream(**{k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")})
@@ -729,7 +725,7 @@ def test_run_expression_idempotent(run_context):
     t = transformation_service.create(
         task=uuid.UUID(TASK1),
         principal=ctx["owner"],
-        transformation_type="expression",
+        transformation_type="derivation",
         output_datastream=ds_out.pk,
         formula="x * 2.0",
         input_datastreams=[TransformationInput(datastream=ds_in.pk, variable_name="x")],
@@ -768,12 +764,12 @@ def test_run_rating_curve(run_context):
     np.testing.assert_allclose(results, [2.0, 4.0])
 
 
-def test_run_composite_expression(run_context):
+def test_run_derivation_with_multiple_inputs(run_context):
     """
-    formula "a + b", 1-hour grid (UTC).
+    formula "a + b", inputs matched on exact timestamp.
     ds_a: 08:00→2.0, 09:00→4.0
     ds_b: 08:00→1.0, 09:00→2.0
-    Grid points at 08:00 and 09:00 UTC → a+b = [3.0, 6.0].
+    Both inputs agree at 08:00 and 09:00 → a+b = [3.0, 6.0].
     """
     ctx = run_context
     kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
@@ -791,11 +787,9 @@ def test_run_composite_expression(run_context):
     t = transformation_service.create(
         task=uuid.UUID(TASK1),
         principal=ctx["owner"],
-        transformation_type="composite_expression",
+        transformation_type="derivation",
         output_datastream=ds_out.pk,
         formula="a + b",
-        output_interval_units="hours",
-        output_interval=1,
         input_datastreams=[
             TransformationInput(datastream=ds_a.pk, variable_name="a"),
             TransformationInput(datastream=ds_b.pk, variable_name="b"),
@@ -807,6 +801,45 @@ def test_run_composite_expression(run_context):
     from core.sta.models.observation import Observation
     results = sorted(Observation.objects.filter(datastream=ds_out).values_list("result", flat=True))
     np.testing.assert_allclose(results, [3.0, 6.0])
+
+
+def test_run_derivation_stops_at_first_misaligned_timestamp(run_context):
+    """
+    formula "a + b". ds_b is missing the 09:00 reading ds_a has, so the run
+    should load only the 08:00 row and stop before the misaligned one.
+    """
+    ctx = run_context
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    ds_a   = _make_datastream(**kwargs)
+    ds_b   = _make_datastream(**kwargs)
+    ds_out = _make_datastream(**kwargs)
+
+    t1 = datetime(2025, 2, 10, 8, 0, tzinfo=dt_timezone.utc)
+    t2 = datetime(2025, 2, 10, 9, 0, tzinfo=dt_timezone.utc)
+    _add_obs(ds_a, t1, 2.0)
+    _add_obs(ds_a, t2, 4.0)
+    _set_end_time(ds_a, t2)
+    _add_obs(ds_b, t1, 1.0)
+    _set_end_time(ds_b, t2)
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="derivation",
+        output_datastream=ds_out.pk,
+        formula="a + b",
+        input_datastreams=[
+            TransformationInput(datastream=ds_a.pk, variable_name="a"),
+            TransformationInput(datastream=ds_b.pk, variable_name="b"),
+        ],
+    )
+    loaded = transformation_service.run(t)
+    assert loaded == 1
+
+    from core.sta.models.observation import Observation
+    out_obs = list(Observation.objects.filter(datastream=ds_out))
+    assert len(out_obs) == 1
+    np.testing.assert_allclose(out_obs[0].result, 3.0)
 
 
 def test_run_aggregation_local_timezone_watermark(run_context):

@@ -132,10 +132,6 @@ vi.mock('@/components/Orchestration/data-products/AggregationForm.vue', () => ({
   default: { template: '<div />' },
 }))
 
-vi.mock('@/components/Orchestration/data-products/ExpressionForm.vue', () => ({
-  default: { template: '<div />' },
-}))
-
 vi.mock('@/components/Orchestration/data-products/DerivationForm.vue', () => ({
   default: { template: '<div />' },
 }))
@@ -177,9 +173,6 @@ const stubs = {
     template: '<div />',
   },
   AggregationForm: {
-    template: '<div />',
-  },
-  ExpressionForm: {
     template: '<div />',
   },
   DerivationForm: {

@@ -159,6 +159,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/using-streaming-data-loader",
               },
               {
+                text: "Using the Job Orchestration System",
+                link: "/user-guides/how-to/using-job-orchestration",
+              },
+              {
                 text: "Visualizing Data",
                 link: "/user-guides/how-to/visualizing-data",
               },
