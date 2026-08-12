@@ -40,6 +40,39 @@ def copy_locations_to_monitoring_sites(apps, schema_editor):
         )
 
 
+def restore_locations_from_monitoring_sites(apps, schema_editor):
+    """
+    Reverses copy_locations_to_monitoring_sites by creating one Location per
+    MonitoringSite. This is lossy: any site that originally had more than one
+    Location only gets one back, and the original Location ids are gone.
+    name/description are copied from the site; encoding_type has no source
+    field on MonitoringSite and is set to a placeholder.
+    """
+
+    MonitoringSite = apps.get_model("sta", "MonitoringSite")
+    Location = apps.get_model("sta", "Location")
+
+    Location.objects.bulk_create(
+        [
+            Location(
+                thing_id=monitoring_site.id,
+                name=monitoring_site.name,
+                description=monitoring_site.description,
+                encoding_type="application/geo+json",
+                latitude=monitoring_site.latitude,
+                longitude=monitoring_site.longitude,
+                elevation_m=monitoring_site.elevation_m,
+                elevation_datum=monitoring_site.elevation_datum,
+                admin_area_1=monitoring_site.admin_area_1,
+                admin_area_2=monitoring_site.admin_area_2,
+                country=monitoring_site.country,
+            )
+            for monitoring_site in MonitoringSite.objects.all()
+        ],
+        batch_size=500,
+    )
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("sta", "0011_alter_location_thing_alter_thingfileattachment_thing_and_more"),
@@ -62,6 +95,11 @@ class Migration(migrations.Migration):
         ),
         migrations.RenameField(
             model_name="monitoringsite", old_name="site_type", new_name="type"
+        ),
+        migrations.AlterField(
+            model_name="monitoringsite",
+            name="sampling_feature_type",
+            field=models.CharField(default="Site", max_length=200),
         ),
         migrations.RemoveField(
             model_name="monitoringsite", name="sampling_feature_type"
@@ -147,10 +185,13 @@ class Migration(migrations.Migration):
             name="country",
             field=models.CharField(blank=True, max_length=2, null=True),
         ),
-        # Location IDs and additional Location rows are discarded by this merge,
-        # so an exact reverse migration is not possible. Leaving reverse_code
-        # unset makes Django reject rollback before applying any reverse steps.
-        migrations.RunPython(copy_locations_to_monitoring_sites),
+        # Reversing this restores one placeholder Location per MonitoringSite;
+        # the original Location ids and any extra per-site Location rows this
+        # merge discarded are gone for good. See restore_locations_from_monitoring_sites.
+        migrations.RunPython(
+            copy_locations_to_monitoring_sites,
+            reverse_code=restore_locations_from_monitoring_sites,
+        ),
         migrations.AlterField(
             model_name="monitoringsite",
             name="latitude",

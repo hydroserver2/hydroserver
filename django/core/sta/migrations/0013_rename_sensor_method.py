@@ -28,6 +28,11 @@ class Migration(migrations.Migration):
             old_name="sensor_model_link",
             new_name="sensor_model_definition",
         ),
+        migrations.AlterField(
+            model_name="method",
+            name="encoding_type",
+            field=models.CharField(max_length=255, default="<value>"),
+        ),
         migrations.RemoveField(model_name="method", name="encoding_type"),
         migrations.RenameField(
             model_name="datastream", old_name="sensor", new_name="method"

@@ -35,7 +35,7 @@ def merge_composite_expression_into_derivation(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("products", "0003_rename_thing_monitoring_site"),
+        ('products', '0002_alter_dataproducttransformation_aggregation_method'),
     ]
 
     operations = [
