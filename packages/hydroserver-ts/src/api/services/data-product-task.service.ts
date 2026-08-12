@@ -10,26 +10,22 @@ import type * as Data from '../../generated/data.types'
 import type {
   AggregationTransformationPatchPayload,
   AggregationTransformationPayload,
-  CompositeExpressionTransformationPatchPayload,
-  CompositeExpressionTransformationPayload,
+  DerivationTransformationPatchPayload,
+  DerivationTransformationPayload,
 } from './data-product-transformation.types'
 
 type AggregationTransformationResponse =
   Data.components['schemas']['AggregationTransformationResponse']
 type AggregationTransformationSummaryResponse =
   Data.components['schemas']['AggregationTransformationSummaryResponse']
-type ExpressionTransformationResponse =
-  Data.components['schemas']['ExpressionTransformationResponse']
-type ExpressionTransformationSummaryResponse =
-  Data.components['schemas']['ExpressionTransformationSummaryResponse']
+type DerivationTransformationResponse =
+  Data.components['schemas']['DerivationTransformationResponse']
+type DerivationTransformationSummaryResponse =
+  Data.components['schemas']['DerivationTransformationSummaryResponse']
 type RatingCurveTransformationResponse =
   Data.components['schemas']['RatingCurveTransformationResponse']
 type RatingCurveTransformationSummaryResponse =
   Data.components['schemas']['RatingCurveTransformationSummaryResponse']
-type CompositeExpressionTransformationResponse =
-  Data.components['schemas']['CompositeExpressionTransformationResponse']
-type CompositeExpressionTransformationSummaryResponse =
-  Data.components['schemas']['CompositeExpressionTransformationSummaryResponse']
 
 export class DataProductTaskService extends HydroServerBaseService<
   typeof C,
@@ -57,48 +53,38 @@ export class DataProductTaskService extends HydroServerBaseService<
     return apiMethods.fetch<TaskRun>(`${this._route}/${taskId}/runs/${runId}`)
   }
 
-  /* -------------------- Expression Transformations ------------------- */
+  /* -------------------- Derivation Transformations ------------------- */
 
-  createExpressionTransformation(
+  createDerivationTransformation(
     taskId: string,
-    payload: {
-      outputDatastreamId: string
-      inputDatastreamId: string
-      variableName: string
-      formula: string
-    }
+    payload: DerivationTransformationPayload
   ) {
-    return apiMethods.post<ExpressionTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/expression`,
+    return apiMethods.post<DerivationTransformationSummaryResponse>(
+      `${this._route}/${taskId}/transformations/derivation`,
       payload
     )
   }
 
-  listExpressionTransformations(taskId: string) {
-    return apiMethods.fetch<ExpressionTransformationResponse[]>(
-      `${this._route}/${taskId}/transformations/expression`
+  listDerivationTransformations(taskId: string) {
+    return apiMethods.fetch<DerivationTransformationResponse[]>(
+      `${this._route}/${taskId}/transformations/derivation`
     )
   }
 
-  updateExpressionTransformation(
+  updateDerivationTransformation(
     taskId: string,
     transformationId: string,
-    payload: Partial<{
-      outputDatastreamId: string
-      inputDatastreamId: string
-      variableName: string | null
-      formula: string
-    }>
+    payload: DerivationTransformationPatchPayload
   ) {
-    return apiMethods.patch<ExpressionTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/expression/${transformationId}`,
+    return apiMethods.patch<DerivationTransformationSummaryResponse>(
+      `${this._route}/${taskId}/transformations/derivation/${transformationId}`,
       payload
     )
   }
 
-  deleteExpressionTransformation(taskId: string, transformationId: string) {
+  deleteDerivationTransformation(taskId: string, transformationId: string) {
     return apiMethods.delete<null>(
-      `${this._route}/${taskId}/transformations/expression/${transformationId}`
+      `${this._route}/${taskId}/transformations/derivation/${transformationId}`
     )
   }
 
@@ -177,44 +163,6 @@ export class DataProductTaskService extends HydroServerBaseService<
   deleteAggregationTransformation(taskId: string, transformationId: string) {
     return apiMethods.delete<null>(
       `${this._route}/${taskId}/transformations/aggregation/${transformationId}`
-    )
-  }
-
-  /* ------------- Composite Expression Transformations ---------------- */
-
-  createCompositeExpressionTransformation(
-    taskId: string,
-    payload: CompositeExpressionTransformationPayload
-  ) {
-    return apiMethods.post<CompositeExpressionTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/composite-expression`,
-      payload
-    )
-  }
-
-  listCompositeExpressionTransformations(taskId: string) {
-    return apiMethods.fetch<CompositeExpressionTransformationResponse[]>(
-      `${this._route}/${taskId}/transformations/composite-expression`
-    )
-  }
-
-  updateCompositeExpressionTransformation(
-    taskId: string,
-    transformationId: string,
-    payload: CompositeExpressionTransformationPatchPayload
-  ) {
-    return apiMethods.patch<CompositeExpressionTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`,
-      payload
-    )
-  }
-
-  deleteCompositeExpressionTransformation(
-    taskId: string,
-    transformationId: string
-  ) {
-    return apiMethods.delete<null>(
-      `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`
     )
   }
 }

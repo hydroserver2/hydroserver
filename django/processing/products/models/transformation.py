@@ -8,8 +8,7 @@ from processing.products.models.task import DataProductTask
 
 class TransformationType(models.TextChoices):
     RATING_CURVE = "rating_curve"
-    EXPRESSION = "expression"
-    COMPOSITE_EXPRESSION = "composite_expression"
+    DERIVATION = "derivation"
     AGGREGATION = "aggregation"
 
 
@@ -68,9 +67,9 @@ class DataProductTransformation(models.Model):
         null=True,
         blank=True,
     )
-    max_gap_interval_units = models.CharField(max_length=255, choices=IntervalUnits, null=True, blank=True)
-    max_gap_interval = models.PositiveIntegerField(null=True, blank=True)
     min_values = models.PositiveIntegerField(null=True, blank=True)
+    stop_on_no_data = models.BooleanField(default=True, blank=True)
+    stop_on_error = models.BooleanField(default=True, blank=True)
 
     class Meta:
         app_label = "products"

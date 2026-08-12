@@ -23,8 +23,7 @@ from .products.rating_curve import RatingCurve
 from .products.task import DataProductTask
 from .products.transformation import (
     RatingCurveTransformation,
-    ExpressionTransformation,
-    CompositeExpressionTransformation,
+    DerivationTransformation,
     AggregationTransformation,
 )
 
