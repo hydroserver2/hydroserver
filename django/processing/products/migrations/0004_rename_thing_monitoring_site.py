@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("products", "0002_alter_dataproducttransformation_aggregation_method"),
+        ("products", "0003_remove_dataproducttransformation_max_gap_interval_and_more"),
         ("sta", "0012_monitoring_site"),
     ]
 
