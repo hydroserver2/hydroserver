@@ -110,6 +110,24 @@ test.describe('workspace management', () => {
       `/workspaces?workspace=${fixtures.workspaces.public.id}&section=service-accounts`
     )
 
+    await page.getByRole('tab', { name: 'Overview' }).click()
+    await expect(page.getByTestId('overview-members-count')).toHaveText('3')
+    await expect(page.getByTestId('overview-service-accounts-count')).toHaveText(
+      '1'
+    )
+
+    await page.getByRole('tab', { name: 'Collaborators' }).click()
+    await expect(
+      page.getByTestId(`collaborator-row-${users.owner.email}`)
+    ).toBeVisible()
+    await expect(
+      page.locator('.collaborator-table').getByText('apikey', { exact: true })
+    ).toHaveCount(0)
+    await page.getByRole('tab', { name: 'Service accounts' }).click()
+    await expect(
+      page.getByRole('row', { name: /apikey Data Loader/ })
+    ).toBeVisible()
+
     await page.getByRole('button', { name: 'Create service account' }).click()
     let dialog = page.getByRole('dialog')
     await dialog.getByLabel('Name *').fill(keyName)

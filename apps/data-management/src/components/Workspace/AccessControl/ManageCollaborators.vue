@@ -17,9 +17,6 @@
     roles. Viewers can see everything in the workspace but cannot edit. Editors
     can create, read, update, and delete all sites, metadata, and datastreams as
     well as set their visibility. Users can remove themselves as collaborators.
-    You can add either a user's email or a service account's email; service
-    accounts can collaborate on workspaces other than the one where they were
-    created.
   </p>
 
   <v-alert
@@ -115,16 +112,6 @@
           <td>
             <div class="font-weight-medium">
               {{ item.name }}
-              <v-chip
-                v-if="item.isServiceAccount"
-                size="x-small"
-                class="ml-2"
-                variant="tonal"
-                color="blue-darken-2"
-                data-testid="collaborator-service-account-chip"
-              >
-                Service account
-              </v-chip>
             </div>
             <div class="text-caption text-medium-emphasis">
               {{ item.email }}
@@ -308,7 +295,9 @@ async function onAddCollaborator() {
       selectedRole.value.id
     )
     if (res.ok) {
-      collaboratorList.value.push(collaboratorToFormData(res.data))
+      if (res.data.user && !res.data.serviceAccount) {
+        collaboratorList.value.push(collaboratorToFormData(res.data))
+      }
       collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
       Snackbar.success('Collaborator added to workspace.')
       showAddCollaborator.value = false
@@ -356,7 +345,9 @@ async function onRemoveCollaborator(email: string) {
 }
 
 const setCollaboratorList = (collaborators: Collaborator[]) => {
-  collaboratorList.value = collaborators.map((c) => collaboratorToFormData(c))
+  collaboratorList.value = collaborators
+    .filter((collaborator) => collaborator.user && !collaborator.serviceAccount)
+    .map((collaborator) => collaboratorToFormData(collaborator))
 
   if (props.workspace?.owner) {
     collaboratorList.value.unshift({
@@ -365,7 +356,6 @@ const setCollaboratorList = (collaborators: Collaborator[]) => {
       name: props.workspace.owner.name,
       role: { name: 'Owner' },
       organization: props.workspace.owner.organizationName || 'No Organization',
-      isServiceAccount: false,
       isOwner: true,
       isBeingEdited: false,
       isSaving: false,
@@ -380,7 +370,7 @@ async function onCancelEdit(item: any) {
 }
 
 const collaboratorToFormData = (c: Collaborator) => {
-  const contact = c.serviceAccount ?? c.user
+  const contact = c.user
   return {
     email: contact?.email ?? '',
     value: contact?.email ?? '',
@@ -388,7 +378,6 @@ const collaboratorToFormData = (c: Collaborator) => {
     role: c.role,
     pendingRole: c.role,
     organization: c.user?.organizationName || 'No Organization',
-    isServiceAccount: !!c.serviceAccount,
     isOwner: false,
     isBeingEdited: false,
     isSaving: false,
