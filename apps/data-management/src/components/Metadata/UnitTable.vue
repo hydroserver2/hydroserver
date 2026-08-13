@@ -3,7 +3,7 @@
     :headers="UnitHeaders"
     :items="sortedItems"
     :search="search"
-    :style="{ 'max-height': `400px` }"
+    height="100%"
     fixed-header
   >
     <template v-slot:item.scope="{ item }">

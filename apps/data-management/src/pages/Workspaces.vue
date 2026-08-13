@@ -291,8 +291,21 @@
             </v-tabs>
           </div>
 
-          <div class="detail-body">
-            <v-window v-model="section">
+          <div
+            class="detail-body"
+            :class="{
+              'detail-body--table':
+                section === 'service-accounts' || section === 'metadata',
+            }"
+          >
+            <v-window
+              v-model="section"
+              class="detail-window"
+              :class="{
+                'detail-window--table':
+                  section === 'service-accounts' || section === 'metadata',
+              }"
+            >
               <v-window-item value="overview">
                 <h6 class="text-h6 mb-1">Overview</h6>
 
@@ -1413,6 +1426,22 @@ onMounted(async () => {
   overflow-y: auto;
   padding: var(--hs-space-16) var(--hs-space-24);
 }
+.detail-body--table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.detail-window--table {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+.detail-window--table :deep(.v-window__container),
+.detail-window--table :deep(.v-window-item) {
+  height: 100%;
+  min-height: 0;
+}
 .workspace-id-cell {
   overflow-wrap: anywhere;
 }
@@ -1532,6 +1561,14 @@ onMounted(async () => {
   .detail-body {
     overflow: visible;
     padding: var(--hs-space-16);
+  }
+  .detail-body--table {
+    display: block;
+  }
+  .detail-window--table,
+  .detail-window--table :deep(.v-window__container),
+  .detail-window--table :deep(.v-window-item) {
+    height: auto;
   }
   .overview-stats {
     flex-wrap: wrap;

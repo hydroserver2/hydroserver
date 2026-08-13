@@ -112,9 +112,9 @@ test.describe('workspace management', () => {
 
     await page.getByRole('tab', { name: 'Overview' }).click()
     await expect(page.getByTestId('overview-members-count')).toHaveText('3')
-    await expect(page.getByTestId('overview-service-accounts-count')).toHaveText(
-      '1'
-    )
+    await expect(
+      page.getByTestId('overview-service-accounts-count')
+    ).toHaveText('1')
 
     await page.getByRole('tab', { name: 'Collaborators' }).click()
     await expect(
@@ -169,6 +169,80 @@ test.describe('workspace management', () => {
         exact: false,
       })
     ).toHaveCount(0)
+  })
+
+  test('service account and metadata tables fit the remaining viewport height', async ({
+    page,
+  }) => {
+    const readTableLayout = async (sectionTestId: string) =>
+      page.getByTestId(sectionTestId).evaluate((section) => {
+        const detailBody = section.closest('.detail-body') as HTMLElement | null
+        const table = section.querySelector(
+          '.v-data-table'
+        ) as HTMLElement | null
+        const wrapper = table?.querySelector(
+          '.v-table__wrapper'
+        ) as HTMLElement | null
+
+        if (!detailBody || !table || !wrapper)
+          throw new Error('Unable to measure the workspace table layout.')
+
+        const detailRect = detailBody.getBoundingClientRect()
+        const tableRect = table.getBoundingClientRect()
+
+        return {
+          detailOverflowY: getComputedStyle(detailBody).overflowY,
+          detailScrollOverflow:
+            detailBody.scrollHeight - detailBody.clientHeight,
+          tableHeight: tableRect.height,
+          tableBottomGap: detailRect.bottom - tableRect.bottom,
+          tableOverflowY: getComputedStyle(wrapper).overflowY,
+        }
+      })
+
+    const expectFittedTable = (
+      layout: Awaited<ReturnType<typeof readTableLayout>>
+    ) => {
+      expect(layout.detailOverflowY).toBe('hidden')
+      expect(layout.detailScrollOverflow).toBeLessThanOrEqual(1)
+      expect(layout.tableBottomGap).toBeGreaterThanOrEqual(14)
+      expect(layout.tableBottomGap).toBeLessThanOrEqual(18)
+      expect(layout.tableOverflowY).toBe('auto')
+    }
+
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(
+      `/workspaces?workspace=${fixtures.workspaces.public.id}&section=service-accounts`
+    )
+    await expect(page.getByTestId('service-accounts-section')).toBeVisible()
+
+    const tallServiceAccounts = await readTableLayout(
+      'service-accounts-section'
+    )
+    expectFittedTable(tallServiceAccounts)
+
+    await page.setViewportSize({ width: 1280, height: 600 })
+    const shortServiceAccounts = await readTableLayout(
+      'service-accounts-section'
+    )
+    expectFittedTable(shortServiceAccounts)
+    expect(shortServiceAccounts.tableHeight).toBeLessThan(
+      tallServiceAccounts.tableHeight
+    )
+
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await page.getByRole('tab', { name: 'Metadata' }).click()
+    await expect(page.getByTestId('workspace-metadata-table')).toBeVisible()
+    await expect(page.getByTestId('service-accounts-section')).toBeHidden()
+
+    const tallMetadata = await readTableLayout('workspace-metadata-table')
+    expectFittedTable(tallMetadata)
+
+    await page.setViewportSize({ width: 1280, height: 600 })
+    const shortMetadata = await readTableLayout('workspace-metadata-table')
+    expectFittedTable(shortMetadata)
+    expect(shortMetadata.tableHeight).toBeLessThan(tallMetadata.tableHeight)
   })
 
   test('viewer sees read-only workspace management controls', async ({
