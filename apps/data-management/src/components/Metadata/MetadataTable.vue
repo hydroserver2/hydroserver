@@ -80,6 +80,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -91,6 +92,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -102,6 +104,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -113,6 +116,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -124,6 +128,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -297,6 +302,7 @@ const canEditMetadata = computed(() =>
 const canDeleteMetadata = computed(() =>
   hasMetadataPermission(PermissionAction.Delete)
 )
+const canManageSystemMetadata = computed(() => isAdmin())
 </script>
 
 <style scoped>

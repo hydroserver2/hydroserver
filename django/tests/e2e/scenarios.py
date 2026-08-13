@@ -224,6 +224,14 @@ def cleanup_scenario(scenario_key):
 def create_scenario(scenario_key):
     marker = _validated_key(scenario_key)
 
+    admin = _user(
+        "admin",
+        marker,
+        first_name="Admin",
+        last_name="User",
+        is_staff=True,
+        is_superuser=True,
+    )
     owner = _user("owner", marker, first_name="Owner", last_name="Johnson")
     editor = _user("editor", marker, first_name="Editor", last_name="Smith")
     viewer = _user("viewer", marker, first_name="Viewer", last_name="Davis")
@@ -260,6 +268,9 @@ def create_scenario(scenario_key):
         organization=organization,
     )
 
+    admin_workspace = WorkspaceFactory(
+        owner=admin, name=_name("Admin", marker), is_private=True
+    )
     public_workspace = WorkspaceFactory(
         owner=owner, name=_name("Public", marker), is_private=False
     )
@@ -354,6 +365,11 @@ def create_scenario(scenario_key):
         code=f"SystemResultQualifier-{marker}",
         description=f"E2E scenario result qualifier {marker}",
     )
+    editable_system_qualifier = ResultQualifierFactory(
+        workspace=None,
+        code=f"EditableSystemResultQualifier-{marker}",
+        description=f"Editable E2E system result qualifier {marker}",
+    )
 
     public_datastream = _datastream(
         public_monitoring_site,
@@ -438,6 +454,7 @@ def create_scenario(scenario_key):
     return {
         "scenarioKey": marker,
         "users": {
+            "admin": user_data(admin),
             "owner": user_data(owner),
             "editor": user_data(editor),
             "viewer": user_data(viewer),
@@ -448,6 +465,7 @@ def create_scenario(scenario_key):
         },
         "fixtures": {
             "workspaces": {
+                "admin": {"id": str(admin_workspace.id), "name": admin_workspace.name},
                 "public": {"id": str(public_workspace.id), "name": public_workspace.name},
                 "private": {"id": str(private_workspace.id), "name": private_workspace.name},
                 "transfer": {"id": str(transfer_workspace.id), "name": transfer_workspace.name},
@@ -518,6 +536,10 @@ def create_scenario(scenario_key):
                 "systemMethod": {
                     "id": str(system_metadata["method"].id),
                     "name": system_metadata["method"].name,
+                },
+                "editableSystemResultQualifier": {
+                    "id": str(editable_system_qualifier.id),
+                    "name": editable_system_qualifier.code,
                 },
             },
             "orchestration": {

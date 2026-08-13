@@ -1,6 +1,10 @@
 export const E2E_PASSWORD = 'HydroServer123!'
 
 export let users = {
+  admin: {
+    email: 'admin@uninitialized.invalid',
+    password: E2E_PASSWORD,
+  },
   owner: {
     email: 'owner@uninitialized.invalid',
     password: E2E_PASSWORD,
@@ -33,6 +37,10 @@ export let users = {
 
 export let fixtures = {
   workspaces: {
+    admin: {
+      id: 'uninitialized',
+      name: 'Admin',
+    },
     public: {
       id: 'uninitialized',
       name: 'Public',
@@ -115,6 +123,10 @@ export let fixtures = {
     systemMethod: {
       id: 'uninitialized',
       name: 'System Method',
+    },
+    editableSystemResultQualifier: {
+      id: 'uninitialized',
+      name: 'Editable System Result Qualifier',
     },
   },
   orchestration: {

@@ -71,6 +71,39 @@ test.describe('metadata management', () => {
     await expect(page.getByTestId('workspace-metadata-table')).toHaveCount(0)
   })
 
+  test('admins can update and delete system metadata from the all metadata table', async ({
+    page,
+  }) => {
+    const qualifier = fixtures.metadata.editableSystemResultQualifier
+    const renamedCode = `${qualifier.name}-UPDATED`
+
+    await authenticateSession(page, users.admin.email, users.admin.password)
+    await page.goto(
+      `/workspaces?workspace=${fixtures.workspaces.admin.id}&section=metadata`
+    )
+
+    await page.getByRole('button', { name: 'All', exact: true }).click()
+    await page.getByRole('tab', { name: 'Result qualifiers' }).click()
+
+    const allTable = page.getByTestId('all-metadata-table')
+    const editButton = allTable.getByTestId(`edit-metadata-${qualifier.id}`)
+    const deleteButton = allTable.getByTestId(`delete-metadata-${qualifier.id}`)
+    await expect(editButton).toBeVisible()
+    await expect(deleteButton).toBeVisible()
+
+    await editButton.click()
+    await page.getByLabel('Code *').fill(renamedCode)
+    await page.getByRole('button', { name: 'Update', exact: true }).click()
+
+    const renamedRow = allTable.locator('tr').filter({ hasText: renamedCode })
+    await expect(renamedRow).toBeVisible()
+
+    await renamedRow.getByLabel('Delete metadata item').click()
+    await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(renamedRow).toHaveCount(0)
+  })
+
   test('workspace method metadata can be created, updated, and deleted', async ({
     page,
   }) => {

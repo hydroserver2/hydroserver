@@ -24,8 +24,8 @@ def test_scenario_uses_generated_ids_and_cleans_up_all_workspace_data():
     )
     assert scenario["fixtures"]["workspaces"]["public"]["id"]
     assert scenario["fixtures"]["monitoringSites"]["public"]["id"]
-    assert User.objects.filter(email__contains="+scenario-one@").count() == 7
-    assert Workspace.objects.count() == 3
+    assert User.objects.filter(email__contains="+scenario-one@").count() == 8
+    assert Workspace.objects.count() == 4
     assert MonitoringSite.objects.count() == 5
 
     cleanup_scenario("scenario-one")
@@ -51,6 +51,6 @@ def test_scenarios_do_not_share_users_or_resource_ids():
 
     cleanup_scenario("scenario-first")
     assert Role.objects.count() == 3
-    assert User.objects.filter(email__contains="+scenario-second@").count() == 7
+    assert User.objects.filter(email__contains="+scenario-second@").count() == 8
 
     cleanup_scenario("scenario-second")
