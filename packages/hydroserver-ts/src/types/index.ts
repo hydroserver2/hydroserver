@@ -31,6 +31,10 @@ export type TimeSpacingUnit = 'seconds' | 'minutes' | 'hours' | 'days'
 
 export type Tags = Record<string, string>
 
+export function getTagValue(tags: Tags, key: string): string | undefined {
+  return Object.hasOwn(tags, key) ? tags[key] : undefined
+}
+
 export type Frequency = 'daily' | 'weekly' | 'monthly' | null
 
 export class HydroShareArchive {

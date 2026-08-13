@@ -1,3 +1,4 @@
+import { getTagValue } from '@hydroserver/client'
 import type { Workspace } from '@hydroserver/client'
 import type { MonitoringSiteMapSummary } from '@/types'
 import type { LocationQuery } from 'vue-router'
@@ -173,7 +174,7 @@ export function filterMonitoringSiteMarkers(
     const inSelectedSiteType =
       selectedSiteTypes.length === 0 ||
       selectedSiteTypes.includes(monitoringSite.type)
-    const tagValue = tagKey ? monitoringSite.tags[tagKey] : undefined
+    const tagValue = tagKey ? getTagValue(monitoringSite.tags, tagKey) : undefined
     const hasSelectedTag =
       !tagKey ||
       (tagValue !== undefined &&

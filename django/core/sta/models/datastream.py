@@ -1,13 +1,13 @@
 import uuid
 
 from django.db import models
-from django.db.models import Q
 from django.contrib.postgres.indexes import GinIndex
 from django.conf import settings
 
 from core.iam.permissions.registry import register_resource_type
 
 from .monitoring_site import MonitoringSite
+from .validators import validate_tags
 from .method import Method
 from .unit import Unit
 from .processing_level import ProcessingLevel
@@ -64,7 +64,7 @@ class Datastream(models.Model):
     result_begin_time = models.DateTimeField(null=True, blank=True)  # Unused
     is_private = models.BooleanField(default=True)
     is_visible = models.BooleanField(default=True)
-    tags = models.JSONField(default=dict, blank=True)
+    tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
 
     objects = DatastreamQuerySet.as_manager()
 
@@ -74,7 +74,6 @@ class Datastream(models.Model):
                 fields=["tags"],
                 name="sta_datastream_tags_gin",
                 opclasses=["jsonb_path_ops"],
-                condition=~Q(tags={}),
             ),
         ]
 

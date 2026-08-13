@@ -366,6 +366,36 @@ def test_update_monitoring_site_tags_returns_422_for_non_string_value(client, va
     assert response.status_code == 422
 
 
+def test_update_monitoring_site_tags_returns_422_for_empty_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"": "summer"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_monitoring_site_tags_returns_422_for_empty_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"season": ""}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
 def test_update_monitoring_site_tags_locks_row_for_update(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -438,6 +468,34 @@ def test_create_monitoring_site_returns_422_for_null_tag_value(client):
     response = client.post(
         MONITORING_SITES_URL,
         data=_monitoring_site_body(workspace.id, tags={"season": None}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_monitoring_site_returns_422_for_empty_tag_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(workspace.id, tags={"": "summer"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_monitoring_site_returns_422_for_empty_tag_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(workspace.id, tags={"season": ""}),
         content_type="application/json",
     )
 

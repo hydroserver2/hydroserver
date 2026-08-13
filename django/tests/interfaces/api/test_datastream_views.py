@@ -401,6 +401,36 @@ def test_update_datastream_tags_returns_422_for_non_string_value(client, value):
     assert response.status_code == 422
 
 
+def test_update_datastream_tags_returns_422_for_empty_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"": "summer"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_datastream_tags_returns_422_for_empty_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"season": ""}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
 def test_update_datastream_tags_locks_row_for_update(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -488,6 +518,50 @@ def test_create_datastream_returns_422_for_null_tag_value(client):
         data=_datastream_body(
             monitoring_site, method, observed_property, processing_level, unit,
             tags={"season": None},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_datastream_returns_422_for_empty_tag_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit,
+            tags={"": "summer"},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_datastream_returns_422_for_empty_tag_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit,
+            tags={"season": ""},
         ),
         content_type="application/json",
     )

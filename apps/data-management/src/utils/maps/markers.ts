@@ -1,4 +1,4 @@
-import { MonitoringSite } from '@hydroserver/client'
+import { getTagValue, MonitoringSite } from '@hydroserver/client'
 import { MapMonitoringSite, MonitoringSiteMarker, MonitoringSiteMapSummary } from '@/types'
 import { mapMarkerColors } from '@/utils/materialColors'
 
@@ -46,7 +46,7 @@ export const addColorToMarkers = <T extends ColorableMonitoringSite>(
   monitoringSites: T[],
   key: string
 ): Array<ColorizedMonitoringSite<T>> =>
-  addColorToMarkersByValue(monitoringSites, (monitoringSite) => monitoringSite.tags[key])
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) => getTagValue(monitoringSite.tags, key))
 
 export const addWorkspaceColorToMarkers = <T extends MapMonitoringSite>(
   monitoringSites: T[]

@@ -524,8 +524,11 @@ class DatastreamService(ServiceUtils):
 
         tag_keys: dict[str, set[str]] = defaultdict(set)
         for tags in queryset.values_list("tags", flat=True):
-            for key, value in (tags or {}).items():
-                tag_keys[key].add(value)
+            if not isinstance(tags, dict):
+                continue
+            for key, value in tags.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    tag_keys[key].add(value)
 
         return {key: sorted(values) for key, values in tag_keys.items()}
 

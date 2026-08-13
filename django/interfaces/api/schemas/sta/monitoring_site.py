@@ -13,6 +13,7 @@ from interfaces.api.schemas import (
     CollectionQueryParameters,
 )
 from interfaces.api.schemas.sta.attachment import FileAttachmentGetResponse
+from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -181,6 +182,10 @@ class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
     workspace_id: uuid.UUID
     tags: dict[str, str] = {}
 
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
+
 
 class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
     tags: dict[str, str | None] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

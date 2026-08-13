@@ -1,6 +1,6 @@
+import core.sta.models.validators
 from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
-from django.db.models import Q
 
 
 def migrate_monitoring_site_tags(_apps, schema_editor):
@@ -59,12 +59,20 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="monitoringsite",
             name="tags",
-            field=models.JSONField(blank=True, default=dict),
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                validators=[core.sta.models.validators.validate_tags],
+            ),
         ),
         migrations.AddField(
             model_name="datastream",
             name="tags",
-            field=models.JSONField(blank=True, default=dict),
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                validators=[core.sta.models.validators.validate_tags],
+            ),
         ),
         migrations.RunPython(migrate_monitoring_site_tags, reverse_migrate_monitoring_site_tags),
         migrations.RunPython(migrate_datastream_tags, reverse_migrate_datastream_tags),
@@ -74,7 +82,6 @@ class Migration(migrations.Migration):
                 fields=["tags"],
                 name="sta_monitoringsite_tags_gin",
                 opclasses=["jsonb_path_ops"],
-                condition=~Q(tags={}),
             ),
         ),
         migrations.AddIndex(
@@ -83,7 +90,6 @@ class Migration(migrations.Migration):
                 fields=["tags"],
                 name="sta_datastream_tags_gin",
                 opclasses=["jsonb_path_ops"],
-                condition=~Q(tags={}),
             ),
         ),
         migrations.DeleteModel(name="MonitoringSiteTag"),

@@ -131,6 +131,18 @@ describe('filterMonitoringSiteMarkers', () => {
       ]).map((monitoringSite) => monitoringSite.id)
     ).toEqual(['monitoringSite-1', 'monitoringSite-3'])
   })
+
+  it('does not match a prototype-named tag key against sites without that own tag', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
+        [],
+        [],
+        undefined,
+        'constructor'
+      ).map((monitoringSite) => monitoringSite.id)
+    ).toEqual([])
+  })
 })
 
 describe('parseBrowseFilterQuery', () => {

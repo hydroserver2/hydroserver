@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import hs, { Tags } from '@hydroserver/client'
+import hs, { getTagValue, Tags } from '@hydroserver/client'
 
 export const useTagStore = defineStore('tags', () => {
   const tags = ref<Tags>({})
@@ -10,10 +10,10 @@ export const useTagStore = defineStore('tags', () => {
     const patch: Record<string, string | null> = {}
 
     for (const [key, value] of Object.entries(newTags)) {
-      if (oldTags[key] !== value) patch[key] = value
+      if (getTagValue(oldTags, key) !== value) patch[key] = value
     }
     for (const key of Object.keys(oldTags)) {
-      if (!(key in newTags)) patch[key] = null
+      if (!Object.hasOwn(newTags, key)) patch[key] = null
     }
 
     return patch

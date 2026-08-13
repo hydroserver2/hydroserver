@@ -1,12 +1,13 @@
 import uuid
 
 from django.db import models
-from django.db.models import Q
 from django.contrib.postgres.indexes import GinIndex
 from django.conf import settings
 
 from core.iam.models import Workspace
 from core.iam.permissions.registry import register_resource_type
+
+from .validators import validate_tags
 
 
 class MonitoringSiteQuerySet(models.QuerySet):
@@ -39,7 +40,7 @@ class MonitoringSite(models.Model):
     country = models.CharField(max_length=2, null=True, blank=True)
     is_private = models.BooleanField(default=False)
     data_disclaimer = models.TextField(null=True, blank=True)
-    tags = models.JSONField(default=dict, blank=True)
+    tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
 
     objects = MonitoringSiteQuerySet.as_manager()
 
@@ -49,7 +50,6 @@ class MonitoringSite(models.Model):
                 fields=["tags"],
                 name="sta_monitoringsite_tags_gin",
                 opclasses=["jsonb_path_ops"],
-                condition=~Q(tags={}),
             ),
         ]
 

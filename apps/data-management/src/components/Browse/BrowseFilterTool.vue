@@ -401,7 +401,7 @@ import {
   buildSiteTypeIconRules,
   getSiteTypeIcon as resolveSiteTypeIcon,
 } from '@/utils/siteTypeIcons'
-import hs, { Workspace } from '@hydroserver/client'
+import hs, { getTagValue, Workspace } from '@hydroserver/client'
 import type { MonitoringSiteMapSummary } from '@/types'
 import {
   mdiAccountOutline,
@@ -591,7 +591,7 @@ const availableTagValues = computed(() => {
   if (!selectedTagKey.value) return []
   const values = new Set(
     monitoringSitesMatchingPrimaryFilters.value
-      .map((monitoringSite) => monitoringSite.tags[selectedTagKey.value])
+      .map((monitoringSite) => getTagValue(monitoringSite.tags, selectedTagKey.value))
       .filter((value) => value !== undefined)
   )
   return [...values].filter(Boolean).sort((a, b) => a.localeCompare(b))

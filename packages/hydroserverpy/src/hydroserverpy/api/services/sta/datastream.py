@@ -316,45 +316,6 @@ class DatastreamService(HydroServerBaseService):
             "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
         )
 
-    def add_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Tag a HydroServer datastream."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        return self.client.request(
-            "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-    def update_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Update the tag of a HydroServer datastream."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        return self.client.request(
-            "put", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-    def delete_tag(self, uid: Union[UUID, str], key: str, value: str) -> None:
-        """Remove a tag from a HydroServer datastream."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        )
-
     def add_file_attachment(self, uid: Union[UUID, str], file: IO[bytes], file_attachment_type: str) -> Dict[str, str]:
         """Add a file attachment of a HydroServer datastream."""
 

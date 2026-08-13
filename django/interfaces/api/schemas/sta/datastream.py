@@ -1,5 +1,5 @@
 import uuid
-from pydantic import AliasPath, AliasChoices
+from pydantic import AliasPath, AliasChoices, field_validator
 from ninja import Schema, Field, Query
 from typing import Optional, Literal, TYPE_CHECKING
 from core.types import ISODatetime
@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     CollectionQueryParameters,
 )
 from interfaces.api.schemas.sta.attachment import FileAttachmentGetResponse
+from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -246,6 +247,10 @@ class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields
     id: Optional[uuid.UUID] = None
     tags: dict[str, str] = {}
 
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
+
 
 class DatastreamPatchBody(BasePatchBody, DatastreamFields, DatastreamRelatedFields):
     tags: dict[str, str | None] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
