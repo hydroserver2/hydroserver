@@ -1,7 +1,7 @@
 import pytest
 
 from core.iam.models import Role, User, Workspace
-from core.sta.models import MonitoringSite
+from core.sta.models import MonitoringSite, ResultQualifier
 from tests.core.iam.factories import RoleFactory
 from tests.e2e.scenarios import cleanup_scenario, create_scenario
 
@@ -27,12 +27,20 @@ def test_scenario_uses_generated_ids_and_cleans_up_all_workspace_data():
     assert User.objects.filter(email__contains="+scenario-one@").count() == 8
     assert Workspace.objects.count() == 4
     assert MonitoringSite.objects.count() == 5
+    editable_qualifier = ResultQualifier.objects.get(
+        code="EditableSystemResultQualifier-scenario-one", workspace__isnull=True
+    )
+    editable_qualifier.code += "-UPDATED"
+    editable_qualifier.save(update_fields=["code"])
 
     cleanup_scenario("scenario-one")
 
     assert not User.objects.filter(email__contains="+scenario-one@").exists()
     assert not Workspace.objects.exists()
     assert not MonitoringSite.objects.exists()
+    assert not ResultQualifier.objects.filter(
+        code__contains="scenario-one", workspace__isnull=True
+    ).exists()
 
 
 def test_scenarios_do_not_share_users_or_resource_ids():

@@ -86,6 +86,9 @@ test.describe('metadata management', () => {
     await page.getByRole('tab', { name: 'Result qualifiers' }).click()
 
     const allTable = page.getByTestId('all-metadata-table')
+    await allTable
+      .getByRole('textbox', { name: 'Search metadata' })
+      .fill(qualifier.name)
     const editButton = allTable.getByTestId(`edit-metadata-${qualifier.id}`)
     const deleteButton = allTable.getByTestId(`delete-metadata-${qualifier.id}`)
     await expect(editButton).toBeVisible()

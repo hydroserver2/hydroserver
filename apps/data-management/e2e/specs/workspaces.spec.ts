@@ -200,14 +200,31 @@ test.describe('workspace management', () => {
         }
       })
 
-    const expectFittedTable = (
-      layout: Awaited<ReturnType<typeof readTableLayout>>
-    ) => {
+    const expectFittedTable = async (sectionTestId: string) => {
+      // Vuetify's window transition can make the newly selected table visible
+      // before its flex layout has reached its final height. Poll the complete
+      // layout contract so measurements describe the settled tab, not an
+      // intermediate animation frame.
+      await expect
+        .poll(async () => {
+          const layout = await readTableLayout(sectionTestId)
+          return (
+            layout.detailOverflowY === 'hidden' &&
+            layout.detailScrollOverflow <= 1 &&
+            layout.tableBottomGap >= 14 &&
+            layout.tableBottomGap <= 18 &&
+            layout.tableOverflowY === 'auto'
+          )
+        })
+        .toBe(true)
+
+      const layout = await readTableLayout(sectionTestId)
       expect(layout.detailOverflowY).toBe('hidden')
       expect(layout.detailScrollOverflow).toBeLessThanOrEqual(1)
       expect(layout.tableBottomGap).toBeGreaterThanOrEqual(14)
       expect(layout.tableBottomGap).toBeLessThanOrEqual(18)
       expect(layout.tableOverflowY).toBe('auto')
+      return layout
     }
 
     await page.setViewportSize({ width: 1280, height: 720 })
@@ -217,16 +234,14 @@ test.describe('workspace management', () => {
     )
     await expect(page.getByTestId('service-accounts-section')).toBeVisible()
 
-    const tallServiceAccounts = await readTableLayout(
+    const tallServiceAccounts = await expectFittedTable(
       'service-accounts-section'
     )
-    expectFittedTable(tallServiceAccounts)
 
     await page.setViewportSize({ width: 1280, height: 600 })
-    const shortServiceAccounts = await readTableLayout(
+    const shortServiceAccounts = await expectFittedTable(
       'service-accounts-section'
     )
-    expectFittedTable(shortServiceAccounts)
     expect(shortServiceAccounts.tableHeight).toBeLessThan(
       tallServiceAccounts.tableHeight
     )
@@ -236,12 +251,10 @@ test.describe('workspace management', () => {
     await expect(page.getByTestId('workspace-metadata-table')).toBeVisible()
     await expect(page.getByTestId('service-accounts-section')).toBeHidden()
 
-    const tallMetadata = await readTableLayout('workspace-metadata-table')
-    expectFittedTable(tallMetadata)
+    const tallMetadata = await expectFittedTable('workspace-metadata-table')
 
     await page.setViewportSize({ width: 1280, height: 600 })
-    const shortMetadata = await readTableLayout('workspace-metadata-table')
-    expectFittedTable(shortMetadata)
+    const shortMetadata = await expectFittedTable('workspace-metadata-table')
     expect(shortMetadata.tableHeight).toBeLessThan(tallMetadata.tableHeight)
   })
 

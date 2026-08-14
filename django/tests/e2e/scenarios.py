@@ -215,8 +215,10 @@ def cleanup_scenario(scenario_key):
     Unit.objects.filter(
         symbol=f"S{marker[-4:]}", workspace__isnull=True
     ).delete()
+    # The admin CRUD test may rename the editable qualifier before failing,
+    # so match the scenario marker rather than only its original code.
     ResultQualifier.objects.filter(
-        code=f"SystemResultQualifier-{marker}", workspace__isnull=True
+        code__contains=marker, workspace__isnull=True
     ).delete()
     Organization.objects.filter(code=f"E2E-{marker}").delete()
 
