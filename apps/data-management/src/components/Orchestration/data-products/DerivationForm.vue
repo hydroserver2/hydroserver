@@ -184,7 +184,7 @@
           ]"
           :disabled="loadingExisting"
           class="mb-2 formula-field"
-          font-family="monospace"
+          font-family="JetBrains Mono"
         />
 
         <v-divider class="mb-4" />
@@ -718,6 +718,6 @@ onMounted(async () => {
   align-items: start;
 }
 .font-weight-mono {
-  font-family: monospace;
+  font-family: var(--hs-font-data);
 }
 </style>

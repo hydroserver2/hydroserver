@@ -1,4 +1,5 @@
 import '@/styles/tailwind.css'
+import '@hydroserver/design-tokens/fonts.css'
 import '@/styles/tokens.scss'
 import '@/styles/global.scss'
 import 'ol/ol.css'

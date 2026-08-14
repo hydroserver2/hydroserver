@@ -8,10 +8,6 @@
 
     <Footer v-if="!route.meta.hideFooter" class="flex-grow-0" />
     <Notifications />
-    <link
-      href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
-      rel="stylesheet"
-    />
   </v-app>
 </template>
 

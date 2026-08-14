@@ -996,7 +996,7 @@ watch(
 }
 
 .detail-mono {
-  font-family: 'Roboto Mono', monospace;
+  font-family: var(--hs-font-data);
   font-weight: 400;
 }
 

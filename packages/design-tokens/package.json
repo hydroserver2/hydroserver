@@ -1,0 +1,19 @@
+{
+  "name": "@hydroserver/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "fonts.css"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    "./fonts.css": "./fonts.css"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/newsreader": "^5.3.0"
+  }
+}

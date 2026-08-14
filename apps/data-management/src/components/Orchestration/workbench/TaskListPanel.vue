@@ -812,7 +812,7 @@ const pauseTooltipText = (item: TaskRow) => {
 .task-time {
   color: #49454f;
   font-size: 12px;
-  font-family: 'Roboto Mono', monospace;
+  font-family: var(--hs-font-data);
   white-space: nowrap;
 }
 .tasks-table :deep(td) {

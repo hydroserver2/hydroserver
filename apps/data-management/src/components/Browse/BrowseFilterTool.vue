@@ -1334,7 +1334,7 @@ pruneSelectionToAvailable(
 }
 
 .site-row-code {
-  font-family: 'Roboto Mono', monospace;
+  font-family: var(--hs-font-data);
   font-size: var(--hs-font-2xs);
 }
 
