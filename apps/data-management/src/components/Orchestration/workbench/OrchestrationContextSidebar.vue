@@ -158,11 +158,8 @@
             {{ issueCountForConnection(dc.id) }}
           </span>
         </div>
-        <div
-          v-if="connections.length === 0"
-          class="sidebar-empty hs-text-sm"
-        >
-          No data connections yet.
+        <div v-if="connections.length === 0" class="sidebar-empty">
+          <small>No data connections yet.</small>
         </div>
       </template>
 
@@ -218,8 +215,8 @@
             {{ issueCountForSite(monitoringSite.id) }}
           </span>
         </div>
-        <div v-if="sites.length === 0" class="sidebar-empty hs-text-sm">
-          No sites yet.
+        <div v-if="sites.length === 0" class="sidebar-empty">
+          <small>No sites yet.</small>
         </div>
       </template>
     </div>

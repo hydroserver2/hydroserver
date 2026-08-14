@@ -8,13 +8,15 @@
         :key="row.key"
         class="quality-mapping-target"
       >
-        <div class="datastream-display hs-text-sm">
+        <div class="datastream-display">
           <div class="datastream-display__content">
-            <span class="target-name hs-text-sm font-weight-semibold">{{ row.name }}</span>
-            <span v-if="row.monitoringSiteName" class="target-monitoringSite hs-text-sm">
+            <span class="target-name hs-text-sm font-weight-semibold">{{
+              row.name
+            }}</span>
+            <small v-if="row.monitoringSiteName" class="target-monitoringSite">
               {{ row.monitoringSiteName }}
-            </span>
-            <span class="target-id hs-text-sm">{{ row.id || '—' }}</span>
+            </small>
+            <small class="target-id">{{ row.id || '—' }}</small>
           </div>
           <DatastreamSiteButton
             :datastream="row.datastream"
@@ -25,7 +27,7 @@
       </div>
     </div>
 
-    <div v-else class="empty-mappings hs-text-sm">No mappings configured.</div>
+    <small v-else class="empty-mappings">No mappings configured.</small>
   </div>
 </template>
 

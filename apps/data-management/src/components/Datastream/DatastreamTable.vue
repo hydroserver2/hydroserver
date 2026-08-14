@@ -206,9 +206,9 @@
                         ),
                       }"
                     />
-                    <span class="datastream-task-link__last-ran hs-text-sm font-weight-medium">
+                    <small class="datastream-task-link__last-ran font-weight-medium">
                       {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                    </span>
+                    </small>
                   </span>
                 </template>
                 <span v-else class="datastream-task-link__conflict-text font-weight-bold">
@@ -285,9 +285,9 @@
                         backgroundColor: monitoringLastRunColor(task),
                       }"
                     />
-                    <span class="datastream-task-link__last-ran hs-text-sm font-weight-medium">
+                    <small class="datastream-task-link__last-ran font-weight-medium">
                       {{ lastRanLabel(task) }}
-                    </span>
+                    </small>
                   </span>
                 </span>
               </div>
@@ -875,9 +875,9 @@
                       ),
                     }"
                   />
-                  <span class="datastream-task-link__last-ran hs-text-sm font-weight-medium">
+                  <small class="datastream-task-link__last-ran font-weight-medium">
                     {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                  </span>
+                  </small>
                 </span>
               </template>
               <span v-else class="datastream-task-link__conflict-text font-weight-bold">
@@ -949,9 +949,9 @@
                     class="datastream-task-link__dot"
                     :style="{ backgroundColor: monitoringLastRunColor(task) }"
                   />
-                  <span class="datastream-task-link__last-ran hs-text-sm font-weight-medium">
+                  <small class="datastream-task-link__last-ran font-weight-medium">
                     {{ lastRanLabel(task) }}
-                  </span>
+                  </small>
                 </span>
               </span>
             </div>

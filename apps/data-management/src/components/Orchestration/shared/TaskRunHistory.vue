@@ -134,7 +134,7 @@
     </div>
   </template>
 
-  <div v-else class="run-empty hs-text-sm">No run history available yet.</div>
+  <small v-else class="run-empty">No run history available yet.</small>
 </template>
 
 <script setup lang="ts">

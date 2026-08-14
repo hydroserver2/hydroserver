@@ -199,8 +199,8 @@
           </p>
           <v-progress-circular indeterminate color="primary" />
         </div>
-        <div v-else class="hs-text-sm text-medium-emphasis">
-          No photos added yet.
+        <div v-else class="text-medium-emphasis">
+          <small>No photos added yet.</small>
         </div>
       </v-col>
     </v-row>

@@ -12,20 +12,23 @@
         class="product-mapping-row"
       >
         <div class="product-mapping-source">
-          <div class="etl-source-display datastream-display hs-text-sm">
+          <div class="etl-source-display datastream-display">
             <div class="datastream-display__content">
               <span class="target-name hs-text-sm font-weight-semibold">
                 {{
                   datastreamName(row.sourceDatastream, row.sourceDatastreamId)
                 }}
               </span>
-              <span v-if="row.sourceDetail" class="target-monitoringSite hs-text-sm">
+              <small v-if="row.sourceDetail" class="target-monitoringSite">
                 {{ row.sourceDetail }}
-              </span>
-              <span v-if="monitoringSiteName(row.sourceDatastream)" class="target-monitoringSite hs-text-sm">
+              </small>
+              <small
+                v-if="monitoringSiteName(row.sourceDatastream)"
+                class="target-monitoringSite"
+              >
                 {{ monitoringSiteName(row.sourceDatastream) }}
-              </span>
-              <span class="target-id hs-text-sm">{{ row.sourceDatastreamId || '—' }}</span>
+              </small>
+              <small class="target-id">{{ row.sourceDatastreamId || '—' }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="row.sourceDatastream"
@@ -42,17 +45,20 @@
         </div>
 
         <div class="product-mapping-target">
-          <div class="etl-target-display datastream-display hs-text-sm">
+          <div class="etl-target-display datastream-display">
             <div class="datastream-display__content">
               <span class="target-name hs-text-sm font-weight-semibold">
                 {{
                   datastreamName(row.targetDatastream, row.targetDatastreamId)
                 }}
               </span>
-              <span v-if="monitoringSiteName(row.targetDatastream)" class="target-monitoringSite hs-text-sm">
+              <small
+                v-if="monitoringSiteName(row.targetDatastream)"
+                class="target-monitoringSite"
+              >
                 {{ monitoringSiteName(row.targetDatastream) }}
-              </span>
-              <span class="target-id hs-text-sm">{{ row.targetDatastreamId || '—' }}</span>
+              </small>
+              <small class="target-id">{{ row.targetDatastreamId || '—' }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="row.targetDatastream"
@@ -66,7 +72,7 @@
       </div>
     </div>
 
-    <div v-else class="empty-mappings hs-text-sm">No mappings configured.</div>
+    <small v-else class="empty-mappings">No mappings configured.</small>
   </div>
 </template>
 

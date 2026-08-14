@@ -139,3 +139,12 @@
 .hs-text-xl {
   font-size: var(--hs-font-xl);
 }
+
+/* Tag-based alternative to `class="hs-text-sm"`: wrap text in <small> —
+ * the semantically correct native tag for de-emphasized side text, help
+ * copy, disclaimers — and it's sized from the scale automatically. No
+ * class needed. Browsers default <small> to ~80% of the parent size;
+ * this pins it to the actual token instead. */
+small {
+  font-size: var(--hs-font-sm);
+}

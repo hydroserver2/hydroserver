@@ -67,9 +67,12 @@
                       content-class="pa-0 ma-0 bg-transparent"
                     >
                       <template v-slot:activator="{ props }">
-                        <div class="plot-disclaimer-text hs-text-sm font-weight-medium" v-bind="props">
+                        <small
+                          class="plot-disclaimer-text font-weight-medium"
+                          v-bind="props"
+                        >
                           *Large data mode
-                        </div>
+                        </small>
                       </template>
                       <v-card
                         elevation="2"

@@ -4,13 +4,13 @@
   <v-card-text>
     <div class="ownership-card hs-table-card">
       <template v-if="showPendingTransferText">
-        <div class="ownership-pending hs-text-sm">
+        <small class="ownership-pending">
           <v-icon :icon="mdiTransitTransfer" size="18" color="primary" />
           <span>
             An ownership transfer is pending to
             <strong>{{ workspace.pendingTransferTo?.name }}</strong>
           </span>
-        </div>
+        </small>
         <v-btn-cancel
           class="mt-4"
           :loading="isCancelling"
@@ -22,13 +22,16 @@
       </template>
 
       <template v-else>
-        <p class="ownership-copy hs-text-sm">
-          Transfer is irreversible once accepted: the new owner gains the
-          ownership rights for this workspace, and its permissions will then
-          determine who can
-          <strong>rename</strong>, <strong>delete</strong>, and
-          <strong>change the privacy</strong> of this workspace. Unless the new
-          owner adds you as a collaborator, you may lose access to it entirely.
+        <p class="ownership-copy">
+          <small>
+            Transfer is irreversible once accepted: the new owner gains the
+            ownership rights for this workspace, and its permissions will then
+            determine who can
+            <strong>rename</strong>, <strong>delete</strong>, and
+            <strong>change the privacy</strong> of this workspace. Unless the
+            new owner adds you as a collaborator, you may lose access to it
+            entirely.
+          </small>
         </p>
 
         <v-form v-model="emailFormValid" class="ownership-form">

@@ -13,10 +13,12 @@
       />
     </div>
 
-    <p v-if="showServiceAccountHelp" class="service-accounts-help-text hs-text-sm">
-      Service accounts provide remote systems with a controlled set of
-      permissions. A service account can collaborate on other workspaces after
-      it is created.
+    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
+      <small>
+        Service accounts provide remote systems with a controlled set of
+        permissions. A service account can collaborate on other workspaces
+        after it is created.
+      </small>
     </p>
 
     <v-alert

@@ -12,11 +12,14 @@
     />
   </div>
 
-  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text hs-text-sm">
-    You can add collaborators to this workspace with either Editor or Viewer
-    roles. Viewers can see everything in the workspace but cannot edit. Editors
-    can create, read, update, and delete all sites, metadata, and datastreams as
-    well as set their visibility. Users can remove themselves as collaborators.
+  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
+    <small>
+      You can add collaborators to this workspace with either Editor or
+      Viewer roles. Viewers can see everything in the workspace but cannot
+      edit. Editors can create, read, update, and delete all sites, metadata,
+      and datastreams as well as set their visibility. Users can remove
+      themselves as collaborators.
+    </small>
   </p>
 
   <v-alert

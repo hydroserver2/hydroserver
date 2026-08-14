@@ -1,10 +1,12 @@
 <template>
   <v-container class="max-w-[64rem]">
     <h4 class="hs-text-lg mt-6 mb-2">Streaming Data Loader</h4>
-    <p class="hs-text-sm text-medium-emphasis mb-4 max-w-[46rem]">
-      A simple alternative to the main HydroServer orchestration system — it
-      reads CSV files on your laptop and streams updates as those updates
-      happen.
+    <p class="text-medium-emphasis mb-4 max-w-[46rem]">
+      <small>
+        A simple alternative to the main HydroServer orchestration system —
+        it reads CSV files on your laptop and streams updates as those
+        updates happen.
+      </small>
     </p>
 
     <div class="flex flex-wrap items-center gap-2 mb-6">
@@ -73,8 +75,8 @@
               />
               {{ platform.name }}
             </h5>
-            <div class="hs-text-sm text-medium-emphasis">
-              {{ platform.requirement }}
+            <div class="text-medium-emphasis">
+              <small>{{ platform.requirement }}</small>
             </div>
           </v-card-text>
           <v-card-actions class="flex-column align-stretch px-4 pb-4">

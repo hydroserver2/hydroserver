@@ -15,10 +15,12 @@
       />
     </div>
 
-    <p v-if="showHelp" class="metadata-help-text hs-text-sm">
-      Methods, units, and other reference metadata used by this workspace's
-      datastreams. Workspace items are yours to edit; system items are shared
-      platform defaults managed by administrators.
+    <p v-if="showHelp" class="metadata-help-text">
+      <small>
+        Methods, units, and other reference metadata used by this workspace's
+        datastreams. Workspace items are yours to edit; system items are
+        shared platform defaults managed by administrators.
+      </small>
     </p>
 
     <v-btn-toggle

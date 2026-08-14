@@ -45,20 +45,22 @@
           </v-card-title>
           <v-card-text
             v-if="showLinkedMetadataHelp"
-            class="hs-text-sm text-medium-emphasis"
+            class="text-medium-emphasis"
           >
-            Select the appropriate metadata to describe the the datastream you
-            are adding to the monitoring site. If you want to modify the values
-            available in the drop down menus below, click the "+" button or
-            visit the
-            <router-link
-              :to="{ path: '/workspaces', query: { section: 'metadata' } }"
-            >
-              Metadata tab of the Workspaces page.
-            </router-link>
-            Options in the drop down menus come from both metadata associated
-            with the workspace as well as system level metadata managed by the
-            system admin.
+            <small>
+              Select the appropriate metadata to describe the the datastream
+              you are adding to the monitoring site. If you want to modify the
+              values available in the drop down menus below, click the "+"
+              button or visit the
+              <router-link
+                :to="{ path: '/workspaces', query: { section: 'metadata' } }"
+              >
+                Metadata tab of the Workspaces page.
+              </router-link>
+              Options in the drop down menus come from both metadata
+              associated with the workspace as well as system level metadata
+              managed by the system admin.
+            </small>
           </v-card-text>
 
           <v-card-text>
@@ -457,10 +459,12 @@
       <v-row>
         <v-col cols="12" md="6">
           <v-card-title>Datastream attributes</v-card-title>
-          <v-card-text class="hs-text-sm text-medium-emphasis">
+          <v-card-text class="text-medium-emphasis">
+            <small>
             For the following items, select an option or type your own. Note:
             the default selections won't be available if there is custom text in
             the field.
+            </small>
           </v-card-text>
           <v-card-text class="pb-0">
             <v-combobox
@@ -493,9 +497,11 @@
             />
           </v-card-text>
 
-          <v-card-text class="hs-text-sm text-medium-emphasis pt-2">
+          <v-card-text class="text-medium-emphasis pt-2">
+            <small>
             When observation data is missing a value, what should the default
             be?
+            </small>
           </v-card-text>
           <v-card-text>
             <v-text-field
@@ -512,11 +518,13 @@
 
         <v-col cols="12" md="6">
           <v-card-title>Name and description</v-card-title>
-          <v-card-text class="hs-text-sm text-medium-emphasis">
+          <v-card-text class="text-medium-emphasis">
+            <small>
             Enter a name and description for this datastream, or opt to
             auto-fill with default text. If you choose the defaults, make sure
             you've first filled out the rest of the form correctly as the
             website will generate text based on the current form fields.
+            </small>
           </v-card-text>
 
           <v-card-text>

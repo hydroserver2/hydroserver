@@ -228,19 +228,24 @@
 
       <div v-else-if="!hasSelection" class="detail-empty">
         <h4 class="hs-text-md font-weight-semibold">{{ emptyHeading }}</h4>
-        <p>{{ emptyMessage }}</p>
+        <p><small>{{ emptyMessage }}</small></p>
       </div>
 
       <div v-else-if="visibleTasks.length === 0" class="detail-empty">
         <h4 class="hs-text-md font-weight-semibold">No tasks</h4>
-        <p>{{ emptyTasksMessage }}</p>
+        <p><small>{{ emptyTasksMessage }}</small></p>
       </div>
 
       <div v-else-if="sortedVisibleTasks.length === 0" class="detail-empty">
         <h4 class="hs-text-md font-weight-semibold">
           No tasks match your filter
         </h4>
-        <p>Clear search, status, or task type filters to see all tasks.</p>
+        <p>
+          <small
+            >Clear search, status, or task type filters to see all
+            tasks.</small
+          >
+        </p>
       </div>
 
       <v-data-table-virtual

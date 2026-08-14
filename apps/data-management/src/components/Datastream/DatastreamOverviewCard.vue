@@ -21,46 +21,46 @@
 
       <!-- Method and Sampled Medium (Less important) -->
       <div class="grid gap-y-2">
-        <div class="flex items-center opacity-80">
-          <span class="hs-text-sm font-weight-medium text-grey-darken-2 mr-2"
+        <small class="flex items-center opacity-80">
+          <span class="font-weight-medium text-grey-darken-2 mr-2"
             >Method:</span
           >
-          <span class="hs-text-sm">
+          <span>
             {{ datastream.method.name }}
           </span>
-        </div>
+        </small>
 
-        <div class="flex items-center opacity-80">
-          <span class="hs-text-sm font-weight-medium text-grey-darken-2 mr-2"
+        <small class="flex items-center opacity-80">
+          <span class="font-weight-medium text-grey-darken-2 mr-2"
             >Sampled Medium:</span
           >
-          <span class="hs-text-sm">{{ datastream.sampledMedium }}</span>
-        </div>
+          <span>{{ datastream.sampledMedium }}</span>
+        </small>
 
-        <div class="flex items-center opacity-90">
-          <span class="hs-text-sm font-weight-medium text-grey-darken-2 mr-2"
+        <small class="flex items-center opacity-90">
+          <span class="font-weight-medium text-grey-darken-2 mr-2"
             >Identifier:</span
           >
-          <span class="hs-text-sm">{{ datastream.id }}</span>
-        </div>
+          <span>{{ datastream.id }}</span>
+        </small>
       </div>
 
-      <div v-if="addAggregation" class="flex items-center opacity-80">
-        <span class="hs-text-sm font-weight-medium text-grey-darken-2 mr-2"
+      <small v-if="addAggregation" class="flex items-center opacity-80">
+        <span class="font-weight-medium text-grey-darken-2 mr-2"
           >Aggregation Statistic:</span
         >
-        <span class="hs-text-sm">{{ datastream?.aggregationStatistic }}</span>
-      </div>
+        <span>{{ datastream?.aggregationStatistic }}</span>
+      </small>
 
-      <div v-if="addAggregation" class="flex items-center opacity-80">
-        <span class="hs-text-sm font-weight-medium text-grey-darken-2 mr-2"
+      <small v-if="addAggregation" class="flex items-center opacity-80">
+        <span class="font-weight-medium text-grey-darken-2 mr-2"
           >Aggregation Interval:</span
         >
-        <span class="hs-text-sm">
+        <span>
           {{ datastream?.timeAggregationInterval }}
           {{ datastream?.timeAggregationIntervalUnit }}
         </span>
-      </div>
+      </small>
     </v-card-text>
   </v-card>
 </template>

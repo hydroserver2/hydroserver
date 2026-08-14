@@ -8,15 +8,15 @@
 
       <div v-for="(t, ti) in transformations" :key="ti" class="rc-mapping-row">
         <div class="rc-mapping-source">
-          <div class="etl-source-display datastream-display hs-text-sm">
+          <div class="etl-source-display datastream-display">
             <div class="datastream-display__content">
               <span class="target-name hs-text-sm font-weight-semibold">{{
                 t.inputDatastream?.name || '—'
               }}</span>
-              <span v-if="t.ratingCurve?.name" class="target-monitoringSite hs-text-sm">
+              <small v-if="t.ratingCurve?.name" class="target-monitoringSite">
                 via {{ t.ratingCurve.name }}
-              </span>
-              <span class="target-id hs-text-sm">{{ inputDatastreamId(t) || '—' }}</span>
+              </small>
+              <small class="target-id">{{ inputDatastreamId(t) || '—' }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="t.inputDatastream"
@@ -31,15 +31,18 @@
         </div>
 
         <div class="rc-mapping-target">
-          <div class="etl-target-display datastream-display hs-text-sm">
+          <div class="etl-target-display datastream-display">
             <div class="datastream-display__content">
               <span class="target-name hs-text-sm font-weight-semibold">{{
                 t.outputDatastream?.name || '—'
               }}</span>
-              <span v-if="outputMonitoringSiteName(t)" class="target-monitoringSite hs-text-sm">
+              <small
+                v-if="outputMonitoringSiteName(t)"
+                class="target-monitoringSite"
+              >
                 {{ outputMonitoringSiteName(t) }}
-              </span>
-              <span class="target-id hs-text-sm">{{ outputDatastreamId(t) || '—' }}</span>
+              </small>
+              <small class="target-id">{{ outputDatastreamId(t) || '—' }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="t.outputDatastream"

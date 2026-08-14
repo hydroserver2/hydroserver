@@ -2,12 +2,12 @@
   <h6 class="hs-text-md privacy-title">Privacy</h6>
 
   <v-card-text>
-    <div v-if="!canManage" class="hs-gate-note hs-text-sm">
+    <small v-if="!canManage" class="hs-gate-note">
       <v-icon :icon="mdiLock" size="16" />
       <span
         >You do not have permission to change this workspace's privacy.</span
       >
-    </div>
+    </small>
 
     <div class="privacy-card hs-table-card">
       <div
@@ -28,12 +28,14 @@
             {{ isPrivate ? 'Private' : 'Public' }}
           </v-chip>
         </div>
-        <div class="privacy-copy-desc hs-text-sm">
-          {{
-            isPrivate
-              ? 'Only you and collaborators can see this workspace and its related sites, datastreams and metadata.'
-              : 'Visible to all users and guests of the system. Related sites and datastreams default to public but can be made private per-resource.'
-          }}
+        <div class="privacy-copy-desc">
+          <small>
+            {{
+              isPrivate
+                ? 'Only you and collaborators can see this workspace and its related sites, datastreams and metadata.'
+                : 'Visible to all users and guests of the system. Related sites and datastreams default to public but can be made private per-resource.'
+            }}
+          </small>
         </div>
       </div>
       <v-switch

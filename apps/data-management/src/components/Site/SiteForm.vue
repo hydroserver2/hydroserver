@@ -15,13 +15,13 @@
     </div>
     <v-divider />
 
-    <v-card-text
-      class="hs-text-sm text-medium-emphasis d-flex align-center"
-    >
+    <v-card-text class="text-medium-emphasis d-flex align-center">
       <v-icon :icon="mdiInformation" class="mr-1" />
-      Click on the map to
-      {{ monitoringSiteId ? 'edit' : 'populate' }}
-      site location data.
+      <small>
+        Click on the map to
+        {{ monitoringSiteId ? 'edit' : 'populate' }}
+        site location data.
+      </small>
     </v-card-text>
 
     <v-form

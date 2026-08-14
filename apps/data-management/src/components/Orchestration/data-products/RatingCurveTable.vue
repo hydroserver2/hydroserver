@@ -23,9 +23,9 @@
     <div class="rating-curve-body">
       <div
         v-if="!loading && displayAttachments.length === 0"
-        class="hs-text-sm text-medium-emphasis"
+        class="text-medium-emphasis"
       >
-        No rating curves have been added to this site yet.
+        <small>No rating curves have been added to this site yet.</small>
       </div>
 
       <div v-else class="rating-curve-list">
@@ -141,9 +141,9 @@
           <div class="rating-curve-body">
             <div
               v-if="!loading && displayAttachments.length === 0"
-              class="hs-text-sm text-medium-emphasis"
+              class="text-medium-emphasis"
             >
-              No rating curves have been added to this site yet.
+              <small>No rating curves have been added to this site yet.</small>
             </div>
 
             <div v-else class="rating-curve-list">
@@ -353,8 +353,11 @@
       </v-card-title>
       <v-divider />
       <v-card-text class="pt-4">
-        <div class="hs-text-sm mb-3">
-          Selected rating curve: <strong>{{ editAttachment?.name }}</strong>
+        <div class="mb-3">
+          <small
+            >Selected rating curve:
+            <strong>{{ editAttachment?.name }}</strong></small
+          >
         </div>
 
         <v-text-field
@@ -507,10 +510,12 @@
       </v-toolbar>
       <v-divider />
       <v-card-text class="pt-4">
-        <div class="hs-text-sm mb-3">
-          <strong>{{ blockedAttachment?.name }}</strong> is linked to one or
-          more tasks. Remove this rating curve from those tasks before deleting
-          it.
+        <div class="mb-3">
+          <small>
+            <strong>{{ blockedAttachment?.name }}</strong> is linked to one or
+            more tasks. Remove this rating curve from those tasks before
+            deleting it.
+          </small>
         </div>
         <div class="linked-task-buttons">
           <v-btn
@@ -525,7 +530,7 @@
             <span class="linked-task-btn-name font-weight-semibold">{{
               task.name || task.id
             }}</span>
-            <span class="linked-task-btn-id hs-text-sm">{{ task.id }}</span>
+            <small class="linked-task-btn-id">{{ task.id }}</small>
           </v-btn>
         </div>
       </v-card-text>
