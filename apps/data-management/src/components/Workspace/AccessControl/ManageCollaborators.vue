@@ -1,6 +1,6 @@
 <template>
   <div class="collaborators-header">
-    <h6 class="text-h6">Collaborators</h6>
+    <h6 class="hs-text-md">Collaborators</h6>
     <v-icon
       :icon="mdiHelpCircleOutline"
       @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
@@ -12,7 +12,7 @@
     />
   </div>
 
-  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
+  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text hs-text-sm">
     You can add collaborators to this workspace with either Editor or Viewer
     roles. Viewers can see everything in the workspace but cannot edit. Editors
     can create, read, update, and delete all sites, metadata, and datastreams as
@@ -113,7 +113,7 @@
             <div class="font-weight-medium">
               {{ item.name }}
             </div>
-            <div class="text-caption text-medium-emphasis">
+            <div class="hs-text-2xs text-medium-emphasis">
               {{ item.email }}
             </div>
           </td>
@@ -436,7 +436,6 @@ onMounted(loadCollaboratorData)
   cursor: pointer;
 }
 .collaborators-help-text {
-  font-size: 12.5px;
   color: #6b7280;
   line-height: 1.5;
   max-width: 640px;

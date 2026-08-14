@@ -67,7 +67,7 @@
                       content-class="pa-0 ma-0 bg-transparent"
                     >
                       <template v-slot:activator="{ props }">
-                        <div class="plot-disclaimer-text" v-bind="props">
+                        <div class="plot-disclaimer-text hs-text-sm font-weight-medium" v-bind="props">
                           *Large data mode
                         </div>
                       </template>
@@ -76,11 +76,11 @@
                         rounded="lg"
                         class="plot-disclaimer-card"
                       >
-                        <v-card-title class="px-4 py-2 text-subtitle-1">
+                        <v-card-title class="px-4 py-2 hs-text-md">
                           Large data mode
                         </v-card-title>
                         <v-divider />
-                        <v-card-text class="px-4 py-2 text-body-2">
+                        <v-card-text class="px-4 py-2 hs-text-sm">
                           Tooltips are disabled when total points exceed
                           {{ largeSeriesTotalThreshold }}. Markers are hidden
                           when visible points exceed
@@ -107,7 +107,7 @@
 
     <div v-if="showInstructions && viewMode === 'plot'" class="plot-empty">
       <v-card-text>
-        <div class="plot-empty__title">Visualize data</div>
+        <div class="plot-empty__title hs-text-md font-weight-semibold">Visualize data</div>
         <v-timeline align="start" density="compact">
           <v-timeline-item size="x-small" dot-color="primary">
             <div>
@@ -825,8 +825,6 @@ onMounted(() => {
 }
 
 .plot-empty__title {
-  font-size: 1.1rem;
-  font-weight: 600;
   margin: 8px 8px 12px;
 }
 
@@ -854,8 +852,6 @@ onMounted(() => {
 .plot-disclaimer-text {
   display: inline-flex;
   align-items: center;
-  font-size: 0.75rem;
-  font-weight: 500;
   color: #6b7280;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 4px;

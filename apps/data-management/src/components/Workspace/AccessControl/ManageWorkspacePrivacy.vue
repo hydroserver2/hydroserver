@@ -1,8 +1,8 @@
 <template>
-  <h6 class="text-h6 privacy-title">Privacy</h6>
+  <h6 class="hs-text-md privacy-title">Privacy</h6>
 
   <v-card-text>
-    <div v-if="!canManage" class="hs-gate-note">
+    <div v-if="!canManage" class="hs-gate-note hs-text-sm">
       <v-icon :icon="mdiLock" size="16" />
       <span
         >You do not have permission to change this workspace's privacy.</span
@@ -17,7 +17,7 @@
         <v-icon :icon="isPrivate ? mdiLock : mdiEarth" size="20" />
       </div>
       <div class="privacy-copy">
-        <div class="privacy-copy-title">
+        <div class="privacy-copy-title hs-text-sm font-weight-semibold">
           <span>Workspace is currently</span>
           <v-chip
             size="small"
@@ -28,7 +28,7 @@
             {{ isPrivate ? 'Private' : 'Public' }}
           </v-chip>
         </div>
-        <div class="privacy-copy-desc">
+        <div class="privacy-copy-desc hs-text-sm">
           {{
             isPrivate
               ? 'Only you and collaborators can see this workspace and its related sites, datastreams and metadata.'
@@ -112,7 +112,6 @@ async function togglePrivacy() {
   background: #fbfaf7;
   border: 1px solid #ece6da;
   border-radius: 8px;
-  font-size: 12.5px;
   color: #8a7a5c;
 }
 .hs-gate-note .v-icon {
@@ -155,13 +154,10 @@ async function togglePrivacy() {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
   color: #1c1b1f;
   margin-bottom: 6px;
 }
 .privacy-copy-desc {
-  font-size: 12.5px;
   color: #6b7280;
   line-height: 1.55;
   max-width: 520px;

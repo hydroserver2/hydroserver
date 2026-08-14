@@ -2,12 +2,12 @@
   <div class="rating-curve-preview-panel">
     <div class="rating-curve-preview-header mb-3">
       <div class="rating-curve-preview-title">
-        <div class="text-subtitle-2 text-truncate">
+        <div class="hs-text-sm text-truncate">
           {{ ratingCurve.name }}
         </div>
         <div
           v-if="ratingCurve.description"
-          class="text-caption text-medium-emphasis"
+          class="hs-text-2xs text-medium-emphasis"
         >
           {{ ratingCurve.description }}
         </div>
@@ -41,13 +41,13 @@
       </svg>
     </div>
 
-    <div v-if="previewRanges" class="text-caption text-medium-emphasis mt-2">
+    <div v-if="previewRanges" class="hs-text-2xs text-medium-emphasis mt-2">
       x: {{ formatPreviewNumber(previewRanges.xMin) }} to
       {{ formatPreviewNumber(previewRanges.xMax) }}. y:
       {{ formatPreviewNumber(previewRanges.yMin) }} to
       {{ formatPreviewNumber(previewRanges.yMax) }}.
     </div>
-    <div v-else class="text-caption text-medium-emphasis">
+    <div v-else class="hs-text-2xs text-medium-emphasis">
       No numeric points available for preview.
     </div>
 
@@ -77,7 +77,7 @@
       v-if="visiblePreviewRows.length"
       class="rating-curve-preview-footer mt-1"
     >
-      <span class="text-caption text-medium-emphasis">
+      <span class="hs-text-2xs text-medium-emphasis">
         {{ tableSummary }}
       </span>
       <v-btn

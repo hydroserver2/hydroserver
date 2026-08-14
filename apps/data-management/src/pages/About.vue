@@ -1,6 +1,6 @@
 <template>
   <v-container v-if="settings.aboutInformation.showAboutInformation">
-    <h4 class="text-h4 my-6">
+    <h4 class="hs-text-lg my-6">
       {{ settings.aboutInformation.title  || 'About us' }}
     </h4>
     <p class="mb-4">

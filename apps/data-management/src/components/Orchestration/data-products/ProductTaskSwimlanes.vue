@@ -1,8 +1,8 @@
 <template>
   <div class="swimlanes-view">
     <div v-if="mappingRows.length" class="product-mappings">
-      <div class="product-mappings-head">Source datastream</div>
-      <div class="product-mappings-head product-mappings-head-target">
+      <div class="product-mappings-head hs-text-2xs font-weight-bold">Source datastream</div>
+      <div class="product-mappings-head product-mappings-head-target hs-text-2xs font-weight-bold">
         Target datastream
       </div>
 
@@ -12,20 +12,20 @@
         class="product-mapping-row"
       >
         <div class="product-mapping-source">
-          <div class="etl-source-display datastream-display">
+          <div class="etl-source-display datastream-display hs-text-sm">
             <div class="datastream-display__content">
-              <span class="target-name">
+              <span class="target-name hs-text-sm font-weight-semibold">
                 {{
                   datastreamName(row.sourceDatastream, row.sourceDatastreamId)
                 }}
               </span>
-              <span v-if="row.sourceDetail" class="target-monitoringSite">
+              <span v-if="row.sourceDetail" class="target-monitoringSite hs-text-sm">
                 {{ row.sourceDetail }}
               </span>
-              <span v-if="monitoringSiteName(row.sourceDatastream)" class="target-monitoringSite">
+              <span v-if="monitoringSiteName(row.sourceDatastream)" class="target-monitoringSite hs-text-sm">
                 {{ monitoringSiteName(row.sourceDatastream) }}
               </span>
-              <span class="target-id">{{ row.sourceDatastreamId || '—' }}</span>
+              <span class="target-id hs-text-sm">{{ row.sourceDatastreamId || '—' }}</span>
             </div>
             <DatastreamSiteButton
               :datastream="row.sourceDatastream"
@@ -42,17 +42,17 @@
         </div>
 
         <div class="product-mapping-target">
-          <div class="etl-target-display datastream-display">
+          <div class="etl-target-display datastream-display hs-text-sm">
             <div class="datastream-display__content">
-              <span class="target-name">
+              <span class="target-name hs-text-sm font-weight-semibold">
                 {{
                   datastreamName(row.targetDatastream, row.targetDatastreamId)
                 }}
               </span>
-              <span v-if="monitoringSiteName(row.targetDatastream)" class="target-monitoringSite">
+              <span v-if="monitoringSiteName(row.targetDatastream)" class="target-monitoringSite hs-text-sm">
                 {{ monitoringSiteName(row.targetDatastream) }}
               </span>
-              <span class="target-id">{{ row.targetDatastreamId || '—' }}</span>
+              <span class="target-id hs-text-sm">{{ row.targetDatastreamId || '—' }}</span>
             </div>
             <DatastreamSiteButton
               :datastream="row.targetDatastream"
@@ -66,7 +66,7 @@
       </div>
     </div>
 
-    <div v-else class="empty-mappings">No mappings configured.</div>
+    <div v-else class="empty-mappings hs-text-sm">No mappings configured.</div>
   </div>
 </template>
 
@@ -231,11 +231,9 @@ function monitoringSiteName(datastream: DatastreamLike) {
   align-items: center;
 }
 .product-mappings-head {
-  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #4f4b59;
-  font-size: 0.68rem;
   padding-bottom: 4px;
 }
 .product-mappings-head:first-child {
@@ -267,7 +265,6 @@ function monitoringSiteName(datastream: DatastreamLike) {
   border-radius: 8px;
   padding: 6px 12px;
   background: #fdfdff;
-  font-size: 0.86rem;
   color: #1c1b1f;
   display: flex;
   flex-direction: column;
@@ -282,7 +279,6 @@ function monitoringSiteName(datastream: DatastreamLike) {
   border-radius: 8px;
   padding: 6px 12px;
   background: #f6f9ff;
-  font-size: 0.86rem;
   color: #1c1b1f;
   display: flex;
   flex-direction: column;
@@ -306,13 +302,10 @@ function monitoringSiteName(datastream: DatastreamLike) {
   color: rgba(0, 0, 0, 0.55);
   overflow-wrap: anywhere;
   white-space: normal;
-  font-size: 0.72rem;
   margin-top: 2px;
 }
 .target-name {
-  font-weight: 600;
   color: #1c1b1f;
-  font-size: 0.86rem;
   line-height: 1.25;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -321,12 +314,10 @@ function monitoringSiteName(datastream: DatastreamLike) {
   color: rgba(0, 0, 0, 0.66);
   overflow-wrap: anywhere;
   white-space: normal;
-  font-size: 0.78rem;
   margin-top: 2px;
 }
 .empty-mappings {
   color: rgba(0, 0, 0, 0.6);
-  font-size: 0.86rem;
   padding: 10px 0;
 }
 

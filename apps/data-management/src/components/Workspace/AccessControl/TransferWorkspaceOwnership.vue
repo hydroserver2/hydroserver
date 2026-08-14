@@ -1,10 +1,10 @@
 <template>
-  <h6 class="text-h6 ownership-title">Transfer workspace ownership</h6>
+  <h6 class="hs-text-md ownership-title">Transfer workspace ownership</h6>
 
   <v-card-text>
     <div class="ownership-card hs-table-card">
       <template v-if="showPendingTransferText">
-        <div class="ownership-pending">
+        <div class="ownership-pending hs-text-sm">
           <v-icon :icon="mdiTransitTransfer" size="18" color="primary" />
           <span>
             An ownership transfer is pending to
@@ -22,7 +22,7 @@
       </template>
 
       <template v-else>
-        <p class="ownership-copy">
+        <p class="ownership-copy hs-text-sm">
           Transfer is irreversible once accepted: the new owner gains the
           ownership rights for this workspace, and its permissions will then
           determine who can
@@ -162,7 +162,6 @@ async function onCancelTransfer() {
   padding: 18px 20px;
 }
 .ownership-copy {
-  font-size: 12.5px;
   color: #6b7280;
   line-height: 1.6;
   margin-bottom: 16px;
@@ -182,7 +181,6 @@ async function onCancelTransfer() {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 13.5px;
   color: #1c1b1f;
 }
 

@@ -98,7 +98,7 @@
               !ratingCurvesLoading &&
               !ratingCurveOptions.length
             "
-            class="text-caption text-medium-emphasis mb-3"
+            class="hs-text-2xs text-medium-emphasis mb-3"
           >
             No rating curves found for this site. Switch to "Create new rating
             curve" to add one.
@@ -129,7 +129,7 @@
             {{ selectedCreateFile ? 'Change CSV file' : 'Choose CSV file *' }}
           </v-btn>
           <div v-if="selectedCreateFile" class="d-flex align-center mb-3">
-            <span class="text-caption text-medium-emphasis">
+            <span class="hs-text-2xs text-medium-emphasis">
               Selected:
               <strong>{{ selectedCreateFile.name }}</strong>
               ({{ formatFileSize(selectedCreateFile.size) }})
@@ -155,7 +155,7 @@
           </v-alert>
           <div
             v-else-if="createFileValidationPending"
-            class="text-caption text-medium-emphasis mb-3"
+            class="hs-text-2xs text-medium-emphasis mb-3"
           >
             Validating rating curve CSV...
           </div>

@@ -25,7 +25,7 @@
       <div ref="popupContent" />
     </div>
 
-    <div ref="selectionLabelContainer" class="selected-site-label">
+    <div ref="selectionLabelContainer" class="selected-site-label hs-text-sm font-weight-semibold">
       {{ selectedSiteLabel }}
     </div>
 
@@ -53,8 +53,8 @@
         <div class="detail-body">
           <div class="detail-header">
             <div class="detail-heading">
-              <h2 class="detail-name">{{ detailMonitoringSite.name }}</h2>
-              <div v-if="detailSubtitle" class="detail-meta">
+              <h2 class="detail-name hs-text-md font-weight-semibold">{{ detailMonitoringSite.name }}</h2>
+              <div v-if="detailSubtitle" class="detail-meta hs-text-sm">
                 <v-icon
                   :icon="detailSiteTypeIcon"
                   size="14"
@@ -73,8 +73,8 @@
           </div>
 
           <div v-if="detailCoordinates" class="detail-grid">
-            <div class="detail-field-label">Coordinates</div>
-            <div class="detail-field-value detail-mono">
+            <div class="detail-field-label hs-text-2xs">Coordinates</div>
+            <div class="detail-field-value hs-text-sm font-weight-medium hs-font-data">
               {{ detailCoordinates }}
             </div>
           </div>
@@ -846,10 +846,11 @@ watch(
   left: auto;
 }
 
+/* No template hook — OpenLayers renders its own zoom control markup. */
 :deep(.ol-zoom button) {
   width: 36px;
   height: 36px;
-  font-size: 1.4rem;
+  font-size: var(--hs-font-lg);
 }
 
 /* 2) Position the dropdown in the top-right corner */
@@ -900,8 +901,6 @@ watch(
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
   color: rgba(0, 0, 0, 0.78);
-  font-size: 13px;
-  font-weight: 600;
   line-height: 1.2;
   pointer-events: none;
   text-overflow: ellipsis;
@@ -946,8 +945,6 @@ watch(
 }
 
 .detail-name {
-  font-size: 16.5px;
-  font-weight: 600;
   line-height: 1.25;
   color: rgba(0, 0, 0, 0.87);
 }
@@ -957,7 +954,6 @@ watch(
   align-items: center;
   gap: 5px;
   margin-top: 4px;
-  font-size: 12.5px;
   color: rgba(0, 0, 0, 0.6);
 }
 
@@ -984,20 +980,12 @@ watch(
 }
 
 .detail-field-label {
-  font-size: 10.5px;
   color: rgba(0, 0, 0, 0.6);
   margin-bottom: 2px;
 }
 
 .detail-field-value {
-  font-size: 12.5px;
-  font-weight: 500;
   color: rgba(0, 0, 0, 0.87);
-}
-
-.detail-mono {
-  font-family: var(--hs-font-data);
-  font-weight: 400;
 }
 
 .detail-actions {

@@ -1,20 +1,20 @@
 <template>
   <div class="quality-mappings-view">
     <div v-if="mappingRows.length" class="quality-mappings">
-      <div class="quality-mappings-head">Target datastream</div>
+      <div class="quality-mappings-head hs-text-2xs font-weight-bold">Target datastream</div>
 
       <div
         v-for="row in mappingRows"
         :key="row.key"
         class="quality-mapping-target"
       >
-        <div class="datastream-display">
+        <div class="datastream-display hs-text-sm">
           <div class="datastream-display__content">
-            <span class="target-name">{{ row.name }}</span>
-            <span v-if="row.monitoringSiteName" class="target-monitoringSite">
+            <span class="target-name hs-text-sm font-weight-semibold">{{ row.name }}</span>
+            <span v-if="row.monitoringSiteName" class="target-monitoringSite hs-text-sm">
               {{ row.monitoringSiteName }}
             </span>
-            <span class="target-id">{{ row.id || '—' }}</span>
+            <span class="target-id hs-text-sm">{{ row.id || '—' }}</span>
           </div>
           <DatastreamSiteButton
             :datastream="row.datastream"
@@ -25,7 +25,7 @@
       </div>
     </div>
 
-    <div v-else class="empty-mappings">No mappings configured.</div>
+    <div v-else class="empty-mappings hs-text-sm">No mappings configured.</div>
   </div>
 </template>
 
@@ -119,8 +119,6 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
 .quality-mappings-head {
   padding-bottom: 4px;
   color: #4f4b59;
-  font-size: 0.68rem;
-  font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -141,7 +139,6 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
   border-radius: 8px;
   background: #f6f9ff;
   color: #1c1b1f;
-  font-size: 0.86rem;
   text-align: left;
 }
 
@@ -155,8 +152,6 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
 
 .target-name {
   color: #1c1b1f;
-  font-size: 0.86rem;
-  font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -164,20 +159,17 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
 .target-monitoringSite {
   margin-top: 2px;
   color: rgba(0, 0, 0, 0.66);
-  font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
 
 .target-id {
   margin-top: 2px;
   color: rgba(0, 0, 0, 0.55);
-  font-size: 0.72rem;
   overflow-wrap: anywhere;
 }
 
 .empty-mappings {
   padding: 10px 0;
   color: rgba(0, 0, 0, 0.6);
-  font-size: 0.86rem;
 }
 </style>

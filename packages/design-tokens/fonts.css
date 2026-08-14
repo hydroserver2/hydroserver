@@ -2,8 +2,13 @@
  * HydroServer type roles
  *
  * Display — Newsreader 500: page titles and the wordmark only. Nothing else.
- * Body / UI — Archivo 400/500/600: navigation, headings, labels, buttons,
- *   table content, forms, and all other interface copy.
+ * Body / UI — Archivo 400/500/600/700: navigation, headings, labels,
+ *   buttons, table content, forms, and all other interface copy. 700
+ *   (bold) is reserved for the smallest, punchiest text — uppercase
+ *   micro-labels, badges, pill counts — where 600 doesn't read as
+ *   distinct at that size. Don't reach past 700; if something needs to
+ *   be louder than bold, that's a size or color problem, not a weight
+ *   problem.
  * Data — JetBrains Mono 400: IDs, UUIDs, timestamps, coordinates, and exact
  *   or tabular numeric values.
  *
@@ -21,6 +26,7 @@
   --hs-font-weight-regular: 400;
   --hs-font-weight-medium: 500;
   --hs-font-weight-semibold: 600;
+  --hs-font-weight-bold: 700;
 
   /* Override Vuetify's Roboto fallbacks. Headings remain Body / UI by default;
      page titles must opt into the Display role explicitly. */

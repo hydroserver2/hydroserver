@@ -11,10 +11,10 @@
               max-width="120"
               class="mr-3"
             ></v-img>
-            <span class="text-h5 font-weight-medium">About HydroServer</span>
+            <span class="hs-text-md font-weight-medium">About HydroServer</span>
           </v-card-title>
           <v-card-text>
-            <p class="text-body-1">
+            <p class="hs-text-sm">
               This web application is an instance of the HydroServer Data
               Management App, which provides a user-friendly interface for
               managing monitoring sites and their metadata. HydroServer is an

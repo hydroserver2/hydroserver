@@ -3,10 +3,12 @@
     <header class="detail-header">
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-2">
-          <h2 class="detail-title">{{ detailTitle }}</h2>
+          <h2 class="detail-title hs-text-md font-weight-regular">
+            {{ detailTitle }}
+          </h2>
           <span
             v-if="detailTypeBadge"
-            class="detail-badge"
+            class="detail-badge hs-text-2xs font-weight-bold"
             :style="{ color: accent, background: accentLight }"
           >
             {{ detailTypeBadge }}
@@ -48,7 +50,7 @@
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
-                  class="detail-action-btn detail-action-btn--header text-none"
+                  class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canCreate"
                   rounded="lg"
@@ -65,7 +67,7 @@
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
-                  class="detail-action-btn detail-action-btn--header text-none"
+                  class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canCreate"
                   rounded="lg"
@@ -82,7 +84,7 @@
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
-                  class="detail-action-btn detail-action-btn--header text-none"
+                  class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canCreateRatingCurve"
                   rounded="lg"
@@ -203,7 +205,7 @@
             rounded="lg"
             density="comfortable"
             closable
-            class="mr-1 task-type-chip"
+            class="mr-1 task-type-chip hs-text-2xs font-weight-semibold"
             :style="taskTypeSelectionStyle(item)"
             @click:close="removeTaskTypeFilter(index)"
           >
@@ -214,7 +216,7 @@
     </div>
 
     <div class="detail-body">
-      <div v-if="loading" class="detail-loading">
+      <div v-if="loading" class="detail-loading hs-text-sm">
         <v-progress-circular
           indeterminate
           size="22"
@@ -225,17 +227,19 @@
       </div>
 
       <div v-else-if="!hasSelection" class="detail-empty">
-        <h4>{{ emptyHeading }}</h4>
+        <h4 class="hs-text-md font-weight-semibold">{{ emptyHeading }}</h4>
         <p>{{ emptyMessage }}</p>
       </div>
 
       <div v-else-if="visibleTasks.length === 0" class="detail-empty">
-        <h4>No tasks</h4>
+        <h4 class="hs-text-md font-weight-semibold">No tasks</h4>
         <p>{{ emptyTasksMessage }}</p>
       </div>
 
       <div v-else-if="sortedVisibleTasks.length === 0" class="detail-empty">
-        <h4>No tasks match your filter</h4>
+        <h4 class="hs-text-md font-weight-semibold">
+          No tasks match your filter
+        </h4>
         <p>Clear search, status, or task type filters to see all tasks.</p>
       </div>
 
@@ -248,11 +252,11 @@
         multi-sort
         fixed-header
         hover
-        class="tasks-table"
+        class="tasks-table hs-text-sm"
         density="compact"
       >
         <template #item.name="{ item }">
-          <span class="task-name">{{ item.name || '—' }}</span>
+          <span class="task-name font-weight-medium">{{ item.name || '—' }}</span>
         </template>
 
         <template #item.statusSort="{ item }">
@@ -283,19 +287,19 @@
                 >
                   <v-card-text class="px-4 py-3">
                     <div
-                      class="mb-1 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
+                      class="mb-1 hs-text-2xs font-weight-bold uppercase tracking-[0.12em] text-slate-600"
                     >
                       Last run summary
                     </div>
                     <div
-                      class="text-[0.95rem] font-semibold leading-snug text-slate-900"
+                      class="hs-text-md font-weight-semibold leading-snug text-slate-900"
                     >
                       {{
                         item.lastRunMessage || 'No run history available yet.'
                       }}
                     </div>
                     <div
-                      class="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500"
+                      class="mt-3 flex items-center gap-1.5 hs-text-sm font-weight-semibold text-slate-500"
                     >
                       <v-icon
                         :icon="statusIcon(item.statusSort)"
@@ -309,12 +313,12 @@
               </v-tooltip>
               <div class="task-run-times">
                 <div class="task-run-time">
-                  <span class="task-run-label">Last</span>
-                  <span class="task-time">{{ item.lastRun }}</span>
+                  <span class="task-run-label hs-text-2xs font-weight-bold">Last</span>
+                  <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
                 </div>
                 <div class="task-run-time">
-                  <span class="task-run-label">Next</span>
-                  <span class="task-time">{{ item.nextRun }}</span>
+                  <span class="task-run-label hs-text-2xs font-weight-bold">Next</span>
+                  <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
                 </div>
               </div>
             </div>
@@ -335,7 +339,7 @@
                   variant="tonal"
                   :prepend-icon="mdiAlert"
                   rounded="lg"
-                  class="task-no-work-chip"
+                  class="task-no-work-chip hs-text-2xs font-weight-bold"
                 >
                   {{ item.noWorkWarning.label }}
                 </v-chip>
@@ -347,7 +351,7 @@
                 style="max-width: 320px"
               >
                 <v-card-text
-                  class="px-4 py-3 text-sm leading-snug text-slate-800"
+                  class="px-4 py-3 hs-text-sm leading-snug text-slate-800"
                 >
                   {{ item.noWorkWarning.message }}
                 </v-card-text>
@@ -357,11 +361,11 @@
         </template>
 
         <template #item.lastRunAt="{ item }">
-          <span class="task-time">{{ item.lastRun }}</span>
+          <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
         </template>
 
         <template #item.nextRunAt="{ item }">
-          <span class="task-time">{{ item.nextRun }}</span>
+          <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
         </template>
 
         <template #item.taskType="{ item }">
@@ -371,7 +375,7 @@
             size="small"
             rounded="lg"
             :style="typeChipStyle(item.taskType)"
-            class="task-type-chip"
+            class="task-type-chip hs-text-2xs font-weight-semibold"
           >
             {{ item.taskType }}
           </v-chip>
@@ -387,7 +391,7 @@
             content-class="pa-0 ma-0 bg-transparent"
           >
             <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="task-rules-count">
+              <span v-bind="tooltipProps" class="task-rules-count hs-text-sm font-weight-semibold">
                 {{ ruleCountLabel(item) }}
               </span>
             </template>
@@ -402,7 +406,7 @@
                 <v-row no-gutters align="center" style="width: 100%">
                   <v-col>
                     <div
-                      class="text-h6"
+                      class="hs-text-md"
                       style="white-space: normal; word-break: break-word"
                     >
                       Quality rules
@@ -445,7 +449,7 @@
             variant="tonal"
             size="small"
             rounded="lg"
-            class="task-violation-chip"
+            class="task-violation-chip font-weight-bold"
           >
             {{ item.monitoringRulesViolated }} rule{{
               item.monitoringRulesViolated === 1 ? '' : 's'
@@ -493,7 +497,7 @@
             </v-btn>
             <span
               v-else-if="canEdit && item.userClickedRunNow"
-              class="text-xs font-semibold text-slate-500"
+              class="hs-text-sm font-weight-semibold text-slate-500"
             >
               Run requested
             </span>
@@ -691,15 +695,11 @@ const pauseTooltipText = (item: TaskRow) => {
   flex-shrink: 0;
 }
 .detail-title {
-  font-size: 17px;
-  font-weight: 400;
   color: #1c1b1f;
 }
 .detail-badge {
-  font-size: 10px;
   border-radius: 4px;
   padding: 2px 7px;
-  font-weight: 700;
 }
 .detail-subtitle {
   margin-top: 4px;
@@ -717,8 +717,6 @@ const pauseTooltipText = (item: TaskRow) => {
 .detail-action-btn--header {
   min-height: 34px;
   padding-inline: 14px;
-  font-size: 13px;
-  font-weight: 600;
 }
 .detail-action-btn--primary {
   padding-inline: 20px;
@@ -755,7 +753,6 @@ const pauseTooltipText = (item: TaskRow) => {
   gap: 12px;
   padding: 24px 0;
   color: #475569;
-  font-size: 13px;
 }
 .detail-empty {
   padding: 40px 20px;
@@ -763,13 +760,10 @@ const pauseTooltipText = (item: TaskRow) => {
   color: #475569;
 }
 .detail-empty h4 {
-  font-size: 15px;
-  font-weight: 600;
   color: #334155;
   margin-bottom: 6px;
 }
 .tasks-table {
-  font-size: 13px;
   height: 100%;
 }
 /* Bound the virtual scroller's viewport so v-data-table-virtual only mounts the
@@ -781,10 +775,14 @@ const pauseTooltipText = (item: TaskRow) => {
   border-bottom: 2px solid #ebebeb;
 }
 .tasks-table :deep(th) {
+  /* No template element to hang an hs-text-* or font-weight-* class on
+     here — these are generated internally by v-data-table-virtual from
+     the `headers` prop, so the type scale is applied via its token
+     instead. */
   padding: 8px 12px;
   text-align: left;
-  font-weight: 600;
-  font-size: 10.5px;
+  font-weight: var(--hs-font-weight-semibold);
+  font-size: var(--hs-font-2xs);
   color: #49454f;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -796,7 +794,6 @@ const pauseTooltipText = (item: TaskRow) => {
   background: #f5f7fa;
 }
 .task-name {
-  font-weight: 500;
   color: #1c1b1f;
 }
 .task-status-cell {
@@ -805,13 +802,8 @@ const pauseTooltipText = (item: TaskRow) => {
   flex-direction: column;
   gap: 4px;
 }
-.task-no-work-chip {
-  font-size: 10.5px;
-  font-weight: 700;
-}
 .task-time {
   color: #49454f;
-  font-size: 12px;
   font-family: var(--hs-font-data);
   white-space: nowrap;
 }
@@ -821,13 +813,8 @@ const pauseTooltipText = (item: TaskRow) => {
 .task-rules-count {
   color: #475569;
   cursor: default;
-  font-size: 13px;
-  font-weight: 600;
   max-width: 320px;
   white-space: nowrap;
-}
-.task-violation-chip {
-  font-weight: 700;
 }
 .task-run-cell {
   align-items: center;
@@ -860,14 +847,8 @@ const pauseTooltipText = (item: TaskRow) => {
 }
 .task-run-label {
   color: #64748b;
-  font-size: 0.68rem;
-  font-weight: 700;
   line-height: 1.15;
   text-transform: uppercase;
-}
-.task-type-chip {
-  font-size: 11px;
-  font-weight: 600;
 }
 .task-actions-inner {
   display: flex;

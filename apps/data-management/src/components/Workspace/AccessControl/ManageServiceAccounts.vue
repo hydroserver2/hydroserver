@@ -1,7 +1,7 @@
 <template>
   <div class="service-accounts-section" data-testid="service-accounts-section">
     <div class="service-accounts-header">
-      <h6 class="text-h6">Service accounts</h6>
+      <h6 class="hs-text-md">Service accounts</h6>
       <v-icon
         :icon="mdiHelpCircleOutline"
         @click="showServiceAccountHelp = !showServiceAccountHelp"
@@ -13,7 +13,7 @@
       />
     </div>
 
-    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
+    <p v-if="showServiceAccountHelp" class="service-accounts-help-text hs-text-sm">
       Service accounts provide remote systems with a controlled set of
       permissions. A service account can collaborate on other workspaces after
       it is created.
@@ -461,7 +461,6 @@ onMounted(loadRoles)
   cursor: pointer;
 }
 .service-accounts-help-text {
-  font-size: 12.5px;
   color: #6b7280;
   line-height: 1.5;
   max-width: 640px;

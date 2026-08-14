@@ -1,6 +1,6 @@
 <template>
   <v-card class="hs-table-card site-details-card" flat>
-    <v-card-title tag="h5" class="text-h6">Site information</v-card-title>
+    <v-card-title tag="h5" class="hs-text-md">Site information</v-card-title>
     <v-divider />
 
     <div v-if="isMobile" class="site-details-mobile">
@@ -11,7 +11,7 @@
       >
         <div class="site-details-mobile__header">
           <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
-          <span class="site-detail-label">{{ item.label }}</span>
+          <span class="site-detail-label font-weight-semibold">{{ item.label }}</span>
         </div>
         <div class="site-details-mobile__value">
           <div v-if="item.label === 'ID'" class="d-flex align-center">
@@ -76,7 +76,7 @@
       </template>
 
       <template v-slot:item.label="{ item }">
-        <span class="site-detail-label">{{ item.label }}</span>
+        <span class="site-detail-label font-weight-semibold">{{ item.label }}</span>
       </template>
 
       <template v-slot:item.value="{ item }">
@@ -129,7 +129,7 @@
 
   <v-dialog v-model="isRatingCurveDialogOpen" width="56rem" max-width="95vw">
     <v-card>
-      <v-card-title class="text-h6 bg-teal-darken-1 text-white">
+      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
         View rating curves
       </v-card-title>
       <v-divider />
@@ -279,10 +279,6 @@ type MonitoringSitePropertyRow = {
 </script>
 
 <style scoped>
-.site-detail-label {
-  font-weight: 600;
-}
-
 .site-details-table :deep(.v-data-table__wrapper) {
   overflow-x: hidden;
   max-height: none;

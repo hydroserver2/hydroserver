@@ -9,7 +9,7 @@
             class="flex items-center gap-3 max-[960px]:flex-wrap max-[600px]:flex-col max-[600px]:items-stretch"
           >
             <h5
-              class="m-0 px-1 whitespace-nowrap text-h5 max-[600px]:w-full max-[600px]:text-center"
+              class="m-0 px-1 whitespace-nowrap hs-text-md max-[600px]:w-full max-[600px]:text-center"
             >
               Datastreams
             </h5>
@@ -133,7 +133,7 @@
           <tr class="align-top">
             <td class="px-4 py-3" :colspan="headers.length">
               <div class="flex flex-col items-start gap-1.5">
-                <div class="pt-1 text-base font-semibold leading-snug">
+                <div class="pt-1 hs-text-md font-weight-semibold leading-snug">
                   {{ item.name }}
                 </div>
                 <v-checkbox
@@ -148,31 +148,31 @@
                 />
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="text-xs uppercase tracking-[0.04em] text-black/55"
+                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
                   >Site</span
                 >
                 <span>{{ item.siteCodeName || '—' }}</span>
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="text-xs uppercase tracking-[0.04em] text-black/55"
+                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
                   >Observed property</span
                 >
                 <span>{{ item.observedPropertyName || '—' }}</span>
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="text-xs uppercase tracking-[0.04em] text-black/55"
+                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
                   >Processing level</span
                 >
                 <span>{{ item.qualityControlLevelDefinition || '—' }}</span>
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="text-xs uppercase tracking-[0.04em] text-black/55"
+                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
                   >Observations</span
                 >
                 <span>{{ item.valueCount ?? '—' }}</span>
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="text-xs uppercase tracking-[0.04em] text-black/55"
+                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
                   >Last updated</span
                 >
                 <span>{{ formatTime(item.phenomenonEndTime) }}</span>

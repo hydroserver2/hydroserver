@@ -12,7 +12,7 @@
         style="width: 100%"
       >
         <v-card-text>
-          <h5 class="text-h5 mb-4 d-flex align-center">
+          <h5 class="hs-text-md mb-4 d-flex align-center">
             <v-icon
               v-if="card.titleIcon"
               left

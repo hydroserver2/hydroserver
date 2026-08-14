@@ -3,16 +3,16 @@
     <header class="bar">
       <button class="back" @click="close">← {{ backLabel }}</button>
       <div class="title">
-        <h2>{{ task.name }}</h2>
-        <span class="pill task-type-pill" :style="taskTypePillStyle">
+        <h2 class="hs-text-md font-weight-regular">{{ task.name }}</h2>
+        <span class="pill task-type-pill hs-text-2xs font-weight-semibold" :style="taskTypePillStyle">
           {{ taskLabel }}
         </span>
-        <span v-if="scheduleText" class="pill">{{ scheduleText }}</span>
+        <span v-if="scheduleText" class="pill hs-text-2xs">{{ scheduleText }}</span>
       </div>
       <div class="actions">
         <button
           type="button"
-          class="header-btn header-btn--neutral"
+          class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
           :disabled="!!pauseDisabledReason"
           @click="togglePaused"
         >
@@ -35,7 +35,7 @@
             <button
               v-bind="props"
               type="button"
-              class="header-btn header-btn--neutral"
+              class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
               :disabled="!canEdit"
             >
               <v-icon :icon="mdiPencil" size="16" />
@@ -72,7 +72,7 @@
             <button
               v-bind="props"
               type="button"
-              class="header-btn header-btn--danger"
+              class="header-btn header-btn--danger hs-text-sm font-weight-semibold"
               :disabled="!canDelete"
             >
               <v-icon :icon="mdiTrashCanOutline" size="16" />
@@ -87,7 +87,7 @@
         </v-dialog>
         <button
           type="button"
-          class="header-btn header-btn--run"
+          class="header-btn header-btn--run hs-text-sm font-weight-semibold"
           :disabled="!!runNowDisabledReason"
           @click="runNow"
         >
@@ -242,19 +242,13 @@ function onFormUpdated() {
   min-width: 0;
 }
 h2 {
-  font-size: 18px;
-  font-weight: 400;
   margin: 0;
 }
 .pill {
-  font-size: 11px;
   background: #f5f7fa;
   border-radius: 4px;
   padding: 2px 7px;
   text-transform: capitalize;
-}
-.task-type-pill {
-  font-weight: 600;
 }
 .actions {
   display: flex;
@@ -280,8 +274,6 @@ h2 {
   color: #1c1b1f;
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
   line-height: 1.1;
   transition:
     background-color 0.12s,

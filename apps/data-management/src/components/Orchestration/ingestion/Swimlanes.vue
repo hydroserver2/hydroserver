@@ -4,12 +4,12 @@
       class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)] gap-[5px] items-center max-[960px]:grid-cols-1"
     >
       <div
-        class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-1 col-end-2 max-[960px]:col-span-full"
+        class="font-weight-bold uppercase tracking-[0.04em] text-[#4f4b59] hs-text-2xs pb-1 col-start-1 col-end-2 max-[960px]:col-span-full"
       >
         Source field
       </div>
       <div
-        class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-3 col-end-4 max-[960px]:col-span-full"
+        class="font-weight-bold uppercase tracking-[0.04em] text-[#4f4b59] hs-text-2xs pb-1 col-start-3 col-end-4 max-[960px]:col-span-full"
       >
         Target datastream
       </div>
@@ -18,7 +18,7 @@
         <div class="contents">
           <div class="min-w-0 flex items-center">
             <div
-              class="etl-source-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-2 bg-[#fdfdff] text-[0.86rem] text-[#1c1b1f] flex items-center [overflow-wrap:anywhere] [word-break:break-word]"
+              class="etl-source-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-2 bg-[#fdfdff] hs-text-sm text-[#1c1b1f] flex items-center [overflow-wrap:anywhere] [word-break:break-word]"
             >
               {{ m.sourceIdentifier || '—' }}
             </div>
@@ -32,22 +32,22 @@
 
           <div class="min-w-0 flex items-center">
             <div
-              class="etl-target-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-[6px] bg-[#f6f9ff] text-[0.86rem] text-[#1c1b1f] flex items-center gap-2 overflow-hidden"
+              class="etl-target-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-[6px] bg-[#f6f9ff] hs-text-sm text-[#1c1b1f] flex items-center gap-2 overflow-hidden"
             >
               <div class="min-w-0 flex flex-1 flex-col justify-center">
                 <span
-                  class="font-semibold text-[#1c1b1f] text-[0.86rem] leading-[1.25] [overflow-wrap:anywhere] whitespace-normal"
+                  class="font-weight-semibold text-[#1c1b1f] hs-text-sm leading-[1.25] [overflow-wrap:anywhere] whitespace-normal"
                 >
                   {{ resolveTargetName(m) || '—' }}
                 </span>
                 <span
                   v-if="resolveMonitoringSiteName(m)"
-                  class="text-[rgba(0,0,0,0.66)] text-[0.78rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
+                  class="text-[rgba(0,0,0,0.66)] hs-text-sm mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
                 >
                   {{ resolveMonitoringSiteName(m) }}
                 </span>
                 <span
-                  class="text-[rgba(0,0,0,0.55)] text-[0.72rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
+                  class="text-[rgba(0,0,0,0.55)] hs-text-sm mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
                 >
                   {{ targetDatastreamId(m) || '—' }}
                 </span>

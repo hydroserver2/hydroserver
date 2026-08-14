@@ -23,13 +23,16 @@
             size="22"
             :color="activeTab === tab.id ? tab.accent : undefined"
           />
-          <span v-if="tab.issues > 0" class="rail-badge">{{ tab.issues }}</span>
+          <span
+            v-if="tab.issues > 0"
+            class="rail-badge hs-text-2xs font-weight-bold"
+            >{{ tab.issues }}</span
+          >
         </span>
         <span
-          class="rail-label"
-          :style="
-            activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}
-          "
+          class="rail-label hs-text-2xs"
+          :class="{ 'font-weight-semibold': activeTab === tab.id }"
+          :style="activeTab === tab.id ? { color: tab.accent } : {}"
         >
           {{ tab.short }}
         </span>
@@ -41,7 +44,7 @@
         <span class="rail-pill">
           <v-icon :icon="mdiBriefcaseOutline" size="22" />
         </span>
-        <span class="rail-label">Workspaces</span>
+        <span class="rail-label hs-text-2xs">Workspaces</span>
       </button>
     </div>
   </nav>
@@ -128,13 +131,10 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--hs-font-2xs);
-  font-weight: 700;
   padding: 0 3px;
   line-height: 1;
 }
 .rail-label {
-  font-size: var(--hs-font-2xs);
   color: var(--hs-text-secondary);
   line-height: 1.2;
   text-align: center;

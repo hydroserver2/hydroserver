@@ -7,7 +7,7 @@
   />
   <v-card v-else-if="!openDelete">
     <v-card-title>
-      <v-row class="text-h5">
+      <v-row class="hs-text-md">
         <v-col v-if="linkToExistingAccount">
           Link Site to HydroShare Archival Resource
         </v-col>
@@ -33,7 +33,7 @@
       validate-on="blur"
       :disabled="loading"
     >
-      <h6 v-if="false" class="text-h6 my-4 d-flex justify-center align-center">
+      <h6 v-if="false" class="hs-text-md my-4 d-flex justify-center align-center">
         Archival Scheduling
 
         <v-tooltip open-delay="500">

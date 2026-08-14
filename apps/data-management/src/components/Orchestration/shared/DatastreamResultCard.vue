@@ -1,6 +1,8 @@
 <template>
   <div class="datastream-result-card">
-    <div class="datastream-result-card__title">{{ datastream.name }}</div>
+    <div class="datastream-result-card__title hs-text-md font-weight-bold">
+      {{ datastream.name }}
+    </div>
 
     <div class="datastream-result-card__grid">
       <div
@@ -8,8 +10,12 @@
         :key="detail.label"
         class="datastream-result-card__detail"
       >
-        <div class="datastream-result-card__label">{{ detail.label }}</div>
-        <div class="datastream-result-card__value">{{ detail.value }}</div>
+        <div class="datastream-result-card__label hs-text-sm font-weight-bold">
+          {{ detail.label }}
+        </div>
+        <div class="datastream-result-card__value hs-text-sm font-weight-bold">
+          {{ detail.value }}
+        </div>
       </div>
     </div>
   </div>
@@ -99,8 +105,6 @@ function humanize(value: string | null | undefined) {
 
 .datastream-result-card__title {
   color: rgba(var(--v-theme-on-surface), 0.94);
-  font-size: 1rem;
-  font-weight: 700;
   line-height: 1.3;
   margin-bottom: 12px;
 }
@@ -113,15 +117,11 @@ function humanize(value: string | null | undefined) {
 
 .datastream-result-card__label {
   color: rgba(var(--v-theme-on-surface), 0.6);
-  font-size: 0.78rem;
-  font-weight: 700;
   line-height: 1.2;
 }
 
 .datastream-result-card__value {
   color: rgba(var(--v-theme-on-surface), 0.92);
-  font-size: 0.9rem;
-  font-weight: 700;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }

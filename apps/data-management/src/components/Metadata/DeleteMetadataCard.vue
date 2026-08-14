@@ -1,7 +1,7 @@
 <template>
   <v-card v-if="loaded">
     <v-toolbar flat color="delete">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" />
         {{
           hasDatastreams

@@ -12,7 +12,7 @@
             v-for="option in dateOptions"
             :key="option.id"
             :value="option.id"
-            class="preset-chip"
+            class="preset-chip hs-text-sm"
             size="small"
             label
           >
@@ -117,7 +117,6 @@ const copyStateToClipboard = () => {
   border-radius: 4px;
   padding-inline: 6px;
   min-height: 24px;
-  font-size: 0.75rem;
 }
 
 .date-fields {

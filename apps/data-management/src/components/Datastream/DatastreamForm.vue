@@ -45,7 +45,7 @@
           </v-card-title>
           <v-card-text
             v-if="showLinkedMetadataHelp"
-            class="text-subtitle-2 text-medium-emphasis"
+            class="hs-text-sm text-medium-emphasis"
           >
             Select the appropriate metadata to describe the the datastream you
             are adding to the monitoring site. If you want to modify the values
@@ -457,7 +457,7 @@
       <v-row>
         <v-col cols="12" md="6">
           <v-card-title>Datastream attributes</v-card-title>
-          <v-card-text class="text-subtitle-2 text-medium-emphasis">
+          <v-card-text class="hs-text-sm text-medium-emphasis">
             For the following items, select an option or type your own. Note:
             the default selections won't be available if there is custom text in
             the field.
@@ -493,7 +493,7 @@
             />
           </v-card-text>
 
-          <v-card-text class="text-subtitle-2 text-medium-emphasis pt-2">
+          <v-card-text class="hs-text-sm text-medium-emphasis pt-2">
             When observation data is missing a value, what should the default
             be?
           </v-card-text>
@@ -512,7 +512,7 @@
 
         <v-col cols="12" md="6">
           <v-card-title>Name and description</v-card-title>
-          <v-card-text class="text-subtitle-2 text-medium-emphasis">
+          <v-card-text class="hs-text-sm text-medium-emphasis">
             Enter a name and description for this datastream, or opt to
             auto-fill with default text. If you choose the defaults, make sure
             you've first filled out the rest of the form correctly as the

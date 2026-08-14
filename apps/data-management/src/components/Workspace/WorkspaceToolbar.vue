@@ -3,7 +3,9 @@
     <div class="px-6 py-3">
       <v-row class="ma-0 gap-3" align="center" no-gutters>
         <v-col cols="auto">
-          <h1 class="orchestration-header-title mb-0">
+          <h1
+            class="orchestration-header-title hs-text-lg font-weight-regular mb-0"
+          >
             {{ title || 'Job orchestration' }}
           </h1>
         </v-col>
@@ -89,8 +91,6 @@ const { compactControls, layout, title } = defineProps<{
 }
 
 .orchestration-header-title {
-  font-size: var(--hs-font-lg);
-  font-weight: 400;
   color: var(--hs-text-primary);
   letter-spacing: 0;
   line-height: 1.2;

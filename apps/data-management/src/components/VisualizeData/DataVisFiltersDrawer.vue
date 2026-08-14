@@ -6,7 +6,7 @@
   >
     <div class="flex h-full flex-col gap-4 px-4 py-4">
       <div class="flex items-center justify-between px-1">
-        <div class="text-[11px] uppercase tracking-[0.25em] text-slate-500">
+        <div class="hs-text-2xs uppercase tracking-[0.25em] text-slate-500">
           Datastream Filters
         </div>
         <v-btn
@@ -14,7 +14,7 @@
           variant="outlined"
           rounded
           :append-icon="mdiClose"
-          class="text-xs"
+          class="hs-text-sm"
           @click="clearFilters"
         >
           Clear filters
@@ -23,7 +23,7 @@
 
       <div class="flex flex-1 flex-col gap-3 overflow-auto pr-1">
         <div>
-          <div class="flex items-center justify-end text-xs text-slate-400">
+          <div class="flex items-center justify-end hs-text-sm text-slate-400">
             <span
               >{{ sortedWorkspaces.length }}/{{ totalWorkspacesCount }}</span
             >
@@ -61,7 +61,7 @@
         </div>
 
         <div>
-          <div class="flex items-center justify-end text-xs text-slate-400">
+          <div class="flex items-center justify-end hs-text-sm text-slate-400">
             <span>{{ sortedMonitoringSites.length }}/{{ totalMonitoringSitesCount }}</span>
           </div>
           <div class="pt-2">
@@ -97,7 +97,7 @@
         </div>
 
         <div>
-          <div class="flex items-center justify-end text-xs text-slate-400">
+          <div class="flex items-center justify-end hs-text-sm text-slate-400">
             <span>
               {{ sortedObservedPropertyNames.length }}/{{
                 totalObservedPropertyNamesCount
@@ -135,7 +135,7 @@
         </div>
 
         <div>
-          <div class="flex items-center justify-end text-xs text-slate-400">
+          <div class="flex items-center justify-end hs-text-sm text-slate-400">
             <span>
               {{ sortedProcessingLevelNames.length }}/{{
                 totalProcessingLevelNamesCount

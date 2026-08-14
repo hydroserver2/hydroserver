@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title class="text-h5"
+    <v-card-title class="hs-text-md"
       >{{ monitoringSiteId ? 'Edit' : 'Register a' }} Site</v-card-title
     >
     <slot name="workspace" />
@@ -16,7 +16,7 @@
     <v-divider />
 
     <v-card-text
-      class="text-subtitle-2 text-medium-emphasis d-flex align-center"
+      class="hs-text-sm text-medium-emphasis d-flex align-center"
     >
       <v-icon :icon="mdiInformation" class="mr-1" />
       Click on the map to
@@ -34,7 +34,7 @@
       <v-card-text>
         <v-row>
           <v-col cols="12" md="6">
-            <h6 class="text-h6 my-4">Site Information</h6>
+            <h6 class="hs-text-md my-4">Site Information</h6>
             <v-row>
               <v-col cols="12"
                 ><v-text-field
@@ -94,7 +94,7 @@
             </v-row>
           </v-col>
           <v-col cols="12" md="6">
-            <h6 class="text-h6 my-4">Site Location</h6>
+            <h6 class="hs-text-md my-4">Site Location</h6>
             <v-row>
               <v-col cols="12" sm="6">
                 <v-text-field

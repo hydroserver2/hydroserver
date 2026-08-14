@@ -307,7 +307,7 @@
               }"
             >
               <v-window-item value="overview">
-                <h6 class="text-h6 mb-1">Overview</h6>
+                <h6 class="hs-text-md mb-1">Overview</h6>
 
                 <div class="overview-stats">
                   <div class="stat-tile stat-tile--members">
@@ -1078,7 +1078,7 @@ onMounted(async () => {
 }
 .stat-tile-head span:last-child {
   font-size: var(--hs-font-2xs);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--hs-text-secondary);
@@ -1094,7 +1094,7 @@ onMounted(async () => {
 }
 .stat-tile-value {
   font-size: var(--hs-font-xl);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: -0.02em;
   color: var(--hs-text-primary);
 }
@@ -1156,7 +1156,7 @@ onMounted(async () => {
 }
 .workspaces-header-title {
   font-size: var(--hs-font-lg);
-  font-weight: 400;
+  font-weight: var(--hs-font-weight-regular);
   color: var(--hs-text-primary);
   letter-spacing: 0;
   line-height: 1.2;
@@ -1215,7 +1215,7 @@ onMounted(async () => {
 }
 .sidebar-title {
   font-size: var(--hs-font-2xs);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   color: var(--hs-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
@@ -1292,7 +1292,7 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .sidebar-item.selected .sidebar-item-title {
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
 }
 .sidebar-item-meta {
   font-size: var(--hs-font-2xs);
@@ -1407,7 +1407,7 @@ onMounted(async () => {
 }
 .detail-title {
   font-size: var(--hs-font-md);
-  font-weight: 400;
+  font-weight: var(--hs-font-weight-regular);
   color: var(--hs-text-primary);
 }
 .detail-subtitle {
@@ -1482,7 +1482,7 @@ onMounted(async () => {
   margin: 0 0 var(--hs-space-8);
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

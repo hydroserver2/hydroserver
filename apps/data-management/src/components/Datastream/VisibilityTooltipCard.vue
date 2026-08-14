@@ -9,7 +9,7 @@
       <v-row no-gutters align="center" style="width: 100%">
         <v-col>
           <div
-            class="text-h6"
+            class="hs-text-md"
             style="white-space: normal; word-break: break-word"
           >
             {{ title }}

@@ -1078,7 +1078,7 @@ const goToTask = async (row: TaskRow) => {
   margin: 0 0 var(--hs-space-8);
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

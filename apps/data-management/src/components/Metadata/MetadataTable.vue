@@ -5,7 +5,7 @@
     :data-testid="`${scope}-metadata-table`"
   >
     <div class="metadata-header">
-      <h6 class="text-h6">Metadata</h6>
+      <h6 class="hs-text-md">Metadata</h6>
       <v-icon
         :icon="mdiHelpCircleOutline"
         @click="showHelp = !showHelp"
@@ -15,7 +15,7 @@
       />
     </div>
 
-    <p v-if="showHelp" class="metadata-help-text">
+    <p v-if="showHelp" class="metadata-help-text hs-text-sm">
       Methods, units, and other reference metadata used by this workspace's
       datastreams. Workspace items are yours to edit; system items are shared
       platform defaults managed by administrators.
@@ -323,7 +323,6 @@ const canManageSystemMetadata = computed(() => isAdmin())
   cursor: pointer;
 }
 .metadata-help-text {
-  font-size: 12.5px;
   color: #6b7280;
   line-height: 1.5;
   max-width: 640px;
@@ -361,6 +360,7 @@ const canManageSystemMetadata = computed(() => isAdmin())
 }
 .metadata-window :deep(td),
 .metadata-window :deep(th) {
-  font-size: 13px;
+  /* No template element reachable inside v-data-table internals. */
+  font-size: var(--hs-font-sm);
 }
 </style>

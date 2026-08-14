@@ -77,7 +77,7 @@
         <v-divider class="mb-4" />
 
         <div
-          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+          class="hs-text-2xs text-medium-emphasis mb-3 font-weight-bold text-uppercase"
         >
           Aggregation settings
         </div>
@@ -137,7 +137,7 @@
         <v-divider class="mb-4 mt-2" />
 
         <div
-          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+          class="hs-text-2xs text-medium-emphasis mb-3 font-weight-bold text-uppercase"
         >
           Timezone
         </div>

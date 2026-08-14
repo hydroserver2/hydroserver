@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar flat color="red-darken-4">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" /> Confirm data connection deletion
       </v-card-title>
     </v-toolbar>

@@ -1,10 +1,10 @@
 <template>
-  <h6 class="text-h6 mb-4">Add Photos</h6>
+  <h6 class="hs-text-md mb-4">Add Photos</h6>
   <v-card-text
     id="drop-area"
     @dragover.prevent
     @drop="handleDrop"
-    class="drop-area text-subtitle-2 text-medium-emphasis d-flex mb-6"
+    class="drop-area hs-text-sm text-medium-emphasis d-flex mb-6"
     data-testid="site-photo-drop-area"
   >
     <v-icon :icon="mdiPaperclip" class="mr-1" />

@@ -68,7 +68,7 @@
           class="account-menu-btn"
         >
           <v-avatar color="primary" size="36">
-            <span class="account-avatar-initials">{{ userInitials }}</span>
+            <span class="account-avatar-initials hs-text-sm font-weight-semibold">{{ userInitials }}</span>
           </v-avatar>
 
           <v-menu bottom left activator="parent">
@@ -324,8 +324,6 @@ async function onLogout() {
   border-bottom: 1px solid #e8e8e8 !important;
 }
 .account-avatar-initials {
-  font-size: 13px;
-  font-weight: 600;
   color: #ffffff;
   letter-spacing: 0.02em;
 }

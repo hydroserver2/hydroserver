@@ -1,27 +1,29 @@
-/* Design tokens for the hand-built "page chrome" shared by Manage
- * Workspaces, Job Orchestration, and Browse Monitoring Sites, and
- * Visualize Data (sidebars, nav rails, floating filter panels, headers,
- * empty states). Vuetify's theme (see plugins/vuetify.ts) already
- * covers component-level color for monitoringSites like buttons and alerts —
- * these tokens are for the custom scoped-CSS chrome around them, which
- * previously reinvented its own close-but-not-quite hex/px values per
- * file.
+/* Color, spacing, and radius tokens for the hand-built "page chrome"
+ * shared by Manage Workspaces, Job Orchestration, Browse Monitoring
+ * Sites, and Visualize Data (sidebars, nav rails, floating filter
+ * panels, headers, empty states). Vuetify's theme (see plugins/vuetify.ts)
+ * already covers component-level color for things like buttons and
+ * alerts — these tokens are for the custom scoped-CSS chrome around them,
+ * which previously reinvented its own close-but-not-quite hex/px values
+ * per file.
  *
  * Most pages (About, Site Details, the Streaming Data Loader download
  * page, etc.) don't need any of this — they're plain Vuetify
- * (text-h4/h5/h6, text-body-1/2, text-caption, text-medium-emphasis,
- * v-card/v-btn defaults) plus Tailwind utility classes for layout. Only
- * reach for these tokens inside the specific dashboard-style chrome
- * listed below; using them elsewhere just reintroduces the two
- * competing visual languages this file was added to avoid.
+ * (v-card/v-btn defaults) plus Tailwind utility classes for layout. Only
+ * reach for the color/spacing/radius tokens below inside the specific
+ * dashboard-style chrome listed above; using them elsewhere just
+ * reintroduces the two competing visual languages this file was added to
+ * avoid.
  *
  * Rule of thumb: if you're about to write a raw hex color, or a px value
- * for spacing/radius/font-size, in a page or component under
- * pages/Workspaces.vue, pages/Orchestration.vue, pages/Browse.vue,
- * pages/VisualizeData.vue, or their sidebar/rail/toolbar/filter
- * components, use one of these instead. If none of them fit, that's a
- * signal to bring a new one back here deliberately rather than inline
- * it.
+ * for spacing/radius, in a page or component under pages/Workspaces.vue,
+ * pages/Orchestration.vue, pages/Browse.vue, pages/VisualizeData.vue, or
+ * their sidebar/rail/toolbar/filter components, use one of these instead.
+ * If none of them fit, that's a signal to bring a new one back here
+ * deliberately rather than inline it.
+ *
+ * The type scale near the bottom of this file is different: it's the
+ * app-wide font-size system, used everywhere (see the comment there).
  */
 :root {
   /* Text */
@@ -93,10 +95,47 @@
   --hs-radius-pill: 999px;
 
   /* Type scale (px). Five sizes, top to bottom: big stat numbers, page /
-     empty-state headings, sub-headings, body/UI text, tiny labels. */
+     empty-state headings, sub-headings, body/UI text, tiny labels.
+     This is the one app-wide font-size scale — see the .hs-text-*
+     classes below. Vuetify 4's Material 3 blueprint renamed its old
+     text-h1..h6/text-body-1/text-body-2/text-caption/text-subtitle-1/
+     text-subtitle-2/text-overline classes, so those names now match no
+     CSS and silently render as unstyled text; use .hs-text-* instead.
+     Font weight comes from Vuetify's own (still-live) .font-weight-
+     regular/medium/semibold/bold classes; font family is the global
+     default set by @hydroserver/design-tokens/fonts.css, or the
+     .hs-font-data class for monospace numeric/ID data. Don't add a
+     sixth size — if none of these five fit, that's a sign the content
+     needs a rethink, not a new token. */
   --hs-font-2xs: 10px;
   --hs-font-sm: 12px;
   --hs-font-md: 17px;
   --hs-font-lg: 22px;
   --hs-font-xl: 26px;
+}
+
+/* App-wide type scale classes. Pick the one matching the role, not the
+ * pixel size you think looks right:
+ *   hs-text-xl  — big stat numbers (dashboard tiles, counts)
+ *   hs-text-lg  — page and empty-state headings
+ *   hs-text-md  — sub-headings (card titles, section headers)
+ *   hs-text-sm  — body / UI text (the default for most copy)
+ *   hs-text-2xs — tiny labels (captions, badges, timestamps)
+ * Combine with Vuetify's .font-weight-regular/medium/semibold/bold for
+ * weight; these classes only ever set font-size.
+ */
+.hs-text-2xs {
+  font-size: var(--hs-font-2xs);
+}
+.hs-text-sm {
+  font-size: var(--hs-font-sm);
+}
+.hs-text-md {
+  font-size: var(--hs-font-md);
+}
+.hs-text-lg {
+  font-size: var(--hs-font-lg);
+}
+.hs-text-xl {
+  font-size: var(--hs-font-xl);
 }

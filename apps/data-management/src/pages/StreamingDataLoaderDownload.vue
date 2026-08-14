@@ -1,7 +1,7 @@
 <template>
   <v-container class="max-w-[64rem]">
-    <h4 class="text-h4 mt-6 mb-2">Streaming Data Loader</h4>
-    <p class="text-body-1 text-medium-emphasis mb-4 max-w-[46rem]">
+    <h4 class="hs-text-lg mt-6 mb-2">Streaming Data Loader</h4>
+    <p class="hs-text-sm text-medium-emphasis mb-4 max-w-[46rem]">
       A simple alternative to the main HydroServer orchestration system — it
       reads CSV files on your laptop and streams updates as those updates
       happen.
@@ -17,11 +17,11 @@
       >
         {{ release.tag_name }}
       </v-chip>
-      <span v-if="formattedReleaseDate" class="text-caption text-medium-emphasis">
+      <span v-if="formattedReleaseDate" class="hs-text-2xs text-medium-emphasis">
         Released {{ formattedReleaseDate }}
       </span>
       <a
-        class="text-caption text-primary d-inline-flex align-center text-decoration-none"
+        class="hs-text-2xs text-primary d-inline-flex align-center text-decoration-none"
         :href="releasesUrl"
         target="_blank"
         rel="noopener noreferrer"
@@ -65,7 +65,7 @@
           style="width: 100%"
         >
           <v-card-text>
-            <h5 class="text-h5 mb-2 d-flex align-center">
+            <h5 class="hs-text-md mb-2 d-flex align-center">
               <v-icon
                 :icon="platform.icon"
                 :color="platform.iconColor"
@@ -73,7 +73,7 @@
               />
               {{ platform.name }}
             </h5>
-            <div class="text-body-2 text-medium-emphasis">
+            <div class="hs-text-sm text-medium-emphasis">
               {{ platform.requirement }}
             </div>
           </v-card-text>
@@ -87,7 +87,7 @@
             >
               Download for {{ platform.short }}
             </v-btn>
-            <span class="text-caption text-medium-emphasis text-center mt-2">
+            <span class="hs-text-2xs text-medium-emphasis text-center mt-2">
               {{
                 platform.assetName
                   ? `${platform.assetName} · ${platform.assetSize}`
@@ -103,10 +103,10 @@
       <v-col cols="12">
         <v-card>
           <v-card-text>
-            <h5 class="text-h6 mb-3">Guides</h5>
+            <h5 class="hs-text-md mb-3">Guides</h5>
             <div class="flex flex-col">
               <a
-                class="flex items-center gap-2 py-2 text-body-2 text-primary text-decoration-none border-b border-black/10"
+                class="flex items-center gap-2 py-2 hs-text-sm text-primary text-decoration-none border-b border-black/10"
                 :href="installGuideUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -115,7 +115,7 @@
                 Installation instructions
               </a>
               <a
-                class="flex items-center gap-2 py-2 text-body-2 text-primary text-decoration-none border-b border-black/10"
+                class="flex items-center gap-2 py-2 hs-text-sm text-primary text-decoration-none border-b border-black/10"
                 :href="usageGuideUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -124,7 +124,7 @@
                 How to use the Streaming Data Loader
               </a>
               <a
-                class="flex items-center gap-2 py-2 text-body-2 text-primary text-decoration-none"
+                class="flex items-center gap-2 py-2 hs-text-sm text-primary text-decoration-none"
                 :href="repoUrl"
                 target="_blank"
                 rel="noopener noreferrer"

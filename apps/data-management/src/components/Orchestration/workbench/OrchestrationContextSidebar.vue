@@ -2,7 +2,9 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="flex items-center">
-        <span class="sidebar-title">{{ title }}</span>
+        <span class="sidebar-title hs-text-2xs font-weight-bold">{{
+          title
+        }}</span>
         <button
           v-if="isIngestion && canCreate"
           type="button"
@@ -35,7 +37,7 @@
         <input
           :value="search"
           :placeholder="`Search ${title.toLowerCase()}…`"
-          class="sidebar-search-input"
+          class="sidebar-search-input hs-text-sm"
           @input="search = ($event.target as HTMLInputElement).value"
         />
       </div>
@@ -65,8 +67,13 @@
             }"
           />
           <div class="sidebar-item-body">
-            <div class="sidebar-item-title">{{ dc.name }}</div>
-            <div class="sidebar-item-meta">
+            <div
+              class="sidebar-item-title hs-text-sm"
+              :class="{ 'font-weight-semibold': selectedConnectionId === dc.id }"
+            >
+              {{ dc.name }}
+            </div>
+            <div class="sidebar-item-meta hs-text-2xs">
               <span class="sidebar-item-meta-text">
                 {{ taskCountForConnection(dc.id) }} task{{
                   taskCountForConnection(dc.id) === 1 ? '' : 's'
@@ -146,12 +153,15 @@
               selectedConnectionId !== dc.id &&
               issueCountForConnection(dc.id) > 0
             "
-            class="sidebar-item-badge"
+            class="sidebar-item-badge hs-text-2xs font-weight-bold"
           >
             {{ issueCountForConnection(dc.id) }}
           </span>
         </div>
-        <div v-if="connections.length === 0" class="sidebar-empty">
+        <div
+          v-if="connections.length === 0"
+          class="sidebar-empty hs-text-sm"
+        >
           No data connections yet.
         </div>
       </template>
@@ -179,8 +189,16 @@
             }"
           />
           <div class="sidebar-item-body">
-            <div class="sidebar-item-title">{{ monitoringSite.name }}</div>
-            <div class="sidebar-item-meta">
+            <div
+              class="sidebar-item-title hs-text-sm"
+              :class="{
+                'font-weight-semibold':
+                  selectedMonitoringSiteId === monitoringSite.id,
+              }"
+            >
+              {{ monitoringSite.name }}
+            </div>
+            <div class="sidebar-item-meta hs-text-2xs">
               {{ taskCountForSite(monitoringSite.id) }} task{{
                 taskCountForSite(monitoringSite.id) === 1 ? '' : 's'
               }}
@@ -195,12 +213,14 @@
             v-if="
               selectedMonitoringSiteId !== monitoringSite.id && issueCountForSite(monitoringSite.id) > 0
             "
-            class="sidebar-item-badge"
+            class="sidebar-item-badge hs-text-2xs font-weight-bold"
           >
             {{ issueCountForSite(monitoringSite.id) }}
           </span>
         </div>
-        <div v-if="sites.length === 0" class="sidebar-empty">No sites yet.</div>
+        <div v-if="sites.length === 0" class="sidebar-empty hs-text-sm">
+          No sites yet.
+        </div>
       </template>
     </div>
 
@@ -208,7 +228,7 @@
       <button
         v-if="canCreate"
         type="button"
-        class="sidebar-footer-btn"
+        class="sidebar-footer-btn hs-text-sm"
         :style="{ color: accent, borderColor: accent + '66' }"
         @click="$emit('create')"
       >
@@ -220,7 +240,7 @@
           <span v-bind="tooltipProps" class="inline-flex w-full">
             <button
               type="button"
-              class="sidebar-footer-btn"
+              class="sidebar-footer-btn hs-text-sm"
               :style="{ color: accent, borderColor: accent + '66' }"
               disabled
             >
@@ -305,8 +325,6 @@ const addLabel = computed(() =>
   border-bottom: 1px solid var(--hs-border);
 }
 .sidebar-title {
-  font-size: var(--hs-font-2xs);
-  font-weight: 700;
   color: var(--hs-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
@@ -340,7 +358,6 @@ const addLabel = computed(() =>
   height: 30px;
   padding-left: 30px;
   padding-right: var(--hs-space-10);
-  font-size: var(--hs-font-sm);
   outline: none;
   background: var(--hs-surface);
 }
@@ -376,14 +393,9 @@ const addLabel = computed(() =>
   padding-right: 62px;
 }
 .sidebar-item-title {
-  font-size: var(--hs-font-sm);
   color: inherit;
 }
-.sidebar-item.selected .sidebar-item-title {
-  font-weight: 600;
-}
 .sidebar-item-meta {
-  font-size: var(--hs-font-2xs);
   color: var(--hs-text-secondary);
   margin-top: var(--hs-space-2);
   min-height: 24px;
@@ -402,8 +414,6 @@ const addLabel = computed(() =>
   color: var(--hs-danger);
   border-radius: var(--hs-radius-pill);
   padding: 1px var(--hs-space-6);
-  font-size: var(--hs-font-2xs);
-  font-weight: 700;
 }
 .sidebar-item-actions {
   position: absolute;
@@ -455,7 +465,6 @@ const addLabel = computed(() =>
 }
 .sidebar-empty {
   padding: var(--hs-space-16) var(--hs-space-16);
-  font-size: var(--hs-font-sm);
   color: var(--hs-text-muted);
 }
 .sidebar-footer {
@@ -468,7 +477,6 @@ const addLabel = computed(() =>
   border-radius: var(--hs-radius-md);
   padding: var(--hs-space-6) 0;
   width: 100%;
-  font-size: var(--hs-font-sm);
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -27,7 +27,7 @@
               v-for="option in dateOptions"
               :key="option.id"
               :value="option.id"
-              class="min-h-[24px] rounded px-2 text-[0.75rem]"
+              class="min-h-[24px] rounded px-2 hs-text-sm"
               size="small"
               label
             >
