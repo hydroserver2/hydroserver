@@ -377,7 +377,13 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
 
         task: EtlTask = self.get(task, action="edit", principal=principal)
         data_connection = task.data_connection
-        etl_mappings = task.etl_mappings.all()
+        etl_mappings = task.etl_mappings.select_related("target_datastream").all()
+
+        for etl_mapping in etl_mappings:
+            datastream_service.update_observation_statistics(
+                datastream=etl_mapping.target_datastream,
+                fields=["phenomenon_end_time"],
+            )
 
         extractor = HTTPExtractor(
             source_uri=data_connection.source_url,
