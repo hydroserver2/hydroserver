@@ -12,7 +12,7 @@ class SessionAuth(APIKeyCookie):
     def authenticate(self, request: HttpRequest, key: str) -> Any:
         if key is None:
             return None
-        if settings.TRUSTED_LOCAL_ENVIRONMENT:
+        if not settings.STRICT_SECURITY:
             csrf_passed = True
         else:
             csrf_passed = check_csrf(request) if self.csrf else True
