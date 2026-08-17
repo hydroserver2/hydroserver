@@ -4,7 +4,6 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { VBtn } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
-import { mdiPlus } from '@mdi/js'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
 // HydroServer's shared palette and semantic roles. Keep the literal beside its
@@ -106,10 +105,12 @@ const vuetify = createVuetify({
     },
     VBtnAdd: {
       ...btnAttrs,
-      color: 'secondary',
-      prependIcon: mdiPlus,
-      rounded: true,
-      variant: 'elevated',
+      // An add/create control is the primary action for its table or view.
+      // Match the shared primary-action shape instead of using the legacy
+      // green pill treatment.
+      color: 'primary',
+      rounded: 'sm',
+      variant: 'flat',
     },
   },
   theme: {

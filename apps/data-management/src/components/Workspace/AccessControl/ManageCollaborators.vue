@@ -1,27 +1,4 @@
 <template>
-  <div class="collaborators-header">
-    <h6 class="hs-text-md">Collaborators</h6>
-    <v-icon
-      :icon="mdiHelpCircleOutline"
-      @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
-      color="grey"
-      size="18"
-      class="collaborators-help-icon"
-      aria-label="Toggle collaborator help"
-      :aria-expanded="showAddCollaboratorHelp"
-    />
-  </div>
-
-  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
-    <small>
-      You can add collaborators to this workspace with either Editor or
-      Viewer roles. Viewers can see everything in the workspace but cannot
-      edit. Editors can create, read, update, and delete all sites, metadata,
-      and datastreams as well as set their visibility. Users can remove
-      themselves as collaborators.
-    </small>
-  </p>
-
   <v-alert
     v-if="loadError"
     type="error"
@@ -68,9 +45,29 @@
     </v-card-actions>
   </v-card-text>
 
-  <v-card class="hs-table-card collaborators-table-card" flat>
-    <v-toolbar flat density="compact">
-      <v-spacer />
+  <div class="hs-table-tools">
+    <v-text-field
+      v-model="search"
+      class="hs-table-search"
+      placeholder="Search collaborators"
+      aria-label="Search collaborators"
+      :prepend-inner-icon="mdiMagnify"
+      clearable
+      hide-details
+      density="compact"
+    />
+
+    <div class="hs-table-actions">
+      <v-btn
+        :icon="mdiHelpCircleOutline"
+        variant="text"
+        size="small"
+        color="text-secondary"
+        title="About collaborators"
+        aria-label="Toggle collaborator help"
+        :aria-expanded="showAddCollaboratorHelp"
+        @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
+      />
 
       <PermissionTooltip
         :has-permission="canCreate"
@@ -78,7 +75,6 @@
       >
         <template #default>
           <v-btn-add
-            class="mr-2"
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
             >Add collaborator</v-btn-add
@@ -88,15 +84,26 @@
         <template #denied>
           <v-btn-add
             disabled
-            class="mr-2"
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
             >Add collaborator</v-btn-add
           >
         </template>
       </PermissionTooltip>
-    </v-toolbar>
+    </div>
+  </div>
 
+  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
+    <small>
+      You can add collaborators to this workspace with either Editor or Viewer
+      roles. Viewers can see everything in the workspace but cannot edit.
+      Editors can create, read, update, and delete all sites, metadata, and
+      datastreams as well as set their visibility. Users can remove themselves
+      as collaborators.
+    </small>
+  </p>
+
+  <v-card class="hs-table-card collaborators-table-card" flat>
     <v-table class="collaborator-table">
       <thead>
         <tr>
@@ -108,7 +115,7 @@
       </thead>
       <tbody>
         <tr
-          v-for="item in collaboratorList"
+          v-for="item in filteredCollaborators"
           :key="item.email"
           :data-testid="`collaborator-row-${item.email}`"
         >
@@ -174,9 +181,11 @@
             </template>
           </td>
         </tr>
-        <tr v-if="!collaboratorList.length">
+        <tr v-if="!filteredCollaborators.length">
           <td colspan="4" class="text-center text-medium-emphasis">
-            No collaborators yet.
+            {{
+              search ? 'No matching collaborators.' : 'No collaborators yet.'
+            }}
           </td>
         </tr>
       </tbody>
@@ -196,7 +205,12 @@ import hs, {
   CollaboratorRole,
   Workspace,
 } from '@hydroserver/client'
-import { mdiHelpCircleOutline, mdiPencil, mdiTrashCanOutline } from '@mdi/js'
+import {
+  mdiHelpCircleOutline,
+  mdiMagnify,
+  mdiPencil,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
@@ -242,6 +256,24 @@ const selectedRole = ref()
 const newCollaboratorEmail = ref('')
 const roles = ref<CollaboratorRole[]>([])
 const collaboratorList = ref<any[]>([])
+const search = ref('')
+const filteredCollaborators = computed(() => {
+  const query = search.value.trim().toLocaleLowerCase()
+  if (!query) return collaboratorList.value
+
+  return collaboratorList.value.filter((collaborator) =>
+    [
+      collaborator.name,
+      collaborator.email,
+      collaborator.organization,
+      collaborator.role?.name,
+    ].some((value) =>
+      String(value ?? '')
+        .toLocaleLowerCase()
+        .includes(query)
+    )
+  )
+})
 const isLoading = ref(false)
 const loadError = ref('')
 const isAdding = ref(false)
@@ -429,23 +461,14 @@ onMounted(loadCollaboratorData)
 </script>
 
 <style scoped>
-.collaborators-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-.collaborators-help-icon {
-  cursor: pointer;
-}
 .collaborators-help-text {
-  color: #6b7280;
+  color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
   margin-bottom: 10px;
 }
 .collaborators-table-card {
-  margin-top: 6px;
+  margin-top: 0;
 }
 .collaborator-table :deep(td) {
   vertical-align: middle;

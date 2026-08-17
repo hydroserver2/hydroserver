@@ -1,6 +1,6 @@
 .required-label::after {
   content: ' *';
-  color: #f44336; /* Vuetify error color */
+  color: rgb(var(--v-theme-error));
 }
 
 /* Thin border so tables read as a contained element rather than content that
@@ -8,7 +8,108 @@
    table, metadata table, sites table) to live here rather than be repeated
    per-component. */
 .hs-table-card {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
+  background: var(--hs-surface);
   overflow: hidden;
+}
+
+.hs-table-card > .v-toolbar {
+  background: var(--hs-surface-subtle);
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.hs-table-card .v-table,
+.hs-table-card .v-data-table {
+  background: var(--hs-surface);
+}
+
+.hs-table-card .v-table__wrapper > table > thead > tr > th {
+  background: var(--hs-surface-muted);
+  color: var(--hs-text-secondary);
+  border-bottom-color: var(--hs-border);
+}
+
+.hs-table-card .v-table__wrapper > table > tbody > tr > td {
+  border-bottom-color: var(--hs-border);
+}
+
+/* Search and the table's primary action sit outside the bordered table,
+   following the familiar filter/action/list hierarchy used by GitHub. */
+.hs-table-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-12);
+  margin: var(--hs-space-8) 0 var(--hs-space-10);
+}
+
+.hs-table-search {
+  --v-input-control-height: 32px;
+  --v-input-padding-top: 0px;
+  flex: 1;
+  height: 32px;
+  max-width: 560px;
+}
+
+.hs-table-search .v-field {
+  height: 32px;
+  border-radius: var(--hs-radius-sm);
+}
+
+.hs-table-search .v-field__input {
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-sm);
+  min-height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.hs-table-search .v-field__input input::placeholder {
+  color: var(--hs-text-secondary);
+  opacity: 1;
+}
+
+.hs-table-search .v-field__prepend-inner .v-icon {
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-md);
+}
+
+.hs-table-search .v-field__prepend-inner,
+.hs-table-search .v-field__append-inner,
+.hs-table-search .v-field__clearable {
+  align-items: center;
+  padding-top: 0;
+}
+
+.hs-table-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+}
+
+/* Compact text-only primary actions for the floating table toolbar. */
+.hs-table-actions .v-btn:not(.v-btn--icon) {
+  height: 32px;
+  min-height: 32px;
+  border-radius: var(--hs-radius-sm) !important;
+}
+
+.hs-table-tools > :last-child {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .hs-table-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hs-table-search {
+    max-width: none;
+  }
+
+  .hs-table-tools > :last-child {
+    align-self: flex-end;
+  }
 }

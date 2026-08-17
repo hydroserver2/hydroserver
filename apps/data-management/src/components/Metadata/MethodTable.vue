@@ -105,7 +105,6 @@ const headers = computed(() => {
     { title: 'Name', key: 'name' },
     { title: 'Type', key: 'type' },
     { title: 'Code', key: 'code' },
-    { title: 'UUID', key: 'id' },
   ]
   if (props.scope === 'all')
     base.push({ title: 'Scope', key: 'scope', sortable: false })

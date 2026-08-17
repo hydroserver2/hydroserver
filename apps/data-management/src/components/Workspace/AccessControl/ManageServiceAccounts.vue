@@ -1,26 +1,5 @@
 <template>
   <div class="service-accounts-section" data-testid="service-accounts-section">
-    <div class="service-accounts-header">
-      <h6 class="hs-text-md">Service accounts</h6>
-      <v-icon
-        :icon="mdiHelpCircleOutline"
-        @click="showServiceAccountHelp = !showServiceAccountHelp"
-        color="grey"
-        size="18"
-        class="service-accounts-help-icon"
-        aria-label="Toggle service account help"
-        :aria-expanded="showServiceAccountHelp"
-      />
-    </div>
-
-    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
-      <small>
-        Service accounts provide remote systems with a controlled set of
-        permissions. A service account can collaborate on other workspaces
-        after it is created.
-      </small>
-    </p>
-
     <v-alert
       v-if="loadError"
       type="error"
@@ -50,7 +29,7 @@
       </v-alert>
 
       <v-sheet
-        color="grey-lighten-5"
+        color="surface-muted"
         class="pa-4 rounded d-flex align-center justify-space-between"
         border
       >
@@ -64,24 +43,55 @@
       </v-sheet>
     </v-card-text>
 
-    <v-card class="hs-table-card service-accounts-table-card" flat>
-      <v-toolbar flat density="compact">
-        <v-spacer />
+    <div class="hs-table-tools">
+      <v-text-field
+        v-model="search"
+        class="hs-table-search"
+        placeholder="Search service accounts"
+        aria-label="Search service accounts"
+        :prepend-inner-icon="mdiMagnify"
+        clearable
+        hide-details
+        density="compact"
+      />
+
+      <div class="hs-table-actions">
+        <v-btn
+          :icon="mdiHelpCircleOutline"
+          variant="text"
+          size="small"
+          color="text-secondary"
+          title="About service accounts"
+          aria-label="Toggle service account help"
+          :aria-expanded="showServiceAccountHelp"
+          @click="showServiceAccountHelp = !showServiceAccountHelp"
+        />
+
         <PermissionTooltip
           :has-permission="canCreate"
           message="You don't have permission to create service accounts for this workspace."
         >
           <template #default>
-            <v-btn-add class="mr-2" @click="openCreate = true">
+            <v-btn-add @click="openCreate = true">
               Create service account
             </v-btn-add>
           </template>
           <template #denied>
-            <v-btn-add class="mr-2" disabled>Create service account</v-btn-add>
+            <v-btn-add disabled>Create service account</v-btn-add>
           </template>
         </PermissionTooltip>
-      </v-toolbar>
+      </div>
+    </div>
 
+    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
+      <small>
+        Service accounts provide remote systems with a controlled set of
+        permissions. A service account can collaborate on other workspaces after
+        it is created.
+      </small>
+    </p>
+
+    <v-card class="hs-table-card service-accounts-table-card" flat>
       <v-data-table-virtual
         class="service-accounts-data-table"
         :headers="headers"
@@ -191,6 +201,7 @@ import {
   mdiContentCopy,
   mdiTrashCanOutline,
   mdiHelpCircleOutline,
+  mdiMagnify,
   mdiPencil,
   mdiRefresh,
 } from '@mdi/js'
@@ -252,7 +263,7 @@ const openCreate = ref(false)
 const openRefresh = ref(false)
 const showServiceAccountHelp = ref(false)
 const sortBy = [{ key: 'OPName' }]
-const search = ref()
+const search = ref('')
 const roles = ref<CollaboratorRole[]>([])
 const serviceAccountsLoadError = ref('')
 const rolesLoadError = ref('')
@@ -453,17 +464,8 @@ onMounted(loadRoles)
   min-height: 0;
   overflow: hidden;
 }
-.service-accounts-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-.service-accounts-help-icon {
-  cursor: pointer;
-}
 .service-accounts-help-text {
-  color: #6b7280;
+  color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
   margin-bottom: 10px;
@@ -473,7 +475,7 @@ onMounted(loadRoles)
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  margin-top: 6px;
+  margin-top: 0;
   overflow: hidden;
 }
 .service-accounts-data-table {

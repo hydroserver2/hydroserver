@@ -1103,6 +1103,9 @@ onMounted(async () => {
   display: flex;
   align-items: center;
 }
+.sidebar-header-row > :last-child {
+  margin-left: auto;
+}
 .sidebar-title {
   color: var(--hs-text-secondary);
   text-transform: uppercase;
@@ -1111,7 +1114,6 @@ onMounted(async () => {
 .sidebar-add {
   width: 26px;
   height: 26px;
-  margin-left: auto;
   border: 0;
   border-radius: var(--hs-radius-sm);
   background: rgb(var(--v-theme-primary));
@@ -1272,7 +1274,7 @@ onMounted(async () => {
   min-width: 0;
 }
 .detail-header {
-  padding: var(--hs-space-12) var(--hs-space-24);
+  padding: var(--hs-space-20) var(--hs-space-24) var(--hs-space-12);
   border-bottom: 1px solid var(--hs-border);
   display: flex;
   align-items: center;
