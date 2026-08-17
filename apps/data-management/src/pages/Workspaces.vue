@@ -1,95 +1,86 @@
 <template>
   <div v-if="isPageLoaded" class="workspaces-page">
-    <div class="workspaces-page-toolbar">
-      <div class="workspaces-header">
-        <div class="workspaces-header-inner">
-          <h1 class="workspaces-header-title">Manage workspaces</h1>
-        </div>
-      </div>
-
-      <v-alert
-        v-if="pendingWorkspaces.length"
-        class="pending-transfer-alert"
-        type="info"
-        variant="tonal"
-        border="start"
-        :icon="mdiTransitTransfer"
-        data-testid="pending-transfers-banner"
+    <v-alert
+      v-if="pendingWorkspaces.length"
+      class="pending-transfer-alert"
+      type="info"
+      variant="tonal"
+      border="start"
+      :icon="mdiTransitTransfer"
+      data-testid="pending-transfers-banner"
+    >
+      <div
+        v-for="ws in pendingWorkspaces"
+        :key="ws.id"
+        class="d-flex align-center flex-wrap ga-2"
       >
-        <div
-          v-for="ws in pendingWorkspaces"
-          :key="ws.id"
-          class="d-flex align-center flex-wrap ga-2"
+        <span>
+          <strong>{{ ws.name }}</strong> — {{ ws.owner?.name }} wants to
+          transfer ownership of this workspace to you.
+        </span>
+        <v-spacer />
+        <v-btn-cancel
+          density="comfortable"
+          :loading="
+            pendingTransferActionId === ws.id &&
+            pendingTransferActionType === 'decline'
+          "
+          :disabled="
+            !!pendingTransferActionId &&
+            (pendingTransferActionId !== ws.id ||
+              pendingTransferActionType !== 'decline')
+          "
+          :aria-label="`Decline transfer of ${ws.name}`"
+          @click="onCancelTransfer(ws)"
         >
-          <span>
-            <strong>{{ ws.name }}</strong> — {{ ws.owner?.name }} wants to
-            transfer ownership of this workspace to you.
-          </span>
-          <v-spacer />
-          <v-btn-cancel
-            density="comfortable"
-            :loading="
-              pendingTransferActionId === ws.id &&
-              pendingTransferActionType === 'decline'
-            "
-            :disabled="
-              !!pendingTransferActionId &&
-              (pendingTransferActionId !== ws.id ||
-                pendingTransferActionType !== 'decline')
-            "
-            :aria-label="`Decline transfer of ${ws.name}`"
-            @click="onCancelTransfer(ws)"
-          >
-            Decline
-          </v-btn-cancel>
-          <v-btn
-            color="green-darken-2"
-            density="comfortable"
-            :prepend-icon="mdiCheck"
-            :loading="
-              pendingTransferActionId === ws.id &&
-              pendingTransferActionType === 'accept'
-            "
-            :disabled="
-              !!pendingTransferActionId &&
-              (pendingTransferActionId !== ws.id ||
-                pendingTransferActionType !== 'accept')
-            "
-            :aria-label="`Accept transfer of ${ws.name}`"
-            @click="onAcceptTransfer(ws)"
-          >
-            Accept transfer
-          </v-btn>
-        </div>
-      </v-alert>
+          Decline
+        </v-btn-cancel>
+        <v-btn-primary
+          density="comfortable"
+          :prepend-icon="mdiCheck"
+          :loading="
+            pendingTransferActionId === ws.id &&
+            pendingTransferActionType === 'accept'
+          "
+          :disabled="
+            !!pendingTransferActionId &&
+            (pendingTransferActionId !== ws.id ||
+              pendingTransferActionType !== 'accept')
+          "
+          :aria-label="`Accept transfer of ${ws.name}`"
+          @click="onAcceptTransfer(ws)"
+        >
+          Accept transfer
+        </v-btn-primary>
+      </div>
+    </v-alert>
 
-      <v-alert
-        v-if="workspaceLoadError && selected"
-        class="workspace-load-alert"
-        type="error"
-        variant="tonal"
-        border="start"
-      >
-        <div class="d-flex align-center flex-wrap ga-2">
-          <span>{{ workspaceLoadError }}</span>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            :loading="isRetryingWorkspaceLoad"
-            @click="retryWorkspaceLoad"
-          >
-            Retry
-          </v-btn>
-        </div>
-      </v-alert>
-    </div>
+    <v-alert
+      v-if="workspaceLoadError && selected"
+      class="workspace-load-alert"
+      type="error"
+      variant="tonal"
+      border="start"
+    >
+      <div class="d-flex align-center flex-wrap ga-2">
+        <span>{{ workspaceLoadError }}</span>
+        <v-spacer />
+        <v-btn
+          variant="text"
+          :loading="isRetryingWorkspaceLoad"
+          @click="retryWorkspaceLoad"
+        >
+          Retry
+        </v-btn>
+      </div>
+    </v-alert>
 
     <div class="workspaces-page-body">
       <div class="workspaces-shell">
         <aside class="sidebar" data-testid="workspace-sidebar">
           <div class="sidebar-header">
-            <div class="flex items-center">
-              <span class="sidebar-title">Workspaces</span>
+            <div class="sidebar-header-row">
+              <span class="sidebar-title hs-label">Workspaces</span>
               <PermissionTooltip
                 :has-permission="canCreateWorkspace"
                 message="You don't have permissions to create a workspace. Contact your system administrator to change your permissions."
@@ -97,25 +88,23 @@
                 <template #default>
                   <button
                     type="button"
-                    class="sidebar-add ml-auto"
-                    :style="{ background: WORKSPACE_ACCENT }"
-                    aria-label="New workspace"
-                    title="New workspace"
+                    class="sidebar-add"
+                    aria-label="Add workspace"
+                    title="Add workspace"
                     @click="openCreate = true"
                   >
-                    <v-icon :icon="mdiPlus" size="16" color="white" />
+                    <v-icon :icon="mdiPlus" size="16" />
                   </button>
                 </template>
                 <template #denied>
                   <button
                     type="button"
-                    class="sidebar-add ml-auto"
-                    style="background: #9e9e9e; opacity: 0.6"
+                    class="sidebar-add"
                     disabled
-                    aria-label="New workspace"
-                    title="New workspace"
+                    aria-label="Add workspace"
+                    title="Add workspace"
                   >
-                    <v-icon :icon="mdiPlus" size="16" color="white" />
+                    <v-icon :icon="mdiPlus" size="16" />
                   </button>
                 </template>
               </PermissionTooltip>
@@ -129,7 +118,7 @@
               <input
                 :value="search"
                 placeholder="Search workspaces…"
-                class="sidebar-search-input"
+                class="sidebar-search-input hs-text-sm"
                 @input="search = ($event.target as HTMLInputElement).value"
               />
             </div>
@@ -141,11 +130,6 @@
               :key="ws.id"
               class="sidebar-item sidebar-item--workspace"
               :class="{ selected: ws.id === selectedId }"
-              :style="
-                ws.id === selectedId
-                  ? { background: WORKSPACE_ACCENT, color: 'white' }
-                  : {}
-              "
               :data-testid="`workspace-list-item-${ws.id}`"
             >
               <button
@@ -155,8 +139,8 @@
                 :aria-current="ws.id === selectedId ? 'true' : undefined"
                 @click="selectWorkspace(ws.id)"
               >
-                <div class="sidebar-item-title">{{ ws.name }}</div>
-                <div class="sidebar-item-meta">
+                <div class="sidebar-item-title hs-title">{{ ws.name }}</div>
+                <div class="sidebar-item-meta hs-text-2xs">
                   <span class="sidebar-item-meta-text">
                     {{ getUserRoleName(ws) }} ·
                     {{ ws.isPrivate ? 'Private' : 'Public' }}
@@ -196,41 +180,16 @@
             </div>
             <div
               v-if="workspaces.length && !filteredWorkspaces.length"
-              class="sidebar-empty"
+              class="sidebar-empty hs-text-sm"
             >
               No matching workspaces.
             </div>
-            <div v-else-if="!workspaces.length" class="sidebar-empty">
+            <div
+              v-else-if="!workspaces.length"
+              class="sidebar-empty hs-text-sm"
+            >
               No workspaces yet.
             </div>
-          </div>
-
-          <div class="sidebar-footer">
-            <PermissionTooltip
-              :has-permission="canCreateWorkspace"
-              message="You don't have permissions to create a workspace. Contact your system administrator to change your permissions."
-            >
-              <template #default>
-                <button
-                  type="button"
-                  class="sidebar-footer-btn"
-                  :style="{
-                    color: WORKSPACE_ACCENT,
-                    borderColor: WORKSPACE_ACCENT + '66',
-                  }"
-                  @click="openCreate = true"
-                >
-                  <v-icon :icon="mdiPlus" size="16" class="mr-1" />
-                  Add workspace
-                </button>
-              </template>
-              <template #denied>
-                <button type="button" class="sidebar-footer-btn" disabled>
-                  <v-icon :icon="mdiPlus" size="16" class="mr-1" />
-                  Add workspace
-                </button>
-              </template>
-            </PermissionTooltip>
           </div>
         </aside>
 
@@ -238,20 +197,22 @@
           <header class="detail-header">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h2 class="detail-title">{{ selected.name }}</h2>
+                <h1 class="detail-title hs-page-title hs-text-xl">
+                  {{ selected.name }}
+                </h1>
                 <v-chip
                   size="small"
                   variant="tonal"
-                  :color="selected.isPrivate ? 'grey-darken-2' : 'primary'"
+                  color="default"
                   :prepend-icon="selected.isPrivate ? mdiLock : mdiEarth"
                 >
                   {{ selected.isPrivate ? 'Private' : 'Public' }}
                 </v-chip>
-                <v-chip size="small" variant="tonal" color="secondary-darken-2">
+                <v-chip size="small" variant="tonal" color="default">
                   {{ getUserRoleName(selected) }}
                 </v-chip>
               </div>
-              <div class="detail-subtitle">
+              <div class="detail-subtitle hs-text-sm">
                 {{
                   isOwner(selected)
                     ? 'Owned by you'
@@ -307,18 +268,18 @@
               }"
             >
               <v-window-item value="overview">
-                <h6 class="hs-text-md mb-1">Overview</h6>
+                <h2 class="hs-subheading mb-1">Overview</h2>
 
                 <div class="overview-stats">
-                  <div class="stat-tile stat-tile--members">
+                  <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
                         <v-icon :icon="mdiAccountCircle" size="14" />
                       </span>
-                      <span>Members</span>
+                      <span class="stat-tile-label hs-label">Members</span>
                     </div>
                     <div
-                      class="stat-tile-value"
+                      class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-members-count"
                     >
                       {{
@@ -328,15 +289,15 @@
                       }}
                     </div>
                   </div>
-                  <div class="stat-tile stat-tile--sites">
+                  <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
                         <v-icon :icon="mdiRadioTower" size="14" />
                       </span>
-                      <span>Sites</span>
+                      <span class="stat-tile-label hs-label">Sites</span>
                     </div>
                     <div
-                      class="stat-tile-value"
+                      class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-sites-count"
                     >
                       {{
@@ -344,15 +305,17 @@
                       }}
                     </div>
                   </div>
-                  <div class="stat-tile stat-tile--keys">
+                  <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
                         <v-icon :icon="mdiKeyVariant" size="14" />
                       </span>
-                      <span>Service accounts</span>
+                      <span class="stat-tile-label hs-label">
+                        Service accounts
+                      </span>
                     </div>
                     <div
-                      class="stat-tile-value"
+                      class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-service-accounts-count"
                     >
                       {{
@@ -362,15 +325,17 @@
                       }}
                     </div>
                   </div>
-                  <div class="stat-tile stat-tile--metadata">
+                  <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
                         <v-icon :icon="mdiDatabaseCog" size="14" />
                       </span>
-                      <span>Metadata items</span>
+                      <span class="stat-tile-label hs-label">
+                        Metadata items
+                      </span>
                     </div>
                     <div
-                      class="stat-tile-value"
+                      class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-metadata-count"
                     >
                       {{
@@ -418,7 +383,7 @@
                     <tr>
                       <td class="text-medium-emphasis">Workspace ID</td>
                       <td class="workspace-id-cell">
-                        <span>{{ selected.id }}</span>
+                        <span class="hs-font-data">{{ selected.id }}</span>
                         <v-btn
                           size="x-small"
                           variant="text"
@@ -490,8 +455,8 @@
             <div class="no-workspace-icon">
               <v-icon :icon="mdiBriefcaseOutline" size="28" />
             </div>
-            <p class="no-workspace-eyebrow">Manage workspaces</p>
-            <h2>
+            <p class="no-workspace-eyebrow hs-label">Manage workspaces</p>
+            <h2 class="hs-heading">
               {{
                 workspaceLoadError
                   ? 'Unable to load workspaces'
@@ -516,25 +481,19 @@
               to collaborators who need access.
             </p>
             <div class="no-workspace-actions">
-              <v-btn
+              <v-btn-primary
                 v-if="workspaceLoadError"
-                color="primary-darken-2"
-                variant="flat"
-                rounded="xl"
                 :loading="isRetryingWorkspaceLoad"
                 @click="retryWorkspaceLoad"
               >
                 Retry
-              </v-btn>
-              <v-btn
+              </v-btn-primary>
+              <v-btn-primary
                 v-else-if="canCreateWorkspace"
-                color="green-darken-2"
-                variant="flat"
-                rounded="xl"
                 @click="openCreate = true"
               >
                 Add workspace
-              </v-btn>
+              </v-btn-primary>
             </div>
           </div>
         </section>
@@ -606,8 +565,6 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { useUserStore } from '@/store/user'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { Snackbar } from '@/utils/notifications'
-
-const WORKSPACE_ACCENT = '#2E7D32'
 
 const SECTIONS = [
   'overview',
@@ -1072,9 +1029,7 @@ onMounted(async () => {
   gap: var(--hs-space-8);
   margin-bottom: var(--hs-space-8);
 }
-.stat-tile-head span:last-child {
-  font-size: var(--hs-font-2xs);
-  font-weight: var(--hs-font-weight-semibold);
+.stat-tile-label {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--hs-text-secondary);
@@ -1087,57 +1042,17 @@ onMounted(async () => {
   height: 24px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--hs-surface-muted);
+  color: rgb(var(--v-theme-primary));
 }
 .stat-tile-value {
-  font-size: var(--hs-font-xl);
-  font-weight: var(--hs-font-weight-bold);
-  letter-spacing: -0.02em;
   color: var(--hs-text-primary);
-}
-/* A little color per metric instead of one uniform grey, so the overview
-   reads as more than a wall of numbers. */
-.stat-tile--members .stat-tile-icon {
-  background: var(--workspace-members-accent-bg);
-  color: var(--workspace-members-accent);
-}
-.stat-tile--members .stat-tile-value {
-  color: var(--workspace-members-accent);
-}
-.stat-tile--sites .stat-tile-icon {
-  background: var(--workspace-sites-accent-bg);
-  color: var(--workspace-sites-accent);
-}
-.stat-tile--sites .stat-tile-value {
-  color: var(--workspace-sites-accent);
-}
-.stat-tile--keys .stat-tile-icon {
-  background: var(--workspace-keys-accent-bg);
-  color: var(--workspace-keys-accent);
-}
-.stat-tile--keys .stat-tile-value {
-  color: var(--workspace-keys-accent);
-}
-.stat-tile--metadata .stat-tile-icon {
-  background: var(--workspace-metadata-accent-bg);
-  color: var(--workspace-metadata-accent);
-}
-.stat-tile--metadata .stat-tile-value {
-  color: var(--workspace-metadata-accent);
 }
 
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /
    OrchestrationContextSidebar.vue) so the two workspace-management entry
    points feel like the same product surface. */
 .workspaces-page {
-  --workspace-members-accent: #1565c0;
-  --workspace-members-accent-bg: #e3f2fd;
-  --workspace-sites-accent: #2e7d32;
-  --workspace-sites-accent-bg: #e8f5e9;
-  --workspace-keys-accent: #e65100;
-  --workspace-keys-accent-bg: #fff3e0;
-  --workspace-metadata-accent: #00695c;
-  --workspace-metadata-accent-bg: #e0f2f1;
-
   background-color: var(--hs-background);
   display: flex;
   flex-direction: column;
@@ -1145,30 +1060,15 @@ onMounted(async () => {
   min-height: 0;
   overflow: hidden;
 }
-.workspaces-page-toolbar {
-  flex-shrink: 0;
-}
-.workspaces-header {
-  background: var(--hs-surface-subtle);
-  border-bottom: 1px solid var(--hs-border);
-}
-.workspaces-header-inner {
-  padding: var(--hs-space-12) var(--hs-space-24);
-}
-.workspaces-header-title {
-  font-size: var(--hs-font-lg);
-  font-weight: var(--hs-font-weight-regular);
-  color: var(--hs-text-primary);
-  letter-spacing: 0;
-  line-height: 1.2;
-}
 .pending-transfer-alert {
   margin: 0;
   border-radius: 0;
+  flex-shrink: 0;
 }
 .workspace-load-alert {
   margin: 0;
   border-radius: 0;
+  flex-shrink: 0;
 }
 .workspaces-page-body {
   flex: 1;
@@ -1195,28 +1095,15 @@ onMounted(async () => {
   flex-shrink: 0;
   min-height: 0;
 }
-.sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  /* The theme's actual primary/secondary, not a hand-copied duplicate of
-     them, so this can't drift from vuetify.ts. */
-  background: linear-gradient(
-    90deg,
-    rgb(var(--v-theme-primary)),
-    rgb(var(--v-theme-secondary))
-  );
-}
 .sidebar-header {
   padding: var(--hs-space-10) var(--hs-space-16) var(--hs-space-8);
   border-bottom: 1px solid var(--hs-border);
 }
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+}
 .sidebar-title {
-  font-size: var(--hs-font-2xs);
-  font-weight: var(--hs-font-weight-bold);
   color: var(--hs-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
@@ -1224,12 +1111,26 @@ onMounted(async () => {
 .sidebar-add {
   width: 26px;
   height: 26px;
-  border: none;
+  margin-left: auto;
+  border: 0;
   border-radius: var(--hs-radius-sm);
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+}
+.sidebar-add:hover:not(:disabled) {
+  background: rgb(var(--v-theme-primary-darken-1));
+}
+.sidebar-add:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+.sidebar-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .sidebar-search {
   position: relative;
@@ -1250,7 +1151,6 @@ onMounted(async () => {
   height: 30px;
   padding-left: 30px;
   padding-right: var(--hs-space-10);
-  font-size: var(--hs-font-sm);
   outline: none;
   background: var(--hs-surface);
 }
@@ -1269,7 +1169,11 @@ onMounted(async () => {
   transition: background 0.1s;
 }
 .sidebar-item:not(.selected):hover {
-  background: rgba(33, 150, 243, 0.06);
+  background: rgba(var(--v-theme-primary), 0.06);
+}
+.sidebar-item.selected {
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
 }
 .sidebar-item-body {
   flex: 1;
@@ -1286,17 +1190,12 @@ onMounted(async () => {
   padding-right: 62px;
 }
 .sidebar-item-title {
-  font-size: var(--hs-font-sm);
   color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sidebar-item.selected .sidebar-item-title {
-  font-weight: var(--hs-font-weight-semibold);
-}
 .sidebar-item-meta {
-  font-size: var(--hs-font-2xs);
   color: var(--hs-text-secondary);
   margin-top: var(--hs-space-2);
   min-height: 16px;
@@ -1305,7 +1204,7 @@ onMounted(async () => {
   gap: var(--hs-space-6);
 }
 .sidebar-item.selected .sidebar-item-meta {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(var(--v-theme-on-primary), 0.75);
 }
 .sidebar-item-meta-text {
   min-width: 0;
@@ -1341,21 +1240,19 @@ onMounted(async () => {
   cursor: pointer;
 }
 .sidebar-item-action:hover:not(:disabled) {
-  /* rgb(73, 69, 79) is --hs-text-secondary; rgba() can't reference a var()
-     directly, so the triple is kept in sync with it by hand here. */
-  background: rgba(73, 69, 79, 0.12);
+  background: rgba(var(--v-theme-text-secondary), 0.12);
 }
 .sidebar-item-action--danger {
   color: var(--hs-danger);
 }
 .sidebar-item-action--danger:hover:not(:disabled) {
-  background: rgba(179, 38, 30, 0.1);
+  background: rgba(var(--v-theme-danger), 0.1);
 }
 .sidebar-item-action--selected {
-  color: white;
+  color: rgb(var(--v-theme-on-primary));
 }
 .sidebar-item-action--selected:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(var(--v-theme-on-primary), 0.18);
 }
 .sidebar-item-action:disabled {
   cursor: not-allowed;
@@ -1363,31 +1260,8 @@ onMounted(async () => {
 }
 .sidebar-empty {
   padding: var(--hs-space-16);
-  font-size: var(--hs-font-sm);
   color: var(--hs-text-muted);
 }
-.sidebar-footer {
-  padding: var(--hs-space-10) var(--hs-space-16);
-  border-top: 1px solid var(--hs-border);
-}
-.sidebar-footer-btn {
-  background: none;
-  border: 1px dashed;
-  border-radius: var(--hs-radius-md);
-  padding: var(--hs-space-6) 0;
-  width: 100%;
-  font-size: var(--hs-font-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--hs-space-4);
-}
-.sidebar-footer-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* ── detail panel ── */
 .detail {
   flex: 1;
@@ -1407,13 +1281,12 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .detail-title {
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-regular);
+  margin: 0;
   color: var(--hs-text-primary);
+  line-height: 1.2;
 }
 .detail-subtitle {
   margin-top: var(--hs-space-4);
-  font-size: var(--hs-font-sm);
   color: var(--hs-text-secondary);
 }
 .detail-tabbar {
@@ -1468,12 +1341,8 @@ onMounted(async () => {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--workspace-members-accent-bg),
-    var(--workspace-sites-accent-bg)
-  );
-  color: var(--workspace-sites-accent);
+  background: var(--hs-surface-muted);
+  color: rgb(var(--v-theme-primary));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1482,19 +1351,12 @@ onMounted(async () => {
 .no-workspace-eyebrow {
   margin: 0 0 var(--hs-space-8);
   color: var(--hs-text-secondary);
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-/* Same size as the page's own h1 (.workspaces-header-title) — this
-   empty-state heading was previously a step larger than the page title
-   above it, which inverted the hierarchy. */
 .no-workspace-state h2 {
   margin: 0 0 var(--hs-space-12);
   color: var(--hs-text-primary);
-  font-size: var(--hs-font-lg);
-  line-height: 1.25;
 }
 .no-workspace-state p {
   line-height: 1.55;
@@ -1544,9 +1406,6 @@ onMounted(async () => {
     min-width: 175px;
     border-right: 1px solid var(--hs-border);
     border-bottom: 0;
-  }
-  .sidebar-footer {
-    display: none;
   }
   .detail {
     width: 100%;
