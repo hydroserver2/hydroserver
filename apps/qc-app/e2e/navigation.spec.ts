@@ -74,7 +74,7 @@ test.describe('navigation', () => {
     await page.getByTestId('nav-rail-item-select').click()
     await expect(page.getByText(/unsaved edits/i)).toBeVisible()
     await expect(
-      page.getByRole('button', { name: /discard/i })
+      page.getByRole('dialog').getByRole('button', { name: /discard/i })
     ).toBeVisible()
   })
 })
