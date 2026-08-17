@@ -6,28 +6,33 @@ import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
 import { mdiPlus } from '@mdi/js'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
-import { hexColors } from './colors'
 
-// HydroServer's shared light theme and its Vuetify-specific semantic roles.
+// HydroServer's shared palette and semantic roles. Keep the literal beside its
+// role so the complete color system can be reviewed and changed in one place.
 const theme: ThemeDefinition = {
   dark: false,
   colors: {
-    // Vuetify 4's theme parser does not yet accept OKLCH, so its adapter uses
-    // the shared palette's equivalent hexadecimal export.
-    background: hexColors.neutral[50],
-    surface: hexColors.neutral[0],
-    'surface-subtle': hexColors.neutral[25],
-    'surface-muted': hexColors.neutral[100],
-    border: hexColors.neutral[300],
-    primary: hexColors.blue[600],
-    secondary: hexColors.green[500],
-    default: '#757575', // grey-darken-1
-    delete: '#F44336', // red
-    error: '#F44336', // red
-    info: '#03A9F4', // light-blue
-    success: hexColors.green[500],
-    warning: '#FF9800', // orange
-    navbar: '#272e3d',
+    'text-primary': '#1C1B1F',
+    'text-secondary': '#49454F',
+    'text-muted': '#9CA3AF',
+    background: '#F4F7FA',
+    surface: '#FFFFFF',
+    'surface-subtle': '#FCFDFF',
+    'surface-muted': '#EEF3F8',
+    'surface-floating': '#FFFFFFF5',
+    border: '#CED8E2',
+    'input-border': '#CAC4D0',
+    primary: '#32649C',
+    secondary: '#66AE5C',
+    default: '#757575',
+    danger: '#B3261E',
+    'danger-bg': '#FFEBEE',
+    delete: '#F44336',
+    error: '#F44336',
+    info: '#03A9F4',
+    success: '#66AE5C',
+    warning: '#FF9800',
+    navbar: '#272E3D',
   },
 }
 

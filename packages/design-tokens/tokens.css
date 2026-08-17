@@ -1,35 +1,13 @@
-/* Shared HydroServer color, spacing, radius, and type tokens. Use these
+/* Shared HydroServer spacing, radius, and type tokens. Use these
  * for custom application chrome such as sidebars, nav rails, floating
  * panels, headers, and empty states so every HydroServer app uses the
  * same visual language. A component framework's theme can still cover
  * framework-provided controls such as buttons and alerts.
  *
- * Rule of thumb: before introducing a raw color or spacing/radius value,
- * use a token from this file. If none fits, add a new shared value here
- * deliberately rather than creating a near-duplicate inside one app.
+ * Rule of thumb: before introducing a raw spacing/radius value, use a token
+ * from this file. Shared color values and roles live in vuetify.ts.
  */
 :root {
-  /* Text */
-  --hs-text-primary: #1c1b1f;
-  --hs-text-secondary: #49454f;
-  --hs-text-muted: #9ca3af;
-
-  /* Surfaces & borders */
-  /* Keep these assignments aligned with the palette in colors.ts. */
-  --hs-background: oklch(97.47% 0.0051 247.88);
-  --hs-surface: oklch(100% 0 0);
-  --hs-surface-subtle: oklch(99.39% 0.0029 264.54);
-  --hs-surface-muted: oklch(96.18% 0.0086 247.91);
-  /* Translucent white for floating "island" panels over map/content. */
-  --hs-surface-floating: rgba(255, 255, 255, 0.96);
-
-  --hs-border: oklch(87.76% 0.0176 248.03);
-  --hs-input-border: #cac4d0;
-
-  /* Status */
-  --hs-danger: #b3261e;
-  --hs-danger-bg: #ffebee;
-
   /* Spacing scale (px). Pick from this set instead of a new value. */
   --hs-space-2: 2px;
   --hs-space-4: 4px;
@@ -55,6 +33,24 @@
   --hs-font-md: 1.0625rem;
   --hs-font-lg: 1.375rem;
   --hs-font-xl: 1.625rem;
+}
+
+/* Compatibility aliases for custom component CSS. Vuetify owns the actual
+ * semantic color declarations and places these channel variables on the same
+ * theme root, so no color value is duplicated here. */
+.v-theme--theme {
+  --hs-text-primary: rgb(var(--v-theme-text-primary));
+  --hs-text-secondary: rgb(var(--v-theme-text-secondary));
+  --hs-text-muted: rgb(var(--v-theme-text-muted));
+  --hs-background: rgb(var(--v-theme-background));
+  --hs-surface: rgb(var(--v-theme-surface));
+  --hs-surface-subtle: rgb(var(--v-theme-surface-subtle));
+  --hs-surface-muted: rgb(var(--v-theme-surface-muted));
+  --hs-surface-floating: rgba(var(--v-theme-surface-floating));
+  --hs-border: rgb(var(--v-theme-border));
+  --hs-input-border: rgb(var(--v-theme-input-border));
+  --hs-danger: rgb(var(--v-theme-danger));
+  --hs-danger-bg: rgb(var(--v-theme-danger-bg));
 }
 
 /* Shared type scale classes. Pick the one matching the role, not the
