@@ -17,7 +17,7 @@
         <v-icon :icon="isPrivate ? mdiLock : mdiEarth" size="20" />
       </div>
       <div class="privacy-copy">
-        <div class="privacy-copy-title hs-text-sm font-weight-semibold">
+        <div class="privacy-copy-title hs-title">
           <span>Workspace is currently</span>
           <v-chip
             size="small"

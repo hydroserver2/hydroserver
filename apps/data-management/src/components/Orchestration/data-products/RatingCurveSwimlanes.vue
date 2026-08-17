@@ -1,8 +1,8 @@
 <template>
   <div class="swimlanes-view">
     <div class="rc-mappings">
-      <div class="rc-mappings-head hs-text-2xs font-weight-bold">Input datastream</div>
-      <div class="rc-mappings-head rc-mappings-head-target hs-text-2xs font-weight-bold">
+      <div class="rc-mappings-head hs-label">Input datastream</div>
+      <div class="rc-mappings-head rc-mappings-head-target hs-label">
         Output datastream
       </div>
 
@@ -10,7 +10,7 @@
         <div class="rc-mapping-source">
           <div class="etl-source-display datastream-display">
             <div class="datastream-display__content">
-              <span class="target-name hs-text-sm font-weight-semibold">{{
+              <span class="target-name hs-title">{{
                 t.inputDatastream?.name || '—'
               }}</span>
               <small v-if="t.ratingCurve?.name" class="target-monitoringSite">
@@ -33,7 +33,7 @@
         <div class="rc-mapping-target">
           <div class="etl-target-display datastream-display">
             <div class="datastream-display__content">
-              <span class="target-name hs-text-sm font-weight-semibold">{{
+              <span class="target-name hs-title">{{
                 t.outputDatastream?.name || '—'
               }}</span>
               <small
@@ -199,7 +199,6 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
 }
 .target-name {
   color: #1c1b1f;
-  line-height: 1.25;
   overflow-wrap: anywhere;
   white-space: normal;
 }

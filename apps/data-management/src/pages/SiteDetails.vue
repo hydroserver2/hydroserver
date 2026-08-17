@@ -186,7 +186,7 @@
             <v-img :src="photo.link" cover class="h-full w-full" />
             <div
               v-if="index === visiblePhotos.length - 1 && extraPhotoCount > 0"
-              class="absolute inset-0 flex items-center justify-center bg-black/55 hs-text-md font-weight-semibold text-white"
+              class="absolute inset-0 flex items-center justify-center bg-black/55 hs-subheading text-white"
             >
               +{{ extraPhotoCount }}
             </div>

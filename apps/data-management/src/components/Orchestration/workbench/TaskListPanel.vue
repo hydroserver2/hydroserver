@@ -8,7 +8,7 @@
           </h2>
           <span
             v-if="detailTypeBadge"
-            class="detail-badge hs-text-2xs font-weight-bold"
+            class="detail-badge hs-label"
             :style="{ color: accent, background: accentLight }"
           >
             {{ detailTypeBadge }}
@@ -227,17 +227,17 @@
       </div>
 
       <div v-else-if="!hasSelection" class="detail-empty">
-        <h4 class="hs-text-md font-weight-semibold">{{ emptyHeading }}</h4>
+        <h4 class="hs-subheading">{{ emptyHeading }}</h4>
         <p><small>{{ emptyMessage }}</small></p>
       </div>
 
       <div v-else-if="visibleTasks.length === 0" class="detail-empty">
-        <h4 class="hs-text-md font-weight-semibold">No tasks</h4>
+        <h4 class="hs-subheading">No tasks</h4>
         <p><small>{{ emptyTasksMessage }}</small></p>
       </div>
 
       <div v-else-if="sortedVisibleTasks.length === 0" class="detail-empty">
-        <h4 class="hs-text-md font-weight-semibold">
+        <h4 class="hs-subheading">
           No tasks match your filter
         </h4>
         <p>
@@ -292,7 +292,7 @@
                 >
                   <v-card-text class="px-4 py-3">
                     <div
-                      class="mb-1 hs-text-2xs font-weight-bold uppercase tracking-[0.12em] text-slate-600"
+                      class="mb-1 hs-label uppercase tracking-[0.12em] text-slate-600"
                     >
                       Last run summary
                     </div>
@@ -318,11 +318,11 @@
               </v-tooltip>
               <div class="task-run-times">
                 <div class="task-run-time">
-                  <span class="task-run-label hs-text-2xs font-weight-bold">Last</span>
+                  <span class="task-run-label hs-label">Last</span>
                   <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
                 </div>
                 <div class="task-run-time">
-                  <span class="task-run-label hs-text-2xs font-weight-bold">Next</span>
+                  <span class="task-run-label hs-label">Next</span>
                   <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
                 </div>
               </div>
@@ -344,7 +344,7 @@
                   variant="tonal"
                   :prepend-icon="mdiAlert"
                   rounded="lg"
-                  class="task-no-work-chip hs-text-2xs font-weight-bold"
+                  class="task-no-work-chip hs-label"
                 >
                   {{ item.noWorkWarning.label }}
                 </v-chip>

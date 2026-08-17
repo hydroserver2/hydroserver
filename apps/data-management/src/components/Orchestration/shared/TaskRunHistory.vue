@@ -36,7 +36,7 @@
           <div class="run-entry-meta-row">
             <div class="run-entry-times-inline hs-text-sm">
               <span class="run-entry-time">
-                <span class="run-entry-meta-label hs-text-2xs font-weight-bold">Started</span>
+                <span class="run-entry-meta-label hs-label">Started</span>
                 {{ run.startedAt }}
               </span>
             </div>

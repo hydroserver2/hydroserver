@@ -45,8 +45,10 @@
      class="filter-panel">, in light or dark mode, without duplicating a
      hand-guessed rgba recipe that can drift from Vuetify's. */
   --hs-shadow-float:
-    0px 1px 2px 0px rgba(var(--v-shadow-color), var(--v-shadow-key-opacity, 0.3)),
-    0px 1px 3px 1px rgba(var(--v-shadow-color), var(--v-shadow-ambient-opacity, 0.15));
+    0px 1px 2px 0px
+      rgba(var(--v-shadow-color), var(--v-shadow-key-opacity, 0.3)),
+    0px 1px 3px 1px
+      rgba(var(--v-shadow-color), var(--v-shadow-ambient-opacity, 0.15));
   --hs-border: #e8e8e8;
   --hs-input-border: #cac4d0;
 
@@ -94,24 +96,11 @@
   --hs-radius-xl: 16px;
   --hs-radius-pill: 999px;
 
-  /* Type scale (px). Five sizes, top to bottom: big stat numbers, page /
-     empty-state headings, sub-headings, body/UI text, tiny labels.
-     This is the one app-wide font-size scale — see the .hs-text-*
-     classes below. Vuetify 4's Material 3 blueprint renamed its old
-     text-h1..h6/text-body-1/text-body-2/text-caption/text-subtitle-1/
-     text-subtitle-2/text-overline classes, so those names now match no
-     CSS and silently render as unstyled text; use .hs-text-* instead.
-     Font weight comes from Vuetify's own (still-live) .font-weight-
-     regular/medium/semibold/bold classes; font family is the global
-     default set by @hydroserver/design-tokens/fonts.css, or the
-     .hs-font-data class for monospace numeric/ID data. Don't add a
-     sixth size — if none of these five fit, that's a sign the content
-     needs a rethink, not a new token. */
-  --hs-font-2xs: 10px;
-  --hs-font-sm: 12px;
-  --hs-font-md: 17px;
-  --hs-font-lg: 22px;
-  --hs-font-xl: 26px;
+  --hs-font-2xs: 0.625rem;
+  --hs-font-sm: 0.75rem;
+  --hs-font-md: 1.0625rem;
+  --hs-font-lg: 1.375rem;
+  --hs-font-xl: 1.625rem;
 }
 
 /* App-wide type scale classes. Pick the one matching the role, not the
@@ -123,6 +112,10 @@
  *   hs-text-2xs — tiny labels (captions, badges, timestamps)
  * Combine with Vuetify's .font-weight-regular/medium/semibold/bold for
  * weight; these classes only ever set font-size.
+ *
+ * If a role always shows up with the same weight and line-height too,
+ * reach for one of the recipes below instead of recomposing it by hand
+ * every time — see the comment there for which one and why.
  */
 .hs-text-2xs {
   font-size: var(--hs-font-2xs);
@@ -140,11 +133,33 @@
   font-size: var(--hs-font-xl);
 }
 
-/* Tag-based alternative to `class="hs-text-sm"`: wrap text in <small> —
- * the semantically correct native tag for de-emphasized side text, help
- * copy, disclaimers — and it's sized from the scale automatically. No
- * class needed. Browsers default <small> to ~80% of the parent size;
- * this pins it to the actual token instead. */
+/* 
+ *   hs-heading    — page / empty-state headings (lg, bold, 1.2)
+ *   hs-subheading — card titles, section sub-headings (md, semibold, 1.25)
+ *   hs-title      — an item's primary name inside a row/card (sm, semibold, 1.25)
+ *   hs-label      — micro-labels: badges, pills, column headers (2xs, bold, 1.2)
+ */
+.hs-heading {
+  font-size: var(--hs-font-lg);
+  font-weight: var(--hs-font-weight-bold);
+  line-height: 1.2;
+}
+.hs-subheading {
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.25;
+}
+.hs-title {
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.25;
+}
+.hs-label {
+  font-size: var(--hs-font-2xs);
+  font-weight: var(--hs-font-weight-bold);
+  line-height: 1.2;
+}
+
 small {
   font-size: var(--hs-font-sm);
 }

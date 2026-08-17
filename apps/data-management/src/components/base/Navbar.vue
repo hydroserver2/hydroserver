@@ -68,7 +68,7 @@
           class="account-menu-btn"
         >
           <v-avatar color="primary" size="36">
-            <span class="account-avatar-initials hs-text-sm font-weight-semibold">{{ userInitials }}</span>
+            <span class="account-avatar-initials hs-title">{{ userInitials }}</span>
           </v-avatar>
 
           <v-menu bottom left activator="parent">

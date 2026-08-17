@@ -1,8 +1,8 @@
 <template>
   <div class="swimlanes-view">
     <div v-if="mappingRows.length" class="product-mappings">
-      <div class="product-mappings-head hs-text-2xs font-weight-bold">Source datastream</div>
-      <div class="product-mappings-head product-mappings-head-target hs-text-2xs font-weight-bold">
+      <div class="product-mappings-head hs-label">Source datastream</div>
+      <div class="product-mappings-head product-mappings-head-target hs-label">
         Target datastream
       </div>
 
@@ -14,7 +14,7 @@
         <div class="product-mapping-source">
           <div class="etl-source-display datastream-display">
             <div class="datastream-display__content">
-              <span class="target-name hs-text-sm font-weight-semibold">
+              <span class="target-name hs-title">
                 {{
                   datastreamName(row.sourceDatastream, row.sourceDatastreamId)
                 }}
@@ -47,7 +47,7 @@
         <div class="product-mapping-target">
           <div class="etl-target-display datastream-display">
             <div class="datastream-display__content">
-              <span class="target-name hs-text-sm font-weight-semibold">
+              <span class="target-name hs-title">
                 {{
                   datastreamName(row.targetDatastream, row.targetDatastreamId)
                 }}
@@ -312,7 +312,6 @@ function monitoringSiteName(datastream: DatastreamLike) {
 }
 .target-name {
   color: #1c1b1f;
-  line-height: 1.25;
   overflow-wrap: anywhere;
   white-space: normal;
 }

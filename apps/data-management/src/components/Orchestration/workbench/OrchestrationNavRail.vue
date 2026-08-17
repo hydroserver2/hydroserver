@@ -25,7 +25,7 @@
           />
           <span
             v-if="tab.issues > 0"
-            class="rail-badge hs-text-2xs font-weight-bold"
+            class="rail-badge hs-label"
             >{{ tab.issues }}</span
           >
         </span>

@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="flex items-center">
-        <span class="sidebar-title hs-text-2xs font-weight-bold">{{
+        <span class="sidebar-title hs-label">{{
           title
         }}</span>
         <button
@@ -153,7 +153,7 @@
               selectedConnectionId !== dc.id &&
               issueCountForConnection(dc.id) > 0
             "
-            class="sidebar-item-badge hs-text-2xs font-weight-bold"
+            class="sidebar-item-badge hs-label"
           >
             {{ issueCountForConnection(dc.id) }}
           </span>
@@ -210,7 +210,7 @@
             v-if="
               selectedMonitoringSiteId !== monitoringSite.id && issueCountForSite(monitoringSite.id) > 0
             "
-            class="sidebar-item-badge hs-text-2xs font-weight-bold"
+            class="sidebar-item-badge hs-label"
           >
             {{ issueCountForSite(monitoringSite.id) }}
           </span>

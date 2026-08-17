@@ -110,7 +110,7 @@
 
     <div v-if="showInstructions && viewMode === 'plot'" class="plot-empty">
       <v-card-text>
-        <div class="plot-empty__title hs-text-md font-weight-semibold">Visualize data</div>
+        <div class="plot-empty__title hs-subheading">Visualize data</div>
         <v-timeline align="start" density="compact">
           <v-timeline-item size="x-small" dot-color="primary">
             <div>

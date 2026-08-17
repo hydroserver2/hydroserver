@@ -59,7 +59,7 @@
         variant="outlined"
       >
         <div class="datastream-card__content">
-          <div class="datastream-card__title hs-text-md font-weight-semibold">
+          <div class="datastream-card__title hs-subheading">
             {{ item.name || item.OPName }}
           </div>
           <div
@@ -176,7 +176,7 @@
             />
             <div class="datastream-task-link__body">
               <div class="datastream-task-link__meta">
-                <span class="datastream-task-link__label hs-text-2xs font-weight-bold">
+                <span class="datastream-task-link__label hs-label">
                   {{
                     linkedTasksForDatastream(item.id).length > 1
                       ? 'Multiple task targets'
@@ -187,7 +187,7 @@
                 </span>
                 <template v-if="linkedTasksForDatastream(item.id).length === 1">
                   <RouterLink
-                    class="datastream-task-link__name hs-text-sm font-weight-semibold"
+                    class="datastream-task-link__name hs-title"
                     :to="linkedTasksForDatastream(item.id)[0].route"
                   >
                     {{ linkedTasksForDatastream(item.id)[0].displayName }}
@@ -255,7 +255,7 @@
                 class="datastream-task-link__monitoring-icon"
               />
               <div class="datastream-task-link__monitoring-body">
-                <span class="datastream-task-link__label hs-text-2xs font-weight-bold">
+                <span class="datastream-task-link__label hs-label">
                   Quality monitoring
                 </span>
                 <span
@@ -264,7 +264,7 @@
                   class="datastream-task-link__monitoring-task"
                 >
                   <RouterLink
-                    class="datastream-task-link__name hs-text-sm font-weight-semibold"
+                    class="datastream-task-link__name hs-title"
                     :to="task.route"
                   >
                     {{ task.displayName }}
@@ -513,7 +513,7 @@
     </div>
 
     <div v-else class="datastream-list">
-      <div class="datastream-list__head hs-text-2xs font-weight-bold">
+      <div class="datastream-list__head hs-label">
         <span>Observation information</span>
         <span>Datastream information</span>
         <span class="datastream-list__head-actions">Actions</span>
@@ -529,7 +529,7 @@
       >
         <div class="ds-card__grid">
           <div class="datastream-latest">
-            <div class="datastream-title hs-text-md font-weight-semibold">
+            <div class="datastream-title hs-subheading">
               {{ item.name || item.OPName }}
             </div>
             <div class="mt-1">
@@ -845,7 +845,7 @@
           />
           <div class="datastream-task-link__body">
             <div class="datastream-task-link__meta">
-              <span class="datastream-task-link__label hs-text-2xs font-weight-bold">
+              <span class="datastream-task-link__label hs-label">
                 {{
                   linkedTasksForDatastream(item.id).length > 1
                     ? 'Multiple task targets'
@@ -856,7 +856,7 @@
               </span>
               <template v-if="linkedTasksForDatastream(item.id).length === 1">
                 <RouterLink
-                  class="datastream-task-link__name hs-text-sm font-weight-semibold"
+                  class="datastream-task-link__name hs-title"
                   :to="linkedTasksForDatastream(item.id)[0].route"
                 >
                   {{ linkedTasksForDatastream(item.id)[0].displayName }}
@@ -924,7 +924,7 @@
               class="datastream-task-link__monitoring-icon"
             />
             <div class="datastream-task-link__monitoring-body">
-              <span class="datastream-task-link__label hs-text-2xs font-weight-bold">
+              <span class="datastream-task-link__label hs-label">
                 Quality monitoring
               </span>
               <span
@@ -932,7 +932,7 @@
                 :key="task.id"
                 class="datastream-task-link__monitoring-task"
               >
-                <RouterLink class="datastream-task-link__name hs-text-sm font-weight-semibold" :to="task.route">
+                <RouterLink class="datastream-task-link__name hs-title" :to="task.route">
                   {{ task.displayName }}
                 </RouterLink>
                 <span

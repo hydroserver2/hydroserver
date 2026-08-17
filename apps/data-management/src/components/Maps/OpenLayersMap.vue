@@ -25,7 +25,7 @@
       <div ref="popupContent" />
     </div>
 
-    <div ref="selectionLabelContainer" class="selected-site-label hs-text-sm font-weight-semibold">
+    <div ref="selectionLabelContainer" class="selected-site-label hs-title">
       {{ selectedSiteLabel }}
     </div>
 
@@ -53,7 +53,7 @@
         <div class="detail-body">
           <div class="detail-header">
             <div class="detail-heading">
-              <h2 class="detail-name hs-text-md font-weight-semibold">{{ detailMonitoringSite.name }}</h2>
+              <h2 class="detail-name hs-subheading">{{ detailMonitoringSite.name }}</h2>
               <div v-if="detailSubtitle" class="detail-meta hs-text-sm">
                 <v-icon
                   :icon="detailSiteTypeIcon"
@@ -945,7 +945,6 @@ watch(
 }
 
 .detail-name {
-  line-height: 1.25;
   color: rgba(0, 0, 0, 0.87);
 }
 

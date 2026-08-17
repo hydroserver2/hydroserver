@@ -1,7 +1,7 @@
 <template>
   <div class="quality-mappings-view">
     <div v-if="mappingRows.length" class="quality-mappings">
-      <div class="quality-mappings-head hs-text-2xs font-weight-bold">Target datastream</div>
+      <div class="quality-mappings-head hs-label">Target datastream</div>
 
       <div
         v-for="row in mappingRows"
@@ -10,7 +10,7 @@
       >
         <div class="datastream-display">
           <div class="datastream-display__content">
-            <span class="target-name hs-text-sm font-weight-semibold">{{
+            <span class="target-name hs-title">{{
               row.name
             }}</span>
             <small v-if="row.monitoringSiteName" class="target-monitoringSite">
@@ -154,7 +154,6 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
 
 .target-name {
   color: #1c1b1f;
-  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
