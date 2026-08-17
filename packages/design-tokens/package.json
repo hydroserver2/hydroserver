@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "files": [
-    "fonts.css"
+    "fonts.css",
+    "tokens.css"
   ],
   "sideEffects": [
     "*.css"
   ],
   "exports": {
-    "./fonts.css": "./fonts.css"
+    "./fonts.css": "./fonts.css",
+    "./tokens.css": "./tokens.css"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

@@ -1,29 +1,12 @@
-/* Color, spacing, and radius tokens for the hand-built "page chrome"
- * shared by Manage Workspaces, Job Orchestration, Browse Monitoring
- * Sites, and Visualize Data (sidebars, nav rails, floating filter
- * panels, headers, empty states). Vuetify's theme (see plugins/vuetify.ts)
- * already covers component-level color for things like buttons and
- * alerts — these tokens are for the custom scoped-CSS chrome around them,
- * which previously reinvented its own close-but-not-quite hex/px values
- * per file.
+/* Shared HydroServer color, spacing, radius, and type tokens. Use these
+ * for custom application chrome such as sidebars, nav rails, floating
+ * panels, headers, and empty states so every HydroServer app uses the
+ * same visual language. A component framework's theme can still cover
+ * framework-provided controls such as buttons and alerts.
  *
- * Most pages (About, Site Details, the Streaming Data Loader download
- * page, etc.) don't need any of this — they're plain Vuetify
- * (v-card/v-btn defaults) plus Tailwind utility classes for layout. Only
- * reach for the color/spacing/radius tokens below inside the specific
- * dashboard-style chrome listed above; using them elsewhere just
- * reintroduces the two competing visual languages this file was added to
- * avoid.
- *
- * Rule of thumb: if you're about to write a raw hex color, or a px value
- * for spacing/radius, in a page or component under pages/Workspaces.vue,
- * pages/Orchestration.vue, pages/Browse.vue, pages/VisualizeData.vue, or
- * their sidebar/rail/toolbar/filter components, use one of these instead.
- * If none of them fit, that's a signal to bring a new one back here
- * deliberately rather than inline it.
- *
- * The type scale near the bottom of this file is different: it's the
- * app-wide font-size system, used everywhere (see the comment there).
+ * Rule of thumb: before introducing a raw color or spacing/radius value,
+ * use a token from this file. If none fits, add a new shared value here
+ * deliberately rather than creating a near-duplicate inside one app.
  */
 :root {
   /* Text */
@@ -34,16 +17,11 @@
   /* Surfaces & borders */
   --hs-surface: #ffffff;
   --hs-surface-muted: #fafafa;
-  /* The translucent white used by floating "island" panels (Browse's
-     filter panel, Visualize Data's filter panel) over map/content. */
+  /* Translucent white for floating "island" panels over map/content. */
   --hs-surface-floating: rgba(255, 255, 255, 0.96);
 
-  /* Matches Vuetify's own `.v-card--variant-elevated` shadow exactly (see
-     node_modules/vuetify's VCard.css) via its --v-shadow-color theme
-     variable, so a plain, non-Vuetify element (like Visualize Data's
-     floating filter panel) casts the same shadow as Browse's <v-card
-     class="filter-panel">, in light or dark mode, without duplicating a
-     hand-guessed rgba recipe that can drift from Vuetify's. */
+  /* Matches Vuetify's elevated card shadow via its theme variables so
+     custom floating elements and framework cards share one elevation. */
   --hs-shadow-float:
     0px 1px 2px 0px
       rgba(var(--v-shadow-color), var(--v-shadow-key-opacity, 0.3)),
@@ -56,15 +34,13 @@
   --hs-danger: #b3261e;
   --hs-danger-bg: #ffebee;
 
-  /* The soft blue-to-green header wash shared by the Manage Workspaces and
-     Job Orchestration page headers (their "same product surface" cue). */
+  /* Soft blue-to-green wash for related product-surface headers. */
   --hs-header-wash-start: #eaf5fd;
   --hs-header-wash-end: #eefaf0;
   --hs-header-wash-border: #dfe8e2;
 
-  /* Categorical accents — used for the workspace overview stat tiles and
-     the Job Orchestration tab rail/sidebar. Each is a deliberate,
-     distinct color in a small fixed set, not a scale. */
+  /* Categorical accents. Each is a deliberate, distinct color in a small
+     fixed set, not a scale. */
   --hs-accent-blue: #1565c0;
   --hs-accent-blue-bg: #e3f2fd;
   --hs-accent-green: #2e7d32;
@@ -103,7 +79,7 @@
   --hs-font-xl: 1.625rem;
 }
 
-/* App-wide type scale classes. Pick the one matching the role, not the
+/* Shared type scale classes. Pick the one matching the role, not the
  * pixel size you think looks right:
  *   hs-text-xl  — big stat numbers (dashboard tiles, counts)
  *   hs-text-lg  — page and empty-state headings

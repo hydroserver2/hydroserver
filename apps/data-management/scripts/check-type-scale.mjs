@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /*
  * Enforces the data-management app's type system: the 5-step font-size
- * scale and font-weight/font-family tokens declared in
- * apps/data-management/src/styles/tokens.scss and
- * packages/design-tokens/fonts.css.
+ * scale and font-weight/font-family tokens declared in the shared
+ * packages/design-tokens CSS files.
  *
  * This is deliberately narrow. It only checks font-size, font-weight, and
  * font-family — not color, not spacing, not arbitrary px values. Widening
@@ -31,7 +30,7 @@
  *     weight has exactly one spelling app-wide, not two.
  *   - An inline `style="font-size: 13px"` / `:style="{ fontWeight: 600 }"`.
  *   - A `var(--hs-font-*)` reference that doesn't match any token actually
- *     declared in tokens.scss/fonts.css (catches typos and drift).
+ *     declared in tokens.css/fonts.css (catches typos and drift).
  *
  * If a legitimate case doesn't fit the five sizes or four weights, that's
  * a signal the content needs a rethink — not a reason to add a sixth
@@ -59,7 +58,7 @@ function collectFiles(root, extensions) {
 // scale.
 const tokenSourceFiles = [
   path.join(repoRoot, 'packages/design-tokens/fonts.css'),
-  path.join(appRoot, 'src/styles/tokens.scss'),
+  path.join(repoRoot, 'packages/design-tokens/tokens.css'),
 ]
 const declaredFontVars = new Set()
 for (const file of tokenSourceFiles) {
@@ -246,7 +245,7 @@ for (const file of files) {
         file,
         source,
         match.index,
-        `undefined type token ${match[1]} — not declared in tokens.scss or fonts.css (typo?)`
+        `undefined type token ${match[1]} — not declared in tokens.css or fonts.css (typo?)`
       )
     }
   }
@@ -258,7 +257,7 @@ if (violations.length) {
   )
   console.error(violations.join('\n'))
   console.error(
-    `\nSize scale: ${sizeVars.join(', ')}\nWeight scale: ${weightVars.join(', ')}\nSee apps/data-management/src/styles/tokens.scss for what each size means.`
+    `\nSize scale: ${sizeVars.join(', ')}\nWeight scale: ${weightVars.join(', ')}\nSee packages/design-tokens/tokens.css for what each size means.`
   )
   process.exit(1)
 }
