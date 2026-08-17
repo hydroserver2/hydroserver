@@ -20,37 +20,12 @@
   /* Translucent white for floating "island" panels over map/content. */
   --hs-surface-floating: rgba(255, 255, 255, 0.96);
 
-  /* Matches Vuetify's elevated card shadow via its theme variables so
-     custom floating elements and framework cards share one elevation. */
-  --hs-shadow-float:
-    0px 1px 2px 0px
-      rgba(var(--v-shadow-color), var(--v-shadow-key-opacity, 0.3)),
-    0px 1px 3px 1px
-      rgba(var(--v-shadow-color), var(--v-shadow-ambient-opacity, 0.15));
   --hs-border: #e8e8e8;
   --hs-input-border: #cac4d0;
 
   /* Status */
   --hs-danger: #b3261e;
   --hs-danger-bg: #ffebee;
-
-  /* Soft blue-to-green wash for related product-surface headers. */
-  --hs-header-wash-start: #eaf5fd;
-  --hs-header-wash-end: #eefaf0;
-  --hs-header-wash-border: #dfe8e2;
-
-  /* Categorical accents. Each is a deliberate, distinct color in a small
-     fixed set, not a scale. */
-  --hs-accent-blue: #1565c0;
-  --hs-accent-blue-bg: #e3f2fd;
-  --hs-accent-green: #2e7d32;
-  --hs-accent-green-bg: #e8f5e9;
-  --hs-accent-purple: #6a1b9a;
-  --hs-accent-purple-bg: #f3e5f5;
-  --hs-accent-teal: #00695c;
-  --hs-accent-teal-bg: #e0f2f1;
-  --hs-accent-orange: #e65100;
-  --hs-accent-orange-bg: #fff3e0;
 
   /* Spacing scale (px). Pick from this set instead of a new value. */
   --hs-space-2: 2px;

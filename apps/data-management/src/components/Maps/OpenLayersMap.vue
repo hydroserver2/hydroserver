@@ -898,7 +898,7 @@ watch(
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--hs-surface-floating);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
   color: rgba(0, 0, 0, 0.78);
   line-height: 1.2;

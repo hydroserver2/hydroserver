@@ -607,10 +607,6 @@ import { useUserStore } from '@/store/user'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { Snackbar } from '@/utils/notifications'
 
-// Matches the accent used for the "Workspaces" entry in the orchestration nav
-// rail, so the two workspace-management entry points read as the same place.
-// Kept as a literal (not `var(--hs-accent-green)`) because it's concatenated
-// with an alpha suffix below — but must stay equal to that token's value.
 const WORKSPACE_ACCENT = '#2E7D32'
 
 const SECTIONS = [
@@ -1101,38 +1097,47 @@ onMounted(async () => {
 /* A little color per metric instead of one uniform grey, so the overview
    reads as more than a wall of numbers. */
 .stat-tile--members .stat-tile-icon {
-  background: var(--hs-accent-blue-bg);
-  color: var(--hs-accent-blue);
+  background: var(--workspace-members-accent-bg);
+  color: var(--workspace-members-accent);
 }
 .stat-tile--members .stat-tile-value {
-  color: var(--hs-accent-blue);
+  color: var(--workspace-members-accent);
 }
 .stat-tile--sites .stat-tile-icon {
-  background: var(--hs-accent-green-bg);
-  color: var(--hs-accent-green);
+  background: var(--workspace-sites-accent-bg);
+  color: var(--workspace-sites-accent);
 }
 .stat-tile--sites .stat-tile-value {
-  color: var(--hs-accent-green);
+  color: var(--workspace-sites-accent);
 }
 .stat-tile--keys .stat-tile-icon {
-  background: var(--hs-accent-orange-bg);
-  color: var(--hs-accent-orange);
+  background: var(--workspace-keys-accent-bg);
+  color: var(--workspace-keys-accent);
 }
 .stat-tile--keys .stat-tile-value {
-  color: var(--hs-accent-orange);
+  color: var(--workspace-keys-accent);
 }
 .stat-tile--metadata .stat-tile-icon {
-  background: var(--hs-accent-teal-bg);
-  color: var(--hs-accent-teal);
+  background: var(--workspace-metadata-accent-bg);
+  color: var(--workspace-metadata-accent);
 }
 .stat-tile--metadata .stat-tile-value {
-  color: var(--hs-accent-teal);
+  color: var(--workspace-metadata-accent);
 }
 
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /
    OrchestrationContextSidebar.vue) so the two workspace-management entry
    points feel like the same product surface. */
 .workspaces-page {
+  --workspace-members-accent: #1565c0;
+  --workspace-members-accent-bg: #e3f2fd;
+  --workspace-sites-accent: #2e7d32;
+  --workspace-sites-accent-bg: #e8f5e9;
+  --workspace-keys-accent: #e65100;
+  --workspace-keys-accent-bg: #fff3e0;
+  --workspace-metadata-accent: #00695c;
+  --workspace-metadata-accent-bg: #e0f2f1;
+
   background-color: var(--hs-surface);
   display: flex;
   flex-direction: column;
@@ -1144,12 +1149,8 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .workspaces-header {
-  background: linear-gradient(
-    120deg,
-    var(--hs-header-wash-start) 0%,
-    var(--hs-header-wash-end) 100%
-  );
-  border-bottom: 1px solid var(--hs-header-wash-border);
+  background: linear-gradient(120deg, #eaf5fd 0%, #eefaf0 100%);
+  border-bottom: 1px solid #dfe8e2;
 }
 .workspaces-header-inner {
   padding: var(--hs-space-12) var(--hs-space-24);
@@ -1469,10 +1470,10 @@ onMounted(async () => {
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    var(--hs-accent-blue-bg),
-    var(--hs-accent-green-bg)
+    var(--workspace-members-accent-bg),
+    var(--workspace-sites-accent-bg)
   );
-  color: var(--hs-accent-green);
+  color: var(--workspace-sites-accent);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1062,12 +1062,8 @@ const goToTask = async (row: TaskRow) => {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--hs-accent-blue-bg),
-    var(--hs-accent-green-bg)
-  );
-  color: var(--hs-accent-green);
+  background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
+  color: #2e7d32;
   display: flex;
   align-items: center;
   justify-content: center;
