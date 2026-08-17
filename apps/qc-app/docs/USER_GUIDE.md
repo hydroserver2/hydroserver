@@ -111,7 +111,7 @@ The Edit View consists of three columns, each independently resizable / collapsi
 |--------|----------|
 | **Left** ("Operations") | The Edit drawer with three sections: Filter Data, Edit Data, Add Data. |
 | **Center** | The Plotly chart + a tab-switched data table (upper left) for the QC target. |
-| **Right** ("Aux") | At the top: **Save** / **Save & Close** / **Close** actions. Below that: the list of Plotted Datastreams, Edit history, and the currently staged Operation Panel. |
+| **Right** ("Aux") | The list of Plotted Datastreams, Edit history, and the currently staged Operation Panel. The **Save** / **Commit** / **Close** actions sit at the bottom of the Edit history panel. |
 
 The chart at the top of the center column has a Plotly toolbar with:
 
@@ -414,7 +414,7 @@ The header carries the count chip and four icon buttons (left to right): **undo*
 
 The body shows:
 
-- A baseline **Data loaded** row at the top, carrying a plot-this-step button, a **reload-from-this-step** button that returns the plot to the state the session started from, and a **reload-from-server** button (cloud icon) that refetches and drops the history entirely.
+- A baseline **Data loaded** row at the top, carrying a plot-this-step button, a **reload-from-this-step** button that returns the plot to the state the session started from, and a **discard-edits-and-reload-from-server** button (cloud icon). The cloud button is hidden on a committed session, where there are no edits to discard.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
   - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
@@ -425,7 +425,26 @@ The body shows:
   - An **undo** button on the trailing entry only (older entries are undone via Reload-from-this-step).
 - A chevron toggles an inline "Arguments" drawer that shows the raw qc-utils call arguments.
 
-Clicking the chevron at the very top of the panel collapses the whole panel; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar.
+### Reload from this step vs. reload from server
+
+These two look like siblings on the **Data loaded** row and mostly produce the
+same picture, but they are not the same operation:
+
+- **Reload from this step** replays the raw observations already held in the
+  browser. No network, and it can only ever restore what you loaded.
+- **Discard edits and reload from server** (cloud icon) re-fetches the
+  observations and throws the history away.
+
+Starting a session already fetches the latest committed state, so within an
+undisturbed session the two agree. Reach for the cloud button when the server
+copy has moved underneath you: **another user committed a session** on the same
+managed datastream while you were editing, or the source is still ingesting
+data and you want the new points. The memory replay can never surface either,
+because it faithfully restores the copy you started with.
+
+Below the body sits the session action bar: **Save**, **Commit**, and **Close** (see [Submit](#submit-save--commit--close)). It stays put when the panel is collapsed, so the actions are always one click away.
+
+Clicking the chevron at the very top of the panel collapses the body; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar. The modal shows the history only, not the session actions.
 
 ## Comparing against a point in history
 
@@ -487,15 +506,15 @@ Per-op failures do not abort the replay. The app keeps going. If your QC history
 - **Audit trail.** Save the QC history before submitting, so you have a record of every transformation you applied.
 - **Iterate offline.** Edit the QC history's JSON if you want to tweak a threshold without re-clicking through the panels.
 
-## Submit (Save / Save & Close)
+## Submit (Save / Commit / Close)
 
-When you're satisfied with the edits, hit one of the action buttons at the top of the right sidebar:
+When you're satisfied with the edits, hit one of the action buttons at the bottom of the Edit history panel:
 
-- **Save**: uploads and keeps you in the Edit view.
-- **Save & Close**: uploads, clears history, and drops you back to the Select view.
-- **Close**: abandons the session. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
+- **Save**: writes the session's operations to the backend as a draft and keeps you in the Edit view.
+- **Commit**: materializes the session into the managed datastream and locks it into the history.
+- **Close**: leaves the editor. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
 
-Clicking Save (or Save & Close) opens a confirmation dialog so a misclick won't push data to the server.
+Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.
 
 ![Submit confirmation dialog](./images/submit-dialog.png)
 
@@ -525,7 +544,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 3. Click **All** in the Time range so you load the full series.
 4. Click the pencil icon → expand **Value thresholds**, set `Greater than: 1000`, press Enter.
 5. Expand **Delete points**, click Delete.
-6. Click **Save** (or **Save & Close**), then confirm in the dialog.
+6. Click **Save** at the bottom of the Edit history panel, then **Commit** and confirm in the dialog.
 
 ### "I want to drift-correct a known-bad interval."
 

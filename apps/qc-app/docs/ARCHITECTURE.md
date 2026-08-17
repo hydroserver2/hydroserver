@@ -294,8 +294,9 @@ Two contract notes worth keeping in mind:
   `created_by`, stamped from the authenticated user on create, and the
   response resolves a deleted account to a placeholder contact rather than
   null. `reconstructSession`/`reconstructCommittedSession` map it onto
-  `HistoryItem.performedBy` (name, falling back to email) so the operations
-  panel can attribute each row. It is never sent back: the field is
+  `HistoryItem.performedBy` (name, falling back to email), shown in a row's
+  expanded detail rather than on the row itself so the collapsed list stays
+  scannable. It is never sent back: the field is
   provenance, not input. Operations applied in the current session show no
   attribution until they are saved and reloaded. Comments have no author of
   their own — `comment` is a plain nullable column that can be rewritten

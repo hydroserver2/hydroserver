@@ -212,19 +212,23 @@
           </template>
         </v-tooltip>
 
-        <!-- Distinct icon from the step reload above: this one refetches
-             and drops the history rather than replaying it. -->
-        <v-tooltip v-if="!selectedSeries?.data.isLoading" location="start" text="Reload from server">
+        <!-- Refetches from the server; the step reload above replays the
+             in-memory raw. Hidden on a committed session. -->
+        <v-tooltip
+          v-if="!selectedSeries?.data.isLoading && !isReadOnly"
+          location="start"
+          text="Discard edits and reload from server"
+        >
           <template #activator="{ props: tp }">
             <v-btn
               v-bind="tp"
               data-testid="history-reload-btn"
-              aria-label="Reload from server"
+              aria-label="Discard edits and reload from server"
               size="x-small"
               variant="text"
               density="comfortable"
               icon="mdi-cloud-download-outline"
-              :disabled="isUpdating || isReadOnly"
+              :disabled="isUpdating"
               @click="onReload"
             />
           </template>
@@ -295,11 +299,25 @@
               class="mr-2"
             />
 
-            <span
-              class="edit-history__method flex-grow-1 text-truncate font-weight-medium"
-            >
-              {{ formatMethod(entry.method) }}
-            </span>
+            <!-- Grows as one unit so the badge sits against the title text. -->
+            <div class="edit-history__title flex-grow-1 d-flex align-center ga-1">
+              <span class="edit-history__method text-truncate font-weight-medium">
+                {{ formatMethod(entry.method) }}
+              </span>
+
+              <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
+                <template #activator="{ props: tp }">
+                  <v-icon
+                    v-bind="tp"
+                    :data-testid="`history-comment-badge-${index}`"
+                    icon="mdi-comment-text-outline"
+                    size="14"
+                    color="primary"
+                    class="flex-shrink-0"
+                  />
+                </template>
+              </v-tooltip>
+            </div>
 
             <v-chip
               v-if="shownStepIndex === index"
@@ -314,34 +332,6 @@
             </v-chip>
 
             <div class="d-flex align-center ga-2 flex-shrink-0">
-              <v-tooltip
-                v-if="entry.performedBy"
-                location="start"
-                :text="`Applied by ${entry.performedBy}`"
-              >
-                <template #activator="{ props: tp }">
-                  <span
-                    v-bind="tp"
-                    class="edit-history__author text-body-small text-medium-emphasis text-truncate"
-                    :data-testid="`history-author-${index}`"
-                  >
-                    {{ entry.performedBy }}
-                  </span>
-                </template>
-              </v-tooltip>
-
-              <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
-                <template #activator="{ props: tp }">
-                  <v-icon
-                    v-bind="tp"
-                    :data-testid="`history-comment-badge-${index}`"
-                    icon="mdi-comment-text-outline"
-                    size="14"
-                    color="primary"
-                  />
-                </template>
-              </v-tooltip>
-
               <v-tooltip
                 v-if="isApplied(index) && entry.execution?.status === 'failed'"
                 location="start"
@@ -519,6 +509,16 @@
         </template>
       </SessionList>
     </div>
+
+    <!-- Sits outside the collapsible body, so it stays visible when
+         collapsed. -->
+    <div
+      v-if="$slots.footer"
+      class="edit-history__footer flex-shrink-0 d-flex align-center flex-wrap ga-1 px-2 pb-2"
+      :class="isCollapsed ? 'pt-2' : 'pt-0'"
+    >
+      <slot name="footer" />
+    </div>
   </div>
 </template>
 
@@ -551,6 +551,11 @@ const props = withDefaults(
     popOutEnabled: true,
   }
 )
+
+defineSlots<{
+  /** Session actions pinned below the history, shown collapsed or not. */
+  footer?: () => any
+}>()
 
 const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void
@@ -680,6 +685,8 @@ const onReload = async () => {
       selectedSeries.value.data.redoStack.length = 0
     }
     await refreshGraphSeriesArray()
+    // Restores the raw values when the refetch above failed and left the
+    // edited record in place.
     await selectedSeries.value?.data.reload()
     // reload() already wiped history; don't push an empty SELECTION.
     await clearSelected({ recordHistory: false })
@@ -862,10 +869,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   background-color: rgba(var(--v-theme-primary), 0.04);
 }
 
-.edit-history__author {
-  max-width: 8rem;
-}
-
 .edit-history__row--loaded {
   background-color: rgba(var(--v-theme-primary), 0.1);
   box-shadow: inset 3px 0 0 0 rgb(var(--v-theme-primary));
@@ -894,6 +897,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .edit-history__expand:hover {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+.edit-history__title {
+  min-width: 0;
 }
 
 .edit-history__method {

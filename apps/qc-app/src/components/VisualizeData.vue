@@ -219,7 +219,7 @@
 
       <template v-else>
         <div
-          class="d-flex align-center flex-wrap px-3 py-2 border-b"
+          class="edit-view__sidebar-bar d-flex align-center px-1 py-1 border-b"
         >
           <v-btn
             size="x-small"
@@ -227,45 +227,9 @@
             density="comfortable"
             icon="mdi-chevron-right"
             title="Collapse panel"
-            class="mr-1"
             @click="auxCollapsed = true"
           />
-          <v-btn
-            data-testid="exit-save-btn"
-            size="small"
-            variant="flat"
-            color="primary"
-            prepend-icon="mdi-content-save-outline"
-            :disabled="saveDisabled"
-            :loading="isSavingDraft"
-            @click="onSaveDraft"
-          >
-            Save
-          </v-btn>
-          <v-btn
-            data-testid="exit-commit-btn"
-            class="ml-1"
-            size="small"
-            variant="flat"
-            color="success"
-            prepend-icon="mdi-cloud-check-outline"
-            :disabled="commitDisabled"
-            :loading="isCommitting"
-            @click="openCommit"
-          >
-            Commit
-          </v-btn>
           <v-spacer />
-          <v-btn
-            data-testid="exit-close-btn"
-            size="small"
-            variant="text"
-            prepend-icon="mdi-close"
-            :disabled="isSavingDraft || isCommitting"
-            @click="requestClose"
-          >
-            Close
-          </v-btn>
         </div>
 
         <section class="bg-surface">
@@ -327,7 +291,45 @@
               v-model:collapsed="historyCollapsed"
               @pop-out="historyModalOpen = true"
               @view-session="onViewSession"
-            />
+            >
+              <template #footer>
+                <v-btn
+                  data-testid="exit-save-btn"
+                  size="small"
+                  variant="flat"
+                  color="primary"
+                  prepend-icon="mdi-content-save-outline"
+                  :disabled="saveDisabled"
+                  :loading="isSavingDraft"
+                  @click="onSaveDraft"
+                >
+                  Save
+                </v-btn>
+                <v-btn
+                  data-testid="exit-commit-btn"
+                  size="small"
+                  variant="flat"
+                  color="success"
+                  prepend-icon="mdi-cloud-check-outline"
+                  :disabled="commitDisabled"
+                  :loading="isCommitting"
+                  @click="openCommit"
+                >
+                  Commit
+                </v-btn>
+                <v-spacer />
+                <v-btn
+                  data-testid="exit-close-btn"
+                  size="small"
+                  variant="text"
+                  prepend-icon="mdi-close"
+                  :disabled="isSavingDraft || isCommitting"
+                  @click="requestClose"
+                >
+                  Close
+                </v-btn>
+              </template>
+            </EditHistory>
           </div>
 
           <!-- Only show the split grip when BOTH sides are actually
@@ -1295,10 +1297,12 @@ useResumeEditSession(enterEdit)
 
 .edit-view__plotted-body,
 .edit-view__aux-body,
-.edit-view__history,
 .edit-view__op-panel {
   min-height: 0;
 }
+
+/* .edit-view__history omits min-height: 0 so its automatic minimum floors
+   the pane at the history header + footer while the split is dragged. */
 
 @media (max-width: 960px) {
   .edit-view {

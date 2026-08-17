@@ -144,9 +144,13 @@ function makeEntry(
   }
 }
 
-function createWrapper(props: Record<string, unknown> = {}) {
+function createWrapper(
+  props: Record<string, unknown> = {},
+  slots: Record<string, unknown> = {}
+) {
   return mount(EditHistory, {
     props,
+    slots,
     global: { plugins: [createTestPinia(), createTestVuetify()] },
   })
 }
@@ -234,6 +238,26 @@ describe('EditHistory.vue', () => {
     const wrapper = createWrapper({ collapsible: false })
     await wrapper.find('.edit-history__header').trigger('click')
     expect(wrapper.emitted('update:collapsed')).toBeFalsy()
+  })
+
+  it('renders no footer when the slot is not provided', () => {
+    const wrapper = createWrapper()
+    expect(wrapper.find('.edit-history__footer').exists()).toBe(false)
+  })
+
+  it('keeps the footer slot visible while collapsed', () => {
+    const wrapper = createWrapper(
+      { collapsible: true, collapsed: true },
+      { footer: '<button data-testid="session-actions">Save</button>' }
+    )
+    const footer = wrapper.find('.edit-history__footer')
+    expect(footer.exists()).toBe(true)
+    expect(footer.isVisible()).toBe(true)
+    expect(wrapper.find('[data-testid="session-actions"]').isVisible()).toBe(
+      true
+    )
+    // The body is what collapses (v-show), not the footer.
+    expect(wrapper.find('.edit-history__row--baseline').isVisible()).toBe(false)
   })
 
   it('emits pop-out when pop-out button is clicked', async () => {
@@ -492,16 +516,26 @@ describe('EditHistory.vue actions', () => {
       ).toBeDefined()
     })
 
-    it('disables reload-from-server, which would wipe the record', async () => {
+    it('hides reload-from-server, which would wipe the record', async () => {
       editHistory.value = [{ method: 'ADD_POINTS', args: [], execution: {} }]
       selectedSeries.value = { data: { history: editHistory.value, redoStack: [] } }
       const w = createWrapper()
       await readOnly()
       await flushPromises()
 
-      expect(
-        w.find('[data-testid="history-reload-btn"]').attributes('disabled')
-      ).toBeDefined()
+      expect(w.find('[data-testid="history-reload-btn"]').exists()).toBe(false)
+    })
+
+    it('shows reload-from-server on an editable session', async () => {
+      editHistory.value = [{ method: 'ADD_POINTS', args: [], execution: {} }]
+      selectedSeries.value = { data: { history: editHistory.value, redoStack: [] } }
+      const w = createWrapper()
+      await flushPromises()
+
+      const btn = w.find('[data-testid="history-reload-btn"]')
+      expect(btn.exists()).toBe(true)
+      // Never gated on whether history exists, unlike the step reload.
+      expect(btn.attributes('disabled')).toBeUndefined()
     })
 
     it('keeps the entries below when reloading from a step', async () => {
@@ -763,7 +797,7 @@ describe('EditHistory.vue actions', () => {
   })
 
   describe('attribution', () => {
-    it('shows who applied an operation, on the row and in the detail', async () => {
+    it('shows who applied an operation in the expanded detail only', async () => {
       editHistory.value = [
         { method: 'ADD_POINTS', args: [], execution: {}, performedBy: 'Ada Lovelace' },
         { method: 'DELETE_POINTS', args: [], execution: {} },
@@ -772,15 +806,21 @@ describe('EditHistory.vue actions', () => {
       const w = createWrapper()
       await flushPromises()
 
-      expect(w.find('[data-testid="history-author-0"]').text()).toBe('Ada Lovelace')
-      // Unsaved operations have no server attribution yet.
-      expect(w.find('[data-testid="history-author-1"]').exists()).toBe(false)
+      // The collapsed row stays terse; attribution lives in the detail.
+      expect(w.find('[data-testid="history-item-0"]').text()).not.toContain(
+        'Ada Lovelace'
+      )
 
       await w.find('[data-testid="history-item-0"]').find('button').trigger('click')
       await flushPromises()
       expect(w.find('[data-testid="history-author-detail-0"]').text()).toContain(
         'Applied by Ada Lovelace'
       )
+
+      // Unsaved operations have no server attribution yet.
+      await w.find('[data-testid="history-item-1"]').find('button').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-testid="history-author-detail-1"]').exists()).toBe(false)
     })
   })
 
