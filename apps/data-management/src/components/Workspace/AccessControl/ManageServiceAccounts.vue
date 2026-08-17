@@ -72,12 +72,14 @@
           message="You don't have permission to create service accounts for this workspace."
         >
           <template #default>
-            <v-btn-add @click="openCreate = true">
+            <v-btn-primary variant="flat" @click="openCreate = true">
               Create service account
-            </v-btn-add>
+            </v-btn-primary>
           </template>
           <template #denied>
-            <v-btn-add disabled>Create service account</v-btn-add>
+            <v-btn-primary variant="flat" disabled>
+              Create service account
+            </v-btn-primary>
           </template>
         </PermissionTooltip>
       </div>

@@ -28,11 +28,12 @@
           @click="showHelp = !showHelp"
         />
 
-        <v-btn-add
+        <v-btn-primary
           v-if="canCreateMetadata"
+          variant="flat"
           :data-testid="`add-${scope}-metadata-item`"
           @click="metaMap[tab]?.openDialog()"
-          >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
+          >Add new {{ metaMap[tab]?.singularName }}</v-btn-primary
         >
       </div>
     </div>

@@ -91,7 +91,7 @@
 .hs-table-actions .v-btn:not(.v-btn--icon) {
   height: 32px;
   min-height: 32px;
-  border-radius: var(--hs-radius-sm) !important;
+  border-radius: var(--hs-radius-sm);
 }
 
 .hs-table-tools > :last-child {
