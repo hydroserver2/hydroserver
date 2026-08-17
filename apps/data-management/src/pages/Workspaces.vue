@@ -208,9 +208,6 @@
                 >
                   {{ selected.isPrivate ? 'Private' : 'Public' }}
                 </v-chip>
-                <v-chip size="small" variant="tonal" color="default">
-                  {{ getUserRoleName(selected) }}
-                </v-chip>
               </div>
               <div class="detail-subtitle hs-text-sm">
                 {{
