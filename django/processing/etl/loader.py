@@ -7,7 +7,7 @@ from typing import Union, Optional
 from pydantic import ConfigDict
 
 from core.sta.models import Datastream
-from core.sta.services import ObservationService
+from core.sta.services import DatastreamService, ObservationService
 from interfaces.api.schemas import ObservationBulkDeleteBody, ObservationBulkPostBody
 
 from hydroserverpy.etl.loaders import Loader, ETLLoaderResult, ETLTargetResult
@@ -16,6 +16,7 @@ from hydroserverpy.etl.exceptions import ETLError
 
 logger = logging.getLogger(__name__)
 observation_service = ObservationService()
+datastream_service = DatastreamService()
 
 
 class HydroServerInternalLoader(Loader):
@@ -114,7 +115,9 @@ class HydroServerInternalLoader(Loader):
                 self.chunk_size,
             )
 
-            if data_ingestion_window_start is not None:
+            use_insert_mode = data_ingestion_window_start is not None
+
+            if use_insert_mode:
                 try:
                     observation_service.bulk_delete(
                         principal=task.workspace.owner,
@@ -136,26 +139,33 @@ class HydroServerInternalLoader(Loader):
                     )
                     continue
 
-            for start_idx in range(0, datastream_observations_to_load, self.chunk_size):
-                end_idx = min(start_idx + self.chunk_size, datastream_observations_to_load)
-                chunk = datastream_df.iloc[start_idx:end_idx]
+            try:
+                for start_idx in range(0, datastream_observations_to_load, self.chunk_size):
+                    end_idx = min(start_idx + self.chunk_size, datastream_observations_to_load)
+                    chunk = datastream_df.iloc[start_idx:end_idx]
 
-                try:
-                    observation_service.bulk_create(
-                        principal=task.workspace.owner,
-                        data=ObservationBulkPostBody(
-                            fields=["phenomenonTime", "result"],
-                            data=chunk.values.tolist(),
-                        ),
-                        datastream_id=datastream.pk,
-                        mode="insert" if data_ingestion_window_start is not None else "append",
-                    )
-                    etl_results.target_results[target_id].values_loaded += len(chunk)
-                except Exception as e:
-                    etl_results.target_results[target_id].status = "failed"
-                    etl_results.target_results[target_id].error = str(e)
-                    etl_results.target_results[target_id].traceback = traceback.format_exc()
-                    break
+                    try:
+                        observation_service.bulk_create(
+                            principal=task.workspace.owner,
+                            data=ObservationBulkPostBody(
+                                fields=["phenomenonTime", "result"],
+                                data=chunk.values.tolist(),
+                            ),
+                            datastream_id=datastream.pk,
+                            mode="insert" if use_insert_mode else "append",
+                            update_datastream_statistics=False,
+                        )
+                        etl_results.target_results[target_id].values_loaded += len(chunk)
+                    except Exception as e:
+                        etl_results.target_results[target_id].status = "failed"
+                        etl_results.target_results[target_id].error = str(e)
+                        etl_results.target_results[target_id].traceback = traceback.format_exc()
+                        break
+            finally:
+                datastream_service.update_observation_statistics(
+                    datastream=datastream,
+                    fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
+                )
 
             if not etl_results.target_results[target_id].values_loaded > 0:
                 etl_results.target_results[target_id].status = "skipped"
