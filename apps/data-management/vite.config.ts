@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     resolve: {
+      preserveSymlinks: true,
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
         '@': resolve(__dirname, 'src'),

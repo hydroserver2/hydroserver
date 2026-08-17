@@ -15,12 +15,15 @@
   --hs-text-muted: #9ca3af;
 
   /* Surfaces & borders */
-  --hs-surface: #ffffff;
-  --hs-surface-muted: #fafafa;
+  /* Keep these assignments aligned with the palette in colors.ts. */
+  --hs-background: oklch(97.47% 0.0051 247.88);
+  --hs-surface: oklch(100% 0 0);
+  --hs-surface-subtle: oklch(99.39% 0.0029 264.54);
+  --hs-surface-muted: oklch(96.18% 0.0086 247.91);
   /* Translucent white for floating "island" panels over map/content. */
   --hs-surface-floating: rgba(255, 255, 255, 0.96);
 
-  --hs-border: #e8e8e8;
+  --hs-border: oklch(87.76% 0.0176 248.03);
   --hs-input-border: #cac4d0;
 
   /* Status */

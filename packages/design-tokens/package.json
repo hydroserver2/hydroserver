@@ -2,20 +2,30 @@
   "name": "@hydroserver/design-tokens",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "files": [
+    "colors.ts",
     "fonts.css",
-    "tokens.css"
+    "tokens.css",
+    "vuetify.ts"
   ],
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "./vuetify.ts"
   ],
   "exports": {
+    "./colors": "./colors.ts",
     "./fonts.css": "./fonts.css",
-    "./tokens.css": "./tokens.css"
+    "./tokens.css": "./tokens.css",
+    "./vuetify": "./vuetify.ts"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/newsreader": "^5.3.0"
+  },
+  "peerDependencies": {
+    "@mdi/js": "^7.4.47",
+    "vuetify": "^4.1.0"
   }
 }

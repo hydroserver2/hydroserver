@@ -1,44 +1,32 @@
 import 'vuetify/styles'
 
-import { createVuetify, ThemeDefinition } from 'vuetify'
+import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { VBtn } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
 import { mdiPlus } from '@mdi/js'
-// add this import
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { hexColors } from './colors'
 
-// Material theme Colors: https://vuetifyjs.com/en/styles/colors/
+// HydroServer's shared light theme and its Vuetify-specific semantic roles.
 const theme: ThemeDefinition = {
   dark: false,
   colors: {
-    background: '#FAFAFA', // grey-lighten-5
-    surface: '#FFFFFF', // white
-    primary: '#2196F3', // blue
-    secondary: '#4CAF50', // green
+    // Vuetify 4's theme parser does not yet accept OKLCH, so its adapter uses
+    // the shared palette's equivalent hexadecimal export.
+    background: hexColors.neutral[50],
+    surface: hexColors.neutral[0],
+    'surface-subtle': hexColors.neutral[25],
+    'surface-muted': hexColors.neutral[100],
+    border: hexColors.neutral[300],
+    primary: hexColors.blue[600],
+    secondary: hexColors.green[500],
     default: '#757575', // grey-darken-1
     delete: '#F44336', // red
     error: '#F44336', // red
     info: '#03A9F4', // light-blue
-    success: '#4CAF50', // green
+    success: hexColors.green[500],
     warning: '#FF9800', // orange
-    navbar: '#272e3d',
-  },
-}
-
-const darkTheme: ThemeDefinition = {
-  dark: true,
-  colors: {
-    background: '#18212a',
-    surface: '#18212a',
-    primary: '#2196F3',
-    secondary: '#4CAF50',
-    default: '#cfd8dc',
-    delete: '#F44336',
-    error: '#F44336',
-    info: '#03A9F4',
-    success: '#4CAF50',
-    warning: '#FF9800',
     navbar: '#272e3d',
   },
 }
@@ -61,7 +49,7 @@ const menuDefaults = {
   autocomplete: 'off',
 }
 
-export default createVuetify({
+const vuetify = createVuetify({
   blueprint: md3,
   directives,
   aliases: {
@@ -95,6 +83,8 @@ export default createVuetify({
     VBtnPrimary: {
       ...btnAttrs,
       color: 'primary',
+      // Primary actions are rectangular with rounded corners, not pills.
+      rounded: 'lg',
     },
     VBtnSecondary: {
       ...btnAttrs,
@@ -121,7 +111,6 @@ export default createVuetify({
     defaultTheme: 'theme',
     themes: {
       theme,
-      dark: darkTheme,
     },
     variations: {
       colors: ['primary', 'secondary', 'surface'],
@@ -135,3 +124,10 @@ export default createVuetify({
     sets: { mdi },
   },
 })
+
+// Vuetify merges its built-in `light` and `dark` themes into custom theme
+// options. HydroServer does not offer a dark mode, so do not ship the unused
+// built-in dark theme through this shared configuration.
+delete vuetify.theme.themes.value.dark
+
+export default vuetify

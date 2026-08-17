@@ -1062,7 +1062,7 @@ onMounted(async () => {
   flex: 1;
   min-width: 0;
   padding: var(--hs-space-16);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--hs-border);
   border-radius: var(--hs-radius-lg);
   background: var(--hs-surface);
 }
@@ -1138,7 +1138,7 @@ onMounted(async () => {
   --workspace-metadata-accent: #00695c;
   --workspace-metadata-accent-bg: #e0f2f1;
 
-  background-color: var(--hs-surface);
+  background-color: var(--hs-background);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
@@ -1149,8 +1149,8 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .workspaces-header {
-  background: linear-gradient(120deg, #eaf5fd 0%, #eefaf0 100%);
-  border-bottom: 1px solid #dfe8e2;
+  background: var(--hs-surface-subtle);
+  border-bottom: 1px solid var(--hs-border);
 }
 .workspaces-header-inner {
   padding: var(--hs-space-12) var(--hs-space-24);
@@ -1180,7 +1180,7 @@ onMounted(async () => {
   display: flex;
   flex: 1;
   min-height: 0;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   overflow: hidden;
 }
 
@@ -1394,7 +1394,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   min-width: 0;
 }
 .detail-header {
@@ -1403,7 +1403,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: var(--hs-space-12);
-  background: var(--hs-surface);
+  background: var(--hs-surface-subtle);
   flex-shrink: 0;
 }
 .detail-title {
@@ -1419,7 +1419,7 @@ onMounted(async () => {
 .detail-tabbar {
   padding: 0 var(--hs-space-24);
   border-bottom: 1px solid var(--hs-border);
-  background: var(--hs-surface);
+  background: var(--hs-surface-subtle);
   flex-shrink: 0;
 }
 .detail-body {
@@ -1457,7 +1457,7 @@ onMounted(async () => {
   justify-content: center;
   min-width: 0;
   overflow: auto;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   padding: var(--hs-space-32);
 }
 .no-workspace-state-content {
