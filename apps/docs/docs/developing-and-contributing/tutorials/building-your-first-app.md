@@ -2,7 +2,7 @@
 
 This tutorial will guide you through how to build a simple web application backed by HydroServer data.
 
-We’ll use the hydroserver.ts API client to build a small browser app that will:
+We’ll use the `@hydroserver/client` TypeScript package to build a small browser app that will:
 
 - Fetch a page of the first 50 public Things currently on playground.hydroserver.org
 - Print each Thing with a location
@@ -91,11 +91,13 @@ const res = await hs.things.list({
   is_private: false,
 });
 
-const things: Thing[] = res.data;
-list.replaceChildren(...things.map(row));
-status.textContent = res.ok
-  ? `Showing ${things.length} public Things.`
-  : res.message;
+if (!res.ok) {
+  status.textContent = res.message;
+} else {
+  const things: Thing[] = res.data;
+  list.replaceChildren(...things.map(row));
+  status.textContent = `Showing ${things.length} public Things.`;
+}
 ```
 
 ```css [src/style.css]
@@ -172,4 +174,4 @@ Open the local Vite URL (usually `http://localhost:5173`) and you should see the
 
 ## Next step
 
-For more examples of how to use hydroserver.ts, head over the how-to guide: [Manage Data With the TypeScript Client](/developing-and-contributing/how-to/using-the-typescript-client).
+For more examples of how to use `@hydroserver/client`, head over the how-to guide: [Use the TypeScript Client](/developing-and-contributing/how-to/using-the-typescript-client).

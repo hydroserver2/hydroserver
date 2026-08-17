@@ -89,8 +89,7 @@ const resolveDataProductTaskType = (
   t: DataProductTask
 ): DataProductTaskType => {
   if (t.aggregationTransformations?.length) return 'Aggregation'
-  if (t.expressionTransformations?.length) return 'Expression'
-  if (t.compositeExpressionTransformations?.length) return 'Derivation'
+  if (t.derivationTransformations?.length) return 'Derivation'
   if (t.ratingCurveTransformations?.length) return 'Rating curve'
   return null
 }
@@ -110,8 +109,7 @@ const getDataProductNoWorkWarning = (
 ): TaskNoWorkWarning =>
   [
     task.aggregationTransformations,
-    task.compositeExpressionTransformations,
-    task.expressionTransformations,
+    task.derivationTransformations,
     task.ratingCurveTransformations,
   ].some((transformations) => (transformations ?? []).length > 0)
     ? null
