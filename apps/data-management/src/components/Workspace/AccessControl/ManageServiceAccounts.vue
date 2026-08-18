@@ -37,6 +37,7 @@
         <v-btn
           :icon="mdiContentCopy"
           variant="text"
+          color="grey-darken-2"
           @click="copyKey(newKey.key)"
           aria-label="Copy service account API key"
         />
@@ -60,7 +61,7 @@
           :icon="mdiHelpCircleOutline"
           variant="text"
           size="small"
-          color="text-secondary"
+          color="grey-darken-2"
           title="About service accounts"
           aria-label="Toggle service account help"
           :aria-expanded="showServiceAccountHelp"
@@ -118,6 +119,7 @@
             :icon="mdiRefresh"
             variant="text"
             size="small"
+            color="grey-darken-2"
             :disabled="!canEdit"
             :aria-label="`Regenerate ${item.name}`"
             @click="onOpenRegenerateDialog(item)"
@@ -126,6 +128,7 @@
             :icon="mdiPencil"
             variant="text"
             size="small"
+            color="grey-darken-2"
             :disabled="!canEdit"
             :aria-label="`Edit ${item.name}`"
             @click="openDialog(item, 'edit')"

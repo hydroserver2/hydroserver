@@ -385,6 +385,7 @@
                           size="x-small"
                           variant="text"
                           density="comfortable"
+                          color="grey-darken-2"
                           :icon="mdiContentCopy"
                           aria-label="Copy workspace ID"
                           @click="copyId(selected.id)"

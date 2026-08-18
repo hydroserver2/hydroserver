@@ -21,7 +21,7 @@
           :icon="mdiHelpCircleOutline"
           variant="text"
           size="small"
-          color="text-secondary"
+          color="grey-darken-2"
           title="About metadata"
           aria-label="Toggle metadata help"
           :aria-expanded="showHelp"
@@ -60,20 +60,37 @@
           </v-tab>
         </v-tabs>
 
-        <v-btn-toggle
+        <v-chip-group
           v-model="scope"
           mandatory
-          density="compact"
-          color="primary"
-          variant="outlined"
-          rounded="xl"
-          divided
+          selected-class="bg-primary text-white"
           class="metadata-scope-toggle"
         >
-          <v-btn value="all">All</v-btn>
-          <v-btn value="workspace">Workspace</v-btn>
-          <v-btn value="system">System</v-btn>
-        </v-btn-toggle>
+          <v-chip
+            value="all"
+            class="metadata-scope-chip hs-text-sm"
+            size="small"
+            label
+          >
+            All
+          </v-chip>
+          <v-chip
+            value="workspace"
+            class="metadata-scope-chip hs-text-sm"
+            size="small"
+            label
+          >
+            Workspace
+          </v-chip>
+          <v-chip
+            value="system"
+            class="metadata-scope-chip hs-text-sm"
+            size="small"
+            label
+          >
+            System
+          </v-chip>
+        </v-chip-group>
       </div>
 
       <v-card class="metadata-table-card" flat>
@@ -291,7 +308,8 @@ const metaMap: Record<string, any> = {
 const hasMetadataPermission = (action: PermissionAction) => {
   if (scope.value === 'system') return isAdmin()
   const resource = metaMap[tab.value]?.resource as
-    PermissionResource | undefined
+    | PermissionResource
+    | undefined
   return !!(
     resource &&
     activeWorkspace.value &&
@@ -346,6 +364,12 @@ const canManageSystemMetadata = computed(() => isAdmin())
   flex-shrink: 0;
   margin: var(--hs-space-4) var(--hs-space-8) var(--hs-space-4)
     var(--hs-space-12);
+  gap: 4px;
+}
+.metadata-scope-chip {
+  border-radius: 4px;
+  padding-inline: 6px;
+  min-height: 24px;
 }
 .metadata-table-card {
   display: flex;

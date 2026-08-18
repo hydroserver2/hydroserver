@@ -2,7 +2,7 @@
   <v-card color="blue-darken-4" variant="outlined">
     <v-card-text>
       <div class="mb-4">
-        <div class="hs-text-md font-weight-bold text-primary-darken-1">
+        <div class="hs-text-md font-weight-bold" style="color: rgb(var(--v-theme-primary))">
           {{ datastream.observedProperty.name }}
         </div>
         <div class="hs-text-2xs font-weight-medium text-grey-darken-1">

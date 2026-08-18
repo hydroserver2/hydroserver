@@ -23,7 +23,8 @@
         Released {{ formattedReleaseDate }}
       </span>
       <a
-        class="hs-text-2xs text-primary d-inline-flex align-center text-decoration-none"
+        class="hs-text-2xs d-inline-flex align-center text-decoration-none"
+        style="color: rgb(var(--v-theme-primary))"
         :href="releasesUrl"
         target="_blank"
         rel="noopener noreferrer"
@@ -108,7 +109,8 @@
             <h5 class="hs-text-md mb-3">Guides</h5>
             <div class="flex flex-col">
               <a
-                class="flex items-center gap-2 py-2 hs-text-sm text-primary text-decoration-none border-b border-black/10"
+                class="flex items-center gap-2 py-2 hs-text-sm text-decoration-none border-b border-black/10"
+                style="color: rgb(var(--v-theme-primary))"
                 :href="installGuideUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -117,7 +119,8 @@
                 Installation instructions
               </a>
               <a
-                class="flex items-center gap-2 py-2 hs-text-sm text-primary text-decoration-none border-b border-black/10"
+                class="flex items-center gap-2 py-2 hs-text-sm text-decoration-none border-b border-black/10"
+                style="color: rgb(var(--v-theme-primary))"
                 :href="usageGuideUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -126,7 +129,8 @@
                 How to use the Streaming Data Loader
               </a>
               <a
-                class="flex items-center gap-2 py-2 hs-text-sm text-primary text-decoration-none"
+                class="flex items-center gap-2 py-2 hs-text-sm text-decoration-none"
+                style="color: rgb(var(--v-theme-primary))"
                 :href="repoUrl"
                 target="_blank"
                 rel="noopener noreferrer"

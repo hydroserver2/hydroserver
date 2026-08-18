@@ -62,7 +62,7 @@
         :icon="mdiHelpCircleOutline"
         variant="text"
         size="small"
-        color="text-secondary"
+        color="grey-darken-2"
         title="About collaborators"
         aria-label="Toggle collaborator help"
         :aria-expanded="showAddCollaboratorHelp"
@@ -164,6 +164,7 @@
             <template v-else>
               <v-btn
                 variant="text"
+                color="grey-darken-2"
                 :icon="mdiPencil"
                 :disabled="!canEdit"
                 :data-testid="`edit-collaborator-${item.email}`"

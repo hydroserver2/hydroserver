@@ -13,6 +13,7 @@
       <v-icon
         v-if="canEdit && (item._scope !== 'system' || canManageSystem)"
         :icon="mdiPencil"
+        color="grey-darken-2"
         :data-testid="`edit-metadata-${item.id}`"
         aria-label="Edit metadata item"
         @click="openDialog(item, 'edit')"
@@ -20,6 +21,7 @@
       <v-icon
         v-if="canDelete && (item._scope !== 'system' || canManageSystem)"
         :icon="mdiTrashCanOutline"
+        color="grey-darken-2"
         :data-testid="`delete-metadata-${item.id}`"
         aria-label="Delete metadata item"
         @click="openDialog(item, 'delete')"
