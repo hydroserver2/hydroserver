@@ -28,15 +28,30 @@
         size="large"
       />
     </template>
-    <router-link v-if="navbarLogo.route" :to="navbarLogo.route">
-      <v-img :src="navbarLogo.src" alt="Logo" :width="navbarLogo.width" />
+    <router-link
+      v-if="navbarLogo.route"
+      :to="navbarLogo.route"
+      class="navbar-home-button"
+    >
+      <v-img
+        :src="navbarLogo.src"
+        alt="Logo"
+        width="30"
+        height="30"
+      />
     </router-link>
     <a
       v-else-if="navbarLogo.link"
       :href="navbarLogo.link"
       :target="navbarLogo.target || '_self'"
+      class="navbar-home-button"
     >
-      <v-img :src="navbarLogo.src" alt="Logo" :width="navbarLogo.width" />
+      <v-img
+        :src="navbarLogo.src"
+        alt="Logo"
+        width="30"
+        height="30"
+      />
     </a>
 
     <template v-if="compactNavigation" v-slot:append>
@@ -322,6 +337,35 @@ async function onLogout() {
 .v-app-bar.navbar-flat,
 :deep(.v-app-bar.navbar-flat) {
   border-bottom: 1px solid #e8e8e8 !important;
+}
+.navbar-home-button {
+  width: 48px;
+  height: 48px;
+  margin: 0 10px;
+  padding: 9px;
+  border: none;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+.navbar-home-button:hover {
+  background: #f8fbff;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.14);
+}
+.navbar-home-button:active {
+  transform: translateY(1px);
 }
 .account-avatar-initials {
   color: #ffffff;
