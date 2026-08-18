@@ -1295,11 +1295,9 @@ onMounted(async () => {
       700px 900px at 50% 115%,
       rgba(26, 111, 168, 0.028),
       transparent 60%
-    ),
-    url('@/assets/workspace-wave-texture.svg');
-  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+    );
+  background-repeat: no-repeat, no-repeat, no-repeat;
   background-position:
-    0 0,
     0 0,
     0 0,
     0 0;

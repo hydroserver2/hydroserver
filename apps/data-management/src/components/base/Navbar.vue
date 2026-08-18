@@ -64,15 +64,13 @@
 
     <template v-if="!compactNavigation">
       <div v-for="path of visiblePaths()" :key="path.label">
-        <v-btn
-          v-bind="path.attrs || {}"
-          :class="{ 'navbar-link--active': isNavItemActive(path) }"
-          :aria-current="isNavItemActive(path) ? 'page' : undefined"
-          @click="path.onClick"
-          density="comfortable"
-        >
-          {{ path.label }}
-        </v-btn>
+        <MainNavItem
+          :label="path.label"
+          :to="path.attrs?.to"
+          :href="path.attrs?.href"
+          :active="isNavItemActive(path)"
+          :on-click="path.onClick"
+        />
       </div>
 
       <v-spacer />
@@ -193,6 +191,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUserStore } from '@/store/user'
 import { navbarLogo } from '@/config/navbarConfig'
+import MainNavItem from '@/components/base/MainNavItem.vue'
 import { RouteLocationRaw, useRoute } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
 import hs from '@hydroserver/client'
@@ -350,13 +349,6 @@ async function onLogout() {
   background: var(--hs-surface) !important;
   border-bottom: 1px solid var(--hs-border) !important;
   box-shadow: none !important;
-}
-:deep(.navbar-link--active) {
-  background-color: #e3f2fd !important;
-  color: #1565c0 !important;
-}
-:deep(.navbar-link--active > .v-btn__overlay) {
-  display: none !important;
 }
 .navbar-home-button {
   width: 48px;
