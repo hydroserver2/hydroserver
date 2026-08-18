@@ -80,6 +80,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -91,6 +92,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -102,6 +104,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -113,6 +116,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -124,6 +128,7 @@
             :workspace-id="workspaceId"
             :can-edit="canEditMetadata"
             :can-delete="canDeleteMetadata"
+            :can-manage-system="canManageSystemMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -297,9 +302,17 @@ const canEditMetadata = computed(() =>
 const canDeleteMetadata = computed(() =>
   hasMetadataPermission(PermissionAction.Delete)
 )
+const canManageSystemMetadata = computed(() => isAdmin())
 </script>
 
 <style scoped>
+.metadata-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
 .metadata-header {
   display: flex;
   align-items: center;
@@ -320,7 +333,27 @@ const canDeleteMetadata = computed(() =>
   margin: 0 0 2px;
 }
 .metadata-table-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   margin-top: 6px;
+  overflow: hidden;
+}
+.metadata-window {
+  flex: 1;
+  min-height: 0;
+}
+.metadata-window :deep(.v-window__container),
+.metadata-window :deep(.v-window-item) {
+  height: 100%;
+  min-height: 0;
+}
+.metadata-window :deep(.v-data-table) {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 .metadata-search {
   max-width: 260px;

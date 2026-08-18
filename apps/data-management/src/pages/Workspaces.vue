@@ -291,8 +291,21 @@
             </v-tabs>
           </div>
 
-          <div class="detail-body">
-            <v-window v-model="section">
+          <div
+            class="detail-body"
+            :class="{
+              'detail-body--table':
+                section === 'service-accounts' || section === 'metadata',
+            }"
+          >
+            <v-window
+              v-model="section"
+              class="detail-window"
+              :class="{
+                'detail-window--table':
+                  section === 'service-accounts' || section === 'metadata',
+              }"
+            >
               <v-window-item value="overview">
                 <h6 class="text-h6 mb-1">Overview</h6>
 
@@ -559,6 +572,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import hs, {
+  Collaborator,
   PermissionAction,
   PermissionResource,
   Workspace,
@@ -660,14 +674,17 @@ const overviewStatsHasError = ref(false)
 let overviewRequestId = 0
 
 function responseCount(result: PromiseSettledResult<unknown>): number | null {
+  const data = responseData(result)
+  return data === null ? null : data.length
+}
+
+function responseData<T>(result: PromiseSettledResult<unknown>): T[] | null {
   if (result.status === 'rejected') return null
   const response = result.value as {
     ok?: boolean
-    data?: unknown[]
+    data?: T[]
   } | null
-  return response?.ok && Array.isArray(response.data)
-    ? response.data.length
-    : null
+  return response?.ok && Array.isArray(response.data) ? response.data : null
 }
 
 const loadOverviewStats = async (workspaceId: string) => {
@@ -717,6 +734,12 @@ const loadOverviewStats = async (workspaceId: string) => {
     return
 
   const counts = results.map(responseCount)
+  const collaborators = responseData<Collaborator>(results[0])
+  const memberCount = collaborators
+    ? collaborators.filter(
+        (collaborator) => collaborator.user && !collaborator.serviceAccount
+      ).length + 1
+    : null
   const metadataCounts = counts.slice(3)
   const metadata = metadataCounts.every((count) => count !== null)
     ? metadataCounts.reduce<number>((total, count) => total + (count ?? 0), 0)
@@ -724,7 +747,7 @@ const loadOverviewStats = async (workspaceId: string) => {
 
   overviewStats.value = {
     // +1 for the owner, who isn't included in the collaborators list.
-    members: counts[0] === null ? null : counts[0] + 1,
+    members: memberCount,
     sites: counts[1],
     serviceAccounts: canViewServiceAccounts ? counts[2] : null,
     metadata,
@@ -1403,6 +1426,22 @@ onMounted(async () => {
   overflow-y: auto;
   padding: var(--hs-space-16) var(--hs-space-24);
 }
+.detail-body--table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.detail-window--table {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+.detail-window--table :deep(.v-window__container),
+.detail-window--table :deep(.v-window-item) {
+  height: 100%;
+  min-height: 0;
+}
 .workspace-id-cell {
   overflow-wrap: anywhere;
 }
@@ -1522,6 +1561,14 @@ onMounted(async () => {
   .detail-body {
     overflow: visible;
     padding: var(--hs-space-16);
+  }
+  .detail-body--table {
+    display: block;
+  }
+  .detail-window--table,
+  .detail-window--table :deep(.v-window__container),
+  .detail-window--table :deep(.v-window-item) {
+    height: auto;
   }
   .overview-stats {
     flex-wrap: wrap;

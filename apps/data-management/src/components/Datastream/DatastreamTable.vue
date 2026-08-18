@@ -48,13 +48,14 @@
 
     <div v-if="isMobile" class="datastream-mobile-list">
       <v-card
-        v-for="item in tableDatastreams"
+        v-for="(item, index) in renderedDatastreams"
         :key="item.id"
         class="datastream-card"
         :class="{
           'datastream-card--highlighted': isTargetDatastream(item.id),
         }"
         :data-datastream-id="item.id"
+        :data-load-more-trigger="isLoadMoreTrigger(index) ? 'true' : undefined"
         variant="outlined"
       >
         <div class="datastream-card__content">
@@ -168,8 +169,8 @@
                 !linkedTasksForDatastream(item.id).length
                   ? mdiLinkOff
                   : linkedTasksForDatastream(item.id).length > 1
-                  ? mdiAlertOctagon
-                  : linkedTasksForDatastream(item.id)[0].icon
+                    ? mdiAlertOctagon
+                    : linkedTasksForDatastream(item.id)[0].icon
               "
               size="20"
             />
@@ -180,8 +181,8 @@
                     linkedTasksForDatastream(item.id).length > 1
                       ? 'Multiple task targets'
                       : linkedTasksForDatastream(item.id).length === 1
-                      ? linkedTasksForDatastream(item.id)[0].label
-                      : 'No task connected'
+                        ? linkedTasksForDatastream(item.id)[0].label
+                        : 'No task connected'
                   }}
                 </span>
                 <template v-if="linkedTasksForDatastream(item.id).length === 1">
@@ -467,7 +468,10 @@
                   :data-testid="`visualize-datastream-${item.id}`"
                   :to="{
                     name: 'VisualizeData',
-                    query: { sites: item.monitoringSiteId, datastreams: item.id },
+                    query: {
+                      sites: item.monitoringSiteId,
+                      datastreams: item.id,
+                    },
                   }"
                 />
                 <v-list-item
@@ -515,11 +519,12 @@
       </div>
 
       <div
-        v-for="item in tableDatastreams"
+        v-for="(item, index) in renderedDatastreams"
         :key="item.id"
         class="ds-card"
         :class="{ 'ds-card--highlighted': isTargetDatastream(item.id) }"
         :data-datastream-id="item.id"
+        :data-load-more-trigger="isLoadMoreTrigger(index) ? 'true' : undefined"
       >
         <div class="ds-card__grid">
           <div class="datastream-latest">
@@ -774,7 +779,10 @@
                     :data-testid="`visualize-datastream-${item.id}`"
                     :to="{
                       name: 'VisualizeData',
-                      query: { sites: item.monitoringSiteId, datastreams: item.id },
+                      query: {
+                        sites: item.monitoringSiteId,
+                        datastreams: item.id,
+                      },
                     }"
                   />
                   <v-list-item
@@ -829,8 +837,8 @@
               !linkedTasksForDatastream(item.id).length
                 ? mdiLinkOff
                 : linkedTasksForDatastream(item.id).length > 1
-                ? mdiAlertOctagon
-                : linkedTasksForDatastream(item.id)[0].icon
+                  ? mdiAlertOctagon
+                  : linkedTasksForDatastream(item.id)[0].icon
             "
             size="20"
           />
@@ -841,8 +849,8 @@
                   linkedTasksForDatastream(item.id).length > 1
                     ? 'Multiple task targets'
                     : linkedTasksForDatastream(item.id).length === 1
-                    ? linkedTasksForDatastream(item.id)[0].label
-                    : 'No task connected'
+                      ? linkedTasksForDatastream(item.id)[0].label
+                      : 'No task connected'
                 }}
               </span>
               <template v-if="linkedTasksForDatastream(item.id).length === 1">
@@ -1123,7 +1131,11 @@ const search = ref()
 const datastreamSectionRef = ref<any>(null)
 const highlightedDatastreamId = ref('')
 const DATASTREAM_HIGHLIGHT_DURATION_MS = 2500
+const DATASTREAM_RENDER_BATCH_SIZE = 10
+const DATASTREAM_PRELOAD_AHEAD_COUNT = 10
+const renderedDatastreamCount = ref(DATASTREAM_RENDER_BATCH_SIZE)
 let highlightTimeout: number | undefined
+let loadMoreObserver: IntersectionObserver | undefined
 const { smAndDown } = useDisplay()
 const isMobile = computed(() => smAndDown.value)
 
@@ -1182,7 +1194,9 @@ const onCreated = async () => {
 const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
   useTableLogic(
     async (monitoringSiteId: string) =>
-      await hs.datastreams.listAllItems({ monitoring_site_id: [monitoringSiteId] }),
+      await hs.datastreams.listAllItems({
+        monitoring_site_id: [monitoringSiteId],
+      }),
     hs.datastreams.delete,
     Datastream,
     monitoringSiteIdRef
@@ -1232,7 +1246,9 @@ const latestStatusClass = (datastream: Datastream) => {
 
 const visibleDatastreams = computed(() => {
   const unitsById = new Map(units.value.map((u) => [u.id, u]))
-  const methodsById = new Map(methods.value.map((method) => [method.id, method]))
+  const methodsById = new Map(
+    methods.value.map((method) => [method.id, method])
+  )
   const opsById = new Map(observedProperties.value.map((o) => [o.id, o]))
   const processingLevelsById = new Map(
     processingLevels.value.map((p) => [p.id, p])
@@ -1308,6 +1324,61 @@ const tableDatastreams = computed(() => {
   )
 })
 
+const renderedDatastreams = computed(() =>
+  tableDatastreams.value.slice(0, renderedDatastreamCount.value)
+)
+
+const hasMoreDatastreams = computed(
+  () => renderedDatastreams.value.length < tableDatastreams.value.length
+)
+
+const loadMoreTriggerIndex = computed(() => {
+  if (!hasMoreDatastreams.value) return -1
+  return Math.max(
+    0,
+    renderedDatastreams.value.length - DATASTREAM_PRELOAD_AHEAD_COUNT
+  )
+})
+
+function isLoadMoreTrigger(index: number) {
+  return index === loadMoreTriggerIndex.value
+}
+
+function loadMoreDatastreams() {
+  if (!hasMoreDatastreams.value) return
+  loadMoreObserver?.disconnect()
+  renderedDatastreamCount.value = Math.min(
+    renderedDatastreamCount.value + DATASTREAM_RENDER_BATCH_SIZE,
+    tableDatastreams.value.length
+  )
+}
+
+async function observeLoadMoreTrigger() {
+  await nextTick()
+  loadMoreObserver?.disconnect()
+  if (!hasMoreDatastreams.value) return
+
+  const trigger = datastreamSectionElement()?.querySelector<HTMLElement>(
+    '[data-load-more-trigger="true"]'
+  )
+  if (!trigger) return
+
+  if (!window.IntersectionObserver) {
+    renderedDatastreamCount.value = tableDatastreams.value.length
+    return
+  }
+
+  loadMoreObserver ??= new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        loadMoreDatastreams()
+      }
+    },
+    { root: null, threshold: 0 }
+  )
+  loadMoreObserver.observe(trigger)
+}
+
 const deepLinkedDatastreamId = computed(() => props.targetDatastreamId.trim())
 
 const targetDatastreamIndex = computed(() => {
@@ -1361,6 +1432,14 @@ async function scrollToTargetDatastream() {
 
   if (targetDatastreamIndex.value === -1 && normalizedSearch.value) {
     search.value = ''
+    await nextTick()
+  }
+
+  if (targetDatastreamIndex.value >= renderedDatastreamCount.value) {
+    renderedDatastreamCount.value = Math.min(
+      targetDatastreamIndex.value + DATASTREAM_PRELOAD_AHEAD_COUNT + 1,
+      tableDatastreams.value.length
+    )
     await nextTick()
   }
 
@@ -1539,7 +1618,8 @@ const siteScopedRoute = (task: any, name: string, view: string) => {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
   }
-  const siteId = task.monitoringSite?.id ?? task.monitoringSiteId ?? monitoringSite.value?.id
+  const siteId =
+    task.monitoringSite?.id ?? task.monitoringSiteId ?? monitoringSite.value?.id
   if (siteId) query.site_id = String(siteId)
 
   return { name, params: { view }, query }
@@ -1812,8 +1892,32 @@ watch(
   { immediate: true, flush: 'post' }
 )
 
+watch(
+  normalizedSearch,
+  () => {
+    renderedDatastreamCount.value = Math.min(
+      DATASTREAM_RENDER_BATCH_SIZE,
+      tableDatastreams.value.length
+    )
+  },
+  { flush: 'post' }
+)
+
+watch(
+  [renderedDatastreamCount, () => tableDatastreams.value.length, isMobile],
+  () => {
+    renderedDatastreamCount.value = Math.min(
+      Math.max(renderedDatastreamCount.value, DATASTREAM_RENDER_BATCH_SIZE),
+      tableDatastreams.value.length
+    )
+    void observeLoadMoreTrigger()
+  },
+  { immediate: true, flush: 'post' }
+)
+
 onBeforeUnmount(() => {
   if (highlightTimeout) window.clearTimeout(highlightTimeout)
+  loadMoreObserver?.disconnect()
 })
 
 const onDownload = async (datastreamId: string) => {
@@ -1920,8 +2024,7 @@ const loadDatastreams = async () => {
   --datastream-list-inline: calc(0.75rem + 1px + 0.85rem);
   padding: 0 0 0.75rem;
   background: #fafbfc;
-  max-height: 100vh;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .datastream-list__head {
