@@ -60,18 +60,18 @@
       />
     </div>
 
-    <div class="hs-table-actions">
-      <v-btn
-        :icon="mdiHelpCircleOutline"
-        variant="text"
-        size="small"
-        color="grey-darken-2"
-        title="About collaborators"
-        aria-label="Toggle collaborator help"
-        :aria-expanded="showAddCollaboratorHelp"
-        @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
-      />
+    <v-btn
+      :icon="mdiHelpCircleOutline"
+      variant="text"
+      size="small"
+      color="grey-darken-2"
+      title="About collaborators"
+      aria-label="Toggle collaborator help"
+      :aria-expanded="showAddCollaboratorHelp"
+      @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
+    />
 
+    <div class="hs-table-actions">
       <PermissionTooltip
         :has-permission="canCreate"
         message="You don't have permission to add collaborators to this workspace."

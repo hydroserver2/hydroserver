@@ -15,18 +15,18 @@
         />
       </div>
 
-      <div class="hs-table-actions">
-        <v-btn
-          :icon="mdiHelpCircleOutline"
-          variant="text"
-          size="small"
-          color="grey-darken-2"
-          title="About metadata"
-          aria-label="Toggle metadata help"
-          :aria-expanded="showHelp"
-          @click="showHelp = !showHelp"
-        />
+      <v-btn
+        :icon="mdiHelpCircleOutline"
+        variant="text"
+        size="small"
+        color="grey-darken-2"
+        title="About metadata"
+        aria-label="Toggle metadata help"
+        :aria-expanded="showHelp"
+        @click="showHelp = !showHelp"
+      />
 
+      <div class="hs-table-actions">
         <v-btn-secondary
           v-if="canCreateMetadata"
           variant="flat"
