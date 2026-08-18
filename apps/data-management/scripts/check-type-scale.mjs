@@ -69,7 +69,7 @@ for (const file of tokenSourceFiles) {
   }
 }
 const sizeVars = [...declaredFontVars].filter(
-  (name) => !name.startsWith('--hs-font-weight-') && name !== '--hs-font-display' && name !== '--hs-font-body' && name !== '--hs-font-data'
+  (name) => !name.startsWith('--hs-font-weight-') && name !== '--hs-font-body' && name !== '--hs-font-data'
 )
 const weightVars = [...declaredFontVars].filter((name) => name.startsWith('--hs-font-weight-'))
 
@@ -153,7 +153,7 @@ for (const file of files) {
         file,
         source,
         match.index,
-        `raw font-family "${value}" — use var(--hs-font-display|body|data) (or the .hs-font-data / .hs-page-title classes)`
+        `raw font-family "${value}" — use var(--hs-font-body|data) (or the .hs-font-data class)`
       )
     }
   }

@@ -197,7 +197,7 @@
           <header class="detail-header">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h1 class="detail-title hs-page-title hs-text-xl">
+                <h1 class="detail-title hs-heading">
                   {{ selected.name }}
                 </h1>
                 <v-chip

@@ -1,7 +1,6 @@
 /*
  * HydroServer type roles
  *
- * Display — Newsreader 500: page titles and the wordmark only. Nothing else.
  * Body / UI — Archivo 400/500/600/700: navigation, headings, labels,
  *   buttons, table content, forms, and all other interface copy. 700
  *   (bold) is reserved for the smallest, punchiest text — uppercase
@@ -15,12 +14,10 @@
  * Fontsource bundles these OFL-licensed fonts with consuming applications.
  * Do not replace these imports with CDN-hosted stylesheets.
  */
-@import "@fontsource/newsreader/500.css";
 @import "@fontsource-variable/archivo/wght.css";
 @import "@fontsource/jetbrains-mono/400.css";
 
 :root {
-  --hs-font-display: "Newsreader", Georgia, serif;
   --hs-font-body: "Archivo Variable", Arial, sans-serif;
   --hs-font-data: "JetBrains Mono", monospace;
   --hs-font-weight-regular: 400;
@@ -37,19 +34,12 @@
   --default-font-family: var(--hs-font-body);
   --default-mono-font-family: var(--hs-font-data);
   --font-sans: var(--hs-font-body);
-  --font-serif: var(--hs-font-display);
   --font-mono: var(--hs-font-data);
 }
 
 html,
 body {
   font-family: var(--hs-font-body);
-}
-
-.hs-page-title,
-.hs-wordmark {
-  font-family: var(--hs-font-display);
-  font-weight: var(--hs-font-weight-medium);
 }
 
 .hs-font-data {
