@@ -59,7 +59,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     },
     {
       title: 'Processing Level',
-      key: 'qualityControlLevelDefinition',
+      key: 'processingLevelName',
       visible: true,
     },
     {
@@ -154,7 +154,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
     const PLName = processingLevelById.value.get(
       datastream.processingLevelId
-    )?.definition
+    )?.name
     return (
       PLName !== undefined && selectedProcessingLevelNameSet.value.has(PLName)
     )

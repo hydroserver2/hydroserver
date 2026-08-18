@@ -34,10 +34,10 @@ If you'd like to follow along exactly, we'll be creating a datastream that repre
 **Observed Property**
 
 - name: Temperature
-- definition: Temperature
+- definition: http://his.cuahsi.org/mastercvreg/edit_cv11.aspx?tbl=VariableNameCV
 - description: Originally from the CUAHSI HIS VariableNameCV. See: http://his.cuahsi.org/mastercvreg/edit_cv11.aspx?tbl=VariableNameCV.
-- variable type: Hydrology
-- variable code: temp
+- type: Hydrology
+- code: temp
 
 <img src="/hydroserver-101/sensor-form.png" alt="sensor form" class="img-white-bg">
 

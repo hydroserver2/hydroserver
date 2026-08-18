@@ -65,9 +65,9 @@ An ObservedProperty specifies the phenomenon of an Observation, such as flow, te
 | M        | id                     | A primary key unique identifier for the ObservedProperty.                                                                          | UUID      |
 | O        | workspace_id           | A foreign key identifier for the Workspace that owns the ObservedProperty. If omitted, the ObservedProperty is shared system-wide. | UUID      |
 | M        | name                   | A descriptive name for the ObservedProperty.                                                                                       | String    |
-| M        | definition             | A text definition of the ObservedProperty or a URL pointing to a controlled definition.                                            | Text      |
+| O        | definition             | A URI pointing to an externally controlled definition of the ObservedProperty.                                                     | URI       |
 | M        | description            | A text description of the ObservedProperty.                                                                                        | Text      |
-| M        | observed_property_type | The type of ObservedProperty.                                                                                                      | String    |
+| M        | type                   | The type of ObservedProperty.                                                                                                      | String    |
 | M        | code                   | A brief text code identifying the ObservedProperty.                                                                                | String    |
 
 ## Organization
@@ -119,8 +119,9 @@ The degree of quality control or processing to which a Datastream has been subje
 | M        | id           | A primary key unique identifier for the ProcessingLevel.                                                                         | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ProcessingLevel. If omitted, the ProcessingLevel is shared system-wide. | UUID      |
 | M        | code         | A brief text code identifying the ProcessingLevel.                                                                               | String    |
-| O        | definition   | A text definition of the ProcessingLevel.                                                                                        | Text      |
-| O        | explanation  | A longer text explanation of the ProcessingLevel.                                                                                | Text      |
+| M        | name         | A descriptive name for the ProcessingLevel.                                                                                      | String    |
+| M        | description  | A text description of the ProcessingLevel.                                                                                       | Text      |
+| O        | definition   | A URI pointing to an externally controlled definition of the ProcessingLevel.                                                    | URI       |
 
 ## ResultQualifier
 
@@ -194,8 +195,8 @@ The unit of measure associated with the Observations within a Datastream.
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the Unit. If omitted, the Unit is shared system-wide. | UUID      |
 | M        | name         | A descriptive name for the Unit.                                                                           | String    |
 | M        | symbol       | An abbreviation or symbol used for the Unit.                                                               | String    |
-| M        | definition   | A URL or text definition for the Unit.                                                                     | Text      |
-| M        | unit_type    | The type of Unit.                                                                                          | String    |
+| O        | definition   | A URI pointing to an externally controlled definition of the Unit.                                       | URI       |
+| M        | type         | The type of Unit.                                                                                          | String    |
 
 ## Workspace
 

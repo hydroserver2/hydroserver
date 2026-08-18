@@ -93,7 +93,7 @@ class UnitAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class ProcessingLevelAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "code", "workspace__name")
+    list_display = ("id", "name", "code", "workspace__name")
     change_list_template = "admin/sta/processinglevel/change_list.html"
 
     def get_urls(self):

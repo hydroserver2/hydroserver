@@ -1274,7 +1274,7 @@ const visibleDatastreams = computed(() => {
         ...d,
         OPName: op ? `${op.name} (${op.code})` : '',
         processingLevelCode: pl?.code ?? '',
-        processingLevelName: pl?.definition ?? '',
+        processingLevelName: pl?.name ?? '',
         methodName: method?.name ?? '',
         unitName: unit?.name ?? '',
         searchText: ',',

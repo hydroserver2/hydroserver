@@ -247,7 +247,7 @@ const totalObservedPropertyNamesCount = computed(() => {
 const totalProcessingLevelNamesCount = computed(() => {
   const names = new Set<string>()
   processingLevels.value.forEach((pl) => {
-    if (pl.definition) names.add(pl.definition)
+    if (pl.name) names.add(pl.name)
   })
   return names.size
 })
@@ -287,11 +287,11 @@ const sortedProcessingLevelNames = computed(() => {
       return
     }
 
-    const definition = dataVisStore.processingLevelById.get(
+    const name = dataVisStore.processingLevelById.get(
       ds.processingLevelId
-    )?.definition
-    if (definition) {
-      names.add(definition)
+    )?.name
+    if (name) {
+      names.add(name)
     }
   })
 

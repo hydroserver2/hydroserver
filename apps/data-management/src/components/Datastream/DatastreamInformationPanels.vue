@@ -250,9 +250,10 @@ onMounted(async () => {
 
   const pl = d.processingLevel
   processingLevelItems.value = [
+    { label: 'Name', value: pl.name },
     { label: 'Code', value: pl.code },
+    { label: 'Description', value: pl.description },
     { label: 'Definition', value: pl.definition },
-    { label: 'Explanation', value: pl.explanation },
   ]
 })
 </script>
