@@ -44,17 +44,20 @@
       </v-sheet>
     </v-card-text>
 
-    <div class="hs-table-tools">
-      <v-text-field
-        v-model="search"
-        class="hs-table-search"
-        placeholder="Search service accounts"
-        aria-label="Search service accounts"
-        :prepend-inner-icon="mdiMagnify"
-        clearable
-        hide-details
-        density="compact"
-      />
+  <div class="hs-table-tools">
+      <div class="workspace-table-search">
+        <v-icon
+          :icon="mdiMagnify"
+          size="16"
+          class="workspace-table-search-icon"
+        />
+        <input
+          v-model="search"
+          placeholder="Search service accounts…"
+          class="workspace-table-search-input hs-text-sm"
+          aria-label="Search service accounts"
+        />
+      </div>
 
       <div class="hs-table-actions">
         <v-btn
@@ -474,6 +477,38 @@ onMounted(loadRoles)
   line-height: 1.5;
   max-width: 640px;
   margin-bottom: 10px;
+}
+.workspace-table-search {
+  position: relative;
+  flex: 1;
+  max-width: 560px;
+}
+.workspace-table-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--hs-input-border);
+  pointer-events: none;
+}
+.workspace-table-search-input {
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-sm);
+  padding-left: 30px;
+  padding-right: var(--hs-space-10);
+  outline: none;
+  background: var(--hs-surface);
+  color: var(--hs-text-primary);
+}
+.workspace-table-search-input::placeholder {
+  color: var(--hs-text-secondary);
+  opacity: 1;
+}
+.workspace-table-search-input:focus {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .service-accounts-table-card {
   display: flex;

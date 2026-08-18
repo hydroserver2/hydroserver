@@ -5,16 +5,15 @@
     :data-testid="`${scope}-metadata-table`"
   >
     <div class="hs-table-tools">
-      <v-text-field
-        v-model="search"
-        class="hs-table-search"
-        clearable
-        :prepend-inner-icon="mdiMagnify"
-        placeholder="Search metadata"
-        aria-label="Search metadata"
-        hide-details
-        density="compact"
-      />
+      <div class="metadata-search">
+        <v-icon :icon="mdiMagnify" size="16" class="metadata-search-icon" />
+        <input
+          v-model="search"
+          placeholder="Search metadata…"
+          class="metadata-search-input hs-text-sm"
+          aria-label="Search metadata"
+        />
+      </div>
 
       <div class="hs-table-actions">
         <v-btn
@@ -62,9 +61,9 @@
 
         <v-chip-group
           v-model="scope"
+          variant="plain"
           mandatory
-          selected-class="bg-primary text-white"
-          class="metadata-scope-toggle"
+          selected-class="bg-primary-lighten-2"
         >
           <v-chip
             value="all"
@@ -236,7 +235,7 @@ const props = defineProps({
   workspace: Object as () => Workspace,
 })
 
-const scope = ref<MetadataScope>('workspace')
+const scope = ref<MetadataScope>('all')
 const search = ref('')
 const showHelp = ref(false)
 
@@ -308,8 +307,7 @@ const metaMap: Record<string, any> = {
 const hasMetadataPermission = (action: PermissionAction) => {
   if (scope.value === 'system') return isAdmin()
   const resource = metaMap[tab.value]?.resource as
-    | PermissionResource
-    | undefined
+    PermissionResource | undefined
   return !!(
     resource &&
     activeWorkspace.value &&
@@ -342,6 +340,38 @@ const canManageSystemMetadata = computed(() => isAdmin())
   line-height: 1.5;
   max-width: 640px;
   margin-bottom: 10px;
+}
+.metadata-search {
+  position: relative;
+  flex: 1;
+  max-width: 560px;
+}
+.metadata-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--hs-input-border);
+  pointer-events: none;
+}
+.metadata-search-input {
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-sm);
+  padding-left: 30px;
+  padding-right: var(--hs-space-10);
+  outline: none;
+  background: var(--hs-surface);
+  color: var(--hs-text-primary);
+}
+.metadata-search-input::placeholder {
+  color: var(--hs-text-secondary);
+  opacity: 1;
+}
+.metadata-search-input:focus {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .metadata-type-tabs {
   flex: 1;
