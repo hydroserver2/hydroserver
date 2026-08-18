@@ -1269,6 +1269,25 @@ onMounted(async () => {
   flex-direction: column;
   overflow: hidden;
   background: var(--hs-background);
+  background-image:
+    radial-gradient(
+      1100px 760px at 12% -8%,
+      rgba(26, 111, 168, 0.045),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 680px at 102% 28%,
+      rgba(10, 46, 77, 0.038),
+      transparent 58%
+    ),
+    radial-gradient(
+      700px 900px at 50% 115%,
+      rgba(26, 111, 168, 0.028),
+      transparent 60%
+    ),
+    url('@/assets/workspace-wave-texture.svg');
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  background-position: 0 0, 0 0, 0 0, 0 0;
   min-width: 0;
 }
 .detail-header {

@@ -1,8 +1,8 @@
 <template>
   <v-app-bar
     app
-    :elevation="route.name === 'Orchestration' ? 0 : 2"
-    :class="route.name === 'Orchestration' ? 'navbar-flat' : ''"
+    :elevation="0"
+    class="navbar-flat"
     density="default"
   >
     <template
@@ -336,12 +336,14 @@ async function onLogout() {
 <style scoped>
 .v-app-bar.navbar-flat,
 :deep(.v-app-bar.navbar-flat) {
-  border-bottom: 1px solid #e8e8e8 !important;
+  background: var(--hs-background) !important;
+  border-bottom: 1px solid var(--hs-border) !important;
+  box-shadow: none !important;
 }
 .navbar-home-button {
   width: 48px;
   height: 48px;
-  margin: 0 10px;
+  margin: 0 10px 0 16px;
   padding: 9px;
   border: none;
   border-radius: 14px;
