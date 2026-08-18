@@ -66,6 +66,8 @@
       <div v-for="path of visiblePaths()" :key="path.label">
         <v-btn
           v-bind="path.attrs || {}"
+          :class="{ 'navbar-link--active': isNavItemActive(path) }"
+          :aria-current="isNavItemActive(path) ? 'page' : undefined"
           @click="path.onClick"
           density="comfortable"
         >
@@ -323,6 +325,15 @@ function visiblePaths(): NavItem[] {
   return items
 }
 
+function isNavItemActive(item: NavItem) {
+  if (!item.attrs?.to) return false
+  const targetPath = router.resolve(item.attrs.to).path
+  return (
+    route.path === targetPath ||
+    route.path.startsWith(`${targetPath}/`)
+  )
+}
+
 async function onLogin() {
   await hs.session.login(route.fullPath)
 }
@@ -336,9 +347,16 @@ async function onLogout() {
 <style scoped>
 .v-app-bar.navbar-flat,
 :deep(.v-app-bar.navbar-flat) {
-  background: var(--hs-background) !important;
+  background: var(--hs-surface) !important;
   border-bottom: 1px solid var(--hs-border) !important;
   box-shadow: none !important;
+}
+:deep(.navbar-link--active) {
+  background-color: #e3f2fd !important;
+  color: #1565c0 !important;
+}
+:deep(.navbar-link--active > .v-btn__overlay) {
+  display: none !important;
 }
 .navbar-home-button {
   width: 48px;

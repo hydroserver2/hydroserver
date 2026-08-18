@@ -235,10 +235,7 @@
               >
                 Collaborators
               </v-tab>
-              <v-tab
-                value="service-accounts"
-                :prepend-icon="mdiAccountKeyOutline"
-              >
+              <v-tab value="service-accounts" :prepend-icon="mdiKeyVariant">
                 Service accounts
               </v-tab>
               <v-tab value="metadata" :prepend-icon="mdiNotebookOutline">
@@ -315,7 +312,7 @@
                   <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
-                        <v-icon :icon="mdiAccountKeyOutline" size="14" />
+                        <v-icon :icon="mdiKeyVariant" size="14" />
                       </span>
                       <span class="stat-tile-label hs-label">
                         Service accounts
@@ -541,11 +538,11 @@ import hs, {
 import {
   mdiAccountArrowRightOutline,
   mdiAccountGroupOutline,
-  mdiAccountKeyOutline,
   mdiBriefcaseOutline,
   mdiCheck,
   mdiContentCopy,
   mdiEarth,
+  mdiKeyVariant,
   mdiLock,
   mdiMagnify,
   mdiPencil,
@@ -1099,8 +1096,10 @@ onMounted(async () => {
   min-height: 0;
 }
 .sidebar-header {
-  padding: var(--hs-space-10) var(--hs-space-16) var(--hs-space-8);
+  padding: var(--hs-space-12) var(--hs-space-16) var(--hs-space-8);
   border-bottom: 1px solid var(--hs-border);
+  min-height: 93px;
+  box-sizing: border-box;
 }
 .sidebar-header-row {
   display: flex;
@@ -1177,8 +1176,9 @@ onMounted(async () => {
   background: rgba(var(--v-theme-primary), 0.06);
 }
 .sidebar-item.selected {
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
+  background: var(--hs-surface);
+  color: var(--hs-text-primary);
+  border-left: 4px solid rgb(var(--v-theme-primary));
 }
 .sidebar-item-body {
   flex: 1;
@@ -1192,6 +1192,9 @@ onMounted(async () => {
   cursor: pointer;
 }
 .sidebar-item--workspace .sidebar-item-body {
+  padding-right: 0;
+}
+.sidebar-item--workspace .sidebar-item-meta {
   padding-right: 62px;
 }
 .sidebar-item-title {
@@ -1209,7 +1212,7 @@ onMounted(async () => {
   gap: var(--hs-space-6);
 }
 .sidebar-item.selected .sidebar-item-meta {
-  color: rgba(var(--v-theme-on-primary), 0.75);
+  color: var(--hs-text-secondary);
 }
 .sidebar-item-meta-text {
   min-width: 0;
@@ -1220,7 +1223,7 @@ onMounted(async () => {
 .sidebar-item-actions {
   position: absolute;
   right: 14px;
-  top: 10px;
+  bottom: 4px;
   display: flex;
   align-items: center;
   gap: var(--hs-space-2);
@@ -1254,10 +1257,13 @@ onMounted(async () => {
   background: rgba(var(--v-theme-danger), 0.1);
 }
 .sidebar-item-action--selected {
-  color: rgb(var(--v-theme-on-primary));
+  color: var(--hs-text-secondary);
+}
+.sidebar-item-action--danger.sidebar-item-action--selected {
+  color: var(--hs-danger);
 }
 .sidebar-item-action--selected:hover:not(:disabled) {
-  background: rgba(var(--v-theme-on-primary), 0.18);
+  background: rgba(var(--v-theme-primary), 0.12);
 }
 .sidebar-item-action:disabled {
   cursor: not-allowed;
@@ -1302,6 +1308,8 @@ onMounted(async () => {
 .detail-header {
   padding: var(--hs-space-20) var(--hs-space-24) var(--hs-space-12);
   border-bottom: 1px solid var(--hs-border);
+  min-height: 93px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: var(--hs-space-12);
