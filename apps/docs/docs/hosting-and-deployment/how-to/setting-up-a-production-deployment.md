@@ -52,6 +52,26 @@ HydroServer’s Docker image supports the following environment variables for co
   defaults to `True`; this only needs to be set explicitly for deployments that don't use that image.  
   Example: `True` / `False`
 
+- **IDP_OIDC_ENABLED**  
+  Whether HydroServer's built-in OIDC identity provider (discovery, authorize, token, and JWKS endpoints) is enabled.
+  Defaults to `True`. When `STRICT_SECURITY` is also `True`, one of `IDP_OIDC_PRIVATE_KEY` or
+  `IDP_OIDC_PRIVATE_KEY_FILE` must be set, or startup will fail.  
+  Example: `True` / `False`
+
+- **IDP_OIDC_PRIVATE_KEY**  
+  RSA private key (PEM format) used to sign OIDC tokens issued by HydroServer's identity provider. Generate one with:
+  ```bash
+  openssl genpkey -algorithm RSA -out oidc_private_key.pem -pkeyopt rsa_keygen_bits:2048
+  ```
+  Set this to the contents of that file, or use `IDP_OIDC_PRIVATE_KEY_FILE` instead to point at its path. Keep it
+  secret and stable across restarts — rotating it invalidates any tokens signed with the old key.  
+  Example: contents of `oidc_private_key.pem`
+
+- **IDP_OIDC_PRIVATE_KEY_FILE**  
+  Path to a PEM file containing the RSA private key described above, as an alternative to setting
+  `IDP_OIDC_PRIVATE_KEY` directly. Takes precedence over `IDP_OIDC_PRIVATE_KEY` if both are set.  
+  Example: `/run/secrets/oidc_private_key.pem`
+
 - **PROXY_BASE_URL**  
   Base URL for your HydroServer instance.  
   Example: `https://hydroserver.your-domain.com`

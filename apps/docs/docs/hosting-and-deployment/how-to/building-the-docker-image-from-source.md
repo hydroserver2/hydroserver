@@ -51,18 +51,28 @@ docker buildx build --load -t hydroserver:local -f django/Dockerfile .
 Run this once against the database your container will use:
 
 ```bash
-docker run --rm -e DATABASE_URL="postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver" hydroserver:local \
+docker run --rm \
+  -e STRICT_SECURITY=False \
+  -e DATABASE_URL="postgresql://hsdbadmin:admin@host.docker.internal:5432/hydroserver" \
+  hydroserver:local \
   python manage.py migrate
 ```
 
 ## Step 5: Run the container
 
+This command serves traffic, so `SECRET_KEY` and `IDP_OIDC_PRIVATE_KEY` need real values. Replace them with securely generated values for live deployments.
+If you are running this container locally, you can alternatively just set `STRICT_SECURITY` to `False`.
+
 ```bash
-docker run -p 8000:8000 -e DATABASE_URL="postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver" hydroserver:local \
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL="postgresql://hsdbadmin:admin@host.docker.internal:5432/hydroserver" \
+  -e SECRET_KEY="replace-with-a-securely-generated-secret-key" \
+  -e IDP_OIDC_PRIVATE_KEY="replace-with-a-generated-oidc-private-key" \
+  hydroserver:local \
   gunicorn hydroserver.wsgi:application --bind 0.0.0.0:8000 --workers 3
 ```
 
-Every setting other than `DATABASE_URL` falls back to its default in this example, which is enough to get a working
+Every setting other than the ones above falls back to its default in this example, which is enough to get a working
 instance running locally. For the full list of supported environment variables and their production
 recommendations, see
 [**Setting Up a Production Deployment**](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md).
