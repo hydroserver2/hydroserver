@@ -6,7 +6,7 @@
       type="info"
       variant="tonal"
       border="start"
-      :icon="mdiTransitTransfer"
+      :icon="mdiAccountArrowRightOutline"
       data-testid="pending-transfers-banner"
     >
       <div
@@ -229,20 +229,28 @@
               <v-tab value="overview" :prepend-icon="mdiBriefcaseOutline">
                 Overview
               </v-tab>
-              <v-tab value="collaborators" :prepend-icon="mdiAccountCircle">
+              <v-tab
+                value="collaborators"
+                :prepend-icon="mdiAccountGroupOutline"
+              >
                 Collaborators
               </v-tab>
-              <v-tab value="service-accounts" :prepend-icon="mdiKeyVariant">
+              <v-tab
+                value="service-accounts"
+                :prepend-icon="mdiAccountKeyOutline"
+              >
                 Service accounts
               </v-tab>
-              <v-tab value="metadata" :prepend-icon="mdiDatabaseCog">
+              <v-tab value="metadata" :prepend-icon="mdiNotebookOutline">
                 Metadata
               </v-tab>
-              <v-tab value="privacy" :prepend-icon="mdiLock">Privacy</v-tab>
+              <v-tab value="privacy" :prepend-icon="mdiShieldLockOutline">
+                Privacy
+              </v-tab>
               <v-tab
                 v-if="canEditWorkspace(selected)"
                 value="ownership"
-                :prepend-icon="mdiTransitTransfer"
+                :prepend-icon="mdiAccountArrowRightOutline"
               >
                 Ownership
               </v-tab>
@@ -271,9 +279,11 @@
                   <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
-                        <v-icon :icon="mdiAccountCircle" size="14" />
+                        <v-icon :icon="mdiAccountGroupOutline" size="14" />
                       </span>
-                      <span class="stat-tile-label hs-label">Members</span>
+                      <span class="stat-tile-label hs-label"
+                        >Collaborators</span
+                      >
                     </div>
                     <div
                       class="stat-tile-value hs-text-xl hs-font-data"
@@ -289,7 +299,7 @@
                   <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
-                        <v-icon :icon="mdiRadioTower" size="14" />
+                        <v-icon :icon="mdiMapMarkerOutline" size="14" />
                       </span>
                       <span class="stat-tile-label hs-label">Sites</span>
                     </div>
@@ -305,7 +315,7 @@
                   <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
-                        <v-icon :icon="mdiKeyVariant" size="14" />
+                        <v-icon :icon="mdiAccountKeyOutline" size="14" />
                       </span>
                       <span class="stat-tile-label hs-label">
                         Service accounts
@@ -325,7 +335,7 @@
                   <div class="stat-tile">
                     <div class="stat-tile-head">
                       <span class="stat-tile-icon">
-                        <v-icon :icon="mdiDatabaseCog" size="14" />
+                        <v-icon :icon="mdiNotebookOutline" size="14" />
                       </span>
                       <span class="stat-tile-label hs-label">
                         Metadata items
@@ -356,12 +366,6 @@
 
                 <v-table class="hs-table-card">
                   <tbody>
-                    <tr>
-                      <td class="text-medium-emphasis" style="width: 200px">
-                        Workspace name
-                      </td>
-                      <td>{{ selected.name }}</td>
-                    </tr>
                     <tr>
                       <td class="text-medium-emphasis">Owner</td>
                       <td>
@@ -535,19 +539,20 @@ import hs, {
   Workspace,
 } from '@hydroserver/client'
 import {
-  mdiAccountCircle,
+  mdiAccountArrowRightOutline,
+  mdiAccountGroupOutline,
+  mdiAccountKeyOutline,
   mdiBriefcaseOutline,
   mdiCheck,
   mdiContentCopy,
-  mdiDatabaseCog,
   mdiEarth,
-  mdiKeyVariant,
   mdiLock,
   mdiMagnify,
   mdiPencil,
   mdiPlus,
-  mdiRadioTower,
-  mdiTransitTransfer,
+  mdiMapMarkerOutline,
+  mdiNotebookOutline,
+  mdiShieldLockOutline,
   mdiTrashCanOutline,
 } from '@mdi/js'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
@@ -1287,7 +1292,11 @@ onMounted(async () => {
     ),
     url('@/assets/workspace-wave-texture.svg');
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
-  background-position: 0 0, 0 0, 0 0, 0 0;
+  background-position:
+    0 0,
+    0 0,
+    0 0,
+    0 0;
   min-width: 0;
 }
 .detail-header {
