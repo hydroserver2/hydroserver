@@ -77,11 +77,11 @@
         message="You don't have permission to add collaborators to this workspace."
       >
         <template #default>
-          <v-btn-primary
+          <v-btn-secondary
             variant="flat"
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
-            >Add collaborator</v-btn-primary
+            >Add collaborator</v-btn-secondary
           >
         </template>
 

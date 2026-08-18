@@ -1,10 +1,5 @@
 <template>
-  <v-app-bar
-    app
-    :elevation="0"
-    class="navbar-flat"
-    density="default"
-  >
+  <v-app-bar app :elevation="0" class="navbar-flat" density="default">
     <template
       v-slot:prepend
       v-if="route.meta.hasSidebar && route.name !== 'VisualizeData'"
@@ -31,27 +26,17 @@
     <router-link
       v-if="navbarLogo.route"
       :to="navbarLogo.route"
-      class="navbar-home-button"
+      class="navbar-home-link"
     >
-      <v-img
-        :src="navbarLogo.src"
-        alt="Logo"
-        width="30"
-        height="30"
-      />
+      <v-img :src="navbarLogo.src" alt="Logo" width="146" height="62" />
     </router-link>
     <a
       v-else-if="navbarLogo.link"
       :href="navbarLogo.link"
       :target="navbarLogo.target || '_self'"
-      class="navbar-home-button"
+      class="navbar-home-link"
     >
-      <v-img
-        :src="navbarLogo.src"
-        alt="Logo"
-        width="30"
-        height="30"
-      />
+      <v-img :src="navbarLogo.src" alt="Logo" width="146" height="62" />
     </a>
 
     <template v-if="compactNavigation" v-slot:append>
@@ -63,7 +48,12 @@
     </template>
 
     <template v-if="!compactNavigation">
-      <div v-for="path of visiblePaths()" :key="path.label">
+      <div
+        v-for="(path, index) of visiblePaths()"
+        :key="path.label"
+        class="main-nav-item-wrapper"
+        :class="{ 'main-nav-item-wrapper--first': index === 0 }"
+      >
         <MainNavItem
           :label="path.label"
           :to="path.attrs?.to"
@@ -83,7 +73,9 @@
           class="account-menu-btn"
         >
           <v-avatar color="primary" size="36">
-            <span class="account-avatar-initials hs-title">{{ userInitials }}</span>
+            <span class="account-avatar-initials hs-title">{{
+              userInitials
+            }}</span>
           </v-avatar>
 
           <v-menu bottom left activator="parent">
@@ -215,7 +207,8 @@ import {
 const route = useRoute()
 const { resetState } = useDataVisStore()
 const { user } = storeToRefs(useUserStore())
-const signupEnabled = import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
+const signupEnabled =
+  import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
@@ -327,10 +320,7 @@ function visiblePaths(): NavItem[] {
 function isNavItemActive(item: NavItem) {
   if (!item.attrs?.to) return false
   const targetPath = router.resolve(item.attrs.to).path
-  return (
-    route.path === targetPath ||
-    route.path.startsWith(`${targetPath}/`)
-  )
+  return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
 }
 
 async function onLogin() {
@@ -350,34 +340,19 @@ async function onLogout() {
   border-bottom: 1px solid var(--hs-border) !important;
   box-shadow: none !important;
 }
-.navbar-home-button {
-  width: 48px;
-  height: 48px;
-  margin: 0 10px 0 16px;
-  padding: 9px;
-  border: none;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.18),
-    0 1px 2px rgba(0, 0, 0, 0.12);
+.navbar-home-link {
+  width: 160px;
+  height: 64px;
+  margin: 0 0 0 4px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    box-shadow 0.15s,
-    transform 0.15s;
+  line-height: 0;
 }
-.navbar-home-button:hover {
-  background: #f8fbff;
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.2),
-    0 1px 3px rgba(0, 0, 0, 0.14);
-}
-.navbar-home-button:active {
-  transform: translateY(1px);
+.main-nav-item-wrapper--first {
+  margin-left: -6px;
 }
 .account-avatar-initials {
   color: #ffffff;

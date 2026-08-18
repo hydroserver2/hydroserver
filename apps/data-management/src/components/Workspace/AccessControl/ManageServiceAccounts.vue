@@ -44,7 +44,7 @@
       </v-sheet>
     </v-card-text>
 
-  <div class="hs-table-tools">
+    <div class="hs-table-tools">
       <div class="workspace-table-search">
         <v-icon
           :icon="mdiMagnify"
@@ -76,14 +76,14 @@
           message="You don't have permission to create service accounts for this workspace."
         >
           <template #default>
-            <v-btn-primary variant="flat" @click="openCreate = true">
+            <v-btn-secondary variant="flat" @click="openCreate = true">
               Create service account
-            </v-btn-primary>
+            </v-btn-secondary>
           </template>
           <template #denied>
-            <v-btn-primary variant="flat" disabled>
+            <v-btn-secondary variant="flat" disabled>
               Create service account
-            </v-btn-primary>
+            </v-btn-secondary>
           </template>
         </PermissionTooltip>
       </div>

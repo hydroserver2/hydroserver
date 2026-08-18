@@ -57,7 +57,7 @@ defineProps<{
   background: transparent;
   color: var(--hs-text-secondary);
   font: inherit;
-  font-size: var(--hs-font-sm);
+  font-size: var(--hs-font-md);
   font-weight: var(--hs-font-weight-medium);
   text-decoration: none;
   white-space: nowrap;

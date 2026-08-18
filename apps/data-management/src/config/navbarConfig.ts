@@ -5,7 +5,7 @@ type NavbarLogo = {
   target?: string // '_blank' will open page in a new tab. Don't use if you want to use the same tab
 }
 
-import logo from '@/assets/icon-color-thick.svg'
+import logo from '@/assets/hydroserver-icon-min.png'
 
 export const navbarLogo: NavbarLogo = {
   src: logo,
