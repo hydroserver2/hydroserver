@@ -52,12 +52,59 @@
         size="16"
         class="workspace-table-search-icon"
       />
+      <div class="workspace-table-search-highlight hs-text-sm" aria-hidden="true">
+        <span
+          v-for="(segment, index) in highlightSegments"
+          :key="index"
+          :class="segment.cls"
+          >{{ segment.text }}</span
+        >
+      </div>
       <input
+        ref="searchInputEl"
         v-model="search"
         placeholder="Search collaborators…"
         class="workspace-table-search-input hs-text-sm"
         aria-label="Search collaborators"
+        autocomplete="off"
+        spellcheck="false"
+        role="combobox"
+        aria-autocomplete="list"
+        :aria-expanded="!!activeSuggestion"
+        @input="onSearchInput"
+        @click="syncCaret"
+        @keyup="syncCaret"
+        @keydown="onSearchKeydown"
+        @focus="onSearchFocus"
+        @blur="onSearchBlur"
       />
+      <div
+        v-if="activeSuggestion && activeSuggestion.items.length"
+        class="workspace-search-suggestions"
+        role="listbox"
+      >
+        <div class="workspace-search-suggestions-title">
+          {{
+            activeSuggestion.type === 'key'
+              ? 'Filter by…'
+              : `${activeSuggestion.key === 'role' ? 'Role' : 'Organization'} values`
+          }}
+        </div>
+        <button
+          v-for="(item, index) in activeSuggestion.items"
+          :key="item"
+          type="button"
+          class="workspace-search-suggestion"
+          :class="{
+            'workspace-search-suggestion--active': index === suggestionIndex,
+          }"
+          role="option"
+          :aria-selected="index === suggestionIndex"
+          @mousedown.prevent="applySuggestion(item)"
+        >
+          {{ item }}{{ activeSuggestion.type === 'key' ? ':' : '' }}
+        </button>
+      </div>
     </div>
 
     <v-btn
@@ -333,7 +380,7 @@
 import { useUserStore } from '@/store/user'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import hs, {
   PermissionAction,
@@ -536,6 +583,167 @@ const filteredCollaborators = computed(() => {
       ))
   )
 })
+// Syntax highlighting: colors the value of a `key:value` pair primary when
+// it matches a real role/organization, the way GitHub highlights valid
+// qualifier values in its issue search bar.
+function isValidQualifierValue(key: string, value: string) {
+  const pool = key === 'role' ? availableRoles.value : availableOrganizations.value
+  return pool.some((item) => item.toLocaleLowerCase() === value.toLocaleLowerCase())
+}
+
+const highlightSegments = computed(() => {
+  const raw = search.value
+  const segments: { text: string; cls: string }[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = QUALIFIER_PATTERN.exec(raw))) {
+    if (match.index > lastIndex)
+      segments.push({ text: raw.slice(lastIndex, match.index), cls: '' })
+    const key = match[1].toLocaleLowerCase()
+    const quoted = match[2] !== undefined
+    const value = match[2] ?? match[3] ?? ''
+    segments.push({ text: match[1], cls: 'hl-key' })
+    segments.push({ text: ':', cls: 'hl-colon' })
+    segments.push({
+      text: quoted ? `"${value}"` : value,
+      cls: value && isValidQualifierValue(key, value) ? 'hl-value-valid' : '',
+    })
+    lastIndex = QUALIFIER_PATTERN.lastIndex
+  }
+  if (lastIndex < raw.length)
+    segments.push({ text: raw.slice(lastIndex), cls: '' })
+  return segments
+})
+
+// Autocomplete: suggests `role`/`organization` while a qualifier key is being
+// typed, and suggests the matching values once a key is followed by `:`,
+// mirroring GitHub's issue search qualifier picker.
+const QUALIFIER_KEYS = ['role', 'organization'] as const
+
+const searchInputEl = ref<HTMLInputElement | null>(null)
+const caret = ref(0)
+const suggestionIndex = ref(0)
+const suggestionsEnabled = ref(false)
+
+function syncCaret() {
+  const el = searchInputEl.value
+  if (el) caret.value = el.selectionStart ?? el.value.length
+}
+
+function onSearchInput() {
+  syncCaret()
+  suggestionsEnabled.value = true
+}
+
+function onSearchFocus() {
+  suggestionsEnabled.value = true
+  syncCaret()
+}
+
+function onSearchBlur() {
+  suggestionsEnabled.value = false
+}
+
+// Finds where the qualifier token under the caret begins, treating a space
+// inside an open quote as part of the value rather than a token boundary
+// (so `organization:"Utah State |` still resolves to the `organization` key).
+function findTokenStart(raw: string, caretPos: number) {
+  let inQuotes = false
+  let tokenStart = 0
+  for (let i = 0; i < caretPos; i++) {
+    const char = raw[i]
+    if (char === '"') inQuotes = !inQuotes
+    else if (char === ' ' && !inQuotes) tokenStart = i + 1
+  }
+  return tokenStart
+}
+
+const currentToken = computed(() => {
+  const raw = search.value
+  const end = Math.min(caret.value, raw.length)
+  const start = findTokenStart(raw, end)
+  return { start, end, text: raw.slice(start, end) }
+})
+
+const activeSuggestion = computed(() => {
+  if (!suggestionsEnabled.value) return null
+  const { text, start, end } = currentToken.value
+  if (!text) return null
+
+  const colonIndex = text.indexOf(':')
+  if (colonIndex === -1) {
+    const query = text.toLocaleLowerCase()
+    const items = QUALIFIER_KEYS.filter((key) => key.startsWith(query))
+    return items.length ? { type: 'key' as const, key: null, items, start, end } : null
+  }
+
+  const key = text.slice(0, colonIndex).toLocaleLowerCase()
+  if (key !== 'role' && key !== 'organization') return null
+
+  let valueQuery = text.slice(colonIndex + 1)
+  if (valueQuery.startsWith('"')) valueQuery = valueQuery.slice(1)
+  if (valueQuery.endsWith('"')) valueQuery = valueQuery.slice(0, -1)
+  const query = valueQuery.toLocaleLowerCase()
+
+  const pool = key === 'role' ? availableRoles.value : availableOrganizations.value
+  const selected = key === 'role' ? selectedRoles.value : selectedOrganizations.value
+  const items = pool.filter(
+    (value) =>
+      !selected.includes(value) && value.toLocaleLowerCase().includes(query)
+  )
+  return { type: 'value' as const, key, items, start, end }
+})
+
+watch(activeSuggestion, () => {
+  suggestionIndex.value = 0
+})
+
+function replaceCurrentToken(replacement: string) {
+  const { start, end } = currentToken.value
+  const raw = search.value
+  const nextCaret = start + replacement.length
+  search.value = raw.slice(0, start) + replacement + raw.slice(end)
+  nextTick(() => {
+    const el = searchInputEl.value
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(nextCaret, nextCaret)
+    caret.value = nextCaret
+  })
+}
+
+function applySuggestion(item: string) {
+  const suggestion = activeSuggestion.value
+  if (!suggestion) return
+  // replaceCurrentToken swaps out the whole token (e.g. the full "role:"
+  // typed so far), so a value pick has to re-include the key prefix rather
+  // than just the value.
+  replaceCurrentToken(
+    suggestion.type === 'key'
+      ? `${item}:`
+      : `${suggestion.key}:${quoteIfNeeded(item)} `
+  )
+}
+
+function onSearchKeydown(event: KeyboardEvent) {
+  const suggestion = activeSuggestion.value
+  if (!suggestion?.items.length) return
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    suggestionIndex.value = (suggestionIndex.value + 1) % suggestion.items.length
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    suggestionIndex.value =
+      (suggestionIndex.value - 1 + suggestion.items.length) % suggestion.items.length
+  } else if (event.key === 'Enter' || event.key === 'Tab') {
+    event.preventDefault()
+    applySuggestion(suggestion.items[suggestionIndex.value])
+  } else if (event.key === 'Escape') {
+    suggestionsEnabled.value = false
+  }
+}
+
 const isLoading = ref(false)
 const loadError = ref('')
 const isAdding = ref(false)
@@ -754,10 +962,12 @@ watch(search, (value) => {
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 2;
   color: var(--hs-input-border);
   pointer-events: none;
 }
 .workspace-table-search input.workspace-table-search-input {
+  position: relative;
   width: 100%;
   height: 30px;
   border: 1px solid var(--hs-input-border);
@@ -765,12 +975,71 @@ watch(search, (value) => {
   padding-left: 30px;
   padding-right: var(--hs-space-10);
   outline: none;
-  background: var(--hs-surface);
-  color: var(--hs-text-secondary);
+  /* Transparent so the highlight overlay behind it (in DOM order, painted
+     underneath) shows through — same characters, rendered in color so valid
+     qualifier values can be highlighted like GitHub does. The overlay
+     carries the actual surface fill. */
+  background: transparent;
+  color: transparent;
+  caret-color: var(--hs-text-secondary);
 }
 .workspace-table-search input.workspace-table-search-input::placeholder {
   color: var(--hs-text-secondary);
   opacity: 1;
+}
+.workspace-table-search-highlight {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 30px;
+  padding-right: var(--hs-space-10);
+  background: var(--hs-surface);
+  border-radius: var(--hs-radius-sm);
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--hs-text-secondary);
+}
+.workspace-table-search-highlight .hl-value-valid {
+  color: rgb(var(--v-theme-primary));
+  font-weight: var(--hs-font-weight-semibold);
+}
+.workspace-search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--hs-space-8) 0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.workspace-search-suggestions-title {
+  padding: var(--hs-space-4) var(--hs-space-16) var(--hs-space-8);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.workspace-search-suggestion {
+  display: block;
+  width: 100%;
+  padding: var(--hs-space-8) var(--hs-space-16);
+  text-align: left;
+  color: var(--hs-text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.workspace-search-suggestion:hover,
+.workspace-search-suggestion--active {
+  background: var(--hs-surface-muted);
 }
 .collaborator-filter-button {
   min-width: auto;
