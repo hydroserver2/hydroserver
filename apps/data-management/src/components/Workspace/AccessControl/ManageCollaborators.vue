@@ -16,21 +16,28 @@
   </v-alert>
   <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
 
-  <v-card-text v-if="showAddCollaborator">
-    <v-text-field
-      v-model="newCollaboratorEmail"
-      label="New collaborator's email"
-      data-testid="new-collaborator-email"
-    />
-    <v-select
-      v-model="selectedRole"
-      :items="roles"
-      label="New collaborator's role"
-      item-title="name"
-      :return-object="true"
-      variant="outlined"
-      data-testid="new-collaborator-role"
-    />
+  <v-card
+    v-if="showAddCollaborator"
+    class="collaborator-add-card mb-4"
+    variant="outlined"
+  >
+    <v-card-text>
+      <v-text-field
+        v-model="newCollaboratorEmail"
+        label="New collaborator's email"
+        data-testid="new-collaborator-email"
+      />
+      <v-select
+        v-model="selectedRole"
+        :items="roles"
+        label="New collaborator's role"
+        item-title="name"
+        :return-object="true"
+        variant="outlined"
+        data-testid="new-collaborator-role"
+      />
+    </v-card-text>
+    <v-divider />
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="cancelAddCollaborator">Cancel</v-btn-cancel>
@@ -43,7 +50,7 @@
         Add collaborator
       </v-btn-primary>
     </v-card-actions>
-  </v-card-text>
+  </v-card>
 
   <div class="hs-table-tools">
     <div class="workspace-table-search">
@@ -970,6 +977,16 @@ watch(search, (value) => {
 </script>
 
 <style scoped>
+.collaborator-add-card {
+  background-color: var(--hs-surface) !important;
+  border-color: var(--hs-border) !important;
+  opacity: 1;
+}
+
+.collaborator-add-card :deep(.v-field) {
+  background-color: var(--hs-surface-subtle);
+}
+
 .collaborators-help-text {
   color: var(--hs-text-secondary);
   line-height: 1.5;
