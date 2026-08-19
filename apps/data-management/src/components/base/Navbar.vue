@@ -354,6 +354,9 @@ async function onLogout() {
 .main-nav-item-wrapper--first {
   margin-left: -6px;
 }
+.account-menu-btn {
+  margin-right: var(--hs-space-8);
+}
 .account-avatar-initials {
   color: #ffffff;
   letter-spacing: 0.02em;
