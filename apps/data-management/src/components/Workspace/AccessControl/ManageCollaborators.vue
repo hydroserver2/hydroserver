@@ -486,7 +486,7 @@ onMounted(loadCollaboratorData)
   color: var(--hs-input-border);
   pointer-events: none;
 }
-.workspace-table-search-input {
+.workspace-table-search input.workspace-table-search-input {
   width: 100%;
   height: 30px;
   border: 1px solid var(--hs-input-border);
@@ -495,9 +495,9 @@ onMounted(loadCollaboratorData)
   padding-right: var(--hs-space-10);
   outline: none;
   background: var(--hs-surface);
-  color: var(--hs-text-primary);
+  color: var(--hs-text-secondary);
 }
-.workspace-table-search-input::placeholder {
+.workspace-table-search input.workspace-table-search-input::placeholder {
   color: var(--hs-text-secondary);
   opacity: 1;
 }

@@ -1157,6 +1157,17 @@ onMounted(async () => {
   padding-right: var(--hs-space-10);
   outline: none;
   background: var(--hs-surface);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
+}
+.sidebar-search-input::placeholder {
+  color: var(--hs-text-secondary);
+  opacity: 1;
+}
+:deep(.metadata-search-input) {
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
 }
 .sidebar-list {
   flex: 1;

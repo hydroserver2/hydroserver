@@ -56,22 +56,22 @@
           placeholder="Search service accounts…"
           class="workspace-table-search-input hs-text-sm"
           aria-label="Search service accounts"
+        />
+      </div>
+
+      <v-btn
+        :icon="mdiHelpCircleOutline"
+        variant="text"
+        size="small"
+        color="grey-darken-2"
+        title="About service accounts"
+        aria-label="Toggle service account help"
+        :aria-expanded="showServiceAccountHelp"
+        @click="showServiceAccountHelp = !showServiceAccountHelp"
       />
-    </div>
 
-    <v-btn
-      :icon="mdiHelpCircleOutline"
-      variant="text"
-      size="small"
-      color="grey-darken-2"
-      title="About service accounts"
-      aria-label="Toggle service account help"
-      :aria-expanded="showServiceAccountHelp"
-      @click="showServiceAccountHelp = !showServiceAccountHelp"
-    />
-
-    <div class="hs-table-actions">
-      <PermissionTooltip
+      <div class="hs-table-actions">
+        <PermissionTooltip
           :has-permission="canCreate"
           message="You don't have permission to create service accounts for this workspace."
         >
@@ -500,7 +500,6 @@ onMounted(loadRoles)
   padding-right: var(--hs-space-10);
   outline: none;
   background: var(--hs-surface);
-  color: var(--hs-text-primary);
 }
 .workspace-table-search-input::placeholder {
   color: var(--hs-text-secondary);
