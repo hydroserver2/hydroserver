@@ -112,9 +112,137 @@
     <v-table class="collaborator-table">
       <thead>
         <tr>
-          <th>Member</th>
-          <th>Organization</th>
-          <th style="width: 200px">Role</th>
+          <th>
+            <div class="collaborator-header-filters">
+              <v-menu :close-on-content-click="false" location="bottom start">
+                <template #activator="{ props: menuProps }">
+                  <v-btn
+                    v-bind="menuProps"
+                    variant="text"
+                    size="small"
+                    class="collaborator-filter-button"
+                    :class="{
+                      'collaborator-filter-button--active': selectedRoles.length,
+                    }"
+                    :append-icon="mdiChevronDown"
+                    :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
+                  >
+                    Role
+                    <span v-if="selectedRoles.length" class="filter-count">
+                      {{ selectedRoles.length }}
+                    </span>
+                  </v-btn>
+                </template>
+                <v-list class="collaborator-filter-menu" density="compact">
+                  <div class="collaborator-filter-title">Filter by role</div>
+                  <v-text-field
+                    v-model="roleFilterSearch"
+                    class="collaborator-filter-search"
+                    placeholder="Filter roles"
+                    :prepend-inner-icon="mdiMagnify"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    clearable
+                  />
+                  <v-list-item
+                    v-for="role in filteredRoles"
+                    :key="role"
+                    @click="toggleRole(role)"
+                  >
+                    <template #prepend>
+                      <v-checkbox
+                        :model-value="selectedRoles.includes(role)"
+                        hide-details
+                        density="compact"
+                        :aria-label="`Role: ${role}`"
+                        @click.stop="toggleRole(role)"
+                      />
+                    </template>
+                    <v-list-item-title>{{ role }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item
+                    v-if="selectedRoles.length"
+                    class="filter-clear-item"
+                    @click="selectedRoles = []"
+                  >
+                    <v-list-item-title>Clear filter</v-list-item-title>
+                  </v-list-item>
+                  <div v-if="!filteredRoles.length" class="filter-empty">
+                    No roles found
+                  </div>
+                </v-list>
+              </v-menu>
+
+              <v-menu :close-on-content-click="false" location="bottom start">
+                <template #activator="{ props: menuProps }">
+                  <v-btn
+                    v-bind="menuProps"
+                    variant="text"
+                    size="small"
+                    class="collaborator-filter-button"
+                    :class="{
+                      'collaborator-filter-button--active': selectedOrganizations.length,
+                    }"
+                    :append-icon="mdiChevronDown"
+                    :aria-label="`Filter by organization${selectedOrganizations.length ? ` (${selectedOrganizations.length} selected)` : ''}`"
+                  >
+                    Organization
+                    <span
+                      v-if="selectedOrganizations.length"
+                      class="filter-count"
+                    >
+                      {{ selectedOrganizations.length }}
+                    </span>
+                  </v-btn>
+                </template>
+                <v-list class="collaborator-filter-menu" density="compact">
+                  <div class="collaborator-filter-title">
+                    Filter by organization
+                  </div>
+                  <v-text-field
+                    v-model="organizationFilterSearch"
+                    class="collaborator-filter-search"
+                    placeholder="Filter organizations"
+                    :prepend-inner-icon="mdiMagnify"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    clearable
+                  />
+                  <v-list-item
+                    v-for="organization in filteredOrganizations"
+                    :key="organization"
+                    @click="toggleOrganization(organization)"
+                  >
+                    <template #prepend>
+                      <v-checkbox
+                        :model-value="selectedOrganizations.includes(organization)"
+                        hide-details
+                        density="compact"
+                        :aria-label="`Organization: ${organization}`"
+                        @click.stop="toggleOrganization(organization)"
+                      />
+                    </template>
+                    <v-list-item-title>{{ organization }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item
+                    v-if="selectedOrganizations.length"
+                    class="filter-clear-item"
+                    @click="selectedOrganizations = []"
+                  >
+                    <v-list-item-title>Clear filter</v-list-item-title>
+                  </v-list-item>
+                  <div
+                    v-if="!filteredOrganizations.length"
+                    class="filter-empty"
+                  >
+                    No organizations found
+                  </div>
+                </v-list>
+              </v-menu>
+            </div>
+          </th>
           <th class="text-right" style="width: 190px">Actions</th>
         </tr>
       </thead>
@@ -125,26 +253,26 @@
           :data-testid="`collaborator-row-${item.email}`"
         >
           <td>
-            <div class="font-weight-medium">
+            <div class="collaborator-name font-weight-medium">
               {{ item.name }}
             </div>
-            <div class="hs-text-2xs text-medium-emphasis">
-              {{ item.email }}
+            <div class="hs-text-sm text-medium-emphasis">
+              <span v-if="!item.isBeingEdited">
+                {{ item.role.name }} · {{ item.email }} ·
+                {{ item.organization }}
+              </span>
+              <v-select
+                v-else
+                v-model="item.pendingRole"
+                :items="roles"
+                item-title="name"
+                :return-object="true"
+                variant="outlined"
+                density="compact"
+                hide-details
+                class="collaborator-role-editor"
+              />
             </div>
-          </td>
-          <td>{{ item.organization }}</td>
-          <td>
-            <v-select
-              v-if="item.isBeingEdited"
-              v-model="item.pendingRole"
-              :items="roles"
-              item-title="name"
-              :return-object="true"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-            <span v-else>{{ item.role.name }}</span>
           </td>
           <td class="text-right">
             <span v-if="item.isOwner" class="text-medium-emphasis">—</span>
@@ -188,9 +316,11 @@
           </td>
         </tr>
         <tr v-if="!filteredCollaborators.length">
-          <td colspan="4" class="text-center text-medium-emphasis">
+          <td colspan="2" class="text-center text-medium-emphasis">
             {{
-              search ? 'No matching collaborators.' : 'No collaborators yet.'
+              search || hasActiveFilters
+                ? 'No matching collaborators.'
+                : 'No collaborators yet.'
             }}
           </td>
         </tr>
@@ -203,7 +333,8 @@
 import { useUserStore } from '@/store/user'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import hs, {
   PermissionAction,
   PermissionResource,
@@ -212,6 +343,7 @@ import hs, {
   Workspace,
 } from '@hydroserver/client'
 import {
+  mdiChevronDown,
   mdiHelpCircleOutline,
   mdiMagnify,
   mdiPencil,
@@ -224,6 +356,9 @@ const props = defineProps({
   workspace: { type: Object as () => Workspace, required: true },
 })
 const emits = defineEmits(['self-removed', 'changed'])
+
+const route = useRoute()
+const router = useRouter()
 
 const { user } = storeToRefs(useUserStore())
 const { hasPermission } = useWorkspacePermissions()
@@ -262,22 +397,143 @@ const selectedRole = ref()
 const newCollaboratorEmail = ref('')
 const roles = ref<CollaboratorRole[]>([])
 const collaboratorList = ref<any[]>([])
-const search = ref('')
-const filteredCollaborators = computed(() => {
-  const query = search.value.trim().toLocaleLowerCase()
-  if (!query) return collaboratorList.value
+const roleFilterSearch = ref('')
+const organizationFilterSearch = ref('')
 
+// The search bar is the single source of truth for filtering, following the
+// GitHub issues search pattern: typed qualifiers like `role:Editor` and
+// `organization:"Utah State University"` drive both the filter menus and the
+// URL, so the whole filter state can be shared or bookmarked as a link.
+const QUALIFIER_PATTERN = /(role|organization):(?:"([^"]*)"|(\S+))/gi
+
+function quoteIfNeeded(value: string) {
+  return /\s/.test(value) ? `"${value}"` : value
+}
+
+function parseCollaboratorQuery(raw: string) {
+  const roleValues: string[] = []
+  const organizationValues: string[] = []
+  const textParts: string[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = QUALIFIER_PATTERN.exec(raw))) {
+    textParts.push(raw.slice(lastIndex, match.index))
+    const key = match[1].toLocaleLowerCase()
+    const value = (match[2] ?? match[3] ?? '').trim()
+    if (value) (key === 'role' ? roleValues : organizationValues).push(value)
+    lastIndex = QUALIFIER_PATTERN.lastIndex
+  }
+  textParts.push(raw.slice(lastIndex))
+  return {
+    roles: roleValues,
+    organizations: organizationValues,
+    text: textParts.join(' ').replace(/\s+/g, ' ').trim(),
+  }
+}
+
+function serializeCollaboratorQuery(
+  roleValues: string[],
+  organizationValues: string[],
+  text: string
+) {
+  return [
+    ...roleValues.map((role) => `role:${quoteIfNeeded(role)}`),
+    ...organizationValues.map(
+      (organization) => `organization:${quoteIfNeeded(organization)}`
+    ),
+    ...(text.trim() ? [text.trim()] : []),
+  ].join(' ')
+}
+
+const search = ref('')
+const parsedQuery = computed(() => parseCollaboratorQuery(search.value))
+const selectedRoles = computed<string[]>({
+  get: () => parsedQuery.value.roles,
+  set: (value) =>
+    (search.value = serializeCollaboratorQuery(
+      value,
+      parsedQuery.value.organizations,
+      parsedQuery.value.text
+    )),
+})
+const selectedOrganizations = computed<string[]>({
+  get: () => parsedQuery.value.organizations,
+  set: (value) =>
+    (search.value = serializeCollaboratorQuery(
+      parsedQuery.value.roles,
+      value,
+      parsedQuery.value.text
+    )),
+})
+
+function toggleRole(role: string) {
+  selectedRoles.value = selectedRoles.value.includes(role)
+    ? selectedRoles.value.filter((r) => r !== role)
+    : [...selectedRoles.value, role]
+}
+
+function toggleOrganization(organization: string) {
+  selectedOrganizations.value = selectedOrganizations.value.includes(
+    organization
+  )
+    ? selectedOrganizations.value.filter((o) => o !== organization)
+    : [...selectedOrganizations.value, organization]
+}
+
+const hasActiveFilters = computed(
+  () => selectedRoles.value.length > 0 || selectedOrganizations.value.length > 0
+)
+const availableRoles = computed(() =>
+  [...new Set(collaboratorList.value.map((item) => item.role?.name).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b)
+  )
+)
+const availableOrganizations = computed(() =>
+  [...new Set(collaboratorList.value.map((item) => item.organization).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b)
+  )
+)
+const filteredRoles = computed(() => {
+  const query = roleFilterSearch.value.trim().toLocaleLowerCase()
+  return availableRoles.value.filter((role) =>
+    role.toLocaleLowerCase().includes(query)
+  )
+})
+const filteredOrganizations = computed(() => {
+  const query = organizationFilterSearch.value.trim().toLocaleLowerCase()
+  return availableOrganizations.value.filter((organization) =>
+    organization.toLocaleLowerCase().includes(query)
+  )
+})
+const filteredCollaborators = computed(() => {
+  const { roles: roleValues, organizations: organizationValues, text } =
+    parsedQuery.value
+  const query = text.toLocaleLowerCase()
   return collaboratorList.value.filter((collaborator) =>
-    [
-      collaborator.name,
-      collaborator.email,
-      collaborator.organization,
-      collaborator.role?.name,
-    ].some((value) =>
-      String(value ?? '')
-        .toLocaleLowerCase()
-        .includes(query)
-    )
+    (!query ||
+      [
+        collaborator.name,
+        collaborator.email,
+        collaborator.organization,
+        collaborator.role?.name,
+      ].some((value) =>
+        String(value ?? '')
+          .toLocaleLowerCase()
+          .includes(query)
+      )) &&
+    (!roleValues.length ||
+      roleValues.some(
+        (role) =>
+          role.toLocaleLowerCase() ===
+          String(collaborator.role?.name ?? '').toLocaleLowerCase()
+      )) &&
+    (!organizationValues.length ||
+      organizationValues.some(
+        (organization) =>
+          organization.toLocaleLowerCase() ===
+          String(collaborator.organization ?? '').toLocaleLowerCase()
+      ))
   )
 })
 const isLoading = ref(false)
@@ -463,7 +719,22 @@ async function loadCollaboratorData() {
   }
 }
 
-onMounted(loadCollaboratorData)
+// The `q` query param mirrors the search bar so the current filter/search
+// state can be reloaded or shared as a link, mirroring GitHub's issue search.
+function queryString(value: unknown) {
+  return `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
+}
+
+onMounted(() => {
+  const queryValue = queryString(route.query.q)
+  if (queryValue) search.value = queryValue
+  loadCollaboratorData()
+})
+
+watch(search, (value) => {
+  if (queryString(route.query.q) === value) return
+  void router.replace({ query: { ...route.query, q: value || undefined } })
+})
 </script>
 
 <style scoped>
@@ -501,14 +772,67 @@ onMounted(loadCollaboratorData)
   color: var(--hs-text-secondary);
   opacity: 1;
 }
+.collaborator-filter-button {
+  min-width: auto;
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+.collaborator-filter-button--active {
+  color: rgb(var(--v-theme-primary));
+}
+.filter-count {
+  min-width: 18px;
+  margin-left: 2px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  font-size: var(--hs-font-2xs);
+  line-height: 18px;
+  text-align: center;
+}
+.collaborator-filter-menu {
+  min-width: 280px;
+  padding: var(--hs-space-8) 0;
+}
+.collaborator-filter-title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+}
+.collaborator-filter-search {
+  margin: 0 var(--hs-space-12) var(--hs-space-8);
+}
+.filter-empty {
+  padding: var(--hs-space-12) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+}
+.filter-clear-item {
+  border-top: 1px solid var(--hs-border);
+  color: rgb(var(--v-theme-primary));
+}
+.collaborator-role-editor {
+  max-width: 200px;
+  margin-top: 4px;
+}
 .workspace-table-search-input:focus {
   border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+  /* Inset so the ring never gets clipped by an ancestor's overflow:hidden
+     (the search bar sits flush against the tab-window's left edge). */
+  box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .collaborators-table-card {
   margin-top: 0;
 }
+.collaborator-header-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+}
 .collaborator-table :deep(td) {
   vertical-align: middle;
+  padding-top: var(--hs-space-12);
+  padding-bottom: var(--hs-space-12);
 }
 </style>
