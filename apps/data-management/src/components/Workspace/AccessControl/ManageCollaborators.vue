@@ -52,7 +52,10 @@
         size="16"
         class="workspace-table-search-icon"
       />
-      <div class="workspace-table-search-highlight hs-text-sm" aria-hidden="true">
+      <div
+        class="workspace-table-search-highlight hs-text-sm"
+        aria-hidden="true"
+      >
         <span
           v-for="(segment, index) in highlightSegments"
           :key="index"
@@ -169,7 +172,8 @@
                     size="small"
                     class="collaborator-filter-button"
                     :class="{
-                      'collaborator-filter-button--active': selectedRoles.length,
+                      'collaborator-filter-button--active':
+                        selectedRoles.length,
                     }"
                     :append-icon="mdiChevronDown"
                     :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
@@ -229,7 +233,8 @@
                     size="small"
                     class="collaborator-filter-button"
                     :class="{
-                      'collaborator-filter-button--active': selectedOrganizations.length,
+                      'collaborator-filter-button--active':
+                        selectedOrganizations.length,
                     }"
                     :append-icon="mdiChevronDown"
                     :aria-label="`Filter by organization${selectedOrganizations.length ? ` (${selectedOrganizations.length} selected)` : ''}`"
@@ -264,7 +269,9 @@
                   >
                     <template #prepend>
                       <v-checkbox
-                        :model-value="selectedOrganizations.includes(organization)"
+                        :model-value="
+                          selectedOrganizations.includes(organization)
+                        "
                         hide-details
                         density="compact"
                         :aria-label="`Organization: ${organization}`"
@@ -532,14 +539,18 @@ const hasActiveFilters = computed(
   () => selectedRoles.value.length > 0 || selectedOrganizations.value.length > 0
 )
 const availableRoles = computed(() =>
-  [...new Set(collaboratorList.value.map((item) => item.role?.name).filter(Boolean))].sort(
-    (a, b) => a.localeCompare(b)
-  )
+  [
+    ...new Set(
+      collaboratorList.value.map((item) => item.role?.name).filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b))
 )
 const availableOrganizations = computed(() =>
-  [...new Set(collaboratorList.value.map((item) => item.organization).filter(Boolean))].sort(
-    (a, b) => a.localeCompare(b)
-  )
+  [
+    ...new Set(
+      collaboratorList.value.map((item) => item.organization).filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b))
 )
 const filteredRoles = computed(() => {
   const query = roleFilterSearch.value.trim().toLocaleLowerCase()
@@ -554,41 +565,48 @@ const filteredOrganizations = computed(() => {
   )
 })
 const filteredCollaborators = computed(() => {
-  const { roles: roleValues, organizations: organizationValues, text } =
-    parsedQuery.value
+  const {
+    roles: roleValues,
+    organizations: organizationValues,
+    text,
+  } = parsedQuery.value
   const query = text.toLocaleLowerCase()
-  return collaboratorList.value.filter((collaborator) =>
-    (!query ||
-      [
-        collaborator.name,
-        collaborator.email,
-        collaborator.organization,
-        collaborator.role?.name,
-      ].some((value) =>
-        String(value ?? '')
-          .toLocaleLowerCase()
-          .includes(query)
-      )) &&
-    (!roleValues.length ||
-      roleValues.some(
-        (role) =>
-          role.toLocaleLowerCase() ===
-          String(collaborator.role?.name ?? '').toLocaleLowerCase()
-      )) &&
-    (!organizationValues.length ||
-      organizationValues.some(
-        (organization) =>
-          organization.toLocaleLowerCase() ===
-          String(collaborator.organization ?? '').toLocaleLowerCase()
-      ))
+  return collaboratorList.value.filter(
+    (collaborator) =>
+      (!query ||
+        [
+          collaborator.name,
+          collaborator.email,
+          collaborator.organization,
+          collaborator.role?.name,
+        ].some((value) =>
+          String(value ?? '')
+            .toLocaleLowerCase()
+            .includes(query)
+        )) &&
+      (!roleValues.length ||
+        roleValues.some(
+          (role) =>
+            role.toLocaleLowerCase() ===
+            String(collaborator.role?.name ?? '').toLocaleLowerCase()
+        )) &&
+      (!organizationValues.length ||
+        organizationValues.some(
+          (organization) =>
+            organization.toLocaleLowerCase() ===
+            String(collaborator.organization ?? '').toLocaleLowerCase()
+        ))
   )
 })
 // Syntax highlighting: colors the value of a `key:value` pair primary when
 // it matches a real role/organization, the way GitHub highlights valid
 // qualifier values in its issue search bar.
 function isValidQualifierValue(key: string, value: string) {
-  const pool = key === 'role' ? availableRoles.value : availableOrganizations.value
-  return pool.some((item) => item.toLocaleLowerCase() === value.toLocaleLowerCase())
+  const pool =
+    key === 'role' ? availableRoles.value : availableOrganizations.value
+  return pool.some(
+    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
+  )
 }
 
 const highlightSegments = computed(() => {
@@ -675,7 +693,9 @@ const activeSuggestion = computed(() => {
   if (colonIndex === -1) {
     const query = text.toLocaleLowerCase()
     const items = QUALIFIER_KEYS.filter((key) => key.startsWith(query))
-    return items.length ? { type: 'key' as const, key: null, items, start, end } : null
+    return items.length
+      ? { type: 'key' as const, key: null, items, start, end }
+      : null
   }
 
   const key = text.slice(0, colonIndex).toLocaleLowerCase()
@@ -686,8 +706,10 @@ const activeSuggestion = computed(() => {
   if (valueQuery.endsWith('"')) valueQuery = valueQuery.slice(0, -1)
   const query = valueQuery.toLocaleLowerCase()
 
-  const pool = key === 'role' ? availableRoles.value : availableOrganizations.value
-  const selected = key === 'role' ? selectedRoles.value : selectedOrganizations.value
+  const pool =
+    key === 'role' ? availableRoles.value : availableOrganizations.value
+  const selected =
+    key === 'role' ? selectedRoles.value : selectedOrganizations.value
   const items = pool.filter(
     (value) =>
       !selected.includes(value) && value.toLocaleLowerCase().includes(query)
@@ -731,11 +753,13 @@ function onSearchKeydown(event: KeyboardEvent) {
   if (!suggestion?.items.length) return
   if (event.key === 'ArrowDown') {
     event.preventDefault()
-    suggestionIndex.value = (suggestionIndex.value + 1) % suggestion.items.length
+    suggestionIndex.value =
+      (suggestionIndex.value + 1) % suggestion.items.length
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
     suggestionIndex.value =
-      (suggestionIndex.value - 1 + suggestion.items.length) % suggestion.items.length
+      (suggestionIndex.value - 1 + suggestion.items.length) %
+      suggestion.items.length
   } else if (event.key === 'Enter' || event.key === 'Tab') {
     event.preventDefault()
     applySuggestion(suggestion.items[suggestionIndex.value])
@@ -1072,6 +1096,49 @@ watch(search, (value) => {
 }
 .collaborator-filter-search {
   margin: 0 var(--hs-space-12) var(--hs-space-8);
+  height: 30px;
+}
+.collaborator-filter-search :deep(.v-field) {
+  height: 30px;
+  min-height: 30px;
+  border-radius: var(--hs-radius-sm);
+  background: var(--hs-surface);
+  padding-inline-start: 0;
+}
+.collaborator-filter-search :deep(.v-field__outline) {
+  color: var(--hs-input-border);
+  --v-field-border-opacity: 1;
+}
+.collaborator-filter-search :deep(.v-field--focused) {
+  box-shadow: none;
+}
+.collaborator-filter-search :deep(.v-field--focused .v-field__outline) {
+  color: rgb(var(--v-theme-primary));
+  --v-field-border-width: 2px;
+  --v-field-border-opacity: 1;
+}
+.collaborator-filter-search :deep(.v-field__input) {
+  min-height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--hs-font-sm);
+}
+.collaborator-filter-search :deep(.v-field__prepend-inner) {
+  padding-left: 8px;
+  padding-right: 0;
+}
+.collaborator-filter-search :deep(.v-field__prepend-inner > .v-icon) {
+  width: 16px;
+  font-size: 16px;
+  color: var(--hs-input-border);
+  opacity: 1;
+}
+.collaborator-filter-search :deep(.v-field__append-inner) {
+  padding-right: 8px;
+}
+.collaborator-filter-search :deep(input::placeholder) {
+  color: var(--hs-text-secondary);
+  opacity: 1;
 }
 .filter-empty {
   padding: var(--hs-space-12) var(--hs-space-16);
