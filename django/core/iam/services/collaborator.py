@@ -62,6 +62,12 @@ class CollaboratorService(ServiceUtils):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
+        # The client fetches collaborators page by page.  Without an explicit
+        # ordering, PostgreSQL is free to return tied rows in a different
+        # order for each request, which can make a collaborator move between
+        # pages or disappear from the merged result.  Keep pagination stable.
+        queryset = queryset.order_by("id")
+
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
         return [self.serialize_collaborator(collaborator) for collaborator in queryset]

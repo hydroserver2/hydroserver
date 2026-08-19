@@ -22,6 +22,7 @@ const theme: ThemeDefinition = {
     border: '#CED8E2',
     'input-border': '#CAC4D0',
     primary: '#32649C',
+    // primary: '#2196F3', material blue 500
     secondary: '#66AE5C',
     default: '#757575',
     danger: '#B3261E',
