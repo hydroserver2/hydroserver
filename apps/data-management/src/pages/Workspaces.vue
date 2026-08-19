@@ -1198,16 +1198,17 @@ onMounted(async () => {
 .sidebar-item-body {
   flex: 1;
   min-width: 0;
-  width: 100%;
+  width: auto;
+  margin: calc(-1 * var(--hs-space-10)) calc(-1 * var(--hs-space-16));
   border: 0;
-  padding: 0;
+  padding: var(--hs-space-10) var(--hs-space-16);
   color: inherit;
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 .sidebar-item--workspace .sidebar-item-body {
-  padding-right: 0;
+  padding-right: var(--hs-space-16);
 }
 .sidebar-item--workspace .sidebar-item-meta {
   padding-right: 62px;
