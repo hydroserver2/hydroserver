@@ -302,11 +302,31 @@ def test_delete_session(get_principal, principal, error, error_fragment):
 
 
 def test_delete_committed_session(get_principal):
+    """A committed session with no dependents can be deleted."""
+    qc_session_service.delete(
+        principal=get_principal("owner"), history=uuid.UUID(H1), session=uuid.UUID(SESSION_COMMITTED_1)
+    )
+    assert not QCSession.objects.filter(pk=uuid.UUID(SESSION_COMMITTED_1)).exists()
+
+
+def test_delete_committed_session_with_dependents(get_principal):
+    """A committed session cannot be deleted while another session depends on it."""
+    dependent_session = qc_session_service.create(
+        principal=get_principal("owner"),
+        history=uuid.UUID(H1),
+        phenomenon_time_start=_dt(2025, 1, 1, 3, 0),
+        phenomenon_time_end=_dt(2025, 1, 1, 9, 0),
+    )
+    assert uuid.UUID(SESSION_COMMITTED_1) in set(
+        dependent_session.dependencies.values_list("dependency_id", flat=True)
+    )
+
     with pytest.raises(ValueError) as exc_info:
         qc_session_service.delete(
             principal=get_principal("owner"), history=uuid.UUID(H1), session=uuid.UUID(SESSION_COMMITTED_1)
         )
-    assert "Only in-progress sessions can be deleted" in str(exc_info.value)
+    assert "other sessions depend on it" in str(exc_info.value)
+    assert QCSession.objects.filter(pk=uuid.UUID(SESSION_COMMITTED_1)).exists()
 
 
 # --- commit() ---
