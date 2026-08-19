@@ -128,9 +128,25 @@
             class="plotted-item__title d-flex align-center ga-1"
             :title="datastream.name"
           >
+            <v-icon
+              v-if="snapshotFor(datastream.id)"
+              icon="mdi-history"
+              size="14"
+              class="flex-shrink-0"
+            />
             <span>{{ datastream.name }}</span>
+            <v-chip
+              v-if="snapshotFor(datastream.id)"
+              size="x-small"
+              variant="tonal"
+              label
+              class="flex-shrink-0"
+            >
+              snapshot
+            </v-chip>
             <v-tooltip
               v-if="
+                !snapshotFor(datastream.id) &&
                 !loadStatus(datastream.id).loading &&
                 loadStatus(datastream.id).count === 0
               "
@@ -150,7 +166,10 @@
             </v-tooltip>
           </div>
           <div class="plotted-item__subtitle">
-            <template v-if="loadStatus(datastream.id).loading">
+            <template v-if="snapshotFor(datastream.id)">
+              {{ snapshotSubtitle(datastream.id) }}
+            </template>
+            <template v-else-if="loadStatus(datastream.id).loading">
               loading…
             </template>
             <template v-else>
@@ -202,6 +221,7 @@ const {
 } = storeToRefs(usePlotlyStore())
 import { ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
+import { formatDayStamp } from '@/utils/time'
 
 const { plottedDatastreams, qcDatastream, loadingStates } =
   storeToRefs(useDataVisStore())
@@ -252,6 +272,23 @@ const loadStatusById = computed<
 
 const loadStatus = (id: string) =>
   loadStatusById.value[id] ?? { loading: true, count: 0 }
+
+const snapshotFor = (id: string) =>
+  graphSeriesArray.value.find((s) => s.id === id)?.snapshot
+
+/** `step 3 of 7: Fill Gaps - by Alice - Mar 14, 2026` */
+const snapshotSubtitle = (id: string): string => {
+  const meta = snapshotFor(id)
+  if (!meta) return ''
+  const parts = [
+    meta.opIndex < 0
+      ? 'session start'
+      : `step ${meta.opIndex + 1} of ${meta.opCount}: ${meta.opName}`,
+  ]
+  if (meta.performedBy) parts.push(`by ${meta.performedBy}`)
+  parts.push(formatDayStamp(meta.createdAt))
+  return parts.join(' - ')
+}
 
 async function clearAll() {
   hiddenTraceIds.value = new Set()

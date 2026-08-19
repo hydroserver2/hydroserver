@@ -45,6 +45,9 @@ export interface ShareState {
   /** Ordered list of plotted datastream ids. The first id is the QC
    *  target. */
   datastreamIds?: string[]
+  /** History snapshots plotted as comparison lines. Kept out of `ds` so the
+   *  QC-target-is-first rule and the `h` / `ya` bitmask indices still hold. */
+  snapshots?: { sessionId: string; opIndex: number }[]
   /** Date range preset id (`0..5`). When set, `begin`/`end` are
    *  omitted from the URL and the receiver recomputes the window
    *  from "now". */
@@ -129,6 +132,10 @@ export function encodeShareState(state: ShareState): Record<string, string> {
 
   if (state.datastreamIds?.length) {
     q.ds = state.datastreamIds.join(',')
+  }
+
+  if (state.snapshots?.length) {
+    q.snap = state.snapshots.map((s) => `${s.sessionId}:${s.opIndex}`).join(',')
   }
 
   // Preset wins over begin/end. If a preset is active, dropping the
@@ -217,6 +224,18 @@ export function decodeShareState(query: Record<string, unknown>): ShareState {
 
   const ds = splitCsv(str('ds'))
   if (ds.length) out.datastreamIds = ds
+
+  // A malformed entry is dropped rather than failing the whole link.
+  const snapshots: { sessionId: string; opIndex: number }[] = []
+  for (const piece of splitCsv(str('snap'))) {
+    const sep = piece.lastIndexOf(':')
+    if (sep <= 0) continue
+    const sessionId = piece.slice(0, sep)
+    const opIndex = Number(piece.slice(sep + 1))
+    if (!sessionId || !Number.isInteger(opIndex) || opIndex < -1) continue
+    snapshots.push({ sessionId, opIndex })
+  }
+  if (snapshots.length) out.snapshots = snapshots
 
   const rRaw = str('r')
   if (rRaw) {

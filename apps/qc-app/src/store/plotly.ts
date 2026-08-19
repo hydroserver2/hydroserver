@@ -162,9 +162,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     return -1
   })
 
-  /** The edit history for the currently selected series */
-  const editHistory: Ref<HistoryItem[]> = ref([])
-
   /**
    * Sentinel armed by programmatic Plotly writes (`setPlotSelection`,
    * `clearSelected`). When the next `plotly_relayout`-induced
@@ -183,6 +180,15 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const selectedSeries = computed(() => {
     return graphSeriesArray.value[selectedSeriesIndex.value]
   })
+
+  /**
+   * The edit history for the currently selected series. Derived, not
+   * assigned: resuming a session swaps in a fresh record without redrawing,
+   * so anything rebound during plot-option building would go stale.
+   */
+  const editHistory = computed<HistoryItem[]>(
+    () => selectedSeries.value?.data?.history ?? []
+  )
 
   // Initialize to an empty-trace PlotlyChartOptions so consumers can read
   // `plotlyOptions.value.traces` etc. without null-guards. 

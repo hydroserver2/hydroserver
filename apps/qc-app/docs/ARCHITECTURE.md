@@ -220,6 +220,145 @@ itself has zero Vue / Pinia / Plotly dependencies. The contract:
 Side-stepping `dispatch` breaks undo / redo, breaks QC History export, and
 silently breaks the worker fast-path. Don't.
 
+## QC history / session service
+
+Editing is persisted as a session DAG through the HydroServer QC API
+(`/api/data/quality-control/histories/{id}/sessions/{id}/operations`).
+
+The API client itself lives in **`@hydroserver/client`**, split across three
+SDK services on the `hs` instance: `qualityControlHistories`,
+`qualityControlSessions` (with `commit`), and `qualityControlOperations`. They
+are normal SDK services built on the shared `apiMethods` layer, so they inherit
+the session auth (CSRF cookie -> `X-CSRFToken`, `credentials: 'include'`) and
+the `ApiResponse` return shape — methods never throw on HTTP errors. Bodies are
+camelCase (`by_alias`); query parameters are snake_case (`expand_related`,
+`range_start`, `managed_datastream_id`, `ancestor_of`, ...).
+
+`src/services/qualityControl/` holds only the **app-side orchestration** that
+composes those services with `@uwrl/qc-utils` and the datastream/observation
+APIs: `createManagedDatastream`, the session lifecycle (`session.ts`),
+`persistOperations`, `commitSession`, `reconstructSession`, `findHistory`, and
+the `observationsBulkBody` serializer. `unwrap` bridges `ApiResponse` to the
+thrown errors this glue surfaces. None of it is a transport — swapping the QC
+client out is a `@hydroserver/client` change, not an app one.
+
+Two contract notes worth keeping in mind:
+
+- **The backend stores the operation DAG as metadata only — it never replays
+  operations.** The app applies ops locally (qc-utils), pushes the edited
+  series to the managed datastream via `bulk-create` (replace mode), then calls
+  `/commit`, which only records checksums and extends the history window.
+  Checksum verification (source/managed) is the client's responsibility;
+  `/commit` performs none.
+- **Vocabulary differs across the boundary.** qc-utils serializes operations as
+  `{ method, args }`; the QC API speaks `{ operationType, arguments, order }`.
+  The enum values are identical, so `persistOperations`/`reconstructSession`
+  rename the fields when crossing between qc-utils and the API.
+- **Operation comments are part of the history, not app-side metadata.**
+  `HistoryItem.comment` is authored in the operations panel, so it rides
+  through `serializeHistory` into `persistOperations` and lands on the API's
+  `comment` field, and exported QC History files carry it. Comments are the one
+  part of a persisted operation that is patched in place, since they are
+  written after the operation ran; everything else stays append-only. The API
+  refuses updates on committed sessions, so the panel renders their comments
+  read-only.
+- **Sessions start/resume from the latest committed state, not the raw source.**
+  Because each commit replays its session into the managed datastream (in-range
+  `replace`), the managed datastream's observations already carry every
+  committed session. `startSession`/`reconstructSession` therefore load the
+  managed datastream as the working base (via `loadLatestBase`, falling back to
+  the source only when nothing has been committed yet) and replay just the
+  current session's own draft operations on top.
+- **A reload resumes from the last save, not from memory.** Only
+  `qcSession.resumeDatastreamId` is persisted; on load the editor replots that
+  datastream and re-runs `beginEditing`, which rebuilds the working copy from
+  the server via `reconstructSession`. Edits made since the last save are not
+  recoverable, so `useUnsavedChangesWarning` raises the browser's native
+  confirmation while `hasUnsavedChanges` is true. A deliberate exit clears the
+  pointer, so only an interrupted session reopens.
+- **Viewing a past session replays its ancestor chain from the source.**
+  The managed datastream carries every commit, so it cannot be the base for a
+  historical view: replaying an older session's operations on top of it would
+  reproduce the final state. `reconstructCommittedSession` instead fetches the
+  ancestor closure (`ancestor_of`), loads the raw source over the union of
+  every window in the chain, and replays the chain in **commit order**
+  (`committedAt`, falling back to `createdAt`) — committing is what writes
+  observations into the managed datastream, so it is commit order, not
+  authoring order, that decides what a later session built on. The union
+  window matters because operations replay against array indices: loading
+  only the viewed session's window would misalign a wider ancestor's
+  selections and corrupt the result silently. The panel then shows just the
+  viewed session's own operations; the ancestors produced the data, but the
+  history is about what this session did.
+- **Operations are attributed by the server.** Every `QCOperation` carries a
+  `created_by`, stamped from the authenticated user on create, and the
+  response resolves a deleted account to a placeholder contact rather than
+  null. `reconstructSession`/`reconstructCommittedSession` map it onto
+  `HistoryItem.performedBy` (name, falling back to email), shown in a row's
+  expanded detail rather than on the row itself so the collapsed list stays
+  scannable. It is never sent back: the field is
+  provenance, not input. Operations applied in the current session show no
+  attribution until they are saved and reloaded. Comments have no author of
+  their own — `comment` is a plain nullable column that can be rewritten
+  later — so "who wrote this note" is a pending backend ask.
+- **A commit is terminal.** The API rejects updating, adding operations to,
+  or re-committing a committed session, and its PATCH body carries only
+  `description`. Continuing work after a commit means starting a new session;
+  the backend links it to every committed session its window overlaps, which
+  is how the DAG gets built.
+- **Deleting a session takes its descendants with it.** The API allows
+  deleting any session with no dependents, committed or not, and rejects one
+  that still has them. Sessions carry `dependencyIds` (their ancestors) on the
+  detail response only, so `utils/sessionGraph.ts` inverts that over a
+  `expand_related: true` listing to find descendants, and
+  `deleteSessionChain()` removes them deepest-first so each delete meets the
+  server's rule. There is no transaction: a failure part-way leaves the
+  earlier deletes in place, which is why the error names how many are already
+  gone and the chooser reloads from the server rather than guessing. Reopening the most recent commit
+  is a pending backend ask (see the TODO in `store/qcSession.ts`) and needs
+  more than lifting the status guard, since a commit also writes observations
+  to the managed datastream and rolls the history's checksum and extent
+  forward.
+
+Tests stub the three services with `makeQcFake()` (a stateful in-memory double
+under `services/qualityControl/__tests__/` that returns
+`{ histories, sessions, operations }`) — the production client lives in the
+package, not the app.
+
+**Permission gating.** QC editing writes to the source datastream's workspace
+(creates the managed datastream, pushes observations), so the editor's entry
+points are gated on the signed-in user's workspace role via
+`useWorkspacePermissions()` — a read-only collaborator sees disabled Start
+editing / Save / Commit controls and an explanation instead of a mid-flow 403,
+and each workspace's role is marked on the picker. The role rides along on the
+`Workspace` object (`collaboratorRole.permissions`; owners have a null role;
+admins override), so no extra request is needed.
+
+**History snapshots.** A snapshot is a session's state at one operation,
+plotted as an extra comparison line. `useHistorySnapshots()` drives it;
+`buildSnapshotRecord()` builds the record by replaying `0..k`, delegating
+committed sessions to `reconstructCommittedSession(..., opLimit)` and
+replaying the live record for the in-progress one so unsaved drafts count.
+
+Three constraints shape the implementation:
+
+- **Window.** The base is always the session chain's own window, never the
+  plot's time range. Operations replay against array indices, so a different
+  base window misaligns the replay. A snapshot is therefore frozen at
+  creation and never refetched.
+- **Record isolation.** `useObservationStore.fetchObservationsInRange` hands
+  back one shared `ObservationRecord` per datastream, and the replay mutates
+  whatever it is given. Snapshots inject a *detached* fetcher that warms the
+  raw cache and then constructs its own `ObservationRecord`, so a build never
+  disturbs the plot's series or a previous snapshot.
+- **Identity.** Snapshots ride in `plottedDatastreams` under the synthetic id
+  `snap:<sessionId>:<opIndex>` so legend rendering, colour assignment,
+  visibility and reorder work unchanged. `isSnapshotId()` guards the paths
+  that would otherwise treat one as real: `refreshGraphSeriesArray` skips its
+  fetch, `releaseManagedDatastream` drops them when the editor closes, and
+  the share encoder keeps them out of `ds` (they use their own `snap` key, so
+  the QC-target-is-first rule and the `h`/`ya` bitmask indices still hold).
+
 ## Routing and auth
 
 vue-router 5, two routes (Home, Workspaces). Two guards run on

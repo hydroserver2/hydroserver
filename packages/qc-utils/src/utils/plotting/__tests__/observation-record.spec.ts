@@ -760,6 +760,71 @@ describe('ObservationRecord', () => {
       expect(rec.dataX.length).toBeGreaterThan(lenAfterTwo);
     });
 
+    it('keeps comment and attribution across a step reload', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [0]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[0]!.performedBy = 'Ada Lovelace';
+      rec.history[0]!.comment = 'Dropped the spike';
+      rec.history[1]!.performedBy = 'Grace Hopper';
+
+      await rec.reloadHistory(1);
+
+      expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
+      expect(rec.history[0]!.comment).toBe('Dropped the spike');
+      expect(rec.history[1]!.performedBy).toBe('Grace Hopper');
+    });
+
+    it('re-measures execution timing rather than carrying it over', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[0]!.performedBy = 'Ada Lovelace';
+      rec.history[0]!.execution!.durationMs = 9999;
+
+      await rec.reloadHistory(1);
+
+      expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
+      // The timing describes the run that just happened, not the old one.
+      expect(rec.history[0]!.execution!.durationMs).not.toBe(9999);
+    });
+
+    it('keeps comment and attribution across undo', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[0]!.performedBy = 'Ada Lovelace';
+      rec.history[0]!.comment = 'Why this selection';
+
+      await rec.undo();
+
+      expect(rec.history).toHaveLength(1);
+      expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
+      expect(rec.history[0]!.comment).toBe('Why this selection');
+    });
+
+    it('keeps comment and attribution across redo', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[1]!.performedBy = 'Grace Hopper';
+      rec.history[1]!.comment = 'Removed the pair';
+
+      await rec.undo();
+      await rec.redo();
+
+      const last = rec.history[rec.history.length - 1]!;
+      expect(last.method).toBe(EnumEditOperations.DELETE_POINTS);
+      expect(last.performedBy).toBe('Grace Hopper');
+      expect(last.comment).toBe('Removed the pair');
+    });
+
     it('removeHistoryItem replays history without the removed entry', async () => {
       const originalLen = rec.dataX.length;
       // Two SELECTION + DELETE pairs (entries 0..3).

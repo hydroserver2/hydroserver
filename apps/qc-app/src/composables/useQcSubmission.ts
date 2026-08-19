@@ -1,19 +1,9 @@
 import { useDataVisStore } from '@/store/dataVisualization'
 import { usePlotlyStore } from '@/store/plotly'
 import { useHydroServer } from '@/store/hydroserver'
+import { observationsBulkBody } from '@/services/qualityControl/observationsBody'
 import { Snackbar } from '@uwrl/qc-utils'
 import { storeToRefs } from 'pinia'
-
-/**
- * ObservationBulkPostBody is a local type inside @hydroserver/client's
- * datastream.service and is not re-exported from the package entry. Define
- * its structural shape here to keep the composable type-safe without
- * reaching into internal module paths.
- */
-type ObservationBulkPostBody = {
-  fields: ('phenomenonTime' | 'result')[]
-  data: unknown[][]
-}
 
 /**
  * Encapsulates the QC submission flow: guard checks, serialization of the
@@ -37,18 +27,10 @@ export function useQcSubmission() {
       return
     }
 
-    const { dataX, dataY } = selectedSeries.value.data
-
     // TODO: resultQualifierCodes serialization is deferred — qualifier
     // tracking in useDataVisStore is still stubbed. Submit only
     // phenomenonTime + result for now.
-    const body: ObservationBulkPostBody = {
-      fields: ['phenomenonTime', 'result'],
-      data: Array.from(dataX as ArrayLike<number>).map((ts, i) => [
-        new Date(ts).toISOString(),
-        (dataY as ArrayLike<number>)[i],
-      ]),
-    }
+    const body = observationsBulkBody(selectedSeries.value.data)
 
     isSubmitting.value = true
     try {

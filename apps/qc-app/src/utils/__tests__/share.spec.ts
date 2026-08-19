@@ -278,3 +278,41 @@ describe('round-trip', () => {
     expect(decoded).toEqual(original)
   })
 })
+
+describe('history snapshots', () => {
+  it('round-trips snapshots', () => {
+    const state: ShareState = {
+      datastreamIds: ['ds-a'],
+      snapshots: [
+        { sessionId: 'sess-1', opIndex: 3 },
+        { sessionId: 'sess-2', opIndex: -1 },
+      ],
+    }
+
+    const q = encodeShareState(state)
+    expect(q.snap).toBe('sess-1:3,sess-2:-1')
+    expect(decodeShareState(q).snapshots).toEqual(state.snapshots)
+  })
+
+  it('omits the key when there are no snapshots', () => {
+    expect(encodeShareState({ datastreamIds: ['ds-a'] }).snap).toBeUndefined()
+    expect(
+      encodeShareState({ datastreamIds: ['ds-a'], snapshots: [] }).snap
+    ).toBeUndefined()
+  })
+
+  it('drops malformed entries instead of failing the whole link', () => {
+    const out = decodeShareState({ snap: 'sess-1:3,broken,sess-2:x,:4' })
+    expect(out.snapshots).toEqual([{ sessionId: 'sess-1', opIndex: 3 }])
+  })
+
+  // Snapshots stay out of `ds` so "QC target is the first id" and the
+  // h/ya bitmask indices keep holding.
+  it('leaves snapshots out of the datastream id list', () => {
+    const q = encodeShareState({
+      datastreamIds: ['ds-a'],
+      snapshots: [{ sessionId: 'sess-1', opIndex: 0 }],
+    })
+    expect(q.ds).toBe('ds-a')
+  })
+})

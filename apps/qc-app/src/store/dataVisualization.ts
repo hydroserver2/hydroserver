@@ -5,11 +5,15 @@ import { useObservationStore } from './observations'
 import { Snackbar } from '@uwrl/qc-utils'
 import { handleNewPlot } from '@/utils/plotting/plotly'
 import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
+import { isSnapshotId } from '@/utils/snapshotId'
+import type { SnapshotMeta } from '@/types'
+import type { ObservationRecord } from '@uwrl/qc-utils'
 import {
   Datastream,
   type DatastreamExtended,
   ObservedProperty,
   ProcessingLevel,
+  type QualityControlHistory,
   Thing,
 } from '@hydroserver/client'
 
@@ -28,6 +32,54 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // To only fetch these once per page
   const things = ref<Thing[]>([])
   const datastreams = ref<(Datastream & DatastreamExtended)[]>([])
+  // QC histories for the workspace (each links a managed datastream to its
+  // source). Drives hiding managed datastreams from the catalog and the
+  // source -> managed lookup used by the "Start editing" chooser.
+  const qcHistories = ref<QualityControlHistory[]>([])
+
+  const historyManagedId = (h: QualityControlHistory): string | undefined =>
+    (h as any).managedDatastreamId ?? (h as any).managedDatastream?.id
+  const historySourceId = (h: QualityControlHistory): string | undefined =>
+    (h as any).sourceDatastreamId ?? (h as any).sourceDatastream?.id
+
+  /** Ids of every managed datastream; these are hidden from the catalog. */
+  const managedDatastreamIds = computed(() => {
+    const ids = new Set<string>()
+    for (const h of qcHistories.value) {
+      const id = historyManagedId(h)
+      if (id) ids.add(id)
+    }
+    return ids
+  })
+
+  /** Add a newly-created QC history so the new managed datastream is hidden
+   *  from the catalog and listed in the chooser without a full reload. */
+  function addQcHistory(history: QualityControlHistory) {
+    if (qcHistories.value.some((h) => (h as any).id === (history as any).id)) {
+      return
+    }
+    qcHistories.value = [...qcHistories.value, history]
+  }
+
+  /** Drop a deleted managed datastream + its history from local state so it
+   *  vanishes from the chooser and doesn't resurface in the catalog. */
+  function removeManagedDatastream(historyId: string, managedId: string) {
+    qcHistories.value = qcHistories.value.filter(
+      (h) => (h as any).id !== historyId
+    )
+    datastreams.value = datastreams.value.filter((d) => d.id !== managedId)
+  }
+
+  /** sourceDatastreamId -> the histories linking its managed datastreams. */
+  const historiesBySource = computed(() => {
+    const map = new Map<string, QualityControlHistory[]>()
+    for (const h of qcHistories.value) {
+      const sourceId = historySourceId(h)
+      if (!sourceId) continue
+      ;(map.get(sourceId) ?? map.set(sourceId, []).get(sourceId)!).push(h)
+    }
+    return map
+  })
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
 
@@ -138,6 +190,61 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     await rebuildPlot()
   }
 
+  /**
+   * Add a frozen history snapshot as an extra line. The synthetic datastream
+   * carries the snapshot id so the legend, colour assignment and visibility
+   * toggles work unchanged; `refreshGraphSeriesArray` skips its fetch.
+   */
+  async function addSnapshotSeries(
+    id: string,
+    record: ObservationRecord,
+    meta: SnapshotMeta
+  ) {
+    if (plottedDatastreams.value.some((d) => d.id === id)) return
+
+    const qcSeries = graphSeriesArray.value.find(
+      (s) => s.id === qcDatastreamId.value
+    )
+    plottedDatastreams.value.push({ id, name: meta.sessionLabel } as Datastream)
+    graphSeriesArray.value.push({
+      id,
+      name: meta.sessionLabel,
+      data: record,
+      yAxisLabel: qcSeries?.yAxisLabel ?? '',
+      color: '',
+      intendedSpacingMs: qcSeries?.intendedSpacingMs ?? null,
+      snapshot: meta,
+    })
+
+    assignSeriesColors(plottedDatastreams.value.map((d) => d.id))
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
+
+  /** Drop every snapshot line, without redrawing. Callers redraw themselves. */
+  function dropSnapshotSeries() {
+    if (!plottedDatastreams.value.some((d) => isSnapshotId(d.id))) return
+    plottedDatastreams.value = plottedDatastreams.value.filter(
+      (d) => !isSnapshotId(d.id)
+    )
+    graphSeriesArray.value = graphSeriesArray.value.filter(
+      (s) => !isSnapshotId(s.id)
+    )
+  }
+
+  /** Drop a snapshot line. Never touches the QC target. */
+  async function removeSnapshotSeries(id: string) {
+    const idx = plottedDatastreams.value.findIndex((d) => d.id === id)
+    if (idx === -1) return
+    plottedDatastreams.value.splice(idx, 1)
+    graphSeriesArray.value = graphSeriesArray.value.filter((s) => s.id !== id)
+
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
+
   /** Clear every plotted datastream at once. */
   async function clearPlottedDatastreams() {
     if (!plottedDatastreams.value.length) return
@@ -172,6 +279,71 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     if (plotlyRef.value) {
       await handleNewPlot(undefined, { preserveZoom: true })
     }
+  }
+
+  /**
+   * Enter editing on a freshly-created managed datastream by reusing the
+   * source's already-loaded series as the managed datastream's working copy,
+   * rather than adding a second, empty plotted item. The managed datastream
+   * is empty on the server, so re-fetching it would blank the plot; the QC
+   * editor zooms (never re-fetches), so this working copy survives until the
+   * first commit materializes the managed datastream.
+   */
+  async function adoptManagedDatastream(managed: Datastream, sourceId: string) {
+    const idx = plottedDatastreams.value.findIndex((d) => d.id === sourceId)
+    if (idx >= 0) plottedDatastreams.value.splice(idx, 1, managed)
+    else plottedDatastreams.value.push(managed)
+    qcDatastreamId.value = managed.id
+
+    // Re-key the loaded series to the managed datastream, keeping its data.
+    const series = graphSeriesArray.value.find((s) => s.id === sourceId)
+    if (series) {
+      series.id = managed.id
+      series.name = managed.name
+    }
+    const ids = new Set(plottedDatastreams.value.map((d) => d.id))
+    graphSeriesArray.value = graphSeriesArray.value.filter((s) => ids.has(s.id))
+
+    assignSeriesColors(plottedDatastreams.value.map((d) => d.id))
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) {
+      await handleNewPlot(undefined, { preserveZoom: true })
+    }
+  }
+
+  /**
+   * Inverse of `adoptManagedDatastream`, for leaving the editor. Managed
+   * datastreams are hidden from the catalog, so without this the Select
+   * view shows a plot with no row selected. No-op when the QC target isn't
+   * managed or its source isn't in the catalog. Snapshots are dropped
+   * regardless: they have no place in the Select view.
+   */
+  async function releaseManagedDatastream() {
+    dropSnapshotSeries()
+
+    const managedId = qcDatastreamId.value
+    if (!managedId) return
+    const history = qcHistories.value.find(
+      (h) => historyManagedId(h) === managedId
+    )
+    const sourceId = history ? historySourceId(history) : undefined
+    const source = sourceId
+      ? datastreams.value.find((d) => d.id === sourceId)
+      : undefined
+    if (!source) return
+
+    const idx = plottedDatastreams.value.findIndex((d) => d.id === managedId)
+    if (idx < 0) return
+    plottedDatastreams.value.splice(idx, 1, source)
+    qcDatastreamId.value = source.id
+
+    // The working copy holds uncommitted edits; `rebuildPlot` refetches.
+    graphSeriesArray.value = graphSeriesArray.value.filter(
+      (s) => s.id !== managedId
+    )
+
+    await rebuildPlot()
   }
 
   // Coalescing lock for `rebuildPlot`. Rapid checkbox toggles in the
@@ -281,6 +453,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     return (
       datastreams.value?.filter(
         (datastream) =>
+          // Managed (QC) datastreams are reached through the "Start editing"
+          // chooser on their source, not picked directly from the catalog.
+          !managedDatastreamIds.value.has(datastream.id) &&
           matchesSelectedThing(datastream) &&
           matchesSelectedObservedProperty(datastream) &&
           matchesSelectedProcessingLevel(datastream)
@@ -463,10 +638,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       currentIds.has(s.id)
     )
 
-    const updateOrFetchPromises = plottedDatastreams.value.map(async (ds) => {
-      loadingStates.value.set(ds.id, true)
-      return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
-    })
+    const updateOrFetchPromises = plottedDatastreams.value
+      // Frozen replays: no server-side datastream to fetch.
+      .filter((ds) => !isSnapshotId(ds.id))
+      .map(async (ds) => {
+        loadingStates.value.set(ds.id, true)
+        return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
+      })
 
     const results = await Promise.all(updateOrFetchPromises)
 
@@ -549,6 +727,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   return {
     things,
     datastreams,
+    qcHistories,
+    managedDatastreamIds,
+    historiesBySource,
+    addQcHistory,
+    removeManagedDatastream,
     processingLevels,
     observedProperties,
     selectedThings,
@@ -579,8 +762,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     plotDatastream,
     unplotDatastream,
     clearPlottedDatastreams,
+    addSnapshotSeries,
+    removeSnapshotSeries,
     setPlottedDatastreams,
     setQcDatastream,
+    adoptManagedDatastream,
+    releaseManagedDatastream,
     rebuildPlot,
     // updateOrFetchGraphSeries,
   }

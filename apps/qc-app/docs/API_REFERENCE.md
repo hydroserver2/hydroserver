@@ -112,6 +112,35 @@ await setSelected([0, 1, 2, 5])      // dispatches SELECTION
 await clearSelected({ recordHistory: false })  // skip history append on cleanup
 ```
 
+### `useResumeEditSession()`
+
+```ts
+const { resume } = useResumeEditSession(enterEdit)
+```
+
+Reopens the editor after a page reload, using the persisted
+`qcSession.resumeDatastreamId`: replots that datastream, makes it the QC
+target, then calls the supplied `enterEdit`. The workspace catalog loads
+asynchronously and is empty at mount, so it waits for the catalog to arrive
+and resumes at most once. A pointer to a datastream missing from the catalog
+(deleted, or another workspace) is dropped rather than retried.
+
+Note the watcher must not use Vue's `once` together with `immediate`: the
+immediate call fires on the initial empty catalog and stops the watcher, so
+the resume would never run on the cold reload it exists for.
+
+### `useUnsavedChangesWarning()`
+
+```ts
+useUnsavedChangesWarning(hasUnsavedChanges) // Ref<boolean>
+```
+
+Asks the browser for its native "leave site?" confirmation while the ref is
+true, so a reload mid-session can't silently drop edits that never reached
+the server. Registers on mount and removes the listener on unmount. Browsers
+ignore any custom message and only honour the prompt once the user has
+interacted with the page.
+
 ### `useQcHistory()`
 
 ```ts
@@ -138,6 +167,71 @@ Single-shot: guards on (selectedSeries + qcDatastream + non-empty
 history), serializes `[phenomenonTime, result]` rows, POSTs with
 `mode: 'replace'`, surfaces a Snackbar, and clears the history in place
 on success.
+
+### `useEditSession()`
+
+Orchestrates the server-backed QC session workflow against the
+`services/qualityControl/` glue:
+
+```ts
+const { beginEditing, startSession, saveDraft, commit, needsSession, needsHistory } =
+  useEditSession()
+```
+
+- `beginEditing()` — resolves the QC history for the QC datastream, loads
+  its sessions, resumes the in-progress one (or sets `needsSession`); sets
+  `needsHistory` when the datastream isn't QC-managed yet.
+- `startSession(spec)` — creates a session and copies the source window in.
+- `saveDraft()` — persists the record's edit operations to the session
+  (append-only reconcile).
+- `commit()` — saves, verifies checksum C, pushes observations
+  (`mode: 'replace'`), then locks the session.
+
+### `useCreateManagedDatastream()`
+
+```ts
+const { create } = useCreateManagedDatastream()
+const { managedDatastream, history } = await create({ source, processingLevelId, name })
+```
+
+Delegates to the tested `createManagedDatastream` orchestration with the
+live client (`hs.datastreams` + `hs.qualityControlHistories`). The datastream
+is created with `expand_related: true`, so `managedDatastream` comes back in
+the same `Datastream & DatastreamExtended` shape as the `datastreams` catalog
+and can be appended to it directly. Without the flag the 201 body is the flat
+model (FK ids only) and catalog consumers reading `ds.processingLevel.id`
+would break.
+
+### `useManagedDatastreams()`
+
+```ts
+const { loadForSource } = useManagedDatastreams()
+const options = await loadForSource(sourceDatastreamId)
+// options: [{ historyId, managed, sessions }]
+```
+
+Resolves a source datastream's managed (QC) datastreams from the loaded QC
+histories and fetches each one's sessions — feeds the "Start editing"
+chooser, which lists managed datastreams with their in-progress/committed
+sessions.
+
+### `useWorkspacePermissions()`
+
+Synchronous, reactive role/permission checks for gating UI. The role
+travels with the `Workspace` object (`collaboratorRole.permissions`; owners
+have a null role; `accountType === 'admin'` overrides), so no separate
+endpoint is needed.
+
+```ts
+const { canEdit, canCreateDatastream, roleName, isOwner, can } =
+  useWorkspacePermissions()
+canEdit()                 // selected workspace: can run the QC edit flow?
+canCreateDatastream(ws)   // can create the managed datastream here?
+roleName(ws)              // 'Owner' | <collaborator role> | 'Admin' | 'Read-only'
+```
+
+Used to disable the editor's Start editing / Save / Commit / Create
+controls and to mark each workspace's role on the picker.
 
 ### `useResizable()`
 
@@ -180,12 +274,17 @@ on boot.
 |-------------------------------------|----------|---------------------------------------------------|-------|
 | `things`                            | state    | `Thing[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
 | `datastreams`                       | state    | `(Datastream & DatastreamExtended)[]`             | All visible datastreams (with `expand_related` nested objects). |
+| `qcHistories`                       | state    | `QualityControlHistory[]`                         | Workspace QC histories (each links a managed datastream to its source); loaded with the catalog. |
+| `managedDatastreamIds`              | computed | `Set<string>`                                     | Ids of every managed (QC) datastream; hidden from the catalog (reached via the Start-editing chooser). |
+| `historiesBySource`                 | computed | `Map<string, QualityControlHistory[]>`            | `sourceDatastreamId` -> its QC histories; drives the Start-editing chooser. |
+| `addQcHistory`                      | action   | `(history: QualityControlHistory) => void`        | Register a newly-created history so its managed datastream hides from the catalog and shows in the chooser without a reload. |
+| `removeManagedDatastream`           | action   | `(historyId: string, managedId: string) => void`  | Drop a deleted managed datastream + its history from local state (chooser/catalog) after deleting it server-side. |
 | `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
 | `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
 | `selectedThings`                    | state    | `Thing[]`                                         | Site filter selection (sidebar). |
 | `selectedObservedPropertyNames`     | state    | `string[]`                                        | Observed-property filter selection. |
 | `selectedProcessingLevelNames`      | state    | `string[]`                                        | Processing-level filter selection. |
-| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections. |
+| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections, with managed (QC) datastreams excluded. |
 | `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 5 streams currently on the chart. |
 | `qcDatastreamId`                    | state    | `string \| null`                                  | Storage form of the QC target; survives plotted-list mutations. |
 | `qcDatastream`                      | computed | `Datastream \| null`                              | Live lookup of `qcDatastreamId` in `plottedDatastreams`. |
@@ -209,8 +308,12 @@ on boot.
 | `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
 | `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove; promotes the previous plotted entry to QC if removing the QC target. |
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
+| `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never promotes to QC target; `refreshGraphSeriesArray` skips its fetch. |
+| `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the QC target alone. |
 | `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |
 | `setQcDatastream`                   | action   | `(id: string \| null) => Promise<void>`           | Change QC target; preserves the current zoom. |
+| `adoptManagedDatastream`            | action   | `(managed: Datastream, sourceId: string) => Promise<void>` | Enter editing on a freshly-created managed datastream: replace the source in the plot and re-key its already-loaded series as the managed datastream's working copy (no second, empty item; no re-fetch). |
+| `releaseManagedDatastream`          | action   | `() => Promise<void>`                             | Inverse of `adoptManagedDatastream`, for leaving the editor: swap the managed datastream back to its source (resolved through `qcHistories`), drop the editor's working copy and rebuild, so the plot shows the source as stored rather than the session's uncommitted edits. Managed datastreams are hidden from the catalog table, so without this the Select view shows a plot with nothing selected. No-op when the QC target isn't managed or its source isn't in the catalog. |
 | `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
 
 ### `usePlotlyStore()` — `src/store/plotly.ts`
@@ -409,6 +512,39 @@ ephemeral connection state).
 | Name | Kind  | Type / signature   | Notes |
 |------|-------|--------------------|-------|
 | `hs` | state | `Ref<HydroServer>` | Non-null after `main.ts` finishes settings load; type-asserted as non-null for ergonomic consumer code. |
+
+### `useQcSessionStore()` — `src/store/qcSession.ts`
+
+View-mode state for QC sessions: which session is editable (the single
+in-progress one) and which is being viewed. Viewing a committed session
+puts the editor in read-only mode.
+
+| Name                | Kind     | Type / signature                        | Notes |
+|---------------------|----------|-----------------------------------------|-------|
+| `historyId`         | state    | `string \| null`                        | The managed datastream's QC history being navigated. |
+| `resumeDatastreamId`| state    | `string \| null`                        | Managed datastream the editor was last open on. The only persisted field: a page reload replots it and resumes its session from the last save. Set on entering the editor, cleared on exit. |
+| `sessions`          | state    | `QualityControlSession[]`               | Committed + in-progress sessions for the history. |
+| `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
+| `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
+| `isLoading`         | state    | `boolean`                               | True while `loadSessions` is in flight. |
+| `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
+| `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |
+| `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
+| `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
+| `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
+| `loadSessions`      | action   | `(historyId: string) => Promise<void>`  | Load a history's sessions; default the view to the in-progress one. |
+| `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |
+| `returnToCurrent`   | action   | `() => void`                            | Return to the editable in-progress session. |
+| `reset`             | action   | `() => void`                            | Clear all state. |
+
+### `useQcPreferencesStore()` — `src/store/qcPreferences.ts`
+
+Persisted QC editing preferences. Persistence: key `qc:preferences:v1`,
+`pick: ['processingLevelId']`.
+
+| Name                | Kind  | Type / signature | Notes |
+|---------------------|-------|------------------|-------|
+| `processingLevelId` | state | `string \| null` | Last-used processing level for the Create-Datastream-for-Editing form; null on first use (no assumed default). |
 
 ## Internal: utilities
 

@@ -327,6 +327,71 @@ describe('createPlotlyOption', () => {
   })
 })
 
+describe('snapshot series axes', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    qcDatastream.value = { id: 'ds-a' }
+    beginDate.value = new Date(0)
+    endDate.value = new Date(10)
+    hiddenAxisIds.value = new Set()
+  })
+
+  const snapshot = {
+    sessionId: 'sess-1',
+    sessionLabel: 'March backfill',
+    opIndex: 0,
+    opCount: 1,
+    opName: 'Fill Gaps',
+    createdAt: '2026-01-01T00:00:00Z',
+  }
+
+  // Its own axis is what lets the user shift a snapshot to line it up
+  // against the QC target.
+  it('gives a snapshot its own axis, like any other non-QC series', () => {
+    const qc = makeSeries({ id: 'ds-a' })
+    const snap = makeSeries({ id: 'snap:sess-1:0', snapshot })
+
+    const opts = createPlotlyOption([qc, snap])
+
+    const trace = opts.traces.find((t: any) => t.id === 'snap:sess-1:0') as any
+    expect(trace.yaxis).toBe('y2')
+    expect((opts.layout as any).yaxis2).toBeDefined()
+  })
+
+  it('keeps the snapshot line colour rather than the QC black', () => {
+    const qc = makeSeries({ id: 'ds-a' })
+    const snap = makeSeries({ id: 'snap:sess-1:0', color: COLORS[2], snapshot })
+
+    const opts = createPlotlyOption([qc, snap])
+
+    const trace = opts.traces.find((t: any) => t.id === 'snap:sess-1:0') as any
+    expect(trace.marker.color).toBe(COLORS[2])
+    expect(trace.selected).toBeUndefined()
+  })
+
+  it('numbers each series axis in turn when a snapshot is present', () => {
+    const qc = makeSeries({ id: 'ds-a' })
+    const snap = makeSeries({ id: 'snap:sess-1:0', snapshot })
+    const other = makeSeries({ id: 'ds-b' })
+
+    const opts = createPlotlyOption([qc, snap, other])
+
+    const trace = opts.traces.find((t: any) => t.id === 'ds-b') as any
+    expect(trace.yaxis).toBe('y3')
+    expect((opts.layout as any).yaxis3).toBeDefined()
+  })
+
+  it('honours the axis toggle on a snapshot row', () => {
+    hiddenAxisIds.value = new Set(['snap:sess-1:0'])
+    const qc = makeSeries({ id: 'ds-a' })
+    const snap = makeSeries({ id: 'snap:sess-1:0', snapshot })
+
+    const opts = createPlotlyOption([qc, snap])
+
+    expect((opts.layout as any).yaxis2.visible).toBe(false)
+  })
+})
+
 describe('findGapIndices', () => {
   it('returns an empty array when no consecutive points exceed the threshold', () => {
     expect(findGapIndices([0, 1, 2, 3], 1.5)).toEqual([])

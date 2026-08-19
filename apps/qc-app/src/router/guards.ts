@@ -1,7 +1,6 @@
 import { useWorkspaceStore } from '@/store/workspaces'
 import hs from '@hydroserver/client'
 import {
-  NavigationGuardNext,
   RouteLocationNormalized,
   RouteLocationRaw,
 } from 'vue-router'
@@ -10,8 +9,7 @@ type RouteGuardResult = RouteLocationRaw | false | null | undefined | void
 
 export type RouteGuard = (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
-  next: NavigationGuardNext
+  from: RouteLocationNormalized
 ) => RouteGuardResult | Promise<RouteGuardResult>
 
 const getQcReturnPath = (to: RouteLocationNormalized) => {
@@ -20,7 +18,13 @@ const getQcReturnPath = (to: RouteLocationNormalized) => {
 }
 
 const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
-  const loginUrl = new URL('/login', window.location.origin)
+  // In production the QC app is served by data-management under the same
+  // origin, so /login resolves there. In dev the two apps run on separate
+  // ports, so VITE_APP_DATA_MANAGEMENT_URL points at the data-management
+  // origin (e.g. http://127.0.0.1:1203); it falls back to the current origin.
+  const dataManagementOrigin =
+    import.meta.env.VITE_APP_DATA_MANAGEMENT_URL || window.location.origin
+  const loginUrl = new URL('/login', dataManagementOrigin)
   loginUrl.searchParams.set('next', getQcReturnPath(to))
   window.location.assign(loginUrl.toString())
   return false as const
@@ -66,7 +70,7 @@ export const guards: RouteGuard[] = [
   // HydroServer workspace context. If none is selected, bounce to the
   // picker and carry a `next` hint so we can come back here once the
   // user commits to a workspace.
-  (to, _from, _next) => {
+  (to) => {
     if (!to.meta?.hasWorkspaceGuard) return null
     const { hasSelection } = useWorkspaceStore()
     if (hasSelection) return null
@@ -78,7 +82,7 @@ export const guards: RouteGuard[] = [
 
   // https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head
   // Append head tags and update page title
-  (to, from, _next) => {
+  (to, from) => {
     // This goes through the matched routes from last to first, finding the closest route with a title.
     // e.g., if we have `/some/deep/nested/route` and `/some`, `/deep`, and `/nested` have titles,
     // `/nested`'s will be chosen.

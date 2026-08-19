@@ -367,12 +367,38 @@ export class ObservationRecord {
    * replay the surviving entries. Used by the "Reload from this step"
    * button in EditHistory.
    */
+  /**
+   * Re-stamp the metadata a replay cannot reproduce. `dispatch` rebuilds
+   * each entry from `[method, ...args]` alone, so the operator's comment
+   * and the server's attribution would be dropped on every undo, redo, or
+   * step reload. Execution timings are deliberately left alone: those
+   * describe the run that just happened, not the operation.
+   *
+   * Paired positionally and only when the method still matches, so a
+   * replay that lands differently leaves entries unstamped rather than
+   * attributing an operation to the wrong person.
+   */
+  private _restoreReplayedMeta(preserved: HistoryItem[]) {
+    const len = Math.min(preserved.length, this.history.length);
+    for (let i = 0; i < len; i++) {
+      const from = preserved[i];
+      const to = this.history[i];
+      if (!from || !to || from.method !== to.method) continue;
+      if (from.comment !== undefined) to.comment = from.comment;
+      if (from.performedBy !== undefined) to.performedBy = from.performedBy;
+    }
+  }
+
   async reloadHistory(index: number): Promise<number[]> {
     const newHistory = this.history.slice(0, index + 1);
     this.redoStack.length = 0;
     await this.reload();
 
-    return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+    const selection = await this.dispatch(
+      newHistory.map((h) => [h.method, ...(h.args || [])]),
+    );
+    this._restoreReplayedMeta(newHistory);
+    return selection;
   }
 
   /** Splice the history entry at `index`, reload from raw, and replay
@@ -382,7 +408,11 @@ export class ObservationRecord {
     newHistory.splice(index, 1);
     this.redoStack.length = 0;
     await this.reload();
-    return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+    const selection = await this.dispatch(
+      newHistory.map((h) => [h.method, ...(h.args || [])]),
+    );
+    this._restoreReplayedMeta(newHistory);
+    return selection;
   }
 
   /**
@@ -398,7 +428,11 @@ export class ObservationRecord {
     this.redoStack.push(popped);
     this._isReplaying = true;
     try {
-      return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+      const selection = await this.dispatch(
+        newHistory.map((h) => [h.method, ...(h.args || [])]),
+      );
+      this._restoreReplayedMeta(newHistory);
+      return selection;
     } finally {
       this._isReplaying = false;
     }
@@ -415,7 +449,15 @@ export class ObservationRecord {
     const item = this.redoStack.pop()!;
     this._isReplaying = true;
     try {
-      return await this.dispatch([[item.method, ...(item.args || [])]]);
+      const selection = await this.dispatch([[item.method, ...(item.args || [])]]);
+      const replayed = this.history[this.history.length - 1];
+      if (replayed && replayed.method === item.method) {
+        if (item.comment !== undefined) replayed.comment = item.comment;
+        if (item.performedBy !== undefined) {
+          replayed.performedBy = item.performedBy;
+        }
+      }
+      return selection;
     } finally {
       this._isReplaying = false;
     }

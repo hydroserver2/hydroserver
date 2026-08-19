@@ -111,7 +111,7 @@ The Edit View consists of three columns, each independently resizable / collapsi
 |--------|----------|
 | **Left** ("Operations") | The Edit drawer with three sections: Filter Data, Edit Data, Add Data. |
 | **Center** | The Plotly chart + a tab-switched data table (upper left) for the QC target. |
-| **Right** ("Aux") | At the top: **Save** / **Save & Close** / **Close** actions. Below that: the list of Plotted Datastreams, Edit history, and the currently staged Operation Panel. |
+| **Right** ("Aux") | The list of Plotted Datastreams, Edit history, and the currently staged Operation Panel. The **Save** / **Commit** / **Close** actions sit at the bottom of the Edit history panel. |
 
 The chart at the top of the center column has a Plotly toolbar with:
 
@@ -414,17 +414,83 @@ The header carries the count chip and four icon buttons (left to right): **undo*
 
 The body shows:
 
-- A baseline **Data loaded** row at the top, with a reload-from-server button.
+- A baseline **Data loaded** row at the top, carrying a plot-this-step button and a **discard-edits-and-reload-from-server** button (cloud icon). Clicking the row returns the plot to the state the session started from. The cloud button is hidden on a committed session, where there are no edits to discard.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
   - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
-  - A **reload-from-this-step** button that replays history up to but not including this entry.
+  - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
+  - Clicking the row itself replays history up to that step. Steps after the one on screen are dimmed, since they were not replayed and so are recorded but not reflected in the plot. Replaying re-measures each step's duration but keeps its comment and attribution.
   - An **undo** button on the trailing entry only (older entries are undone via Reload-from-this-step).
 - A chevron toggles an inline "Arguments" drawer that shows the raw qc-utils call arguments.
 
-Clicking the chevron at the very top of the panel collapses the whole panel; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar.
+### Reload from this step vs. reload from server
+
+These two look like siblings on the **Data loaded** row and mostly produce the
+same picture, but they are not the same operation:
+
+- **Reload from this step** replays the raw observations already held in the
+  browser. No network, and it can only ever restore what you loaded.
+- **Discard edits and reload from server** (cloud icon) re-fetches the
+  observations and throws the history away.
+
+Starting a session already fetches the latest committed state, so within an
+undisturbed session the two agree. Reach for the cloud button when the server
+copy has moved underneath you: **another user committed a session** on the same
+managed datastream while you were editing, or the source is still ingesting
+data and you want the new points. The memory replay can never surface either,
+because it faithfully restores the copy you started with.
+
+Below the body sits the session action bar (see [Submit](#submit-save--commit--close)). It stays put when the panel is collapsed, so the actions are always one click away. While a session is open it carries **Save**, **Discard**, and **Commit**; once you commit, those are replaced by **New session**, which opens the next one over the current time range without a trip back to the Select view. **Close** is always there.
+
+Clicking the chevron at the very top of the panel collapses the body; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar. The modal shows the history only, not the session actions.
+
+## Comparing against a point in history
+
+The chart-line button on any history row plots that session's state at that
+operation as a **separate line**, so you can compare it against what you are
+editing now without leaving your session. The button on the **Data loaded**
+row plots the state the session started from, before its first operation.
+
+Click the button again to remove the line.
+
+Things worth knowing:
+
+- Snapshots appear in the plotted datastreams list with a history icon, a
+  `snapshot` chip, and a provenance line such as
+  `step 3 of 7: Fill Gaps - by Alice - Mar 14, 2026`.
+- Each snapshot gets its own Y axis, so you can shift it to line it up
+  against the QC target, exactly like any other plotted datastream.
+- A snapshot is **frozen**. It is computed once, over its own session's
+  window, and changing the plot's time range never refetches or recomputes
+  it. Zoom outside that window and the line simply stops.
+- Snapshots of the session you are editing include your unsaved edits;
+  snapshots of any other session replay what was saved to the server.
+- Snapshots travel in the share link, so a link reproduces the comparison.
+  Each one replays on load, so a link carrying several is slower to open.
+- Leaving the editor for the Select view drops every snapshot.
+
+## Deleting a session
+
+The **Start editing** chooser shows every session on a managed datastream as a
+timeline, oldest first, each with a trash icon. Both in-progress and committed
+sessions can be deleted. When no session is open, the timeline is headed by a
+**Start new session** node.
+
+Sessions build on each other: a session started after a commit records that it
+began from that commit's result. Deleting a session therefore also deletes
+every session built on top of it, since those describe edits to data that would
+no longer exist. Hovering the trash icon says how far the delete reaches.
+
+The confirmation dialog names every session that will go, marks the one you
+picked, and orders them newest first, which is the order they are removed in.
+When the delete reaches beyond the session you picked, you also have to tick a
+box acknowledging the count. **None of this can be undone.**
+
+If the server rejects a delete part-way through a chain, the sessions already
+removed stay removed. The error says how many, and the chooser reloads so the
+list reflects what actually survived.
 
 ## Save / load a QC history
 
@@ -461,15 +527,17 @@ Per-op failures do not abort the replay. The app keeps going. If your QC history
 - **Audit trail.** Save the QC history before submitting, so you have a record of every transformation you applied.
 - **Iterate offline.** Edit the QC history's JSON if you want to tweak a threshold without re-clicking through the panels.
 
-## Submit (Save / Save & Close)
+## Submit (Save / Commit / Close)
 
-When you're satisfied with the edits, hit one of the action buttons at the top of the right sidebar:
+When you're satisfied with the edits, hit one of the action buttons at the bottom of the Edit history panel:
 
-- **Save**: uploads and keeps you in the Edit view.
-- **Save & Close**: uploads, clears history, and drops you back to the Select view.
-- **Close**: abandons the session. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
+- **Save**: writes the session's operations to the backend as a draft and keeps you in the Edit view.
+- **Commit**: materializes the session into the managed datastream and locks it into the history.
+- **Discard**: drops every edit made since the last save, returning the session to its last saved state. Edits already saved to the session stay. Disabled when there is nothing unsaved, and it asks for confirmation first.
+- **New session**: replaces Save and Commit once the session is committed. Opens a new session over the current time range, starting from the state the last commit left behind.
+- **Close**: leaves the editor. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
 
-Clicking Save (or Save & Close) opens a confirmation dialog so a misclick won't push data to the server.
+Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.
 
 ![Submit confirmation dialog](./images/submit-dialog.png)
 
@@ -499,7 +567,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 3. Click **All** in the Time range so you load the full series.
 4. Click the pencil icon → expand **Value thresholds**, set `Greater than: 1000`, press Enter.
 5. Expand **Delete points**, click Delete.
-6. Click **Save** (or **Save & Close**), then confirm in the dialog.
+6. Click **Save** at the bottom of the Edit history panel, then **Commit** and confirm in the dialog.
 
 ### "I want to drift-correct a known-bad interval."
 
