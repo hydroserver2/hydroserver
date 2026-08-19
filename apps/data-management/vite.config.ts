@@ -7,12 +7,14 @@ import vuetify from 'vite-plugin-vuetify'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
-  const qcProxyTarget = env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'
+  const qcProxyTarget =
+    env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'
   const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
   const sdkRoot = resolve(
     __dirname,
     env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
+  const designTokensRoot = resolve(__dirname, '../../packages/design-tokens')
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
 
@@ -27,7 +29,11 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     optimizeDeps: {
-      exclude: ['vuetify', ...(useLocal ? ['@hydroserver/client'] : [])],
+      exclude: [
+        'vuetify',
+        '@hydroserver/design-tokens',
+        ...(useLocal ? ['@hydroserver/client'] : []),
+      ],
     },
     server: {
       host: '127.0.0.1',
@@ -51,14 +57,19 @@ export default defineConfig(({ mode }) => {
       fs: {
         allow: [
           sdkRoot,
+          designTokensRoot,
           resolve(__dirname), // <- add this
         ],
       },
     },
     resolve: {
-      preserveSymlinks: true,
+      preserveSymlinks: false,
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
+        'vuetify/styles': resolve(
+          __dirname,
+          'node_modules/vuetify/lib/styles/main.sass'
+        ),
         '@': resolve(__dirname, 'src'),
         ...(useLocal ? { '@hydroserver/client': sdkEntry } : {}),
       },
