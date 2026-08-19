@@ -301,11 +301,20 @@ Two contract notes worth keeping in mind:
   attribution until they are saved and reloaded. Comments have no author of
   their own — `comment` is a plain nullable column that can be rewritten
   later — so "who wrote this note" is a pending backend ask.
-- **A commit is terminal.** The API rejects updating, deleting, adding
-  operations to, or re-committing a committed session, and its PATCH body
-  carries only `description`. Continuing work after a commit means starting a
-  new session; the backend links it to every committed session its window
-  overlaps, which is how the DAG gets built. Reopening the most recent commit
+- **A commit is terminal.** The API rejects updating, adding operations to,
+  or re-committing a committed session, and its PATCH body carries only
+  `description`. Continuing work after a commit means starting a new session;
+  the backend links it to every committed session its window overlaps, which
+  is how the DAG gets built.
+- **Deleting a session takes its descendants with it.** The API allows
+  deleting any session with no dependents, committed or not, and rejects one
+  that still has them. Sessions carry `dependencyIds` (their ancestors) on the
+  detail response only, so `utils/sessionGraph.ts` inverts that over a
+  `expand_related: true` listing to find descendants, and
+  `deleteSessionChain()` removes them deepest-first so each delete meets the
+  server's rule. There is no transaction: a failure part-way leaves the
+  earlier deletes in place, which is why the error names how many are already
+  gone and the chooser reloads from the server rather than guessing. Reopening the most recent commit
   is a pending backend ask (see the TODO in `store/qcSession.ts`) and needs
   more than lifting the status guard, since a commit also writes observations
   to the managed datastream and rolls the history's checksum and extent

@@ -40,8 +40,12 @@ export function useManagedDatastreams() {
             id: managedId,
             name: h.managedDatastream?.name ?? managedId,
           } as Datastream)
-        const sessions =
-          await hs.qualityControlSessions.listAllItems(historyId)
+        // expand_related so each session carries `dependencyIds`, which the
+        // deletion chain is derived from.
+        const sessions = await hs.qualityControlSessions.listAllItems(
+          historyId,
+          { expand_related: true }
+        )
         return { historyId, managed, sessions }
       })
     )
@@ -70,20 +74,39 @@ export function useManagedDatastreams() {
   }
 
   /**
-   * Discard an in-progress session, dropping its draft operations. Committed
-   * sessions are immutable server-side, so only the draft can be deleted.
-   * Throws on failure.
+   * Delete `chain` in order, deepest dependent first so each delete meets
+   * the server's "no dependents" rule. Resolves with the ids removed. On
+   * failure it throws, and the message names how many were already gone,
+   * because the deletes that landed cannot be rolled back.
+   *
+   * Takes the chain rather than deriving one: it must be exactly what the
+   * confirmation showed. If the server has since gained a dependent the
+   * delete is refused there, which is the safe direction to be wrong in.
    */
-  async function deleteSession(
+  async function deleteSessionChain(
     historyId: string,
-    sessionId: string
-  ): Promise<void> {
+    chain: string[]
+  ): Promise<string[]> {
     const { hs } = useHydroServer()
-    const res = await hs.qualityControlSessions.delete(historyId, sessionId)
-    if (!res.ok) {
-      throw new Error(res.message || 'Could not discard the session.')
+    if (!chain.length) {
+      throw new Error('That session no longer exists.')
     }
+
+    const deleted: string[] = []
+    for (const id of chain) {
+      const res = await hs.qualityControlSessions.delete(historyId, id)
+      if (!res.ok) {
+        const reason = res.message || 'Could not delete the session.'
+        throw new Error(
+          deleted.length
+            ? `${reason} ${deleted.length} of ${chain.length} sessions were already deleted and cannot be restored.`
+            : reason
+        )
+      }
+      deleted.push(id)
+    }
+    return deleted
   }
 
-  return { loadForSource, deleteManaged, deleteSession }
+  return { loadForSource, deleteManaged, deleteSessionChain }
 }

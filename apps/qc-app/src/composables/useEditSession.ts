@@ -247,6 +247,22 @@ export function useEditSession() {
     snapshotSavedEdits()
   }
 
+  /**
+   * Drop everything added since the last save: replay the saved prefix,
+   * then put the saved comment text back, since a comment edited in place
+   * on a surviving entry survives the replay.
+   */
+  async function discardUnsavedEdits(): Promise<number[] | undefined> {
+    const record = selectedSeries.value?.data as ObservationRecord | undefined
+    if (!record) return
+    const selection = await record.reloadHistory(savedEdits.value.length - 1)
+    record.history.forEach((item, i) => {
+      item.comment = savedComments.value[i] || undefined
+    })
+    snapshotSavedEdits()
+    return selection
+  }
+
   async function saveDraft(): Promise<void> {
     const historyId = sessionStore.historyId
     const session = sessionStore.inProgressSession
@@ -319,6 +335,7 @@ export function useEditSession() {
     startSession,
     viewSession,
     saveDraft,
+    discardUnsavedEdits,
     commit,
   }
 }

@@ -72,6 +72,19 @@ describe('SessionList', () => {
     expect(wrapper.text()).toContain('Editing')
   })
 
+  it('marks each session with its status, not just the editable one', async () => {
+    const { committedId, inProgressId } = await seedAndLoad()
+    const wrapper = mountList()
+    await flushPromises()
+    const marker = (id: string) => wrapper.find(`[data-testid="session-${id}"]`)
+    expect(marker(committedId).classes()).toContain('qc-timeline__item--done')
+    expect(marker(committedId).find('.mdi-check').exists()).toBe(true)
+    expect(marker(inProgressId).classes()).toContain(
+      'qc-timeline__item--active'
+    )
+    expect(marker(inProgressId).find('.mdi-pencil').exists()).toBe(true)
+  })
+
   it('lists sessions oldest first, so the most recent is at the bottom', async () => {
     const { committedId, inProgressId } = await seedAndLoad()
     const wrapper = mountList()

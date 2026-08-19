@@ -14,3 +14,68 @@
   color: rgba(var(--v-theme-on-surface), 0.75);
   background: rgba(var(--v-theme-on-surface), 0.03);
 }
+
+/* Session timeline, shared by the editor's session list and the
+   "Start editing" chooser. Unscoped so both can reach Vuetify's
+   timeline internals without repeating the :deep() rules.
+
+   Markers: Vuetify's is a saturated disc ringed in surface-light with the
+   glyph flush to its edge. Flatten it to a tonal marker with room for the
+   icon, nudged onto the title's row. */
+.qc-timeline__item .v-timeline-divider__dot {
+  width: 20px;
+  height: 20px;
+  margin-block-start: 4px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: none;
+}
+
+/* `.v-icon` declares the multiplier on itself, so it has to be set there. */
+.qc-timeline__item .v-timeline-divider__inner-dot .v-icon {
+  --v-icon-size-multiplier: 0.75;
+}
+
+.qc-timeline__item--active .v-timeline-divider__inner-dot {
+  background: rgba(var(--v-theme-warning), 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-warning), 0.35);
+}
+
+.qc-timeline__item--done .v-timeline-divider__inner-dot {
+  background: rgba(var(--v-theme-success), 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-success), 0.35);
+}
+
+/* Every session reads as its own container, so the unselected ones don't
+   float loose against the timeline rail. The card padding replaces Vuetify's
+   body inset, so the gap to the rail comes back as a margin. */
+.qc-timeline__item .v-timeline-item__body {
+  margin-inline-start: 10px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.qc-timeline__item:hover .v-timeline-item__body {
+  background-color: rgba(var(--v-theme-primary), 0.06);
+}
+
+.qc-timeline__item--viewed .v-timeline-item__body {
+  background-color: rgba(var(--v-theme-primary), 0.12);
+  border-color: rgba(var(--v-theme-primary), 0.4);
+}
+
+/* The "start a session" node heads the timeline as an action rather than a
+   record, so it stays flat instead of taking the session card treatment. */
+.qc-timeline__item--new .v-timeline-item__body {
+  border-style: dashed;
+  background-color: transparent;
+}
+
+.qc-timeline__item--new .v-timeline-divider__inner-dot {
+  background: rgba(var(--v-theme-primary), 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-primary), 0.35);
+}

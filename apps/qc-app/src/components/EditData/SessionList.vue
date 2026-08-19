@@ -26,6 +26,7 @@
     <v-timeline
       v-else
       side="end"
+      align="start"
       density="compact"
       truncate-line="both"
       line-thickness="2"
@@ -34,17 +35,19 @@
       <v-timeline-item
         v-for="session of orderedSessions"
         :key="session.id"
-        :dot-color="session.status === 'in_progress' ? 'warning' : 'success'"
-        :icon="
-          session.status === 'in_progress' ? 'mdi-pencil' : 'mdi-check'
-        "
+        fill-dot
         size="x-small"
+        :icon="session.status === 'in_progress' ? 'mdi-pencil' : 'mdi-check'"
+        :icon-color="session.status === 'in_progress' ? 'warning' : 'success'"
         width="100%"
         :data-testid="`session-${session.id}`"
-        class="qc-session-list__item"
-        :class="{
-          'qc-session-list__item--viewed': session.id === viewedSessionId,
-        }"
+        class="qc-session-list__item qc-timeline__item"
+        :class="[
+          session.status === 'in_progress'
+            ? 'qc-timeline__item--active'
+            : 'qc-timeline__item--done',
+          { 'qc-timeline__item--viewed': session.id === viewedSessionId },
+        ]"
       >
         <!-- Only the header selects; clicks inside the nested panel must not. -->
         <div
@@ -152,28 +155,4 @@ function returnToCurrent(): void {
   min-height: 28px;
 }
 
-.qc-session-list__timeline :deep(.v-timeline-item__body) {
-  padding-block: 2px;
-}
-
-/* Every session reads as its own container, so the unselected ones don't
-   float loose against the timeline rail. */
-.qc-session-list__item :deep(.v-timeline-item__body) {
-  border-radius: 6px;
-  padding: 6px 8px;
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  background-color: rgba(var(--v-theme-on-surface), 0.02);
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-
-.qc-session-list__item:hover :deep(.v-timeline-item__body) {
-  background-color: rgba(var(--v-theme-primary), 0.06);
-}
-
-.qc-session-list__item--viewed :deep(.v-timeline-item__body) {
-  background-color: rgba(var(--v-theme-primary), 0.12);
-  border-color: rgba(var(--v-theme-primary), 0.4);
-}
 </style>

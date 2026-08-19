@@ -414,14 +414,14 @@ The header carries the count chip and four icon buttons (left to right): **undo*
 
 The body shows:
 
-- A baseline **Data loaded** row at the top, carrying a plot-this-step button, a **reload-from-this-step** button that returns the plot to the state the session started from, and a **discard-edits-and-reload-from-server** button (cloud icon). The cloud button is hidden on a committed session, where there are no edits to discard.
+- A baseline **Data loaded** row at the top, carrying a plot-this-step button and a **discard-edits-and-reload-from-server** button (cloud icon). Clicking the row returns the plot to the state the session started from. The cloud button is hidden on a committed session, where there are no edits to discard.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
   - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
   - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
-  - A **reload-from-this-step** button that replays history up to but not including this entry.
+  - Clicking the row itself replays history up to that step. Steps after the one on screen are dimmed, since they were not replayed and so are recorded but not reflected in the plot. Replaying re-measures each step's duration but keeps its comment and attribution.
   - An **undo** button on the trailing entry only (older entries are undone via Reload-from-this-step).
 - A chevron toggles an inline "Arguments" drawer that shows the raw qc-utils call arguments.
 
@@ -442,7 +442,7 @@ managed datastream while you were editing, or the source is still ingesting
 data and you want the new points. The memory replay can never surface either,
 because it faithfully restores the copy you started with.
 
-Below the body sits the session action bar: **Save**, **Commit**, and **Close** (see [Submit](#submit-save--commit--close)). It stays put when the panel is collapsed, so the actions are always one click away.
+Below the body sits the session action bar (see [Submit](#submit-save--commit--close)). It stays put when the panel is collapsed, so the actions are always one click away. While a session is open it carries **Save**, **Discard**, and **Commit**; once you commit, those are replaced by **New session**, which opens the next one over the current time range without a trip back to the Select view. **Close** is always there.
 
 Clicking the chevron at the very top of the panel collapses the body; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar. The modal shows the history only, not the session actions.
 
@@ -470,6 +470,27 @@ Things worth knowing:
 - Snapshots travel in the share link, so a link reproduces the comparison.
   Each one replays on load, so a link carrying several is slower to open.
 - Leaving the editor for the Select view drops every snapshot.
+
+## Deleting a session
+
+The **Start editing** chooser shows every session on a managed datastream as a
+timeline, oldest first, each with a trash icon. Both in-progress and committed
+sessions can be deleted. When no session is open, the timeline is headed by a
+**Start new session** node.
+
+Sessions build on each other: a session started after a commit records that it
+began from that commit's result. Deleting a session therefore also deletes
+every session built on top of it, since those describe edits to data that would
+no longer exist. Hovering the trash icon says how far the delete reaches.
+
+The confirmation dialog names every session that will go, marks the one you
+picked, and orders them newest first, which is the order they are removed in.
+When the delete reaches beyond the session you picked, you also have to tick a
+box acknowledging the count. **None of this can be undone.**
+
+If the server rejects a delete part-way through a chain, the sessions already
+removed stay removed. The error says how many, and the chooser reloads so the
+list reflects what actually survived.
 
 ## Save / load a QC history
 
@@ -512,6 +533,8 @@ When you're satisfied with the edits, hit one of the action buttons at the botto
 
 - **Save**: writes the session's operations to the backend as a draft and keeps you in the Edit view.
 - **Commit**: materializes the session into the managed datastream and locks it into the history.
+- **Discard**: drops every edit made since the last save, returning the session to its last saved state. Edits already saved to the session stay. Disabled when there is nothing unsaved, and it asks for confirmation first.
+- **New session**: replaces Save and Commit once the session is committed. Opens a new session over the current time range, starting from the state the last commit left behind.
 - **Close**: leaves the editor. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
 
 Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.

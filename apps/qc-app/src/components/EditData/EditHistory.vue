@@ -127,6 +127,14 @@
           <div class="rounded border bg-surface overflow-hidden">
       <div
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
+        :class="{ 'edit-history__row--clickable': canStepTo }"
+        :role="canStepTo ? 'button' : undefined"
+        :tabindex="canStepTo ? 0 : undefined"
+        data-testid="history-reload-step-baseline"
+        :title="canStepTo ? `Reload the session's starting state` : undefined"
+        @click="onRowReload(SNAPSHOT_BASELINE_INDEX)"
+        @keydown.enter.prevent="onRowReload(SNAPSHOT_BASELINE_INDEX)"
+        @keydown.space.prevent="onRowReload(SNAPSHOT_BASELINE_INDEX)"
       >
         <v-icon
           :icon="
@@ -191,23 +199,7 @@
                 snapshotShown(SNAPSHOT_BASELINE_INDEX) ? 'primary' : undefined
               "
               :disabled="isBuilding"
-              @click="onToggleSnapshot(SNAPSHOT_BASELINE_INDEX)"
-            />
-          </template>
-        </v-tooltip>
-
-        <v-tooltip location="start" text="Reload from this step">
-          <template #activator="{ props: tp }">
-            <v-btn
-              v-bind="tp"
-              data-testid="history-reload-step-baseline"
-              aria-label="Reload from this step"
-              size="x-small"
-              variant="text"
-              density="comfortable"
-              icon="mdi-reload"
-              :disabled="isUpdating || !editCount"
-              @click="onReloadHistory(SNAPSHOT_BASELINE_INDEX)"
+              @click.stop="onToggleSnapshot(SNAPSHOT_BASELINE_INDEX)"
             />
           </template>
         </v-tooltip>
@@ -229,7 +221,7 @@
               density="comfortable"
               icon="mdi-cloud-download-outline"
               :disabled="isUpdating"
-              @click="onReload"
+              @click.stop="onReload"
             />
           </template>
         </v-tooltip>
@@ -268,7 +260,19 @@
               'edit-history__row--loading': entry.execution?.inFlight,
               'edit-history__row--open': openIndex === index,
               'edit-history__row--loaded': shownStepIndex === index,
+              'edit-history__row--unapplied': !isApplied(index),
+              'edit-history__row--clickable': canStepTo,
             }"
+            :role="canStepTo ? 'button' : undefined"
+            :tabindex="canStepTo ? 0 : undefined"
+            :title="
+              isApplied(index)
+                ? 'Reload from this step'
+                : 'Not applied in the step currently shown. Click to reload from here.'
+            "
+            @click="onRowReload(index)"
+            @keydown.enter.prevent="onRowReload(index)"
+            @keydown.space.prevent="onRowReload(index)"
           >
             <button
               type="button"
@@ -278,7 +282,7 @@
                 openIndex === index ? 'Collapse' : 'Expand arguments'
               "
               :aria-expanded="openIndex === index"
-              @click="toggle(index)"
+              @click.stop="toggle(index)"
             >
               <v-icon
                 :icon="
@@ -389,21 +393,7 @@
                     "
                     :color="snapshotShown(index) ? 'primary' : undefined"
                     :disabled="isBuilding || entry.execution?.inFlight"
-                    @click="onToggleSnapshot(index)"
-                  />
-                </template>
-              </v-tooltip>
-
-              <v-tooltip location="start" text="Reload from this step">
-                <template #activator="{ props: tp }">
-                  <v-btn
-                    v-bind="tp"
-                    size="x-small"
-                    variant="text"
-                    density="comfortable"
-                    icon="mdi-reload"
-                    :disabled="isUpdating || entry.execution?.inFlight"
-                    @click="onReloadHistory(index)"
+                    @click.stop="onToggleSnapshot(index)"
                   />
                 </template>
               </v-tooltip>
@@ -426,7 +416,7 @@
                     icon="mdi-undo-variant"
                     color="error"
                     :disabled="isUpdating"
-                    @click="onUndo"
+                    @click.stop="onUndo"
                   />
                 </template>
               </v-tooltip>
@@ -514,10 +504,15 @@
          collapsed. -->
     <div
       v-if="$slots.footer"
-      class="edit-history__footer flex-shrink-0 d-flex align-center flex-wrap ga-1 px-2 pb-2"
+      class="edit-history__footer flex-shrink-0 px-2 pb-2"
       :class="isCollapsed ? 'pt-2' : 'pt-0'"
     >
-      <slot name="footer" />
+      <!-- Same container treatment as the session rows above. -->
+      <div
+        class="rounded border bg-surface d-flex align-center flex-wrap ga-2 px-2 py-2"
+      >
+        <slot name="footer" />
+      </div>
     </div>
   </div>
 </template>
@@ -631,6 +626,16 @@ const canUndo = computed(
 const canRedo = computed(
   () => (selectedSeries.value?.data.redoStack?.length ?? 0) > 0
 )
+
+/** Stepping needs something to replay and a settled dispatch. */
+const canStepTo = computed(() => !isUpdating.value && editCount.value > 0)
+
+/** Row click / Enter / Space: replay to that step. */
+const onRowReload = (index: number) => {
+  if (!canStepTo.value) return
+  if (index >= 0 && editHistory.value[index]?.execution?.inFlight) return
+  onReloadHistory(index)
+}
 
 function toggle(index: number) {
   openIndex.value = openIndex.value === index ? null : index
@@ -869,6 +874,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   background-color: rgba(var(--v-theme-primary), 0.04);
 }
 
+.edit-history__row--clickable {
+  cursor: pointer;
+}
+
+.edit-history__row--clickable:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+}
+
 .edit-history__row--loaded {
   background-color: rgba(var(--v-theme-primary), 0.1);
   box-shadow: inset 3px 0 0 0 rgb(var(--v-theme-primary));
@@ -884,6 +898,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .edit-history__row--loading {
   opacity: 0.75;
+}
+
+/* Steps past the one on screen were not replayed, so they are dimmed to
+   separate what the plot reflects from what is merely recorded. */
+.edit-history__row--unapplied {
+  opacity: 0.45;
 }
 
 .edit-history__expand {

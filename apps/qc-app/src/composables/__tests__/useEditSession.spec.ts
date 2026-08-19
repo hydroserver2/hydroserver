@@ -58,6 +58,11 @@ const makeRecord = (history: any[] = []) => ({
   dataX: [Date.UTC(2025, 0, 1)],
   dataY: [10],
   reload: vi.fn(async () => {}),
+  // Stands in for qc-utils: truncate to `0..index` and hand back a selection.
+  reloadHistory: vi.fn(async function (this: any, index: number) {
+    history.splice(index + 1)
+    return []
+  }),
 })
 
 let qc: ReturnType<typeof makeQcFake>
@@ -289,6 +294,52 @@ describe('useEditSession', () => {
 
     const store = useQcSessionStore()
     expect(store.committedSessions[0]?.description).toBe('Reviewed January spike')
+  })
+})
+
+describe('useEditSession.discardUnsavedEdits', () => {
+  it('drops edits added since the last save', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    const { discardUnsavedEdits, hasUnsavedChanges } = session
+    await session.beginEditing()
+    await session.startSession(WIN)
+
+    const record = selectedSeries.value.data
+    record.history.push({ method: 'DELETE_POINTS', args: [] })
+    expect(hasUnsavedChanges.value).toBe(true)
+
+    await discardUnsavedEdits()
+
+    expect(record.history).toHaveLength(0)
+    expect(hasUnsavedChanges.value).toBe(false)
+  })
+
+  it('puts a comment edited in place back to its saved text', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    const { saveDraft, discardUnsavedEdits, hasUnsavedChanges } = session
+    await session.beginEditing()
+    await session.startSession(WIN)
+
+    const record = selectedSeries.value.data
+    record.history.push({
+      method: 'DELETE_POINTS',
+      args: [],
+      comment: 'the saved reason',
+    })
+    await saveDraft()
+    expect(hasUnsavedChanges.value).toBe(false)
+
+    record.history[0].comment = 'an unsaved rewrite'
+    expect(hasUnsavedChanges.value).toBe(true)
+
+    await discardUnsavedEdits()
+
+    expect(record.history[0].comment).toBe('the saved reason')
+    expect(hasUnsavedChanges.value).toBe(false)
   })
 })
 

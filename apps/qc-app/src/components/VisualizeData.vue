@@ -293,37 +293,72 @@
               @view-session="onViewSession"
             >
               <template #footer>
+                <!-- Committing ends the session, so the footer swaps Save and
+                     Commit for the one action left: opening the next one. -->
+                <template v-if="inProgressSession">
+                  <v-btn
+                    data-testid="exit-save-btn"
+                    size="small"
+                    variant="flat"
+                    color="primary"
+                    prepend-icon="mdi-content-save-outline"
+                    :disabled="saveDisabled"
+                    :loading="isSavingDraft"
+                    @click="onSaveDraft"
+                  >
+                    Save
+                  </v-btn>
+                  <v-btn
+                    data-testid="exit-discard-btn"
+                    size="small"
+                    variant="tonal"
+                    color="error"
+                    prepend-icon="mdi-backup-restore"
+                    :disabled="!hasUnsavedChanges || isUpdating || isSavingDraft || isCommitting"
+                    :loading="isDiscarding"
+                    title="Drop every edit made since the last save"
+                    @click="showDiscardConfirm = true"
+                  >
+                    Discard
+                  </v-btn>
+                  <v-btn
+                    data-testid="exit-commit-btn"
+                    size="small"
+                    variant="flat"
+                    color="success"
+                    prepend-icon="mdi-cloud-check-outline"
+                    :disabled="commitDisabled"
+                    :loading="isCommitting"
+                    @click="openCommit"
+                  >
+                    Commit
+                  </v-btn>
+                </template>
                 <v-btn
-                  data-testid="exit-save-btn"
+                  v-else
+                  data-testid="exit-new-session-btn"
                   size="small"
                   variant="flat"
                   color="primary"
-                  prepend-icon="mdi-content-save-outline"
-                  :disabled="saveDisabled"
-                  :loading="isSavingDraft"
-                  @click="onSaveDraft"
+                  prepend-icon="mdi-plus"
+                  :disabled="!canEditWorkspace || isStartingSession"
+                  :loading="isStartingSession"
+                  :title="
+                    canEditWorkspace
+                      ? 'Start a new session over the current time range'
+                      : `Your role on this workspace (${workspaceRole}) is read-only.`
+                  "
+                  @click="startSessionForWindow"
                 >
-                  Save
-                </v-btn>
-                <v-btn
-                  data-testid="exit-commit-btn"
-                  size="small"
-                  variant="flat"
-                  color="success"
-                  prepend-icon="mdi-cloud-check-outline"
-                  :disabled="commitDisabled"
-                  :loading="isCommitting"
-                  @click="openCommit"
-                >
-                  Commit
+                  New session
                 </v-btn>
                 <v-spacer />
                 <v-btn
                   data-testid="exit-close-btn"
                   size="small"
-                  variant="text"
+                  variant="tonal"
                   prepend-icon="mdi-close"
-                  :disabled="isSavingDraft || isCommitting"
+                  :disabled="isSavingDraft || isCommitting || isStartingSession"
                   @click="requestClose"
                 >
                   Close
@@ -383,9 +418,9 @@
           </div>
         </div>
         <v-card-text class="text-body-medium pt-2 pb-4 px-6">
-          The source data's integrity is verified, then the edited observations
+          If the source data hasn't changed since you started, your edits
           <strong>replace</strong> the managed datastream over this session's
-          range and the session is locked into the history.
+          range. The session then becomes read-only.
         </v-card-text>
         <div class="px-6 pb-2">
           <v-textarea
@@ -410,6 +445,42 @@
             @click="onCommit"
           >
             Commit
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showDiscardConfirm" max-width="520">
+      <v-card rounded="lg">
+        <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
+          <v-avatar color="error" variant="tonal" size="40">
+            <v-icon icon="mdi-backup-restore" size="22" />
+          </v-avatar>
+          <div class="d-flex flex-column">
+            <div class="text-title-large font-weight-bold">Discard unsaved edits?</div>
+            <div class="text-body-small text-medium-emphasis">
+              {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
+              since the last save
+            </div>
+          </div>
+        </div>
+        <v-card-text class="text-body-medium pt-2 pb-4 px-6">
+          The session returns to its last saved state. Edits already saved to
+          the session stay. This cannot be undone.
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
+          <v-btn variant="text" @click="showDiscardConfirm = false">Cancel</v-btn>
+          <v-spacer />
+          <v-btn
+            color="error"
+            variant="flat"
+            prepend-icon="mdi-backup-restore"
+            data-testid="confirm-discard-btn"
+            :loading="isDiscarding"
+            @click="onDiscardUnsaved"
+          >
+            Discard edits
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -489,6 +560,7 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useProcessingLevels } from '@/composables/useProcessingLevels'
 import type { Datastream } from '@hydroserver/client'
 import { Snackbar } from '@uwrl/qc-utils'
+import { collectDeletionChain } from '@/utils/sessionGraph'
 import {
   decodeShareState,
   encodeShareState,
@@ -543,6 +615,7 @@ const {
   beginEditing,
   startSession,
   saveDraft,
+  discardUnsavedEdits,
   commit,
   needsSession,
   needsHistory,
@@ -583,7 +656,8 @@ const { create: createManaged } = useCreateManagedDatastream()
 const qcPreferences = useQcPreferencesStore()
 const { canEdit, canCreateDatastream, roleName } = useWorkspacePermissions()
 const { createProcessingLevel } = useProcessingLevels()
-const { loadForSource, deleteManaged, deleteSession } = useManagedDatastreams()
+const { loadForSource, deleteManaged, deleteSessionChain } =
+  useManagedDatastreams()
 
 // Permission gating: QC editing writes to the selected workspace (creates
 // the managed datastream, pushes observations). Gate the editor entry
@@ -605,6 +679,9 @@ const chooserSource = ref<Datastream | null>(null)
 const isSavingDraft = ref(false)
 const isCommitting = ref(false)
 const isCreating = ref(false)
+const isStartingSession = ref(false)
+const isDiscarding = ref(false)
+const showDiscardConfirm = ref(false)
 
 const saveDisabled = computed(
   () =>
@@ -717,7 +794,24 @@ function exitToSelect() {
 
 // No in-progress session yet: open one over the window already chosen by the
 // time-range controls in the Select view, rather than prompting for it again.
+async function onDiscardUnsaved() {
+  showDiscardConfirm.value = false
+  isDiscarding.value = true
+  try {
+    await discardUnsavedEdits()
+    await redraw()
+    Snackbar.success('Unsaved edits discarded.')
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not discard the edits.'
+    )
+  } finally {
+    isDiscarding.value = false
+  }
+}
+
 async function startSessionForWindow() {
+  isStartingSession.value = true
   try {
     await startSession({
       phenomenonTimeStart: beginDate.value.toISOString(),
@@ -727,6 +821,8 @@ async function startSessionForWindow() {
     Snackbar.success('Edit session started.')
   } catch (e) {
     Snackbar.error(e instanceof Error ? e.message : 'Could not start the session.')
+  } finally {
+    isStartingSession.value = false
   }
 }
 
@@ -1107,16 +1203,29 @@ async function onChooserDeleteSession(
   sessionId: string
 ) {
   try {
-    await deleteSession(option.historyId, sessionId)
+    // Same input the confirmation previewed, so the two cannot disagree.
+    const deleted = await deleteSessionChain(
+      option.historyId,
+      collectDeletionChain(option.sessions, sessionId)
+    )
+    const gone = new Set(deleted)
     chooserOptions.value = chooserOptions.value.map((o) =>
       o.historyId === option.historyId
-        ? { ...o, sessions: o.sessions.filter((s) => s.id !== sessionId) }
+        ? { ...o, sessions: o.sessions.filter((s) => !gone.has(s.id)) }
         : o
     )
-    Snackbar.success('Session discarded.')
+    Snackbar.success(
+      deleted.length === 1
+        ? 'Session deleted.'
+        : `${deleted.length} sessions deleted.`
+    )
   } catch (e) {
+    // Refresh regardless: a partial cascade leaves the chooser's copy wrong.
+    if (chooserSource.value) {
+      chooserOptions.value = await loadForSource(chooserSource.value.id)
+    }
     Snackbar.error(
-      e instanceof Error ? e.message : 'Could not discard the session.'
+      e instanceof Error ? e.message : 'Could not delete the session.'
     )
   }
 }
