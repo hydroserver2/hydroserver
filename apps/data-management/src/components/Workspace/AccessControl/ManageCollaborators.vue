@@ -1129,7 +1129,7 @@ watch(search, (value) => {
 }
 .collaborator-filter-search :deep(.v-field__prepend-inner > .v-icon) {
   width: 16px;
-  font-size: 16px;
+  font-size: var(--hs-font-md);
   color: var(--hs-input-border);
   opacity: 1;
 }

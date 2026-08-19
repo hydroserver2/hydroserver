@@ -1365,6 +1365,27 @@ onMounted(async () => {
   height: 100%;
   min-height: 0;
 }
+.detail-window--table :deep(.service-accounts-section),
+.detail-window--table :deep(.metadata-section) {
+  height: auto;
+  max-height: 100%;
+  overflow: hidden;
+}
+.detail-window--table :deep(.service-accounts-table-card),
+.detail-window--table :deep(.metadata-table-frame),
+.detail-window--table :deep(.metadata-table-card) {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 100%;
+}
+.detail-window--table :deep(.service-accounts-data-table),
+.detail-window--table :deep(.metadata-window),
+.detail-window--table :deep(.metadata-window .v-data-table) {
+  flex: 0 1 auto;
+  height: auto !important;
+  max-height: 100%;
+  overflow: auto;
+}
 .workspace-id-cell {
   overflow-wrap: anywhere;
 }
