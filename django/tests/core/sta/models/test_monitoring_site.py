@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -25,6 +26,41 @@ def test_file_attachment_link_uses_local_media_proxy(settings):
     )
 
     assert attachment.link == "https://hydro.example.com/media/photo.png"
+
+
+# --- tags validation ---------------------------------------------------------------
+
+
+def test_full_clean_rejects_non_dict_tags():
+    monitoring_site = MonitoringSiteFactory(tags={"season": "summer"})
+    monitoring_site.tags = ["season", "summer"]
+
+    with pytest.raises(ValidationError):
+        monitoring_site.full_clean()
+
+
+def test_full_clean_rejects_non_string_tag_values():
+    monitoring_site = MonitoringSiteFactory()
+    monitoring_site.tags = {"count": 1}
+
+    with pytest.raises(ValidationError):
+        monitoring_site.full_clean()
+
+
+def test_full_clean_rejects_empty_tag_key():
+    monitoring_site = MonitoringSiteFactory()
+    monitoring_site.tags = {"": "summer"}
+
+    with pytest.raises(ValidationError):
+        monitoring_site.full_clean()
+
+
+def test_full_clean_rejects_empty_tag_value():
+    monitoring_site = MonitoringSiteFactory()
+    monitoring_site.tags = {"season": ""}
+
+    with pytest.raises(ValidationError):
+        monitoring_site.full_clean()
 
 
 # --- delete() --------------------------------------------------------------------

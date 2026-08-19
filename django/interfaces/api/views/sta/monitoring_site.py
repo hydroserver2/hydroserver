@@ -20,9 +20,6 @@ from interfaces.api.schemas import (
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
-    TagGetResponse,
-    TagPostBody,
-    TagDeleteBody,
     FileAttachmentQueryParameters,
     FileAttachmentGetResponse,
     FileAttachmentPostBody,
@@ -306,105 +303,6 @@ def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: 
     """
 
     return 204, monitoring_site_service.delete(principal=request.principal, uid=monitoring_site_id)
-
-
-@monitoring_site_router.get(
-    "/{monitoring_site_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
-    response={
-        200: list[TagGetResponse],
-        401: str,
-        403: str,
-    },
-    by_alias=True,
-)
-def get_monitoring_site_tags(request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID]):
-    """
-    Get all tags associated with a MonitoringSite.
-    """
-
-    return 200, monitoring_site_service.get_tags(
-        principal=request.principal,
-        uid=monitoring_site_id,
-    )
-
-
-@monitoring_site_router.post(
-    "/{monitoring_site_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        201: TagGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def add_monitoring_site_tag(
-    request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID], data: TagPostBody
-):
-    """
-    Add a tag to a MonitoringSite.
-    """
-
-    return 201, monitoring_site_service.add_tag(
-        principal=request.principal,
-        uid=monitoring_site_id,
-        data=data,
-    )
-
-
-@monitoring_site_router.put(
-    "/{monitoring_site_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        200: TagGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def edit_monitoring_site_tag(
-    request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID], data: TagPostBody
-):
-    """
-    Edit a tag of a MonitoringSite.
-    """
-
-    return 200, monitoring_site_service.update_tag(
-        principal=request.principal,
-        uid=monitoring_site_id,
-        data=data,
-    )
-
-
-@monitoring_site_router.delete(
-    "/{monitoring_site_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        204: None,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def remove_monitoring_site_tag(
-    request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID], data: TagDeleteBody
-):
-    """
-    Remove a tag from a MonitoringSite.
-    """
-
-    return 204, monitoring_site_service.remove_tag(
-        principal=request.principal,
-        uid=monitoring_site_id,
-        data=data,
-    )
 
 
 @monitoring_site_router.get(

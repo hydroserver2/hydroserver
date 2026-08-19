@@ -14,12 +14,10 @@ from core.iam.models import (
     WorkspaceTransferConfirmation,
 )
 from core.sta.models import (
-    DatastreamTag,
     ObservedProperty,
     ProcessingLevel,
     ResultQualifier,
     Method,
-    MonitoringSiteTag,
     Unit,
 )
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
@@ -122,9 +120,7 @@ def _datastream(
         phenomenon_end_time=end,
         is_private=private,
         is_visible=True,
-    )
-    DatastreamTag.objects.create(
-        datastream=datastream, key=f"E2E {marker}", value="Scenario"
+        tags={f"E2E {marker}": "Scenario"},
     )
     return datastream
 
@@ -353,9 +349,8 @@ def create_scenario(scenario_key):
         latitude=41.741111,
         longitude=-111.805555,
     )
-    MonitoringSiteTag.objects.create(
-        monitoring_site=mutable_public_monitoring_site, key="E2E", value="Mutable"
-    )
+    mutable_public_monitoring_site.tags = {"E2E": "Mutable"}
+    mutable_public_monitoring_site.save()
 
     public_metadata = _metadata(public_workspace, marker, "Public")
     private_metadata = _metadata(private_workspace, marker, "Private")

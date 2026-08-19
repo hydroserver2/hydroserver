@@ -29,9 +29,10 @@ export interface GraphSeries {
 
 export type TimeSpacingUnit = 'seconds' | 'minutes' | 'hours' | 'days'
 
-export interface Tag {
-  key: string
-  value: string
+export type Tags = Record<string, string>
+
+export function getTagValue(tags: Tags, key: string): string | undefined {
+  return Object.hasOwn(tags, key) ? tags[key] : undefined
 }
 
 export type Frequency = 'daily' | 'weekly' | 'monthly' | null
@@ -73,7 +74,7 @@ export class MonitoringSite {
   id: string
   workspaceId: string
   name: string
-  tags: Tag[]
+  tags: Tags
   hydroShareArchive?: HydroShareArchive | null
   type: string
   code: string
@@ -92,7 +93,7 @@ export class MonitoringSite {
     this.id = ''
     this.workspaceId = ''
     this.name = ''
-    this.tags = []
+    this.tags = {}
     this.type = ''
     this.code = ''
     this.elevationDatum = 'WGS84'
@@ -130,6 +131,7 @@ export class Datastream {
   timeAggregationInterval: number | null
   timeAggregationIntervalUnit: TimeSpacingUnit
   valueCount: number
+  tags: Tags
 
   constructor(monitoringSiteId?: string) {
     this.id = ''
@@ -151,6 +153,7 @@ export class Datastream {
     this.isPrivate = true
     this.isVisible = true
     this.valueCount = 0
+    this.tags = {}
   }
 }
 
@@ -457,7 +460,7 @@ export interface SiteTypeIcon {
 
 export interface MonitoringSiteMapSummary extends MonitoringSiteMarker {
   code: string
-  tags: Tag[]
+  tags: Tags
 }
 
 export interface MonitoringSiteTaskSummary {

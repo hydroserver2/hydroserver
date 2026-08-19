@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-card class="datastream-info-card" rounded="lg">
     <v-toolbar flat color="primary" density="comfortable">
       <v-icon icon="mdi-database-outline" class="ms-4 me-2" />
@@ -101,19 +101,19 @@
             <MetadataList :items="generalItems">
               <template #value="{ item }">
                 <template v-if="item.label === 'Tags'">
-                  <span v-if="!(item.value as any[])?.length" class="text-medium-emphasis">
+                  <span v-if="!Object.keys(item.value as Tags).length" class="text-medium-emphasis">
                     No tags
                   </span>
                   <div v-else class="d-flex flex-wrap ga-1 mt-1">
                     <v-chip
-                      v-for="(tag, i) in (item.value as Tag[])"
-                      :key="`${tag.key}-${i}`"
+                      v-for="[key, value] in Object.entries(item.value as Tags)"
+                      :key="key"
                       size="small"
                       color="blue-grey-lighten-4"
                       variant="flat"
                       class="tag-chip"
                     >
-                      <strong>{{ tag.key }}</strong>:&nbsp;{{ tag.value }}
+                      <strong>{{ key }}</strong>:&nbsp;{{ value }}
                     </v-chip>
                   </div>
                 </template>
@@ -213,17 +213,14 @@
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, h } from 'vue'
+import { computed, ref, h } from 'vue'
 import {
   Datastream,
   type DatastreamExtended,
-  type Tag,
+  type Tags,
 } from '@hydroserver/client'
-import { useHydroServer } from '@/store/hydroserver'
 import { formatTimeWithZone } from '@/utils/time'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
-
-const { hs } = storeToRefs(useHydroServer())
 
 const props = defineProps({
   datastream: {
@@ -241,7 +238,7 @@ const {
 } = storeToRefs(useDataVisStore())
 const { plotDatastream, setPlottedDatastreams } = useDataVisStore()
 const downloading = ref(false)
-const tags = ref<Tag[]>([])
+const tags = computed<Tags>(() => props.datastream.tags ?? {})
 const expandedPanels = ref<string[]>(['general'])
 
 function filterBySite() {
@@ -403,21 +400,6 @@ const processingLevelItems = computed(() => {
   ]
 })
 
-onMounted(async () => {
-  // Tags are not returned by expand_related; fetch separately.
-  const existing = (d.value as any).tags
-  if (Array.isArray(existing)) {
-    tags.value = existing
-    return
-  }
-  try {
-    const res = await hs.value.datastreams.getTags(d.value.id)
-    tags.value = res.ok && Array.isArray(res.data) ? res.data : []
-  } catch (error) {
-    console.error('Error fetching datastream tags', error)
-    tags.value = []
-  }
-})
 </script>
 
 <style scoped lang="scss">

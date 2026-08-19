@@ -42,7 +42,6 @@ from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
-    TagGetResponse,
     FileAttachmentGetResponse,
 )
 from interfaces.api.schemas.sta.observed_property import (
@@ -103,9 +102,6 @@ from interfaces.api.schemas.sta.observation import (
 )
 from interfaces.api.schemas.sta.attachment import (
     FileAttachmentQueryParameters,
-    TagGetResponse,
-    TagPostBody,
-    TagDeleteBody,
     FileAttachmentGetResponse,
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,

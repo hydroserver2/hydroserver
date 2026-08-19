@@ -63,7 +63,7 @@ class RatingCurveService(HydroServerBaseService):
         name: str,
         fitting_method: Literal["linear", "power_law"],
         points: List[tuple],
-        description: Optional[str] = None,
+        description: Optional[str] = ...,
     ) -> RatingCurve:
         """Update a rating curve."""
 

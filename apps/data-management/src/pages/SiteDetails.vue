@@ -450,20 +450,16 @@ onMounted(async () => {
     console.error('Error fetching rating curves from DB', error)
   )
 
-  const [monitoringSiteResponse, tagResponse] = await Promise.all([
-    hs.monitoringSites.getItem(monitoringSiteId).catch((error: any) => {
+  const monitoringSiteResponse = await hs.monitoringSites
+    .getItem(monitoringSiteId)
+    .catch((error: any) => {
       if (parseInt(error.status) === 403) authorized.value = false
       else console.error('Error fetching monitoringSite', error)
 
       return null
-    }),
-    hs.monitoringSites.getTags(monitoringSiteId).catch((error) => {
-      console.error('Error fetching additional metadata tags', error)
-      return null
-    }),
-  ])
+    })
 
-  tags.value = tagResponse?.ok ? tagResponse.data : []
+  tags.value = monitoringSiteResponse?.tags ?? {}
   monitoringSite.value = monitoringSiteResponse ?? undefined
   try {
     workspace.value =
