@@ -1165,6 +1165,10 @@ onMounted(async () => {
   color: var(--hs-text-secondary);
   opacity: 1;
 }
+.sidebar-search-input:focus {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
+}
 :deep(.metadata-search-input) {
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-regular);
