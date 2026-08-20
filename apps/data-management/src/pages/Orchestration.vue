@@ -570,17 +570,63 @@ const visibleTasks = computed<TaskRow[]>(() => {
   return activeTaskRows.value.filter((t) => t.monitoringSiteId === selectedMonitoringSiteId.value)
 })
 
+const TASK_QUALIFIER_PATTERN = /(status|name):(?:"([^"]*)"|(\S+))/gi
+
+function parseTaskQuery(raw: string) {
+  const statuses: string[] = []
+  const names: string[] = []
+  const textParts: string[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  TASK_QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = TASK_QUALIFIER_PATTERN.exec(raw))) {
+    textParts.push(raw.slice(lastIndex, match.index))
+    const key = match[1].toLowerCase()
+    const value = (match[2] ?? match[3] ?? '').trim()
+    if (value) (key === 'status' ? statuses : names).push(value)
+    lastIndex = TASK_QUALIFIER_PATTERN.lastIndex
+  }
+  textParts.push(raw.slice(lastIndex))
+
+  return {
+    statuses,
+    names,
+    text: textParts.join(' ').replace(/\s+/g, ' ').trim(),
+  }
+}
+
 const searchedVisibleTasks = computed<TaskRow[]>(() => {
-  const term = orchestrationSearch.value.trim().toLowerCase()
+  const parsedQuery = parseTaskQuery(orchestrationSearch.value)
+  const term = parsedQuery.text.toLowerCase()
   const filters = new Set(orchestrationStatusFilter.value)
   const taskTypeFilters = new Set(orchestrationTaskTypeFilter.value)
+  const queryStatuses = new Set(
+    parsedQuery.statuses.map((value) => value.toLowerCase())
+  )
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
       const bucket = t.statusSort ?? 'Unknown'
       if (!filters.has(bucket)) return false
     }
+    if (
+      queryStatuses.size > 0 &&
+      !queryStatuses.has((t.statusSort ?? 'Unknown').toLowerCase())
+    ) {
+      return false
+    }
     if (activeTab.value === 'aggregation' && taskTypeFilters.size > 0) {
       if (!t.taskType || !taskTypeFilters.has(t.taskType)) return false
+    }
+    if (parsedQuery.names.length > 0) {
+      const taskName = (t.name ?? '').toLowerCase()
+      if (
+        !parsedQuery.names.some((name) =>
+          taskName.includes(name.toLowerCase())
+        )
+      ) {
+        return false
+      }
     }
     if (!term) return true
     const haystack = [

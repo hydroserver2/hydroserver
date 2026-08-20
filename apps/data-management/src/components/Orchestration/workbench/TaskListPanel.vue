@@ -118,7 +118,7 @@
         />
         <input
           :value="taskSearch"
-          placeholder="Search tasks…"
+          placeholder="Search tasks… (status:Pending)"
           class="workspace-table-search-input hs-text-sm"
           aria-label="Search tasks"
           autocomplete="off"
@@ -127,6 +127,7 @@
         />
       </div>
       <v-autocomplete
+        v-if="activeTab !== 'ingestion'"
         :model-value="statusFilter"
         :items="STATUS_OPTIONS"
         item-title="title"
@@ -266,9 +267,71 @@
         multi-sort
         fixed-header
         hover
-        class="tasks-table hs-text-sm"
+        class="tasks-table hs-table-card hs-text-sm"
         density="compact"
       >
+        <template #header.name>
+          <span v-if="activeTab !== 'ingestion'">Task name</span>
+        </template>
+
+        <template #header.statusSort>
+          <v-menu
+            v-if="activeTab === 'ingestion'"
+            :close-on-content-click="false"
+            location="bottom start"
+            attach="body"
+          >
+            <template #activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                variant="text"
+                size="small"
+                class="task-filter-button"
+                :class="{ 'task-filter-button--active': statusFilter.length }"
+                :append-icon="mdiChevronDown"
+                :aria-label="`Filter by status${statusFilter.length ? ` (${statusFilter.length} selected)` : ''}`"
+              >
+                Status
+                <span v-if="statusFilter.length" class="filter-count">
+                  {{ statusFilter.length }}
+                </span>
+              </v-btn>
+            </template>
+            <v-list class="task-filter-menu" density="compact">
+              <div class="task-filter-title">Filter by status</div>
+              <v-list-item
+                v-for="status in STATUS_OPTIONS"
+                :key="status.value"
+                :class="{
+                  'task-filter-option--selected': statusFilter.includes(status.value),
+                }"
+                @click="toggleStatusFilter(status.value)"
+              >
+                <v-list-item-title class="task-status-option">
+                  <v-icon
+                    :icon="statusIcon(status.value)"
+                    size="18"
+                    :style="{ color: statusIconColor(status.value) }"
+                  />
+                  <span>{{ status.title }}</span>
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item
+                v-if="statusFilter.length"
+                class="filter-clear-item"
+                @click="statusFilter = []"
+              >
+                <v-list-item-title>Clear filter</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          <span v-else>Status</span>
+        </template>
+
+        <template #header.actions>
+          <span v-if="activeTab !== 'ingestion'">Actions</span>
+        </template>
+
         <template #item.name="{ item }">
           <span class="task-name font-weight-medium">{{ item.name || '—' }}</span>
         </template>
@@ -538,6 +601,7 @@ import { storeToRefs } from 'pinia'
 import {
   mdiAlert,
   mdiAlertCircleOutline,
+  mdiChevronDown,
   mdiChevronRight,
   mdiCheckCircleOutline,
   mdiClockAlertOutline,
@@ -607,9 +671,17 @@ const accent = computed(() =>
 const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
 const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
 const tableHeaders = computed(() => {
-  const headers = [{ title: 'Task name', key: 'name' }]
+  const headers = [
+    {
+      title: activeTab.value === 'ingestion' ? '' : 'Task name',
+      key: 'name',
+    },
+  ]
 
-  headers.push({ title: 'Status', key: 'statusSort' })
+  headers.push({
+    title: activeTab.value === 'ingestion' ? '' : 'Status',
+    key: 'statusSort',
+  })
 
   if (activeTab.value === 'aggregation') {
     headers.push({ title: 'Type', key: 'taskType' })
@@ -623,7 +695,7 @@ const tableHeaders = computed(() => {
   }
 
   headers.push({
-    title: 'Actions',
+    title: activeTab.value === 'ingestion' ? '' : 'Actions',
     key: 'actions',
     align: 'end',
     sortable: false,
@@ -824,6 +896,32 @@ const pauseTooltipText = (item: TaskRow) => {
 }
 .tasks-table :deep(thead tr) {
   border-bottom: 2px solid #ebebeb;
+}
+.task-filter-button {
+  min-width: auto;
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+.task-filter-button--active {
+  color: rgb(var(--v-theme-primary));
+}
+.task-filter-menu {
+  min-width: 240px;
+  padding: var(--hs-space-8) 0;
+}
+.task-filter-title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+}
+.task-status-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+}
+.task-filter-option--selected {
+  background: var(--hs-surface-muted);
 }
 .tasks-table :deep(th) {
   /* No template element to hang an hs-text-* or font-weight-* class on
