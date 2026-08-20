@@ -1,9 +1,14 @@
 <template>
+  <v-skeleton-loader
+    v-if="isLoading"
+    type="table"
+    class="metadata-table-loading-skeleton"
+  />
   <v-data-table-virtual
+    v-else
     :headers="UnitHeaders"
     :items="sortedItems"
     :search="search"
-    height="100%"
     fixed-header
   >
     <template v-slot:item.scope="{ item }">
@@ -119,7 +124,16 @@ const props = defineProps<{
   scope?: 'workspace' | 'system' | 'all'
 }>()
 
-const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
+const {
+  item,
+  items,
+  isLoading,
+  openEdit,
+  openDelete,
+  openDialog,
+  onUpdate,
+  onDelete,
+} =
   props.scope === 'all'
     ? useAllScopeTableLogic(
         async (wsId: string) =>

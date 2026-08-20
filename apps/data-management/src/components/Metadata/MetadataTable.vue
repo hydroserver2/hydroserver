@@ -379,7 +379,7 @@ const canManageSystemMetadata = computed(() => isAdmin())
 }
 .metadata-table-frame {
   display: flex;
-  flex: 1;
+  flex: 0 1 auto;
   flex-direction: column;
   min-height: 0;
 }
@@ -406,7 +406,7 @@ const canManageSystemMetadata = computed(() => isAdmin())
 }
 .metadata-table-card {
   display: flex;
-  flex: 1;
+  flex: 0 1 auto;
   flex-direction: column;
   min-height: 0;
   margin-top: 0;
@@ -414,7 +414,7 @@ const canManageSystemMetadata = computed(() => isAdmin())
   overflow: hidden;
 }
 .metadata-window {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
 }
 .metadata-window :deep(.v-window__container),
@@ -423,10 +423,19 @@ const canManageSystemMetadata = computed(() => isAdmin())
   min-height: 0;
 }
 .metadata-window :deep(.v-data-table) {
-  height: 100%;
+  height: auto;
   max-height: 100%;
   min-height: 0;
   overflow: hidden;
+}
+.metadata-window :deep(.v-data-table .v-table__wrapper) {
+  max-height: 100%;
+  overflow-y: auto;
+}
+.metadata-window :deep(.metadata-table-loading-skeleton) {
+  min-height: 360px;
+  height: 100%;
+  background: var(--hs-surface);
 }
 .metadata-window
   :deep(.v-table--fixed-header > .v-table__wrapper > table > thead) {

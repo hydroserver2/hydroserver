@@ -22,6 +22,7 @@ export function useAllScopeTableLogic<T extends WithId>(
   const openDelete = ref(false)
   const item = ref(new ItemClass()) as Ref<Scoped<T>>
   const items: Ref<Scoped<T>[]> = ref([])
+  const isLoading = ref(true)
 
   function openDialog(selectedItem: T, dialog: string) {
     item.value = selectedItem
@@ -49,8 +50,10 @@ export function useAllScopeTableLogic<T extends WithId>(
   }
 
   async function loadData() {
+    isLoading.value = true
     if (!idRef.value) {
       items.value = []
+      isLoading.value = false
       return
     }
     try {
@@ -68,6 +71,8 @@ export function useAllScopeTableLogic<T extends WithId>(
       ]
     } catch (error) {
       console.error(`Error fetching table items`, error)
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -84,6 +89,7 @@ export function useAllScopeTableLogic<T extends WithId>(
     openDelete,
     item,
     items,
+    isLoading,
     openDialog,
     onUpdate,
     onDelete,

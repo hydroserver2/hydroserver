@@ -15,6 +15,7 @@ export function useSystemTableLogic<T extends WithId>(
   const openAccessControl = ref(false)
   const item = ref(new ItemClass()) as Ref<Scoped<T>>
   const items: Ref<Scoped<T>[]> = ref([])
+  const isLoading = ref(true)
 
   function openDialog(selectedItem: T, dialog: string) {
     item.value = selectedItem
@@ -40,10 +41,13 @@ export function useSystemTableLogic<T extends WithId>(
   }
 
   onMounted(async () => {
+    isLoading.value = true
     try {
       items.value = await fetchFn()
     } catch (error) {
       console.error(`Error fetching table items`, error)
+    } finally {
+      isLoading.value = false
     }
   })
 
@@ -53,6 +57,7 @@ export function useSystemTableLogic<T extends WithId>(
     openAccessControl,
     item,
     items,
+    isLoading,
     openDialog,
     onUpdate,
     onDelete,

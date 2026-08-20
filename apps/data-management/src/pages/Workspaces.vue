@@ -1373,7 +1373,7 @@ onMounted(async () => {
 }
 .detail-window--table :deep(.metadata-table-frame),
 .detail-window--table :deep(.metadata-table-card) {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
   max-height: 100%;
 }
@@ -1385,8 +1385,8 @@ onMounted(async () => {
 }
 .detail-window--table :deep(.metadata-window),
 .detail-window--table :deep(.metadata-window .v-data-table) {
-  flex: 1 1 auto;
-  height: 100% !important;
+  flex: 0 1 auto;
+  height: auto !important;
   max-height: 100%;
   overflow: hidden;
 }
