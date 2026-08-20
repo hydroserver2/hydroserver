@@ -107,7 +107,9 @@
     </header>
 
     <div
-      v-if="hasSelection && (visibleTasks.length > 0 || activeTab === 'ingestion')"
+      v-if="
+        hasSelection && (visibleTasks.length > 0 || activeTab === 'ingestion')
+      "
       class="hs-table-tools detail-filterbar"
     >
       <div class="workspace-table-search">
@@ -118,7 +120,7 @@
         />
         <input
           :value="taskSearch"
-          placeholder="Search tasks… (status:Pending)"
+          placeholder="Search tasks…"
           class="workspace-table-search-input hs-text-sm"
           aria-label="Search tasks"
           autocomplete="off"
@@ -205,7 +207,10 @@
           </v-chip>
         </template>
       </v-autocomplete>
-      <div v-if="activeTab === 'ingestion' && selectedConnection" class="hs-table-actions">
+      <div
+        v-if="activeTab === 'ingestion' && selectedConnection"
+        class="hs-table-actions"
+      >
         <v-tooltip location="top" :disabled="canCreate">
           <template #activator="{ props: tooltipProps }">
             <span v-bind="tooltipProps" class="inline-flex">
@@ -238,22 +243,23 @@
 
       <div v-else-if="!hasSelection" class="detail-empty">
         <h4 class="hs-subheading">{{ emptyHeading }}</h4>
-        <p><small>{{ emptyMessage }}</small></p>
+        <p>
+          <small>{{ emptyMessage }}</small>
+        </p>
       </div>
 
       <div v-else-if="visibleTasks.length === 0" class="detail-empty">
         <h4 class="hs-subheading">No tasks</h4>
-        <p><small>{{ emptyTasksMessage }}</small></p>
+        <p>
+          <small>{{ emptyTasksMessage }}</small>
+        </p>
       </div>
 
       <div v-else-if="sortedVisibleTasks.length === 0" class="detail-empty">
-        <h4 class="hs-subheading">
-          No tasks match your filter
-        </h4>
+        <h4 class="hs-subheading">No tasks match your filter</h4>
         <p>
           <small
-            >Clear search, status, or task type filters to see all
-            tasks.</small
+            >Clear search, status, or task type filters to see all tasks.</small
           >
         </p>
       </div>
@@ -268,6 +274,7 @@
         fixed-header
         hover
         class="tasks-table hs-table-card hs-text-sm"
+        :class="{ 'tasks-table--ingestion': activeTab === 'ingestion' }"
         density="compact"
       >
         <template #header.name>
@@ -303,7 +310,9 @@
                 v-for="status in STATUS_OPTIONS"
                 :key="status.value"
                 :class="{
-                  'task-filter-option--selected': statusFilter.includes(status.value),
+                  'task-filter-option--selected': statusFilter.includes(
+                    status.value
+                  ),
                 }"
                 @click="toggleStatusFilter(status.value)"
               >
@@ -333,7 +342,9 @@
         </template>
 
         <template #item.name="{ item }">
-          <span class="task-name font-weight-medium">{{ item.name || '—' }}</span>
+          <span class="task-name font-weight-medium">{{
+            item.name || '—'
+          }}</span>
         </template>
 
         <template #item.statusSort="{ item }">
@@ -468,7 +479,10 @@
             content-class="pa-0 ma-0 bg-transparent"
           >
             <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="task-rules-count hs-text-sm font-weight-semibold">
+              <span
+                v-bind="tooltipProps"
+                class="task-rules-count hs-text-sm font-weight-semibold"
+              >
                 {{ ruleCountLabel(item) }}
               </span>
             </template>
@@ -671,17 +685,16 @@ const accent = computed(() =>
 const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
 const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
 const tableHeaders = computed(() => {
-  const headers = [
-    {
-      title: activeTab.value === 'ingestion' ? '' : 'Task name',
-      key: 'name',
-    },
-  ]
-
-  headers.push({
-    title: activeTab.value === 'ingestion' ? '' : 'Status',
-    key: 'statusSort',
-  })
+  const headers =
+    activeTab.value === 'ingestion'
+      ? [
+          { title: '', key: 'statusSort' },
+          { title: '', key: 'name' },
+        ]
+      : [
+          { title: 'Task name', key: 'name' },
+          { title: 'Status', key: 'statusSort' },
+        ]
 
   if (activeTab.value === 'aggregation') {
     headers.push({ title: 'Type', key: 'taskType' })
@@ -900,8 +913,20 @@ const pauseTooltipText = (item: TaskRow) => {
 .tasks-table :deep(thead tr) {
   border-bottom: 2px solid #ebebeb;
 }
+/* VDataTableVirtual inserts a marker row before the first rendered task.
+   Its measured offset is visible as an empty spacer in this fixed table. */
+.tasks-table--ingestion :deep(tbody > tr:first-child) {
+  height: 0 !important;
+  border: 0 !important;
+}
+.tasks-table--ingestion :deep(tbody > tr:first-child > td) {
+  height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
 .task-filter-button {
   min-width: auto;
+  height: 32px;
   color: var(--hs-text-primary);
   text-transform: none;
 }
@@ -938,6 +963,16 @@ const pauseTooltipText = (item: TaskRow) => {
   color: #49454f;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+}
+.tasks-table--ingestion :deep(thead th) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.tasks-table--ingestion :deep(thead tr) {
+  border-bottom: 0;
+}
+.tasks-table--ingestion :deep(.v-table--fixed-header > .v-table__wrapper > table > thead > tr > th) {
+  box-shadow: none !important;
 }
 .tasks-table :deep(tbody tr) {
   border-bottom: 1px solid #f0f0f0;
