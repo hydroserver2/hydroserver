@@ -320,6 +320,16 @@ function visiblePaths(): NavItem[] {
 function isNavItemActive(item: NavItem) {
   if (!item.attrs?.to) return false
   const targetPath = router.resolve(item.attrs.to).path
+
+  // The orchestration nav target points to the default tab, but every
+  // orchestration tab and task-detail route belongs to the same main-nav item.
+  if (
+    targetPath === '/orchestration/ingestion' &&
+    route.path.startsWith('/orchestration/')
+  ) {
+    return true
+  }
+
   return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
 }
 

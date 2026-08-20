@@ -82,8 +82,8 @@ const { compactControls, layout, title } = defineProps<{
 .orchestration-header {
   /* Matches the Manage Workspaces header (Workspaces.vue) so the two
      workspace-scoped entry points read as the same product surface. */
-  background: linear-gradient(120deg, #eaf5fd 0%, #eefaf0 100%);
-  border-bottom: 1px solid #dfe8e2;
+  background: var(--hs-surface-subtle);
+  border-bottom: 1px solid var(--hs-border);
 }
 
 .orchestration-header-title {

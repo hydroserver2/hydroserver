@@ -12,7 +12,7 @@
       <div class="orchestration-shell">
         <div
           class="orchestration-nav-column"
-          :style="{ '--accent': navAccent, '--accent-light': navAccentLight }"
+          :style="{ '--accent': navAccent }"
         >
           <OrchestrationNavRail
             :tabs="tabs"
@@ -298,14 +298,13 @@ const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
-// Tints the accent bar spanning the nav rail + connections/sites sidebar
+// Sets the accent bar spanning the nav rail + connections/sites sidebar
 // (.orchestration-nav-column below) with the active tab's color. Previously
 // this bar lived on the sidebar alone, which put it 88px in from the page
 // edge — floating past the end of the nav rail instead of anchored to it,
 // unlike the equivalent bar on Manage Workspaces (Workspaces.vue), which
 // sits flush against the page edge because that page has no nav rail.
 const navAccent = computed(() => TAB_META[activeTab.value].accent)
-const navAccentLight = computed(() => TAB_META[activeTab.value].accentLight)
 
 const applyRouteWorkspace = () => {
   const targetWorkspaceId = routeWorkspaceId.value
@@ -992,7 +991,7 @@ const goToTask = async (row: TaskRow) => {
 
 <style scoped>
 .orchestration-page {
-  background-color: var(--hs-surface);
+  background-color: var(--hs-background);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
@@ -1015,14 +1014,12 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex: 1;
   min-height: 0;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   overflow: hidden;
 }
 
-/* Wraps the nav rail and the connections/sites sidebar so the accent bar
-   below spans both as one strip anchored to the page edge — the same
-   position the equivalent bar holds on Manage Workspaces (Workspaces.vue),
-   which has no nav rail in front of its sidebar. */
+/* Keep the navigation edge treatment consistent with the flat chrome used by
+   Manage Workspaces (Workspaces.vue). */
 .orchestration-nav-column {
   position: relative;
   display: flex;
@@ -1036,7 +1033,7 @@ const goToTask = async (row: TaskRow) => {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  background: var(--accent);
   z-index: 1;
 }
 
@@ -1047,7 +1044,7 @@ const goToTask = async (row: TaskRow) => {
   justify-content: center;
   min-width: 0;
   overflow: auto;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   padding: var(--hs-space-32);
 }
 
@@ -1056,14 +1053,14 @@ const goToTask = async (row: TaskRow) => {
   color: var(--hs-text-primary);
 }
 
-/* Matches the empty-state icon on Manage Workspaces (Workspaces.vue) so the
-   two workspace-scoped entry points read as the same product surface. */
+/* Matches the flat empty-state icon on Manage Workspaces (Workspaces.vue) so
+   the two workspace-scoped entry points read as the same product surface. */
 .no-workspace-icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
-  color: #2e7d32;
+  background: var(--hs-surface-muted);
+  color: rgb(var(--v-theme-primary));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1102,7 +1099,7 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   min-width: 0;
 }
 
