@@ -264,98 +264,38 @@
         </p>
       </div>
 
-      <v-data-table-virtual
-        v-else-if="sortedVisibleTasks.length > 0 || activeTab === 'ingestion'"
-        :headers="tableHeaders"
-        :items="sortedVisibleTasks"
-        :sort-by="defaultSortBy"
-        item-value="id"
-        multi-sort
-        fixed-header
-        hover
-        class="tasks-table hs-table-card hs-text-sm"
-        :class="{ 'tasks-table--ingestion': activeTab === 'ingestion' }"
-        density="compact"
+      <div
+        v-if="activeTab === 'ingestion'"
+        class="hs-table-card tasks-table-shell--ingestion"
       >
-        <template #header.name>
-          <v-menu
-            v-if="activeTab === 'ingestion'"
-            :close-on-content-click="false"
-            location="bottom start"
-            attach="body"
-          >
-            <template #activator="{ props: menuProps }">
-              <v-btn
-                v-bind="menuProps"
-                variant="text"
-                size="small"
-                class="task-filter-button"
-                :class="{
-                  'task-filter-button--active': statusFilter.length,
-                  'task-filter-button--ingestion': activeTab === 'ingestion',
-                }"
-                :append-icon="mdiChevronDown"
-                :aria-label="`Filter by status${statusFilter.length ? ` (${statusFilter.length} selected)` : ''}`"
-              >
-                Status
-                <span v-if="statusFilter.length" class="filter-count">
-                  {{ statusFilter.length }}
-                </span>
-              </v-btn>
-            </template>
-            <v-list class="task-filter-menu" density="compact">
-              <div class="task-filter-title">Filter by status</div>
-              <v-list-item
-                v-for="status in STATUS_OPTIONS"
-                :key="status.value"
-                :class="{
-                  'task-filter-option--selected': statusFilter.includes(
-                    status.value
-                  ),
-                }"
-                @click="toggleStatusFilter(status.value)"
-              >
-                <v-list-item-title class="task-status-option">
-                  <v-icon
-                    :icon="statusIcon(status.value)"
-                    size="18"
-                    :style="{ color: statusIconColor(status.value) }"
-                  />
-                  <span>{{ status.title }}</span>
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item
-                v-if="statusFilter.length"
-                class="filter-clear-item"
-                @click="statusFilter = []"
-              >
-                <v-list-item-title>Clear filter</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-          <span v-else>Task name</span>
-        </template>
-
-        <template #header.statusSort>
-          <span v-if="activeTab !== 'ingestion'">Status</span>
-        </template>
-
-        <template #header.actions>
-          <span v-if="activeTab !== 'ingestion'">Actions</span>
-        </template>
-
-        <template #no-data>
-          <div class="task-table-no-data hs-text-sm">
-            No tasks match the current filters.
-          </div>
-        </template>
-
-        <template #item.name="{ item }">
-          <template v-if="activeTab === 'ingestion'">
-            <div class="ingestion-task-content">
-              <div class="ingestion-task-name">
-                {{ item.name || '—' }}
-              </div>
+        <table class="tasks-table tasks-table--ingestion hs-text-sm">
+          <thead>
+            <tr>
+              <th colspan="2" class="ingestion-main-header">
+                <div>Status</div>
+              </th>
+              <th class="text-right" />
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in sortedVisibleTasks" :key="item.id">
+            <td class="ingestion-status-cell">
+              <v-tooltip location="bottom" :open-delay="0" :close-delay="80">
+                <template #activator="{ props: tooltipProps }">
+                  <span
+                    v-bind="tooltipProps"
+                    class="task-status-icon"
+                    :style="{ color: statusIconColor(item.statusSort) }"
+                    :aria-label="item.statusSort"
+                  >
+                    <v-icon :icon="statusIcon(item.statusSort)" size="20" />
+                  </span>
+                </template>
+                <span>{{ item.lastRunMessage || 'No run history available yet.' }}</span>
+              </v-tooltip>
+            </td>
+            <td class="ingestion-task-cell">
+              <div class="ingestion-task-name">{{ item.name || '—' }}</div>
               <div class="ingestion-task-meta hs-text-sm">
                 <span class="ingestion-task-meta-label hs-label">Last</span>
                 <span>{{ item.lastRun }}</span>
@@ -371,13 +311,102 @@
                   :prepend-icon="mdiAlert"
                   rounded="lg"
                   class="task-no-work-chip hs-label"
+                  :title="item.noWorkWarning.message"
                 >
                   {{ item.noWorkWarning.label }}
                 </v-chip>
               </div>
-            </div>
-          </template>
-          <span v-else class="task-name font-weight-medium">{{
+            </td>
+            <td class="text-right ingestion-actions-cell">
+              <div class="task-actions-inner">
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="black"
+                  icon
+                  :disabled="pauseButtonDisabled(item)"
+                  class="task-pause-btn"
+                  aria-label="Pause or resume task"
+                  @click.stop="$emit('toggle-paused', item)"
+                >
+                  <NoScheduleIcon v-if="!item.schedule" />
+                  <v-icon
+                    v-else
+                    :icon="item.schedule.enabled ? mdiPause : mdiPlay"
+                    size="16"
+                  />
+                </v-btn>
+                <v-btn
+                  v-if="canEdit && !item.userClickedRunNow"
+                  variant="outlined"
+                  color="green-darken-3"
+                  :prepend-icon="mdiPlay"
+                  class="detail-action-btn detail-action-btn--compact text-none"
+                  rounded="lg"
+                  @click.stop="$emit('run-now', item)"
+                >
+                  Run now
+                </v-btn>
+                <span
+                  v-else-if="canEdit && item.userClickedRunNow"
+                  class="hs-text-sm font-weight-semibold text-slate-500"
+                >
+                  Run requested
+                </span>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  :style="{ color: accent }"
+                  :append-icon="mdiChevronRight"
+                  class="text-none"
+                  @click.stop="$emit('open-task', item)"
+                >
+                  Details
+                </v-btn>
+              </div>
+            </td>
+            </tr>
+            <tr v-if="sortedVisibleTasks.length === 0">
+              <td colspan="3" class="task-table-no-data hs-text-sm">
+                No tasks match the current filters.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <v-data-table-virtual
+        v-else-if="sortedVisibleTasks.length > 0"
+        :headers="tableHeaders"
+        :items="sortedVisibleTasks"
+        :sort-by="defaultSortBy"
+        item-value="id"
+        multi-sort
+        fixed-header
+        hover
+        class="tasks-table hs-table-card hs-text-sm"
+        density="compact"
+      >
+        <template #header.name>
+          <div>Task name</div>
+        </template>
+
+        <template #header.statusSort>
+          <div>Status</div>
+        </template>
+
+        <template #header.actions>
+          <div>Actions</div>
+        </template>
+
+        <template #no-data>
+          <div class="task-table-no-data hs-text-sm">
+            No tasks match the current filters.
+          </div>
+        </template>
+
+        <template #item.name="{ item }">
+          <span class="task-name font-weight-medium">{{
             item.name || '—'
           }}</span>
         </template>
@@ -446,7 +475,7 @@
               </div>
             </div>
             <v-tooltip
-              v-if="activeTab !== 'ingestion' && item.noWorkWarning"
+              v-if="item.noWorkWarning"
               location="top"
               :open-delay="0"
               :close-delay="80"
@@ -650,7 +679,6 @@ import { storeToRefs } from 'pinia'
 import {
   mdiAlert,
   mdiAlertCircleOutline,
-  mdiChevronDown,
   mdiChevronRight,
   mdiCheckCircleOutline,
   mdiClockAlertOutline,
@@ -949,55 +977,11 @@ const pauseTooltipText = (item: TaskRow) => {
 .tasks-table {
   height: 100%;
 }
-/* Bound the virtual scroller's viewport so v-data-table-virtual only mounts the
-   visible rows instead of all of them (avoids a multi-second render with many tasks). */
 .tasks-table :deep(.v-table__wrapper) {
   max-height: 100%;
 }
 .tasks-table :deep(thead tr) {
   border-bottom: 2px solid #ebebeb;
-}
-/* VDataTableVirtual inserts a marker row before the first rendered task.
-   Its measured offset is visible as an empty spacer in this fixed table. */
-.tasks-table--ingestion :deep(tbody > tr:first-child) {
-  height: 0 !important;
-  border: 0 !important;
-}
-.tasks-table--ingestion :deep(tbody > tr:first-child > td) {
-  height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-}
-.task-filter-button {
-  min-width: auto;
-  height: 32px;
-  color: var(--hs-text-primary);
-  text-transform: none;
-}
-.task-filter-button--active {
-  color: rgb(var(--v-theme-primary));
-}
-.task-filter-button--ingestion {
-  position: relative;
-  left: -24px;
-}
-.task-filter-menu {
-  min-width: 240px;
-  padding: var(--hs-space-8) 0;
-}
-.task-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
-}
-.task-status-option {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--hs-space-8);
-}
-.task-filter-option--selected {
-  background: var(--hs-surface-muted);
 }
 .tasks-table :deep(th) {
   /* No template element to hang an hs-text-* or font-weight-* class on
@@ -1012,33 +996,46 @@ const pauseTooltipText = (item: TaskRow) => {
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
-.tasks-table--ingestion :deep(thead th) {
-  padding-top: 0;
-  padding-bottom: 0;
+.tasks-table--ingestion {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  border: 0;
 }
-.tasks-table--ingestion :deep(thead tr) {
-  border-bottom: 0;
+.tasks-table-shell--ingestion {
+  height: 100%;
 }
-.tasks-table--ingestion :deep(.v-table--fixed-header > .v-table__wrapper > table > thead > tr > th) {
-  box-shadow: none !important;
+.tasks-table--ingestion thead th {
+  height: 48px;
+  padding: 8px 12px;
+  border: 0;
+  background: var(--hs-surface-muted);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
+  text-transform: none;
+  letter-spacing: 0;
 }
-.tasks-table--ingestion .task-run-times {
-  display: none;
+.tasks-table--ingestion thead tr {
+  border-bottom: 1px solid var(--hs-border);
 }
-.tasks-table--ingestion .task-status-cell {
-  align-items: center;
-  gap: 0;
+.tasks-table--ingestion .ingestion-main-header {
+  text-align: left;
 }
-.tasks-table--ingestion :deep(thead th:first-child) {
+.tasks-table--ingestion .ingestion-status-cell {
   width: 32px;
-  padding: 0 0 0 12px !important;
+  padding: var(--hs-space-12) 0 var(--hs-space-12) var(--hs-space-12);
+  vertical-align: top;
 }
-.tasks-table--ingestion :deep(tbody td:first-child) {
-  width: 32px;
-  padding: 13px 0 13px 12px !important;
+.tasks-table--ingestion .ingestion-task-cell {
+  padding: var(--hs-space-12) var(--hs-space-12) var(--hs-space-12) 4px;
+  vertical-align: top;
 }
-.tasks-table--ingestion :deep(tbody td:nth-child(2)) {
-  padding-left: 4px;
+.tasks-table--ingestion .ingestion-actions-cell {
+  width: 1%;
+  white-space: nowrap;
+  padding: var(--hs-space-12);
+  vertical-align: top;
 }
 .ingestion-task-name {
   color: var(--hs-text-primary);
