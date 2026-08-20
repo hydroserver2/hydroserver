@@ -297,7 +297,11 @@ defineEmits<{
 
 const isIngestion = computed(() => activeTab.value === 'ingestion')
 const isQuality = computed(() => activeTab.value === 'quality')
-const accent = computed(() => TAB_META[activeTab.value].accent)
+const accent = computed(() =>
+  isIngestion.value
+    ? 'rgb(var(--v-theme-primary))'
+    : TAB_META[activeTab.value].accent
+)
 const title = computed(() => (isIngestion.value ? 'Connections' : 'Sites'))
 const addLabel = computed(() =>
   isIngestion.value ? 'Add data connection' : 'Add site'
@@ -314,9 +318,6 @@ const addLabel = computed(() =>
   flex-shrink: 0;
   min-height: 0;
 }
-/* The accent bar that used to sit here now spans the nav rail + this
-   sidebar together — see .orchestration-nav-column in Orchestration.vue —
-   so it's anchored to the page edge instead of floating in from 88px. */
 .sidebar-header {
   padding: var(--hs-space-10) var(--hs-space-16) var(--hs-space-8);
   border-bottom: 1px solid var(--hs-border);

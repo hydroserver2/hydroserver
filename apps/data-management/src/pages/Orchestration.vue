@@ -1,18 +1,9 @@
 <template>
   <div class="orchestration-page">
-    <div class="orchestration-page-toolbar">
-      <WorkspaceToolbar
-        layout="orchestration"
-        title="Job orchestration"
-        hide-workspace-management
-      />
-    </div>
-
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
       <div class="orchestration-shell">
         <div
           class="orchestration-nav-column"
-          :style="{ '--accent': navAccent }"
         >
           <OrchestrationNavRail
             :tabs="tabs"
@@ -228,7 +219,6 @@ import { useOrchestrationTaskRows } from '@/composables/orchestration/useOrchest
 import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowPolling'
 import { useOrchestrationRouteState } from '@/composables/orchestration/useOrchestrationRouteState'
 
-import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
 import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
 import OrchestrationContextSidebar from '@/components/Orchestration/workbench/OrchestrationContextSidebar.vue'
 import TaskListPanel from '@/components/Orchestration/workbench/TaskListPanel.vue'
@@ -297,14 +287,6 @@ const {
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
-
-// Sets the accent bar spanning the nav rail + connections/sites sidebar
-// (.orchestration-nav-column below) with the active tab's color. Previously
-// this bar lived on the sidebar alone, which put it 88px in from the page
-// edge — floating past the end of the nav rail instead of anchored to it,
-// unlike the equivalent bar on Manage Workspaces (Workspaces.vue), which
-// sits flush against the page edge because that page has no nav rail.
-const navAccent = computed(() => TAB_META[activeTab.value].accent)
 
 const applyRouteWorkspace = () => {
   const targetWorkspaceId = routeWorkspaceId.value
@@ -999,10 +981,6 @@ const goToTask = async (row: TaskRow) => {
   overflow: hidden;
 }
 
-.orchestration-page-toolbar {
-  flex-shrink: 0;
-}
-
 .orchestration-page-body {
   flex: 1;
   display: flex;
@@ -1026,17 +1004,6 @@ const goToTask = async (row: TaskRow) => {
   flex-shrink: 0;
   min-height: 0;
 }
-.orchestration-nav-column::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--accent);
-  z-index: 1;
-}
-
 .no-workspace-state {
   flex: 1;
   display: flex;
@@ -1076,9 +1043,8 @@ const goToTask = async (row: TaskRow) => {
   text-transform: uppercase;
 }
 
-/* Same size as the page's own h1 (WorkspaceToolbar.vue's
-   .orchestration-header-title) — this empty-state heading was previously a
-   step larger than the page title above it, which inverted the hierarchy. */
+/* Keep the empty-state heading aligned with the page's established heading
+   scale and hierarchy. */
 .no-workspace-state h2 {
   margin: 0 0 var(--hs-space-12);
   color: var(--hs-text-primary);

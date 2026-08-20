@@ -23,7 +23,10 @@
           />
         </div>
       </div>
-      <div class="detail-actions">
+      <div
+        v-if="activeTab === 'aggregation' || activeTab === 'quality'"
+        class="detail-actions"
+      >
         <template v-if="activeTab === 'aggregation'">
           <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
@@ -97,6 +100,9 @@
             <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
         </template>
+      </div>
+      <div class="detail-header-workspace-selector">
+        <WorkspaceSelector />
       </div>
     </header>
 
@@ -548,6 +554,7 @@ import type { DataConnection } from '@hydroserver/client'
 import { useOrchestrationStore } from '@/store/orchestration'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
+import WorkspaceSelector from '@/components/Workspace/WorkspaceSelector.vue'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
   READ_ONLY_TOOLTIP,
@@ -592,7 +599,11 @@ const {
   orchestrationTaskTypeFilter: taskTypeFilter,
 } = storeToRefs(useOrchestrationStore())
 
-const accent = computed(() => TAB_META[activeTab.value].accent)
+const accent = computed(() =>
+  activeTab.value === 'ingestion'
+    ? 'rgb(var(--v-theme-primary))'
+    : TAB_META[activeTab.value].accent
+)
 const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
 const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
 const tableHeaders = computed(() => {
@@ -717,6 +728,9 @@ const pauseTooltipText = (item: TaskRow) => {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-shrink: 0;
+}
+.detail-header-workspace-selector {
   flex-shrink: 0;
 }
 .detail-action-btn {

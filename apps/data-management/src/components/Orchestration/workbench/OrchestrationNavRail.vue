@@ -7,21 +7,25 @@
         type="button"
         class="rail-btn"
         :class="{ active: activeTab === tab.id }"
-        :style="
-          activeTab === tab.id
-            ? { '--accent': tab.accent, '--accent-light': tab.accentLight }
-            : {}
-        "
         @click="$emit('select-tab', tab.id)"
       >
         <span
           class="rail-pill"
-          :style="activeTab === tab.id ? { background: tab.accentLight } : {}"
+          :style="
+            activeTab === tab.id
+              ? {
+                  background:
+                    tab.id === 'ingestion'
+                      ? 'rgba(var(--v-theme-primary), 0.12)'
+                      : tab.accentLight,
+                }
+              : {}
+          "
         >
           <v-icon
             :icon="tab.icon"
             size="22"
-            :color="activeTab === tab.id ? tab.accent : undefined"
+            :style="activeTab === tab.id ? { color: activeColor(tab) } : {}"
           />
           <span
             v-if="tab.issues > 0"
@@ -32,7 +36,7 @@
         <span
           class="rail-label hs-text-2xs"
           :class="{ 'font-weight-semibold': activeTab === tab.id }"
-          :style="activeTab === tab.id ? { color: tab.accent } : {}"
+          :style="activeTab === tab.id ? { color: activeColor(tab) } : {}"
         >
           {{ tab.short }}
         </span>
@@ -66,6 +70,9 @@ defineEmits<{
 }>()
 
 const { activeTab } = storeToRefs(useOrchestrationStore())
+
+const activeColor = (tab: TabDefinition) =>
+  tab.id === 'ingestion' ? 'rgb(var(--v-theme-primary))' : tab.accent
 </script>
 
 <style scoped>
