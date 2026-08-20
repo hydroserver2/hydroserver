@@ -24,27 +24,7 @@
         </div>
       </div>
       <div class="detail-actions">
-        <template v-if="activeTab === 'ingestion' && selectedConnection">
-          <v-tooltip location="top" :disabled="canCreate">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="flat"
-                  :prepend-icon="mdiPlus"
-                  :style="{ background: accent, color: 'white' }"
-                  :disabled="!canCreate"
-                  class="detail-action-btn detail-action-btn--primary text-none"
-                  rounded="lg"
-                  @click="$emit('add-task')"
-                >
-                  Add task
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-        </template>
-        <template v-else-if="activeTab === 'aggregation'">
+        <template v-if="activeTab === 'aggregation'">
           <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
@@ -121,20 +101,25 @@
     </header>
 
     <div
-      v-if="hasSelection && visibleTasks.length > 0"
-      class="detail-filterbar"
+      v-if="hasSelection && (visibleTasks.length > 0 || activeTab === 'ingestion')"
+      class="hs-table-tools detail-filterbar"
     >
-      <v-text-field
-        :model-value="taskSearch"
-        :prepend-inner-icon="mdiMagnify"
-        placeholder="Search tasks"
-        hide-details
-        clearable
-        density="compact"
-        variant="outlined"
-        class="detail-search"
-        @update:model-value="taskSearch = $event ?? ''"
-      />
+      <div class="workspace-table-search">
+        <v-icon
+          :icon="mdiMagnify"
+          size="16"
+          class="workspace-table-search-icon"
+        />
+        <input
+          :value="taskSearch"
+          placeholder="Search tasks…"
+          class="workspace-table-search-input hs-text-sm"
+          aria-label="Search tasks"
+          autocomplete="off"
+          spellcheck="false"
+          @input="taskSearch = ($event.target as HTMLInputElement).value"
+        />
+      </div>
       <v-autocomplete
         :model-value="statusFilter"
         :items="STATUS_OPTIONS"
@@ -213,6 +198,24 @@
           </v-chip>
         </template>
       </v-autocomplete>
+      <div v-if="activeTab === 'ingestion' && selectedConnection" class="hs-table-actions">
+        <v-tooltip location="top" :disabled="canCreate">
+          <template #activator="{ props: tooltipProps }">
+            <span v-bind="tooltipProps" class="inline-flex">
+              <v-btn-secondary
+                variant="flat"
+                :prepend-icon="mdiPlus"
+                :disabled="!canCreate"
+                data-testid="add-ingestion-task"
+                @click="$emit('add-task')"
+              >
+                Add task
+              </v-btn-secondary>
+            </span>
+          </template>
+          <span>{{ READ_ONLY_TOOLTIP }}</span>
+        </v-tooltip>
+      </div>
     </div>
 
     <div class="detail-body">
@@ -731,15 +734,42 @@ const pauseTooltipText = (item: TaskRow) => {
   padding-inline: 12px;
 }
 .detail-filterbar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 22px;
-  border-bottom: 1px solid #eef1f5;
-  background: white;
+  padding: 0 var(--hs-space-24);
+  margin: var(--hs-space-8) 0 var(--hs-space-10);
 }
-.detail-search {
-  max-width: 260px;
+.workspace-table-search {
+  position: relative;
+  flex: 1;
+  max-width: 560px;
+}
+.workspace-table-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  color: var(--hs-input-border);
+  pointer-events: none;
+}
+.workspace-table-search-input {
+  position: relative;
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-sm);
+  padding-left: 30px;
+  padding-right: var(--hs-space-10);
+  outline: none;
+  background: var(--hs-surface);
+  color: var(--hs-text-secondary);
+}
+.workspace-table-search-input::placeholder {
+  color: var(--hs-text-secondary);
+  opacity: 1;
+}
+.workspace-table-search-input:focus {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .detail-status-filter {
   max-width: 320px;
