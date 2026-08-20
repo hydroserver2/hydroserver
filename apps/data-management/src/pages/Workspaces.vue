@@ -83,7 +83,7 @@
               <span class="sidebar-title hs-label">Workspaces</span>
               <PermissionTooltip
                 :has-permission="canCreateWorkspace"
-                message="You don't have permissions to create a workspace. Contact your system administrator to change your permissions."
+                message="You don't have permission to create a workspace."
               >
                 <template #default>
                   <button

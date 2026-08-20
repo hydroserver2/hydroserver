@@ -33,7 +33,7 @@
           :disabled="isEdit && !canAssignRole"
           :hint="
             isEdit && !canAssignRole
-              ? 'You do not have permission to change collaborator roles.'
+              ? `You don't have permission to change collaborator roles.`
               : undefined
           "
           :persistent-hint="isEdit && !canAssignRole"

@@ -4,9 +4,7 @@
   <v-card-text>
     <small v-if="!canManage" class="hs-gate-note">
       <v-icon :icon="mdiLock" size="16" />
-      <span
-        >You do not have permission to change this workspace's privacy.</span
-      >
+      <span>You don't have permission to change this workspace's privacy.</span>
     </small>
 
     <div class="privacy-card hs-table-card">

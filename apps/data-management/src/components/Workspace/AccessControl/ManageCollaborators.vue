@@ -348,8 +348,7 @@
             </div>
           </td>
           <td class="text-right">
-            <span v-if="item.isOwner" class="text-medium-emphasis">—</span>
-            <template v-else-if="item.isBeingEdited">
+            <template v-if="item.isBeingEdited">
               <v-btn-cancel
                 size="small"
                 class="mr-2"
@@ -366,29 +365,64 @@
               >
             </template>
             <template v-else>
-              <v-btn
-                variant="text"
-                size="small"
-                class="hs-table-icon-action"
-                color="grey-darken-2"
-                :icon="mdiPencil"
-                :disabled="!canEdit"
-                :data-testid="`edit-collaborator-${item.email}`"
-                :aria-label="`Edit ${item.name}`"
-                @click="item.isBeingEdited = true"
-              />
-              <v-btn
-                variant="text"
-                size="small"
-                class="hs-table-icon-action hs-table-icon-action--danger"
-                color="grey-darken-2"
-                :icon="mdiTrashCanOutline"
-                :loading="removingEmail === item.email"
-                :disabled="!canRemove(item) || !!removingEmail"
-                :data-testid="`remove-collaborator-${item.email}`"
-                :aria-label="`Remove ${item.name}`"
-                @click="onRemoveCollaborator(item.email)"
-              />
+              <PermissionTooltip
+                :has-permission="canEditCollaborator(item)"
+                :message="collaboratorEditDeniedMessage(item)"
+              >
+                <template #default>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    color="grey-darken-2"
+                    :icon="mdiPencil"
+                    :data-testid="`edit-collaborator-${item.email}`"
+                    :aria-label="`Edit ${item.name}`"
+                    @click="item.isBeingEdited = true"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    color="grey-darken-2"
+                    :icon="mdiPencilOffOutline"
+                    disabled
+                    :aria-label="`Edit ${item.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+              <PermissionTooltip
+                :has-permission="canRemoveCollaborator(item)"
+                :message="collaboratorRemoveDeniedMessage(item)"
+              >
+                <template #default>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    color="grey-darken-2"
+                    :icon="mdiTrashCanOutline"
+                    :loading="removingEmail === item.email"
+                    :disabled="!!removingEmail"
+                    :data-testid="`remove-collaborator-${item.email}`"
+                    :aria-label="`Remove ${item.name}`"
+                    @click="onRemoveCollaborator(item.email)"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    color="grey-darken-2"
+                    :icon="mdiDeleteOffOutline"
+                    disabled
+                    :aria-label="`Remove ${item.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
             </template>
           </td>
         </tr>
@@ -421,9 +455,11 @@ import hs, {
 } from '@hydroserver/client'
 import {
   mdiChevronDown,
+  mdiDeleteOffOutline,
   mdiHelpCircleOutline,
   mdiMagnify,
   mdiPencil,
+  mdiPencilOffOutline,
   mdiTrashCanOutline,
 } from '@mdi/js'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
@@ -467,6 +503,21 @@ const canDelete = computed(() =>
 )
 const canRemove = (item: { email: string }) =>
   canDelete.value || item.email === user.value?.email
+const canEditCollaborator = (item: { isOwner?: boolean }) =>
+  canEdit.value && !item.isOwner
+const canRemoveCollaborator = (item: { email: string; isOwner?: boolean }) =>
+  canRemove(item) && !item.isOwner
+const collaboratorEditDeniedMessage = (item: { isOwner?: boolean }) =>
+  item.isOwner
+    ? 'The workspace owner cannot be edited.'
+    : "You don't have permission to edit collaborators."
+const collaboratorRemoveDeniedMessage = (item: {
+  email: string
+  isOwner?: boolean
+}) =>
+  item.isOwner
+    ? 'The workspace owner cannot be removed.'
+    : "You don't have permission to remove collaborators."
 
 const showAddCollaboratorHelp = ref(false)
 const showAddCollaborator = ref(false)

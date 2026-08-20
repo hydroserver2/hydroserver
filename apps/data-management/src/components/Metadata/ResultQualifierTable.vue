@@ -10,26 +10,62 @@
       <MetadataScopeChip :scope="item._scope" />
     </template>
     <template v-slot:item.actions="{ item }">
-      <v-btn
-        v-if="canEdit && (item._scope !== 'system' || canManageSystem)"
-        :icon="mdiPencil"
-        class="hs-table-icon-action"
-        variant="text"
-        size="small"
-        :data-testid="`edit-metadata-${item.id}`"
-        aria-label="Edit metadata item"
-        @click="openDialog(item, 'edit')"
-      />
-      <v-btn
-        v-if="canDelete && (item._scope !== 'system' || canManageSystem)"
-        :icon="mdiTrashCanOutline"
-        class="hs-table-icon-action hs-table-icon-action--danger"
-        variant="text"
-        size="small"
-        :data-testid="`delete-metadata-${item.id}`"
-        aria-label="Delete metadata item"
-        @click="openDialog(item, 'delete')"
-      />
+      <PermissionTooltip
+        :has-permission="
+          canEdit && (item._scope !== 'system' || canManageSystem)
+        "
+        message="You don't have permission to edit this metadata item."
+      >
+        <template #default>
+          <v-btn
+            :icon="mdiPencil"
+            class="hs-table-icon-action"
+            variant="text"
+            size="small"
+            :data-testid="`edit-metadata-${item.id}`"
+            aria-label="Edit metadata item"
+            @click="openDialog(item, 'edit')"
+          />
+        </template>
+        <template #denied>
+          <v-btn
+            :icon="mdiPencilOffOutline"
+            class="hs-table-icon-action"
+            variant="text"
+            size="small"
+            disabled
+            aria-label="Edit metadata item unavailable"
+          />
+        </template>
+      </PermissionTooltip>
+      <PermissionTooltip
+        :has-permission="
+          canDelete && (item._scope !== 'system' || canManageSystem)
+        "
+        message="You don't have permission to delete this metadata item."
+      >
+        <template #default>
+          <v-btn
+            :icon="mdiTrashCanOutline"
+            class="hs-table-icon-action hs-table-icon-action--danger"
+            variant="text"
+            size="small"
+            :data-testid="`delete-metadata-${item.id}`"
+            aria-label="Delete metadata item"
+            @click="openDialog(item, 'delete')"
+          />
+        </template>
+        <template #denied>
+          <v-btn
+            :icon="mdiDeleteOffOutline"
+            class="hs-table-icon-action hs-table-icon-action--danger"
+            variant="text"
+            size="small"
+            disabled
+            aria-label="Delete metadata item unavailable"
+          />
+        </template>
+      </PermissionTooltip>
     </template>
   </v-data-table-virtual>
 
@@ -66,7 +102,13 @@ import MetadataScopeChip from '@/components/Metadata/MetadataScopeChip.vue'
 import { computed, toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
 import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
-import { mdiTrashCanOutline, mdiPencil } from '@mdi/js'
+import {
+  mdiDeleteOffOutline,
+  mdiPencil,
+  mdiPencilOffOutline,
+  mdiTrashCanOutline,
+} from '@mdi/js'
+import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
 const props = defineProps<{
   search: string | undefined

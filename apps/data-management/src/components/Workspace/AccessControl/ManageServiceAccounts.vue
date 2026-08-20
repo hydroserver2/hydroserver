@@ -148,11 +148,7 @@
     </p>
 
     <v-card class="hs-table-card service-accounts-table-card" flat>
-      <v-table
-        class="service-accounts-table"
-        height="100%"
-        fixed-header
-      >
+      <v-table class="service-accounts-table" height="100%" fixed-header>
         <thead>
           <tr>
             <th>
@@ -243,36 +239,87 @@
               </div>
             </td>
             <td class="text-right">
-              <v-btn
-                :icon="mdiRefresh"
-                variant="text"
-                size="small"
-                class="hs-table-icon-action"
-                color="grey-darken-2"
-                :disabled="!canEdit"
-                :aria-label="`Regenerate ${serviceAccountItem.name}`"
-                @click="onOpenRegenerateDialog(serviceAccountItem)"
-              />
-              <v-btn
-                :icon="mdiPencil"
-                variant="text"
-                size="small"
-                class="hs-table-icon-action"
-                color="grey-darken-2"
-                :disabled="!canEdit"
-                :aria-label="`Edit ${serviceAccountItem.name}`"
-                @click="openDialog(serviceAccountItem, 'edit')"
-              />
-              <v-btn
-                :icon="mdiTrashCanOutline"
-                variant="text"
-                size="small"
-                class="hs-table-icon-action hs-table-icon-action--danger"
-                color="grey-darken-2"
-                :disabled="!canDelete"
-                :aria-label="`Delete ${serviceAccountItem.name}`"
-                @click="openDialog(serviceAccountItem, 'delete')"
-              />
+              <PermissionTooltip
+                :has-permission="canEdit"
+                message="You don't have permission to regenerate service accounts."
+              >
+                <template #default>
+                  <v-btn
+                    :icon="mdiRefresh"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    color="grey-darken-2"
+                    :aria-label="`Regenerate ${serviceAccountItem.name}`"
+                    @click="onOpenRegenerateDialog(serviceAccountItem)"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn
+                    :icon="mdiRefresh"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    color="grey-darken-2"
+                    disabled
+                    :aria-label="`Regenerate ${serviceAccountItem.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+              <PermissionTooltip
+                :has-permission="canEdit"
+                message="You don't have permission to edit service accounts."
+              >
+                <template #default>
+                  <v-btn
+                    :icon="mdiPencil"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    color="grey-darken-2"
+                    :aria-label="`Edit ${serviceAccountItem.name}`"
+                    @click="openDialog(serviceAccountItem, 'edit')"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn
+                    :icon="mdiPencilOffOutline"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    color="grey-darken-2"
+                    disabled
+                    :aria-label="`Edit ${serviceAccountItem.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+              <PermissionTooltip
+                :has-permission="canDelete"
+                message="You don't have permission to delete service accounts."
+              >
+                <template #default>
+                  <v-btn
+                    :icon="mdiTrashCanOutline"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    color="grey-darken-2"
+                    :aria-label="`Delete ${serviceAccountItem.name}`"
+                    @click="openDialog(serviceAccountItem, 'delete')"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn
+                    :icon="mdiDeleteOffOutline"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    color="grey-darken-2"
+                    disabled
+                    :aria-label="`Delete ${serviceAccountItem.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
             </td>
           </tr>
           <tr v-if="!filteredItems.length">
@@ -348,10 +395,12 @@ import ServiceAccountRegenerateForm from './ServiceAccountRegenerateForm.vue'
 import {
   mdiChevronDown,
   mdiContentCopy,
+  mdiDeleteOffOutline,
   mdiTrashCanOutline,
   mdiHelpCircleOutline,
   mdiMagnify,
   mdiPencil,
+  mdiPencilOffOutline,
   mdiRefresh,
 } from '@mdi/js'
 
@@ -534,7 +583,10 @@ const parsedQuery = computed(() => parseServiceAccountQuery(search.value))
 const selectedRoles = computed<string[]>({
   get: () => parsedQuery.value.roles,
   set: (value) =>
-    (search.value = serializeServiceAccountQuery(value, parsedQuery.value.text)),
+    (search.value = serializeServiceAccountQuery(
+      value,
+      parsedQuery.value.text
+    )),
 })
 
 function toggleRole(role: string) {
@@ -677,9 +729,7 @@ const activeSuggestion = computed(() => {
   if (colonIndex === -1) {
     const query = text.toLocaleLowerCase()
     const items = QUALIFIER_KEYS.filter((key) => key.startsWith(query))
-    return items.length
-      ? { type: 'key' as const, items, start, end }
-      : null
+    return items.length ? { type: 'key' as const, items, start, end } : null
   }
 
   const key = text.slice(0, colonIndex).toLocaleLowerCase()
