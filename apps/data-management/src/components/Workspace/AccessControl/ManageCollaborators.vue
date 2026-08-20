@@ -88,33 +88,6 @@
         @focus="onSearchFocus"
         @blur="onSearchBlur"
       />
-      <div
-        v-if="activeSuggestion && activeSuggestion.items.length"
-        class="workspace-search-suggestions"
-        role="listbox"
-      >
-        <div class="workspace-search-suggestions-title">
-          {{
-            activeSuggestion.type === 'key'
-              ? 'Filter by…'
-              : `${activeSuggestion.key === 'role' ? 'Role' : 'Organization'} values`
-          }}
-        </div>
-        <button
-          v-for="(item, index) in activeSuggestion.items"
-          :key="item"
-          type="button"
-          class="workspace-search-suggestion"
-          :class="{
-            'workspace-search-suggestion--active': index === suggestionIndex,
-          }"
-          role="option"
-          :aria-selected="index === suggestionIndex"
-          @mousedown.prevent="applySuggestion(item)"
-        >
-          {{ item }}{{ activeSuggestion.type === 'key' ? ':' : '' }}
-        </button>
-      </div>
     </div>
 
     <v-btn
@@ -155,6 +128,37 @@
     </div>
   </div>
 
+  <Teleport to="body">
+    <div
+      v-if="activeSuggestion && activeSuggestion.items.length"
+      class="workspace-search-suggestions"
+      :style="suggestionStyle"
+      role="listbox"
+    >
+      <div class="workspace-search-suggestions-title">
+        {{
+          activeSuggestion.type === 'key'
+            ? 'Filter by…'
+            : `${activeSuggestion.key === 'role' ? 'Role' : 'Organization'} values`
+        }}
+      </div>
+      <button
+        v-for="(item, index) in activeSuggestion.items"
+        :key="item"
+        type="button"
+        class="workspace-search-suggestion"
+        :class="{
+          'workspace-search-suggestion--active': index === suggestionIndex,
+        }"
+        role="option"
+        :aria-selected="index === suggestionIndex"
+        @mousedown.prevent="applySuggestion(item)"
+      >
+        {{ item }}{{ activeSuggestion.type === 'key' ? ':' : '' }}
+      </button>
+    </div>
+  </Teleport>
+
   <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
     <small>
       You can add collaborators to this workspace with either Editor or Viewer
@@ -171,7 +175,11 @@
         <tr>
           <th>
             <div class="collaborator-header-filters">
-              <v-menu :close-on-content-click="false" location="bottom start">
+              <v-menu
+                :close-on-content-click="false"
+                location="bottom start"
+                attach="body"
+              >
                 <template #activator="{ props: menuProps }">
                   <v-btn
                     v-bind="menuProps"
@@ -232,7 +240,11 @@
                 </v-list>
               </v-menu>
 
-              <v-menu :close-on-content-click="false" location="bottom start">
+              <v-menu
+                :close-on-content-click="false"
+                location="bottom start"
+                attach="body"
+              >
                 <template #activator="{ props: menuProps }">
                   <v-btn
                     v-bind="menuProps"
@@ -654,6 +666,15 @@ const searchInputEl = ref<HTMLInputElement | null>(null)
 const caret = ref(0)
 const suggestionIndex = ref(0)
 const suggestionsEnabled = ref(false)
+const suggestionStyle = computed(() => {
+  const input = searchInputEl.value
+  if (!input) return {}
+  const rect = input.getBoundingClientRect()
+  return {
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+  }
+})
 
 function syncCaret() {
   const el = searchInputEl.value
@@ -1051,16 +1072,17 @@ watch(search, (value) => {
   font-weight: var(--hs-font-weight-semibold);
 }
 .workspace-search-suggestions {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 10;
+  position: fixed;
+  z-index: 2000;
   min-width: 220px;
   max-width: 320px;
   max-height: 240px;
   overflow-y: auto;
   padding: var(--hs-space-8) 0;
-  background: var(--hs-surface);
+  /* This panel is teleported outside the theme root, so keep an opaque
+     fallback for environments where the HydroServer surface alias is not
+     inherited by body-mounted content. */
+  background-color: var(--hs-surface, #fff);
   border: 1px solid var(--hs-border);
   border-radius: var(--hs-radius-sm);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -1084,7 +1106,8 @@ watch(search, (value) => {
 }
 .workspace-search-suggestion:hover,
 .workspace-search-suggestion--active {
-  background: var(--hs-surface-muted);
+  background-color: var(--hs-surface-muted, #eef4fa);
+  color: var(--hs-text-primary, #1c1b1f);
 }
 .collaborator-filter-button {
   min-width: auto;
@@ -1107,6 +1130,8 @@ watch(search, (value) => {
 }
 .collaborator-filter-menu {
   min-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
   padding: var(--hs-space-8) 0;
 }
 .collaborator-filter-title {
