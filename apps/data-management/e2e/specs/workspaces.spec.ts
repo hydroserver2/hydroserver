@@ -177,9 +177,11 @@ test.describe('workspace management', () => {
     const readTableLayout = async (sectionTestId: string) =>
       page.getByTestId(sectionTestId).evaluate((section) => {
         const detailBody = section.closest('.detail-body') as HTMLElement | null
-        const table = section.querySelector(
-          '.v-data-table'
-        ) as HTMLElement | null
+        // Service accounts now render a plain v-table (matching the
+        // collaborators table), which only carries the `.v-table` class;
+        // the metadata table's v-data-table-virtual carries both
+        // `.v-table` and `.v-data-table`, so `.v-table` matches either.
+        const table = section.querySelector('.v-table') as HTMLElement | null
         const wrapper = table?.querySelector(
           '.v-table__wrapper'
         ) as HTMLElement | null
