@@ -384,6 +384,9 @@ const canManageSystemMetadata = computed(() => isAdmin())
   min-height: 0;
 }
 .metadata-table-selector {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   min-height: 42px;
@@ -424,6 +427,16 @@ const canManageSystemMetadata = computed(() => isAdmin())
   max-height: 100%;
   min-height: 0;
   overflow: hidden;
+}
+.metadata-window
+  :deep(.v-table--fixed-header > .v-table__wrapper > table > thead) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.metadata-window
+  :deep(.v-table--fixed-header > .v-table__wrapper > table > thead > tr > th) {
+  background: var(--hs-surface-muted);
 }
 .metadata-window :deep(td),
 .metadata-window :deep(th) {
