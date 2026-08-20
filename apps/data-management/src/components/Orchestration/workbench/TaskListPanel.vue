@@ -713,6 +713,9 @@ const pauseTooltipText = (item: TaskRow) => {
   background: white;
   flex-shrink: 0;
 }
+.detail-header > .min-w-0 {
+  flex: 1;
+}
 .detail-title {
   color: #1c1b1f;
 }
@@ -724,7 +727,6 @@ const pauseTooltipText = (item: TaskRow) => {
   margin-top: 4px;
 }
 .detail-actions {
-  margin-left: auto;
   display: flex;
   gap: 8px;
   align-items: center;
