@@ -286,11 +286,7 @@
                       class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-members-count"
                     >
-                      {{
-                        overviewStatsLoaded
-                          ? (overviewStats.members ?? '—')
-                          : '—'
-                      }}
+                      {{ overviewStats.members ?? '—' }}
                     </div>
                   </div>
                   <div class="stat-tile">
@@ -304,9 +300,7 @@
                       class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-sites-count"
                     >
-                      {{
-                        overviewStatsLoaded ? (overviewStats.sites ?? '—') : '—'
-                      }}
+                      {{ overviewStats.sites ?? '—' }}
                     </div>
                   </div>
                   <div class="stat-tile">
@@ -322,11 +316,7 @@
                       class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-service-accounts-count"
                     >
-                      {{
-                        overviewStatsLoaded
-                          ? (overviewStats.serviceAccounts ?? '—')
-                          : '—'
-                      }}
+                      {{ overviewStats.serviceAccounts ?? '—' }}
                     </div>
                   </div>
                   <div class="stat-tile">
@@ -342,17 +332,13 @@
                       class="stat-tile-value hs-text-xl hs-font-data"
                       data-testid="overview-metadata-count"
                     >
-                      {{
-                        overviewStatsLoaded
-                          ? (overviewStats.metadata ?? '—')
-                          : '—'
-                      }}
+                      {{ overviewStats.metadata ?? '—' }}
                     </div>
                   </div>
                 </div>
 
                 <v-alert
-                  v-if="overviewStatsLoaded && overviewStatsHasError"
+                  v-if="overviewStatsComplete && overviewStatsHasError"
                   class="mb-4"
                   type="warning"
                   variant="tonal"
@@ -622,7 +608,7 @@ const overviewStats = ref<{
   serviceAccounts: number | null
   metadata: number | null
 }>({ members: null, sites: null, serviceAccounts: null, metadata: null })
-const overviewStatsLoaded = ref(false)
+const overviewStatsComplete = ref(false)
 const overviewStatsHasError = ref(false)
 let overviewRequestId = 0
 
@@ -642,7 +628,7 @@ function responseData<T>(result: PromiseSettledResult<unknown>): T[] | null {
 
 const loadOverviewStats = async (workspaceId: string) => {
   const requestId = ++overviewRequestId
-  overviewStatsLoaded.value = false
+  overviewStatsComplete.value = false
   overviewStatsHasError.value = false
   overviewStats.value = {
     members: null,
@@ -663,10 +649,15 @@ const loadOverviewStats = async (workspaceId: string) => {
     ? hs.workspaces.getServiceAccounts(workspaceId)
     : Promise.resolve(null)
 
-  const results = await Promise.allSettled([
+  // Load the numbers users look for first. Metadata is intentionally kept out
+  // of this critical path because each list may require several paginated
+  // requests before its total can be calculated.
+  const primaryResults = Promise.allSettled([
     hs.workspaces.getCollaborators(workspaceId),
     hs.monitoringSites.listSiteSummaries(workspaceId),
     serviceAccountRequest,
+  ])
+  const metadataResults = Promise.allSettled([
     hs.methods.list({ workspace_id: [workspaceId], fetch_all: true }),
     hs.observedProperties.list({
       workspace_id: [workspaceId],
@@ -683,34 +674,40 @@ const loadOverviewStats = async (workspaceId: string) => {
     }),
   ])
 
+  const results = await primaryResults
   if (requestId !== overviewRequestId || selectedId.value !== workspaceId)
     return
 
-  const counts = results.map(responseCount)
+  const primaryCounts = results.map(responseCount)
   const collaborators = responseData<Collaborator>(results[0])
   const memberCount = collaborators
     ? collaborators.filter(
         (collaborator) => collaborator.user && !collaborator.serviceAccount
       ).length + 1
     : null
-  const metadataCounts = counts.slice(3)
-  const metadata = metadataCounts.every((count) => count !== null)
-    ? metadataCounts.reduce<number>((total, count) => total + (count ?? 0), 0)
-    : null
-
   overviewStats.value = {
     // +1 for the owner, who isn't included in the collaborators list.
     members: memberCount,
-    sites: counts[1],
-    serviceAccounts: canViewServiceAccounts ? counts[2] : null,
-    metadata,
+    sites: primaryCounts[1],
+    serviceAccounts: canViewServiceAccounts ? primaryCounts[2] : null,
+    metadata: null,
   }
   overviewStatsHasError.value =
-    counts[0] === null ||
-    counts[1] === null ||
-    (canViewServiceAccounts && counts[2] === null) ||
-    metadata === null
-  overviewStatsLoaded.value = true
+    primaryCounts[0] === null ||
+    primaryCounts[1] === null ||
+    (canViewServiceAccounts && primaryCounts[2] === null)
+  // Vue can render the primary totals now while the slower metadata totals
+  // continue in the background.
+  const metadataCounts = (await metadataResults).map(responseCount)
+  if (requestId !== overviewRequestId || selectedId.value !== workspaceId)
+    return
+
+  const metadata = metadataCounts.every((count) => count !== null)
+    ? metadataCounts.reduce<number>((total, count) => total + (count ?? 0), 0)
+    : null
+  overviewStats.value.metadata = metadata
+  overviewStatsHasError.value ||= metadata === null
+  overviewStatsComplete.value = true
 }
 
 watch(
