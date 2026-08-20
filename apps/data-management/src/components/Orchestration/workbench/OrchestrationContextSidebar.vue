@@ -221,34 +221,6 @@
       </template>
     </div>
 
-    <div v-if="isIngestion" class="sidebar-footer">
-      <button
-        v-if="canCreate"
-        type="button"
-        class="sidebar-footer-btn hs-text-sm"
-        :style="{ color: accent, borderColor: accent + '66' }"
-        @click="$emit('create')"
-      >
-        <v-icon :icon="mdiPlus" size="16" class="mr-1" />
-        {{ addLabel }}
-      </button>
-      <v-tooltip v-else location="top">
-        <template #activator="{ props: tooltipProps }">
-          <span v-bind="tooltipProps" class="inline-flex w-full">
-            <button
-              type="button"
-              class="sidebar-footer-btn hs-text-sm"
-              :style="{ color: accent, borderColor: accent + '66' }"
-              disabled
-            >
-              <v-icon :icon="mdiPlus" size="16" class="mr-1" />
-              {{ addLabel }}
-            </button>
-          </span>
-        </template>
-        <span>{{ READ_ONLY_TOOLTIP }}</span>
-      </v-tooltip>
-    </div>
   </aside>
 </template>
 
@@ -464,25 +436,5 @@ const addLabel = computed(() =>
 .sidebar-empty {
   padding: var(--hs-space-16) var(--hs-space-16);
   color: var(--hs-text-muted);
-}
-.sidebar-footer {
-  padding: var(--hs-space-10) var(--hs-space-16);
-  border-top: 1px solid var(--hs-border);
-}
-.sidebar-footer-btn {
-  background: none;
-  border: 1px dashed;
-  border-radius: var(--hs-radius-md);
-  padding: var(--hs-space-6) 0;
-  width: 100%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-.sidebar-footer-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 </style>

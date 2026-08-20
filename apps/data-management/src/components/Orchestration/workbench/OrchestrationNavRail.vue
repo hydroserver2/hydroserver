@@ -43,19 +43,10 @@
       </button>
     </div>
 
-    <div class="rail-bottom">
-      <button type="button" class="rail-btn" @click="$emit('open-workspaces')">
-        <span class="rail-pill">
-          <v-icon :icon="mdiBriefcaseOutline" size="22" />
-        </span>
-        <span class="rail-label hs-text-2xs">Workspaces</span>
-      </button>
-    </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { mdiBriefcaseOutline } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { type TabDefinition, type TabId } from './orchestrationTabs'
@@ -66,7 +57,6 @@ defineProps<{
 
 defineEmits<{
   (e: 'select-tab', id: TabId): void
-  (e: 'open-workspaces'): void
 }>()
 
 const { activeTab } = storeToRefs(useOrchestrationStore())
@@ -92,14 +82,6 @@ const activeColor = (tab: TabDefinition) =>
   align-items: center;
   gap: var(--hs-space-2);
   width: 100%;
-}
-.rail-bottom {
-  margin-top: auto;
-  width: 100%;
-  padding-top: var(--hs-space-12);
-  display: flex;
-  flex-direction: column;
-  gap: var(--hs-space-2);
 }
 .rail-btn {
   display: flex;

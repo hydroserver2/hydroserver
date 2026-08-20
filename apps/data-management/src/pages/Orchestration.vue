@@ -8,7 +8,6 @@
           <OrchestrationNavRail
             :tabs="tabs"
             @select-tab="setActiveTab"
-            @open-workspaces="openWorkspaceManager"
           />
 
           <OrchestrationContextSidebar

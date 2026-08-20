@@ -265,7 +265,7 @@
       </div>
 
       <v-data-table-virtual
-        v-else
+        v-else-if="sortedVisibleTasks.length > 0 || activeTab === 'ingestion'"
         :headers="tableHeaders"
         :items="sortedVisibleTasks"
         :sort-by="defaultSortBy"
@@ -278,10 +278,6 @@
         density="compact"
       >
         <template #header.name>
-          <span v-if="activeTab !== 'ingestion'">Task name</span>
-        </template>
-
-        <template #header.statusSort>
           <v-menu
             v-if="activeTab === 'ingestion'"
             :close-on-content-click="false"
@@ -294,7 +290,10 @@
                 variant="text"
                 size="small"
                 class="task-filter-button"
-                :class="{ 'task-filter-button--active': statusFilter.length }"
+                :class="{
+                  'task-filter-button--active': statusFilter.length,
+                  'task-filter-button--ingestion': activeTab === 'ingestion',
+                }"
                 :append-icon="mdiChevronDown"
                 :aria-label="`Filter by status${statusFilter.length ? ` (${statusFilter.length} selected)` : ''}`"
               >
@@ -334,15 +333,51 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          <span v-else>Status</span>
+          <span v-else>Task name</span>
+        </template>
+
+        <template #header.statusSort>
+          <span v-if="activeTab !== 'ingestion'">Status</span>
         </template>
 
         <template #header.actions>
           <span v-if="activeTab !== 'ingestion'">Actions</span>
         </template>
 
+        <template #no-data>
+          <div class="task-table-no-data hs-text-sm">
+            No tasks match the current filters.
+          </div>
+        </template>
+
         <template #item.name="{ item }">
-          <span class="task-name font-weight-medium">{{
+          <template v-if="activeTab === 'ingestion'">
+            <div class="ingestion-task-content">
+              <div class="ingestion-task-name">
+                {{ item.name || '—' }}
+              </div>
+              <div class="ingestion-task-meta hs-text-sm">
+                <span class="ingestion-task-meta-label hs-label">Last</span>
+                <span>{{ item.lastRun }}</span>
+                <span aria-hidden="true">·</span>
+                <span class="ingestion-task-meta-label hs-label">Next</span>
+                <span>{{ item.nextRun }}</span>
+                <v-chip
+                  v-if="item.noWorkWarning"
+                  size="x-small"
+                  density="comfortable"
+                  color="amber-darken-3"
+                  variant="tonal"
+                  :prepend-icon="mdiAlert"
+                  rounded="lg"
+                  class="task-no-work-chip hs-label"
+                >
+                  {{ item.noWorkWarning.label }}
+                </v-chip>
+              </div>
+            </div>
+          </template>
+          <span v-else class="task-name font-weight-medium">{{
             item.name || '—'
           }}</span>
         </template>
@@ -411,7 +446,7 @@
               </div>
             </div>
             <v-tooltip
-              v-if="item.noWorkWarning"
+              v-if="activeTab !== 'ingestion' && item.noWorkWarning"
               location="top"
               :open-delay="0"
               :close-delay="80"
@@ -758,6 +793,15 @@ const toggleStatusFilter = (status: string) => {
     next.add(status)
   }
   statusFilter.value = Array.from(next)
+
+  const withoutStatuses = taskSearch.value
+    .replace(/(?:^|\s)status:(?:"[^"]*"|\S+)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const statusQuery = Array.from(next)
+    .map((value) => `status:${/\s/.test(value) ? `"${value}"` : value}`)
+    .join(' ')
+  taskSearch.value = [statusQuery, withoutStatuses].filter(Boolean).join(' ')
 }
 
 const removeTaskTypeFilter = (index: number) => {
@@ -933,6 +977,10 @@ const pauseTooltipText = (item: TaskRow) => {
 .task-filter-button--active {
   color: rgb(var(--v-theme-primary));
 }
+.task-filter-button--ingestion {
+  position: relative;
+  left: -24px;
+}
 .task-filter-menu {
   min-width: 240px;
   padding: var(--hs-space-8) 0;
@@ -974,11 +1022,50 @@ const pauseTooltipText = (item: TaskRow) => {
 .tasks-table--ingestion :deep(.v-table--fixed-header > .v-table__wrapper > table > thead > tr > th) {
   box-shadow: none !important;
 }
+.tasks-table--ingestion .task-run-times {
+  display: none;
+}
+.tasks-table--ingestion .task-status-cell {
+  align-items: center;
+  gap: 0;
+}
+.tasks-table--ingestion :deep(thead th:first-child) {
+  width: 32px;
+  padding: 0 0 0 12px !important;
+}
+.tasks-table--ingestion :deep(tbody td:first-child) {
+  width: 32px;
+  padding: 13px 0 13px 12px !important;
+}
+.tasks-table--ingestion :deep(tbody td:nth-child(2)) {
+  padding-left: 4px;
+}
+.ingestion-task-name {
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.3;
+}
+.ingestion-task-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-6);
+  margin-top: var(--hs-space-4);
+  color: var(--hs-text-secondary);
+}
+.ingestion-task-meta-label {
+  color: var(--hs-text-secondary);
+}
 .tasks-table :deep(tbody tr) {
   border-bottom: 1px solid #f0f0f0;
 }
 .tasks-table :deep(tbody tr:hover) {
   background: #f5f7fa;
+}
+.task-table-no-data {
+  padding: var(--hs-space-16);
+  color: var(--hs-text-secondary);
+  text-align: center;
 }
 .task-name {
   color: #1c1b1f;
