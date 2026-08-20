@@ -823,7 +823,7 @@ const pauseTooltipText = (item: TaskRow) => {
 }
 .detail-filterbar {
   padding: 0 var(--hs-space-24);
-  margin: var(--hs-space-8) 0 var(--hs-space-10);
+  margin: var(--hs-space-24) 0 var(--hs-space-10);
 }
 .workspace-table-search {
   position: relative;
@@ -869,6 +869,9 @@ const pauseTooltipText = (item: TaskRow) => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 22px;
+}
+.detail-filterbar + .detail-body {
+  padding-top: 0;
 }
 .detail-loading {
   display: flex;
