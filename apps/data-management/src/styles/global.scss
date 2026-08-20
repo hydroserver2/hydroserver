@@ -94,6 +94,25 @@
   border-radius: var(--hs-radius-sm);
 }
 
+.hs-table-icon-action {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  padding: 0 !important;
+  border-radius: var(--hs-radius-sm) !important;
+  color: var(--hs-text-secondary) !important;
+}
+
+.hs-table-icon-action:hover:not(:disabled) {
+  background: rgba(var(--v-theme-text-secondary), 0.12) !important;
+  color: var(--hs-text-secondary) !important;
+}
+
+.hs-table-icon-action--danger:hover:not(:disabled) {
+  background: rgba(var(--v-theme-danger), 0.1) !important;
+  color: rgb(var(--v-theme-red-darken-2)) !important;
+}
+
 .hs-table-tools > :last-child {
   margin-left: auto;
   flex-shrink: 0;

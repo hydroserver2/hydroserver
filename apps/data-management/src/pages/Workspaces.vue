@@ -1267,19 +1267,11 @@ onMounted(async () => {
   background: rgba(var(--v-theme-text-secondary), 0.12);
 }
 .sidebar-item-action--danger {
-  color: var(--hs-danger);
-}
-.sidebar-item-action--danger:hover:not(:disabled) {
-  background: rgba(var(--v-theme-danger), 0.1);
-}
-.sidebar-item-action--selected {
   color: var(--hs-text-secondary);
 }
-.sidebar-item-action--danger.sidebar-item-action--selected {
-  color: var(--hs-danger);
-}
-.sidebar-item-action--selected:hover:not(:disabled) {
-  background: rgba(var(--v-theme-primary), 0.12);
+.sidebar-item-action--danger:hover:not(:disabled) {
+  color: rgb(var(--v-theme-red-darken-2));
+  background: rgba(var(--v-theme-danger), 0.1);
 }
 .sidebar-item-action:disabled {
   cursor: not-allowed;

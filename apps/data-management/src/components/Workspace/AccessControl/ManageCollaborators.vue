@@ -356,6 +356,8 @@
             <template v-else>
               <v-btn
                 variant="text"
+                size="small"
+                class="hs-table-icon-action"
                 color="grey-darken-2"
                 :icon="mdiPencil"
                 :disabled="!canEdit"
@@ -365,7 +367,9 @@
               />
               <v-btn
                 variant="text"
-                color="red-darken-2"
+                size="small"
+                class="hs-table-icon-action hs-table-icon-action--danger"
+                color="grey-darken-2"
                 :icon="mdiTrashCanOutline"
                 :loading="removingEmail === item.email"
                 :disabled="!canRemove(item) || !!removingEmail"

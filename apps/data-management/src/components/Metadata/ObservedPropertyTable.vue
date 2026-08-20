@@ -10,18 +10,22 @@
       <MetadataScopeChip :scope="item._scope" />
     </template>
     <template v-slot:item.actions="{ item }">
-      <v-icon
+      <v-btn
         v-if="canEdit && (item._scope !== 'system' || canManageSystem)"
         :icon="mdiPencil"
-        color="grey-darken-2"
+        class="hs-table-icon-action"
+        variant="text"
+        size="small"
         :data-testid="`edit-metadata-${item.id}`"
         aria-label="Edit metadata item"
         @click="openDialog(item, 'edit')"
       />
-      <v-icon
+      <v-btn
         v-if="canDelete && (item._scope !== 'system' || canManageSystem)"
         :icon="mdiTrashCanOutline"
-        color="grey-darken-2"
+        class="hs-table-icon-action hs-table-icon-action--danger"
+        variant="text"
+        size="small"
         :data-testid="`delete-metadata-${item.id}`"
         aria-label="Delete metadata item"
         @click="openDialog(item, 'delete')"
