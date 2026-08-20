@@ -112,22 +112,7 @@
       "
       class="hs-table-tools detail-filterbar"
     >
-      <div class="workspace-table-search">
-        <v-icon
-          :icon="mdiMagnify"
-          size="16"
-          class="workspace-table-search-icon"
-        />
-        <input
-          :value="taskSearch"
-          placeholder="Search tasks…"
-          class="workspace-table-search-input hs-text-sm"
-          aria-label="Search tasks"
-          autocomplete="off"
-          spellcheck="false"
-          @input="taskSearch = ($event.target as HTMLInputElement).value"
-        />
-      </div>
+      <HsSearchInput v-model="taskSearch" placeholder="Search tasks…" />
       <v-autocomplete
         v-if="activeTab !== 'ingestion'"
         :model-value="statusFilter"
@@ -331,92 +316,94 @@
           </thead>
           <tbody>
             <tr v-for="item in sortedVisibleTasks" :key="item.id">
-            <td class="ingestion-status-cell">
-              <v-tooltip location="bottom" :open-delay="0" :close-delay="80">
-                <template #activator="{ props: tooltipProps }">
-                  <span
-                    v-bind="tooltipProps"
-                    class="task-status-icon"
-                    :style="{ color: statusIconColor(item.statusSort) }"
-                    :aria-label="item.statusSort"
+              <td class="ingestion-status-cell">
+                <v-tooltip location="bottom" :open-delay="0" :close-delay="80">
+                  <template #activator="{ props: tooltipProps }">
+                    <span
+                      v-bind="tooltipProps"
+                      class="task-status-icon"
+                      :style="{ color: statusIconColor(item.statusSort) }"
+                      :aria-label="item.statusSort"
+                    >
+                      <v-icon :icon="statusIcon(item.statusSort)" size="20" />
+                    </span>
+                  </template>
+                  <span>{{
+                    item.lastRunMessage || 'No run history available yet.'
+                  }}</span>
+                </v-tooltip>
+              </td>
+              <td class="ingestion-task-cell">
+                <div class="ingestion-task-name">{{ item.name || '—' }}</div>
+                <div class="ingestion-task-meta hs-text-sm">
+                  <span class="ingestion-task-meta-label hs-label">Last</span>
+                  <span>{{ item.lastRun }}</span>
+                  <span aria-hidden="true">·</span>
+                  <span class="ingestion-task-meta-label hs-label">Next</span>
+                  <span>{{ item.nextRun }}</span>
+                  <v-chip
+                    v-if="item.noWorkWarning"
+                    size="x-small"
+                    density="comfortable"
+                    color="amber-darken-3"
+                    variant="tonal"
+                    :prepend-icon="mdiAlert"
+                    rounded="lg"
+                    class="task-no-work-chip hs-label"
+                    :title="item.noWorkWarning.message"
                   >
-                    <v-icon :icon="statusIcon(item.statusSort)" size="20" />
+                    {{ item.noWorkWarning.label }}
+                  </v-chip>
+                </div>
+              </td>
+              <td class="text-right ingestion-actions-cell">
+                <div class="task-actions-inner">
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="black"
+                    icon
+                    :disabled="pauseButtonDisabled(item)"
+                    class="task-pause-btn"
+                    aria-label="Pause or resume task"
+                    @click.stop="$emit('toggle-paused', item)"
+                  >
+                    <NoScheduleIcon v-if="!item.schedule" />
+                    <v-icon
+                      v-else
+                      :icon="item.schedule.enabled ? mdiPause : mdiPlay"
+                      size="16"
+                    />
+                  </v-btn>
+                  <v-btn
+                    v-if="canEdit && !item.userClickedRunNow"
+                    variant="outlined"
+                    color="green-darken-3"
+                    :prepend-icon="mdiPlay"
+                    class="detail-action-btn detail-action-btn--compact text-none"
+                    rounded="lg"
+                    @click.stop="$emit('run-now', item)"
+                  >
+                    Run now
+                  </v-btn>
+                  <span
+                    v-else-if="canEdit && item.userClickedRunNow"
+                    class="hs-text-sm font-weight-semibold text-slate-500"
+                  >
+                    Run requested
                   </span>
-                </template>
-                <span>{{ item.lastRunMessage || 'No run history available yet.' }}</span>
-              </v-tooltip>
-            </td>
-            <td class="ingestion-task-cell">
-              <div class="ingestion-task-name">{{ item.name || '—' }}</div>
-              <div class="ingestion-task-meta hs-text-sm">
-                <span class="ingestion-task-meta-label hs-label">Last</span>
-                <span>{{ item.lastRun }}</span>
-                <span aria-hidden="true">·</span>
-                <span class="ingestion-task-meta-label hs-label">Next</span>
-                <span>{{ item.nextRun }}</span>
-                <v-chip
-                  v-if="item.noWorkWarning"
-                  size="x-small"
-                  density="comfortable"
-                  color="amber-darken-3"
-                  variant="tonal"
-                  :prepend-icon="mdiAlert"
-                  rounded="lg"
-                  class="task-no-work-chip hs-label"
-                  :title="item.noWorkWarning.message"
-                >
-                  {{ item.noWorkWarning.label }}
-                </v-chip>
-              </div>
-            </td>
-            <td class="text-right ingestion-actions-cell">
-              <div class="task-actions-inner">
-                <v-btn
-                  variant="text"
-                  size="small"
-                  color="black"
-                  icon
-                  :disabled="pauseButtonDisabled(item)"
-                  class="task-pause-btn"
-                  aria-label="Pause or resume task"
-                  @click.stop="$emit('toggle-paused', item)"
-                >
-                  <NoScheduleIcon v-if="!item.schedule" />
-                  <v-icon
-                    v-else
-                    :icon="item.schedule.enabled ? mdiPause : mdiPlay"
-                    size="16"
-                  />
-                </v-btn>
-                <v-btn
-                  v-if="canEdit && !item.userClickedRunNow"
-                  variant="outlined"
-                  color="green-darken-3"
-                  :prepend-icon="mdiPlay"
-                  class="detail-action-btn detail-action-btn--compact text-none"
-                  rounded="lg"
-                  @click.stop="$emit('run-now', item)"
-                >
-                  Run now
-                </v-btn>
-                <span
-                  v-else-if="canEdit && item.userClickedRunNow"
-                  class="hs-text-sm font-weight-semibold text-slate-500"
-                >
-                  Run requested
-                </span>
-                <v-btn
-                  variant="text"
-                  size="small"
-                  :style="{ color: accent }"
-                  :append-icon="mdiChevronRight"
-                  class="text-none"
-                  @click.stop="$emit('open-task', item)"
-                >
-                  Details
-                </v-btn>
-              </div>
-            </td>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :style="{ color: accent }"
+                    :append-icon="mdiChevronRight"
+                    class="text-none"
+                    @click.stop="$emit('open-task', item)"
+                  >
+                    Details
+                  </v-btn>
+                </div>
+              </td>
             </tr>
             <tr v-if="sortedVisibleTasks.length === 0">
               <td colspan="3" class="task-table-no-data hs-text-sm">
@@ -738,7 +725,6 @@ import {
   mdiClockOutline,
   mdiFilterVariant,
   mdiHelpCircleOutline,
-  mdiMagnify,
   mdiPause,
   mdiPauseCircleOutline,
   mdiPlay,
@@ -749,6 +735,7 @@ import { useOrchestrationStore } from '@/store/orchestration'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import WorkspaceSelector from '@/components/Workspace/WorkspaceSelector.vue'
+import HsSearchInput from '@/components/base/HsSearchInput.vue'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
   READ_ONLY_TOOLTIP,
@@ -966,40 +953,6 @@ const pauseTooltipText = (item: TaskRow) => {
 .detail-filterbar {
   padding: 0 var(--hs-space-24);
   margin: var(--hs-space-24) 0 var(--hs-space-10);
-}
-.workspace-table-search {
-  position: relative;
-  flex: 1;
-  max-width: 560px;
-}
-.workspace-table-search-icon {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  color: var(--hs-input-border);
-  pointer-events: none;
-}
-.workspace-table-search-input {
-  position: relative;
-  width: 100%;
-  height: 30px;
-  border: 1px solid var(--hs-input-border);
-  border-radius: var(--hs-radius-sm);
-  padding-left: 30px;
-  padding-right: var(--hs-space-10);
-  outline: none;
-  background: var(--hs-surface);
-  color: var(--hs-text-secondary);
-}
-.workspace-table-search-input::placeholder {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-.workspace-table-search-input:focus {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .detail-status-filter {
   max-width: 320px;

@@ -1,6 +1,7 @@
 import '@/styles/tailwind.css'
 import '@hydroserver/design-tokens/fonts.css'
 import '@hydroserver/design-tokens/tokens.css'
+import '@hydroserver/design-tokens/components.css'
 import '@/styles/global.scss'
 import 'ol/ol.css'
 

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "files": [
+    "components.css",
     "fonts.css",
     "tokens.css",
     "vuetify.ts"
@@ -13,6 +14,7 @@
     "./vuetify.ts"
   ],
   "exports": {
+    "./components.css": "./components.css",
     "./fonts.css": "./fonts.css",
     "./tokens.css": "./tokens.css",
     "./vuetify": "./vuetify.ts"

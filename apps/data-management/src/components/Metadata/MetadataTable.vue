@@ -5,15 +5,7 @@
     :data-testid="`${scope}-metadata-table`"
   >
     <div class="hs-table-tools">
-      <div class="metadata-search">
-        <v-icon :icon="mdiMagnify" size="16" class="metadata-search-icon" />
-        <input
-          v-model="search"
-          placeholder="Search metadata…"
-          class="metadata-search-input hs-text-sm"
-          aria-label="Search metadata"
-        />
-      </div>
+      <HsSearchInput v-model="search" placeholder="Search metadata…" />
 
       <v-btn
         :icon="mdiHelpCircleOutline"
@@ -210,6 +202,7 @@ import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCard.vue'
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
+import HsSearchInput from '@/components/base/HsSearchInput.vue'
 import { computed, ref } from 'vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { storeToRefs } from 'pinia'
@@ -220,7 +213,7 @@ import {
   Workspace,
 } from '@hydroserver/client'
 import { useMetadata } from '@/store/metadata'
-import { mdiHelpCircleOutline, mdiMagnify } from '@mdi/js'
+import { mdiHelpCircleOutline } from '@mdi/js'
 
 type MetadataScope = 'workspace' | 'system' | 'all'
 
@@ -307,7 +300,8 @@ const metaMap: Record<string, any> = {
 const hasMetadataPermission = (action: PermissionAction) => {
   if (scope.value === 'system') return isAdmin()
   const resource = metaMap[tab.value]?.resource as
-    PermissionResource | undefined
+    | PermissionResource
+    | undefined
   return !!(
     resource &&
     activeWorkspace.value &&
@@ -340,38 +334,6 @@ const canManageSystemMetadata = computed(() => isAdmin())
   line-height: 1.5;
   max-width: 640px;
   margin-bottom: 10px;
-}
-.metadata-search {
-  position: relative;
-  flex: 1;
-  max-width: 560px;
-}
-.metadata-search-icon {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--hs-input-border);
-  pointer-events: none;
-}
-.metadata-search-input {
-  width: 100%;
-  height: 30px;
-  border: 1px solid var(--hs-input-border);
-  border-radius: var(--hs-radius-sm);
-  padding-left: 30px;
-  padding-right: var(--hs-space-10);
-  outline: none;
-  background: var(--hs-surface);
-  color: var(--hs-text-primary);
-}
-.metadata-search-input::placeholder {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-.metadata-search-input:focus {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .metadata-type-tabs {
   flex: 1;

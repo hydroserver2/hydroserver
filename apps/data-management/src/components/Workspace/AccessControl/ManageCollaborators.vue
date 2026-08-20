@@ -53,16 +53,9 @@
   </v-card>
 
   <div class="hs-table-tools">
-    <div class="workspace-table-search">
-      <v-icon
-        :icon="mdiMagnify"
-        size="16"
-        class="workspace-table-search-icon"
-      />
-      <div
-        class="workspace-table-search-highlight hs-text-sm"
-        aria-hidden="true"
-      >
+    <div class="hs-query-search">
+      <v-icon :icon="mdiMagnify" size="16" class="hs-query-search__icon" />
+      <div class="hs-query-search__highlight hs-text-sm" aria-hidden="true">
         <span
           v-for="(segment, index) in highlightSegments"
           :key="index"
@@ -74,7 +67,7 @@
         ref="searchInputEl"
         v-model="search"
         placeholder="Search collaborators…"
-        class="workspace-table-search-input hs-text-sm"
+        class="hs-query-search__input hs-text-sm"
         aria-label="Search collaborators"
         autocomplete="off"
         spellcheck="false"
@@ -131,11 +124,11 @@
   <Teleport to="body">
     <div
       v-if="activeSuggestion && activeSuggestion.items.length"
-      class="workspace-search-suggestions"
+      class="hs-query-search-popover"
       :style="suggestionStyle"
       role="listbox"
     >
-      <div class="workspace-search-suggestions-title">
+      <div class="hs-query-search-popover__title">
         {{
           activeSuggestion.type === 'key'
             ? 'Filter by…'
@@ -146,9 +139,9 @@
         v-for="(item, index) in activeSuggestion.items"
         :key="item"
         type="button"
-        class="workspace-search-suggestion"
+        class="hs-query-search-popover__option"
         :class="{
-          'workspace-search-suggestion--active': index === suggestionIndex,
+          'hs-query-search-popover__option--active': index === suggestionIndex,
         }"
         role="option"
         :aria-selected="index === suggestionIndex"
@@ -1069,97 +1062,6 @@ watch(search, (value) => {
   max-width: 640px;
   margin-bottom: 10px;
 }
-.workspace-table-search {
-  position: relative;
-  flex: 1;
-  max-width: 560px;
-}
-.workspace-table-search-icon {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  color: var(--hs-input-border);
-  pointer-events: none;
-}
-.workspace-table-search input.workspace-table-search-input {
-  position: relative;
-  width: 100%;
-  height: 30px;
-  border: 1px solid var(--hs-input-border);
-  border-radius: var(--hs-radius-sm);
-  padding-left: 30px;
-  padding-right: var(--hs-space-10);
-  outline: none;
-  /* Transparent so the highlight overlay behind it (in DOM order, painted
-     underneath) shows through — same characters, rendered in color so valid
-     qualifier values can be highlighted like GitHub does. The overlay
-     carries the actual surface fill. */
-  background: transparent;
-  color: transparent;
-  caret-color: var(--hs-text-secondary);
-}
-.workspace-table-search input.workspace-table-search-input::placeholder {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-.workspace-table-search-highlight {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  padding-left: 30px;
-  padding-right: var(--hs-space-10);
-  background: var(--hs-surface);
-  border-radius: var(--hs-radius-sm);
-  white-space: pre;
-  overflow: hidden;
-  pointer-events: none;
-  color: var(--hs-text-secondary);
-}
-.workspace-table-search-highlight .hl-value-valid {
-  color: rgb(var(--v-theme-primary));
-  font-weight: var(--hs-font-weight-semibold);
-}
-.workspace-search-suggestions {
-  position: fixed;
-  z-index: 2000;
-  min-width: 220px;
-  max-width: 320px;
-  max-height: 240px;
-  overflow-y: auto;
-  padding: var(--hs-space-8) 0;
-  /* This panel is teleported outside the theme root, so keep an opaque
-     fallback for environments where the HydroServer surface alias is not
-     inherited by body-mounted content. */
-  background-color: var(--hs-surface, #fff);
-  border: 1px solid var(--hs-border);
-  border-radius: var(--hs-radius-sm);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-.workspace-search-suggestions-title {
-  padding: var(--hs-space-4) var(--hs-space-16) var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  font-size: var(--hs-font-2xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.workspace-search-suggestion {
-  display: block;
-  width: 100%;
-  padding: var(--hs-space-8) var(--hs-space-16);
-  text-align: left;
-  color: var(--hs-text-primary);
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-.workspace-search-suggestion:hover,
-.workspace-search-suggestion--active {
-  background-color: var(--hs-surface-muted, #eef4fa);
-  color: var(--hs-text-primary, #1c1b1f);
-}
 .collaborator-filter-button {
   min-width: auto;
   color: var(--hs-text-primary);
@@ -1248,12 +1150,6 @@ watch(search, (value) => {
 .collaborator-role-editor {
   max-width: 200px;
   margin-top: 4px;
-}
-.workspace-table-search-input:focus {
-  border-color: rgb(var(--v-theme-primary));
-  /* Inset so the ring never gets clipped by an ancestor's overflow:hidden
-     (the search bar sits flush against the tab-window's left edge). */
-  box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
 }
 .collaborators-table-card {
   margin-top: 0;

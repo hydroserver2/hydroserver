@@ -76,122 +76,18 @@
     </v-alert>
 
     <div class="workspaces-page-body">
-      <div class="workspaces-shell">
-        <aside class="sidebar" data-testid="workspace-sidebar">
-          <div class="sidebar-header">
-            <div class="sidebar-header-row">
-              <span class="sidebar-title hs-label">Workspaces</span>
-              <PermissionTooltip
-                :has-permission="canCreateWorkspace"
-                message="You don't have permission to create a workspace."
-              >
-                <template #default>
-                  <button
-                    type="button"
-                    class="sidebar-add"
-                    aria-label="Add workspace"
-                    title="Add workspace"
-                    @click="openCreate = true"
-                  >
-                    <v-icon :icon="mdiPlus" size="16" />
-                  </button>
-                </template>
-                <template #denied>
-                  <button
-                    type="button"
-                    class="sidebar-add"
-                    disabled
-                    aria-label="Add workspace"
-                    title="Add workspace"
-                  >
-                    <v-icon :icon="mdiPlus" size="16" />
-                  </button>
-                </template>
-              </PermissionTooltip>
-            </div>
-            <div class="sidebar-search">
-              <v-icon
-                :icon="mdiMagnify"
-                size="16"
-                class="sidebar-search-icon"
-              />
-              <input
-                :value="search"
-                placeholder="Search workspaces…"
-                class="sidebar-search-input hs-text-sm"
-                @input="search = ($event.target as HTMLInputElement).value"
-              />
-            </div>
-          </div>
-
-          <div class="sidebar-list">
-            <div
-              v-for="ws in filteredWorkspaces"
-              :key="ws.id"
-              class="sidebar-item sidebar-item--workspace"
-              :class="{ selected: ws.id === selectedId }"
-              :data-testid="`workspace-list-item-${ws.id}`"
-            >
-              <button
-                type="button"
-                class="sidebar-item-body"
-                :aria-label="`Select ${ws.name} workspace`"
-                :aria-current="ws.id === selectedId ? 'true' : undefined"
-                @click="selectWorkspace(ws.id)"
-              >
-                <div class="sidebar-item-title hs-title">{{ ws.name }}</div>
-                <div class="sidebar-item-meta hs-text-2xs">
-                  <span class="sidebar-item-meta-text">
-                    {{ getUserRoleName(ws) }} ·
-                    {{ ws.isPrivate ? 'Private' : 'Public' }}
-                  </span>
-                </div>
-              </button>
-              <span class="sidebar-item-actions">
-                <button
-                  type="button"
-                  class="sidebar-item-action"
-                  :class="{
-                    'sidebar-item-action--selected': ws.id === selectedId,
-                  }"
-                  :disabled="!canEditWorkspace(ws)"
-                  :title="canEditWorkspace(ws) ? '' : EDIT_DENIED_MESSAGE"
-                  :aria-label="`Edit ${ws.name}`"
-                  :data-testid="`workspace-edit-${ws.id}`"
-                  @click.stop="openDialog(ws, 'edit')"
-                >
-                  <v-icon :icon="mdiPencil" size="15" />
-                </button>
-                <button
-                  type="button"
-                  class="sidebar-item-action sidebar-item-action--danger"
-                  :class="{
-                    'sidebar-item-action--selected': ws.id === selectedId,
-                  }"
-                  :disabled="!canDeleteWorkspace(ws)"
-                  :title="canDeleteWorkspace(ws) ? '' : DELETE_DENIED_MESSAGE"
-                  :aria-label="`Delete ${ws.name}`"
-                  :data-testid="`workspace-delete-${ws.id}`"
-                  @click.stop="openDialog(ws, 'delete')"
-                >
-                  <v-icon :icon="mdiTrashCanOutline" size="15" />
-                </button>
-              </span>
-            </div>
-            <div
-              v-if="workspaces.length && !filteredWorkspaces.length"
-              class="sidebar-empty hs-text-sm"
-            >
-              No matching workspaces.
-            </div>
-            <div
-              v-else-if="!workspaces.length"
-              class="sidebar-empty hs-text-sm"
-            >
-              No workspaces yet.
-            </div>
-          </div>
-        </aside>
+      <HsMasterDetailLayout sidebar-test-id="workspace-sidebar">
+        <template #sidebar>
+          <WorkspaceSidebar
+            :workspaces="workspaces"
+            :selected-id="selectedId"
+            :can-create="canCreateWorkspace"
+            @create="openCreate = true"
+            @select="selectWorkspace"
+            @edit="openDialog($event, 'edit')"
+            @delete="openDialog($event, 'delete')"
+          />
+        </template>
 
         <section v-if="selected" class="detail" data-testid="workspace-detail">
           <header class="detail-header">
@@ -270,117 +166,11 @@
               }"
             >
               <v-window-item value="overview">
-                <h2 class="hs-subheading mb-1">Overview</h2>
-
-                <div class="overview-stats">
-                  <div class="stat-tile">
-                    <div class="stat-tile-head">
-                      <span class="stat-tile-icon">
-                        <v-icon :icon="mdiAccountGroupOutline" size="14" />
-                      </span>
-                      <span class="stat-tile-label hs-label"
-                        >Collaborators</span
-                      >
-                    </div>
-                    <div
-                      class="stat-tile-value hs-text-xl hs-font-data"
-                      data-testid="overview-members-count"
-                    >
-                      {{ overviewStats.members ?? '—' }}
-                    </div>
-                  </div>
-                  <div class="stat-tile">
-                    <div class="stat-tile-head">
-                      <span class="stat-tile-icon">
-                        <v-icon :icon="mdiMapMarkerOutline" size="14" />
-                      </span>
-                      <span class="stat-tile-label hs-label">Sites</span>
-                    </div>
-                    <div
-                      class="stat-tile-value hs-text-xl hs-font-data"
-                      data-testid="overview-sites-count"
-                    >
-                      {{ overviewStats.sites ?? '—' }}
-                    </div>
-                  </div>
-                  <div class="stat-tile">
-                    <div class="stat-tile-head">
-                      <span class="stat-tile-icon">
-                        <v-icon :icon="mdiKeyVariant" size="14" />
-                      </span>
-                      <span class="stat-tile-label hs-label">
-                        Service accounts
-                      </span>
-                    </div>
-                    <div
-                      class="stat-tile-value hs-text-xl hs-font-data"
-                      data-testid="overview-service-accounts-count"
-                    >
-                      {{ overviewStats.serviceAccounts ?? '—' }}
-                    </div>
-                  </div>
-                  <div class="stat-tile">
-                    <div class="stat-tile-head">
-                      <span class="stat-tile-icon">
-                        <v-icon :icon="mdiNotebookOutline" size="14" />
-                      </span>
-                      <span class="stat-tile-label hs-label">
-                        Metadata items
-                      </span>
-                    </div>
-                    <div
-                      class="stat-tile-value hs-text-xl hs-font-data"
-                      data-testid="overview-metadata-count"
-                    >
-                      {{ overviewStats.metadata ?? '—' }}
-                    </div>
-                  </div>
-                </div>
-
-                <v-alert
-                  v-if="overviewStatsComplete && overviewStatsHasError"
-                  class="mb-4"
-                  type="warning"
-                  variant="tonal"
-                  border="start"
-                >
-                  Some totals could not be loaded.
-                </v-alert>
-
-                <v-table class="hs-table-card">
-                  <tbody>
-                    <tr>
-                      <td class="text-medium-emphasis">Owner</td>
-                      <td>
-                        {{ selected.owner?.name || 'Unknown'
-                        }}<span v-if="isOwner(selected)"> (you)</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="text-medium-emphasis">Your role</td>
-                      <td>{{ getUserRoleName(selected) }}</td>
-                    </tr>
-                    <tr>
-                      <td class="text-medium-emphasis">Visibility</td>
-                      <td>{{ selected.isPrivate ? 'Private' : 'Public' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="text-medium-emphasis">Workspace ID</td>
-                      <td class="workspace-id-cell">
-                        <span class="hs-font-data">{{ selected.id }}</span>
-                        <v-btn
-                          size="x-small"
-                          variant="text"
-                          density="comfortable"
-                          color="grey-darken-2"
-                          :icon="mdiContentCopy"
-                          aria-label="Copy workspace ID"
-                          @click="copyId(selected.id)"
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
+                <WorkspaceOverview
+                  :key="selected.id"
+                  :workspace="selected"
+                  :active="section === 'overview'"
+                />
               </v-window-item>
 
               <v-window-item value="collaborators">
@@ -482,7 +272,7 @@
             </div>
           </div>
         </section>
-      </div>
+      </HsMasterDetailLayout>
     </div>
   </div>
   <FullScreenLoader v-else />
@@ -516,7 +306,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import hs, {
-  Collaborator,
   PermissionAction,
   PermissionResource,
   Workspace,
@@ -526,22 +315,18 @@ import {
   mdiAccountGroupOutline,
   mdiBriefcaseOutline,
   mdiCheck,
-  mdiContentCopy,
   mdiEarth,
   mdiKeyVariant,
   mdiLock,
-  mdiMagnify,
-  mdiPencil,
-  mdiPlus,
-  mdiMapMarkerOutline,
   mdiNotebookOutline,
   mdiShieldLockOutline,
-  mdiTrashCanOutline,
 } from '@mdi/js'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
-import PermissionTooltip from '@/components/PermissionTooltip.vue'
+import HsMasterDetailLayout from '@/components/base/HsMasterDetailLayout.vue'
 import WorkspaceFormCard from '@/components/Workspace/WorkspaceFormCard.vue'
 import DeleteWorkspaceCard from '@/components/Workspace/DeleteWorkspaceCard.vue'
+import WorkspaceOverview from '@/components/Workspace/WorkspaceOverview.vue'
+import WorkspaceSidebar from '@/components/Workspace/WorkspaceSidebar.vue'
 import ManageCollaborators from '@/components/Workspace/AccessControl/ManageCollaborators.vue'
 import ManageServiceAccounts from '@/components/Workspace/AccessControl/ManageServiceAccounts.vue'
 import ManageWorkspacePrivacy from '@/components/Workspace/AccessControl/ManageWorkspacePrivacy.vue'
@@ -569,12 +354,9 @@ const router = useRouter()
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { setWorkspaces } = workspaceStore
-const { hasPermission, getUserRoleName, isOwner } = useWorkspacePermissions()
+const { hasPermission, isOwner } = useWorkspacePermissions()
 const { user } = storeToRefs(useUserStore())
 
-const EDIT_DENIED_MESSAGE = 'You do not have permission to edit this workspace.'
-const DELETE_DENIED_MESSAGE =
-  'You do not have permission to delete this workspace.'
 const canEditWorkspace = (ws: Workspace | null) =>
   !!ws && hasPermission(PermissionResource.Workspace, PermissionAction.Edit, ws)
 const canDeleteWorkspace = (ws: Workspace | null) =>
@@ -584,7 +366,6 @@ const canDeleteWorkspace = (ws: Workspace | null) =>
 const isPageLoaded = ref(false)
 const workspaceLoadError = ref('')
 const isRetryingWorkspaceLoad = ref(false)
-const search = ref('')
 
 const selectedId = ref('')
 const section = ref<WorkspaceSection>('overview')
@@ -601,115 +382,6 @@ const selected = computed(
   () => workspaces.value.find((ws) => ws.id === selectedId.value) ?? null
 )
 
-/** At-a-glance counts shown as the large stat tiles on the Overview tab. */
-const overviewStats = ref<{
-  members: number | null
-  sites: number | null
-  serviceAccounts: number | null
-  metadata: number | null
-}>({ members: null, sites: null, serviceAccounts: null, metadata: null })
-const overviewStatsComplete = ref(false)
-const overviewStatsHasError = ref(false)
-let overviewRequestId = 0
-
-function responseCount(result: PromiseSettledResult<unknown>): number | null {
-  const data = responseData(result)
-  return data === null ? null : data.length
-}
-
-function responseData<T>(result: PromiseSettledResult<unknown>): T[] | null {
-  if (result.status === 'rejected') return null
-  const response = result.value as {
-    ok?: boolean
-    data?: T[]
-  } | null
-  return response?.ok && Array.isArray(response.data) ? response.data : null
-}
-
-const loadOverviewStats = async (workspaceId: string) => {
-  const requestId = ++overviewRequestId
-  overviewStatsComplete.value = false
-  overviewStatsHasError.value = false
-  overviewStats.value = {
-    members: null,
-    sites: null,
-    serviceAccounts: null,
-    metadata: null,
-  }
-
-  const workspace = workspaces.value.find((item) => item.id === workspaceId)
-  const canViewServiceAccounts =
-    !!workspace &&
-    hasPermission(
-      PermissionResource.ServiceAccount,
-      PermissionAction.View,
-      workspace
-    )
-  const serviceAccountRequest = canViewServiceAccounts
-    ? hs.workspaces.getServiceAccounts(workspaceId)
-    : Promise.resolve(null)
-
-  // Load the numbers users look for first. Metadata is intentionally kept out
-  // of this critical path because each list may require several paginated
-  // requests before its total can be calculated.
-  const primaryResults = Promise.allSettled([
-    hs.workspaces.getCollaborators(workspaceId),
-    hs.monitoringSites.listSiteSummaries(workspaceId),
-    serviceAccountRequest,
-  ])
-  const metadataResults = Promise.allSettled([
-    hs.methods.list({ workspace_id: [workspaceId], fetch_all: true }),
-    hs.observedProperties.list({
-      workspace_id: [workspaceId],
-      fetch_all: true,
-    }),
-    hs.processingLevels.list({
-      workspace_id: [workspaceId],
-      fetch_all: true,
-    }),
-    hs.units.list({ workspace_id: [workspaceId], fetch_all: true }),
-    hs.resultQualifiers.list({
-      workspace_id: [workspaceId],
-      fetch_all: true,
-    }),
-  ])
-
-  const results = await primaryResults
-  if (requestId !== overviewRequestId || selectedId.value !== workspaceId)
-    return
-
-  const primaryCounts = results.map(responseCount)
-  const collaborators = responseData<Collaborator>(results[0])
-  const memberCount = collaborators
-    ? collaborators.filter(
-        (collaborator) => collaborator.user && !collaborator.serviceAccount
-      ).length + 1
-    : null
-  overviewStats.value = {
-    // +1 for the owner, who isn't included in the collaborators list.
-    members: memberCount,
-    sites: primaryCounts[1],
-    serviceAccounts: canViewServiceAccounts ? primaryCounts[2] : null,
-    metadata: null,
-  }
-  overviewStatsHasError.value =
-    primaryCounts[0] === null ||
-    primaryCounts[1] === null ||
-    (canViewServiceAccounts && primaryCounts[2] === null)
-  // Vue can render the primary totals now while the slower metadata totals
-  // continue in the background.
-  const metadataCounts = (await metadataResults).map(responseCount)
-  if (requestId !== overviewRequestId || selectedId.value !== workspaceId)
-    return
-
-  const metadata = metadataCounts.every((count) => count !== null)
-    ? metadataCounts.reduce<number>((total, count) => total + (count ?? 0), 0)
-    : null
-  overviewStats.value.metadata = metadata
-  overviewStatsHasError.value ||= metadata === null
-  overviewStatsComplete.value = true
-}
-
 watch(
   selected,
   (ws) => {
@@ -717,21 +389,9 @@ watch(
     if (selectedWorkspace.value?.id !== ws.id) selectedWorkspace.value = ws
     if (section.value === 'ownership' && !canEditWorkspace(ws))
       section.value = 'overview'
-    else if (section.value === 'overview') void loadOverviewStats(ws.id)
   },
   { immediate: true }
 )
-
-watch(section, (value) => {
-  if (value === 'overview' && selected.value)
-    void loadOverviewStats(selected.value.id)
-})
-
-const filteredWorkspaces = computed(() => {
-  const term = (search.value || '').toLowerCase()
-  if (!term) return workspaces.value
-  return workspaces.value.filter((ws) => ws.name.toLowerCase().includes(term))
-})
 
 const canCreateWorkspace = computed(() =>
   ['admin', 'standard'].includes(user.value?.accountType ?? '')
@@ -916,15 +576,6 @@ async function retryWorkspaceLoad() {
   isRetryingWorkspaceLoad.value = false
 }
 
-async function copyId(id: string) {
-  try {
-    await navigator.clipboard.writeText(id)
-    Snackbar.success('Workspace ID copied to clipboard')
-  } catch {
-    Snackbar.error('Failed to copy workspace ID')
-  }
-}
-
 function queryString(value: unknown) {
   return `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
 }
@@ -1006,46 +657,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ── overview stat tiles ── */
-.overview-stats {
-  display: flex;
-  gap: var(--hs-space-12);
-  margin-bottom: var(--hs-space-16);
-}
-.stat-tile {
-  flex: 1;
-  min-width: 0;
-  padding: var(--hs-space-16);
-  border: 1px solid var(--hs-border);
-  border-radius: var(--hs-radius-lg);
-  background: var(--hs-surface);
-}
-.stat-tile-head {
-  display: flex;
-  align-items: center;
-  gap: var(--hs-space-8);
-  margin-bottom: var(--hs-space-8);
-}
-.stat-tile-label {
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--hs-text-secondary);
-}
-.stat-tile-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--hs-surface-muted);
-  color: rgb(var(--v-theme-primary));
-}
-.stat-tile-value {
-  color: var(--hs-text-primary);
-}
-
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /
    OrchestrationContextSidebar.vue) so the two workspace-management entry
    points feel like the same product surface. */
@@ -1073,211 +684,7 @@ onMounted(async () => {
   min-height: 0;
   overflow: hidden;
 }
-.workspaces-shell {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  background: var(--hs-background);
-  overflow: hidden;
-}
 
-/* ── left-hand workspace selection sidebar ── */
-.sidebar {
-  position: relative;
-  width: 260px;
-  border-right: 1px solid var(--hs-border);
-  background: var(--hs-surface-muted);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  min-height: 0;
-}
-.sidebar-header {
-  padding: var(--hs-space-12) var(--hs-space-16) var(--hs-space-8);
-  border-bottom: 1px solid var(--hs-border);
-  min-height: 93px;
-  box-sizing: border-box;
-}
-.sidebar-header-row {
-  display: flex;
-  align-items: center;
-}
-.sidebar-header-row > :last-child {
-  margin-left: auto;
-}
-.sidebar-title {
-  color: var(--hs-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-}
-.sidebar-add {
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: var(--hs-radius-sm);
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.sidebar-add:hover:not(:disabled) {
-  background: rgb(var(--v-theme-primary-darken-1));
-}
-.sidebar-add:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-}
-.sidebar-add:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.sidebar-search {
-  position: relative;
-  margin-top: var(--hs-space-8);
-}
-.sidebar-search-icon {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--hs-input-border);
-  pointer-events: none;
-}
-.sidebar-search-input {
-  width: 100%;
-  border: 1px solid var(--hs-input-border);
-  border-radius: var(--hs-radius-pill);
-  height: 30px;
-  padding-left: 30px;
-  padding-right: var(--hs-space-10);
-  outline: none;
-  background: var(--hs-surface);
-  color: var(--hs-text-secondary);
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-regular);
-}
-.sidebar-search-input::placeholder {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-.sidebar-search-input:focus {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
-}
-:deep(.metadata-search-input) {
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-regular);
-}
-.sidebar-list {
-  flex: 1;
-  overflow-y: auto;
-}
-.sidebar-item {
-  position: relative;
-  padding: var(--hs-space-10) var(--hs-space-16);
-  cursor: default;
-  border-bottom: 1px solid var(--hs-border);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--hs-space-10);
-  transition: background 0.1s;
-}
-.sidebar-item:not(.selected):hover {
-  background: rgba(var(--v-theme-primary), 0.06);
-}
-.sidebar-item.selected {
-  background: var(--hs-surface);
-  color: var(--hs-text-primary);
-  border-left: 4px solid rgb(var(--v-theme-primary));
-}
-.sidebar-item-body {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  margin: calc(-1 * var(--hs-space-10)) calc(-1 * var(--hs-space-16));
-  border: 0;
-  padding: var(--hs-space-10) var(--hs-space-16);
-  color: inherit;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-.sidebar-item--workspace .sidebar-item-body {
-  padding-right: var(--hs-space-16);
-}
-.sidebar-item--workspace .sidebar-item-meta {
-  padding-right: 62px;
-}
-.sidebar-item-title {
-  color: inherit;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sidebar-item-meta {
-  color: var(--hs-text-secondary);
-  margin-top: var(--hs-space-2);
-  min-height: 16px;
-  display: flex;
-  align-items: center;
-  gap: var(--hs-space-6);
-}
-.sidebar-item.selected .sidebar-item-meta {
-  color: var(--hs-text-secondary);
-}
-.sidebar-item-meta-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sidebar-item-actions {
-  position: absolute;
-  right: 14px;
-  bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: var(--hs-space-2);
-  opacity: 0;
-  transition: opacity 0.1s;
-}
-.sidebar-item:hover .sidebar-item-actions,
-.sidebar-item:focus-within .sidebar-item-actions,
-.sidebar-item.selected .sidebar-item-actions {
-  opacity: 1;
-}
-.sidebar-item-action {
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: var(--hs-radius-sm);
-  color: var(--hs-text-secondary);
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.sidebar-item-action:hover:not(:disabled) {
-  background: rgba(var(--v-theme-text-secondary), 0.12);
-}
-.sidebar-item-action--danger {
-  color: var(--hs-text-secondary);
-}
-.sidebar-item-action--danger:hover:not(:disabled) {
-  color: rgb(var(--v-theme-red-darken-2));
-  background: rgba(var(--v-theme-danger), 0.1);
-}
-.sidebar-item-action:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-.sidebar-empty {
-  padding: var(--hs-space-16);
-  color: var(--hs-text-muted);
-}
 /* ── detail panel ── */
 .detail {
   flex: 1;
@@ -1387,13 +794,6 @@ onMounted(async () => {
   max-height: 100%;
   overflow: hidden;
 }
-.workspace-id-cell {
-  overflow-wrap: anywhere;
-}
-.workspace-id-cell span {
-  vertical-align: middle;
-}
-
 .no-workspace-state {
   flex: 1;
   display: flex;
@@ -1436,12 +836,6 @@ onMounted(async () => {
   margin-top: var(--hs-space-24);
 }
 
-@media (hover: none) {
-  .sidebar-item-actions {
-    opacity: 1;
-  }
-}
-
 @media (max-width: 700px) {
   .workspaces-page {
     height: auto;
@@ -1450,33 +844,11 @@ onMounted(async () => {
     );
     overflow: visible;
   }
-  .workspaces-page-body,
-  .workspaces-shell {
+  .workspaces-page-body {
     width: 100%;
     max-width: 100%;
     min-width: 0;
     overflow: visible;
-  }
-  .workspaces-shell {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    max-width: 100%;
-    min-height: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--hs-border);
-  }
-  .sidebar-list {
-    display: flex;
-    flex: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-  .sidebar-item {
-    min-width: 175px;
-    border-right: 1px solid var(--hs-border);
-    border-bottom: 0;
   }
   .detail {
     width: 100%;
@@ -1500,12 +872,6 @@ onMounted(async () => {
   .detail-window--table :deep(.v-window__container),
   .detail-window--table :deep(.v-window-item) {
     height: auto;
-  }
-  .overview-stats {
-    flex-wrap: wrap;
-  }
-  .stat-tile {
-    flex: 1 1 calc(50% - 6px);
   }
 }
 </style>

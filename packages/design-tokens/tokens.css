@@ -28,6 +28,9 @@
   --hs-radius-xl: 16px;
   --hs-radius-pill: 999px;
 
+  /* Elevation for autocomplete menus and other small floating panels. */
+  --hs-shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
   --hs-font-2xs: 0.625rem;
   --hs-font-sm: 0.75rem;
   --hs-font-md: 1.0625rem;
@@ -52,7 +55,6 @@
   --hs-danger: rgb(var(--v-theme-danger));
   --hs-danger-bg: rgb(var(--v-theme-danger-bg));
 }
-
 
 /* Shared type scale classes. Pick the one matching the role, not the
  * pixel size you think looks right:
