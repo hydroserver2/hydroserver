@@ -18,9 +18,10 @@ HydroServer requires a [**PostgreSQL database (version 15 or higher)**](https://
 At present, no specific PostgreSQL extensions are required, although you should ensure the database is accessible from 
 the HydroServer deployment environment and configured with sufficient resources for your expected workload.
 
-Because Gunicorn is not designed to serve static files, HydroServer’s static assets must be collected and served 
-through a separate mechanism. Recommended approaches for serving static files will vary by platform and additional 
-details and examples are provided below.
+Because Gunicorn is not designed to serve static files on its own, HydroServer bundles 
+[**WhiteNoise**](https://whitenoise.readthedocs.io/) to serve static assets directly from Django whenever 
+local static storage is used, with compression and appropriate cache headers applied automatically. 
+Recommended approaches for serving static files will vary by platform, and details and examples are provided below.
 
 For user account management, HydroServer requires access to an external email server to send account verification and 
 password reset emails. Alternatively, you may integrate third-party identity providers (e.g. 
@@ -44,6 +45,32 @@ HydroServer’s Docker image supports the following environment variables for co
 - **DEBUG**  
   Enables debug mode. Must be `False` in production.  
   Example: `True` / `False`
+
+- **STRICT_SECURITY**  
+  Enables CSRF protection, requires a real `SECRET_KEY`, applies default account rate limits, and requires
+  `IDP_OIDC_PRIVATE_KEY` when OIDC is enabled. Must be `True` in production. The published Docker image already
+  defaults to `True`; this only needs to be set explicitly for deployments that don't use that image.  
+  Example: `True` / `False`
+
+- **IDP_OIDC_ENABLED**  
+  Whether HydroServer's built-in OIDC identity provider (discovery, authorize, token, and JWKS endpoints) is enabled.
+  Defaults to `True`. When `STRICT_SECURITY` is also `True`, one of `IDP_OIDC_PRIVATE_KEY` or
+  `IDP_OIDC_PRIVATE_KEY_FILE` must be set, or startup will fail.  
+  Example: `True` / `False`
+
+- **IDP_OIDC_PRIVATE_KEY**  
+  RSA private key (PEM format) used to sign OIDC tokens issued by HydroServer's identity provider. Generate one with:
+  ```bash
+  openssl genpkey -algorithm RSA -out oidc_private_key.pem -pkeyopt rsa_keygen_bits:2048
+  ```
+  Set this to the contents of that file, or use `IDP_OIDC_PRIVATE_KEY_FILE` instead to point at its path. Keep it
+  secret and stable across restarts — rotating it invalidates any tokens signed with the old key.  
+  Example: contents of `oidc_private_key.pem`
+
+- **IDP_OIDC_PRIVATE_KEY_FILE**  
+  Path to a PEM file containing the RSA private key described above, as an alternative to setting
+  `IDP_OIDC_PRIVATE_KEY` directly. Takes precedence over `IDP_OIDC_PRIVATE_KEY` if both are set.  
+  Example: `/run/secrets/oidc_private_key.pem`
 
 - **PROXY_BASE_URL**  
   Base URL for your HydroServer instance.  
@@ -96,6 +123,16 @@ HydroServer’s Docker image supports the following environment variables for co
   Example (S3): `{"bucket_name": "hydroserver-static-your-account-id", "location": "static"}`  
   Example (GCS): `{"bucket_name": "hydroserver-static-your-project-id", "project_id": "your-gcp-project-id", "location": "static"}`
 
+- **STATIC_HOST**  
+  Optional origin prefixed to `STATIC_URL` to front static files served by HydroServer with a CDN (e.g., Amazon
+  CloudFront). Only applied when `STATIC_STORAGE_BACKEND` is local. Leave unset to serve static files at a relative 
+  `/static/` path.  
+  Example: `https://d123abc4567.cloudfront.net`
+
+- **WHITENOISE_MAX_AGE**  
+  `Cache-Control` max-age, in seconds, that WhiteNoise sets on locally served static files. Defaults to `86400` (1 day).  
+  Example: `86400`
+
 Store sensitive environment variables (database credentials, API keys, etc.) securely, using a secret manager such as 
 [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html), 
 [HashiCorp Vault](https://developer.hashicorp.com/vault), or [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager).
@@ -103,14 +140,21 @@ Avoid committing secrets to version control or hardcoding them into configuratio
 
 ### Serving Static and Media Files
 
-Django is not optimized for serving static or media files in production. Recommended approaches include:
+**Static files** (CSS, JavaScript, and images bundled with the application) are served directly by HydroServer, using 
+Django WhiteNoise, whenever `STATIC_STORAGE_BACKEND` is local. WhiteNoise applies gzip compression and necessary cache 
+headers automatically. For higher-traffic deployments, set **STATIC_HOST** to a CDN domain (e.g., AWS CloudFront) 
+pointed at your HydroServer instance as its origin; WhiteNoise's cache headers let the CDN serve cached static assets 
+without re-fetching from HydroServer on every request.
 
-- Using a reverse proxy (e.g., [**NGINX**](https://nginx.org/)) to serve static and media volumes.  
+**Media files** Django is not optimized for storing or serving user-uploaded media files in production. Recommended 
+approaches include:
+
+- Using a reverse proxy (e.g., [**NGINX**](https://nginx.org/)) to serve the media volume.  
 - Offloading storage and delivery to a cloud service such as [**Amazon S3**](https://docs.aws.amazon.com/s3/) or 
   [**Google Cloud Storage**](https://cloud.google.com/storage/docs), optionally integrated with a 
   **Content Delivery Network (CDN)** service such as
   [**AWS CloudFront**](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) or 
-  [**Google Cloud CDN**](https://cloud.google.com/cdn/docs) for improved performance.  
+  [**Google Cloud CDN**](https://cloud.google.com/cdn/docs) for improved performance.
 
 Since these approaches bypass HydroServer’s internal authorization system, you may need to add additional security 
 controls to protect private media files (for example, by using signed URLs).
