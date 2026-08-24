@@ -36,7 +36,13 @@
             </v-tooltip>
           </td>
           <td class="ingestion-task-cell">
-            <div class="ingestion-task-name">{{ task.name || '—' }}</div>
+            <button
+              type="button"
+              class="ingestion-task-name"
+              @click="emit('open-task', task)"
+            >
+              {{ task.name || '—' }}
+            </button>
             <div class="ingestion-task-meta hs-text-sm">
               <span class="ingestion-task-meta-label hs-label">Last</span>
               <span>{{ task.lastRun }}</span>
@@ -200,10 +206,20 @@ const statusOptions = STATUS_OPTIONS.map((status) => ({
 }
 
 .ingestion-task-name {
+  padding: 0;
   color: var(--hs-text-primary);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
   font-size: var(--hs-font-md);
   font-weight: var(--hs-font-weight-semibold);
   line-height: 1.3;
+}
+
+.ingestion-task-name:hover {
+  text-decoration: underline;
 }
 
 .ingestion-task-meta {

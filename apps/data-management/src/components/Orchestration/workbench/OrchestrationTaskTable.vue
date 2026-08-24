@@ -50,7 +50,13 @@
           </td>
 
           <td class="task-summary-cell">
-            <div class="task-name">{{ task.name || '—' }}</div>
+            <button
+              type="button"
+              class="task-name"
+              @click="emit('open-task', task)"
+            >
+              {{ task.name || '—' }}
+            </button>
             <div class="task-meta hs-text-sm">
               <span class="task-meta-label hs-label">Last</span>
               <span class="task-time">{{ task.lastRun }}</span>
@@ -358,10 +364,20 @@ const pauseTooltipText = (task: TaskRow) => {
 }
 
 .task-name {
+  padding: 0;
   color: var(--hs-text-primary);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
   font-size: var(--hs-font-md);
   font-weight: var(--hs-font-weight-semibold);
   line-height: 1.3;
+}
+
+.task-name:hover {
+  text-decoration: underline;
 }
 
 .task-meta {
