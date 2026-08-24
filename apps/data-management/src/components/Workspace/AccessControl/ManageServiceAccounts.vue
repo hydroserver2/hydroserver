@@ -73,6 +73,16 @@
           @focus="onSearchFocus"
           @blur="onSearchBlur"
         />
+        <button
+          v-if="search"
+          type="button"
+          class="hs-query-search__clear"
+          aria-label="Clear service account search and filters"
+          @mousedown.prevent
+          @click="clearSearchAndFilters"
+        >
+          <v-icon :icon="mdiClose" size="16" />
+        </button>
       </div>
 
       <v-btn
@@ -388,6 +398,7 @@ import DeleteServiceAccount from './DeleteServiceAccount.vue'
 import ServiceAccountRegenerateForm from './ServiceAccountRegenerateForm.vue'
 import {
   mdiChevronDown,
+  mdiClose,
   mdiContentCopy,
   mdiDeleteOffOutline,
   mdiTrashCanOutline,
@@ -574,6 +585,15 @@ function serializeServiceAccountQuery(roleValues: string[], text: string) {
 
 const search = ref('')
 const parsedQuery = computed(() => parseServiceAccountQuery(search.value))
+
+function clearSearchAndFilters() {
+  search.value = ''
+  roleFilterSearch.value = ''
+  suggestionsEnabled.value = false
+  caret.value = 0
+  nextTick(() => searchInputEl.value?.focus())
+}
+
 const selectedRoles = computed<string[]>({
   get: () => parsedQuery.value.roles,
   set: (value) =>

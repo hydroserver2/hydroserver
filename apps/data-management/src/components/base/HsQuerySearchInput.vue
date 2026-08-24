@@ -27,6 +27,16 @@
       @focus="onFocus"
       @blur="suggestionsEnabled = false"
     />
+    <button
+      v-if="modelValue"
+      type="button"
+      class="hs-query-search__clear"
+      aria-label="Clear search and filters"
+      @mousedown.prevent
+      @click="clearSearch"
+    >
+      <v-icon :icon="mdiClose" size="16" />
+    </button>
   </div>
 
   <Teleport to="body">
@@ -63,7 +73,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { mdiMagnify } from '@mdi/js'
+import { mdiClose, mdiMagnify } from '@mdi/js'
 
 type QueryQualifier = {
   key: string
@@ -166,6 +176,13 @@ function onInput(event: Event) {
 function onFocus() {
   suggestionsEnabled.value = true
   syncCaret()
+}
+
+function clearSearch() {
+  suggestionsEnabled.value = false
+  caret.value = 0
+  emit('update:modelValue', '')
+  nextTick(() => inputEl.value?.focus())
 }
 
 function findTokenStart(raw: string, caretPosition: number) {

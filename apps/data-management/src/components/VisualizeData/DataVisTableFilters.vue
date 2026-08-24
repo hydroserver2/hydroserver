@@ -68,24 +68,13 @@
         </div>
       </v-list>
     </v-menu>
-
-    <v-btn
-      v-if="selectedFilterCount"
-      variant="text"
-      size="small"
-      :prepend-icon="mdiClose"
-      class="clear-all-filters"
-      @click="clearFilters"
-    >
-      Clear filters
-    </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { mdiChevronDown, mdiClose, mdiMagnify } from '@mdi/js'
+import { mdiChevronDown, mdiMagnify } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useWorkspaceStore } from '@/store/workspaces'
 import {
@@ -297,14 +286,6 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
   },
 ])
 
-const selectedFilterCount = computed(
-  () =>
-    parsedQuery.value.filters.workspace.length +
-    parsedQuery.value.filters.site.length +
-    parsedQuery.value.filters.property.length +
-    parsedQuery.value.filters.processing.length
-)
-
 const filteredOptions = (filter: FilterDefinition) => {
   const query = filterSearches[filter.key].trim().toLocaleLowerCase()
   if (!query) return filter.options
@@ -345,13 +326,6 @@ const clearFilter = (key: FilterKey) => {
   ) as DatastreamQueryFilters
   tableSearch.value = serializeDatastreamQuery(filters, parsedQuery.value.text)
   filterSearches[key] = ''
-}
-
-const clearFilters = () => {
-  tableSearch.value = parsedQuery.value.text
-  Object.keys(filterSearches).forEach((key) => {
-    filterSearches[key as FilterKey] = ''
-  })
 }
 </script>
 
@@ -464,10 +438,5 @@ const clearFilters = () => {
 .filter-clear-item {
   color: rgb(var(--v-theme-primary));
   border-top: 1px solid var(--hs-border);
-}
-
-.clear-all-filters {
-  color: var(--hs-text-secondary);
-  text-transform: none;
 }
 </style>

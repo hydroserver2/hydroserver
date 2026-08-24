@@ -81,6 +81,16 @@
         @focus="onSearchFocus"
         @blur="onSearchBlur"
       />
+      <button
+        v-if="search"
+        type="button"
+        class="hs-query-search__clear"
+        aria-label="Clear collaborator search and filters"
+        @mousedown.prevent
+        @click="clearSearchAndFilters"
+      >
+        <v-icon :icon="mdiClose" size="16" />
+      </button>
     </div>
 
     <v-btn
@@ -448,6 +458,7 @@ import hs, {
 } from '@hydroserver/client'
 import {
   mdiChevronDown,
+  mdiClose,
   mdiDeleteOffOutline,
   mdiHelpCircleOutline,
   mdiMagnify,
@@ -569,6 +580,16 @@ function serializeCollaboratorQuery(
 
 const search = ref('')
 const parsedQuery = computed(() => parseCollaboratorQuery(search.value))
+
+function clearSearchAndFilters() {
+  search.value = ''
+  roleFilterSearch.value = ''
+  organizationFilterSearch.value = ''
+  suggestionsEnabled.value = false
+  caret.value = 0
+  nextTick(() => searchInputEl.value?.focus())
+}
+
 const selectedRoles = computed<string[]>({
   get: () => parsedQuery.value.roles,
   set: (value) =>

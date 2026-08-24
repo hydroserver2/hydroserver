@@ -42,4 +42,25 @@ describe('HsQuerySearchInput', () => {
     expect(overlayWeight).toBe('400')
     expect(getComputedStyle(highlightedValue).fontWeight).toBe(overlayWeight)
   })
+
+  it('clears the search query and filters from the trailing button', async () => {
+    const wrapper = mount(HsQuerySearchInput, {
+      props: {
+        modelValue: 'status:Failed temperature',
+        placeholder: 'Search tasks…',
+        qualifiers: [{ key: 'status', label: 'Status', values: ['Failed'] }],
+      },
+      global: {
+        stubs: {
+          'v-icon': true,
+        },
+      },
+    })
+
+    await wrapper
+      .get('button[aria-label="Clear search and filters"]')
+      .trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([['']])
+  })
 })

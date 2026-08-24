@@ -122,17 +122,26 @@ test.describe("visualization", () => {
     await copiedContext.close();
   });
 
-  test("visualization clear selected deselects all datastreams", async ({
+  test("visualization header checkbox clears selected datastreams", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
+    const tableHeader = page.locator("thead");
+    const clearSelectedCheckbox = tableHeader.getByRole("checkbox", {
+      name: "Clear selected datastreams",
+    });
+
+    await expect(clearSelectedCheckbox).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
 
     await plotPublicDatastream(page);
+    await expect(clearSelectedCheckbox).toBeVisible();
+    await expect(clearSelectedCheckbox).toHaveJSProperty("indeterminate", true);
+    await expect(tableHeader).toContainText("1 of 5 selected");
     await page.getByTestId("toggle-selected-datastreams").click();
 
     await expect(
@@ -145,8 +154,9 @@ test.describe("visualization", () => {
     ).toHaveCount(0);
 
     // clearSelected() resets showOnlySelected to false, so both rows are visible immediately
-    await page.getByTestId("clear-selected-datastreams").click();
+    await clearSelectedCheckbox.click();
 
+    await expect(clearSelectedCheckbox).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
@@ -199,7 +209,9 @@ test.describe("visualization", () => {
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
     ).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Clear filters" }).click();
+    await page
+      .getByRole("button", { name: "Clear search and filters" })
+      .click();
     await expect(tableSearch).toHaveValue("");
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),

@@ -5,22 +5,11 @@
         <div class="datastreams-heading">
           <h2 id="datastreams-heading" class="hs-subheading">Datastreams</h2>
           <span class="datastreams-count hs-text-sm">
-            {{ tableItems.length }} available ·
-            {{ plottedDatastreams.length }}/5 selected
+            {{ tableItems.length }} available
           </span>
         </div>
 
         <div class="hs-table-actions datastreams-actions">
-          <v-btn
-            size="small"
-            variant="text"
-            :disabled="!plottedDatastreams.length"
-            data-testid="clear-selected-datastreams"
-            @click="clearSelected"
-          >
-            Clear selected
-          </v-btn>
-
           <v-btn
             size="small"
             variant="outlined"
@@ -102,7 +91,24 @@
     <div class="hs-table-card datastreams-table-card">
       <table class="datastreams-table hs-text-sm">
         <thead>
-          <tr>
+          <tr v-if="plottedDatastreams.length">
+            <th colspan="3" class="datastream-selection-header">
+              <div class="datastream-selection-header__content">
+                <input
+                  type="checkbox"
+                  class="plot-checkbox datastreams-clear-selection-checkbox"
+                  :indeterminate="true"
+                  aria-label="Clear selected datastreams"
+                  data-testid="clear-selected-datastreams"
+                  @change="clearSelected"
+                />
+                <span>
+                  {{ plottedDatastreams.length }} of 5 selected
+                </span>
+              </div>
+            </th>
+          </tr>
+          <tr v-else>
             <th colspan="3" class="datastream-filter-header">
               <DataVisTableFilters />
             </th>
@@ -523,6 +529,23 @@ function updatePlottedDatastreams(
   padding: var(--hs-space-8) var(--hs-space-12) var(--hs-space-10);
   text-align: left;
   background: var(--hs-surface-muted);
+}
+
+.datastream-selection-header {
+  text-align: left;
+}
+
+.datastream-selection-header__content {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
+  color: var(--hs-text-primary);
+  font-weight: var(--hs-font-weight-semibold);
+}
+
+.datastreams-clear-selection-checkbox {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .datastreams-table thead tr,

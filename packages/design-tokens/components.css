@@ -30,7 +30,7 @@
 .hs-search__input {
   width: 100%;
   height: 30px;
-  padding-right: var(--hs-space-10);
+  padding-right: 30px;
   padding-left: 30px;
   color: var(--hs-search-text, var(--hs-text-primary));
   font-size: var(--hs-font-sm);
@@ -49,6 +49,38 @@
 .hs-search__input:focus {
   border-color: rgb(var(--v-theme-primary));
   box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
+}
+
+.hs-search__clear,
+.hs-query-search__clear {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: var(--hs-space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--hs-text-secondary);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--hs-radius-sm);
+  transform: translateY(-50%);
+}
+
+.hs-search__clear:hover,
+.hs-query-search__clear:hover {
+  color: var(--hs-text-primary);
+  background: var(--hs-surface-muted);
+}
+
+.hs-search__clear:focus-visible,
+.hs-query-search__clear:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 1px;
 }
 
 /* Query-aware search keeps a transparent input over syntax-highlighted text.
@@ -74,7 +106,7 @@
   position: relative;
   width: 100%;
   height: 30px;
-  padding-right: var(--hs-space-10);
+  padding-right: 30px;
   padding-left: 30px;
   color: transparent;
   caret-color: var(--hs-text-secondary);
@@ -99,7 +131,7 @@
   inset: 0;
   display: flex;
   align-items: center;
-  padding-right: var(--hs-space-10);
+  padding-right: 30px;
   padding-left: 30px;
   overflow: hidden;
   color: var(--hs-text-secondary);

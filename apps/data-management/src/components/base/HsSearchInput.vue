@@ -10,11 +10,21 @@
       class="hs-search__input"
       @input="onInput"
     />
+    <button
+      v-if="modelValue"
+      type="button"
+      class="hs-search__clear"
+      aria-label="Clear search"
+      @mousedown.prevent
+      @click="emit('update:modelValue', '')"
+    >
+      <v-icon :icon="mdiClose" size="16" />
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { mdiMagnify } from '@mdi/js'
+import { mdiClose, mdiMagnify } from '@mdi/js'
 
 withDefaults(
   defineProps<{
