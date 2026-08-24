@@ -10,26 +10,6 @@
         </div>
 
         <div class="hs-table-actions datastreams-actions">
-          <v-btn
-            size="small"
-            variant="outlined"
-            data-testid="toggle-selected-datastreams"
-            @click="showOnlySelected = !showOnlySelected"
-          >
-            {{ showOnlySelected ? 'Show all' : 'Show selected' }}
-          </v-btn>
-
-          <v-btn-primary
-            size="small"
-            :loading="downloading"
-            :disabled="!plottedDatastreams.length"
-            :prepend-icon="mdiDownload"
-            data-testid="download-selected-datastreams"
-            @click="downloadSelected(plottedDatastreams)"
-          >
-            Download selected
-          </v-btn-primary>
-
           <v-menu :close-on-content-click="false" location="bottom end">
             <template #activator="{ props: menuProps }">
               <v-tooltip
@@ -94,17 +74,41 @@
           <tr v-if="plottedDatastreams.length">
             <th colspan="3" class="datastream-selection-header">
               <div class="datastream-selection-header__content">
-                <input
-                  type="checkbox"
-                  class="plot-checkbox datastreams-clear-selection-checkbox"
-                  :indeterminate="true"
-                  aria-label="Clear selected datastreams"
-                  data-testid="clear-selected-datastreams"
-                  @change="clearSelected"
-                />
-                <span>
-                  {{ plottedDatastreams.length }} of 5 selected
-                </span>
+                <div class="datastream-selection-summary">
+                  <input
+                    type="checkbox"
+                    class="plot-checkbox datastreams-clear-selection-checkbox"
+                    :indeterminate="true"
+                    aria-label="Clear selected datastreams"
+                    data-testid="clear-selected-datastreams"
+                    @change="clearSelected"
+                  />
+                  <span>
+                    {{ plottedDatastreams.length }} of 5 selected
+                  </span>
+                </div>
+
+                <div class="datastream-selection-actions">
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    data-testid="toggle-selected-datastreams"
+                    @click="showOnlySelected = !showOnlySelected"
+                  >
+                    {{ showOnlySelected ? 'Show all' : 'Show selected' }}
+                  </v-btn>
+
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    :loading="downloading"
+                    :prepend-icon="mdiDownload"
+                    data-testid="download-selected-datastreams"
+                    @click="downloadSelected(plottedDatastreams)"
+                  >
+                    Download selected
+                  </v-btn>
+                </div>
               </div>
             </th>
           </tr>
@@ -514,8 +518,7 @@ function updatePlottedDatastreams(
 }
 
 .datastreams-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .datastream-details-menu {
@@ -565,7 +568,7 @@ function updatePlottedDatastreams(
 
 .datastreams-table .datastream-filter-header {
   height: auto;
-  padding: var(--hs-space-8) var(--hs-space-12) var(--hs-space-10);
+  padding: var(--hs-space-12);
   text-align: left;
   background: var(--hs-surface-muted);
 }
@@ -576,10 +579,21 @@ function updatePlottedDatastreams(
 
 .datastream-selection-header__content {
   display: flex;
-  gap: var(--hs-space-12);
   align-items: center;
+  justify-content: space-between;
   color: var(--hs-text-primary);
   font-weight: var(--hs-font-weight-semibold);
+}
+
+.datastream-selection-summary,
+.datastream-selection-actions {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
+}
+
+.datastream-selection-actions {
+  font-weight: var(--hs-font-weight-regular);
 }
 
 .datastreams-clear-selection-checkbox {
@@ -719,10 +733,6 @@ function updatePlottedDatastreams(
     align-items: stretch;
   }
 
-  .datastreams-actions {
-    justify-content: flex-start;
-  }
-
   .datastream-plot-cell {
     width: 28px;
     padding-left: var(--hs-space-8);
@@ -756,6 +766,19 @@ function updatePlottedDatastreams(
 
   .datastream-name {
     white-space: normal;
+  }
+
+  .datastream-selection-header__content {
+    gap: var(--hs-space-8);
+  }
+
+  .datastream-selection-actions {
+    gap: var(--hs-space-4);
+  }
+
+  .datastream-selection-actions :deep(.v-btn) {
+    min-width: auto;
+    padding: 0 var(--hs-space-8);
   }
 }
 </style>
