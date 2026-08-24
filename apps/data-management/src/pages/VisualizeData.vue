@@ -9,10 +9,7 @@
           class="plot-section"
           :style="{ flex: `${cardHeight} 1 0%` }"
         >
-          <DataVisualizationCard
-            :cardHeight="cardHeight"
-            @copy-state="copyStateToClipboard"
-          />
+          <DataVisualizationCard :cardHeight="cardHeight" />
         </div>
 
         <div
@@ -35,7 +32,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import hs from '@hydroserver/client'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { Snackbar } from '@/utils/notifications'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
@@ -106,60 +103,41 @@ const isValidAxisRange = (
     range.start < range.end
   )
 
-const generateStateUrl = () => {
-  const BASE_URL = new URL('/visualize-data', window.location.origin).toString()
+const buildStateQuery = (): LocationQueryRaw => {
+  const query: LocationQueryRaw = {
+    sites: selectedMonitoringSites.value.map((site) => site.id),
+    datastreams: plottedDatastreams.value.map((datastream) => datastream.id),
+    PLs: selectedProcessingLevelNames.value,
+    OPs: selectedObservedPropertyNames.value,
+    q: tableSearch.value.trim() || undefined,
+  }
 
-  const queryParams = new URLSearchParams()
-
-  selectedMonitoringSites.value.forEach((t) =>
-    queryParams.append('sites', t.id)
-  )
-
-  plottedDatastreams.value.forEach((ds) =>
-    queryParams.append('datastreams', ds.id)
-  )
-
-  selectedProcessingLevelNames.value.forEach((pl) =>
-    queryParams.append('PLs', pl)
-  )
-
-  selectedObservedPropertyNames.value.forEach((op) =>
-    queryParams.append('OPs', op)
-  )
-
-  if (tableSearch.value.trim())
-    queryParams.append('q', tableSearch.value.trim())
+  // The default layout is represented by the blank route so the main app-bar
+  // navigation always opens a clean `/visualize-data` URL.
+  if (!showPlot.value) query.plot = '0'
+  if (!showTable.value) query.table = '0'
+  if (showSummaryStatistics.value) query.summary = '1'
 
   if (selectedDateBtnId.value < 0) {
-    queryParams.append('beginDate', beginDate.value.toISOString())
-    queryParams.append('endDate', endDate.value.toISOString())
-  } else {
-    // 0 is the default so no need to put it in the URL
-    if (selectedDateBtnId.value !== 0)
-      queryParams.append(
-        'selectedDateBtnId',
-        selectedDateBtnId.value.toString()
-      )
+    query.beginDate = beginDate.value.toISOString()
+    query.endDate = endDate.value.toISOString()
+  } else if (selectedDateBtnId.value !== 0) {
+    // 0 is the default so no need to put it in the URL.
+    query.selectedDateBtnId = selectedDateBtnId.value.toString()
   }
 
   if (dataZoomStart.value !== 0)
-    queryParams.append('dataZoomStart', dataZoomStart.value.toString())
+    query.dataZoomStart = dataZoomStart.value.toString()
   if (dataZoomEnd.value !== 0 && dataZoomEnd.value !== 100)
-    queryParams.append('dataZoomEnd', dataZoomEnd.value.toString())
+    query.dataZoomEnd = dataZoomEnd.value.toString()
 
   if (isValidAxisRange(xAxisRange.value)) {
-    queryParams.append('xStart', xAxisRange.value.start.toString())
-    queryParams.append('xEnd', xAxisRange.value.end.toString())
+    query.xStart = xAxisRange.value.start.toString()
+    query.xEnd = xAxisRange.value.end.toString()
   }
 
-  const yRangeKeys = Object.keys(yAxisRanges.value)
-  if (yRangeKeys.length) {
-    queryParams.append('yRanges', JSON.stringify(yAxisRanges.value))
-  }
-
-  queryParams.append('plot', showPlot.value ? '1' : '0')
-  queryParams.append('table', showTable.value ? '1' : '0')
-  queryParams.append('summary', showSummaryStatistics.value ? '1' : '0')
+  if (Object.keys(yAxisRanges.value).length)
+    query.yRanges = JSON.stringify(yAxisRanges.value)
 
   const visibleColumns = tableHeaders.value
     .filter((header) => header.visible && header.key !== 'plot')
@@ -168,21 +146,11 @@ const generateStateUrl = () => {
     .filter((header) => header.key !== 'plot')
     .map((header) => header.key)
 
-  if (visibleColumns.length !== allColumns.length) {
-    queryParams.append('columns', visibleColumns.join(','))
+  if (visibleColumns.length && visibleColumns.length !== allColumns.length) {
+    query.columns = visibleColumns.join(',')
   }
 
-  return `${BASE_URL}?${queryParams.toString()}`
-}
-
-const copyStateToClipboard = async () => {
-  try {
-    const stateUrl = generateStateUrl()
-    await navigator.clipboard.writeText(stateUrl)
-    Snackbar.info('Copied URL to clipboard')
-  } catch (err) {
-    console.error('Failed to copy URL:', err)
-  }
+  return query
 }
 
 const parseUrlAndSetState = () => {
@@ -370,21 +338,43 @@ const parseUrlAndSetState = () => {
 
 const loading = ref(true)
 
-const queryString = (value: unknown) =>
-  `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
+const syncRouteQuery = () => {
+  if (loading.value) return
 
-watch(tableSearch, (value) => {
-  if (loading.value || queryString(route.query.q) === value) return
-  void router.replace({ query: { ...route.query, q: value || undefined } })
-})
+  const query = buildStateQuery()
+  const nextFullPath = router.resolve({
+    path: route.path,
+    hash: route.hash,
+    query,
+  }).fullPath
+  if (nextFullPath === route.fullPath) return
 
+  void router.replace({ query })
+}
+
+// Keep all shareable visualization state in the URL. `replace` avoids adding
+// a browser-history entry for every filter, zoom, or layout adjustment.
 watch(
-  () => route.query.q,
-  (value) => {
-    if (loading.value) return
-    const routeSearch = queryString(value)
-    if (routeSearch !== tableSearch.value) tableSearch.value = routeSearch
-  }
+  [
+    selectedMonitoringSites,
+    plottedDatastreams,
+    selectedObservedPropertyNames,
+    selectedProcessingLevelNames,
+    beginDate,
+    endDate,
+    dataZoomStart,
+    dataZoomEnd,
+    selectedDateBtnId,
+    showPlot,
+    showTable,
+    showSummaryStatistics,
+    tableHeaders,
+    tableSearch,
+    xAxisRange,
+    yAxisRanges,
+  ],
+  syncRouteQuery,
+  { deep: true }
 )
 
 onMounted(async () => {
@@ -411,6 +401,7 @@ onMounted(async () => {
 
   parseUrlAndSetState()
   loading.value = false
+  syncRouteQuery()
 })
 
 onUnmounted(() => {

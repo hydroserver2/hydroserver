@@ -35,17 +35,6 @@
         />
       </div>
     </div>
-    <div class="time-filters__actions">
-      <v-btn
-        color="primary"
-        :append-icon="mdiContentCopy"
-        class="copy-state-btn"
-        data-testid="copy-visualization-state"
-        @click="copyStateToClipboard"
-      >
-        Copy State as URL
-      </v-btn>
-    </div>
   </div>
 </template>
 
@@ -54,10 +43,8 @@ import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
-import { mdiContentCopy } from '@mdi/js'
 
 const { setDateRange, onDateBtnClick } = useDataVisStore()
-const emit = defineEmits(['copy-state'])
 
 const { beginDate, endDate, dateOptions, selectedDateBtnId } =
   storeToRefs(useDataVisStore())
@@ -68,10 +55,6 @@ const handlePresetChange = (value: number | null) => {
   if (typeof value === 'number') {
     onDateBtnClick(value)
   }
-}
-
-const copyStateToClipboard = () => {
-  emit('copy-state')
 }
 </script>
 
@@ -92,14 +75,6 @@ const copyStateToClipboard = () => {
   gap: var(--hs-space-12);
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.time-filters__actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 0 0 auto;
-  gap: var(--hs-space-8);
 }
 
 .preset-filters {
@@ -138,16 +113,6 @@ const copyStateToClipboard = () => {
 
   .time-filters__controls {
     width: 100%;
-  }
-
-  .time-filters__actions {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .copy-state-btn {
-    width: 100%;
-    max-width: 260px;
   }
 
   .preset-filters {

@@ -96,7 +96,7 @@
                   <div ref="plotContainer" class="plotly-chart" />
                 </div>
                 <div class="plot-toolbar">
-                  <DataVisTimeFilters @copy-state="handleCopyState" />
+                  <DataVisTimeFilters />
                 </div>
               </v-window-item>
               <v-window-item value="summary" class="plot-window-item">
@@ -155,8 +155,6 @@ import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
 import { getXRangeBounds, supportsWebgl } from '@/utils/plotting/plotly'
 import { mdiChartLine, mdiSigma } from '@mdi/js'
-
-const emit = defineEmits(['copy-state'])
 
 const props = defineProps({
   cardHeight: { type: Number, required: true },
@@ -451,11 +449,6 @@ const captureAxisRangesFromPlotly = () => {
   } else if (yAxisRanges.value && Object.keys(yAxisRanges.value).length) {
     yAxisRanges.value = {}
   }
-}
-
-const handleCopyState = () => {
-  captureAxisRangesFromPlotly()
-  emit('copy-state')
 }
 
 const updating = computed(() =>
