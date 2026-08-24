@@ -1,298 +1,234 @@
 <template>
-  <v-data-table-virtual
-    :headers="tableHeaders"
-    :items="tasks"
-    :sort-by="defaultSortBy"
-    item-value="id"
-    multi-sort
-    fixed-header
-    hover
-    class="task-table hs-table-card hs-text-sm"
-    density="compact"
-  >
-    <template #header.name><div>Task name</div></template>
-    <template #header.statusSort>
-      <TaskTableFilter
-        label="Status"
-        title="Filter by status"
-        :options="statusOptions"
-        :selected="statusFilter"
-        @toggle="emit('toggle-status', $event)"
-        @clear="emit('clear-status')"
-      />
-    </template>
-    <template #header.taskType>
-      <TaskTableFilter
-        label="Type"
-        title="Filter by task type"
-        :options="taskTypeOptions"
-        :selected="taskTypeFilter"
-        @toggle="emit('toggle-task-type', $event)"
-        @clear="emit('clear-task-type')"
-      />
-    </template>
-    <template #header.actions><div>Actions</div></template>
-
-    <template #item.name="{ item }">
-      <span class="task-name font-weight-medium">{{ item.name || '—' }}</span>
-    </template>
-
-    <template #item.statusSort="{ item }">
-      <div class="task-status-cell">
-        <div class="task-run-cell">
-          <v-tooltip
-            location="bottom"
-            :open-delay="0"
-            :close-delay="80"
-            content-class="pa-0 ma-0 bg-transparent"
-            max-width="640"
-          >
-            <template #activator="{ props: tooltipProps }">
-              <span
-                v-bind="tooltipProps"
-                class="task-status-icon"
-                :style="{ color: taskStatusColor(item.statusSort) }"
-                :aria-label="item.statusSort"
-              >
-                <v-icon :icon="taskStatusIcon(item.statusSort)" size="20" />
-              </span>
-            </template>
-            <v-card
-              elevation="6"
-              rounded="lg"
-              class="ma-0 pa-0 border border-slate-200"
-              style="max-width: 560px; min-width: 360px"
-            >
-              <v-card-text class="px-4 py-3">
-                <div
-                  class="mb-1 hs-label uppercase tracking-[0.12em] text-slate-600"
-                >
-                  Last run summary
-                </div>
-                <div
-                  class="hs-text-md font-weight-semibold leading-snug text-slate-900"
-                >
-                  {{ item.lastRunMessage || 'No run history available yet.' }}
-                </div>
-                <div
-                  class="mt-3 flex items-center gap-1.5 hs-text-sm font-weight-semibold text-slate-500"
-                >
-                  <v-icon
-                    :icon="taskStatusIcon(item.statusSort)"
-                    size="14"
-                    :style="{ color: taskStatusColor(item.statusSort) }"
-                  />
-                  <span>{{ item.statusSort }}</span>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-tooltip>
-          <div class="task-run-times">
-            <div class="task-run-time">
-              <span class="task-run-label hs-label">Last</span>
-              <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
+  <div class="hs-table-card task-table-shell">
+    <table class="task-table hs-text-sm">
+      <thead>
+        <tr>
+          <th colspan="2" class="task-main-header">
+            <div class="task-header-filters">
+              <TaskTableFilter
+                label="Status"
+                title="Filter by status"
+                :options="statusOptions"
+                :selected="statusFilter"
+                @toggle="emit('toggle-status', $event)"
+                @clear="emit('clear-status')"
+              />
+              <TaskTableFilter
+                v-if="activeTab === 'aggregation'"
+                label="Type"
+                title="Filter by task type"
+                :options="taskTypeOptions"
+                :selected="taskTypeFilter"
+                @toggle="emit('toggle-task-type', $event)"
+                @clear="emit('clear-task-type')"
+              />
             </div>
-            <div class="task-run-time">
-              <span class="task-run-label hs-label">Next</span>
-              <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
-            </div>
-          </div>
-        </div>
-        <v-tooltip
-          v-if="item.noWorkWarning"
-          location="top"
-          :open-delay="0"
-          :close-delay="80"
-          content-class="pa-0 ma-0 bg-transparent"
-          max-width="320"
-        >
-          <template #activator="{ props: tooltipProps }">
-            <v-chip
-              v-bind="tooltipProps"
-              size="x-small"
-              density="comfortable"
-              color="amber-darken-3"
-              variant="tonal"
-              :prepend-icon="mdiAlert"
-              rounded="lg"
-              class="task-no-work-chip hs-label"
-            >
-              {{ item.noWorkWarning.label }}
-            </v-chip>
-          </template>
-          <v-card
-            elevation="6"
-            rounded="lg"
-            class="ma-0 pa-0 border border-slate-200"
-            style="max-width: 320px"
-          >
-            <v-card-text
-              class="px-4 py-3 hs-text-sm leading-snug text-slate-800"
-            >
-              {{ item.noWorkWarning.message }}
-            </v-card-text>
-          </v-card>
-        </v-tooltip>
-      </div>
-    </template>
+          </th>
+          <th class="text-right" />
+        </tr>
+      </thead>
 
-    <template #item.lastRunAt="{ item }">
-      <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
-    </template>
-
-    <template #item.nextRunAt="{ item }">
-      <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
-    </template>
-
-    <template #item.taskType="{ item }">
-      <v-chip
-        v-if="item.taskType"
-        density="comfortable"
-        size="small"
-        rounded="lg"
-        :style="taskTypeChipStyle(item.taskType)"
-        class="task-type-chip hs-text-2xs font-weight-semibold"
-      >
-        {{ item.taskType }}
-      </v-chip>
-      <span v-else class="text-slate-400">—</span>
-    </template>
-
-    <template #item.qualityRuleSummary="{ item }">
-      <v-tooltip
-        v-if="(item.qualityRuleCount ?? 0) > 0"
-        location="bottom"
-        :open-delay="0"
-        :close-delay="80"
-        content-class="pa-0 ma-0 bg-transparent"
-      >
-        <template #activator="{ props: tooltipProps }">
-          <span
-            v-bind="tooltipProps"
-            class="task-rules-count hs-text-sm font-weight-semibold"
-          >
-            {{ qualityRuleCountLabel(item) }}
-          </span>
-        </template>
-
-        <v-card
-          elevation="2"
-          rounded="lg"
-          class="ma-0 pa-0"
-          style="max-width: 360px; min-width: 240px"
-        >
-          <v-card-title class="px-4 py-2">
-            <v-row no-gutters align="center" style="width: 100%">
-              <v-col>
-                <div
-                  class="hs-text-md"
-                  style="white-space: normal; word-break: break-word"
+      <tbody>
+        <tr v-for="task in tasks" :key="task.id">
+          <td class="task-status-cell">
+            <v-tooltip location="bottom" :open-delay="0" :close-delay="80">
+              <template #activator="{ props: tooltipProps }">
+                <span
+                  v-bind="tooltipProps"
+                  class="task-status-icon"
+                  :style="{ color: taskStatusColor(task.statusSort) }"
+                  :aria-label="task.statusSort"
                 >
-                  Quality rules
-                </div>
-              </v-col>
-              <v-col cols="auto">
-                <v-chip size="small" color="teal-darken-1" variant="tonal">
-                  {{ qualityRuleCountLabel(item) }}
-                </v-chip>
-              </v-col>
-            </v-row>
-          </v-card-title>
-
-          <v-divider />
-
-          <v-card-text class="py-2 px-4">
-            <v-row dense>
-              <template
-                v-for="rule in item.qualityRuleBreakdown ?? []"
-                :key="rule.label"
-              >
-                <v-col cols="8" class="font-weight-medium">
-                  {{ rule.label }}
-                </v-col>
-                <v-col cols="4">{{ rule.count }}</v-col>
+                  <v-icon :icon="taskStatusIcon(task.statusSort)" size="20" />
+                </span>
               </template>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-tooltip>
-      <span v-else class="text-slate-400">No rules</span>
-    </template>
+              <span>{{
+                task.lastRunMessage || 'No run history available yet.'
+              }}</span>
+            </v-tooltip>
+          </td>
 
-    <template #item.monitoringRulesViolated="{ item }">
-      <v-chip
-        v-if="(item.monitoringRulesViolated ?? 0) > 0"
-        color="red-darken-3"
-        variant="tonal"
-        size="small"
-        rounded="lg"
-        class="task-violation-chip font-weight-bold"
-      >
-        {{ item.monitoringRulesViolated }}
-        {{ item.monitoringRulesViolated === 1 ? 'rule' : 'rules' }}
-      </v-chip>
-      <span v-else class="text-slate-400">None</span>
-    </template>
+          <td class="task-summary-cell">
+            <div class="task-name">{{ task.name || '—' }}</div>
+            <div class="task-meta hs-text-sm">
+              <span class="task-meta-label hs-label">Last</span>
+              <span class="task-time">{{ task.lastRun }}</span>
+              <span aria-hidden="true">·</span>
+              <span class="task-meta-label hs-label">Next</span>
+              <span class="task-time">{{ task.nextRun }}</span>
 
-    <template #item.actions="{ item }">
-      <div class="task-actions">
-        <v-tooltip location="top" :open-delay="0" :close-delay="0">
-          <template #activator="{ props: tooltipProps }">
-            <span v-bind="tooltipProps" class="inline-flex">
+              <v-chip
+                v-if="activeTab === 'aggregation' && task.taskType"
+                density="comfortable"
+                size="small"
+                rounded="lg"
+                :style="taskTypeChipStyle(task.taskType)"
+                class="task-type-chip hs-text-2xs font-weight-semibold"
+              >
+                {{ task.taskType }}
+              </v-chip>
+
+              <v-tooltip
+                v-if="
+                  activeTab === 'quality' && (task.qualityRuleCount ?? 0) > 0
+                "
+                location="bottom"
+                :open-delay="0"
+                :close-delay="80"
+                content-class="pa-0 ma-0 bg-transparent"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <button
+                    v-bind="tooltipProps"
+                    type="button"
+                    class="task-quality-summary hs-text-sm"
+                  >
+                    {{ qualityRuleCountLabel(task) }}
+                  </button>
+                </template>
+                <v-card
+                  elevation="2"
+                  rounded="lg"
+                  class="ma-0 pa-0"
+                  style="max-width: 360px; min-width: 240px"
+                >
+                  <v-card-title class="px-4 py-2">
+                    <div class="task-rules-title">
+                      <span class="hs-text-md">Quality rules</span>
+                      <v-chip
+                        size="small"
+                        color="teal-darken-1"
+                        variant="tonal"
+                      >
+                        {{ qualityRuleCountLabel(task) }}
+                      </v-chip>
+                    </div>
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text class="py-2 px-4">
+                    <v-row dense>
+                      <template
+                        v-for="rule in task.qualityRuleBreakdown ?? []"
+                        :key="rule.label"
+                      >
+                        <v-col cols="8" class="font-weight-medium">
+                          {{ rule.label }}
+                        </v-col>
+                        <v-col cols="4">{{ rule.count }}</v-col>
+                      </template>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </v-tooltip>
+              <span
+                v-else-if="activeTab === 'quality'"
+                class="task-quality-empty"
+              >
+                No rules
+              </span>
+
+              <v-chip
+                v-if="
+                  activeTab === 'quality' &&
+                  (task.monitoringRulesViolated ?? 0) > 0
+                "
+                color="red-darken-3"
+                variant="tonal"
+                size="small"
+                rounded="lg"
+                class="task-violation-chip font-weight-bold"
+              >
+                {{ task.monitoringRulesViolated }}
+                {{
+                  task.monitoringRulesViolated === 1
+                    ? 'violation'
+                    : 'violations'
+                }}
+              </v-chip>
+              <span
+                v-else-if="activeTab === 'quality'"
+                class="task-quality-empty"
+              >
+                No violations
+              </span>
+
+              <v-chip
+                v-if="task.noWorkWarning"
+                size="x-small"
+                density="comfortable"
+                color="amber-darken-3"
+                variant="tonal"
+                :prepend-icon="mdiAlert"
+                rounded="lg"
+                class="task-no-work-chip hs-label"
+                :title="task.noWorkWarning.message"
+              >
+                {{ task.noWorkWarning.label }}
+              </v-chip>
+            </div>
+          </td>
+
+          <td class="text-right task-actions-cell">
+            <div class="task-actions">
+              <v-tooltip location="top" :open-delay="0" :close-delay="0">
+                <template #activator="{ props: tooltipProps }">
+                  <span v-bind="tooltipProps" class="inline-flex">
+                    <v-btn
+                      variant="text"
+                      size="small"
+                      color="black"
+                      icon
+                      :disabled="pauseButtonDisabled(task)"
+                      aria-label="Pause or resume task"
+                      @click.stop="emit('toggle-paused', task)"
+                    >
+                      <NoScheduleIcon v-if="!task.schedule" />
+                      <v-icon
+                        v-else
+                        :icon="task.schedule.enabled ? mdiPause : mdiPlay"
+                        size="16"
+                      />
+                    </v-btn>
+                  </span>
+                </template>
+                <span>{{ pauseTooltipText(task) }}</span>
+              </v-tooltip>
+              <v-btn
+                v-if="canEdit && !task.userClickedRunNow"
+                variant="outlined"
+                color="green-darken-3"
+                :prepend-icon="mdiPlay"
+                class="task-action-button text-none"
+                rounded="lg"
+                @click.stop="emit('run-now', task)"
+              >
+                Run now
+              </v-btn>
+              <span
+                v-else-if="canEdit && task.userClickedRunNow"
+                class="hs-text-sm font-weight-semibold text-slate-500"
+              >
+                Run requested
+              </span>
               <v-btn
                 variant="text"
                 size="small"
-                color="black"
-                icon
-                :disabled="pauseButtonDisabled(item)"
-                aria-label="Pause or resume task"
-                @click.stop="emit('toggle-paused', item)"
+                :style="{ color: accent }"
+                :append-icon="mdiChevronRight"
+                class="text-none"
+                @click.stop="emit('open-task', task)"
               >
-                <NoScheduleIcon v-if="!item.schedule" />
-                <v-icon
-                  v-else
-                  :icon="item.schedule.enabled ? mdiPause : mdiPlay"
-                  size="16"
-                />
+                Details
               </v-btn>
-            </span>
-          </template>
-          <span>{{ pauseTooltipText(item) }}</span>
-        </v-tooltip>
-        <v-btn
-          v-if="canEdit && !item.userClickedRunNow"
-          variant="outlined"
-          color="green-darken-3"
-          :prepend-icon="mdiPlay"
-          class="task-action-button text-none"
-          rounded="lg"
-          @click.stop="emit('run-now', item)"
-        >
-          Run now
-        </v-btn>
-        <span
-          v-else-if="canEdit && item.userClickedRunNow"
-          class="hs-text-sm font-weight-semibold text-slate-500"
-        >
-          Run requested
-        </span>
-        <v-btn
-          variant="text"
-          size="small"
-          :style="{ color: accent }"
-          :append-icon="mdiChevronRight"
-          class="text-none"
-          @click.stop="emit('open-task', item)"
-        >
-          Details
-        </v-btn>
-      </div>
-    </template>
-  </v-data-table-virtual>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiAlert, mdiChevronRight, mdiPause, mdiPlay } from '@mdi/js'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
@@ -331,7 +267,6 @@ const emit = defineEmits<{
 }>()
 
 const { activeTab } = storeToRefs(useOrchestrationStore())
-const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
 
 const statusOptions = STATUS_OPTIONS.map((status) => ({
   ...status,
@@ -343,33 +278,6 @@ const taskTypeOptions = DATA_PRODUCT_TYPE_OPTIONS.map((taskType) => ({
   title: taskType,
   value: taskType,
 }))
-
-const tableHeaders = computed(() => {
-  const headers = [
-    { title: 'Task name', key: 'name' },
-    { title: 'Status', key: 'statusSort' },
-  ]
-
-  if (activeTab.value === 'aggregation') {
-    headers.push({ title: 'Type', key: 'taskType' })
-  }
-
-  if (activeTab.value === 'quality') {
-    headers.push(
-      { title: 'Rules', key: 'qualityRuleSummary' },
-      { title: 'Violations', key: 'monitoringRulesViolated' }
-    )
-  }
-
-  headers.push({
-    title: 'Actions',
-    key: 'actions',
-    align: 'end',
-    sortable: false,
-  } as any)
-
-  return headers
-})
 
 const taskTypeChipStyle = (taskType: DataProductTaskType) =>
   getTaskTypeChipStyle(taskType)
@@ -384,108 +292,130 @@ const pauseTooltipText = (task: TaskRow) => {
 </script>
 
 <style scoped>
-.task-table {
-  height: 100%;
-}
-
-.task-table :deep(.v-table__wrapper) {
+.task-table-shell {
+  height: auto;
   max-height: 100%;
+  min-height: 0;
+  overflow: auto;
 }
 
-.task-table :deep(thead tr) {
-  border-bottom: 1px solid var(--hs-border);
+.task-table {
+  width: 100%;
+  min-width: 100%;
+  height: auto;
+  border-collapse: collapse;
+  table-layout: auto;
 }
 
-.task-table :deep(th) {
+.task-table thead th {
+  height: 48px;
   padding: var(--hs-space-8) var(--hs-space-12);
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-regular);
-  text-align: left;
   text-transform: none;
   letter-spacing: 0;
   background: var(--hs-surface-muted);
+  border: 0;
 }
 
-.task-table :deep(tbody tr) {
+.task-table thead tr,
+.task-table tbody tr {
   border-bottom: 1px solid var(--hs-border);
 }
 
-.task-table :deep(tbody tr:hover) {
+.task-table tbody tr:hover {
   background: var(--hs-surface-muted);
 }
 
-.task-table :deep(td) {
-  padding: 13px var(--hs-space-12);
+.task-main-header {
+  text-align: left;
+}
+
+.task-header-filters {
+  display: flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+}
+
+.task-status-cell {
+  width: 32px;
+  padding: var(--hs-space-12) 0 var(--hs-space-12) var(--hs-space-12);
+  vertical-align: top;
+}
+
+.task-summary-cell {
+  padding: var(--hs-space-12) var(--hs-space-12) var(--hs-space-12) 4px;
+  vertical-align: top;
+}
+
+.task-actions-cell {
+  width: 1%;
+  padding: var(--hs-space-12);
+  vertical-align: top;
+  white-space: nowrap;
 }
 
 .task-name {
   color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.3;
 }
 
-.task-status-cell {
+.task-meta {
   display: flex;
-  flex-direction: column;
-  gap: var(--hs-space-4);
-  align-items: flex-start;
-}
-
-.task-run-cell,
-.task-status-icon,
-.task-actions {
-  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--hs-space-6);
   align-items: center;
+  margin-top: var(--hs-space-4);
+  color: var(--hs-text-secondary);
 }
 
-.task-run-cell {
-  gap: var(--hs-space-8);
-  min-width: 0;
-}
-
-.task-status-icon {
-  flex: 0 0 auto;
-  justify-content: center;
-  line-height: 1;
-}
-
-.task-run-times {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 0;
-}
-
-.task-run-time {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  gap: 0.35rem;
-  align-items: baseline;
-  line-height: 1.15;
+.task-meta-label {
+  color: var(--hs-text-secondary);
 }
 
 .task-time {
   color: var(--hs-text-secondary);
   font-family: var(--hs-font-data);
-  line-height: 1.15;
   white-space: nowrap;
 }
 
-.task-run-label {
-  color: var(--hs-text-muted);
-  line-height: 1.15;
-  text-transform: uppercase;
+.task-status-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
-.task-rules-count {
-  max-width: 320px;
+.task-quality-summary {
+  padding: 0;
   color: var(--hs-text-secondary);
-  white-space: nowrap;
+  font-weight: var(--hs-font-weight-semibold);
   cursor: default;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dotted var(--hs-text-muted);
+}
+
+.task-quality-empty {
+  color: var(--hs-text-muted);
+}
+
+.task-rules-title {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
+  justify-content: space-between;
 }
 
 .task-actions {
-  justify-content: flex-end;
+  display: flex;
   gap: var(--hs-space-6);
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .task-action-button {
