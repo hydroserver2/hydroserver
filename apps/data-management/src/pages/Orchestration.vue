@@ -682,7 +682,7 @@ const emptyHeading = computed(() =>
 const emptyMessage = computed(() => {
   if (activeTab.value === 'ingestion') {
     if (dataConnections.value.length === 0) {
-      return "Click 'Add data connection' to get started."
+      return "Click the '+' icon in the data connections menu to get started."
     }
     return 'Pick a connection from the list to view its tasks.'
   }
@@ -736,17 +736,21 @@ const selectSidebarFromRouteGroup = () => {
   return true
 }
 
-const autoSelectSidebar = () => {
-  if (activeTab.value === 'ingestion') {
+const selectValidGroupForTab = (tab: TabId) => {
+  if (tab === 'ingestion') {
     const current = selectedConnectionId.value
-    if (current && connectionsById.value.has(current)) return
+    if (current && connectionsById.value.has(current)) return current
     selectedConnectionId.value = dataConnections.value[0]?.id ?? null
-  } else {
-    const current = selectedMonitoringSiteId.value
-    if (current && monitoringSitesById.value.has(current)) return
-    selectedMonitoringSiteId.value = monitoringSites.value[0]?.id ?? null
+    return selectedConnectionId.value
   }
+
+  const current = selectedMonitoringSiteId.value
+  if (current && monitoringSitesById.value.has(current)) return current
+  selectedMonitoringSiteId.value = monitoringSites.value[0]?.id ?? null
+  return selectedMonitoringSiteId.value
 }
+
+const autoSelectSidebar = () => selectValidGroupForTab(activeTab.value)
 
 const selectedGroupIdForTab = (tab: TabId) =>
   tab === 'ingestion'
@@ -789,10 +793,7 @@ const closeTaskDetailsAndSync = async () => {
 
 const setActiveTab = async (tab: TabId) => {
   sidebarSearch.value = ''
-  await replaceView(tab, selectedGroupIdForTab(tab))
-  autoSelectSidebar()
-  await fetchVisibleTasks()
-  await syncSelectedGroupToRoute()
+  await replaceView(tab, selectValidGroupForTab(tab))
 }
 
 const openWorkspaceManager = async () => {
@@ -801,13 +802,11 @@ const openWorkspaceManager = async () => {
 
 const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
-  await fetchVisibleTasks()
   await replaceView('ingestion', id)
 }
 
 const selectSite = async (id: string) => {
   selectedMonitoringSiteId.value = id
-  await fetchVisibleTasks()
   await replaceView(activeTab.value, id)
 }
 
@@ -832,10 +831,16 @@ const closeWorkspaceScopedUi = () => {
   draftDatastreams.value = []
 }
 
+let workspaceSyncRequestId = 0
+
 watch(
   selectedWorkspaceId,
   async (newId, oldId) => {
     if (newId == null || routeWorkspaceDenied.value) return
+    const syncRequestId = ++workspaceSyncRequestId
+    const isCurrentWorkspaceSync = () =>
+      syncRequestId === workspaceSyncRequestId &&
+      selectedWorkspaceId.value === newId
     const workspaceChanged = oldId != null && oldId !== newId
     const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
     // The URL workspace wins; only push the new selection into the URL when
@@ -848,17 +853,23 @@ watch(
     selectedMonitoringSiteId.value = null
     if (workspaceChanged && !routeSelectedThisWorkspace)
       await closeTaskDetails()
+    if (!isCurrentWorkspaceSync()) return
     await fetchAll(newId)
+    if (!isCurrentWorkspaceSync()) return
     if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
       autoSelectSidebar()
     }
     await fetchVisibleTasks(true)
+    if (!isCurrentWorkspaceSync()) return
     await syncSelectedGroupToRoute(overrideWorkspaceId)
   },
   { immediate: true }
 )
 
+let routeSelectionSyncRequestId = 0
+
 watch([routeDataConnectionId, routeSiteId, routeView], async () => {
+  const syncRequestId = ++routeSelectionSyncRequestId
   if (loading.value || hasTaskDetails.value) {
     return
   }
@@ -874,7 +885,10 @@ watch([routeDataConnectionId, routeSiteId, routeView], async () => {
       : !!routeSiteId.value
   if (!hasRouteSelection) return
 
-  await autoSelectSidebarAndSync()
+  autoSelectSidebar()
+  await fetchVisibleTasks()
+  if (syncRequestId !== routeSelectionSyncRequestId) return
+  await syncSelectedGroupToRoute()
 })
 
 const openCreateDialog = () => {

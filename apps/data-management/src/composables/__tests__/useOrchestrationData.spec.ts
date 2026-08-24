@@ -120,6 +120,56 @@ describe('useOrchestrationData', () => {
     })
   })
 
+  it('does not restore tasks from a request after its group is cleared', async () => {
+    let resolveTasks!: (items: unknown[]) => void
+    tasksListMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveTasks = resolve
+      })
+    )
+
+    const data = useOrchestrationData()
+    const staleLoad = data.fetchTasksForGroup(
+      'ingestion',
+      'dc-old',
+      'workspace-1'
+    )
+
+    await data.fetchTasksForGroup('ingestion', null, 'workspace-1')
+    resolveTasks([{ id: 'etl-stale' }])
+    await staleLoad
+
+    expect(data.workspaceTasks.value).toEqual([])
+    expect(data.loadedTaskGroup.value).toBeNull()
+    expect(data.taskLoading.value).toBe(false)
+  })
+
+  it('invalidates a pending task request when workspace summaries reload', async () => {
+    let resolveTasks!: (items: unknown[]) => void
+    tasksListMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveTasks = resolve
+      })
+    )
+    dataConnectionsListMock.mockResolvedValue([])
+    monitoringSitesTaskSummariesMock.mockResolvedValue({ ok: true, data: [] })
+
+    const data = useOrchestrationData()
+    const staleLoad = data.fetchTasksForGroup(
+      'ingestion',
+      'dc-old',
+      'workspace-old'
+    )
+
+    await data.fetchAll('workspace-new')
+    resolveTasks([{ id: 'etl-stale' }])
+    await staleLoad
+
+    expect(data.workspaceTasks.value).toEqual([])
+    expect(data.loadedTaskGroup.value).toBeNull()
+    expect(data.taskLoading.value).toBe(false)
+  })
+
   it('refreshes data connections without replacing other loaded data', async () => {
     dataConnectionsListMock.mockResolvedValue([{ id: 'dc-3' }])
 

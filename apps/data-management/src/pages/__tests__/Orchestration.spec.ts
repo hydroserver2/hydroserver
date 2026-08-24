@@ -90,7 +90,10 @@ vi.mock('@/components/Workspace/WorkspaceToolbar.vue', () => ({
 vi.mock(
   '@/components/Orchestration/workbench/OrchestrationNavRail.vue',
   () => ({
-    default: { template: '<nav data-testid="nav-rail" />' },
+    default: {
+      template:
+        '<nav data-testid="nav-rail"><button data-testid="aggregation-tab" @click="$emit(\'select-tab\', \'aggregation\')" /></nav>',
+    },
   })
 )
 
@@ -155,7 +158,8 @@ const stubs = {
     template: '<div />',
   },
   OrchestrationNavRail: {
-    template: '<nav data-testid="nav-rail" />',
+    template:
+      '<nav data-testid="nav-rail"><button data-testid="aggregation-tab" @click="$emit(\'select-tab\', \'aggregation\')" /></nav>',
   },
   OrchestrationContextSidebar: {
     template: '<aside />',
@@ -230,5 +234,23 @@ describe('Orchestration page', () => {
     const route = routes.find((item) => item.name === 'Orchestration')
 
     expect(route?.redirect).toBe('/orchestration/ingestion')
+  })
+
+  it('routes nav-rail selections immediately', async () => {
+    const { default: Orchestration } = await import('@/pages/Orchestration.vue')
+    const wrapper = shallowMount(Orchestration, {
+      global: { stubs },
+    })
+    await flushPromises()
+    replaceMock.mockClear()
+
+    await wrapper.get('[data-testid="aggregation-tab"]').trigger('click')
+
+    expect(replaceMock).toHaveBeenCalledTimes(1)
+    expect(replaceMock).toHaveBeenCalledWith({
+      name: 'OrchestrationView',
+      params: { view: 'aggregation' },
+      query: {},
+    })
   })
 })
