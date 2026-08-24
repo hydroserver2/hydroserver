@@ -44,8 +44,12 @@ function readCurrentUserScriptTag(): string | null {
   ) as HTMLScriptElement | null
 
   const devShellHost = resolveDevShellHost()
-
-  if (!scriptTag && typeof XMLHttpRequest !== 'undefined' && devShellHost) {
+  
+  if (
+    !scriptTag?.textContent &&
+    typeof XMLHttpRequest !== 'undefined' &&
+    devShellHost
+  ) {
     try {
       const xhr = new XMLHttpRequest()
       xhr.open('GET', devShellHost, false)

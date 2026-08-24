@@ -18,7 +18,7 @@ def get_app_settings_context():
                 {
                     "id": social_app.provider_id,
                     "name": social_app.name,
-                    "iconLink": f"{settings.PROXY_BASE_URL if settings.STATIC_STORAGE_IS_LOCAL else ''}"
+                    "iconLink": f"{settings.PROXY_BASE_URL if settings.STATIC_STORAGE_IS_LOCAL and not settings.STATIC_HOST else ''}"
                     f"{static(f'providers/{social_app.provider_id}.png')}",
                     "signupEnabled": (
                         True
