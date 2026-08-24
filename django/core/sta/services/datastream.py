@@ -220,7 +220,9 @@ class DatastreamService(ServiceUtils):
             )
 
         datastream_rows = list(
-            queryset.select_related("monitoring_site", "observed_property", "processing_level")
+            queryset.select_related(
+                "monitoring_site", "observed_property", "processing_level", "unit"
+            )
             .order_by("id")
             .values(
                 "id",
@@ -235,7 +237,11 @@ class DatastreamService(ServiceUtils):
                 "processing_level_id",
                 "processing_level__definition",
                 "unit_id",
+                "unit__symbol",
                 "no_data_value",
+                "aggregation_statistic",
+                "time_aggregation_interval",
+                "time_aggregation_interval_unit",
                 "value_count",
                 "phenomenon_begin_time",
                 "phenomenon_end_time",
@@ -287,7 +293,13 @@ class DatastreamService(ServiceUtils):
                     "observed_property_id": observed_property_id,
                     "processing_level_id": processing_level_id,
                     "unit_id": str(row["unit_id"]),
+                    "unit_symbol": row["unit__symbol"],
                     "no_data_value": row["no_data_value"],
+                    "aggregation_statistic": row["aggregation_statistic"],
+                    "time_aggregation_interval": row["time_aggregation_interval"],
+                    "time_aggregation_interval_unit": row[
+                        "time_aggregation_interval_unit"
+                    ],
                     "value_count": row["value_count"],
                     "phenomenon_begin_time": row["phenomenon_begin_time"],
                     "phenomenon_end_time": row["phenomenon_end_time"],

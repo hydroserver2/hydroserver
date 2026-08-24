@@ -5714,6 +5714,8 @@ export interface components {
         };
         /** VisualizationDatastreamResponse */
         VisualizationDatastreamResponse: {
+            /** Aggregationstatistic */
+            aggregationStatistic: string;
             /**
              * Id
              * Format: uuid
@@ -5746,11 +5748,20 @@ export interface components {
              * Format: uuid
              */
             processingLevelId: string;
+            /** Timeaggregationinterval */
+            timeAggregationInterval: number;
+            /**
+             * Timeaggregationintervalunit
+             * @enum {string}
+             */
+            timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
             /**
              * Unitid
              * Format: uuid
              */
             unitId: string;
+            /** Unitsymbol */
+            unitSymbol: string;
             /** Valuecount */
             valueCount?: number | null;
         };

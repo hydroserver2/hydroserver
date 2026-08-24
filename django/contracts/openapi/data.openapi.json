@@ -10789,6 +10789,11 @@
       },
       "VisualizationDatastreamResponse": {
         "properties": {
+          "aggregationStatistic": {
+            "maxLength": 255,
+            "title": "Aggregationstatistic",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -10870,9 +10875,28 @@
             "title": "Processinglevelid",
             "type": "string"
           },
+          "timeAggregationInterval": {
+            "title": "Timeaggregationinterval",
+            "type": "number"
+          },
+          "timeAggregationIntervalUnit": {
+            "enum": [
+              "seconds",
+              "minutes",
+              "hours",
+              "days"
+            ],
+            "title": "Timeaggregationintervalunit",
+            "type": "string"
+          },
           "unitId": {
             "format": "uuid",
             "title": "Unitid",
+            "type": "string"
+          },
+          "unitSymbol": {
+            "maxLength": 255,
+            "title": "Unitsymbol",
             "type": "string"
           },
           "valueCount": {
@@ -10895,7 +10919,11 @@
           "observedPropertyId",
           "processingLevelId",
           "unitId",
-          "noDataValue"
+          "unitSymbol",
+          "noDataValue",
+          "aggregationStatistic",
+          "timeAggregationInterval",
+          "timeAggregationIntervalUnit"
         ],
         "title": "VisualizationDatastreamResponse",
         "type": "object"

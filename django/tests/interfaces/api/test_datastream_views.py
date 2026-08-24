@@ -469,13 +469,25 @@ def test_remove_datastream_tag_returns_404_for_unknown_key(client):
 
 def test_get_datastream_visualization_bootstrap_returns_public_datastream(client):
     workspace = WorkspaceFactory()
-    datastream = _make_datastream(workspace)
+    datastream = _make_datastream(
+        workspace,
+        aggregation_statistic="Mean",
+        time_aggregation_interval=1,
+        time_aggregation_interval_unit="days",
+        unit=UnitFactory(workspace=workspace, symbol="cfs"),
+    )
 
     response = client.get(f"{DATASTREAMS_URL}/visualization-bootstrap")
 
     assert response.status_code == 200
     body = response.json()
-    assert str(datastream.id) in [d["id"] for d in body["datastreams"]]
+    returned_datastream = next(
+        d for d in body["datastreams"] if d["id"] == str(datastream.id)
+    )
+    assert returned_datastream["aggregationStatistic"] == "Mean"
+    assert returned_datastream["timeAggregationInterval"] == 1
+    assert returned_datastream["timeAggregationIntervalUnit"] == "days"
+    assert returned_datastream["unitSymbol"] == "cfs"
 
 
 def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):

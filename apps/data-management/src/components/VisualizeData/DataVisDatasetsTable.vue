@@ -33,7 +33,7 @@
           <v-menu :close-on-content-click="false" location="bottom end">
             <template #activator="{ props: menuProps }">
               <v-tooltip
-                text="Choose row details"
+                text="Choose additional row details"
                 location="top"
                 :open-delay="0"
                 :close-delay="0"
@@ -45,7 +45,7 @@
                     variant="text"
                     size="small"
                     class="hs-table-icon-action"
-                    aria-label="Choose row details"
+                    aria-label="Choose additional row details"
                   />
                 </template>
               </v-tooltip>
@@ -53,7 +53,7 @@
 
             <v-card class="datastream-details-menu">
               <div class="datastream-details-menu__title hs-text-sm">
-                Row details
+                Additional row details
               </div>
               <v-list density="compact" class="py-1">
                 <v-list-item
@@ -138,34 +138,24 @@
               <button
                 type="button"
                 class="datastream-name"
+                :title="datastreamDisplayName(item)"
                 @click.stop="openMetadata(item)"
               >
-                {{ item.name || 'Unnamed datastream' }}
+                {{ datastreamDisplayName(item) }}
               </button>
-              <div class="datastream-meta hs-text-sm">
+              <div class="datastream-meta datastream-signature hs-text-sm">
                 <span
-                  v-if="isDetailVisible('siteCodeName')"
-                  class="datastream-meta__item"
+                  v-for="value in datastreamSignature(item)"
+                  :key="`${item.id}-${value}`"
+                  class="datastream-signature__item"
                 >
-                  <span class="datastream-meta__label hs-label">Site</span>
-                  {{ item.siteCodeName || '—' }}
+                  {{ value }}
                 </span>
-                <span
-                  v-if="isDetailVisible('observedPropertyName')"
-                  class="datastream-meta__item"
-                >
-                  <span class="datastream-meta__label hs-label">Property</span>
-                  {{ item.observedPropertyName || '—' }}
-                </span>
-                <span
-                  v-if="isDetailVisible('qualityControlLevelDefinition')"
-                  class="datastream-meta__item"
-                >
-                  <span class="datastream-meta__label hs-label"
-                    >Processing</span
-                  >
-                  {{ item.qualityControlLevelDefinition || '—' }}
-                </span>
+              </div>
+              <div
+                v-if="hasVisibleAdditionalDetails"
+                class="datastream-meta hs-text-sm"
+              >
                 <span
                   v-if="isDetailVisible('valueCount')"
                   class="datastream-meta__item datastream-meta__item--data"
@@ -239,9 +229,9 @@ import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import DataVisTableFilters from './DataVisTableFilters.vue'
 
 type DatastreamTableItem = Datastream & {
-  siteCodeName?: string
-  observedPropertyName?: string
+  monitoringSiteName?: string
   qualityControlLevelDefinition?: string
+  unitSymbol?: string
 }
 
 const dataVisStore = useDataVisStore()
@@ -302,21 +292,13 @@ const tableItems = computed<DatastreamTableItem[]>(() =>
     const monitoringSite = dataVisStore.monitoringSiteById.get(
       datastream.monitoringSiteId
     )
-    const observedProperty = dataVisStore.observedPropertyById.get(
-      datastream.observedPropertyId
-    )
-    const observedPropertyCode = observedProperty?.code?.trim() ?? ''
-    const observedPropertyName = observedProperty?.name?.trim() ?? ''
     const processingLevel = dataVisStore.processingLevelById.get(
       datastream.processingLevelId
     )
 
     return {
       ...datastream,
-      siteCodeName: monitoringSite?.code,
-      observedPropertyName: observedPropertyCode
-        ? `${observedPropertyName} (${observedPropertyCode})`
-        : observedPropertyName,
+      monitoringSiteName: monitoringSite?.name,
       qualityControlLevelDefinition: processingLevel?.definition,
     }
   })
@@ -329,9 +311,12 @@ const visibleTableItems = computed(() => {
       if (!query) return true
       return [
         item.name,
-        item.siteCodeName,
-        item.observedPropertyName,
+        item.monitoringSiteName,
         item.qualityControlLevelDefinition,
+        item.aggregationStatistic,
+        item.intendedTimeSpacing,
+        item.intendedTimeSpacingUnit,
+        item.unitSymbol,
         item.valueCount,
         item.phenomenonEndTime,
       ].some((value) => `${value ?? ''}`.toLocaleLowerCase().includes(query))
@@ -357,6 +342,60 @@ const selectedHeaders = computed({
 
 const isDetailVisible = (key: string) =>
   headers.value.find((header) => header.key === key)?.visible ?? true
+
+const hasVisibleAdditionalDetails = computed(() =>
+  ['valueCount', 'phenomenonEndTime'].some(isDetailVisible)
+)
+
+const datastreamDisplayName = (item: DatastreamTableItem) => {
+  const datastreamName = item.name?.trim() || 'Unnamed datastream'
+  return item.monitoringSiteName
+    ? `${item.monitoringSiteName} - ${datastreamName}`
+    : datastreamName
+}
+
+type TimeSpacingUnit = NonNullable<Datastream['intendedTimeSpacingUnit']>
+
+const formatIntendedTimeSpacing = (
+  interval: number | string | null | undefined,
+  unit: Datastream['intendedTimeSpacingUnit']
+) => {
+  if (interval === null || interval === undefined || !unit) return ''
+
+  const numericInterval = Number(interval)
+  if (!Number.isFinite(numericInterval)) return ''
+
+  if (numericInterval === 1) {
+    const namedPeriods: Record<TimeSpacingUnit, string> = {
+      seconds: 'every second',
+      minutes: 'every minute',
+      hours: 'hourly',
+      days: 'daily',
+    }
+    return namedPeriods[unit]
+  }
+
+  const abbreviations: Record<TimeSpacingUnit, string> = {
+    seconds: 'sec',
+    minutes: 'min',
+    hours: 'hr',
+    days: 'day',
+  }
+  return `every ${numericInterval} ${abbreviations[unit]}`
+}
+
+const datastreamSignature = (item: DatastreamTableItem) =>
+  [
+    item.qualityControlLevelDefinition,
+    item.aggregationStatistic,
+    formatIntendedTimeSpacing(
+      item.intendedTimeSpacing,
+      item.intendedTimeSpacingUnit
+    ),
+    item.unitSymbol,
+  ]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
 
 const toggleHeader = (key: string) => {
   const keys = [...selectedHeaders.value]
@@ -624,6 +663,15 @@ function updatePlottedDatastreams(
   color: var(--hs-text-secondary);
 }
 
+.datastream-signature {
+  gap: 0;
+}
+
+.datastream-signature__item:not(:first-child)::before {
+  margin: 0 var(--hs-space-8);
+  content: '·';
+}
+
 .datastream-meta__item {
   display: inline-flex;
   gap: var(--hs-space-4);
@@ -699,6 +747,11 @@ function updatePlottedDatastreams(
     flex-direction: column;
     gap: var(--hs-space-2);
     align-items: flex-start;
+  }
+
+  .datastream-meta.datastream-signature {
+    flex-direction: row;
+    gap: 0;
   }
 
   .datastream-name {

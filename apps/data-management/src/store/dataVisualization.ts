@@ -49,29 +49,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const tableHeaders = reactive([
     { title: 'Plot', key: 'plot', visible: true },
     {
-      title: 'Site Code',
-      key: 'siteCodeName',
-      visible: true,
-    },
-    {
-      title: 'Observed Property',
-      key: 'observedPropertyName',
-      visible: true,
-    },
-    {
-      title: 'Processing Level',
-      key: 'qualityControlLevelDefinition',
-      visible: true,
-    },
-    {
       title: 'Number Observations',
       key: 'valueCount',
-      visible: true,
+      visible: false,
     },
     {
       title: 'Date Last Updated',
       key: 'phenomenonEndTime',
-      visible: true,
+      visible: false,
     },
   ])
 
@@ -143,7 +128,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     showPlot.value = true
     showTable.value = true
     tableHeaders.forEach((header) => {
-      header.visible = true
+      header.visible = header.key === 'plot'
     })
     xAxisRange.value = null
     yAxisRanges.value = {}
