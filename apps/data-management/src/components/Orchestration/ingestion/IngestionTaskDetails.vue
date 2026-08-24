@@ -4,14 +4,20 @@
     class="flex flex-col flex-1 min-h-0 h-full bg-white overflow-hidden"
   >
     <header class="pt-[14px] border-b border-[#e8e8e8] bg-white shrink-0">
-      <button class="task-details-back hs-text-sm font-weight-medium" type="button" @click="close">
+      <button
+        class="task-details-back hs-text-sm font-weight-medium"
+        type="button"
+        @click="close"
+      >
         <v-icon :icon="mdiArrowLeft" size="16" />
         <span>{{ backLabel }}</span>
       </button>
 
       <div class="flex items-start gap-3 pb-3">
         <div class="flex items-center gap-[10px] flex-wrap min-w-0">
-          <h2 class="task-details-title hs-text-md font-weight-regular">{{ task.name }}</h2>
+          <h2 class="task-details-title hs-text-md font-weight-regular">
+            {{ task.name }}
+          </h2>
           <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
           <span v-if="scheduleText" class="schedule-pill hs-text-2xs">{{
             scheduleText
@@ -92,23 +98,13 @@
       </div>
     </header>
 
-    <div class="flex">
-      <button
-        type="button"
-        class="task-details-tab hs-text-sm font-weight-medium"
-        :class="{ 'task-details-tab--active': tab === 'runs' }"
-        @click="tab = 'runs'"
-      >
-        Run history
-      </button>
-      <button
-        type="button"
-        class="task-details-tab hs-text-sm font-weight-medium"
-        :class="{ 'task-details-tab--active': tab === 'mappings' }"
-        @click="tab = 'mappings'"
-      >
-        Mappings
-      </button>
+    <div class="detail-tabbar">
+      <v-tabs v-model="tab" color="primary" density="comfortable" show-arrows>
+        <v-tab value="runs" :prepend-icon="mdiHistory">Run history</v-tab>
+        <v-tab value="mappings" :prepend-icon="mdiTransitConnectionVariant">
+          Mappings
+        </v-tab>
+      </v-tabs>
     </div>
 
     <section class="task-details-body">
@@ -144,9 +140,11 @@ import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
 import {
   mdiArrowLeft,
+  mdiHistory,
   mdiPause,
   mdiPencil,
   mdiPlay,
+  mdiTransitConnectionVariant,
   mdiTrashCanOutline,
 } from '@mdi/js'
 
@@ -272,25 +270,11 @@ h2.task-details-title {
   background: rgba(179, 38, 30, 0.08);
   border-color: #b3261e;
 }
-.task-details-tab {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-family: inherit;
-  color: #49454f;
-  padding: 8px 14px;
-  margin-bottom: -1px;
-  transition:
-    color 0.12s,
-    border-color 0.12s;
-}
-.task-details-tab:hover {
-  color: #1c1b1f;
-}
-.task-details-tab--active {
-  color: #1565c0;
-  border-bottom-color: #1565c0;
+.detail-tabbar {
+  padding: 0 var(--hs-space-24);
+  border-bottom: 1px solid var(--hs-border);
+  background: var(--hs-surface-subtle);
+  flex-shrink: 0;
 }
 .task-details-body {
   flex: 1;
@@ -313,5 +297,11 @@ h2.task-details-title {
   padding: 40px 20px;
   text-align: center;
   color: #5f5a67;
+}
+
+@media (max-width: 700px) {
+  .detail-tabbar {
+    padding: 0 var(--hs-space-8);
+  }
 }
 </style>

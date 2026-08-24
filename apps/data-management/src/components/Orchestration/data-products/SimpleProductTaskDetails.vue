@@ -1,13 +1,25 @@
 <template>
   <div v-if="task" class="detail">
     <header class="bar">
-      <button class="back" @click="close">← {{ backLabel }}</button>
+      <button
+        class="task-details-back hs-text-sm font-weight-medium"
+        type="button"
+        @click="close"
+      >
+        <v-icon :icon="mdiArrowLeft" size="16" />
+        <span>{{ backLabel }}</span>
+      </button>
       <div class="title">
         <h2 class="hs-text-md font-weight-regular">{{ task.name }}</h2>
-        <span class="pill task-type-pill hs-text-2xs font-weight-semibold" :style="taskTypePillStyle">
+        <span
+          class="pill task-type-pill hs-text-2xs font-weight-semibold"
+          :style="taskTypePillStyle"
+        >
           {{ taskLabel }}
         </span>
-        <span v-if="scheduleText" class="pill hs-text-2xs">{{ scheduleText }}</span>
+        <span v-if="scheduleText" class="pill hs-text-2xs">{{
+          scheduleText
+        }}</span>
       </div>
       <div class="actions">
         <button
@@ -97,10 +109,14 @@
       </div>
     </header>
 
-    <v-tabs v-model="tab" density="compact">
-      <v-tab value="runs">Run history</v-tab>
-      <v-tab value="mappings">Mappings</v-tab>
-    </v-tabs>
+    <div class="detail-tabbar">
+      <v-tabs v-model="tab" color="primary" density="comfortable" show-arrows>
+        <v-tab value="runs" :prepend-icon="mdiHistory">Run history</v-tab>
+        <v-tab value="mappings" :prepend-icon="mdiTransitConnectionVariant">
+          Mappings
+        </v-tab>
+      </v-tabs>
+    </div>
     <section class="body">
       <div v-if="tab === 'runs'" class="run-history-list">
         <TaskRunHistory
@@ -144,7 +160,15 @@ import {
   getDataProductTypeColors,
   type DataProductTaskType,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
-import { mdiPause, mdiPencil, mdiPlay, mdiTrashCanOutline } from '@mdi/js'
+import {
+  mdiArrowLeft,
+  mdiHistory,
+  mdiPause,
+  mdiPencil,
+  mdiPlay,
+  mdiTransitConnectionVariant,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 
 const props = defineProps<{
   taskLabel: 'aggregation' | 'derivation' | 'rating curve'
@@ -222,17 +246,28 @@ function onFormUpdated() {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
   align-items: start;
-  gap: 10px;
+  column-gap: 10px;
+  row-gap: 0;
   padding: 14px 22px 12px;
   border-bottom: 1px solid #e8e8e8;
 }
-.back {
+.task-details-back {
   grid-column: 1 / -1;
   justify-self: start;
-  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: transparent;
-  color: #1565c0;
+  border: none;
   cursor: pointer;
+  font-family: inherit;
+  color: #1565c0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.task-details-back:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 .title {
   display: flex;
@@ -311,6 +346,12 @@ h2 {
   background: rgba(179, 38, 30, 0.08);
   border-color: #b3261e;
 }
+.detail-tabbar {
+  padding: 0 var(--hs-space-24);
+  border-bottom: 1px solid var(--hs-border);
+  background: var(--hs-surface-subtle);
+  flex-shrink: 0;
+}
 .body {
   flex: 1;
   min-height: 0;
@@ -336,6 +377,12 @@ h2 {
   .actions {
     justify-self: start;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .detail-tabbar {
+    padding: 0 var(--hs-space-8);
   }
 }
 </style>

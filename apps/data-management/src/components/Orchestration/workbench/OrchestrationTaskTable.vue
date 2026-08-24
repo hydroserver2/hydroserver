@@ -314,6 +314,12 @@ const pauseTooltipText = (task: TaskRow) => {
   table-layout: auto;
 }
 
+.task-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 .task-table thead th {
   height: 48px;
   padding: var(--hs-space-8) var(--hs-space-12);

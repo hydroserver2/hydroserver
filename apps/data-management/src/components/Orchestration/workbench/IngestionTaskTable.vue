@@ -162,6 +162,12 @@ const statusOptions = STATUS_OPTIONS.map((status) => ({
   table-layout: auto;
 }
 
+.ingestion-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 .ingestion-table thead th {
   height: 48px;
   padding: var(--hs-space-8) var(--hs-space-12);
