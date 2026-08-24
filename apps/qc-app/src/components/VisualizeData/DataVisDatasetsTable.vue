@@ -115,9 +115,8 @@
       <v-data-table-virtual
         data-testid="datastreams-table"
         :headers="visibleHeaders"
-        :items="tableItems"
+        :items="searchedTableItems"
         :sort-by="sortBy"
-        :search="search"
         style="height: 0"
         class="flex-grow-1"
         fixed-header
@@ -250,6 +249,7 @@ const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
 const downloading = ref(false)
+const search = ref('')
 // The catalog endpoint returns enriched datastream records with the
 // nested `unit` / `observedProperty` / `monitoringSite` etc. relationships, so
 // the info card receives `Datastream & DatastreamExtended` at runtime
@@ -308,6 +308,26 @@ const tableItems = computed(() => {
   })
 })
 
+// Search after the faceted and "selected only" filters have produced the
+// available rows. Keeping this here (rather than delegating it to the data
+// table's global search) makes the filter order explicit and ensures search
+// never considers datastreams excluded by the other table controls.
+const searchedTableItems = computed(() => {
+  const query = search.value.trim().toLocaleLowerCase()
+  if (!query) return tableItems.value
+
+  return tableItems.value.filter((item) =>
+    [
+      item.siteCodeName,
+      item.siteName,
+      item.observedPropertyName,
+      item.qualityControlLevelDefinition,
+      item.valueCount,
+      item.phenomenonEndTime,
+    ].some((value) => String(value ?? '').toLocaleLowerCase().includes(query))
+  )
+})
+
 // --- Cell formatters --------------------------------------------------------
 const NUMBER_FORMATTER = new Intl.NumberFormat()
 const formatCount = (n: unknown): string => {
@@ -349,7 +369,6 @@ const getRowProps = ({ item }: { item: Datastream }) => ({
   },
 })
 
-const search = ref()
 const headers = reactive([
   { title: 'Plot', key: 'plot', visible: true, width: 64, sortable: false },
   {

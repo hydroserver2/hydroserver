@@ -8,14 +8,14 @@ describe('datastream query search', () => {
   it('parses qualifier tags separately from free text', () => {
     expect(
       parseDatastreamQuery(
-        'workspace:"Bear River" site:logan property:"Water temperature" recent'
+        'workspace:"Bear River" site:logan observed-property:"Water temperature" recent'
       )
     ).toEqual({
       filters: {
         workspace: ['Bear River'],
         site: ['logan'],
-        property: ['Water temperature'],
-        processing: [],
+        'observed-property': ['Water temperature'],
+        'processing-level': [],
       },
       text: 'recent',
     })
@@ -27,13 +27,13 @@ describe('datastream query search', () => {
         {
           workspace: ['Bear River'],
           site: ['logan'],
-          property: ['Water temperature'],
-          processing: ['Quality controlled'],
+          'observed-property': ['Water temperature'],
+          'processing-level': ['Quality controlled'],
         },
         'recent'
       )
     ).toBe(
-      'workspace:"Bear River" site:logan property:"Water temperature" processing:"Quality controlled" recent'
+      'workspace:"Bear River" site:logan observed-property:"Water temperature" processing-level:"Quality controlled" recent'
     )
   })
 })

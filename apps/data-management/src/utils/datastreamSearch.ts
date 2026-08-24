@@ -1,8 +1,8 @@
 export const DATASTREAM_QUALIFIER_KEYS = [
   'workspace',
   'site',
-  'property',
-  'processing',
+  'observed-property',
+  'processing-level',
 ] as const
 
 export type DatastreamQualifierKey = (typeof DATASTREAM_QUALIFIER_KEYS)[number]
@@ -10,7 +10,7 @@ export type DatastreamQualifierKey = (typeof DATASTREAM_QUALIFIER_KEYS)[number]
 export type DatastreamQueryFilters = Record<DatastreamQualifierKey, string[]>
 
 const qualifierPattern = () =>
-  /(workspace|site|property|processing):(?:"([^"]*)"|(\S+))/gi
+  /(workspace|site|observed-property|processing-level):(?:"([^"]*)"|(\S+))/gi
 
 export const quoteDatastreamQualifier = (value: string) =>
   /\s/.test(value) ? `"${value}"` : value
@@ -19,8 +19,8 @@ export function parseDatastreamQuery(raw: string) {
   const filters: DatastreamQueryFilters = {
     workspace: [],
     site: [],
-    property: [],
-    processing: [],
+    'observed-property': [],
+    'processing-level': [],
   }
   const textParts: string[] = []
   const pattern = qualifierPattern()

@@ -260,22 +260,22 @@ const uniqueSorted = (values: Array<string | null | undefined>) =>
 const searchQualifiers = computed(() => [
   {
     key: 'workspace',
-    label: 'Workspace',
+    label: 'Workspaces',
     values: uniqueSorted(workspaces.value.map((item) => item.name)),
   },
   {
     key: 'site',
-    label: 'Site',
+    label: 'Sites',
     values: uniqueSorted(monitoringSites.value.map((item) => item.name)),
   },
   {
-    key: 'property',
-    label: 'Observed property',
+    key: 'observed-property',
+    label: 'Observed properties',
     values: uniqueSorted(observedProperties.value.map((item) => item.name)),
   },
   {
-    key: 'processing',
-    label: 'Processing level',
+    key: 'processing-level',
+    label: 'Processing levels',
     values: uniqueSorted(processingLevels.value.map((item) => item.definition)),
   },
 ])

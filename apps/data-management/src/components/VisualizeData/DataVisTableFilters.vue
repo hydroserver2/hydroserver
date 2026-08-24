@@ -116,15 +116,15 @@ const { workspaces } = storeToRefs(useWorkspaceStore())
 const filterSearches = reactive<Record<FilterKey, string>>({
   workspace: '',
   site: '',
-  property: '',
-  processing: '',
+  'observed-property': '',
+  'processing-level': '',
 })
 
 const initialFilters: DatastreamQueryFilters = {
   workspace: selectedWorkspaces.value.map((item) => item.name),
   site: selectedMonitoringSites.value.map((item) => item.name),
-  property: [...selectedObservedPropertyNames.value],
-  processing: [...selectedProcessingLevelNames.value],
+  'observed-property': [...selectedObservedPropertyNames.value],
+  'processing-level': [...selectedProcessingLevelNames.value],
 }
 if (!tableSearch.value.trim()) {
   tableSearch.value = serializeDatastreamQuery(initialFilters, '')
@@ -165,13 +165,13 @@ watch(
       observedProperties.value
         .map((item) => item.name)
         .filter((value): value is string => Boolean(value)),
-      filters.property
+      filters['observed-property']
     )
     selectedProcessingLevelNames.value = canonicalValues(
       processingLevels.value
         .map((item) => item.definition)
         .filter((value): value is string => Boolean(value)),
-      filters.processing
+      filters['processing-level']
     )
   },
   { immediate: true }
@@ -250,7 +250,7 @@ const sortedProcessingLevelNames = computed(() => {
 const filterDefinitions = computed<FilterDefinition[]>(() => [
   {
     key: 'workspace',
-    label: 'Workspace',
+    label: 'Workspaces',
     options: sortedWorkspaces.value.map((item) => ({
       value: item.name,
       label: item.name,
@@ -259,7 +259,7 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
   },
   {
     key: 'site',
-    label: 'Site',
+    label: 'Sites',
     options: sortedMonitoringSites.value.map((item) => ({
       value: item.name,
       label: item.name,
@@ -267,8 +267,8 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
     selectedCount: selectedMonitoringSites.value.length,
   },
   {
-    key: 'property',
-    label: 'Observed property',
+    key: 'observed-property',
+    label: 'Observed properties',
     options: sortedObservedPropertyNames.value.map((item) => ({
       value: item,
       label: item,
@@ -276,8 +276,8 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
     selectedCount: selectedObservedPropertyNames.value.length,
   },
   {
-    key: 'processing',
-    label: 'Processing level',
+    key: 'processing-level',
+    label: 'Processing levels',
     options: sortedProcessingLevelNames.value.map((item) => ({
       value: item,
       label: item,
