@@ -51,7 +51,9 @@
   box-shadow: inset 0 0 0 1px rgb(var(--v-theme-primary));
 }
 
-/* Query-aware search keeps a transparent input over syntax-highlighted text. */
+/* Query-aware search keeps a transparent input over syntax-highlighted text.
+ * Keep every visible segment at the input's font weight so the native caret
+ * and the highlighted overlay use identical horizontal text metrics. */
 .hs-query-search {
   position: relative;
   flex: 1;
@@ -109,7 +111,6 @@
 
 .hs-query-search__highlight .hl-value-valid {
   color: rgb(var(--v-theme-primary));
-  font-weight: var(--hs-font-weight-semibold);
 }
 
 .hs-query-search-popover {
