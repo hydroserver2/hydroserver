@@ -1,229 +1,213 @@
 <template>
-  <div class="flex h-full min-h-0 flex-col">
-    <v-card
-      class="flex min-h-0 flex-1 flex-col elevation-2 max-[600px]:min-h-[520px]"
-    >
-      <v-sheet class="px-3 py-2 max-[600px]:px-2" color="secondary">
-        <v-defaults-provider :defaults="{ VBtn: { variant: 'text' } }">
-          <div
-            class="flex items-center gap-3 max-[960px]:flex-wrap max-[600px]:flex-col max-[600px]:items-stretch"
+  <section class="datastreams-panel" aria-labelledby="datastreams-heading">
+    <div class="hs-table-tools datastreams-tools">
+      <div class="datastreams-tools__primary">
+        <div class="datastreams-heading">
+          <h2 id="datastreams-heading" class="hs-subheading">Datastreams</h2>
+          <span class="datastreams-count hs-text-sm">
+            {{ tableItems.length }} available ·
+            {{ plottedDatastreams.length }}/5 selected
+          </span>
+        </div>
+
+        <div class="hs-table-actions datastreams-actions">
+          <v-btn
+            size="small"
+            variant="text"
+            :disabled="!plottedDatastreams.length"
+            data-testid="clear-selected-datastreams"
+            @click="clearSelected"
           >
-            <h5
-              class="m-0 px-1 whitespace-nowrap hs-text-md max-[600px]:w-full max-[600px]:text-center"
-            >
-              Datastreams
-            </h5>
+            Clear selected
+          </v-btn>
 
-            <v-text-field
-              class="w-[135px] max-w-full flex-none max-[600px]:w-full"
-              clearable
-              v-model="search"
-              :prepend-inner-icon="mdiMagnify"
-              label="Search"
-              hide-details
-              density="compact"
-              variant="underlined"
-            />
+          <v-btn
+            size="small"
+            variant="outlined"
+            data-testid="toggle-selected-datastreams"
+            @click="showOnlySelected = !showOnlySelected"
+          >
+            {{ showOnlySelected ? 'Show all' : 'Show selected' }}
+          </v-btn>
 
-            <div
-              class="ml-auto flex flex-wrap items-center justify-end gap-2 max-[960px]:ml-0 max-[960px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
-            >
-              <v-btn
-                class="max-[600px]:w-full"
-                color="white"
-                data-testid="clear-selected-datastreams"
-                @click="clearSelected"
+          <v-btn-primary
+            size="small"
+            :loading="downloading"
+            :disabled="!plottedDatastreams.length"
+            :prepend-icon="mdiDownload"
+            data-testid="download-selected-datastreams"
+            @click="downloadSelected(plottedDatastreams)"
+          >
+            Download selected
+          </v-btn-primary>
+
+          <v-menu :close-on-content-click="false" location="bottom end">
+            <template #activator="{ props: menuProps }">
+              <v-tooltip
+                text="Choose row details"
+                location="top"
+                :open-delay="0"
+                :close-delay="0"
               >
-                Clear Selected
-              </v-btn>
-
-              <v-btn
-                class="max-[600px]:w-full"
-                color="white"
-                variant="outlined"
-                data-testid="toggle-selected-datastreams"
-                @click="showOnlySelected = !showOnlySelected"
-              >
-                {{ showOnlySelected ? 'Show All' : 'Show Selected' }}
-              </v-btn>
-
-              <v-btn
-                class="max-[600px]:w-full pr-0"
-                color="white"
-                :loading="downloading"
-                :prepend-icon="mdiDownload"
-                data-testid="download-selected-datastreams"
-                @click="downloadSelected(plottedDatastreams)"
-                >Download Selected</v-btn
-              >
-
-              <v-menu :close-on-content-click="false" location="bottom end">
-                <template #activator="{ props: menuProps }">
-                  <template v-if="isMobile">
-                    <v-btn
-                      v-bind="menuProps"
-                      color="white"
-                      variant="text"
-                      :prepend-icon="mdiTableColumnWidth"
-                      class="max-[600px]:w-full"
-                    >
-                      Show/Hide Columns
-                    </v-btn>
-                  </template>
-                  <template v-else>
-                    <v-tooltip
-                      text="Show/Hide Columns"
-                      location="top"
-                      :open-delay="0"
-                      :close-delay="0"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-btn
-                          v-bind="{ ...menuProps, ...tooltipProps }"
-                          :icon="mdiTableColumnWidth"
-                          color="white"
-                          variant="text"
-                          class="shrink-0"
-                          aria-label="Show or hide columns"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </template>
+                <template #activator="{ props: tooltipProps }">
+                  <v-btn
+                    v-bind="{ ...menuProps, ...tooltipProps }"
+                    :icon="mdiTableColumnWidth"
+                    variant="text"
+                    size="small"
+                    class="hs-table-icon-action"
+                    aria-label="Choose row details"
+                  />
                 </template>
+              </v-tooltip>
+            </template>
 
-                <v-card class="min-w-[260px] py-1">
-                  <v-list density="compact" class="py-1">
-                    <v-list-item
-                      v-for="header in selectableHeaders"
-                      :key="header.key"
-                      class="cursor-pointer"
-                      @click="toggleHeader(header.key)"
-                    >
-                      <template #prepend>
-                        <v-checkbox-btn
-                          :model-value="selectedHeaders.includes(header.key)"
-                          @update:model-value="toggleHeader(header.key)"
-                          @click.stop
-                          :aria-label="`Toggle ${header.title}`"
-                          color="green"
-                        />
-                      </template>
-                      <v-list-item-title>{{ header.title }}</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-card>
-              </v-menu>
-            </div>
-          </div>
-        </v-defaults-provider>
-      </v-sheet>
-      <v-data-table-virtual
-        v-if="isMobile"
-        :headers="headers.filter((header) => header.visible)"
-        :items="tableItems"
-        :search="search"
-        fixed-header
-        hide-default-header
-        class="h-full min-h-0 flex-1 elevation-2 max-[600px]:min-h-[440px] [&_.v-table__wrapper]:overflow-x-hidden"
-        color="green"
-        density="compact"
-        hover
-      >
-        <template v-slot:item="{ item }">
-          <tr class="align-top">
-            <td class="px-4 py-3" :colspan="headers.length">
-              <div class="flex flex-col items-start gap-1.5">
-                <div class="pt-1 hs-text-md font-weight-semibold leading-snug">
-                  {{ item.name }}
-                </div>
-                <v-checkbox
-                  :model-value="isChecked(item)"
-                  :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
-                  density="compact"
-                  label="Plot"
-                  hide-details
-                  class="plot-checkbox"
-                  :data-testid="`plot-datastream-${item.id}`"
-                  @click.stop="updatePlottedDatastreams(item, !isChecked(item))"
-                />
+            <v-card class="datastream-details-menu">
+              <div class="datastream-details-menu__title hs-text-sm">
+                Row details
               </div>
-              <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
-                  >Site</span
+              <v-list density="compact" class="py-1">
+                <v-list-item
+                  v-for="header in selectableHeaders"
+                  :key="header.key"
+                  @click="toggleHeader(header.key)"
                 >
-                <span>{{ item.siteCodeName || '—' }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
-                  >Observed property</span
-                >
-                <span>{{ item.observedPropertyName || '—' }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
-                  >Processing level</span
-                >
-                <span>{{ item.qualityControlLevelDefinition || '—' }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
-                  >Observations</span
-                >
-                <span>{{ item.valueCount ?? '—' }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 pt-1.5">
-                <span class="hs-text-2xs uppercase tracking-[0.04em] text-black/55"
-                  >Last updated</span
-                >
-                <span>{{ formatTime(item.phenomenonEndTime) }}</span>
-              </div>
-              <v-btn
-                class="mt-3 mb-1 min-h-[36px] w-full"
-                variant="outlined"
-                color="primary"
-                :data-testid="`datavis-metadata-${item.id}`"
-                @click="openMetadata(item)"
+                  <template #prepend>
+                    <v-checkbox-btn
+                      :model-value="selectedHeaders.includes(header.key)"
+                      :aria-label="`Toggle ${header.title}`"
+                      color="primary"
+                      @update:model-value="toggleHeader(header.key)"
+                      @click.stop
+                    />
+                  </template>
+                  <v-list-item-title>{{ header.title }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-card>
+          </v-menu>
+        </div>
+      </div>
+
+      <div class="datastreams-search">
+        <HsQuerySearchInput
+          v-model="search"
+          placeholder="Search datastreams…"
+          aria-label="Search"
+          :qualifiers="searchQualifiers"
+        />
+      </div>
+    </div>
+
+    <div class="hs-table-card datastreams-table-card">
+      <table class="datastreams-table hs-text-sm">
+        <thead>
+          <tr>
+            <th colspan="3" class="datastream-filter-header">
+              <DataVisTableFilters />
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            v-for="item in visibleTableItems"
+            :key="item.id"
+            @click="openMetadata(item)"
+          >
+            <td class="datastream-plot-cell">
+              <input
+                type="checkbox"
+                class="plot-checkbox"
+                :checked="isChecked(item)"
+                :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
+                :aria-label="`Plot ${item.name || 'datastream'}`"
+                :data-testid="`plot-datastream-${item.id}`"
+                @click.stop
+                @change="onPlotChange(item, $event)"
+              />
+            </td>
+
+            <td class="datastream-summary-cell">
+              <button
+                type="button"
+                class="datastream-name"
+                @click.stop="openMetadata(item)"
               >
-                Show Full Metadata
+                {{ item.name || 'Unnamed datastream' }}
+              </button>
+              <div class="datastream-meta hs-text-sm">
+                <span
+                  v-if="isDetailVisible('siteCodeName')"
+                  class="datastream-meta__item"
+                >
+                  <span class="datastream-meta__label hs-label">Site</span>
+                  {{ item.siteCodeName || '—' }}
+                </span>
+                <span
+                  v-if="isDetailVisible('observedPropertyName')"
+                  class="datastream-meta__item"
+                >
+                  <span class="datastream-meta__label hs-label">Property</span>
+                  {{ item.observedPropertyName || '—' }}
+                </span>
+                <span
+                  v-if="isDetailVisible('qualityControlLevelDefinition')"
+                  class="datastream-meta__item"
+                >
+                  <span class="datastream-meta__label hs-label"
+                    >Processing</span
+                  >
+                  {{ item.qualityControlLevelDefinition || '—' }}
+                </span>
+                <span
+                  v-if="isDetailVisible('valueCount')"
+                  class="datastream-meta__item datastream-meta__item--data"
+                >
+                  <span class="datastream-meta__label hs-label"
+                    >Observations</span
+                  >
+                  {{ formatObservationCount(item.valueCount) }}
+                </span>
+                <span
+                  v-if="isDetailVisible('phenomenonEndTime')"
+                  class="datastream-meta__item datastream-meta__item--data"
+                >
+                  <span class="datastream-meta__label hs-label">Updated</span>
+                  {{ formatTime(item.phenomenonEndTime) }}
+                </span>
+              </div>
+            </td>
+
+            <td class="datastream-actions-cell">
+              <v-btn
+                variant="text"
+                size="small"
+                color="primary"
+                :append-icon="mdiChevronRight"
+                class="datastream-details-button"
+                :aria-label="`View details for ${item.name || 'datastream'}`"
+                :data-testid="`datavis-metadata-${item.id}`"
+                @click.stop="openMetadata(item)"
+              >
+                <span class="datastream-details-button__label">Details</span>
               </v-btn>
             </td>
           </tr>
-        </template>
-      </v-data-table-virtual>
-      <v-data-table-virtual
-        v-else
-        :headers="headers.filter((header) => header.visible)"
-        :items="tableItems"
-        :sort-by="sortBy"
-        multi-sort
-        :search="search"
-        fixed-header
-        class="h-full min-h-0 flex-1 elevation-2 max-[600px]:min-h-[440px]"
-        color="green"
-        density="compact"
-        @click:row="onRowClick"
-        hover
-      >
-        <template v-slot:item.plot="{ item }">
-          <v-checkbox
-            :model-value="isChecked(item)"
-            :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
-            class="d-flex align-self-center plot-checkbox"
-            density="compact"
-            :data-testid="`plot-datastream-${item.id}`"
-            @click.stop="updatePlottedDatastreams(item, !isChecked(item))"
-          />
-        </template>
-        <template v-slot:item.phenomenonEndTime="{ item }">
-          {{ formatTime(item.phenomenonEndTime) }}
-        </template>
-      </v-data-table-virtual>
-    </v-card>
+
+          <tr v-if="!visibleTableItems.length">
+            <td colspan="3" class="datastreams-empty hs-text-sm">
+              No datastreams match the current filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <v-dialog
+      v-if="selectedDatastream && selectedMonitoringSite"
       v-model="openInfoCard"
       width="50rem"
-      v-if="selectedDatastream && selectedMonitoringSite"
     >
       <DatastreamInformationCard
         :datastream="selectedDatastream"
@@ -231,157 +215,191 @@
         @close="openInfoCard = false"
       />
     </v-dialog>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { useDataVisStore } from '@/store/dataVisualization'
-import { Datastream, MonitoringSite } from '@hydroserver/client'
-import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
-import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
-import { useDisplay } from 'vuetify'
-import DatastreamInformationCard from './DatastreamInformationCard.vue'
+import { storeToRefs } from 'pinia'
+import { Datastream, MonitoringSite } from '@hydroserver/client'
+import { mdiChevronRight, mdiDownload, mdiTableColumnWidth } from '@mdi/js'
+import { useDataVisStore } from '@/store/dataVisualization'
+import { useWorkspaceStore } from '@/store/workspaces'
+import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
-import { mdiDownload, mdiMagnify, mdiTableColumnWidth } from '@mdi/js'
+import { parseDatastreamQuery } from '@/utils/datastreamSearch'
+import HsQuerySearchInput from '@/components/base/HsQuerySearchInput.vue'
+import DatastreamInformationCard from './DatastreamInformationCard.vue'
+import DataVisTableFilters from './DataVisTableFilters.vue'
+
+type DatastreamTableItem = Datastream & {
+  siteCodeName?: string
+  observedPropertyName?: string
+  qualityControlLevelDefinition?: string
+}
 
 const dataVisStore = useDataVisStore()
 const {
   filteredDatastreams,
   plottedDatastreams,
   tableHeaders: headers,
+  tableSearch: search,
+  monitoringSites,
+  observedProperties,
+  processingLevels,
 } = storeToRefs(dataVisStore)
+const { workspaces } = storeToRefs(useWorkspaceStore())
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
 const downloading = ref(false)
 const selectedDatastream = ref<Datastream | null>(null)
 const selectedMonitoringSite = ref<MonitoringSite | null>(null)
-const { smAndDown } = useDisplay()
-const isMobile = computed(() => smAndDown.value)
 
-const downloadSelected = async (plottedDatastreams: Datastream[]) => {
-  downloading.value = true
-  try {
-    await downloadDatastreamsCsvZip(plottedDatastreams)
-  } catch (error) {
-    console.error('Error downloading selected datastreams', error)
-  }
-  downloading.value = false
-}
-
-const onRowClick = (event: Event, item: any) => {
-  // If the click came from a checkbox, do nothing.
-  let targetElement = event.target as HTMLElement
-  if (targetElement.id && targetElement.id.startsWith('checkbox-')) return
-
-  const foundMonitoringSite = dataVisStore.monitoringSiteById.get(item.item.monitoringSiteId)
-  if (foundMonitoringSite) selectedMonitoringSite.value = foundMonitoringSite
-
-  const selectedDatastreamId = item.item.id
-  const foundDatastream = filteredDatastreams.value.find(
-    (d) => d.id === selectedDatastreamId
+const uniqueSorted = (values: Array<string | null | undefined>) =>
+  [...new Set(values.filter((value): value is string => Boolean(value)))].sort(
+    (a, b) => a.localeCompare(b)
   )
-  if (foundDatastream) {
-    selectedDatastream.value = foundDatastream
-    openInfoCard.value = true
-  } else selectedDatastream.value = null
-}
-
-const openMetadata = (item: Datastream) => {
-  const foundMonitoringSite = dataVisStore.monitoringSiteById.get(item.monitoringSiteId)
-  if (foundMonitoringSite) selectedMonitoringSite.value = foundMonitoringSite
-
-  const foundDatastream = filteredDatastreams.value.find(
-    (d) => d.id === item.id
-  )
-  if (foundDatastream) {
-    selectedDatastream.value = foundDatastream
-    openInfoCard.value = true
-  } else selectedDatastream.value = null
-}
+const searchQualifiers = computed(() => [
+  {
+    key: 'workspace',
+    label: 'Workspace',
+    values: uniqueSorted(workspaces.value.map((item) => item.name)),
+  },
+  {
+    key: 'site',
+    label: 'Site',
+    values: uniqueSorted(monitoringSites.value.map((item) => item.name)),
+  },
+  {
+    key: 'property',
+    label: 'Observed property',
+    values: uniqueSorted(observedProperties.value.map((item) => item.name)),
+  },
+  {
+    key: 'processing',
+    label: 'Processing level',
+    values: uniqueSorted(processingLevels.value.map((item) => item.definition)),
+  },
+])
+const plainSearch = computed(() => parseDatastreamQuery(search.value).text)
 
 const displayDatastreams = computed(() => {
-  if (showOnlySelected.value) {
-    return filteredDatastreams.value.filter((ds) =>
-      plottedDatastreams.value.some((sds) => sds.id === ds.id)
-    )
-  } else {
-    return filteredDatastreams.value
-  }
+  if (!showOnlySelected.value) return filteredDatastreams.value
+  return filteredDatastreams.value.filter((datastream) =>
+    plottedDatastreams.value.some((selected) => selected.id === datastream.id)
+  )
 })
 
-const tableItems = computed(() => {
-  return displayDatastreams.value.map((ds) => {
-    const monitoringSite = dataVisStore.monitoringSiteById.get(ds.monitoringSiteId)
+const tableItems = computed<DatastreamTableItem[]>(() =>
+  displayDatastreams.value.map((datastream) => {
+    const monitoringSite = dataVisStore.monitoringSiteById.get(
+      datastream.monitoringSiteId
+    )
     const observedProperty = dataVisStore.observedPropertyById.get(
-      ds.observedPropertyId
+      datastream.observedPropertyId
     )
-    const observedPropertyCode =
-      typeof observedProperty?.code === 'string'
-        ? observedProperty.code.trim()
-        : ''
-    const observedPropertyName =
-      typeof observedProperty?.name === 'string'
-        ? observedProperty.name.trim()
-        : ''
-    const observedPropertyDisplay = observedPropertyCode
-      ? `${observedPropertyName} (${observedPropertyCode})`
-      : observedPropertyName
+    const observedPropertyCode = observedProperty?.code?.trim() ?? ''
+    const observedPropertyName = observedProperty?.name?.trim() ?? ''
     const processingLevel = dataVisStore.processingLevelById.get(
-      ds.processingLevelId
+      datastream.processingLevelId
     )
+
     return {
-      ...ds,
+      ...datastream,
       siteCodeName: monitoringSite?.code,
-      observedPropertyName: observedPropertyDisplay,
+      observedPropertyName: observedPropertyCode
+        ? `${observedPropertyName} (${observedPropertyCode})`
+        : observedPropertyName,
       qualityControlLevelDefinition: processingLevel?.definition,
     }
   })
+)
+
+const visibleTableItems = computed(() => {
+  const query = plainSearch.value.trim().toLocaleLowerCase()
+  return tableItems.value
+    .filter((item) => {
+      if (!query) return true
+      return [
+        item.name,
+        item.siteCodeName,
+        item.observedPropertyName,
+        item.qualityControlLevelDefinition,
+        item.valueCount,
+        item.phenomenonEndTime,
+      ].some((value) => `${value ?? ''}`.toLocaleLowerCase().includes(query))
+    })
+    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
 })
 
-function clearSelected() {
-  showOnlySelected.value = false
-  plottedDatastreams.value = []
-}
+const selectableHeaders = computed(() =>
+  headers.value.filter((header) => header.key !== 'plot')
+)
 
-const isChecked = (item: Datastream) => {
-  return computed(() =>
-    plottedDatastreams.value.some((sds) => sds.id === item.id)
-  ).value
-}
-
-const search = ref()
-const selectableHeaders = computed(() => {
-  return headers.value.filter((header) => header.key !== 'plot')
-})
-
-const sortBy = [
-  { key: 'siteCodeName' },
-  { key: 'observedPropertyName' },
-  { key: 'qualityControlLevelDefinition' },
-]
 const selectedHeaders = computed({
   get: () =>
     headers.value
       .filter((header) => header.visible)
       .map((header) => header.key),
-  set: (keys) => {
+  set: (keys: string[]) => {
     headers.value.forEach((header) => {
-      header.visible = keys.includes(header.key)
+      header.visible = header.key === 'plot' || keys.includes(header.key)
     })
   },
 })
 
+const isDetailVisible = (key: string) =>
+  headers.value.find((header) => header.key === key)?.visible ?? true
+
 const toggleHeader = (key: string) => {
   const keys = [...selectedHeaders.value]
   const index = keys.indexOf(key)
-  if (index >= 0) {
-    keys.splice(index, 1)
-  } else {
-    keys.push(key)
-  }
+  if (index >= 0) keys.splice(index, 1)
+  else keys.push(key)
   selectedHeaders.value = keys
+}
+
+const downloadSelected = async (datastreams: Datastream[]) => {
+  downloading.value = true
+  try {
+    await downloadDatastreamsCsvZip(datastreams)
+  } catch (error) {
+    console.error('Error downloading selected datastreams', error)
+  } finally {
+    downloading.value = false
+  }
+}
+
+const clearSelected = () => {
+  showOnlySelected.value = false
+  plottedDatastreams.value = []
+}
+
+const isChecked = (item: Datastream) =>
+  plottedDatastreams.value.some((selected) => selected.id === item.id)
+
+const openMetadata = (item: Datastream) => {
+  selectedMonitoringSite.value =
+    dataVisStore.monitoringSiteById.get(item.monitoringSiteId) ?? null
+  selectedDatastream.value =
+    filteredDatastreams.value.find((datastream) => datastream.id === item.id) ??
+    null
+  openInfoCard.value = Boolean(
+    selectedDatastream.value && selectedMonitoringSite.value
+  )
+}
+
+const formatObservationCount = (value: number | string | null | undefined) => {
+  const count = Number(value)
+  return Number.isFinite(count) ? count.toLocaleString() : '—'
+}
+
+const onPlotChange = (datastream: Datastream, event: Event) => {
+  updatePlottedDatastreams(
+    datastream,
+    (event.target as HTMLInputElement).checked
+  )
 }
 
 function updatePlottedDatastreams(
@@ -389,7 +407,7 @@ function updatePlottedDatastreams(
   selected: boolean | null
 ) {
   const index = plottedDatastreams.value.findIndex(
-    (ds) => ds.id === datastream.id
+    (item) => item.id === datastream.id
   )
   if (selected && index === -1) {
     if (plottedDatastreams.value.length >= 5) return
@@ -401,29 +419,267 @@ function updatePlottedDatastreams(
 </script>
 
 <style scoped>
-:deep(.plot-checkbox.v-input--disabled .v-selection-control__input) {
-  position: relative;
+.datastreams-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
-:deep(.plot-checkbox.v-input--disabled .v-selection-control__input::after) {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  background:
-    linear-gradient(
-      45deg,
-      transparent 46%,
-      #94a3b8 46%,
-      #94a3b8 54%,
-      transparent 54%
-    ),
-    linear-gradient(
-      -45deg,
-      transparent 46%,
-      #94a3b8 46%,
-      #94a3b8 54%,
-      transparent 54%
-    );
-  pointer-events: none;
+.datastreams-tools {
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0 0 var(--hs-space-10);
+}
+
+.datastreams-tools__primary {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.datastreams-heading {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--hs-space-8);
+  align-items: baseline;
+}
+
+.datastreams-heading h2 {
+  margin: 0;
+  color: var(--hs-text-primary);
+}
+
+.datastreams-count {
+  color: var(--hs-text-secondary);
+  white-space: nowrap;
+}
+
+.datastreams-search {
+  width: 100%;
+  margin-left: 0 !important;
+}
+
+.datastreams-search :deep(.hs-query-search) {
+  width: 100%;
+  max-width: none;
+}
+
+.datastreams-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.datastream-details-menu {
+  min-width: 260px;
+  padding: var(--hs-space-4) 0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
+}
+
+.datastream-details-menu__title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+  font-weight: var(--hs-font-weight-semibold);
+}
+
+.datastreams-table-card {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.datastreams-table {
+  width: 100%;
+  min-width: 100%;
+  height: auto;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.datastreams-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.datastreams-table thead th {
+  height: 48px;
+  padding: var(--hs-space-8) var(--hs-space-12);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--hs-surface-muted);
+}
+
+.datastreams-table .datastream-filter-header {
+  height: auto;
+  padding: var(--hs-space-8) var(--hs-space-12) var(--hs-space-10);
+  text-align: left;
+  background: var(--hs-surface-muted);
+}
+
+.datastreams-table thead tr,
+.datastreams-table tbody tr {
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.datastreams-table tbody tr {
+  cursor: pointer;
+}
+
+.datastreams-table tbody tr:hover {
+  background: var(--hs-surface-muted);
+}
+
+.datastream-plot-cell {
+  width: 32px;
+  padding: var(--hs-space-12) 0 var(--hs-space-12) var(--hs-space-12);
+  vertical-align: top;
+}
+
+.datastream-summary-cell {
+  padding: var(--hs-space-12) var(--hs-space-12) var(--hs-space-12) 4px;
+  vertical-align: top;
+}
+
+.datastream-actions-cell {
+  width: 1%;
+  padding: var(--hs-space-12);
+  vertical-align: top;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.plot-checkbox {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: rgb(var(--v-theme-primary));
+  cursor: pointer;
+}
+
+.plot-checkbox:disabled {
+  cursor: not-allowed;
+}
+
+.datastream-name {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  color: var(--hs-text-primary);
+  font-family: inherit;
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.3;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.datastream-name:hover {
+  text-decoration: underline;
+}
+
+.datastream-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hs-space-4) var(--hs-space-12);
+  align-items: center;
+  margin-top: var(--hs-space-4);
+  color: var(--hs-text-secondary);
+}
+
+.datastream-meta__item {
+  display: inline-flex;
+  gap: var(--hs-space-4);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.datastream-meta__label {
+  color: var(--hs-text-secondary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.datastream-meta__item--data {
+  font-family: var(--hs-font-data);
+  white-space: nowrap;
+}
+
+.datastream-meta__item--data .datastream-meta__label {
+  font-family: inherit;
+}
+
+.datastream-details-button {
+  min-height: 28px;
+  text-transform: none;
+}
+
+.datastreams-empty {
+  padding: var(--hs-space-24);
+  color: var(--hs-text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .datastreams-panel {
+    min-height: 520px;
+  }
+
+  .datastreams-heading {
+    justify-content: space-between;
+  }
+
+  .datastreams-tools__primary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .datastreams-actions {
+    justify-content: flex-start;
+  }
+
+  .datastream-plot-cell {
+    width: 28px;
+    padding-left: var(--hs-space-8);
+  }
+
+  .datastream-actions-cell {
+    width: 48px;
+    padding-right: var(--hs-space-8);
+  }
+
+  .datastream-details-button {
+    min-width: 32px;
+    width: 32px;
+    padding: 0;
+  }
+
+  .datastream-details-button__label {
+    display: none;
+  }
+
+  .datastream-meta {
+    flex-direction: column;
+    gap: var(--hs-space-2);
+    align-items: flex-start;
+  }
+
+  .datastream-name {
+    white-space: normal;
+  }
 }
 </style>

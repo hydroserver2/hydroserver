@@ -3,8 +3,6 @@
   <div v-else class="visualize-page">
     <DataVisNavRail />
     <div class="visualize-content">
-      <DataVisFiltersDrawer @drawer-change="handleDrawerChange" />
-
       <div class="visualize-layout">
         <div
           v-if="showPlot"
@@ -30,20 +28,19 @@
 </template>
 
 <script setup lang="ts">
-import DataVisFiltersDrawer from '@/components/VisualizeData/DataVisFiltersDrawer.vue'
 import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import hs from '@hydroserver/client'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useSidebarStore } from '@/store/useSidebar'
 import { storeToRefs } from 'pinia'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Snackbar } from '@/utils/notifications'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
 const route = useRoute()
+const router = useRouter()
 
 const dataVisStore = useDataVisStore()
 const { onDateBtnClick, resetState } = dataVisStore
@@ -67,10 +64,10 @@ const {
   showTable,
   showSummaryStatistics,
   tableHeaders,
+  tableSearch,
   xAxisRange,
   yAxisRanges,
 } = storeToRefs(dataVisStore)
-const sidebar = useSidebarStore()
 
 const fullHeight = 90
 const defaultPlotHeight = 45
@@ -99,21 +96,14 @@ watch(showPlot, (isVisible) => {
   if (!isVisible) showSummaryStatistics.value = false
 })
 
-const handleDrawerChange = () => {
-  setTimeout(() => {
-    window.dispatchEvent(new Event('resize'))
-    window.dispatchEvent(new Event('datavis-layout'))
-  }, 250)
-}
-
 const isValidAxisRange = (
   range: { start: number; end: number } | null
 ): range is { start: number; end: number } =>
   Boolean(
     range &&
-      Number.isFinite(range.start) &&
-      Number.isFinite(range.end) &&
-      range.start < range.end
+    Number.isFinite(range.start) &&
+    Number.isFinite(range.end) &&
+    range.start < range.end
   )
 
 const generateStateUrl = () => {
@@ -121,7 +111,9 @@ const generateStateUrl = () => {
 
   const queryParams = new URLSearchParams()
 
-  selectedMonitoringSites.value.forEach((t) => queryParams.append('sites', t.id))
+  selectedMonitoringSites.value.forEach((t) =>
+    queryParams.append('sites', t.id)
+  )
 
   plottedDatastreams.value.forEach((ds) =>
     queryParams.append('datastreams', ds.id)
@@ -134,6 +126,9 @@ const generateStateUrl = () => {
   selectedObservedPropertyNames.value.forEach((op) =>
     queryParams.append('OPs', op)
   )
+
+  if (tableSearch.value.trim())
+    queryParams.append('q', tableSearch.value.trim())
 
   if (selectedDateBtnId.value < 0) {
     queryParams.append('beginDate', beginDate.value.toISOString())
@@ -165,7 +160,6 @@ const generateStateUrl = () => {
   queryParams.append('plot', showPlot.value ? '1' : '0')
   queryParams.append('table', showTable.value ? '1' : '0')
   queryParams.append('summary', showSummaryStatistics.value ? '1' : '0')
-  queryParams.append('drawer', sidebar.isOpen ? '1' : '0')
 
   const visibleColumns = tableHeaders.value
     .filter((header) => header.visible && header.key !== 'plot')
@@ -200,12 +194,16 @@ const parseUrlAndSetState = () => {
   ) => {
     if (value === undefined || value === null) return null
     const raw = Array.isArray(value)
-      ? value.find((item): item is string => typeof item === 'string') ?? null
+      ? (value.find((item): item is string => typeof item === 'string') ?? null)
       : value
     if (!raw) return null
     const normalized = raw.toLowerCase()
     return normalized === '1' || normalized === 'true' || normalized === 'yes'
   }
+
+  const searchParam = route.query.q
+  const searchRaw = Array.isArray(searchParam) ? searchParam[0] : searchParam
+  tableSearch.value = typeof searchRaw === 'string' ? searchRaw : ''
 
   const selectedDateBtnIdParam = (route.query.selectedDateBtnId as string) || ''
   if (selectedDateBtnIdParam !== '') {
@@ -226,8 +224,8 @@ const parseUrlAndSetState = () => {
   const datastreamIdsArray = Array.isArray(datastreamIds)
     ? datastreamIds
     : datastreamIds
-    ? [datastreamIds]
-    : []
+      ? [datastreamIds]
+      : []
 
   const datastreamIdsStrings = datastreamIdsArray.filter(
     (id): id is string => typeof id === 'string'
@@ -248,8 +246,8 @@ const parseUrlAndSetState = () => {
   const siteIdsArray = Array.isArray(siteIds)
     ? siteIds
     : siteIds
-    ? [siteIds]
-    : []
+      ? [siteIds]
+      : []
 
   const siteIdsStrings = siteIdsArray.filter(
     (id): id is string => typeof id === 'string'
@@ -265,8 +263,8 @@ const parseUrlAndSetState = () => {
   const OPNamesArray = Array.isArray(OPNames)
     ? OPNames
     : OPNames
-    ? [OPNames]
-    : []
+      ? [OPNames]
+      : []
 
   const OPNamesStrings = OPNamesArray.filter(
     (op): op is string => typeof op === 'string'
@@ -280,8 +278,8 @@ const parseUrlAndSetState = () => {
   const PLNamesArray = Array.isArray(PLNames)
     ? PLNames
     : PLNames
-    ? [PLNames]
-    : []
+      ? [PLNames]
+      : []
 
   const PLNamesStrings = PLNamesArray.filter(
     (pl): pl is string => typeof pl === 'string'
@@ -355,11 +353,6 @@ const parseUrlAndSetState = () => {
   const summaryParam = parseBoolean(route.query.summary)
   if (summaryParam !== null) showSummaryStatistics.value = summaryParam
 
-  const drawerParam = parseBoolean(route.query.drawer)
-  if (drawerParam !== null) {
-    sidebar.setOpen(drawerParam, true)
-  }
-
   const columnsParam = route.query.columns
   if (columnsParam) {
     const raw = Array.isArray(columnsParam)
@@ -373,10 +366,26 @@ const parseUrlAndSetState = () => {
       dataVisStore.setTableVisibleColumns(keys)
     }
   }
-
 }
 
 const loading = ref(true)
+
+const queryString = (value: unknown) =>
+  `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
+
+watch(tableSearch, (value) => {
+  if (loading.value || queryString(route.query.q) === value) return
+  void router.replace({ query: { ...route.query, q: value || undefined } })
+})
+
+watch(
+  () => route.query.q,
+  (value) => {
+    if (loading.value) return
+    const routeSearch = queryString(value)
+    if (routeSearch !== tableSearch.value) tableSearch.value = routeSearch
+  }
+)
 
 onMounted(async () => {
   try {
@@ -415,8 +424,8 @@ onUnmounted(() => {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  gap: 12px;
-  --visualize-margin: 16px;
+  gap: var(--hs-space-12);
+  --visualize-margin: var(--hs-space-16);
   margin: var(--visualize-margin);
   height: calc(
     100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px) -
@@ -427,11 +436,9 @@ onUnmounted(() => {
 .visualize-page {
   --datavis-rail-width: 64px;
   display: flex;
-  height: calc(
-    100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
-  );
+  height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
   overflow: hidden;
-  background-color: #eef2f6;
+  background-color: var(--hs-background);
 }
 
 .visualize-content {
@@ -455,8 +462,8 @@ onUnmounted(() => {
 
 @media (max-width: 600px) {
   .visualize-layout {
-    --visualize-margin: 8px;
-    gap: 8px;
+    --visualize-margin: var(--hs-space-8);
+    gap: var(--hs-space-8);
   }
   .visualize-page {
     --datavis-rail-width: 56px;

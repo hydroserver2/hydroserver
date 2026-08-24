@@ -5,7 +5,7 @@
   <v-divider />
 
   <div class="summary-table-wrapper">
-    <v-data-table density="compact" class="elevation-1">
+    <v-data-table density="compact" class="summary-table">
       <tbody>
         <tr v-for="header in summaryStatsHeaders" :key="header.key">
           <td>{{ header.title }}</td>
@@ -61,12 +61,17 @@ const summaryStatsHeaders = [
 }
 
 table th + th {
-  border-left: 1px solid #dddddd;
+  border-left: 1px solid var(--hs-border);
 }
 table td + td {
-  border-left: 1px solid #dddddd;
+  border-left: 1px solid var(--hs-border);
 }
 table tr:last-child td {
-  border-bottom: 1px solid #dddddd;
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.summary-table {
+  color: var(--hs-text-primary);
+  background: var(--hs-surface);
 }
 </style>

@@ -31,6 +31,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const selectedProcessingLevelNames = ref<string[]>([])
 
   const showSummaryStatistics = ref(false)
+  const tableSearch = ref('')
   const summaryStatisticsArray = ref<SummaryStatistics[]>([])
 
   const graphSeriesArray = ref<GraphSeries[]>([])
@@ -83,7 +84,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const xAxisRange = ref<{ start: number; end: number } | null>(null)
   const yAxisRanges = ref<Record<string, [number, number]>>({})
   const monitoringSiteById = computed(
-    () => new Map(monitoringSites.value.map((monitoringSite) => [monitoringSite.id, monitoringSite]))
+    () =>
+      new Map(
+        monitoringSites.value.map((monitoringSite) => [
+          monitoringSite.id,
+          monitoringSite,
+        ])
+      )
   )
   const observedPropertyById = computed(
     () =>
@@ -104,7 +111,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       )
   )
   const selectedMonitoringSiteIds = computed(
-    () => new Set(selectedMonitoringSites.value.map((monitoringSite) => monitoringSite.id))
+    () =>
+      new Set(
+        selectedMonitoringSites.value.map((monitoringSite) => monitoringSite.id)
+      )
   )
   const selectedWorkspaceIds = computed(
     () => new Set(selectedWorkspaces.value.map((workspace) => workspace.id))
@@ -123,6 +133,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
     showSummaryStatistics.value = false
+    tableSearch.value = ''
     summaryStatisticsArray.value = []
     endDate.value = new Date()
     beginDate.value = new Date(new Date().getTime() - oneMonth)
@@ -526,6 +537,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     loadingStates,
     selectedDateBtnId,
     showSummaryStatistics,
+    tableSearch,
     summaryStatisticsArray,
     cardHeight,
     tableHeight,

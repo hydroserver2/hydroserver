@@ -2,27 +2,15 @@ import { expect, test, type Page } from "../support/test";
 
 import { authenticateSession } from "../support/auth";
 import { fixtures, users } from "../support/fixtures";
-import { chooseAutocompleteOption } from "../support/ui";
 
 test.describe("visualization", () => {
   function mobileDatastreamRow(page: Page, datastreamName: string) {
     return page.getByRole("row").filter({ hasText: datastreamName }).first();
   }
 
-  async function ensureFiltersDrawerOpen(page: Page) {
-    const workspaceFilter = page
-      .getByRole("combobox", { name: "Workspaces" })
-      .first();
-    if (
-      (await workspaceFilter.count()) > 0 &&
-      (await workspaceFilter.isVisible())
-    ) {
-      return;
-    }
-
-    await page.getByRole("button", { name: "Toggle filters drawer" }).click();
+  async function ensureTableFiltersVisible(page: Page) {
     await expect(
-      page.getByRole("combobox", { name: "Workspaces" }).first(),
+      page.getByRole("button", { name: "Filter by workspace" }),
     ).toBeVisible();
   }
 
@@ -39,12 +27,14 @@ test.describe("visualization", () => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
-    await ensureFiltersDrawerOpen(page);
+    await ensureTableFiltersVisible(page);
 
     await expect(
       page.getByRole("heading", { name: "Datastreams" }),
     ).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Sites" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Filter by site" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Clear Selected" }),
     ).toBeVisible();
@@ -173,7 +163,7 @@ test.describe("visualization", () => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto("/visualize-data");
-    await ensureFiltersDrawerOpen(page);
+    await ensureTableFiltersVisible(page);
 
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
@@ -185,11 +175,19 @@ test.describe("visualization", () => {
       ),
     ).toBeVisible();
 
-    await chooseAutocompleteOption(
-      page,
-      "Sites",
-      fixtures.monitoringSites.privateWorkspacePublic.name,
-    );
+    await page.getByRole("button", { name: "Filter by site" }).click();
+    await page
+      .getByRole("checkbox", {
+        name: `Site: ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
+      })
+      .click();
+
+    const tableSearch = page.getByRole("combobox", { name: "Search" });
+    const selectedSiteName = fixtures.monitoringSites.privateWorkspacePublic.name;
+    const siteQualifier = /\s/.test(selectedSiteName)
+      ? `site:"${selectedSiteName}"`
+      : `site:${selectedSiteName}`;
+    await expect(tableSearch).toHaveValue(siteQualifier);
 
     await expect(
       mobileDatastreamRow(
@@ -202,6 +200,7 @@ test.describe("visualization", () => {
     ).toHaveCount(0);
 
     await page.getByRole("button", { name: "Clear filters" }).click();
+    await expect(tableSearch).toHaveValue("");
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
     ).toBeVisible();
@@ -211,6 +210,20 @@ test.describe("visualization", () => {
         fixtures.datastreams.privateWorkspacePublic.name,
       ),
     ).toBeVisible();
+
+    await tableSearch.fill(siteQualifier);
+    await expect(
+      page.getByRole("button", { name: "Filter by site (1 selected)" }),
+    ).toBeVisible();
+    await expect(
+      mobileDatastreamRow(
+        page,
+        fixtures.datastreams.privateWorkspacePublic.name,
+      ),
+    ).toBeVisible();
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name),
+    ).toHaveCount(0);
   });
 
   test("visualization search filters the mobile datastream cards", async ({
@@ -220,7 +233,7 @@ test.describe("visualization", () => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
-    const tableSearch = page.getByRole("textbox", {
+    const tableSearch = page.getByRole("combobox", {
       name: "Search",
     });
     await expect(tableSearch).toBeVisible();
@@ -239,28 +252,36 @@ test.describe("visualization", () => {
     ).toBeVisible();
   });
 
-  test("visualization column toggles hide and restore table headers", async ({
+  test("visualization detail toggles hide and restore row metadata", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
-    const columnsButton = page.getByRole("button", {
-      name: "Show or hide columns",
+    const datastreamRow = page
+      .getByRole("row")
+      .filter({ hasText: fixtures.datastreams.public.name })
+      .first();
+    await expect(
+      datastreamRow.getByText("Property", { exact: true }),
+    ).toBeVisible();
+
+    const detailsButton = page.getByRole("button", {
+      name: "Choose row details",
     });
-    await columnsButton.click();
+    await detailsButton.click();
     await page
       .getByRole("checkbox", { name: "Toggle Observed Property" })
       .click();
     await expect(
-      page.getByRole("columnheader", { name: "Observed Property" }),
+      datastreamRow.getByText("Property", { exact: true }),
     ).toHaveCount(0);
 
     await page
       .getByRole("checkbox", { name: "Toggle Observed Property" })
       .click();
     await expect(
-      page.getByRole("columnheader", { name: "Observed Property" }),
+      datastreamRow.getByText("Property", { exact: true }),
     ).toBeVisible();
   });
 

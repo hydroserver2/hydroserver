@@ -1,12 +1,13 @@
 <template>
-  <v-card>
-    <v-toolbar flat color="blue-darken-2">
+  <v-card class="datastream-information-card">
+    <v-toolbar flat color="surface-subtle">
       <v-card-title> Datastream information </v-card-title>
       <v-spacer />
       <v-btn
         :loading="downloading"
         :prepend-icon="mdiDownload"
-        color="blue-lighten-5"
+        color="primary"
+        variant="tonal"
         data-testid="download-datastream-csv"
         @click="downloadDatastream(datastream.id)"
         >Download</v-btn
@@ -17,7 +18,6 @@
 
     <v-card-actions>
       <v-btn-primary
-        color="blue"
         variant="text"
         data-testid="add-datastream-to-plot"
         @click="addToPlot(datastream)"

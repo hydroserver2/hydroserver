@@ -1,5 +1,5 @@
 <template>
-  <v-card class="elevation-2 plot-card" :loading="updating">
+  <v-card flat class="hs-table-card plot-card" :loading="updating">
     <template v-slot:loader="{ isActive }">
       <v-progress-linear color="primary" :active="isActive" indeterminate />
     </template>
@@ -296,7 +296,7 @@ const syncDefaultTraceStyles = () => {
   defaultHoverMode.value = hoverMode === false ? false : 'x'
 }
 
-const normalizeTraceArray = <T>(values: T[], length: number, fallback: T) => {
+const normalizeTraceArray = <T,>(values: T[], length: number, fallback: T) => {
   if (values.length === length) return values
   const next = new Array(length).fill(fallback) as T[]
   for (let i = 0; i < Math.min(values.length, length); i += 1) {
@@ -823,12 +823,13 @@ onMounted(() => {
 }
 
 .plot-empty :deep(.v-card-text) {
-  margin-top: 12px;
-  margin-left: 12px;
+  margin-top: var(--hs-space-12);
+  margin-left: var(--hs-space-12);
 }
 
 .plot-empty__title {
-  margin: 8px 8px 12px;
+  margin: var(--hs-space-8) var(--hs-space-8) var(--hs-space-12);
+  color: var(--hs-text-primary);
 }
 
 .plotly-chart {
@@ -846,8 +847,8 @@ onMounted(() => {
 
 .plot-disclaimer {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: var(--hs-space-10);
+  left: var(--hs-space-10);
   z-index: 5;
   pointer-events: auto;
 }
@@ -855,13 +856,13 @@ onMounted(() => {
 .plot-disclaimer-text {
   display: inline-flex;
   align-items: center;
-  color: #6b7280;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 4px;
-  padding: 2px 6px;
+  padding: var(--hs-space-2) var(--hs-space-6);
+  color: var(--hs-text-secondary);
   text-decoration: underline dotted;
   text-underline-offset: 3px;
   cursor: default;
+  background: var(--hs-surface-floating);
+  border-radius: var(--hs-radius-sm);
 }
 
 .plot-disclaimer-card {
@@ -889,8 +890,8 @@ onMounted(() => {
   .drag.cursor-w-resize,
   .drag.cursor-ew-resize,
   .drag.cursor-e-resize {
-    fill: #f8f8f8 !important;
-    stroke: #f8f8f8 !important;
+    fill: var(--hs-surface-subtle) !important;
+    stroke: var(--hs-surface-subtle) !important;
     stroke-width: 1px !important;
   }
 
@@ -898,8 +899,8 @@ onMounted(() => {
   .drag.cursor-nw-resize,
   .drag.cursor-ne-resize,
   .drag.cursor-se-resize {
-    fill: #f2f2f2 !important;
-    stroke: #f2f2f2 !important;
+    fill: var(--hs-surface-muted) !important;
+    stroke: var(--hs-surface-muted) !important;
     stroke-width: 1px !important;
   }
 }
@@ -914,8 +915,8 @@ onMounted(() => {
 
 .plot-rail {
   width: 44px;
-  background-color: #f2f2f2;
-  border-right: 1px solid #e0e0e0;
+  background-color: var(--hs-surface-muted);
+  border-right: 1px solid var(--hs-border);
   border-radius: 0;
   display: flex;
   flex-direction: column;
@@ -932,8 +933,8 @@ onMounted(() => {
 }
 
 .plot-rail-btn--active {
-  background-color: rgba(33, 150, 243, 0.12);
-  color: #1e88e5;
+  color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.12);
   position: relative;
 }
 
@@ -944,7 +945,7 @@ onMounted(() => {
   top: 0;
   bottom: 0;
   width: 3px;
-  background-color: #1e88e5;
+  background-color: rgb(var(--v-theme-primary));
 }
 
 .plot-panel {
@@ -984,7 +985,7 @@ onMounted(() => {
     flex: 0 0 36px;
     flex-direction: row;
     border-right: 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--hs-border);
   }
 
   .plot-rail-btn {
