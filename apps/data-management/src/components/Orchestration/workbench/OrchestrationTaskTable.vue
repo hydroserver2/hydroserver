@@ -11,7 +11,26 @@
     density="compact"
   >
     <template #header.name><div>Task name</div></template>
-    <template #header.statusSort><div>Status</div></template>
+    <template #header.statusSort>
+      <TaskTableFilter
+        label="Status"
+        title="Filter by status"
+        :options="statusOptions"
+        :selected="statusFilter"
+        @toggle="emit('toggle-status', $event)"
+        @clear="emit('clear-status')"
+      />
+    </template>
+    <template #header.taskType>
+      <TaskTableFilter
+        label="Type"
+        title="Filter by task type"
+        :options="taskTypeOptions"
+        :selected="taskTypeFilter"
+        @toggle="emit('toggle-task-type', $event)"
+        @clear="emit('clear-task-type')"
+      />
+    </template>
     <template #header.actions><div>Actions</div></template>
 
     <template #item.name="{ item }">
@@ -279,7 +298,9 @@ import { mdiAlert, mdiChevronRight, mdiPause, mdiPlay } from '@mdi/js'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import {
+  DATA_PRODUCT_TYPE_OPTIONS,
   READ_ONLY_TOOLTIP,
+  STATUS_OPTIONS,
   type DataProductTaskType,
   type TaskRow,
 } from './orchestrationTabs'
@@ -289,14 +310,21 @@ import {
   taskStatusIcon,
   taskTypeChipStyle as getTaskTypeChipStyle,
 } from './taskPresentation'
+import TaskTableFilter from './TaskTableFilter.vue'
 
 const props = defineProps<{
   tasks: TaskRow[]
+  statusFilter: string[]
+  taskTypeFilter: NonNullable<DataProductTaskType>[]
   canEdit: boolean
   accent: string
 }>()
 
 const emit = defineEmits<{
+  'toggle-status': [status: string]
+  'clear-status': []
+  'toggle-task-type': [taskType: string]
+  'clear-task-type': []
   'toggle-paused': [task: TaskRow]
   'run-now': [task: TaskRow]
   'open-task': [task: TaskRow]
@@ -304,6 +332,17 @@ const emit = defineEmits<{
 
 const { activeTab } = storeToRefs(useOrchestrationStore())
 const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
+
+const statusOptions = STATUS_OPTIONS.map((status) => ({
+  ...status,
+  icon: taskStatusIcon(status.value),
+  color: taskStatusColor(status.value),
+}))
+
+const taskTypeOptions = DATA_PRODUCT_TYPE_OPTIONS.map((taskType) => ({
+  title: taskType,
+  value: taskType,
+}))
 
 const tableHeaders = computed(() => {
   const headers = [
@@ -354,17 +393,18 @@ const pauseTooltipText = (task: TaskRow) => {
 }
 
 .task-table :deep(thead tr) {
-  border-bottom: 2px solid var(--hs-border);
+  border-bottom: 1px solid var(--hs-border);
 }
 
 .task-table :deep(th) {
   padding: var(--hs-space-8) var(--hs-space-12);
   color: var(--hs-text-secondary);
-  font-size: var(--hs-font-2xs);
-  font-weight: var(--hs-font-weight-semibold);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
   text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--hs-surface-muted);
 }
 
 .task-table :deep(tbody tr) {

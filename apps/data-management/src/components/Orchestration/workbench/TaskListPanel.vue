@@ -25,188 +25,100 @@
       </div>
     </template>
 
-    <template
-      v-if="activeTab === 'aggregation' || activeTab === 'quality'"
-      #actions
-    >
-      <div class="detail-actions">
-        <template v-if="activeTab === 'aggregation'">
-          <v-tooltip location="top" :disabled="canCreate">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="outlined"
-                  class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
-                  :disabled="!canCreate"
-                  rounded="lg"
-                  @click="emit('add-aggregation')"
-                >
-                  + Aggregation
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-          <v-tooltip location="top" :disabled="canCreate">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="outlined"
-                  class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
-                  :disabled="!canCreate"
-                  rounded="lg"
-                  @click="emit('add-derivation')"
-                >
-                  + Derivation
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-          <v-tooltip location="top" :disabled="canCreateRatingCurve">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="outlined"
-                  class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
-                  :disabled="!canCreateRatingCurve"
-                  rounded="lg"
-                  @click="emit('add-rating-curve')"
-                >
-                  + Rating curve
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-        </template>
-        <v-tooltip v-else location="top" :disabled="canCreate">
-          <template #activator="{ props: tooltipProps }">
-            <span v-bind="tooltipProps" class="inline-flex">
-              <v-btn
-                variant="flat"
-                :prepend-icon="mdiPlus"
-                :style="{ background: accent, color: 'white' }"
-                :disabled="!canCreate"
-                class="detail-action-btn detail-action-btn--primary text-none"
-                rounded="lg"
-                @click="emit('add-quality')"
-              >
-                Add quality task
-              </v-btn>
-            </span>
-          </template>
-          <span>{{ READ_ONLY_TOOLTIP }}</span>
-        </v-tooltip>
-      </div>
-    </template>
-
     <template #accessory>
       <WorkspaceSelector />
     </template>
 
-    <template
-      v-if="
-        hasSelection && (visibleTasks.length > 0 || activeTab === 'ingestion')
-      "
-      #toolbar
-    >
+    <template v-if="hasSelection" #toolbar>
       <div class="hs-table-tools detail-filterbar">
-        <HsSearchInput v-model="taskSearch" placeholder="Search tasks…" />
-        <v-autocomplete
-          v-if="activeTab !== 'ingestion'"
-          :model-value="statusFilter"
-          :items="STATUS_OPTIONS"
-          item-title="title"
-          item-value="value"
-          label="Status filters"
-          multiple
-          clearable
-          hide-details
-          density="compact"
-          variant="outlined"
-          :prepend-inner-icon="mdiFilterVariant"
-          autocomplete="off"
-          name="orchestration-status-filter"
-          spellcheck="false"
-          class="detail-status-filter"
-          @update:model-value="statusFilter = $event ?? []"
-        >
-          <template #selection="{ item, index }">
-            <v-chip
-              color="primary-lighten-2"
-              rounded
-              density="comfortable"
-              closable
-              class="mr-1"
-              @click:close="removeStatusFilter(index)"
-            >
-              <v-icon
-                :icon="taskStatusIcon(item.value)"
-                size="14"
-                class="mr-1"
-                :style="{ color: taskStatusColor(item.value) }"
-              />
-              <span>{{ item.title }}</span>
-            </v-chip>
-          </template>
-          <template #item="{ props: itemProps, item }">
-            <v-list-item v-bind="itemProps">
-              <template #prepend>
-                <v-icon
-                  :icon="taskStatusIcon(item.value)"
-                  size="18"
-                  :style="{ color: taskStatusColor(item.value) }"
-                />
-              </template>
-            </v-list-item>
-          </template>
-        </v-autocomplete>
-        <v-autocomplete
-          v-if="activeTab === 'aggregation'"
-          :model-value="taskTypeFilter"
-          :items="DATA_PRODUCT_TYPE_OPTIONS"
-          label="Task type filters"
-          multiple
-          clearable
-          hide-details
-          density="compact"
-          variant="outlined"
-          :prepend-inner-icon="mdiFilterVariant"
-          autocomplete="off"
-          name="orchestration-task-type-filter"
-          spellcheck="false"
-          class="detail-task-type-filter"
-          @update:model-value="taskTypeFilter = $event ?? []"
-        >
-          <template #selection="{ item, index }">
-            <v-chip
-              rounded="lg"
-              density="comfortable"
-              closable
-              class="mr-1 task-type-chip hs-text-2xs font-weight-semibold"
-              :style="taskTypeSelectionStyle(item)"
-              @click:close="removeTaskTypeFilter(index)"
-            >
-              <span>{{ item }}</span>
-            </v-chip>
-          </template>
-        </v-autocomplete>
-        <div
-          v-if="activeTab === 'ingestion' && selectedConnection"
-          class="hs-table-actions"
-        >
-          <v-tooltip location="top" :disabled="canCreate">
+        <HsQuerySearchInput
+          v-model="taskSearch"
+          placeholder="Search tasks…"
+          :qualifiers="searchQualifiers"
+        />
+        <div class="hs-table-actions">
+          <v-tooltip
+            v-if="activeTab === 'ingestion' && selectedConnection"
+            location="top"
+            :disabled="canCreate"
+          >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn-secondary
                   variant="flat"
-                  :prepend-icon="mdiPlus"
                   :disabled="!canCreate"
                   data-testid="add-ingestion-task"
                   @click="emit('add-task')"
                 >
                   Add task
+                </v-btn-secondary>
+              </span>
+            </template>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
+          </v-tooltip>
+
+          <template v-if="activeTab === 'aggregation'">
+            <v-tooltip location="top" :disabled="canCreate">
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <v-btn-secondary
+                    variant="flat"
+                    :disabled="!canCreate"
+                    data-testid="add-aggregation-task"
+                    @click="emit('add-aggregation')"
+                  >
+                    Add aggregation
+                  </v-btn-secondary>
+                </span>
+              </template>
+              <span>{{ READ_ONLY_TOOLTIP }}</span>
+            </v-tooltip>
+            <v-tooltip location="top" :disabled="canCreate">
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <v-btn-secondary
+                    variant="flat"
+                    :disabled="!canCreate"
+                    data-testid="add-derivation-task"
+                    @click="emit('add-derivation')"
+                  >
+                    Add derivation
+                  </v-btn-secondary>
+                </span>
+              </template>
+              <span>{{ READ_ONLY_TOOLTIP }}</span>
+            </v-tooltip>
+            <v-tooltip location="top" :disabled="canCreateRatingCurve">
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <v-btn-secondary
+                    variant="flat"
+                    :disabled="!canCreateRatingCurve"
+                    data-testid="add-rating-curve-task"
+                    @click="emit('add-rating-curve')"
+                  >
+                    Add rating curve
+                  </v-btn-secondary>
+                </span>
+              </template>
+              <span>{{ READ_ONLY_TOOLTIP }}</span>
+            </v-tooltip>
+          </template>
+
+          <v-tooltip
+            v-if="activeTab === 'quality'"
+            location="top"
+            :disabled="canCreate"
+          >
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn-secondary
+                  variant="flat"
+                  :disabled="!canCreate"
+                  data-testid="add-quality-task"
+                  @click="emit('add-quality')"
+                >
+                  Add quality task
                 </v-btn-secondary>
               </span>
             </template>
@@ -264,8 +176,14 @@
     <OrchestrationTaskTable
       v-else
       :tasks="sortedVisibleTasks"
+      :status-filter="statusFilter"
+      :task-type-filter="taskTypeFilter"
       :can-edit="canEdit"
       :accent="accent"
+      @toggle-status="toggleStatusFilter"
+      @clear-status="clearStatusFilter"
+      @toggle-task-type="toggleTaskTypeFilter"
+      @clear-task-type="clearTaskTypeFilter"
       @toggle-paused="emit('toggle-paused', $event)"
       @run-now="emit('run-now', $event)"
       @open-task="emit('open-task', $event)"
@@ -274,13 +192,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { mdiFilterVariant, mdiPlus } from '@mdi/js'
 import type { DataConnection } from '@hydroserver/client'
 import HsDetailPanel from '@/components/base/HsDetailPanel.vue'
 import HsEmptyState from '@/components/base/HsEmptyState.vue'
-import HsSearchInput from '@/components/base/HsSearchInput.vue'
+import HsQuerySearchInput from '@/components/base/HsQuerySearchInput.vue'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import WorkspaceSelector from '@/components/Workspace/WorkspaceSelector.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
@@ -294,11 +211,6 @@ import {
   type DataProductTaskType,
   type TaskRow,
 } from './orchestrationTabs'
-import {
-  taskStatusColor,
-  taskStatusIcon,
-  taskTypeChipStyle,
-} from './taskPresentation'
 
 defineProps<{
   canCreate: boolean
@@ -341,14 +253,50 @@ const accent = computed(() =>
 )
 const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
 
-const taskTypeSelectionStyle = (taskType: unknown) =>
-  taskTypeChipStyle(taskType as DataProductTaskType)
+const searchQualifiers = computed(() => [
+  {
+    key: 'status',
+    label: 'Status',
+    values: STATUS_OPTIONS.map(({ value }) => value),
+  },
+  ...(activeTab.value === 'aggregation'
+    ? [
+        {
+          key: 'type',
+          label: 'Task type',
+          values: DATA_PRODUCT_TYPE_OPTIONS,
+        },
+      ]
+    : []),
+  { key: 'name', label: 'Task name', values: [] },
+])
 
-const removeStatusFilter = (index: number) => {
-  const next = [...statusFilter.value]
-  next.splice(index, 1)
-  statusFilter.value = next
+const qualifierValues = (query: string, key: string) => {
+  const values: string[] = []
+  const pattern = new RegExp(`${key}:(?:"([^"]*)"|(\\S+))`, 'gi')
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(query))) {
+    const value = (match[1] ?? match[2] ?? '').toLocaleLowerCase()
+    if (value) values.push(value)
+  }
+  return values
 }
+
+watch(
+  taskSearch,
+  (query) => {
+    const selectedStatuses = qualifierValues(query, 'status')
+    statusFilter.value = STATUS_OPTIONS.filter(({ value }) =>
+      selectedStatuses.includes(value.toLocaleLowerCase())
+    ).map(({ value }) => value)
+
+    const selectedTaskTypes = qualifierValues(query, 'type')
+    taskTypeFilter.value = DATA_PRODUCT_TYPE_OPTIONS.filter((taskType) =>
+      selectedTaskTypes.includes(taskType.toLocaleLowerCase())
+    )
+  },
+  { immediate: true }
+)
 
 const toggleStatusFilter = (status: string) => {
   const next = new Set(statusFilter.value)
@@ -371,10 +319,26 @@ const clearStatusFilter = () => {
   statusFilter.value.slice().forEach(toggleStatusFilter)
 }
 
-const removeTaskTypeFilter = (index: number) => {
-  const next = [...taskTypeFilter.value]
-  next.splice(index, 1)
-  taskTypeFilter.value = next
+const toggleTaskTypeFilter = (taskType: string) => {
+  const typedTaskType = taskType as NonNullable<DataProductTaskType>
+  const next = new Set(taskTypeFilter.value)
+  next.has(typedTaskType) ? next.delete(typedTaskType) : next.add(typedTaskType)
+  taskTypeFilter.value = Array.from(next)
+
+  const searchWithoutTaskTypes = taskSearch.value
+    .replace(/(?:^|\s)type:(?:"[^"]*"|\S+)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const typeQuery = Array.from(next)
+    .map((value) => `type:${/\s/.test(value) ? `"${value}"` : value}`)
+    .join(' ')
+  taskSearch.value = [typeQuery, searchWithoutTaskTypes]
+    .filter(Boolean)
+    .join(' ')
+}
+
+const clearTaskTypeFilter = () => {
+  taskTypeFilter.value.slice().forEach(toggleTaskTypeFilter)
 }
 </script>
 
@@ -392,39 +356,14 @@ const removeTaskTypeFilter = (index: number) => {
   margin-top: var(--hs-space-4);
 }
 
-.detail-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--hs-space-8);
-  align-items: center;
-}
-
-.detail-action-btn {
-  min-height: 40px;
-}
-
-.detail-action-btn--header {
-  min-height: 34px;
-  padding-inline: var(--hs-space-12);
-  color: rgb(var(--v-theme-primary));
-  border-color: rgb(var(--v-theme-primary));
-}
-
-.detail-action-btn--primary {
-  padding-inline: var(--hs-space-20);
-}
-
 .detail-filterbar {
   padding: 0 var(--hs-space-24);
   margin: var(--hs-space-24) 0 var(--hs-space-10);
 }
 
-.detail-status-filter {
-  max-width: 320px;
-}
-
-.detail-task-type-filter {
-  max-width: 300px;
+.detail-filterbar .hs-table-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .detail-loading {

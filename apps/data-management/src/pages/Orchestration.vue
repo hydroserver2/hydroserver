@@ -559,11 +559,12 @@ const visibleTasks = computed<TaskRow[]>(() => {
   )
 })
 
-const TASK_QUALIFIER_PATTERN = /(status|name):(?:"([^"]*)"|(\S+))/gi
+const TASK_QUALIFIER_PATTERN = /(status|name|type):(?:"([^"]*)"|(\S+))/gi
 
 function parseTaskQuery(raw: string) {
   const statuses: string[] = []
   const names: string[] = []
+  const types: string[] = []
   const textParts: string[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -573,7 +574,11 @@ function parseTaskQuery(raw: string) {
     textParts.push(raw.slice(lastIndex, match.index))
     const key = match[1].toLowerCase()
     const value = (match[2] ?? match[3] ?? '').trim()
-    if (value) (key === 'status' ? statuses : names).push(value)
+    if (value) {
+      if (key === 'status') statuses.push(value)
+      else if (key === 'type') types.push(value)
+      else names.push(value)
+    }
     lastIndex = TASK_QUALIFIER_PATTERN.lastIndex
   }
   textParts.push(raw.slice(lastIndex))
@@ -581,6 +586,7 @@ function parseTaskQuery(raw: string) {
   return {
     statuses,
     names,
+    types,
     text: textParts.join(' ').replace(/\s+/g, ' ').trim(),
   }
 }
@@ -592,6 +598,9 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
   const taskTypeFilters = new Set(orchestrationTaskTypeFilter.value)
   const queryStatuses = new Set(
     parsedQuery.statuses.map((value) => value.toLowerCase())
+  )
+  const queryTaskTypes = new Set(
+    parsedQuery.types.map((value) => value.toLowerCase())
   )
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
@@ -606,6 +615,13 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
     }
     if (activeTab.value === 'aggregation' && taskTypeFilters.size > 0) {
       if (!t.taskType || !taskTypeFilters.has(t.taskType)) return false
+    }
+    if (
+      activeTab.value === 'aggregation' &&
+      queryTaskTypes.size > 0 &&
+      (!t.taskType || !queryTaskTypes.has(t.taskType.toLowerCase()))
+    ) {
+      return false
     }
     if (parsedQuery.names.length > 0) {
       const taskName = (t.name ?? '').toLowerCase()

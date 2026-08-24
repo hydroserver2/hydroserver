@@ -4,59 +4,14 @@
       <thead>
         <tr>
           <th colspan="2" class="ingestion-main-header">
-            <v-menu
-              :close-on-content-click="false"
-              location="bottom start"
-              attach="body"
-            >
-              <template #activator="{ props: menuProps }">
-                <v-btn
-                  v-bind="menuProps"
-                  variant="text"
-                  size="small"
-                  class="task-filter-button"
-                  :class="{
-                    'task-filter-button--active': statusFilter.length,
-                  }"
-                  :append-icon="mdiChevronDown"
-                  :aria-label="`Filter by status${statusFilter.length ? ` (${statusFilter.length} selected)` : ''}`"
-                >
-                  Status
-                  <span v-if="statusFilter.length" class="filter-count">
-                    {{ statusFilter.length }}
-                  </span>
-                </v-btn>
-              </template>
-              <v-list class="task-filter-menu" density="compact">
-                <div class="task-filter-title">Filter by status</div>
-                <v-list-item
-                  v-for="status in STATUS_OPTIONS"
-                  :key="status.value"
-                  :class="{
-                    'task-filter-option--selected': statusFilter.includes(
-                      status.value
-                    ),
-                  }"
-                  @click="emit('toggle-status', status.value)"
-                >
-                  <v-list-item-title class="task-status-option">
-                    <v-icon
-                      :icon="taskStatusIcon(status.value)"
-                      size="18"
-                      :style="{ color: taskStatusColor(status.value) }"
-                    />
-                    <span>{{ status.title }}</span>
-                  </v-list-item-title>
-                </v-list-item>
-                <v-list-item
-                  v-if="statusFilter.length"
-                  class="filter-clear-item"
-                  @click="emit('clear-status')"
-                >
-                  <v-list-item-title>Clear filter</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            <TaskTableFilter
+              label="Status"
+              title="Filter by status"
+              :options="statusOptions"
+              :selected="statusFilter"
+              @toggle="emit('toggle-status', $event)"
+              @clear="emit('clear-status')"
+            />
           </th>
           <th class="text-right" />
         </tr>
@@ -157,16 +112,11 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiAlert,
-  mdiChevronDown,
-  mdiChevronRight,
-  mdiPause,
-  mdiPlay,
-} from '@mdi/js'
+import { mdiAlert, mdiChevronRight, mdiPause, mdiPlay } from '@mdi/js'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import { STATUS_OPTIONS, type TaskRow } from './orchestrationTabs'
 import { taskStatusColor, taskStatusIcon } from './taskPresentation'
+import TaskTableFilter from './TaskTableFilter.vue'
 
 defineProps<{
   tasks: TaskRow[]
@@ -182,6 +132,12 @@ const emit = defineEmits<{
   'run-now': [task: TaskRow]
   'open-task': [task: TaskRow]
 }>()
+
+const statusOptions = STATUS_OPTIONS.map((status) => ({
+  ...status,
+  icon: taskStatusIcon(status.value),
+  color: taskStatusColor(status.value),
+}))
 </script>
 
 <style scoped>
@@ -223,46 +179,6 @@ const emit = defineEmits<{
 
 .ingestion-main-header {
   text-align: left;
-}
-
-.task-filter-button {
-  min-width: auto;
-  height: 32px;
-  padding: 0 var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  text-transform: none;
-}
-
-.task-filter-button--active,
-.filter-clear-item {
-  color: rgb(var(--v-theme-primary));
-}
-
-.filter-count {
-  margin-left: var(--hs-space-4);
-  color: inherit;
-}
-
-.task-filter-menu {
-  min-width: 240px;
-  padding: var(--hs-space-8) 0;
-}
-
-.task-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
-}
-
-.task-status-option {
-  display: inline-flex;
-  gap: var(--hs-space-8);
-  align-items: center;
-}
-
-.task-filter-option--selected {
-  background: var(--hs-surface-muted);
 }
 
 .ingestion-status-cell {
