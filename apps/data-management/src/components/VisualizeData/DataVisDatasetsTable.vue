@@ -164,10 +164,7 @@
                   v-if="isDetailVisible('valueCount')"
                   class="datastream-meta__item datastream-meta__item--data"
                 >
-                  <span class="datastream-meta__label hs-label"
-                    >Observations</span
-                  >
-                  {{ formatObservationCount(item.valueCount) }}
+                  {{ formatObservationCount(item.valueCount) }} observations
                 </span>
                 <span
                   v-if="isDetailVisible('phenomenonEndTime')"
@@ -536,7 +533,9 @@ function updatePlottedDatastreams(
 }
 
 .datastreams-table-card {
-  flex: 1;
+  flex: 0 1 auto;
+  height: auto;
+  max-height: 100%;
   min-height: 0;
   overflow: auto;
 }
