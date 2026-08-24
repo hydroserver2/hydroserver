@@ -1,6 +1,10 @@
 <template>
   <div class="hs-master-detail">
+    <div v-if="$slots.rail" class="hs-master-detail__rail">
+      <slot name="rail" />
+    </div>
     <aside
+      v-if="showSidebar"
       class="hs-master-detail__sidebar"
       :data-testid="sidebarTestId || undefined"
     >
@@ -16,8 +20,12 @@
 withDefaults(
   defineProps<{
     sidebarTestId?: string
+    showSidebar?: boolean
   }>(),
-  { sidebarTestId: '' }
+  {
+    sidebarTestId: '',
+    showSidebar: true,
+  }
 )
 </script>
 
@@ -39,6 +47,12 @@ withDefaults(
   min-height: 0;
   background: var(--hs-surface-muted);
   border-right: 1px solid var(--hs-border);
+}
+
+.hs-master-detail__rail {
+  display: flex;
+  flex-shrink: 0;
+  min-height: 0;
 }
 
 .hs-master-detail__content {
@@ -64,6 +78,11 @@ withDefaults(
     min-height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--hs-border);
+  }
+
+  .hs-master-detail__rail {
+    width: 100%;
+    min-height: auto;
   }
 
   .hs-master-detail__content {

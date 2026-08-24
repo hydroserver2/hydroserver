@@ -143,6 +143,14 @@ vi.mock(
 )
 
 const stubs = {
+  HsMasterDetailLayout: {
+    template: '<div><slot name="rail" /><slot name="sidebar" /><slot /></div>',
+  },
+  HsEmptyState: {
+    props: ['title'],
+    template:
+      '<section><h2>{{ title }}</h2><slot /><slot name="actions" /></section>',
+  },
   WorkspaceToolbar: {
     template: '<div />',
   },
@@ -180,6 +188,9 @@ const stubs = {
     template: '<div><slot /></div>',
   },
   'v-btn': {
+    template: '<button><slot /></button>',
+  },
+  'v-btn-primary': {
     template: '<button><slot /></button>',
   },
 }

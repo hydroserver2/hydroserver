@@ -1,6 +1,6 @@
 <template>
-  <section class="detail">
-    <header class="detail-header">
+  <HsDetailPanel>
+    <template #header>
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-2">
           <h2 class="detail-title hs-text-md font-weight-regular">
@@ -23,10 +23,13 @@
           />
         </div>
       </div>
-      <div
-        v-if="activeTab === 'aggregation' || activeTab === 'quality'"
-        class="detail-actions"
-      >
+    </template>
+
+    <template
+      v-if="activeTab === 'aggregation' || activeTab === 'quality'"
+      #actions
+    >
+      <div class="detail-actions">
         <template v-if="activeTab === 'aggregation'">
           <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
@@ -34,10 +37,9 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
-                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canCreate"
                   rounded="lg"
-                  @click="$emit('add-aggregation')"
+                  @click="emit('add-aggregation')"
                 >
                   + Aggregation
                 </v-btn>
@@ -51,10 +53,9 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
-                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canCreate"
                   rounded="lg"
-                  @click="$emit('add-derivation')"
+                  @click="emit('add-derivation')"
                 >
                   + Derivation
                 </v-btn>
@@ -68,10 +69,9 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header hs-text-sm font-weight-semibold text-none"
-                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canCreateRatingCurve"
                   rounded="lg"
-                  @click="$emit('add-rating-curve')"
+                  @click="emit('add-rating-curve')"
                 >
                   + Rating curve
                 </v-btn>
@@ -80,747 +80,227 @@
             <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
         </template>
-        <template v-else-if="activeTab === 'quality'">
-          <v-tooltip location="top" :disabled="canCreate">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="flat"
-                  :prepend-icon="mdiPlus"
-                  :style="{ background: accent, color: 'white' }"
-                  :disabled="!canCreate"
-                  class="detail-action-btn detail-action-btn--primary text-none"
-                  rounded="lg"
-                  @click="$emit('add-quality')"
-                >
-                  Add quality task
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-        </template>
-      </div>
-      <div class="detail-header-workspace-selector">
-        <WorkspaceSelector />
-      </div>
-    </header>
-
-    <div
-      v-if="
-        hasSelection && (visibleTasks.length > 0 || activeTab === 'ingestion')
-      "
-      class="hs-table-tools detail-filterbar"
-    >
-      <HsSearchInput v-model="taskSearch" placeholder="Search tasks…" />
-      <v-autocomplete
-        v-if="activeTab !== 'ingestion'"
-        :model-value="statusFilter"
-        :items="STATUS_OPTIONS"
-        item-title="title"
-        item-value="value"
-        label="Status filters"
-        multiple
-        clearable
-        hide-details
-        density="compact"
-        variant="outlined"
-        :prepend-inner-icon="mdiFilterVariant"
-        autocomplete="off"
-        name="orchestration-status-filter"
-        spellcheck="false"
-        class="detail-status-filter"
-        @update:model-value="statusFilter = $event ?? []"
-      >
-        <template #selection="{ item, index }">
-          <v-chip
-            color="primary-lighten-2"
-            rounded
-            density="comfortable"
-            closable
-            class="mr-1"
-            @click:close="removeStatusFilter(index)"
-          >
-            <v-icon
-              :icon="statusIcon(item.value)"
-              size="14"
-              class="mr-1"
-              :style="{ color: statusIconColor(item.value) }"
-            />
-            <span>{{ item.title }}</span>
-          </v-chip>
-        </template>
-        <template #item="{ props: itemProps, item }">
-          <v-list-item v-bind="itemProps">
-            <template #prepend>
-              <v-icon
-                :icon="statusIcon(item.value)"
-                size="18"
-                :style="{ color: statusIconColor(item.value) }"
-              />
-            </template>
-          </v-list-item>
-        </template>
-      </v-autocomplete>
-      <v-autocomplete
-        v-if="activeTab === 'aggregation'"
-        :model-value="taskTypeFilter"
-        :items="DATA_PRODUCT_TYPE_OPTIONS"
-        label="Task type filters"
-        multiple
-        clearable
-        hide-details
-        density="compact"
-        variant="outlined"
-        :prepend-inner-icon="mdiFilterVariant"
-        autocomplete="off"
-        name="orchestration-task-type-filter"
-        spellcheck="false"
-        class="detail-task-type-filter"
-        @update:model-value="taskTypeFilter = $event ?? []"
-      >
-        <template #selection="{ item, index }">
-          <v-chip
-            rounded="lg"
-            density="comfortable"
-            closable
-            class="mr-1 task-type-chip hs-text-2xs font-weight-semibold"
-            :style="taskTypeSelectionStyle(item)"
-            @click:close="removeTaskTypeFilter(index)"
-          >
-            <span>{{ item }}</span>
-          </v-chip>
-        </template>
-      </v-autocomplete>
-      <div
-        v-if="activeTab === 'ingestion' && selectedConnection"
-        class="hs-table-actions"
-      >
-        <v-tooltip location="top" :disabled="canCreate">
+        <v-tooltip v-else location="top" :disabled="canCreate">
           <template #activator="{ props: tooltipProps }">
             <span v-bind="tooltipProps" class="inline-flex">
-              <v-btn-secondary
+              <v-btn
                 variant="flat"
                 :prepend-icon="mdiPlus"
+                :style="{ background: accent, color: 'white' }"
                 :disabled="!canCreate"
-                data-testid="add-ingestion-task"
-                @click="$emit('add-task')"
+                class="detail-action-btn detail-action-btn--primary text-none"
+                rounded="lg"
+                @click="emit('add-quality')"
               >
-                Add task
-              </v-btn-secondary>
+                Add quality task
+              </v-btn>
             </span>
           </template>
           <span>{{ READ_ONLY_TOOLTIP }}</span>
         </v-tooltip>
       </div>
-    </div>
+    </template>
 
-    <div class="detail-body">
-      <div v-if="loading" class="detail-loading hs-text-sm">
-        <v-progress-circular
-          indeterminate
-          size="22"
-          width="2"
-          color="blue-grey-darken-1"
-        />
-        <span>Loading…</span>
-      </div>
+    <template #accessory>
+      <WorkspaceSelector />
+    </template>
 
-      <div v-else-if="!hasSelection" class="detail-empty">
-        <h4 class="hs-subheading">{{ emptyHeading }}</h4>
-        <p>
-          <small>{{ emptyMessage }}</small>
-        </p>
-      </div>
-
-      <div v-else-if="visibleTasks.length === 0" class="detail-empty">
-        <h4 class="hs-subheading">No tasks</h4>
-        <p>
-          <small>{{ emptyTasksMessage }}</small>
-        </p>
-      </div>
-
-      <div v-else-if="sortedVisibleTasks.length === 0" class="detail-empty">
-        <h4 class="hs-subheading">No tasks match your filter</h4>
-        <p>
-          <small
-            >Clear search, status, or task type filters to see all tasks.</small
-          >
-        </p>
-      </div>
-
-      <div
-        v-if="activeTab === 'ingestion'"
-        class="hs-table-card tasks-table-shell--ingestion"
-      >
-        <table class="tasks-table tasks-table--ingestion hs-text-sm">
-          <thead>
-            <tr>
-              <th colspan="2" class="ingestion-main-header">
-                <v-menu
-                  :close-on-content-click="false"
-                  location="bottom start"
-                  attach="body"
-                >
-                  <template #activator="{ props: menuProps }">
-                    <v-btn
-                      v-bind="menuProps"
-                      variant="text"
-                      size="small"
-                      class="task-filter-button"
-                      :class="{
-                        'task-filter-button--active': statusFilter.length,
-                      }"
-                      :append-icon="mdiChevronDown"
-                      :aria-label="`Filter by status${statusFilter.length ? ` (${statusFilter.length} selected)` : ''}`"
-                    >
-                      Status
-                      <span v-if="statusFilter.length" class="filter-count">
-                        {{ statusFilter.length }}
-                      </span>
-                    </v-btn>
-                  </template>
-                  <v-list class="task-filter-menu" density="compact">
-                    <div class="task-filter-title">Filter by status</div>
-                    <v-list-item
-                      v-for="status in STATUS_OPTIONS"
-                      :key="status.value"
-                      :class="{
-                        'task-filter-option--selected': statusFilter.includes(
-                          status.value
-                        ),
-                      }"
-                      @click="toggleStatusFilter(status.value)"
-                    >
-                      <v-list-item-title class="task-status-option">
-                        <v-icon
-                          :icon="statusIcon(status.value)"
-                          size="18"
-                          :style="{ color: statusIconColor(status.value) }"
-                        />
-                        <span>{{ status.title }}</span>
-                      </v-list-item-title>
-                    </v-list-item>
-                    <v-list-item
-                      v-if="statusFilter.length"
-                      class="filter-clear-item"
-                      @click="clearStatusFilter"
-                    >
-                      <v-list-item-title>Clear filter</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </th>
-              <th class="text-right" />
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in sortedVisibleTasks" :key="item.id">
-              <td class="ingestion-status-cell">
-                <v-tooltip location="bottom" :open-delay="0" :close-delay="80">
-                  <template #activator="{ props: tooltipProps }">
-                    <span
-                      v-bind="tooltipProps"
-                      class="task-status-icon"
-                      :style="{ color: statusIconColor(item.statusSort) }"
-                      :aria-label="item.statusSort"
-                    >
-                      <v-icon :icon="statusIcon(item.statusSort)" size="20" />
-                    </span>
-                  </template>
-                  <span>{{
-                    item.lastRunMessage || 'No run history available yet.'
-                  }}</span>
-                </v-tooltip>
-              </td>
-              <td class="ingestion-task-cell">
-                <div class="ingestion-task-name">{{ item.name || '—' }}</div>
-                <div class="ingestion-task-meta hs-text-sm">
-                  <span class="ingestion-task-meta-label hs-label">Last</span>
-                  <span>{{ item.lastRun }}</span>
-                  <span aria-hidden="true">·</span>
-                  <span class="ingestion-task-meta-label hs-label">Next</span>
-                  <span>{{ item.nextRun }}</span>
-                  <v-chip
-                    v-if="item.noWorkWarning"
-                    size="x-small"
-                    density="comfortable"
-                    color="amber-darken-3"
-                    variant="tonal"
-                    :prepend-icon="mdiAlert"
-                    rounded="lg"
-                    class="task-no-work-chip hs-label"
-                    :title="item.noWorkWarning.message"
-                  >
-                    {{ item.noWorkWarning.label }}
-                  </v-chip>
-                </div>
-              </td>
-              <td class="text-right ingestion-actions-cell">
-                <div class="task-actions-inner">
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="black"
-                    icon
-                    :disabled="pauseButtonDisabled(item)"
-                    class="task-pause-btn"
-                    aria-label="Pause or resume task"
-                    @click.stop="$emit('toggle-paused', item)"
-                  >
-                    <NoScheduleIcon v-if="!item.schedule" />
-                    <v-icon
-                      v-else
-                      :icon="item.schedule.enabled ? mdiPause : mdiPlay"
-                      size="16"
-                    />
-                  </v-btn>
-                  <v-btn
-                    v-if="canEdit && !item.userClickedRunNow"
-                    variant="outlined"
-                    color="green-darken-3"
-                    :prepend-icon="mdiPlay"
-                    class="detail-action-btn detail-action-btn--compact text-none"
-                    rounded="lg"
-                    @click.stop="$emit('run-now', item)"
-                  >
-                    Run now
-                  </v-btn>
-                  <span
-                    v-else-if="canEdit && item.userClickedRunNow"
-                    class="hs-text-sm font-weight-semibold text-slate-500"
-                  >
-                    Run requested
-                  </span>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    :style="{ color: accent }"
-                    :append-icon="mdiChevronRight"
-                    class="text-none"
-                    @click.stop="$emit('open-task', item)"
-                  >
-                    Details
-                  </v-btn>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="sortedVisibleTasks.length === 0">
-              <td colspan="3" class="task-table-no-data hs-text-sm">
-                No tasks match the current filters.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <v-data-table-virtual
-        v-else-if="sortedVisibleTasks.length > 0"
-        :headers="tableHeaders"
-        :items="sortedVisibleTasks"
-        :sort-by="defaultSortBy"
-        item-value="id"
-        multi-sort
-        fixed-header
-        hover
-        class="tasks-table hs-table-card hs-text-sm"
-        density="compact"
-      >
-        <template #header.name>
-          <div>Task name</div>
-        </template>
-
-        <template #header.statusSort>
-          <div>Status</div>
-        </template>
-
-        <template #header.actions>
-          <div>Actions</div>
-        </template>
-
-        <template #no-data>
-          <div class="task-table-no-data hs-text-sm">
-            No tasks match the current filters.
-          </div>
-        </template>
-
-        <template #item.name="{ item }">
-          <span class="task-name font-weight-medium">{{
-            item.name || '—'
-          }}</span>
-        </template>
-
-        <template #item.statusSort="{ item }">
-          <div class="task-status-cell">
-            <div class="task-run-cell">
-              <v-tooltip
-                location="bottom"
-                :open-delay="0"
-                :close-delay="80"
-                content-class="pa-0 ma-0 bg-transparent"
-                max-width="640"
-              >
-                <template #activator="{ props: tooltipProps }">
-                  <span
-                    v-bind="tooltipProps"
-                    class="task-status-icon"
-                    :style="{ color: statusIconColor(item.statusSort) }"
-                    :aria-label="item.statusSort"
-                  >
-                    <v-icon :icon="statusIcon(item.statusSort)" size="20" />
-                  </span>
-                </template>
-                <v-card
-                  elevation="6"
-                  rounded="lg"
-                  class="ma-0 pa-0 border border-slate-200"
-                  style="max-width: 560px; min-width: 360px"
-                >
-                  <v-card-text class="px-4 py-3">
-                    <div
-                      class="mb-1 hs-label uppercase tracking-[0.12em] text-slate-600"
-                    >
-                      Last run summary
-                    </div>
-                    <div
-                      class="hs-text-md font-weight-semibold leading-snug text-slate-900"
-                    >
-                      {{
-                        item.lastRunMessage || 'No run history available yet.'
-                      }}
-                    </div>
-                    <div
-                      class="mt-3 flex items-center gap-1.5 hs-text-sm font-weight-semibold text-slate-500"
-                    >
-                      <v-icon
-                        :icon="statusIcon(item.statusSort)"
-                        size="14"
-                        :style="{ color: statusIconColor(item.statusSort) }"
-                      />
-                      <span>{{ item.statusSort }}</span>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-tooltip>
-              <div class="task-run-times">
-                <div class="task-run-time">
-                  <span class="task-run-label hs-label">Last</span>
-                  <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
-                </div>
-                <div class="task-run-time">
-                  <span class="task-run-label hs-label">Next</span>
-                  <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
-                </div>
-              </div>
-            </div>
-            <v-tooltip
-              v-if="item.noWorkWarning"
-              location="top"
-              :open-delay="0"
-              :close-delay="80"
-              content-class="pa-0 ma-0 bg-transparent"
-              max-width="320"
+    <template
+      v-if="
+        hasSelection && (visibleTasks.length > 0 || activeTab === 'ingestion')
+      "
+      #toolbar
+    >
+      <div class="hs-table-tools detail-filterbar">
+        <HsSearchInput v-model="taskSearch" placeholder="Search tasks…" />
+        <v-autocomplete
+          v-if="activeTab !== 'ingestion'"
+          :model-value="statusFilter"
+          :items="STATUS_OPTIONS"
+          item-title="title"
+          item-value="value"
+          label="Status filters"
+          multiple
+          clearable
+          hide-details
+          density="compact"
+          variant="outlined"
+          :prepend-inner-icon="mdiFilterVariant"
+          autocomplete="off"
+          name="orchestration-status-filter"
+          spellcheck="false"
+          class="detail-status-filter"
+          @update:model-value="statusFilter = $event ?? []"
+        >
+          <template #selection="{ item, index }">
+            <v-chip
+              color="primary-lighten-2"
+              rounded
+              density="comfortable"
+              closable
+              class="mr-1"
+              @click:close="removeStatusFilter(index)"
             >
-              <template #activator="{ props: tooltipProps }">
-                <v-chip
-                  v-bind="tooltipProps"
-                  size="x-small"
-                  density="comfortable"
-                  color="amber-darken-3"
-                  variant="tonal"
-                  :prepend-icon="mdiAlert"
-                  rounded="lg"
-                  class="task-no-work-chip hs-label"
-                >
-                  {{ item.noWorkWarning.label }}
-                </v-chip>
+              <v-icon
+                :icon="taskStatusIcon(item.value)"
+                size="14"
+                class="mr-1"
+                :style="{ color: taskStatusColor(item.value) }"
+              />
+              <span>{{ item.title }}</span>
+            </v-chip>
+          </template>
+          <template #item="{ props: itemProps, item }">
+            <v-list-item v-bind="itemProps">
+              <template #prepend>
+                <v-icon
+                  :icon="taskStatusIcon(item.value)"
+                  size="18"
+                  :style="{ color: taskStatusColor(item.value) }"
+                />
               </template>
-              <v-card
-                elevation="6"
-                rounded="lg"
-                class="ma-0 pa-0 border border-slate-200"
-                style="max-width: 320px"
-              >
-                <v-card-text
-                  class="px-4 py-3 hs-text-sm leading-snug text-slate-800"
-                >
-                  {{ item.noWorkWarning.message }}
-                </v-card-text>
-              </v-card>
-            </v-tooltip>
-          </div>
-        </template>
-
-        <template #item.lastRunAt="{ item }">
-          <span class="task-time hs-text-sm">{{ item.lastRun }}</span>
-        </template>
-
-        <template #item.nextRunAt="{ item }">
-          <span class="task-time hs-text-sm">{{ item.nextRun }}</span>
-        </template>
-
-        <template #item.taskType="{ item }">
-          <v-chip
-            v-if="item.taskType"
-            density="comfortable"
-            size="small"
-            rounded="lg"
-            :style="typeChipStyle(item.taskType)"
-            class="task-type-chip hs-text-2xs font-weight-semibold"
-          >
-            {{ item.taskType }}
-          </v-chip>
-          <span v-else class="text-slate-400">—</span>
-        </template>
-
-        <template #item.qualityRuleSummary="{ item }">
-          <v-tooltip
-            v-if="(item.qualityRuleCount ?? 0) > 0"
-            location="bottom"
-            :open-delay="0"
-            :close-delay="80"
-            content-class="pa-0 ma-0 bg-transparent"
-          >
+            </v-list-item>
+          </template>
+        </v-autocomplete>
+        <v-autocomplete
+          v-if="activeTab === 'aggregation'"
+          :model-value="taskTypeFilter"
+          :items="DATA_PRODUCT_TYPE_OPTIONS"
+          label="Task type filters"
+          multiple
+          clearable
+          hide-details
+          density="compact"
+          variant="outlined"
+          :prepend-inner-icon="mdiFilterVariant"
+          autocomplete="off"
+          name="orchestration-task-type-filter"
+          spellcheck="false"
+          class="detail-task-type-filter"
+          @update:model-value="taskTypeFilter = $event ?? []"
+        >
+          <template #selection="{ item, index }">
+            <v-chip
+              rounded="lg"
+              density="comfortable"
+              closable
+              class="mr-1 task-type-chip hs-text-2xs font-weight-semibold"
+              :style="taskTypeSelectionStyle(item)"
+              @click:close="removeTaskTypeFilter(index)"
+            >
+              <span>{{ item }}</span>
+            </v-chip>
+          </template>
+        </v-autocomplete>
+        <div
+          v-if="activeTab === 'ingestion' && selectedConnection"
+          class="hs-table-actions"
+        >
+          <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
-              <span
-                v-bind="tooltipProps"
-                class="task-rules-count hs-text-sm font-weight-semibold"
-              >
-                {{ ruleCountLabel(item) }}
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn-secondary
+                  variant="flat"
+                  :prepend-icon="mdiPlus"
+                  :disabled="!canCreate"
+                  data-testid="add-ingestion-task"
+                  @click="emit('add-task')"
+                >
+                  Add task
+                </v-btn-secondary>
               </span>
             </template>
-
-            <v-card
-              elevation="2"
-              rounded="lg"
-              class="ma-0 pa-0"
-              style="max-width: 360px; min-width: 240px"
-            >
-              <v-card-title class="px-4 py-2">
-                <v-row no-gutters align="center" style="width: 100%">
-                  <v-col>
-                    <div
-                      class="hs-text-md"
-                      style="white-space: normal; word-break: break-word"
-                    >
-                      Quality rules
-                    </div>
-                  </v-col>
-                  <v-col cols="auto">
-                    <v-chip size="small" color="teal-darken-1" variant="tonal">
-                      {{ ruleCountLabel(item) }}
-                    </v-chip>
-                  </v-col>
-                </v-row>
-              </v-card-title>
-
-              <v-divider />
-
-              <v-card-text class="py-2 px-4">
-                <v-row dense>
-                  <template
-                    v-for="rule in item.qualityRuleBreakdown ?? []"
-                    :key="rule.label"
-                  >
-                    <v-col cols="8" class="font-weight-medium">
-                      {{ rule.label }}
-                    </v-col>
-                    <v-col cols="4">
-                      {{ rule.count }}
-                    </v-col>
-                  </template>
-                </v-row>
-              </v-card-text>
-            </v-card>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
-          <span v-else class="text-slate-400">No rules</span>
-        </template>
+        </div>
+      </div>
+    </template>
 
-        <template #item.monitoringRulesViolated="{ item }">
-          <v-chip
-            v-if="(item.monitoringRulesViolated ?? 0) > 0"
-            color="red-darken-3"
-            variant="tonal"
-            size="small"
-            rounded="lg"
-            class="task-violation-chip font-weight-bold"
-          >
-            {{ item.monitoringRulesViolated }} rule{{
-              item.monitoringRulesViolated === 1 ? '' : 's'
-            }}
-          </v-chip>
-          <span v-else class="text-slate-400">None</span>
-        </template>
-
-        <template #item.actions="{ item }">
-          <div class="task-actions-inner">
-            <v-tooltip location="top" :open-delay="0" :close-delay="0">
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="black"
-                    icon
-                    :disabled="pauseButtonDisabled(item)"
-                    class="task-pause-btn"
-                    aria-label="Pause or resume task"
-                    @click.stop="$emit('toggle-paused', item)"
-                  >
-                    <NoScheduleIcon v-if="!item.schedule" />
-                    <v-icon
-                      v-else
-                      :icon="item.schedule.enabled ? mdiPause : mdiPlay"
-                      size="16"
-                    />
-                  </v-btn>
-                </span>
-              </template>
-              <span>{{ pauseTooltipText(item) }}</span>
-            </v-tooltip>
-            <v-btn
-              v-if="canEdit && !item.userClickedRunNow"
-              variant="outlined"
-              color="green-darken-3"
-              :prepend-icon="mdiPlay"
-              class="detail-action-btn detail-action-btn--compact text-none"
-              rounded="lg"
-              @click.stop="$emit('run-now', item)"
-            >
-              Run now
-            </v-btn>
-            <span
-              v-else-if="canEdit && item.userClickedRunNow"
-              class="hs-text-sm font-weight-semibold text-slate-500"
-            >
-              Run requested
-            </span>
-            <v-btn
-              variant="text"
-              size="small"
-              :style="{ color: accent }"
-              :append-icon="mdiChevronRight"
-              class="text-none"
-              @click.stop="$emit('open-task', item)"
-            >
-              Details
-            </v-btn>
-          </div>
-        </template>
-      </v-data-table-virtual>
+    <div v-if="loading" class="detail-loading hs-text-sm">
+      <v-progress-circular
+        indeterminate
+        size="22"
+        width="2"
+        color="blue-grey-darken-1"
+      />
+      <span>Loading…</span>
     </div>
-  </section>
+
+    <HsEmptyState v-else-if="!hasSelection" compact :title="emptyHeading">
+      <small>{{ emptyMessage }}</small>
+    </HsEmptyState>
+
+    <HsEmptyState
+      v-else-if="visibleTasks.length === 0"
+      compact
+      title="No tasks"
+    >
+      <small>{{ emptyTasksMessage }}</small>
+    </HsEmptyState>
+
+    <HsEmptyState
+      v-else-if="sortedVisibleTasks.length === 0"
+      compact
+      title="No tasks match your filter"
+    >
+      <small
+        >Clear search, status, or task type filters to see all tasks.</small
+      >
+    </HsEmptyState>
+
+    <IngestionTaskTable
+      v-else-if="activeTab === 'ingestion'"
+      :tasks="sortedVisibleTasks"
+      :status-filter="statusFilter"
+      :can-edit="canEdit"
+      :accent="accent"
+      @toggle-status="toggleStatusFilter"
+      @clear-status="clearStatusFilter"
+      @toggle-paused="emit('toggle-paused', $event)"
+      @run-now="emit('run-now', $event)"
+      @open-task="emit('open-task', $event)"
+    />
+
+    <OrchestrationTaskTable
+      v-else
+      :tasks="sortedVisibleTasks"
+      :can-edit="canEdit"
+      :accent="accent"
+      @toggle-paused="emit('toggle-paused', $event)"
+      @run-now="emit('run-now', $event)"
+      @open-task="emit('open-task', $event)"
+    />
+  </HsDetailPanel>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import {
-  mdiAlert,
-  mdiAlertCircleOutline,
-  mdiChevronDown,
-  mdiChevronRight,
-  mdiCheckCircleOutline,
-  mdiClockAlertOutline,
-  mdiClockOutline,
-  mdiFilterVariant,
-  mdiHelpCircleOutline,
-  mdiPause,
-  mdiPauseCircleOutline,
-  mdiPlay,
-  mdiPlus,
-} from '@mdi/js'
+import { mdiFilterVariant, mdiPlus } from '@mdi/js'
 import type { DataConnection } from '@hydroserver/client'
-import { useOrchestrationStore } from '@/store/orchestration'
-import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
-import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
-import WorkspaceSelector from '@/components/Workspace/WorkspaceSelector.vue'
+import HsDetailPanel from '@/components/base/HsDetailPanel.vue'
+import HsEmptyState from '@/components/base/HsEmptyState.vue'
 import HsSearchInput from '@/components/base/HsSearchInput.vue'
+import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
+import WorkspaceSelector from '@/components/Workspace/WorkspaceSelector.vue'
+import { useOrchestrationStore } from '@/store/orchestration'
+import IngestionTaskTable from './IngestionTaskTable.vue'
+import OrchestrationTaskTable from './OrchestrationTaskTable.vue'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
   READ_ONLY_TOOLTIP,
   STATUS_OPTIONS,
   TAB_META,
-  getDataProductTypeColors,
   type DataProductTaskType,
   type TaskRow,
 } from './orchestrationTabs'
+import {
+  taskStatusColor,
+  taskStatusIcon,
+  taskTypeChipStyle,
+} from './taskPresentation'
 
-const typeChipStyle = (taskType: DataProductTaskType) => {
-  const colors = getDataProductTypeColors(taskType)
-  if (!colors) return {}
-  return { background: colors.bg, color: colors.text }
-}
-
-const taskTypeSelectionStyle = (taskType: unknown) =>
-  typeChipStyle(taskType as DataProductTaskType)
-
-const statusIcon = (status: unknown) => {
-  if (status === 'OK') return mdiCheckCircleOutline
-  if (status === 'Needs attention') return mdiAlertCircleOutline
-  if (status === 'Behind schedule') return mdiClockAlertOutline
-  if (status === 'Loading paused') return mdiPauseCircleOutline
-  if (status === 'Pending') return mdiClockOutline
-  return mdiHelpCircleOutline
-}
-
-const statusIconColor = (status: unknown) => {
-  if (status === 'OK') return '#2E7D32'
-  if (status === 'Needs attention') return '#B71C1C'
-  if (status === 'Behind schedule') return '#BF360C'
-  if (status === 'Loading paused') return '#546E7A'
-  if (status === 'Pending') return '#1565C0'
-  return '#6B7280'
-}
-
-const {
-  activeTab,
-  orchestrationSearch: taskSearch,
-  orchestrationStatusFilter: statusFilter,
-  orchestrationTaskTypeFilter: taskTypeFilter,
-} = storeToRefs(useOrchestrationStore())
-
-const accent = computed(() =>
-  activeTab.value === 'ingestion'
-    ? 'rgb(var(--v-theme-primary))'
-    : TAB_META[activeTab.value].accent
-)
-const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
-const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
-const tableHeaders = computed(() => {
-  const headers =
-    activeTab.value === 'ingestion'
-      ? [
-          { title: '', key: 'statusSort' },
-          { title: '', key: 'name' },
-        ]
-      : [
-          { title: 'Task name', key: 'name' },
-          { title: 'Status', key: 'statusSort' },
-        ]
-
-  if (activeTab.value === 'aggregation') {
-    headers.push({ title: 'Type', key: 'taskType' })
-  }
-
-  if (activeTab.value === 'quality') {
-    headers.push(
-      { title: 'Rules', key: 'qualityRuleSummary' },
-      { title: 'Violations', key: 'monitoringRulesViolated' }
-    )
-  }
-
-  headers.push({
-    title: activeTab.value === 'ingestion' ? '' : 'Actions',
-    key: 'actions',
-    align: 'end',
-    sortable: false,
-  } as any)
-
-  return headers
-})
-
-const props = defineProps<{
+defineProps<{
   canCreate: boolean
   canCreateRatingCurve: boolean
   canEdit: boolean
@@ -836,16 +316,33 @@ const props = defineProps<{
   emptyTasksMessage: string
 }>()
 
-defineEmits<{
-  (e: 'toggle-paused', row: TaskRow): void
-  (e: 'run-now', row: TaskRow): void
-  (e: 'open-task', row: TaskRow): void
-  (e: 'add-task'): void
-  (e: 'add-aggregation'): void
-  (e: 'add-derivation'): void
-  (e: 'add-rating-curve'): void
-  (e: 'add-quality'): void
+const emit = defineEmits<{
+  'toggle-paused': [row: TaskRow]
+  'run-now': [row: TaskRow]
+  'open-task': [row: TaskRow]
+  'add-task': []
+  'add-aggregation': []
+  'add-derivation': []
+  'add-rating-curve': []
+  'add-quality': []
 }>()
+
+const {
+  activeTab,
+  orchestrationSearch: taskSearch,
+  orchestrationStatusFilter: statusFilter,
+  orchestrationTaskTypeFilter: taskTypeFilter,
+} = storeToRefs(useOrchestrationStore())
+
+const accent = computed(() =>
+  activeTab.value === 'ingestion'
+    ? 'rgb(var(--v-theme-primary))'
+    : TAB_META[activeTab.value].accent
+)
+const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
+
+const taskTypeSelectionStyle = (taskType: unknown) =>
+  taskTypeChipStyle(taskType as DataProductTaskType)
 
 const removeStatusFilter = (index: number) => {
   const next = [...statusFilter.value]
@@ -855,21 +352,19 @@ const removeStatusFilter = (index: number) => {
 
 const toggleStatusFilter = (status: string) => {
   const next = new Set(statusFilter.value)
-  if (next.has(status)) {
-    next.delete(status)
-  } else {
-    next.add(status)
-  }
+  next.has(status) ? next.delete(status) : next.add(status)
   statusFilter.value = Array.from(next)
 
-  const withoutStatuses = taskSearch.value
+  const searchWithoutStatuses = taskSearch.value
     .replace(/(?:^|\s)status:(?:"[^"]*"|\S+)/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim()
   const statusQuery = Array.from(next)
     .map((value) => `status:${/\s/.test(value) ? `"${value}"` : value}`)
     .join(' ')
-  taskSearch.value = [statusQuery, withoutStatuses].filter(Boolean).join(' ')
+  taskSearch.value = [statusQuery, searchWithoutStatuses]
+    .filter(Boolean)
+    .join(' ')
 }
 
 const clearStatusFilter = () => {
@@ -881,303 +376,62 @@ const removeTaskTypeFilter = (index: number) => {
   next.splice(index, 1)
   taskTypeFilter.value = next
 }
-
-const ruleCountLabel = (item: TaskRow) => {
-  const count = item.qualityRuleCount ?? 0
-  return `${count} rule${count === 1 ? '' : 's'}`
-}
-
-const pauseButtonDisabled = (item: TaskRow) => !props.canEdit || !item.schedule
-
-const pauseTooltipText = (item: TaskRow) => {
-  if (!props.canEdit) return READ_ONLY_TOOLTIP
-  if (!item.schedule) return 'This task has no schedule configured.'
-  return item.schedule.enabled ? 'Pause task' : 'Resume task'
-}
 </script>
 
 <style scoped>
-.detail {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: white;
-  min-width: 0;
-}
-.detail-header {
-  padding: 12px 22px;
-  border-bottom: 1px solid #e8e8e8;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: white;
-  flex-shrink: 0;
-}
-.detail-header > .min-w-0 {
-  flex: 1;
-}
 .detail-title {
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
 }
+
 .detail-badge {
-  border-radius: 4px;
-  padding: 2px 7px;
+  padding: var(--hs-space-2) var(--hs-space-6);
+  border-radius: var(--hs-radius-sm);
 }
+
 .detail-subtitle {
-  margin-top: 4px;
+  margin-top: var(--hs-space-4);
 }
+
 .detail-actions {
   display: flex;
-  gap: 8px;
+  flex-shrink: 0;
+  gap: var(--hs-space-8);
   align-items: center;
-  flex-shrink: 0;
 }
-.detail-header-workspace-selector {
-  flex-shrink: 0;
-}
+
 .detail-action-btn {
   min-height: 40px;
 }
+
 .detail-action-btn--header {
   min-height: 34px;
-  padding-inline: 14px;
+  padding-inline: var(--hs-space-12);
+  color: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
 }
+
 .detail-action-btn--primary {
-  padding-inline: 20px;
+  padding-inline: var(--hs-space-20);
 }
-.detail-action-btn--compact {
-  min-height: 32px;
-  padding-inline: 12px;
-}
+
 .detail-filterbar {
   padding: 0 var(--hs-space-24);
   margin: var(--hs-space-24) 0 var(--hs-space-10);
 }
+
 .detail-status-filter {
   max-width: 320px;
 }
+
 .detail-task-type-filter {
   max-width: 300px;
 }
-.detail-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 22px;
-}
-.detail-filterbar + .detail-body {
-  padding-top: 0;
-}
+
 .detail-loading {
   display: flex;
+  gap: var(--hs-space-12);
   align-items: center;
-  gap: 12px;
-  padding: 24px 0;
-  color: #475569;
-}
-.detail-empty {
-  padding: 40px 20px;
-  text-align: center;
-  color: #475569;
-}
-.detail-empty h4 {
-  color: #334155;
-  margin-bottom: 6px;
-}
-.tasks-table {
-  height: 100%;
-}
-.tasks-table :deep(.v-table__wrapper) {
-  max-height: 100%;
-}
-.tasks-table :deep(thead tr) {
-  border-bottom: 2px solid #ebebeb;
-}
-.tasks-table :deep(th) {
-  /* No template element to hang an hs-text-* or font-weight-* class on
-     here — these are generated internally by v-data-table-virtual from
-     the `headers` prop, so the type scale is applied via its token
-     instead. */
-  padding: 8px 12px;
-  text-align: left;
-  font-weight: var(--hs-font-weight-semibold);
-  font-size: var(--hs-font-2xs);
-  color: #49454f;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-.tasks-table--ingestion {
-  width: 100%;
-  min-width: 100%;
-  height: auto;
-  border-collapse: collapse;
-  table-layout: auto;
-  border: 0;
-}
-.tasks-table-shell--ingestion {
-  height: auto;
-  max-height: 100%;
-  min-height: 0;
-  overflow: auto;
-}
-.tasks-table--ingestion thead th {
-  height: 48px;
-  padding: 8px 12px;
-  border: 0;
-  background: var(--hs-surface-muted);
+  padding: var(--hs-space-24) 0;
   color: var(--hs-text-secondary);
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-regular);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.tasks-table--ingestion thead tr {
-  border-bottom: 1px solid var(--hs-border);
-}
-.tasks-table--ingestion .ingestion-main-header {
-  text-align: left;
-}
-.task-filter-button {
-  min-width: auto;
-  height: 32px;
-  padding: 0 var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  text-transform: none;
-}
-.task-filter-button--active {
-  color: rgb(var(--v-theme-primary));
-}
-.filter-count {
-  margin-left: var(--hs-space-4);
-  color: inherit;
-}
-.task-filter-menu {
-  min-width: 240px;
-  padding: var(--hs-space-8) 0;
-}
-.task-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
-}
-.task-status-option {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--hs-space-8);
-}
-.task-filter-option--selected {
-  background: var(--hs-surface-muted);
-}
-.filter-clear-item {
-  color: rgb(var(--v-theme-primary));
-}
-.tasks-table--ingestion .ingestion-status-cell {
-  width: 32px;
-  padding: var(--hs-space-12) 0 var(--hs-space-12) var(--hs-space-12);
-  vertical-align: top;
-}
-.tasks-table--ingestion .ingestion-task-cell {
-  padding: var(--hs-space-12) var(--hs-space-12) var(--hs-space-12) 4px;
-  vertical-align: top;
-}
-.tasks-table--ingestion .ingestion-actions-cell {
-  width: 1%;
-  white-space: nowrap;
-  padding: var(--hs-space-12);
-  vertical-align: top;
-}
-.ingestion-task-name {
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
-  line-height: 1.3;
-}
-.ingestion-task-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--hs-space-6);
-  margin-top: var(--hs-space-4);
-  color: var(--hs-text-secondary);
-}
-.ingestion-task-meta-label {
-  color: var(--hs-text-secondary);
-}
-.tasks-table :deep(tbody tr) {
-  border-bottom: 1px solid #f0f0f0;
-}
-.tasks-table :deep(tbody tr:hover) {
-  background: #f5f7fa;
-}
-.task-table-no-data {
-  padding: var(--hs-space-16);
-  color: var(--hs-text-secondary);
-  text-align: center;
-}
-.task-name {
-  color: #1c1b1f;
-}
-.task-status-cell {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.task-time {
-  color: #49454f;
-  font-family: var(--hs-font-data);
-  white-space: nowrap;
-}
-.tasks-table :deep(td) {
-  padding: 13px 12px;
-}
-.task-rules-count {
-  color: #475569;
-  cursor: default;
-  max-width: 320px;
-  white-space: nowrap;
-}
-.task-run-cell {
-  align-items: center;
-  display: inline-flex;
-  gap: 8px;
-  min-width: 0;
-}
-.task-status-icon {
-  align-items: center;
-  display: inline-flex;
-  flex: 0 0 auto;
-  justify-content: center;
-  line-height: 1;
-}
-.task-run-times {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 0;
-}
-.task-run-time {
-  align-items: baseline;
-  display: grid;
-  gap: 0.35rem;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  line-height: 1.15;
-}
-.task-run-time .task-time {
-  line-height: 1.15;
-}
-.task-run-label {
-  color: #64748b;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-.task-actions-inner {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-.task-pause-btn {
-  align-self: center;
 }
 </style>

@@ -1,17 +1,13 @@
 <template>
   <div class="orchestration-page">
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
-      <div class="orchestration-shell">
-        <div
-          class="orchestration-nav-column"
-        >
-          <OrchestrationNavRail
-            :tabs="tabs"
-            @select-tab="setActiveTab"
-          />
+      <HsMasterDetailLayout :show-sidebar="!!selectedWorkspace">
+        <template #rail>
+          <OrchestrationNavRail :tabs="tabs" @select-tab="setActiveTab" />
+        </template>
 
+        <template v-if="selectedWorkspace" #sidebar>
           <OrchestrationContextSidebar
-            v-if="selectedWorkspace"
             :connections="filteredConnections"
             :sites="filteredSites"
             :can-create="canCreateDataConnections"
@@ -30,37 +26,26 @@
             @delete-connection="openDeleteDialog"
             @create="openCreateDialog"
           />
-        </div>
+        </template>
 
-        <section
+        <HsEmptyState
           v-if="!selectedWorkspace"
-          class="no-workspace-state"
+          :icon="mdiBriefcaseOutline"
+          eyebrow="No selected workspace"
+          title="Select or create a workspace to manage jobs"
           data-testid="no-selected-workspace"
         >
-          <div class="no-workspace-state-content">
-            <div class="no-workspace-icon">
-              <v-icon :icon="mdiBriefcaseOutline" size="28" />
-            </div>
-            <p class="no-workspace-eyebrow">No selected workspace</p>
-            <h2>Select or create a workspace to manage jobs</h2>
-            <p>
-              Job orchestration is scoped to a workspace. Create a new workspace
-              from the Workspaces view, or ask a workspace owner or
-              administrator for edit permissions on the workspace whose jobs you
-              need to manage.
-            </p>
-            <div class="no-workspace-actions">
-              <v-btn
-                color="primary-darken-2"
-                variant="flat"
-                rounded="xl"
-                @click="openWorkspaceManager"
-              >
-                Open workspaces
-              </v-btn>
-            </div>
-          </div>
-        </section>
+          <p>
+            Job orchestration is scoped to a workspace. Create a new workspace
+            from the Workspaces view, or ask a workspace owner or administrator
+            for edit permissions on the workspace whose jobs you need to manage.
+          </p>
+          <template #actions>
+            <v-btn-primary @click="openWorkspaceManager">
+              Open workspaces
+            </v-btn-primary>
+          </template>
+        </HsEmptyState>
 
         <template v-else>
           <RouterView v-slot="{ Component }">
@@ -188,7 +173,7 @@
             @deleted="onQualityTaskChanged"
           />
         </v-dialog>
-      </div>
+      </HsMasterDetailLayout>
     </div>
   </div>
 </template>
@@ -221,6 +206,8 @@ import { useOrchestrationRouteState } from '@/composables/orchestration/useOrche
 import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
 import OrchestrationContextSidebar from '@/components/Orchestration/workbench/OrchestrationContextSidebar.vue'
 import TaskListPanel from '@/components/Orchestration/workbench/TaskListPanel.vue'
+import HsEmptyState from '@/components/base/HsEmptyState.vue'
+import HsMasterDetailLayout from '@/components/base/HsMasterDetailLayout.vue'
 import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
@@ -464,8 +451,9 @@ const taskAttentionCount = (connection: DataConnection) =>
 const productTaskAttentionCount = (monitoringSite: MonitoringSiteTaskSummary) =>
   monitoringSite.productTaskAttentionCount
 
-const monitoringTaskAttentionCount = (monitoringSite: MonitoringSiteTaskSummary) =>
-  monitoringSite.monitoringTaskAttentionCount
+const monitoringTaskAttentionCount = (
+  monitoringSite: MonitoringSiteTaskSummary
+) => monitoringSite.monitoringTaskAttentionCount
 
 const summaryDotColor = (total: number, issues: number) => {
   if (total === 0) return DOT_EMPTY
@@ -566,7 +554,9 @@ const visibleTasks = computed<TaskRow[]>(() => {
     )
   }
   if (!selectedMonitoringSiteId.value) return []
-  return activeTaskRows.value.filter((t) => t.monitoringSiteId === selectedMonitoringSiteId.value)
+  return activeTaskRows.value.filter(
+    (t) => t.monitoringSiteId === selectedMonitoringSiteId.value
+  )
 })
 
 const TASK_QUALIFIER_PATTERN = /(status|name):(?:"([^"]*)"|(\S+))/gi
@@ -620,9 +610,7 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
     if (parsedQuery.names.length > 0) {
       const taskName = (t.name ?? '').toLowerCase()
       if (
-        !parsedQuery.names.some((name) =>
-          taskName.includes(name.toLowerCase())
-        )
+        !parsedQuery.names.some((name) => taskName.includes(name.toLowerCase()))
       ) {
         return false
       }
@@ -713,7 +701,8 @@ const selectSidebarFromTaskDetails = () => {
       task.dataConnection?.id ?? task.dataConnectionId ?? null
     return !!selectedConnectionId.value
   }
-  selectedMonitoringSiteId.value = task.monitoringSite?.id ?? task.monitoringSiteId ?? null
+  selectedMonitoringSiteId.value =
+    task.monitoringSite?.id ?? task.monitoringSiteId ?? null
   return !!selectedMonitoringSiteId.value
 }
 
@@ -744,7 +733,9 @@ const autoSelectSidebar = () => {
 }
 
 const selectedGroupIdForTab = (tab: TabId) =>
-  tab === 'ingestion' ? selectedConnectionId.value : selectedMonitoringSiteId.value
+  tab === 'ingestion'
+    ? selectedConnectionId.value
+    : selectedMonitoringSiteId.value
 
 const fetchVisibleTasks = async (force = false) => {
   if (!selectedWorkspaceId.value || hasTaskDetails.value) {
@@ -1033,78 +1024,6 @@ const goToTask = async (row: TaskRow) => {
   overflow: hidden;
 }
 
-.orchestration-shell {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  background: var(--hs-background);
-  overflow: hidden;
-}
-
-/* Keep the navigation edge treatment consistent with the flat chrome used by
-   Manage Workspaces (Workspaces.vue). */
-.orchestration-nav-column {
-  position: relative;
-  display: flex;
-  flex-shrink: 0;
-  min-height: 0;
-}
-.no-workspace-state {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  overflow: auto;
-  background: var(--hs-background);
-  padding: var(--hs-space-32);
-}
-
-.no-workspace-state-content {
-  max-width: 560px;
-  color: var(--hs-text-primary);
-}
-
-/* Matches the flat empty-state icon on Manage Workspaces (Workspaces.vue) so
-   the two workspace-scoped entry points read as the same product surface. */
-.no-workspace-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--hs-surface-muted);
-  color: rgb(var(--v-theme-primary));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--hs-space-16);
-}
-
-.no-workspace-eyebrow {
-  margin: 0 0 var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-bold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Keep the empty-state heading aligned with the page's established heading
-   scale and hierarchy. */
-.no-workspace-state h2 {
-  margin: 0 0 var(--hs-space-12);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-lg);
-  line-height: 1.25;
-}
-
-.no-workspace-state p {
-  line-height: 1.55;
-}
-
-.no-workspace-actions {
-  margin-top: var(--hs-space-24);
-}
-
 .detail {
   flex: 1;
   display: flex;
@@ -1116,5 +1035,23 @@ const goToTask = async (row: TaskRow) => {
 
 .detail--task {
   padding: 0;
+}
+
+@media (max-width: 700px) {
+  .orchestration-page {
+    height: auto;
+    min-height: calc(
+      100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
+    );
+    overflow: visible;
+  }
+
+  .orchestration-page-body,
+  .detail {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
 }
 </style>

@@ -225,53 +225,41 @@
           </div>
         </section>
 
-        <section v-else class="no-workspace-state">
-          <div class="no-workspace-state-content">
-            <div class="no-workspace-icon">
-              <v-icon :icon="mdiBriefcaseOutline" size="28" />
-            </div>
-            <p class="no-workspace-eyebrow hs-label">Manage workspaces</p>
-            <h2 class="hs-heading">
-              {{
-                workspaceLoadError
-                  ? 'Unable to load workspaces'
-                  : workspaces.length
-                    ? 'Select a workspace to manage it'
-                    : !canCreateWorkspace
-                      ? 'No workspaces available'
-                      : 'Create your first workspace'
-              }}
-            </h2>
-            <p v-if="workspaceLoadError">
-              We could not load your workspaces. Check your connection and try
-              again.
-            </p>
-            <p v-else-if="!workspaces.length && !canCreateWorkspace">
-              You do not belong to a workspace yet. Ask a workspace owner to
-              invite you as a collaborator.
-            </p>
-            <p v-else>
-              Workspaces control who can access your sites, datastreams, and
-              metadata. After creating one, assign roles like Editor or Viewer
-              to collaborators who need access.
-            </p>
-            <div class="no-workspace-actions">
-              <v-btn-primary
-                v-if="workspaceLoadError"
-                :loading="isRetryingWorkspaceLoad"
-                @click="retryWorkspaceLoad"
-              >
-                Retry
-              </v-btn-primary>
-              <v-btn-primary
-                v-else-if="canCreateWorkspace"
-                @click="openCreate = true"
-              >
-                Add workspace
-              </v-btn-primary>
-            </div>
-          </div>
-        </section>
+        <HsEmptyState
+          v-else
+          :icon="mdiBriefcaseOutline"
+          eyebrow="Manage workspaces"
+          :title="emptyStateTitle"
+        >
+          <p v-if="workspaceLoadError">
+            We could not load your workspaces. Check your connection and try
+            again.
+          </p>
+          <p v-else-if="!workspaces.length && !canCreateWorkspace">
+            You do not belong to a workspace yet. Ask a workspace owner to
+            invite you as a collaborator.
+          </p>
+          <p v-else>
+            Workspaces control who can access your sites, datastreams, and
+            metadata. After creating one, assign roles like Editor or Viewer to
+            collaborators who need access.
+          </p>
+          <template #actions>
+            <v-btn-primary
+              v-if="workspaceLoadError"
+              :loading="isRetryingWorkspaceLoad"
+              @click="retryWorkspaceLoad"
+            >
+              Retry
+            </v-btn-primary>
+            <v-btn-primary
+              v-else-if="canCreateWorkspace"
+              @click="openCreate = true"
+            >
+              Add workspace
+            </v-btn-primary>
+          </template>
+        </HsEmptyState>
       </HsMasterDetailLayout>
     </div>
   </div>
@@ -322,6 +310,7 @@ import {
   mdiShieldLockOutline,
 } from '@mdi/js'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
+import HsEmptyState from '@/components/base/HsEmptyState.vue'
 import HsMasterDetailLayout from '@/components/base/HsMasterDetailLayout.vue'
 import WorkspaceFormCard from '@/components/Workspace/WorkspaceFormCard.vue'
 import DeleteWorkspaceCard from '@/components/Workspace/DeleteWorkspaceCard.vue'
@@ -380,6 +369,16 @@ const activeItem = ref<Workspace>({} as Workspace)
 
 const selected = computed(
   () => workspaces.value.find((ws) => ws.id === selectedId.value) ?? null
+)
+
+const emptyStateTitle = computed(() =>
+  workspaceLoadError.value
+    ? 'Unable to load workspaces'
+    : workspaces.value.length
+      ? 'Select a workspace to manage it'
+      : !canCreateWorkspace.value
+        ? 'No workspaces available'
+        : 'Create your first workspace'
 )
 
 watch(
@@ -794,48 +793,6 @@ onMounted(async () => {
   max-height: 100%;
   overflow: hidden;
 }
-.no-workspace-state {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  overflow: auto;
-  background: var(--hs-background);
-  padding: var(--hs-space-32);
-}
-.no-workspace-state-content {
-  max-width: 560px;
-  color: var(--hs-text-primary);
-}
-.no-workspace-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--hs-surface-muted);
-  color: rgb(var(--v-theme-primary));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--hs-space-16);
-}
-.no-workspace-eyebrow {
-  margin: 0 0 var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.no-workspace-state h2 {
-  margin: 0 0 var(--hs-space-12);
-  color: var(--hs-text-primary);
-}
-.no-workspace-state p {
-  line-height: 1.55;
-}
-.no-workspace-actions {
-  margin-top: var(--hs-space-24);
-}
-
 @media (max-width: 700px) {
   .workspaces-page {
     height: auto;

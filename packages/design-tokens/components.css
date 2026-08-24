@@ -230,6 +230,16 @@
   border: 0;
 }
 
+.hs-selection-list__body:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+}
+
+.hs-selection-list__item--with-status .hs-selection-list__body {
+  margin-left: 0;
+  padding-left: 0;
+}
+
 .hs-selection-list__item--with-actions .hs-selection-list__meta {
   padding-right: 62px;
 }
@@ -301,6 +311,34 @@
 .hs-selection-list__empty {
   padding: var(--hs-space-16);
   color: var(--hs-text-muted);
+}
+
+/* Compact primary action used in sidebar headers. */
+.hs-sidebar-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: rgb(var(--v-theme-on-primary));
+  cursor: pointer;
+  background: rgb(var(--v-theme-primary));
+  border: 0;
+  border-radius: var(--hs-radius-sm);
+}
+
+.hs-sidebar-action:hover:not(:disabled) {
+  background: rgb(var(--v-theme-primary-darken-1));
+}
+
+.hs-sidebar-action:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+.hs-sidebar-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Contained tables and their filter/action toolbar. */
