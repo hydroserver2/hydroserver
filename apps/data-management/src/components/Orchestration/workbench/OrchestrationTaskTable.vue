@@ -19,6 +19,7 @@
                 title="Filter by task type"
                 :options="taskTypeOptions"
                 :selected="taskTypeFilter"
+                show-checkboxes
                 @toggle="emit('toggle-task-type', $event)"
                 @clear="emit('clear-task-type')"
               />

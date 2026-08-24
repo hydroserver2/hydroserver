@@ -18,7 +18,11 @@
       </v-btn>
     </template>
 
-    <v-list class="task-filter-menu" density="compact">
+    <v-list
+      class="task-filter-menu"
+      :class="{ 'task-filter-menu--compact': !showCheckboxes }"
+      density="compact"
+    >
       <div class="task-filter-title">{{ title }}</div>
       <v-list-item
         v-for="option in options"
@@ -28,7 +32,7 @@
         }"
         @click="emit('toggle', option.value)"
       >
-        <template #prepend>
+        <template v-if="showCheckboxes" #prepend>
           <v-checkbox
             :model-value="selected.includes(option.value)"
             hide-details
@@ -61,17 +65,21 @@
 <script setup lang="ts">
 import { mdiChevronDown } from '@mdi/js'
 
-defineProps<{
-  label: string
-  title: string
-  options: readonly {
+withDefaults(
+  defineProps<{
+    label: string
     title: string
-    value: string
-    icon?: string
-    color?: string
-  }[]
-  selected: readonly string[]
-}>()
+    options: readonly {
+      title: string
+      value: string
+      icon?: string
+      color?: string
+    }[]
+    selected: readonly string[]
+    showCheckboxes?: boolean
+  }>(),
+  { showCheckboxes: false }
+)
 
 const emit = defineEmits<{
   toggle: [value: string]
@@ -110,6 +118,19 @@ const emit = defineEmits<{
   max-height: 320px;
   padding: var(--hs-space-8) 0;
   overflow-y: auto;
+}
+
+.task-filter-menu--compact {
+  min-width: 240px;
+}
+
+.task-filter-menu--compact :deep(.v-list-item) {
+  min-height: 32px;
+  padding-inline: var(--hs-space-16);
+}
+
+.task-filter-menu--compact :deep(.v-list-item__content) {
+  padding-block: 0;
 }
 
 .task-filter-title {
