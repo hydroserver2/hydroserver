@@ -23,12 +23,9 @@
         <h1>Monitoring sites</h1>
 
         <div class="filter-header-actions">
-          <v-btn
+          <v-btn-primary
             v-if="showRegisterSite"
             class="register-site-button"
-            color="primary"
-            variant="flat"
-            rounded="xl"
             data-testid="register-site-button"
             aria-label="Create Site"
             :disabled="!canRegisterSite"
@@ -39,9 +36,8 @@
             "
             @click="$emit('register-site')"
           >
-            <v-icon :icon="mdiPlus" size="16" />
             Create Site
-          </v-btn>
+          </v-btn-primary>
 
           <v-btn
             icon
@@ -410,7 +406,6 @@ import {
   mdiFilterOffOutline,
   mdiMagnify,
   mdiPencilOutline,
-  mdiPlus,
   mdiTagOutline,
   mdiTrashCanOutline,
 } from '@mdi/js'

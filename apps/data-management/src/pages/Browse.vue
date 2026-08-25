@@ -32,7 +32,11 @@
     />
     <FullScreenLoader v-else loading-text="Loading map..." />
 
-    <v-dialog v-model="showSiteForm" width="60rem" :persistent="false">
+    <v-dialog
+      v-model="showSiteForm"
+      width="60rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
       <SiteForm
         v-if="registrationWorkspaceId"
         :workspace-id="registrationWorkspaceId"
@@ -55,7 +59,11 @@
       </SiteForm>
     </v-dialog>
 
-    <v-dialog v-model="showEditSiteForm" width="80rem" :persistent="false">
+    <v-dialog
+      v-model="showEditSiteForm"
+      width="80rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
       <SiteForm
         v-if="editingSite"
         :monitoring-site-id="editingSite.id"
@@ -64,7 +72,11 @@
       />
     </v-dialog>
 
-    <v-dialog v-model="showDeleteSiteDialog" width="40rem" :persistent="false">
+    <v-dialog
+      v-model="showDeleteSiteDialog"
+      width="40rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
       <SiteDeleteModal
         v-if="deletingSite"
         :monitoringSite="deletingSite"
@@ -77,7 +89,7 @@
     <v-dialog
       v-model="showAccessControlDialog"
       width="40rem"
-      :persistent="false"
+      max-width="calc(100vw - var(--hs-space-32))"
     >
       <SiteAccessControl
         v-if="deletingSite"
@@ -354,7 +366,6 @@ onBeforeUnmount(() => {
 .browse-page {
   position: relative;
   height: calc(100dvh - var(--v-layout-top, 0px));
-  min-height: 520px;
   overflow: hidden;
 }
 
