@@ -16,7 +16,8 @@
       <v-card-text v-if="item">
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-checkbox

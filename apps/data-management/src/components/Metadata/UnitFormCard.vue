@@ -14,22 +14,26 @@
       <v-card-text v-if="item">
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-text-field
           v-model="item.symbol"
-          label="Symbol *"
+          class="required-label"
+          label="Symbol"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-text-field
           v-model="item.definition"
-          label="Definition *"
+          class="required-label"
+          label="Definition"
           :rules="rules.requiredDescription"
         />
         <v-text-field
           v-model="item.type"
-          label="Unit Type *"
+          class="required-label"
+          label="Unit Type"
           :rules="rules.requiredAndMaxLength255"
         />
       </v-card-text>

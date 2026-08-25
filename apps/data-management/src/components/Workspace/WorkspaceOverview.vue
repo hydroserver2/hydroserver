@@ -59,11 +59,9 @@
         <td class="text-medium-emphasis">Workspace ID</td>
         <td class="workspace-id-cell">
           <span class="hs-font-data">{{ workspace.id }}</span>
-          <v-btn
+          <v-btn-icon
             size="x-small"
-            variant="text"
             density="comfortable"
-            color="grey-darken-2"
             :icon="mdiContentCopy"
             aria-label="Copy workspace ID"
             @click="copyId"

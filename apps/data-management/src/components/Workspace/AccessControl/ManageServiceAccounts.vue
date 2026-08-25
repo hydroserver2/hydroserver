@@ -10,7 +10,9 @@
       <div class="d-flex align-center ga-2">
         <span>{{ loadError }}</span>
         <v-spacer />
-        <v-btn variant="text" size="small" @click="reloadData">Retry</v-btn>
+        <v-btn-secondary size="small" @click="reloadData">
+          Retry
+        </v-btn-secondary>
       </div>
     </v-alert>
     <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
@@ -34,10 +36,8 @@
         border
       >
         <span class="text-mono text-wrap break-all">{{ newKey.key }}</span>
-        <v-btn
+        <v-btn-icon
           :icon="mdiContentCopy"
-          variant="text"
-          color="grey-darken-2"
           @click="copyKey(newKey.key)"
           aria-label="Copy service account API key"
         />
@@ -85,11 +85,9 @@
         </button>
       </div>
 
-      <v-btn
+      <v-btn-icon
         :icon="mdiHelpCircleOutline"
-        variant="text"
         size="small"
-        color="grey-darken-2"
         title="About service accounts"
         aria-label="Toggle service account help"
         :aria-expanded="showServiceAccountHelp"
@@ -102,14 +100,14 @@
           message="You don't have permission to create service accounts for this workspace."
         >
           <template #default>
-            <v-btn-secondary variant="flat" @click="openCreate = true">
+            <v-btn-page-action @click="openCreate = true">
               Create service account
-            </v-btn-secondary>
+            </v-btn-page-action>
           </template>
           <template #denied>
-            <v-btn-secondary variant="flat" disabled>
+            <v-btn-page-action disabled>
               Create service account
-            </v-btn-secondary>
+            </v-btn-page-action>
           </template>
         </PermissionTooltip>
       </div>
@@ -163,9 +161,8 @@
                   attach="body"
                 >
                   <template #activator="{ props: menuProps }">
-                    <v-btn
+                    <v-btn-cancel
                       v-bind="menuProps"
-                      variant="text"
                       size="small"
                       class="service-account-filter-button"
                       :class="{
@@ -176,13 +173,16 @@
                       :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
                     >
                       Role
-                      <span v-if="selectedRoles.length" class="filter-count">
+                      <span
+                        v-if="selectedRoles.length"
+                        class="filter-count hs-label"
+                      >
                         {{ selectedRoles.length }}
                       </span>
-                    </v-btn>
+                    </v-btn-cancel>
                   </template>
                   <v-list class="service-account-filter-menu" density="compact">
-                    <div class="service-account-filter-title">
+                    <div class="service-account-filter-title hs-subheading">
                       Filter by role
                     </div>
                     <v-text-field
@@ -190,7 +190,6 @@
                       class="service-account-filter-search"
                       placeholder="Filter roles"
                       :prepend-inner-icon="mdiMagnify"
-                      variant="outlined"
                       density="compact"
                       hide-details
                       clearable
@@ -225,7 +224,7 @@
                 </v-menu>
               </div>
             </th>
-            <th class="text-right" style="width: 190px">Actions</th>
+            <th class="service-account-actions-column text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -248,23 +247,19 @@
                 message="You don't have permission to regenerate service accounts."
               >
                 <template #default>
-                  <v-btn
+                  <v-btn-icon
                     :icon="mdiRefresh"
-                    variant="text"
                     size="small"
                     class="hs-table-icon-action"
-                    color="grey-darken-2"
                     :aria-label="`Regenerate ${serviceAccountItem.name}`"
                     @click="onOpenRegenerateDialog(serviceAccountItem)"
                   />
                 </template>
                 <template #denied>
-                  <v-btn
+                  <v-btn-icon
                     :icon="mdiRefresh"
-                    variant="text"
                     size="small"
                     class="hs-table-icon-action"
-                    color="grey-darken-2"
                     disabled
                     :aria-label="`Regenerate ${serviceAccountItem.name} unavailable`"
                   />
@@ -275,23 +270,19 @@
                 message="You don't have permission to edit service accounts."
               >
                 <template #default>
-                  <v-btn
+                  <v-btn-icon
                     :icon="mdiPencil"
-                    variant="text"
                     size="small"
                     class="hs-table-icon-action"
-                    color="grey-darken-2"
                     :aria-label="`Edit ${serviceAccountItem.name}`"
                     @click="openDialog(serviceAccountItem, 'edit')"
                   />
                 </template>
                 <template #denied>
-                  <v-btn
+                  <v-btn-icon
                     :icon="mdiPencilOffOutline"
-                    variant="text"
                     size="small"
                     class="hs-table-icon-action"
-                    color="grey-darken-2"
                     disabled
                     :aria-label="`Edit ${serviceAccountItem.name} unavailable`"
                   />
@@ -302,23 +293,19 @@
                 message="You don't have permission to delete service accounts."
               >
                 <template #default>
-                  <v-btn
+                  <v-btn-icon
                     :icon="mdiTrashCanOutline"
-                    variant="text"
                     size="small"
                     class="hs-table-icon-action hs-table-icon-action--danger"
-                    color="grey-darken-2"
                     :aria-label="`Delete ${serviceAccountItem.name}`"
                     @click="openDialog(serviceAccountItem, 'delete')"
                   />
                 </template>
                 <template #denied>
-                  <v-btn
+                  <v-btn-icon
                     :icon="mdiDeleteOffOutline"
-                    variant="text"
                     size="small"
                     class="hs-table-icon-action hs-table-icon-action--danger"
-                    color="grey-darken-2"
                     disabled
                     :aria-label="`Delete ${serviceAccountItem.name} unavailable`"
                   />
@@ -966,7 +953,7 @@ watch(search, (value) => {
   color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
-  margin-bottom: 10px;
+  margin-bottom: var(--hs-space-10);
 }
 .service-account-header-filters {
   display: flex;
@@ -982,14 +969,12 @@ watch(search, (value) => {
   color: rgb(var(--v-theme-primary));
 }
 .filter-count {
-  min-width: 18px;
-  margin-left: 2px;
-  padding: 0 5px;
-  border-radius: 999px;
+  min-width: var(--hs-space-20);
+  margin-left: var(--hs-space-2);
+  padding: 0 var(--hs-space-4);
+  border-radius: var(--hs-radius-pill);
   background: rgb(var(--v-theme-primary));
   color: rgb(var(--v-theme-on-primary));
-  font-size: var(--hs-font-2xs);
-  line-height: 18px;
   text-align: center;
 }
 .service-account-filter-menu {
@@ -1001,8 +986,6 @@ watch(search, (value) => {
 .service-account-filter-title {
   padding: var(--hs-space-8) var(--hs-space-16);
   color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
 }
 .service-account-filter-search {
   margin: 0 var(--hs-space-12) var(--hs-space-8);
@@ -1075,5 +1058,8 @@ watch(search, (value) => {
   vertical-align: middle;
   padding-top: var(--hs-space-12);
   padding-bottom: var(--hs-space-12);
+}
+.service-account-actions-column {
+  width: 190px;
 }
 </style>

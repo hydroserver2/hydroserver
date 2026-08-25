@@ -14,8 +14,8 @@
       workspace. If you want to keep your data, you can backup to HydroShare or
       download a local copy before deletion. Alternatively, you can pass
       ownership of this workspace to someone else using the
-      <v-btn class="px-0" variant="text" @click="emit('switch-to-transfer')"
-        >Transfer ownership</v-btn
+      <v-btn-cancel class="px-0" @click="emit('switch-to-transfer')"
+        >Transfer ownership</v-btn-cancel
       >
       section.
     </v-card-text>
@@ -40,12 +40,7 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete
-        color="delete"
-        :loading="loading"
-        :disabled="loading"
-        @click="onDelete"
-      >
+      <v-btn-delete :loading="loading" :disabled="loading" @click="onDelete">
         Delete
       </v-btn-delete>
     </v-card-actions>

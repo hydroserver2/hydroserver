@@ -1,5 +1,5 @@
 <template>
-  <h6 class="hs-text-md privacy-title">Privacy</h6>
+  <h2 class="hs-subheading privacy-title">Privacy</h2>
 
   <v-card-text>
     <small v-if="!canManage" class="hs-gate-note">
@@ -19,8 +19,7 @@
           <span>Workspace is currently</span>
           <v-chip
             size="small"
-            :color="isPrivate ? 'red-darken-2' : 'green'"
-            text-color="white"
+            :color="isPrivate ? 'error' : 'success'"
             :data-testid="`workspace-privacy-status-${workspace.id}`"
           >
             {{ isPrivate ? 'Private' : 'Public' }}
@@ -39,7 +38,7 @@
       <v-switch
         v-model="isPrivate"
         label="Make this workspace private"
-        color="red-darken-2"
+        color="error"
         hide-details
         :loading="isUpdating"
         :disabled="!canManage || isUpdating"
@@ -98,7 +97,7 @@ async function togglePrivacy() {
 
 <style scoped>
 .privacy-title {
-  margin-bottom: 4px;
+  margin-bottom: var(--hs-space-4);
 }
 
 /* Inline note explaining why the toggle below is disabled (permission-denied
@@ -106,16 +105,16 @@ async function togglePrivacy() {
 .hs-gate-note {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 13px;
-  margin-bottom: 14px;
-  background: #fbfaf7;
-  border: 1px solid #ece6da;
-  border-radius: 8px;
-  color: #8a7a5c;
+  gap: var(--hs-space-8);
+  padding: var(--hs-space-12);
+  margin-bottom: var(--hs-space-12);
+  background: var(--hs-surface-muted);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
+  color: var(--hs-text-secondary);
 }
 .hs-gate-note .v-icon {
-  color: #b8924a;
+  color: rgb(var(--v-theme-primary));
   flex-shrink: 0;
 }
 
@@ -123,28 +122,28 @@ async function togglePrivacy() {
    red/green private-public convention used on the datastream table's
    visibility icons, so the same state reads the same way everywhere. */
 .hs-icon-tile {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: var(--hs-space-32);
+  height: var(--hs-space-32);
+  border-radius: var(--hs-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 .hs-icon-tile--private {
-  background: #fdecea;
-  color: #c62828;
+  background: rgb(var(--v-theme-danger-bg));
+  color: rgb(var(--v-theme-error));
 }
 .hs-icon-tile--public {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--hs-surface-muted);
+  color: rgb(var(--v-theme-success));
 }
 
 .privacy-card {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  padding: 18px 20px;
+  gap: var(--hs-space-16);
+  padding: var(--hs-space-20);
 }
 .privacy-copy {
   flex: 1;
@@ -153,12 +152,12 @@ async function togglePrivacy() {
 .privacy-copy-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #1c1b1f;
-  margin-bottom: 6px;
+  gap: var(--hs-space-8);
+  color: var(--hs-text-primary);
+  margin-bottom: var(--hs-space-6);
 }
 .privacy-copy-desc {
-  color: #6b7280;
+  color: var(--hs-text-secondary);
   line-height: 1.55;
   max-width: 520px;
 }
@@ -166,7 +165,7 @@ async function togglePrivacy() {
 @media (max-width: 600px) {
   .privacy-card {
     flex-wrap: wrap;
-    padding: 16px;
+    padding: var(--hs-space-16);
   }
   .privacy-card .v-switch {
     flex-basis: 100%;

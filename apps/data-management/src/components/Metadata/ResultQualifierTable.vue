@@ -22,10 +22,9 @@
         message="You don't have permission to edit this metadata item."
       >
         <template #default>
-          <v-btn
+          <v-btn-icon
             :icon="mdiPencil"
             class="hs-table-icon-action"
-            variant="text"
             size="small"
             :data-testid="`edit-metadata-${item.id}`"
             aria-label="Edit metadata item"
@@ -33,10 +32,9 @@
           />
         </template>
         <template #denied>
-          <v-btn
+          <v-btn-icon
             :icon="mdiPencilOffOutline"
             class="hs-table-icon-action"
-            variant="text"
             size="small"
             disabled
             aria-label="Edit metadata item unavailable"
@@ -50,10 +48,9 @@
         message="You don't have permission to delete this metadata item."
       >
         <template #default>
-          <v-btn
+          <v-btn-icon
             :icon="mdiTrashCanOutline"
             class="hs-table-icon-action hs-table-icon-action--danger"
-            variant="text"
             size="small"
             :data-testid="`delete-metadata-${item.id}`"
             aria-label="Delete metadata item"
@@ -61,10 +58,9 @@
           />
         </template>
         <template #denied>
-          <v-btn
+          <v-btn-icon
             :icon="mdiDeleteOffOutline"
             class="hs-table-icon-action hs-table-icon-action--danger"
-            variant="text"
             size="small"
             disabled
             aria-label="Delete metadata item unavailable"

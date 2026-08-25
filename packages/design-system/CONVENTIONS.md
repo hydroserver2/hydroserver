@@ -45,9 +45,12 @@ already has an answer. Check here first, then `tokens.css`, `vuetify.ts`,
 ## Buttons
 
 - Use the semantic button aliases — `VBtnPrimary`, `VBtnSecondary`,
-  `VBtnDelete`, `VBtnCancel`, `VBtnAdd` — not bare `VBtn` with manual
-  `color`/`variant` props. Each alias already encodes the right color,
-  shape, and emphasis for its role.
+  `VBtnDelete`, `VBtnCancel`, `VBtnAdd`, `VBtnIcon`, and
+  `VBtnPageAction` — not bare `VBtn` with manual `color`/`variant` props.
+  `VBtnIcon` is the neutral treatment for compact icon-only controls.
+  `VBtnPageAction` is green and reserved for the one action that most advances
+  a page or major tab's goal; use blue `VBtnPrimary` for dialog submit actions.
+  Each alias already encodes the right color, shape, and emphasis for its role.
 
 ## Forms
 

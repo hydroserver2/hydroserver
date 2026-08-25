@@ -7,7 +7,7 @@
  */
 
 /* Shared form affordances. */
-.required-label::after {
+.required-label .v-label::after {
   content: ' *';
   color: rgb(var(--v-theme-error));
 }

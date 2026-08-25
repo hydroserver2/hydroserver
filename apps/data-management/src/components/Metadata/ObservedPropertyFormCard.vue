@@ -17,34 +17,38 @@
         <v-text-field
           v-model="item.name"
           hide-details
-          label="Name *"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
           @update:modelValue="handleNameUpdated"
-          class="pb-4"
+          class="pb-4 required-label"
         />
 
         <v-textarea
           v-model="item.definition"
-          label="Definition *"
+          class="required-label"
+          label="Definition"
           :rules="rules.requiredDescription"
         ></v-textarea>
 
         <v-textarea
           v-model="item.description"
-          label="Description *"
+          class="required-label"
+          label="Description"
           :rules="rules.requiredDescription"
         ></v-textarea>
 
         <v-combobox
           :items="vocabularyStore.variableTypes"
           v-model="item.type"
-          label="Variable Type *"
+          class="required-label"
+          label="Variable Type"
           :rules="rules.requiredAndMaxLength500"
         />
 
         <v-text-field
           v-model="item.code"
-          label="Variable Code *"
+          class="required-label"
+          label="Variable Code"
           :rules="rules.requiredAndMaxLength500"
         />
       </v-card-text>

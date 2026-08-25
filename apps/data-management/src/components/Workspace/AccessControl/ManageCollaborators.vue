@@ -9,9 +9,9 @@
     <div class="d-flex align-center ga-2">
       <span>{{ loadError }}</span>
       <v-spacer />
-      <v-btn variant="text" size="small" @click="loadCollaboratorData">
+      <v-btn-secondary size="small" @click="loadCollaboratorData">
         Retry
-      </v-btn>
+      </v-btn-secondary>
     </div>
   </v-alert>
   <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
@@ -24,16 +24,17 @@
     <v-card-text>
       <v-text-field
         v-model="newCollaboratorEmail"
+        class="required-label"
         label="New collaborator's email"
         data-testid="new-collaborator-email"
       />
       <v-select
         v-model="selectedRole"
         :items="roles"
+        class="required-label"
         label="New collaborator's role"
         item-title="name"
         :return-object="true"
-        variant="outlined"
         data-testid="new-collaborator-role"
       />
     </v-card-text>
@@ -93,11 +94,9 @@
       </button>
     </div>
 
-    <v-btn
+    <v-btn-icon
       :icon="mdiHelpCircleOutline"
-      variant="text"
       size="small"
-      color="grey-darken-2"
       title="About collaborators"
       aria-label="Toggle collaborator help"
       :aria-expanded="showAddCollaboratorHelp"
@@ -110,21 +109,19 @@
         message="You don't have permission to add collaborators to this workspace."
       >
         <template #default>
-          <v-btn-secondary
-            variant="flat"
+          <v-btn-page-action
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
-            >Add collaborator</v-btn-secondary
+            >Add collaborator</v-btn-page-action
           >
         </template>
 
         <template #denied>
-          <v-btn-primary
-            variant="flat"
+          <v-btn-page-action
             disabled
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
-            >Add collaborator</v-btn-primary
+            >Add collaborator</v-btn-page-action
           >
         </template>
       </PermissionTooltip>
@@ -184,9 +181,8 @@
                 attach="body"
               >
                 <template #activator="{ props: menuProps }">
-                  <v-btn
+                  <v-btn-cancel
                     v-bind="menuProps"
-                    variant="text"
                     size="small"
                     class="collaborator-filter-button"
                     :class="{
@@ -197,19 +193,23 @@
                     :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
                   >
                     Role
-                    <span v-if="selectedRoles.length" class="filter-count">
+                    <span
+                      v-if="selectedRoles.length"
+                      class="filter-count hs-label"
+                    >
                       {{ selectedRoles.length }}
                     </span>
-                  </v-btn>
+                  </v-btn-cancel>
                 </template>
                 <v-list class="collaborator-filter-menu" density="compact">
-                  <div class="collaborator-filter-title">Filter by role</div>
+                  <div class="collaborator-filter-title hs-subheading">
+                    Filter by role
+                  </div>
                   <v-text-field
                     v-model="roleFilterSearch"
                     class="collaborator-filter-search"
                     placeholder="Filter roles"
                     :prepend-inner-icon="mdiMagnify"
-                    variant="outlined"
                     density="compact"
                     hide-details
                     clearable
@@ -249,9 +249,8 @@
                 attach="body"
               >
                 <template #activator="{ props: menuProps }">
-                  <v-btn
+                  <v-btn-cancel
                     v-bind="menuProps"
-                    variant="text"
                     size="small"
                     class="collaborator-filter-button"
                     :class="{
@@ -268,10 +267,10 @@
                     >
                       {{ selectedOrganizations.length }}
                     </span>
-                  </v-btn>
+                  </v-btn-cancel>
                 </template>
                 <v-list class="collaborator-filter-menu" density="compact">
-                  <div class="collaborator-filter-title">
+                  <div class="collaborator-filter-title hs-subheading">
                     Filter by organization
                   </div>
                   <v-text-field
@@ -279,7 +278,6 @@
                     class="collaborator-filter-search"
                     placeholder="Filter organizations"
                     :prepend-inner-icon="mdiMagnify"
-                    variant="outlined"
                     density="compact"
                     hide-details
                     clearable
@@ -319,7 +317,7 @@
               </v-menu>
             </div>
           </th>
-          <th class="text-right" style="width: 190px">Actions</th>
+          <th class="collaborator-actions-column text-right">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -343,7 +341,6 @@
                 :items="roles"
                 item-title="name"
                 :return-object="true"
-                variant="outlined"
                 density="compact"
                 hide-details
                 class="collaborator-role-editor"
@@ -358,13 +355,13 @@
                 @click="onCancelEdit(item)"
                 >Cancel</v-btn-cancel
               >
-              <v-btn
+              <v-btn-primary
                 size="small"
                 :loading="item.isSaving"
                 :disabled="item.isSaving"
                 :data-testid="`save-collaborator-${item.email}`"
                 @click="onSaveRole(item)"
-                >Save</v-btn
+                >Save</v-btn-primary
               >
             </template>
             <template v-else>
@@ -373,11 +370,9 @@
                 :message="collaboratorEditDeniedMessage(item)"
               >
                 <template #default>
-                  <v-btn
-                    variant="text"
+                  <v-btn-icon
                     size="small"
                     class="hs-table-icon-action"
-                    color="grey-darken-2"
                     :icon="mdiPencil"
                     :data-testid="`edit-collaborator-${item.email}`"
                     :aria-label="`Edit ${item.name}`"
@@ -385,11 +380,9 @@
                   />
                 </template>
                 <template #denied>
-                  <v-btn
-                    variant="text"
+                  <v-btn-icon
                     size="small"
                     class="hs-table-icon-action"
-                    color="grey-darken-2"
                     :icon="mdiPencilOffOutline"
                     disabled
                     :aria-label="`Edit ${item.name} unavailable`"
@@ -401,11 +394,9 @@
                 :message="collaboratorRemoveDeniedMessage(item)"
               >
                 <template #default>
-                  <v-btn
-                    variant="text"
+                  <v-btn-icon
                     size="small"
                     class="hs-table-icon-action hs-table-icon-action--danger"
-                    color="grey-darken-2"
                     :icon="mdiTrashCanOutline"
                     :loading="removingEmail === item.email"
                     :disabled="!!removingEmail"
@@ -415,11 +406,9 @@
                   />
                 </template>
                 <template #denied>
-                  <v-btn
-                    variant="text"
+                  <v-btn-icon
                     size="small"
                     class="hs-table-icon-action hs-table-icon-action--danger"
-                    color="grey-darken-2"
                     :icon="mdiDeleteOffOutline"
                     disabled
                     :aria-label="`Remove ${item.name} unavailable`"
@@ -1081,7 +1070,7 @@ watch(search, (value) => {
   color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
-  margin-bottom: 10px;
+  margin-bottom: var(--hs-space-10);
 }
 .collaborator-filter-button {
   min-width: auto;
@@ -1092,14 +1081,12 @@ watch(search, (value) => {
   color: rgb(var(--v-theme-primary));
 }
 .filter-count {
-  min-width: 18px;
-  margin-left: 2px;
-  padding: 0 5px;
-  border-radius: 999px;
+  min-width: var(--hs-space-20);
+  margin-left: var(--hs-space-2);
+  padding: 0 var(--hs-space-4);
+  border-radius: var(--hs-radius-pill);
   background: rgb(var(--v-theme-primary));
   color: rgb(var(--v-theme-on-primary));
-  font-size: var(--hs-font-2xs);
-  line-height: 18px;
   text-align: center;
 }
 .collaborator-filter-menu {
@@ -1111,8 +1098,6 @@ watch(search, (value) => {
 .collaborator-filter-title {
   padding: var(--hs-space-8) var(--hs-space-16);
   color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
 }
 .collaborator-filter-search {
   margin: 0 var(--hs-space-12) var(--hs-space-8);
@@ -1170,7 +1155,7 @@ watch(search, (value) => {
 }
 .collaborator-role-editor {
   max-width: 200px;
-  margin-top: 4px;
+  margin-top: var(--hs-space-4);
 }
 .collaborators-table-card {
   margin-top: 0;
@@ -1179,6 +1164,9 @@ watch(search, (value) => {
   display: flex;
   align-items: center;
   gap: var(--hs-space-8);
+}
+.collaborator-actions-column {
+  width: 190px;
 }
 .collaborator-table :deep(td) {
   vertical-align: middle;

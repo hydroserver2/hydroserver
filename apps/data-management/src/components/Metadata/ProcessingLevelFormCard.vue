@@ -16,7 +16,8 @@
       <v-card-text>
         <v-text-field
           v-model="item.code"
-          label="Code *"
+          class="required-label"
+          label="Code"
           :rules="rules.requiredCode"
         />
 

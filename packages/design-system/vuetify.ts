@@ -61,6 +61,8 @@ const vuetify = createVuetify({
     VBtnCancel: VBtn,
     VBtnDelete: VBtn,
     VBtnAdd: VBtn,
+    VBtnIcon: VBtn,
+    VBtnPageAction: VBtn,
   },
   defaults: {
     global: {
@@ -108,6 +110,21 @@ const vuetify = createVuetify({
       // Match the shared primary-action shape instead of using the legacy
       // green pill treatment.
       color: 'primary',
+      rounded: 'sm',
+      variant: 'flat',
+    },
+    VBtnIcon: {
+      ...btnAttrs,
+      color: 'grey',
+      rounded: 'sm',
+      variant: 'text',
+    },
+    VBtnPageAction: {
+      ...btnAttrs,
+      // A page-level action gets the green emphasis. Use only for the one
+      // action that best advances the page's main task; dialogs keep blue
+      // primary actions so their submit action remains predictable.
+      color: 'secondary',
       rounded: 'sm',
       variant: 'flat',
     },

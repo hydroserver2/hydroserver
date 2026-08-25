@@ -65,13 +65,12 @@
       <div class="d-flex align-center flex-wrap ga-2">
         <span>{{ workspaceLoadError }}</span>
         <v-spacer />
-        <v-btn
-          variant="text"
+        <v-btn-secondary
           :loading="isRetryingWorkspaceLoad"
           @click="retryWorkspaceLoad"
         >
           Retry
-        </v-btn>
+        </v-btn-secondary>
       </div>
     </v-alert>
 
@@ -708,17 +707,17 @@ onMounted(async () => {
   background-image:
     radial-gradient(
       1100px 760px at 12% -8%,
-      rgba(26, 111, 168, 0.045),
+      rgb(var(--v-theme-primary) / 0.045),
       transparent 62%
     ),
     radial-gradient(
       900px 680px at 102% 28%,
-      rgba(10, 46, 77, 0.038),
+      rgb(var(--v-theme-primary) / 0.038),
       transparent 58%
     ),
     radial-gradient(
       700px 900px at 50% 115%,
-      rgba(26, 111, 168, 0.028),
+      rgb(var(--v-theme-primary) / 0.028),
       transparent 60%
     );
   background-repeat: no-repeat, no-repeat, no-repeat;
@@ -731,7 +730,6 @@ onMounted(async () => {
 .detail-header {
   padding: var(--hs-space-20) var(--hs-space-24) var(--hs-space-12);
   border-bottom: 1px solid var(--hs-border);
-  min-height: 93px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -742,7 +740,6 @@ onMounted(async () => {
 .detail-title {
   margin: 0;
   color: var(--hs-text-primary);
-  line-height: 1.2;
 }
 .detail-subtitle {
   margin-top: var(--hs-space-4);

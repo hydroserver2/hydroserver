@@ -7,11 +7,9 @@
     <div class="hs-table-tools">
       <HsSearchInput v-model="search" placeholder="Search metadata…" />
 
-      <v-btn
+      <v-btn-icon
         :icon="mdiHelpCircleOutline"
-        variant="text"
         size="small"
-        color="grey-darken-2"
         title="About metadata"
         aria-label="Toggle metadata help"
         :aria-expanded="showHelp"
@@ -19,12 +17,11 @@
       />
 
       <div class="hs-table-actions">
-        <v-btn-secondary
+        <v-btn-page-action
           v-if="canCreateMetadata"
-          variant="flat"
           :data-testid="`add-${scope}-metadata-item`"
           @click="metaMap[tab]?.openDialog()"
-          >Add new {{ metaMap[tab]?.singularName }}</v-btn-secondary
+          >Add new {{ metaMap[tab]?.singularName }}</v-btn-page-action
         >
       </div>
     </div>
@@ -333,7 +330,7 @@ const canManageSystemMetadata = computed(() => isAdmin())
   color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
-  margin-bottom: 10px;
+  margin-bottom: var(--hs-space-10);
 }
 .metadata-type-tabs {
   flex: 1;
@@ -359,12 +356,12 @@ const canManageSystemMetadata = computed(() => isAdmin())
   flex-shrink: 0;
   margin: var(--hs-space-4) var(--hs-space-8) var(--hs-space-4)
     var(--hs-space-12);
-  gap: 4px;
+  gap: var(--hs-space-4);
 }
 .metadata-scope-chip {
-  border-radius: 4px;
-  padding-inline: 6px;
-  min-height: 24px;
+  border-radius: var(--hs-radius-sm);
+  padding-inline: var(--hs-space-6);
+  min-height: var(--hs-space-24);
 }
 .metadata-table-card {
   display: flex;

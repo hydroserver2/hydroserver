@@ -15,12 +15,7 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary
-        color="warning"
-        :loading="loading"
-        :disabled="loading"
-        @click="onDelete"
-      >
+      <v-btn-primary :loading="loading" :disabled="loading" @click="onDelete">
         Regenerate key
       </v-btn-primary>
     </v-card-actions>

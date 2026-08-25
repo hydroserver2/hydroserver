@@ -17,7 +17,8 @@
       <v-card-text>
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength150"
         />
         <v-text-field v-model="item.description" label="Description" />
@@ -25,10 +26,10 @@
           v-model="selectedRole"
           :items="roles"
           data-testid="service-account-role"
-          label="Service account's role *"
+          class="required-label"
+          label="Service account's role"
           item-title="name"
           :return-object="true"
-          variant="outlined"
           :rules="required"
           :disabled="isEdit && !canAssignRole"
           :hint="
