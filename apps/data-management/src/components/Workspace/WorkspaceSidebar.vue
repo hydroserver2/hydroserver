@@ -94,8 +94,10 @@ import { computed, ref } from 'vue'
 import type { Workspace } from '@hydroserver/client'
 import { PermissionAction, PermissionResource } from '@hydroserver/client'
 import { mdiPencil, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
-import HsSelectionListItem from '@/components/base/HsSelectionListItem.vue'
-import HsSelectionSidebar from '@/components/base/HsSelectionSidebar.vue'
+import {
+  HsSelectionListItem,
+  HsSelectionSidebar,
+} from '@hydroserver/design-system/vue'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 

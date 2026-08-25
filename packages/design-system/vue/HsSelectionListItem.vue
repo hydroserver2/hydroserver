@@ -43,6 +43,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'HsSelectionListItem' })
+
 withDefaults(
   defineProps<{
     title: string

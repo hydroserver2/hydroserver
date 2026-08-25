@@ -74,19 +74,16 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { mdiClose, mdiMagnify } from '@mdi/js'
+import type { HsQueryQualifier } from './types'
 
-type QueryQualifier = {
-  key: string
-  label: string
-  values: readonly string[]
-}
+defineOptions({ name: 'HsQuerySearchInput' })
 
 const props = withDefaults(
   defineProps<{
     modelValue: string
     placeholder: string
     ariaLabel?: string
-    qualifiers: readonly QueryQualifier[]
+    qualifiers: readonly HsQueryQualifier[]
   }>(),
   { ariaLabel: '' }
 )

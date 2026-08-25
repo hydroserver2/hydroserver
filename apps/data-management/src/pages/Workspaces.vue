@@ -309,9 +309,11 @@ import {
   mdiNotebookOutline,
   mdiShieldLockOutline,
 } from '@mdi/js'
-import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
-import HsEmptyState from '@/components/base/HsEmptyState.vue'
-import HsMasterDetailLayout from '@/components/base/HsMasterDetailLayout.vue'
+import {
+  HsEmptyState,
+  HsFullScreenLoader as FullScreenLoader,
+  HsMasterDetailLayout,
+} from '@hydroserver/design-system/vue'
 import WorkspaceFormCard from '@/components/Workspace/WorkspaceFormCard.vue'
 import DeleteWorkspaceCard from '@/components/Workspace/DeleteWorkspaceCard.vue'
 import WorkspaceOverview from '@/components/Workspace/WorkspaceOverview.vue'

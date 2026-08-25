@@ -2,7 +2,6 @@ import '@/styles/tailwind.css'
 import '@hydroserver/design-system/fonts.css'
 import '@hydroserver/design-system/tokens.css'
 import '@hydroserver/design-system/components.css'
-import '@/styles/global.scss'
 import 'ol/ol.css'
 
 import { createApp } from 'vue'

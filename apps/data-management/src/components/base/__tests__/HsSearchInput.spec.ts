@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
-import HsSearchInput from '@/components/base/HsSearchInput.vue'
+import { HsSearchInput } from '@hydroserver/design-system/vue'
 
 describe('HsSearchInput', () => {
   it('clears the search from the trailing button', async () => {

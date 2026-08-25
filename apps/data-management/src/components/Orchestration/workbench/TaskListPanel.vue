@@ -195,9 +195,11 @@
 import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { DataConnection } from '@hydroserver/client'
-import HsDetailPanel from '@/components/base/HsDetailPanel.vue'
-import HsEmptyState from '@/components/base/HsEmptyState.vue'
-import HsQuerySearchInput from '@/components/base/HsQuerySearchInput.vue'
+import {
+  HsDetailPanel,
+  HsEmptyState,
+  HsQuerySearchInput,
+} from '@hydroserver/design-system/vue'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import WorkspaceSelector from '@/components/Workspace/WorkspaceSelector.vue'
 import { useOrchestrationStore } from '@/store/orchestration'

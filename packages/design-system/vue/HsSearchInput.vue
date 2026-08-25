@@ -26,6 +26,8 @@
 <script setup lang="ts">
 import { mdiClose, mdiMagnify } from '@mdi/js'
 
+defineOptions({ name: 'HsSearchInput' })
+
 withDefaults(
   defineProps<{
     modelValue: string

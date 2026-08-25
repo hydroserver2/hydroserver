@@ -33,14 +33,9 @@
 </template>
 
 <script setup lang="ts">
-type HsNavRailItem = {
-  id: string
-  label: string
-  icon: string
-  badge?: number
-  activeColor?: string
-  activeBackground?: string
-}
+import type { HsNavRailItem } from './types'
+
+defineOptions({ name: 'HsNavRail' })
 
 withDefaults(
   defineProps<{

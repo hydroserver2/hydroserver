@@ -17,6 +17,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'HsMasterDetailLayout' })
+
 withDefaults(
   defineProps<{
     sidebarTestId?: string

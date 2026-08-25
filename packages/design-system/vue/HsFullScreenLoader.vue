@@ -17,6 +17,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'HsFullScreenLoader' })
+
 const props = defineProps({
   loadingText: { type: String, default: 'Loading page...' },
 })

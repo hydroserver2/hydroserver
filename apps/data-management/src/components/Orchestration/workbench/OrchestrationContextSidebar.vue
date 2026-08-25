@@ -157,8 +157,10 @@ import type {
   DataConnection,
   MonitoringSiteTaskSummary,
 } from '@hydroserver/client'
-import HsSelectionListItem from '@/components/base/HsSelectionListItem.vue'
-import HsSelectionSidebar from '@/components/base/HsSelectionSidebar.vue'
+import {
+  HsSelectionListItem,
+  HsSelectionSidebar,
+} from '@hydroserver/design-system/vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { READ_ONLY_TOOLTIP } from './orchestrationTabs'
 

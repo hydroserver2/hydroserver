@@ -28,6 +28,10 @@
   </section>
 </template>
 
+<script setup lang="ts">
+defineOptions({ name: 'HsDetailPanel' })
+</script>
+
 <style scoped>
 .hs-detail-panel {
   display: flex;

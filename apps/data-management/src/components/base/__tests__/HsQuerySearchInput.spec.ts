@@ -3,7 +3,7 @@ import '@hydroserver/design-system/components.css'
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import HsQuerySearchInput from '@/components/base/HsQuerySearchInput.vue'
+import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
 
 describe('HsQuerySearchInput', () => {
   afterEach(() => {

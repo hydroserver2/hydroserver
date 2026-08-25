@@ -7,6 +7,7 @@
     "README.md",
     "components.css",
     "fonts.css",
+    "settings.scss",
     "tokens.css",
     "vuetify.ts",
     "vue"
@@ -18,6 +19,7 @@
   "exports": {
     "./components.css": "./components.css",
     "./fonts.css": "./fonts.css",
+    "./settings.scss": "./settings.scss",
     "./tokens.css": "./tokens.css",
     "./vuetify": "./vuetify.ts",
     "./vue": "./vue/index.ts"

@@ -206,8 +206,10 @@ import { useOrchestrationRouteState } from '@/composables/orchestration/useOrche
 import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
 import OrchestrationContextSidebar from '@/components/Orchestration/workbench/OrchestrationContextSidebar.vue'
 import TaskListPanel from '@/components/Orchestration/workbench/TaskListPanel.vue'
-import HsEmptyState from '@/components/base/HsEmptyState.vue'
-import HsMasterDetailLayout from '@/components/base/HsMasterDetailLayout.vue'
+import {
+  HsEmptyState,
+  HsMasterDetailLayout,
+} from '@hydroserver/design-system/vue'
 import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'

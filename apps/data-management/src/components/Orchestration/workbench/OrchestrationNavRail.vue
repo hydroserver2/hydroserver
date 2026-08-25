@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import HsNavRail from '@/components/base/HsNavRail.vue'
+import { HsNavRail } from '@hydroserver/design-system/vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { type TabDefinition, type TabId } from './orchestrationTabs'
 

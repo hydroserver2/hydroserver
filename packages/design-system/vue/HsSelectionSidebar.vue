@@ -25,7 +25,9 @@
 </template>
 
 <script setup lang="ts">
-import HsSearchInput from '@/components/base/HsSearchInput.vue'
+import HsSearchInput from './HsSearchInput.vue'
+
+defineOptions({ name: 'HsSelectionSidebar' })
 
 withDefaults(
   defineProps<{

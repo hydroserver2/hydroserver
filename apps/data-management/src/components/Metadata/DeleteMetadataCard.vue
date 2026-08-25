@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import hs, { Datastream } from '@hydroserver/client'
 import { computed, onMounted, ref } from 'vue'
-import FullScreenLoader from '../base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 import { mdiAlert } from '@mdi/js'
 
 const datastreams = ref<Datastream[]>([])

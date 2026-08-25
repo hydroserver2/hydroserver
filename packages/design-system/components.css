@@ -6,6 +6,12 @@
  * consuming app and use these classes for shared search and table treatments.
  */
 
+/* Shared form affordances. */
+.required-label::after {
+  content: ' *';
+  color: rgb(var(--v-theme-error));
+}
+
 /* Compact search input used in sidebars and table toolbars. */
 .hs-search {
   position: relative;

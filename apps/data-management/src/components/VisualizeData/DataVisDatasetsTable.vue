@@ -282,7 +282,7 @@ import {
   type DatastreamSortKey,
   type DatastreamSortOrder,
 } from '@/utils/datastreamSearch'
-import HsQuerySearchInput from '@/components/base/HsQuerySearchInput.vue'
+import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import DataVisTableFilters from './DataVisTableFilters.vue'
 

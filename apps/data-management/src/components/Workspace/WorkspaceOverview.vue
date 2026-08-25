@@ -89,7 +89,7 @@ import {
   mdiMapMarkerOutline,
   mdiNotebookOutline,
 } from '@mdi/js'
-import HsStatCard from '@/components/base/HsStatCard.vue'
+import { HsStatCard } from '@hydroserver/design-system/vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { Snackbar } from '@/utils/notifications'
 

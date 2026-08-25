@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'HsStatCard' })
+
 defineProps<{
   icon: string
   label: string

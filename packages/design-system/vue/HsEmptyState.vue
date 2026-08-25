@@ -22,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'HsEmptyState' })
+
 withDefaults(
   defineProps<{
     title: string

@@ -34,7 +34,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { Snackbar } from '@/utils/notifications'
-import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 
 const route = useRoute()
 const router = useRouter()
