@@ -323,7 +323,6 @@ export interface LinkedResource {
   description?: string | null
   type: string
   link: string
-  isHosted: boolean
 }
 
 export class OAuthProvider {
