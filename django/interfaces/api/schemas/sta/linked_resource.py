@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 from ninja import Query
 from interfaces.api.schemas import (
@@ -7,8 +8,8 @@ from interfaces.api.schemas import (
 )
 
 
-class FileAttachmentQueryParameters(CollectionQueryParameters):
-    file_attachment_type: list[str] = Query([], description="Filter by file attachment type.", alias="type")
+class LinkedResourceQueryParameters(CollectionQueryParameters):
+    type: list[str] = Query([], description="Filter by linked resource type.")
 
 
 class TagGetResponse(BaseGetResponse):
@@ -26,19 +27,16 @@ class TagDeleteBody(BasePostBody):
     value: Optional[str] = None
 
 
-class FileAttachmentGetResponse(BaseGetResponse):
-    id: int
+class LinkedResourceGetResponse(BaseGetResponse):
+    id: uuid.UUID
     name: str
     description: Optional[str] = None
+    type: str
     link: str
-    file_attachment_type: str
+    is_hosted: bool
 
 
-class FileAttachmentPostBody(BasePostBody):
+class LinkedResourcePostBody(BasePostBody):
     name: str
     description: Optional[str] = None
-    file_attachment_type: str
-
-
-class FileAttachmentDeleteBody(BasePostBody):
-    name: str
+    type: str

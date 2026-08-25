@@ -59,10 +59,10 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
             queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
                 "transformations__input_datastreams__datastream",
                 "transformations__input_datastreams__datastream__datastream_tags",
-                "transformations__input_datastreams__datastream__datastream_file_attachments",
+                "transformations__input_datastreams__datastream__datastream_linked_resources",
                 "transformations__output_datastream",
                 "transformations__output_datastream__datastream_tags",
-                "transformations__output_datastream__datastream_file_attachments",
+                "transformations__output_datastream__datastream_linked_resources",
                 "transformations__rating_curve",
             )
         else:
@@ -132,10 +132,10 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
             ).prefetch_related(
                 "transformations__input_datastreams__datastream",
                 "transformations__input_datastreams__datastream__datastream_tags",
-                "transformations__input_datastreams__datastream__datastream_file_attachments",
+                "transformations__input_datastreams__datastream__datastream_linked_resources",
                 "transformations__output_datastream",
                 "transformations__output_datastream__datastream_tags",
-                "transformations__output_datastream__datastream_file_attachments",
+                "transformations__output_datastream__datastream_linked_resources",
                 "transformations__rating_curve",
             )
         else:

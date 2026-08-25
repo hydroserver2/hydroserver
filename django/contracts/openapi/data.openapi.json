@@ -1834,13 +1834,6 @@
             "title": "Description",
             "type": "string"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1883,6 +1876,13 @@
             "default": true,
             "title": "Isvisible",
             "type": "boolean"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
           },
           "method": {
             "$ref": "#/components/schemas/MethodSummaryResponse"
@@ -2038,7 +2038,7 @@
           "processingLevel",
           "unit",
           "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "DatastreamDetailResponse",
         "type": "object"
@@ -2853,13 +2853,6 @@
             "title": "Description",
             "type": "string"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2902,6 +2895,13 @@
             "default": true,
             "title": "Isvisible",
             "type": "boolean"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
           },
           "methodId": {
             "format": "uuid",
@@ -3069,7 +3069,7 @@
           "id",
           "workspaceId",
           "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "DatastreamSummaryResponse",
         "type": "object"
@@ -3788,102 +3788,6 @@
         "title": "EtlTaskSummaryResponse",
         "type": "object"
       },
-      "FileAttachmentDeleteBody": {
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "FileAttachmentDeleteBody",
-        "type": "object"
-      },
-      "FileAttachmentGetResponse": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "fileAttachmentType": {
-            "title": "Fileattachmenttype",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "integer"
-          },
-          "link": {
-            "title": "Link",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "link",
-          "fileAttachmentType"
-        ],
-        "title": "FileAttachmentGetResponse",
-        "type": "object"
-      },
-      "FileAttachmentQueryParameters": {
-        "properties": {
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
-          },
-          "type": {
-            "default": [],
-            "description": "Filter by file attachment type.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Type",
-            "type": "array"
-          }
-        },
-        "title": "FileAttachmentQueryParameters",
-        "type": "object"
-      },
       "JSONPayloadPostBody": {
         "properties": {
           "dataIngestionWindow": {
@@ -3984,6 +3888,95 @@
           "timestampKey"
         ],
         "title": "JSONPayloadResponse",
+        "type": "object"
+      },
+      "LinkedResourceGetResponse": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isHosted": {
+            "title": "Ishosted",
+            "type": "boolean"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "link",
+          "isHosted"
+        ],
+        "title": "LinkedResourceGetResponse",
+        "type": "object"
+      },
+      "LinkedResourceQueryParameters": {
+        "properties": {
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          },
+          "type": {
+            "default": [],
+            "description": "Filter by linked resource type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Type",
+            "type": "array"
+          }
+        },
+        "title": "LinkedResourceQueryParameters",
         "type": "object"
       },
       "MethodDetailResponse": {
@@ -5055,13 +5048,6 @@
             ],
             "title": "Elevation M"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5076,6 +5062,13 @@
             "minimum": -90,
             "title": "Latitude",
             "type": "number"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
           },
           "longitude": {
             "maximum": 180,
@@ -5115,7 +5108,7 @@
           "id",
           "workspace",
           "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "MonitoringSiteDetailResponse",
         "type": "object"
@@ -5793,13 +5786,6 @@
             ],
             "title": "Elevation M"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5814,6 +5800,13 @@
             "minimum": -90,
             "title": "Latitude",
             "type": "number"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
           },
           "longitude": {
             "maximum": 180,
@@ -5855,7 +5848,7 @@
           "id",
           "workspaceId",
           "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "MonitoringSiteSummaryResponse",
         "type": "object"
@@ -12070,10 +12063,10 @@
         ]
       }
     },
-    "/api/data/datastreams/file-attachment-types": {
+    "/api/data/datastreams/linked-resource-types": {
       "get": {
-        "description": "Get file attachment types.",
-        "operationId": "interfaces_api_views_sta_datastream_get_file_attachment_types",
+        "description": "Get linked resource types.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resource_types",
         "parameters": [
           {
             "description": "Page number (1-based).",
@@ -12152,7 +12145,7 @@
             "description": "OK"
           }
         },
-        "summary": "Get File Attachment Types",
+        "summary": "Get Datastream Linked Resource Types",
         "tags": [
           "Datastreams"
         ]
@@ -12831,103 +12824,10 @@
         ]
       }
     },
-    "/api/data/datastreams/{datastream_id}/file-attachments": {
-      "delete": {
-        "description": "Remove a file attachment from a datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_remove_datastream_file_attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileAttachmentDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Datastream File Attachment",
-        "tags": [
-          "Datastreams"
-        ]
-      },
+    "/api/data/datastreams/{datastream_id}/linked-resources": {
       "get": {
-        "description": "Get all file attachments associated with a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_file_attachments",
+        "description": "Get all linked resources associated with a Datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resources",
         "parameters": [
           {
             "in": "path",
@@ -12981,13 +12881,13 @@
             }
           },
           {
-            "description": "Filter by file attachment type.",
+            "description": "Filter by linked resource type.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter by file attachment type.",
+              "description": "Filter by linked resource type.",
               "items": {
                 "type": "string"
               },
@@ -13002,7 +12902,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                    "$ref": "#/components/schemas/LinkedResourceGetResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -13048,14 +12948,14 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Get Datastream File Attachments",
+        "summary": "Get Datastream Linked Resources",
         "tags": [
           "Datastreams"
         ]
       },
       "post": {
-        "description": "Add a file attachment to a datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_add_datastream_file_attachment",
+        "description": "Add a linked resource to a datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_add_datastream_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -13085,18 +12985,40 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
+                  },
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "title": "Name",
                     "type": "string"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
+                  "type": {
+                    "title": "Type",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "file",
-                  "file_attachment_type"
+                  "name",
+                  "type"
                 ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
@@ -13110,7 +13032,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
                 }
               }
             },
@@ -13186,14 +13108,16 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Add Datastream File Attachment",
+        "summary": "Add Datastream Linked Resource",
         "tags": [
           "Datastreams"
         ]
-      },
-      "put": {
-        "description": "Replace a file attachment for a datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_replace_datastream_file_attachment",
+      }
+    },
+    "/api/data/datastreams/{datastream_id}/linked-resources/{linked_resource_id}": {
+      "delete": {
+        "description": "Remove a linked resource from a datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_remove_datastream_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -13202,6 +13126,98 @@
             "schema": {
               "format": "uuid",
               "title": "Datastream Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Remove Datastream Linked Resource",
+        "tags": [
+          "Datastreams"
+        ]
+      },
+      "patch": {
+        "description": "Update a linked resource for a datastream. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
+        "operationId": "interfaces_api_views_sta_datastream_update_datastream_linked_resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
               "type": "string"
             }
           }
@@ -13223,19 +13239,51 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
-                    "type": "string"
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Name"
+                  },
+                  "type": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Type"
                   }
                 },
-                "required": [
-                  "file",
-                  "file_attachment_type"
-                ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
               }
@@ -13244,8 +13292,15 @@
           "required": true
         },
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
+                }
+              }
+            },
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -13279,6 +13334,17 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "413": {
             "content": {
@@ -13317,7 +13383,7 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Replace Datastream File Attachment",
+        "summary": "Update Datastream Linked Resource",
         "tags": [
           "Datastreams"
         ]
@@ -17243,10 +17309,10 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/file-attachment-types": {
+    "/api/data/monitoring-sites/linked-resource-types": {
       "get": {
-        "description": "Get file attachment types.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_file_attachment_types",
+        "description": "Get linked resource types.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types",
         "parameters": [
           {
             "description": "Page number (1-based).",
@@ -17325,7 +17391,7 @@
             "description": "OK"
           }
         },
-        "summary": "Get File Attachment Types",
+        "summary": "Get Monitoring Site Linked Resource Types",
         "tags": [
           "Monitoring Sites"
         ]
@@ -18082,103 +18148,10 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/{monitoring_site_id}/file-attachments": {
-      "delete": {
-        "description": "Remove a file attachment from a monitoring_site.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileAttachmentDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Monitoring Site File Attachment",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
+    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources": {
       "get": {
-        "description": "Get all file attachments associated with a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_file_attachments",
+        "description": "Get all linked resources associated with a MonitoringSite.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources",
         "parameters": [
           {
             "in": "path",
@@ -18232,13 +18205,13 @@
             }
           },
           {
-            "description": "Filter by file attachment type.",
+            "description": "Filter by linked resource type.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter by file attachment type.",
+              "description": "Filter by linked resource type.",
               "items": {
                 "type": "string"
               },
@@ -18253,7 +18226,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                    "$ref": "#/components/schemas/LinkedResourceGetResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -18299,14 +18272,14 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Get Monitoring Site File Attachments",
+        "summary": "Get Monitoring Site Linked Resources",
         "tags": [
           "Monitoring Sites"
         ]
       },
       "post": {
-        "description": "Add a file attachment to a monitoring_site.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_file_attachment",
+        "description": "Add a linked resource to a monitoring_site.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -18336,18 +18309,40 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
+                  },
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "title": "Name",
                     "type": "string"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
+                  "type": {
+                    "title": "Type",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "file",
-                  "file_attachment_type"
+                  "name",
+                  "type"
                 ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
@@ -18361,7 +18356,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
                 }
               }
             },
@@ -18437,14 +18432,16 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Add Monitoring Site File Attachment",
+        "summary": "Add Monitoring Site Linked Resource",
         "tags": [
           "Monitoring Sites"
         ]
-      },
-      "put": {
-        "description": "Replace a file attachment for a monitoring_site.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_replace_monitoring_site_file_attachment",
+      }
+    },
+    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
+      "delete": {
+        "description": "Remove a linked resource from a monitoring_site.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -18453,6 +18450,98 @@
             "schema": {
               "format": "uuid",
               "title": "Monitoring Site Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Remove Monitoring Site Linked Resource",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      },
+      "patch": {
+        "description": "Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "monitoring_site_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Monitoring Site Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
               "type": "string"
             }
           }
@@ -18474,19 +18563,51 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
-                    "type": "string"
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Name"
+                  },
+                  "type": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Type"
                   }
                 },
-                "required": [
-                  "file",
-                  "file_attachment_type"
-                ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
               }
@@ -18495,8 +18616,15 @@
           "required": true
         },
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
+                }
+              }
+            },
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -18530,6 +18658,17 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "413": {
             "content": {
@@ -18568,7 +18707,7 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Replace Monitoring Site File Attachment",
+        "summary": "Update Monitoring Site Linked Resource",
         "tags": [
           "Monitoring Sites"
         ]

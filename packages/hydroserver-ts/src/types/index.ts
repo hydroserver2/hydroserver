@@ -317,10 +317,13 @@ export class User {
   }
 }
 
-export interface FileAttachment {
+export interface LinkedResource {
+  id: string
   name: string
+  description?: string | null
+  type: string
   link: string
-  fileAttachmentType: string
+  isHosted: boolean
 }
 
 export class OAuthProvider {

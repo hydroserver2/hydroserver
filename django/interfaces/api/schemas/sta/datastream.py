@@ -10,7 +10,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, FileAttachmentGetResponse
+from interfaces.api.schemas.sta.linked_resource import TagGetResponse, TagPostBody, LinkedResourceGetResponse
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -221,9 +221,7 @@ class DatastreamSummaryResponse(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
     datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
@@ -237,9 +235,7 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
     processing_level: "ProcessingLevelSummaryResponse"
     unit: "UnitSummaryResponse"
     datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):

@@ -27,6 +27,9 @@ const defaultSettings: AppSettings = {
     enableClarityAnalytics: false,
     clarityProjectId: null,
   },
+  extensionsConfiguration: {
+    fileUploadEnabled: false,
+  },
   legalInformation: {
     termsOfUseLink: null,
     privacyPolicyLink: null,
@@ -90,6 +93,10 @@ export const settings: AppSettings = {
   analyticsConfiguration: {
     ...defaultSettings.analyticsConfiguration,
     ...parsedSettings.analyticsConfiguration,
+  },
+  extensionsConfiguration: {
+    ...defaultSettings.extensionsConfiguration,
+    ...parsedSettings.extensionsConfiguration,
   },
   legalInformation: {
     ...defaultSettings.legalInformation,

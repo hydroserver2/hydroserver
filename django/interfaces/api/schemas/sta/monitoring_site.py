@@ -12,8 +12,8 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import (
-    FileAttachmentGetResponse,
+from interfaces.api.schemas.sta.linked_resource import (
+    LinkedResourceGetResponse,
     TagGetResponse,
     TagPostBody,
 )
@@ -166,18 +166,14 @@ class MonitoringSiteSummaryResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
     monitoring_site_tags: list[TagGetResponse] = Field(..., alias="tags")
-    monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class MonitoringSiteDetailResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse"
     monitoring_site_tags: list[TagGetResponse] = Field(..., alias="tags")
-    monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):

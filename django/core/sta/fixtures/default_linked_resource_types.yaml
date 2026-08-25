@@ -1,5 +1,5 @@
 ---
-- model: sta.fileattachmenttype
+- model: sta.linkedresourcetype
   pk: 1
   fields:
     name: Photo

@@ -39,7 +39,7 @@ Where URLs are used in the Value element, they are hyperlinked and made clickabl
 
 <img src="/data-management-app/additional-site-metadata.png" alt="Create site form" class="img-white-bg">
 
-## Photos and File Attachments
+## Photos and Linked Resources
 
 You can also attach photos to your monitoring site. You can either drag and drop photo files onto the upload area on the form, or you can use the 'click to upload' link. You can choose any number of photos and they will be displayed on the site landing page next to the metadata for the site. Photos can also be added later by clicking on the 'Edit site information' on the site's landing page.
 

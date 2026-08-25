@@ -15,19 +15,18 @@ from core.sta.models import (
     Datastream,
     Observation,
     DatastreamTag,
-    DatastreamFileAttachment,
+    DatastreamLinkedResource,
     DatastreamAggregation,
     DatastreamStatus,
     SampledMedium,
-    FileAttachmentType,
+    LinkedResourceType,
 )
 from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
     TagPostBody,
     TagDeleteBody,
-    FileAttachmentPostBody,
-    FileAttachmentDeleteBody,
+    LinkedResourcePostBody,
 )
 from interfaces.api.schemas.sta.datastream import (
     DatastreamOrderByFields,
@@ -75,7 +74,7 @@ class DatastreamService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_tags", "datastream_file_attachments"
+                "datastream_tags", "datastream_linked_resources"
             )
         queryset = principal.annotate_permissions(queryset)
 
@@ -104,7 +103,7 @@ class DatastreamService(ServiceUtils):
             "observed_property",
             "unit",
             "processing_level",
-        ).prefetch_related("datastream_tags", "datastream_file_attachments")
+        ).prefetch_related("datastream_tags", "datastream_linked_resources")
 
     @staticmethod
     def apply_tag_filter(queryset, tags: list[str]):
@@ -188,7 +187,7 @@ class DatastreamService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_tags", "datastream_file_attachments"
+                "datastream_tags", "datastream_linked_resources"
             )
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -587,7 +586,7 @@ class DatastreamService(ServiceUtils):
 
         return f"{deleted_count} tag(s) deleted"
 
-    def get_file_attachments(
+    def get_linked_resources(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
@@ -597,60 +596,70 @@ class DatastreamService(ServiceUtils):
             principal=principal, uid=uid, action="view"
         )
 
-        queryset = datastream.datastream_file_attachments
+        queryset = datastream.datastream_linked_resources
 
-        if filtering.get("file_attachment_type"):
-            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
+        if filtering.get("type"):
+            queryset = self.apply_filters(queryset, "type", filtering["type"])
 
         return queryset.all()
 
-    def add_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    def add_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        file,
+        link: Optional[str],
+        data: LinkedResourcePostBody,
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
         )
 
-        if DatastreamFileAttachment.objects.filter(
-            datastream=datastream, name=file.name
-        ).exists():
-            raise HttpError(400, "File attachment already exists")
-
-        return DatastreamFileAttachment.objects.create(
-            datastream=datastream,
-            name=file.name,
-            description=data.description,
-            file_attachment=file,
-            file_attachment_type=data.file_attachment_type,
+        return self.create_linked_resource(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            file=file,
+            link=link,
+            data=data,
         )
 
-    def replace_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    def update_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+        name: Optional[str],
+        description: Optional[str],
+        type: Optional[str],
+        file,
+        link: Optional[str],
     ):
-        self.remove_file_attachment(
-            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
+        datastream = self.get_datastream_for_action(principal=principal, uid=uid, action="edit")
+
+        return self.update_linked_resource_fields(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            linked_resource_id=linked_resource_id,
+            name=name,
+            description=description,
+            type=type,
+            file=file,
+            link=link,
         )
 
-        return self.add_file_attachment(
-            principal=principal, uid=uid, file=file, data=data
-        )
-
-    def remove_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: FileAttachmentDeleteBody
+    def remove_linked_resource(
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, linked_resource_id: uuid.UUID
     ):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
+        datastream = self.get_datastream_for_action(principal=principal, uid=uid, action="edit")
+
+        self.delete_linked_resource(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            linked_resource_id=linked_resource_id,
         )
-
-        try:
-            file_attachment = DatastreamFileAttachment.objects.get(
-                datastream=datastream, name=data.name
-            )
-        except DatastreamFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
-
-        file_attachment.file_attachment.delete()
-        file_attachment.delete()
 
     def list_aggregation_statistics(
         self,
@@ -690,14 +699,14 @@ class DatastreamService(ServiceUtils):
 
         return queryset.values_list("name", flat=True)
 
-    def list_file_attachment_types(
+    def list_linked_resource_types(
         self,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
         order_desc: bool = False,
     ):
-        queryset = FileAttachmentType.objects.order_by(
+        queryset = LinkedResourceType.objects.order_by(
             f"{'-' if order_desc else ''}name"
         )
         queryset, count = self.apply_pagination(queryset, response, page, page_size)

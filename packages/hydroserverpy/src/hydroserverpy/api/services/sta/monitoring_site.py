@@ -165,23 +165,37 @@ class MonitoringSiteService(HydroServerBaseService):
             "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
         )
 
-    def add_file_attachment(self, uid: Union[UUID, str], file: IO[bytes], file_attachment_type: str) -> Dict[str, str]:
-        """Add a file attachment of a HydroServer monitoring_site."""
+    def add_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        name: str,
+        type: str,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Add a linked resource to a HydroServer monitoring_site. Exactly one of `file`/`url`
+        must be given; whichever one is provided determines whether the resource is hosted by
+        HydroServer or an external link.
+        """
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+        data = {
+            "name": name,
+            "type": type,
+        }
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
 
         return self.client.request(
-            "post", path, data={"file_attachment_type": file_attachment_type}, files={"file": file}
+            "post", path, data=data, files={"file": file} if file is not None else None
         ).json()
 
-    def delete_file_attachment(self, uid: Union[UUID, str], name: str) -> None:
-        """Delete a file attachment of a HydroServer monitoring_site."""
+    def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
+        """Delete a linked resource from a HydroServer monitoring_site."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "name": name
-        }
-        self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        )
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        self.client.request("delete", path)

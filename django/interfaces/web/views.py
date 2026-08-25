@@ -89,6 +89,9 @@ def get_app_settings_context():
             "enableClarityAnalytics": instance_configuration.analytics_configuration.enable_clarity_analytics,
             "clarityProjectId": instance_configuration.analytics_configuration.clarity_project_id,
         },
+        "extensionsConfiguration": {
+            "fileUploadEnabled": settings.MEDIA_STORAGE_ENABLED,
+        },
         "legalInformation": {
             "termsOfUseLink": instance_configuration.terms_of_use_link,
             "privacyPolicyLink": instance_configuration.privacy_policy_link,

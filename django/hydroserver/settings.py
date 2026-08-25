@@ -314,10 +314,13 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost"
 
 # Storage
 
+MEDIA_STORAGE_ENABLED = env.bool("MEDIA_STORAGE_ENABLED", default=False)
+MEDIA_URL = "/media/"
+
 STATIC_HOST = env.str("STATIC_HOST", default="")
 STATIC_URL = STATIC_HOST + "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-MEDIA_URL = "/media/"
+
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 STORAGES = {

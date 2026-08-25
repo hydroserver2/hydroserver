@@ -6,7 +6,7 @@ from django.test.utils import CaptureQueriesContext
 from core.sta.models import (
     Datastream,
     MonitoringSite,
-    MonitoringSiteFileAttachment,
+    MonitoringSiteLinkedResource,
     Observation,
 )
 from tests.core.iam.factories import WorkspaceFactory
@@ -16,15 +16,26 @@ from tests.core.tree_factories import build_datastreams
 pytestmark = pytest.mark.django_db
 
 
-def test_file_attachment_link_uses_local_media_proxy(settings):
+def test_hosted_linked_resource_uses_local_media_proxy(settings):
     settings.MEDIA_STORAGE_IS_LOCAL = True
     settings.PROXY_BASE_URL = "https://hydro.example.com"
-    attachment = MonitoringSiteFileAttachment(
+    linked_resource = MonitoringSiteLinkedResource(
         monitoring_site=MonitoringSiteFactory(),
-        file_attachment=SimpleUploadedFile("photo.png", b"photo"),
+        file=SimpleUploadedFile("photo.png", b"photo"),
     )
 
-    assert attachment.link == "https://hydro.example.com/media/photo.png"
+    assert linked_resource.is_hosted is True
+    assert linked_resource.link == "https://hydro.example.com/media/photo.png"
+
+
+def test_external_linked_resource_returns_url_directly():
+    linked_resource = MonitoringSiteLinkedResource(
+        monitoring_site=MonitoringSiteFactory(),
+        url="https://example.com/report.pdf",
+    )
+
+    assert linked_resource.is_hosted is False
+    assert linked_resource.link == "https://example.com/report.pdf"
 
 
 # --- delete() --------------------------------------------------------------------
