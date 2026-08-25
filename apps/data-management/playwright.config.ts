@@ -106,6 +106,7 @@ export default defineConfig({
         ACCOUNT_RATE_LIMITS_DISABLED: 'true',
         DEPLOYMENT_BACKEND: 'dev',
         DEBUG: 'True',
+        MEDIA_STORAGE_ENABLED: 'True',
         E2E_TESTING: 'True',
         E2E_CONTROL_TOKEN: e2eControlToken,
       },

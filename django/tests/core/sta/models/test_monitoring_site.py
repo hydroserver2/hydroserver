@@ -24,7 +24,6 @@ def test_hosted_linked_resource_uses_local_media_proxy(settings):
         file=SimpleUploadedFile("photo.png", b"photo"),
     )
 
-    assert linked_resource.is_hosted is True
     assert linked_resource.link == "https://hydro.example.com/media/photo.png"
 
 
@@ -34,7 +33,6 @@ def test_external_linked_resource_returns_url_directly():
         url="https://example.com/report.pdf",
     )
 
-    assert linked_resource.is_hosted is False
     assert linked_resource.link == "https://example.com/report.pdf"
 
 

@@ -408,7 +408,9 @@ test.describe('sites and workspaces', () => {
     const tagValue = siteFormDialog.getByRole('combobox', { name: 'Value' })
     await tagValue.fill('Registration')
     await tagValue.press('Enter')
-    await siteFormDialog.getByRole('button', { name: 'Add' }).click()
+    await siteFormDialog
+      .getByRole('button', { name: 'Add', exact: true })
+      .click()
     await page.getByRole('button', { name: 'Save' }).click()
 
     const siteRow = page.locator('.site-row').filter({ hasText: siteName })

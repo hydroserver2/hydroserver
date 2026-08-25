@@ -3373,8 +3373,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Ishosted */
-            isHosted: boolean;
             /** Link */
             link: string;
             /** Name */

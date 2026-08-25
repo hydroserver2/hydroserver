@@ -33,7 +33,6 @@ class LinkedResourceGetResponse(BaseGetResponse):
     description: Optional[str] = None
     type: str
     link: str
-    is_hosted: bool
 
 
 class LinkedResourcePostBody(BasePostBody):

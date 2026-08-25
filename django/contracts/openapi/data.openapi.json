@@ -3908,10 +3908,6 @@
             "title": "Id",
             "type": "string"
           },
-          "isHosted": {
-            "title": "Ishosted",
-            "type": "boolean"
-          },
           "link": {
             "title": "Link",
             "type": "string"
@@ -3929,8 +3925,7 @@
           "id",
           "name",
           "type",
-          "link",
-          "isHosted"
+          "link"
         ],
         "title": "LinkedResourceGetResponse",
         "type": "object"
@@ -13008,10 +13003,12 @@
                     "title": "Link"
                   },
                   "name": {
+                    "minLength": 1,
                     "title": "Name",
                     "type": "string"
                   },
                   "type": {
+                    "minLength": 1,
                     "title": "Type",
                     "type": "string"
                   }
@@ -18332,10 +18329,12 @@
                     "title": "Link"
                   },
                   "name": {
+                    "minLength": 1,
                     "title": "Name",
                     "type": "string"
                   },
                   "type": {
+                    "minLength": 1,
                     "title": "Type",
                     "type": "string"
                   }
