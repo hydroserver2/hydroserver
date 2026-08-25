@@ -62,5 +62,6 @@ describe('HsQuerySearchInput', () => {
       .trigger('click')
 
     expect(wrapper.emitted('update:modelValue')).toEqual([['']])
+    expect(wrapper.emitted('clear')).toHaveLength(1)
   })
 })

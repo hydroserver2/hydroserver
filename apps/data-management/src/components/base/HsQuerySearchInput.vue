@@ -93,6 +93,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  clear: []
 }>()
 
 const inputEl = ref<HTMLInputElement | null>(null)
@@ -182,6 +183,7 @@ function clearSearch() {
   suggestionsEnabled.value = false
   caret.value = 0
   emit('update:modelValue', '')
+  emit('clear')
   nextTick(() => inputEl.value?.focus())
 }
 

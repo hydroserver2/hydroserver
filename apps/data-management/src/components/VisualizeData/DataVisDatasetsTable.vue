@@ -37,6 +37,7 @@
           placeholder="Search datastreams…"
           aria-label="Search"
           :qualifiers="searchQualifiers"
+          @clear="clearSearchAndSelection"
         />
       </div>
     </div>
@@ -219,6 +220,9 @@ const {
   datastreamDetailLevel: detailLevel,
   monitoringSites,
   selectedMonitoringSites,
+  selectedWorkspaces,
+  selectedObservedPropertyNames,
+  selectedProcessingLevelNames,
   observedProperties,
   processingLevels,
 } = storeToRefs(dataVisStore)
@@ -373,6 +377,15 @@ const downloadSelected = async (datastreams: Datastream[]) => {
 const clearSelected = () => {
   showOnlySelected.value = false
   plottedDatastreams.value = []
+}
+
+const clearSearchAndSelection = () => {
+  search.value = ''
+  selectedWorkspaces.value = []
+  selectedMonitoringSites.value = []
+  selectedObservedPropertyNames.value = []
+  selectedProcessingLevelNames.value = []
+  clearSelected()
 }
 
 const isChecked = (item: Datastream) =>
