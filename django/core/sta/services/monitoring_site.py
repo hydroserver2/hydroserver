@@ -4,9 +4,8 @@ from typing import Optional, Literal, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import IntegrityError
-from django.db.models import Count, QuerySet, F, Q, FloatField, Subquery, OuterRef, IntegerField
+from django.db.models import Count, QuerySet, Q, FloatField, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 from core.iam.models import ServiceAccount
@@ -18,19 +17,15 @@ from core.sta.cache import (
 )
 from core.sta.models import (
     MonitoringSite,
-    MonitoringSiteTag,
     MonitoringSiteLinkedResource,
     SiteType,
     LinkedResourceType,
 )
 from interfaces.api.schemas import (
-    TagGetResponse,
     MonitoringSiteSummaryResponse,
     MonitoringSiteDetailResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
-    TagPostBody,
-    TagDeleteBody,
     LinkedResourcePostBody,
 )
 from interfaces.api.schemas.sta.monitoring_site import (
@@ -61,9 +56,7 @@ class MonitoringSiteService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.prefetch_related(
-                "monitoring_site_tags", "monitoring_site_linked_resources"
-            )
+            queryset = queryset.prefetch_related("monitoring_site_linked_resources")
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -83,7 +76,7 @@ class MonitoringSiteService(ServiceUtils):
     def select_expanded_fields(queryset: QuerySet) -> QuerySet:
         return (
             queryset.select_related("workspace")
-            .prefetch_related("monitoring_site_tags", "monitoring_site_linked_resources")
+            .prefetch_related("monitoring_site_linked_resources")
         )
 
     @staticmethod
@@ -130,10 +123,9 @@ class MonitoringSiteService(ServiceUtils):
                 raise ValueError(f"Invalid tag format: '{tag}'. Must be 'key:value'.")
 
             key, value = tag.split(":", 1)
+            queryset = queryset.filter(tags__contains={key: value})
 
-            queryset = queryset.filter(monitoring_site_tags__key=key, monitoring_site_tags__value=value)
-
-        return queryset.distinct()
+        return queryset
 
     @staticmethod
     def parse_bbox_filters(bbox: Optional[list[str]]) -> list[tuple[float, float, float, float]]:
@@ -246,38 +238,11 @@ class MonitoringSiteService(ServiceUtils):
             "is_private",
             "latitude_value",
             "longitude_value",
+            "tags",
         )
 
     @staticmethod
-    def get_tags_by_monitoring_site_id(
-        principal: User | ServiceAccount | AnonymousPrincipal,
-        monitoring_site_ids: list[uuid.UUID],
-    ) -> dict[str, list[TagGetResponse]]:
-        if not monitoring_site_ids:
-            return {}
-
-        tags_by_monitoring_site_id: dict[str, list[TagGetResponse]] = defaultdict(list)
-        visible_monitoring_sites = principal.filter_by_permission(MonitoringSite.objects, "can_view")
-        tag_rows = (
-            MonitoringSiteTag.objects.filter(monitoring_site__in=visible_monitoring_sites, monitoring_site_id__in=monitoring_site_ids)
-            .values("monitoring_site_id", "key", "value")
-            .order_by("monitoring_site_id", "key", "value")
-            .distinct()
-        )
-        for tag in tag_rows:
-            tags_by_monitoring_site_id[str(tag["monitoring_site_id"])].append(
-                {
-                    "key": tag["key"],
-                    "value": tag["value"],
-                }
-            )
-        return tags_by_monitoring_site_id
-
-    @staticmethod
-    def serialize_site_summary_rows(
-        site_rows,
-        tags_by_monitoring_site_id: dict[str, list[TagGetResponse]],
-    ) -> list[dict]:
+    def serialize_site_summary_rows(site_rows) -> list[dict]:
         return [
             {
                 "id": str(site["id"]),
@@ -288,7 +253,7 @@ class MonitoringSiteService(ServiceUtils):
                 "is_private": site["is_private"],
                 "latitude": site["latitude_value"],
                 "longitude": site["longitude_value"],
-                "tags": tags_by_monitoring_site_id.get(str(site["id"]), []),
+                "tags": site["tags"] or {},
             }
             for site in site_rows
         ]
@@ -389,11 +354,7 @@ class MonitoringSiteService(ServiceUtils):
                 site_queryset.order_by("id").distinct()
             )
         )
-        tags_by_monitoring_site_id = self.get_tags_by_monitoring_site_id(
-            principal=principal,
-            monitoring_site_ids=[site["id"] for site in site_rows],
-        )
-        return self.serialize_site_summary_rows(site_rows, tags_by_monitoring_site_id)
+        return self.serialize_site_summary_rows(site_rows)
 
     @staticmethod
     def list_task_summaries(
@@ -495,9 +456,7 @@ class MonitoringSiteService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.prefetch_related(
-                "monitoring_site_tags", "monitoring_site_linked_resources"
-            )
+            queryset = queryset.prefetch_related("monitoring_site_linked_resources")
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
@@ -545,19 +504,11 @@ class MonitoringSiteService(ServiceUtils):
             monitoring_site = MonitoringSite.objects.create(
                 pk=data.id,
                 workspace=workspace,
+                tags=data.tags,
                 **data.dict(include=set(MonitoringSiteFields.model_fields.keys())),
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
-
-        if data.tags:
-            keys = [tag.key for tag in data.tags]
-            if len(keys) != len(set(keys)):
-                raise HttpError(400, "Duplicate tag keys are not allowed")
-            MonitoringSiteTag.objects.bulk_create([
-                MonitoringSiteTag(monitoring_site=monitoring_site, key=tag.key, value=tag.value)
-                for tag in data.tags
-            ])
 
         return self.get(
             principal=principal, uid=monitoring_site.id, expand_related=expand_related
@@ -572,8 +523,13 @@ class MonitoringSiteService(ServiceUtils):
     ):
         monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
         monitoring_site_data = data.dict(
-            include=set(MonitoringSiteFields.model_fields.keys()), exclude_unset=True
+            include=set(MonitoringSitePatchBody.model_fields.keys()), exclude_unset=True
         )
+
+        if (tags_payload := monitoring_site_data.pop("tags", None)) is not None:
+            monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
+            merged_tags = {**(monitoring_site.tags or {}), **tags_payload}
+            monitoring_site.tags = {k: v for k, v in merged_tags.items() if v is not None}
 
         for field, value in monitoring_site_data.items():
             setattr(monitoring_site, field, value)
@@ -592,66 +548,29 @@ class MonitoringSiteService(ServiceUtils):
 
         return "MonitoringSite deleted"
 
-    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="view")
-
-        return monitoring_site.monitoring_site_tags.all()
-
     @staticmethod
     def get_tag_keys(
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[uuid.UUID],
         monitoring_site_id: Optional[uuid.UUID],
     ):
-        queryset = MonitoringSiteTag.objects.filter(
-            monitoring_site__in=principal.filter_by_permission(MonitoringSite.objects, "can_view")
-        )
+        queryset = principal.filter_by_permission(MonitoringSite.objects, "can_view")
 
         if workspace_id:
-            queryset = queryset.filter(monitoring_site__workspace_id=workspace_id)
+            queryset = queryset.filter(workspace_id=workspace_id)
 
         if monitoring_site_id:
-            queryset = queryset.filter(monitoring_site_id=monitoring_site_id)
+            queryset = queryset.filter(id=monitoring_site_id)
 
-        tags = queryset.values("key").annotate(values=ArrayAgg(F("value"), distinct=True))
+        tag_keys: dict[str, set[str]] = defaultdict(set)
+        for tags in queryset.values_list("tags", flat=True):
+            if not isinstance(tags, dict):
+                continue
+            for key, value in tags.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    tag_keys[key].add(value)
 
-        return {entry["key"]: entry["values"] for entry in tags}
-
-    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
-
-        if MonitoringSiteTag.objects.filter(monitoring_site=monitoring_site, key=data.key).exists():
-            raise HttpError(400, "Tag already exists")
-
-        return MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key=data.key, value=data.value)
-
-    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
-
-        try:
-            tag = MonitoringSiteTag.objects.get(monitoring_site=monitoring_site, key=data.key)
-        except MonitoringSiteTag.DoesNotExist:
-            raise HttpError(404, "Tag does not exist")
-
-        tag.value = data.value
-        tag.save()
-
-        return tag
-
-    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
-        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
-
-        queryset = MonitoringSiteTag.objects.filter(monitoring_site=monitoring_site, key=data.key)
-
-        if data.value is not None:
-            queryset = queryset.filter(value=data.value)
-
-        deleted_count, _ = queryset.delete()
-
-        if deleted_count == 0:
-            raise HttpError(404, "Tag does not exist")
-
-        return f"{deleted_count} tag(s) deleted"
+        return {key: sorted(values) for key, values in tag_keys.items()}
 
     def get_linked_resources(
         self,

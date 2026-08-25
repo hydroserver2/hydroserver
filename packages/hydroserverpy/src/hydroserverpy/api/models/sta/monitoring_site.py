@@ -64,12 +64,6 @@ class MonitoringSite(HydroServerBaseModel):
 
         return self._datastreams
 
-    @field_validator("tags", mode="before")
-    def transform_tags(cls, v):
-        if isinstance(v, list):
-            return {item["key"]: item["value"] for item in v if "key" in item and "value" in item}
-        return v
-
     @field_validator("linked_resources", mode="before")
     def transform_linked_resources(cls, v):
         if isinstance(v, list):
@@ -82,23 +76,17 @@ class MonitoringSite(HydroServerBaseModel):
             }
         return v
 
-    def add_tag(self, key: str, value: str):
-        """Add a tag to this monitoring site."""
+    def set_tag(self, key: str, value: str):
+        """Create or update a tag on this monitoring site."""
 
-        self.client.monitoring_sites.add_tag(uid=self.uid, key=key, value=value)
-        self.tags[key] = value
-
-    def update_tag(self, key: str, value: str):
-        """Edit a tag of this monitoring site."""
-
-        self.client.monitoring_sites.update_tag(uid=self.uid, key=key, value=value)
+        self.client.monitoring_sites.set_tag(uid=self.uid, key=key, value=value)
         self.tags[key] = value
 
     def delete_tag(self, key: str):
         """Delete a tag of this monitoring site."""
 
-        self.client.monitoring_sites.delete_tag(uid=self.uid, key=key, value=self.tags[key])
-        del self.tags[key]
+        self.client.monitoring_sites.delete_tag(uid=self.uid, key=key)
+        self.tags.pop(key, None)
 
     def add_linked_resource(
         self,

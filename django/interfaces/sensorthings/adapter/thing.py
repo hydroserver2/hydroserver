@@ -27,7 +27,7 @@ class ThingMixin(SensorThingsUtils):
         sites = MonitoringSite.objects
         if needs_properties:
             sites = sites.select_related("workspace").prefetch_related(
-                "monitoring_site_linked_resources", "monitoring_site_tags"
+                "monitoring_site_linked_resources"
             )
         sites = principal.filter_by_permission(sites, "can_view")
 
@@ -91,10 +91,7 @@ class ThingMixin(SensorThingsUtils):
                                 "name": site.workspace.name,
                                 "is_private": site.workspace.is_private,
                             },
-                            "tags": {
-                                tag.key: tag.value
-                                for tag in site.monitoring_site_tags.all()
-                            },
+                            "tags": site.tags or {},
                             "linked_resources": {
                                 link.name: link.link
                                 for link in site.monitoring_site_linked_resources.all()

@@ -42,7 +42,6 @@ from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
-    TagGetResponse,
     LinkedResourceGetResponse,
 )
 from interfaces.api.schemas.sta.observed_property import (
@@ -103,9 +102,6 @@ from interfaces.api.schemas.sta.observation import (
 )
 from interfaces.api.schemas.sta.linked_resource import (
     LinkedResourceQueryParameters,
-    TagGetResponse,
-    TagPostBody,
-    TagDeleteBody,
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
 )

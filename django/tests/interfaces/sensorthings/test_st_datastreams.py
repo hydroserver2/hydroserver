@@ -27,3 +27,21 @@ def test_get_datastream_returns_200(client):
 
     assert response.status_code == 200
     assert response.json()["@iot.id"] == str(datastream.id)
+
+
+def test_get_datastream_includes_tags_in_properties(client):
+    datastream = DatastreamFactory(tags={"season": "summer"})
+
+    response = client.get(_detail_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["properties"]["tags"] == {"season": "summer"}
+
+
+def test_get_datastream_returns_empty_tags_when_untagged(client):
+    datastream = DatastreamFactory()
+
+    response = client.get(_detail_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["properties"]["tags"] == {}

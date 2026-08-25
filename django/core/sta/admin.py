@@ -11,9 +11,7 @@ from core.sta.models import (
     Unit,
     ProcessingLevel,
     MonitoringSiteLinkedResource,
-    MonitoringSiteTag,
     DatastreamLinkedResource,
-    DatastreamTag,
     ResultQualifier,
     Observation,
     SiteType,
@@ -45,10 +43,6 @@ class MonitoringSiteLinkedResourceAdmin(admin.ModelAdmin):
         if not settings.MEDIA_STORAGE_ENABLED:
             fields = [f for f in fields if f != "file"]
         return fields
-
-
-class MonitoringSiteTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
 class MethodAdmin(admin.ModelAdmin):
@@ -185,10 +179,6 @@ class DatastreamLinkedResourceAdmin(admin.ModelAdmin):
         if not settings.MEDIA_STORAGE_ENABLED:
             fields = [f for f in fields if f != "file"]
         return fields
-
-
-class DatastreamTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "datastream__name")
 
 
 class ResultQualifierAdmin(admin.ModelAdmin):
@@ -381,14 +371,12 @@ class LinkedResourceTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 admin.site.register(MonitoringSite, MonitoringSiteAdmin)
 admin.site.register(MonitoringSiteLinkedResource, MonitoringSiteLinkedResourceAdmin)
-admin.site.register(MonitoringSiteTag, MonitoringSiteTagAdmin)
 admin.site.register(Method, MethodAdmin)
 admin.site.register(ObservedProperty, ObservedPropertyAdmin)
 admin.site.register(Unit, UnitAdmin)
 admin.site.register(ProcessingLevel, ProcessingLevelAdmin)
 admin.site.register(Datastream, DatastreamAdmin)
 admin.site.register(DatastreamLinkedResource, DatastreamLinkedResourceAdmin)
-admin.site.register(DatastreamTag, DatastreamTagAdmin)
 admin.site.register(LinkedResourceType, LinkedResourceTypeAdmin)
 admin.site.register(ResultQualifier, ResultQualifierAdmin)
 admin.site.register(SiteType, SiteTypeAdmin)

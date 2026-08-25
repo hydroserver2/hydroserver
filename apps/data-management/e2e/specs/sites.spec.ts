@@ -312,9 +312,9 @@ test.describe('sites and workspaces', () => {
     await page.route('**/api/data/monitoring-sites/site-summaries*', async (route) => {
       const response = await route.fetch()
       const summaries = (await response.json()) as Array<{
-        tags: Array<{ key: string; value: string }>
+        tags: Record<string, string>
       }>
-      summaries[0]?.tags.push({ key: 'E2E', value: 'Additional value' })
+      if (summaries[0]) summaries[0].tags['E2E'] = 'Additional value'
       await route.fulfill({ response, json: summaries })
     })
 
@@ -488,6 +488,19 @@ test.describe('sites and workspaces', () => {
     await expect(
       page.getByRole('heading', { name: renamedSiteName, exact: true })
     ).toBeVisible()
+    
+    await page.getByTestId('edit-site-button').click()
+    const editDialog = page.getByRole('dialog')
+    const tagKeyField = editDialog.getByRole('combobox', { name: 'Key' })
+    await tagKeyField.fill('E2E-Live')
+    await tagKeyField.press('Enter')
+    const tagValueField = editDialog.getByRole('combobox', { name: 'Value' })
+    await tagValueField.fill('Reactive')
+    await tagValueField.press('Enter')
+    await editDialog.getByRole('button', { name: 'Add', exact: true }).click()
+    await editDialog.getByRole('button', { name: 'Save' }).click()
+
+    await expect(page.getByText('E2E-Live: Reactive')).toBeVisible()
 
     await page.getByTestId('site-access-control-button').click()
     await page.getByTestId('site-privacy-checkbox').click()

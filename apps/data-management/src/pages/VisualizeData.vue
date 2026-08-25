@@ -415,12 +415,17 @@ onUnmounted(() => {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  min-height: 0;
   gap: 12px;
+  --visualize-margin: 16px;
+  margin: var(--visualize-margin);
+  height: calc(
+    100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px) -
+      (var(--visualize-margin) * 2)
+  );
 }
 
 .visualize-page {
-  --datavis-rail-width: 88px;
+  --datavis-rail-width: 64px;
   display: flex;
   height: calc(
     100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
@@ -432,12 +437,6 @@ onUnmounted(() => {
 .visualize-content {
   flex: 1;
   min-width: 0;
-  min-height: 0;
-  display: flex;
-  align-items: stretch;
-  gap: 16px;
-  padding: 16px;
-  box-sizing: border-box;
   position: relative;
 }
 
@@ -455,15 +454,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 600px) {
-  .visualize-content {
-    gap: 8px;
-    padding: 8px;
-  }
   .visualize-layout {
+    --visualize-margin: 8px;
     gap: 8px;
   }
   .visualize-page {
-    --datavis-rail-width: 76px;
+    --datavis-rail-width: 56px;
   }
 }
 </style>

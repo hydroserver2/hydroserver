@@ -12,21 +12,6 @@ class LinkedResourceQueryParameters(CollectionQueryParameters):
     type: list[str] = Query([], description="Filter by linked resource type.")
 
 
-class TagGetResponse(BaseGetResponse):
-    key: str
-    value: str
-
-
-class TagPostBody(BasePostBody):
-    key: str
-    value: str
-
-
-class TagDeleteBody(BasePostBody):
-    key: str
-    value: Optional[str] = None
-
-
 class LinkedResourceGetResponse(BaseGetResponse):
     id: uuid.UUID
     name: str

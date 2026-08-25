@@ -230,8 +230,7 @@ hs_api.monitoring_sites.create(workspace, name, description, code, type,
 
 | Method | Description                      |
 |---|----------------------------------|
-| `add_tag(key, value)` | Add a tag to this monitoring site |
-| `update_tag(key, value)` | Update an existing tag's value   |
+| `set_tag(key, value)` | Add or update a tag on this monitoring site |
 | `delete_tag(key)` | Remove a tag                     |
 | `add_linked_resource(name, type, file=None, url=None, description=None)` | Add a linked resource            |
 | `delete_linked_resource(name)` | Remove a linked resource by name |
@@ -455,7 +454,7 @@ Deletes observations within the given time range. If both parameters are omitted
 
 ### Tag and linked resource methods
 
-Same as monitoring sites — `add_tag`, `update_tag`, `delete_tag`, `add_linked_resource`, `delete_linked_resource`.
+Same as monitoring sites — `set_tag`, `delete_tag`, `add_linked_resource`, `delete_linked_resource`.
 
 ---
 

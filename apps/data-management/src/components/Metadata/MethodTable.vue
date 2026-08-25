@@ -3,7 +3,7 @@
     :headers="headers"
     :items="sortedItems"
     :search="search"
-    :style="{ 'max-height': `400px` }"
+    height="100%"
     fixed-header
   >
     <template v-slot:item.scope="{ item }">
@@ -11,14 +11,14 @@
     </template>
     <template v-slot:item.actions="{ item }">
       <v-icon
-        v-if="canEdit && item._scope !== 'system'"
+        v-if="canEdit && (item._scope !== 'system' || canManageSystem)"
         :icon="mdiPencil"
         :data-testid="`edit-metadata-${item.id}`"
         aria-label="Edit metadata item"
         @click="openDialog(item, 'edit')"
       />
       <v-icon
-        v-if="canDelete && item._scope !== 'system'"
+        v-if="canDelete && (item._scope !== 'system' || canManageSystem)"
         :icon="mdiTrashCanOutline"
         :data-testid="`delete-metadata-${item.id}`"
         aria-label="Delete metadata item"
@@ -65,8 +65,9 @@ import { mdiTrashCanOutline, mdiPencil } from '@mdi/js'
 const props = defineProps<{
   search: string | undefined
   workspaceId?: string
-  canEdit: Boolean
-  canDelete: Boolean
+  canEdit: boolean
+  canDelete: boolean
+  canManageSystem?: boolean
   scope?: 'workspace' | 'system' | 'all'
 }>()
 

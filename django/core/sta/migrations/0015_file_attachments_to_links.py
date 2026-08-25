@@ -16,7 +16,7 @@ def populate_link_uuids(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("sta", "0013_rename_sensor_method"),
+        ("sta", "0014_monitoringsite_tags_datastream_tags"),
     ]
 
     operations = [

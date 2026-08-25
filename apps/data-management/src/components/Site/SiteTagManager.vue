@@ -67,15 +67,15 @@
     <v-col>
       <div class="chips-wrap">
         <v-chip
-          v-for="(tag, i) in previewTags"
-          :key="`${tag.key}:${i}`"
+          v-for="[key, value] in Object.entries(previewTags)"
+          :key="key"
           class="multiline-chip"
-          :color="materialColors[i % materialColors.length]"
+          :color="materialColors[tagColorIndex(key) % materialColors.length]"
           closable
           rounded
-          @click:close="previewTags.splice(i, 1)"
+          @click:close="deleteTag(key)"
         >
-          <span class="chip-text">{{ tag.key }}: {{ tag.value }}</span>
+          <span class="chip-text">{{ key }}: {{ value }}</span>
         </v-chip>
       </div>
     </v-col>
@@ -97,21 +97,26 @@ const { tags: workspaceTags } = useWorkspaceTags()
 const selectedKey = ref('')
 const selectedValue = ref('')
 
-const isKeyUsed = computed(() =>
-  previewTags.value.some((tag) => tag.key === selectedKey.value)
-)
+const isKeyUsed = computed(() => selectedKey.value in previewTags.value)
+
+const tagColorIndex = (key: string) => Object.keys(previewTags.value).indexOf(key)
 
 const addTag = () => {
   if (selectedKey.value === '' || selectedValue.value === '') {
     return
   }
-  previewTags.value.push({ key: selectedKey.value, value: selectedValue.value })
+  previewTags.value = { ...previewTags.value, [selectedKey.value]: selectedValue.value }
   selectedKey.value = ''
   selectedValue.value = ''
 }
 
+const deleteTag = (key: string) => {
+  const { [key]: _removed, ...rest } = previewTags.value
+  previewTags.value = rest
+}
+
 onMounted(async () => {
-  previewTags.value = props.monitoringSiteId ? [...tags.value] : []
+  previewTags.value = props.monitoringSiteId ? { ...tags.value } : {}
 })
 </script>
 

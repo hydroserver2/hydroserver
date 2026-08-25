@@ -1,11 +1,11 @@
 import uuid
+from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet, Min, Max, Count, F
-from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import QuerySet, Min, Max, Count
 from django.utils import timezone
 from django.http import StreamingHttpResponse
 from core.service import ServiceUtils
@@ -14,7 +14,6 @@ from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import (
     Datastream,
     Observation,
-    DatastreamTag,
     DatastreamLinkedResource,
     DatastreamAggregation,
     DatastreamStatus,
@@ -24,8 +23,6 @@ from core.sta.models import (
 from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
-    TagPostBody,
-    TagDeleteBody,
     LinkedResourcePostBody,
 )
 from interfaces.api.schemas.sta.datastream import (
@@ -74,7 +71,7 @@ class DatastreamService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_tags", "datastream_linked_resources"
+                "datastream_linked_resources"
             )
         queryset = principal.annotate_permissions(queryset)
 
@@ -103,7 +100,7 @@ class DatastreamService(ServiceUtils):
             "observed_property",
             "unit",
             "processing_level",
-        ).prefetch_related("datastream_tags", "datastream_linked_resources")
+        ).prefetch_related("datastream_linked_resources")
 
     @staticmethod
     def apply_tag_filter(queryset, tags: list[str]):
@@ -115,10 +112,9 @@ class DatastreamService(ServiceUtils):
                 raise ValueError(f"Invalid tag format: '{tag}'. Must be 'key:value'.")
 
             key, value = tag.split(":", 1)
+            queryset = queryset.filter(tags__contains={key: value})
 
-            queryset = queryset.filter(datastream_tags__key=key, datastream_tags__value=value)
-
-        return queryset.distinct()
+        return queryset
 
     def list(
         self,
@@ -187,7 +183,7 @@ class DatastreamService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_tags", "datastream_linked_resources"
+                "datastream_linked_resources"
             )
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -387,19 +383,10 @@ class DatastreamService(ServiceUtils):
         try:
             datastream = Datastream.objects.create(
                 pk=data.id,
-                **data.dict(include=set(DatastreamPostBody.model_fields.keys()) - {"tags"})
+                **data.dict(include=set(DatastreamPostBody.model_fields.keys()))
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
-
-        if data.tags:
-            keys = [tag.key for tag in data.tags]
-            if len(keys) != len(set(keys)):
-                raise HttpError(400, "Duplicate tag keys are not allowed")
-            DatastreamTag.objects.bulk_create([
-                DatastreamTag(datastream=datastream, key=tag.key, value=tag.value)
-                for tag in data.tags
-            ])
 
         return self.get(
             principal=principal, uid=datastream.id, expand_related=expand_related
@@ -498,6 +485,11 @@ class DatastreamService(ServiceUtils):
                 400, "The given unit cannot be associated with this datastream"
             )
 
+        if (tags_payload := datastream_data.pop("tags", None)) is not None:
+            datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
+            merged_tags = {**(datastream.tags or {}), **tags_payload}
+            datastream.tags = {k: v for k, v in merged_tags.items() if v is not None}
+
         for field, value in datastream_data.items():
             setattr(datastream, field, value)
 
@@ -515,76 +507,29 @@ class DatastreamService(ServiceUtils):
 
         return "Datastream deleted"
 
-    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="view"
-        )
-
-        return datastream.datastream_tags.all()
-
     @staticmethod
     def get_tag_keys(
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[uuid.UUID],
         datastream_id: Optional[uuid.UUID],
     ):
-        queryset = DatastreamTag.objects.filter(
-            datastream__in=principal.filter_by_permission(Datastream.objects, "can_view")
-        )
+        queryset = principal.filter_by_permission(Datastream.objects, "can_view")
 
         if workspace_id:
-            queryset = queryset.filter(datastream__monitoring_site__workspace_id=workspace_id)
+            queryset = queryset.filter(monitoring_site__workspace_id=workspace_id)
 
         if datastream_id:
-            queryset = queryset.filter(datastream_id=datastream_id)
+            queryset = queryset.filter(id=datastream_id)
 
-        tags = queryset.values("key").annotate(values=ArrayAgg(F("value"), distinct=True))
+        tag_keys: dict[str, set[str]] = defaultdict(set)
+        for tags in queryset.values_list("tags", flat=True):
+            if not isinstance(tags, dict):
+                continue
+            for key, value in tags.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    tag_keys[key].add(value)
 
-        return {entry["key"]: entry["values"] for entry in tags}
-
-    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-
-        if DatastreamTag.objects.filter(datastream=datastream, key=data.key).exists():
-            raise HttpError(400, "Tag already exists")
-
-        return DatastreamTag.objects.create(
-            datastream=datastream, key=data.key, value=data.value
-        )
-
-    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-
-        try:
-            tag = DatastreamTag.objects.get(datastream=datastream, key=data.key)
-        except DatastreamTag.DoesNotExist:
-            raise HttpError(404, "Tag does not exist")
-
-        tag.value = data.value
-        tag.save()
-
-        return tag
-
-    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-
-        queryset = DatastreamTag.objects.filter(datastream=datastream, key=data.key)
-
-        if data.value is not None:
-            queryset = queryset.filter(value=data.value)
-
-        deleted_count, _ = queryset.delete()
-
-        if deleted_count == 0:
-            raise HttpError(404, "Tag does not exist")
-
-        return f"{deleted_count} tag(s) deleted"
+        return {key: sorted(values) for key, values in tag_keys.items()}
 
     def get_linked_resources(
         self,

@@ -84,7 +84,7 @@ class MonitoringSiteService(HydroServerBaseService):
             "adminArea1": admin_area_1,
             "adminArea2": admin_area_2,
             "country": country,
-            "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
+            "tags": tags or {},
         }
 
         return super().create(**body)
@@ -105,6 +105,7 @@ class MonitoringSiteService(HydroServerBaseService):
         admin_area_2: Optional[str] = ...,
         country: Optional[str] = ...,
         data_disclaimer: Optional[str] = ...,
+        tags: Dict[str, Optional[str]] = ...,
     ) -> "MonitoringSite":
         """Update a monitoring_site."""
 
@@ -122,48 +123,20 @@ class MonitoringSiteService(HydroServerBaseService):
             "adminArea1": admin_area_1,
             "adminArea2": admin_area_2,
             "country": country,
+            "tags": tags,
         }
 
         return super().update(uid=str(uid), **body)
 
-    def add_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Tag a HydroServer monitoring_site."""
+    def set_tag(self, uid: Union[UUID, str], key: str, value: str) -> "MonitoringSite":
+        """Create or update a tag on a HydroServer monitoring_site."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        return self.client.request(
-            "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
+        return self.update(uid=uid, tags={key: value})
 
-    def update_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Update the tag of a HydroServer monitoring_site."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        return self.client.request(
-            "put", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-    def delete_tag(self, uid: Union[UUID, str], key: str, value: str) -> None:
+    def delete_tag(self, uid: Union[UUID, str], key: str) -> "MonitoringSite":
         """Remove a tag from a HydroServer monitoring_site."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        )
+        return self.update(uid=uid, tags={key: None})
 
     def add_linked_resource(
         self,
