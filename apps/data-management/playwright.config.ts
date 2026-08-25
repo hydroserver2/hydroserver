@@ -7,6 +7,10 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '../..')
 const apiDir = path.join(repoRoot, 'django')
 const ensureDbScript = path.join(here, 'e2e/scripts/ensure_e2e_database.py')
+const injectSettingsScript = path.join(
+  here,
+  'e2e/scripts/injectBuiltSettings.mjs'
+)
 
 const e2ePython = process.env.E2E_PYTHON || 'python3.14'
 const apiHost = process.env.E2E_API_HOST || '127.0.0.1'
@@ -23,7 +27,7 @@ const e2eControlToken =
 // builds and previews the production bundle so the release gate tests the real
 // artifact.
 const appCommand = process.env.CI
-  ? `npm run build && npm run preview -- --host ${appHost} --port ${appPort}`
+  ? `npm run build && node ${injectSettingsScript} && npm run preview -- --host ${appHost} --port ${appPort}`
   : `npm run dev -- --host ${appHost} --port ${appPort}`
 
 // Suppress the managed servers' output in the local test console so the
