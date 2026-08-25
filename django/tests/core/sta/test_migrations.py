@@ -9,7 +9,7 @@ from tests.core.sta.factories import ProcessingLevelFactory
 pytestmark = pytest.mark.django_db
 
 migration = importlib.import_module(
-    "core.sta.migrations.0014_rename_metadata_table_fields"
+    "core.sta.migrations.0015_rename_metadata_table_fields"
 )
 
 
