@@ -1,4 +1,4 @@
-import '@hydroserver/design-tokens/components.css'
+import '@hydroserver/design-system/components.css'
 
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'

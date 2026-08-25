@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     __dirname,
     env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
-  const designTokensRoot = resolve(__dirname, '../../packages/design-tokens')
+  const designSystemRoot = resolve(__dirname, '../../packages/design-system')
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
 
@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       exclude: [
         'vuetify',
-        '@hydroserver/design-tokens',
+        '@hydroserver/design-system',
         ...(useLocal ? ['@hydroserver/client'] : []),
       ],
     },
@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => {
       fs: {
         allow: [
           sdkRoot,
-          designTokensRoot,
+          designSystemRoot,
           resolve(__dirname), // <- add this
         ],
       },

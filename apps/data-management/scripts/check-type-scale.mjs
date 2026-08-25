@@ -2,7 +2,7 @@
 /*
  * Enforces the data-management app's type system: the 5-step font-size
  * scale and font-weight/font-family tokens declared in the shared
- * packages/design-tokens CSS files.
+ * packages/design-system CSS files.
  *
  * This is deliberately narrow. It only checks font-size, font-weight, and
  * font-family — not color, not spacing, not arbitrary px values. Widening
@@ -57,8 +57,8 @@ function collectFiles(root, extensions) {
 // hardcoding it here, so this script can't silently drift from the real
 // scale.
 const tokenSourceFiles = [
-  path.join(repoRoot, 'packages/design-tokens/fonts.css'),
-  path.join(repoRoot, 'packages/design-tokens/tokens.css'),
+  path.join(repoRoot, 'packages/design-system/fonts.css'),
+  path.join(repoRoot, 'packages/design-system/tokens.css'),
 ]
 const declaredFontVars = new Set()
 for (const file of tokenSourceFiles) {
@@ -257,7 +257,7 @@ if (violations.length) {
   )
   console.error(violations.join('\n'))
   console.error(
-    `\nSize scale: ${sizeVars.join(', ')}\nWeight scale: ${weightVars.join(', ')}\nSee packages/design-tokens/tokens.css for what each size means.`
+    `\nSize scale: ${sizeVars.join(', ')}\nWeight scale: ${weightVars.join(', ')}\nSee packages/design-system/tokens.css for what each size means.`
   )
   process.exit(1)
 }
