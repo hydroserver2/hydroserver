@@ -123,7 +123,6 @@
           <tr
             v-for="item in visibleTableItems"
             :key="item.id"
-            @click="openMetadata(item)"
           >
             <td class="datastream-plot-cell">
               <input
@@ -139,14 +138,27 @@
             </td>
 
             <td class="datastream-summary-cell">
-              <button
-                type="button"
+              <div
                 class="datastream-name"
                 :title="datastreamDisplayName(item)"
-                @click.stop="openMetadata(item)"
               >
-                {{ datastreamDisplayName(item) }}
-              </button>
+                <span
+                  v-if="showMonitoringSiteContext && item.monitoringSiteName"
+                  class="datastream-name__thing"
+                >
+                  {{ item.monitoringSiteName }}
+                </span>
+                <span
+                  v-if="showMonitoringSiteContext && item.monitoringSiteName"
+                  class="datastream-name__separator"
+                  aria-hidden="true"
+                >
+                  /
+                </span>
+                <span class="datastream-name__primary">
+                  {{ datastreamName(item) }}
+                </span>
+              </div>
               <div class="datastream-meta datastream-signature hs-text-sm">
                 <span
                   v-for="value in datastreamSignature(item)"
@@ -325,6 +337,12 @@ const visibleTableItems = computed(() => {
     .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
 })
 
+const showMonitoringSiteContext = computed(
+  () =>
+    new Set(visibleTableItems.value.map((item) => item.monitoringSiteId)).size >
+    1
+)
+
 const selectableHeaders = computed(() =>
   headers.value.filter((header) => header.key !== 'plot')
 )
@@ -348,11 +366,14 @@ const hasVisibleAdditionalDetails = computed(() =>
   ['valueCount', 'phenomenonEndTime'].some(isDetailVisible)
 )
 
+const datastreamName = (item: DatastreamTableItem) =>
+  item.name?.trim() || 'Unnamed datastream'
+
 const datastreamDisplayName = (item: DatastreamTableItem) => {
-  const datastreamName = item.name?.trim() || 'Unnamed datastream'
-  return item.monitoringSiteName
-    ? `${item.monitoringSiteName} - ${datastreamName}`
-    : datastreamName
+  const name = datastreamName(item)
+  return showMonitoringSiteContext.value && item.monitoringSiteName
+    ? `${item.monitoringSiteName} / ${name}`
+    : name
 }
 
 type TimeSpacingUnit = NonNullable<Datastream['intendedTimeSpacingUnit']>
@@ -606,7 +627,7 @@ function updatePlottedDatastreams(
 }
 
 .datastreams-table tbody tr {
-  cursor: pointer;
+  cursor: default;
 }
 
 .datastreams-table tbody tr:hover {
@@ -636,7 +657,7 @@ function updatePlottedDatastreams(
   display: block;
   width: 16px;
   height: 16px;
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   accent-color: rgb(var(--v-theme-primary));
   cursor: pointer;
 }
@@ -646,7 +667,9 @@ function updatePlottedDatastreams(
 }
 
 .datastream-name {
-  display: block;
+  display: flex;
+  gap: var(--hs-space-6);
+  align-items: baseline;
   max-width: 100%;
   padding: 0;
   overflow: hidden;
@@ -658,13 +681,34 @@ function updatePlottedDatastreams(
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
   background: transparent;
   border: 0;
 }
 
-.datastream-name:hover {
-  text-decoration: underline;
+.datastream-name__thing {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datastream-name__separator {
+  flex: 0 0 auto;
+  color: var(--hs-text-secondary);
+  font-weight: var(--hs-font-weight-regular);
+}
+
+.datastream-name__primary {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .datastream-meta {
@@ -764,6 +808,11 @@ function updatePlottedDatastreams(
   }
 
   .datastream-name {
+    white-space: normal;
+  }
+
+  .datastream-name__thing,
+  .datastream-name__primary {
     white-space: normal;
   }
 
