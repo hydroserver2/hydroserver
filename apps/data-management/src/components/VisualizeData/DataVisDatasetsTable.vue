@@ -33,10 +33,11 @@
 
       <div class="datastreams-search">
         <HsQuerySearchInput
-          v-model="search"
+          :model-value="search"
           placeholder="Search datastreams…"
           aria-label="Search"
           :qualifiers="searchQualifiers"
+          @update:model-value="updateSearch"
           @clear="clearSearchAndSelection"
         />
       </div>
@@ -57,9 +58,7 @@
                     data-testid="clear-selected-datastreams"
                     @change="clearSelected"
                   />
-                  <span>
-                    {{ plottedDatastreams.length }} of 5 selected
-                  </span>
+                  <span> {{ plottedDatastreams.length }} of 5 selected </span>
                 </div>
 
                 <div class="datastream-selection-actions">
@@ -88,16 +87,86 @@
           </tr>
           <tr v-else>
             <th colspan="3" class="datastream-filter-header">
-              <DataVisTableFilters />
+              <div class="datastream-filter-header__content">
+                <DataVisTableFilters />
+
+                <v-menu location="bottom end" attach="body">
+                  <template #activator="{ props: menuProps }">
+                    <v-btn
+                      v-bind="menuProps"
+                      variant="text"
+                      size="small"
+                      class="datastream-sort-button"
+                      :prepend-icon="mdiSort"
+                      :append-icon="mdiChevronDown"
+                      aria-label="Sort datastreams"
+                      data-testid="datastream-sort-menu"
+                    >
+                      {{ sortButtonLabel }}
+                    </v-btn>
+                  </template>
+
+                  <v-list class="datastream-sort-menu" density="comfortable">
+                    <div class="datastream-sort-menu__title">Sort by</div>
+                    <v-list-item
+                      v-for="option in sortOptions"
+                      :key="option.key"
+                      :class="{
+                        'datastream-sort-menu__item--selected':
+                          activeSort.key === option.key,
+                      }"
+                      @click="setSortKey(option.key)"
+                    >
+                      <template #prepend>
+                        <v-icon
+                          :icon="mdiCheck"
+                          :class="{
+                            'datastream-sort-menu__check--hidden':
+                              activeSort.key !== option.key,
+                          }"
+                        />
+                      </template>
+                      <v-list-item-title>{{ option.label }}</v-list-item-title>
+                    </v-list-item>
+
+                    <v-divider class="my-1" />
+
+                    <div class="datastream-sort-menu__title">Order</div>
+                    <v-list-item
+                      v-for="option in sortOrderOptions"
+                      :key="option.order"
+                      :class="{
+                        'datastream-sort-menu__item--selected':
+                          activeSort.order === option.order,
+                      }"
+                      @click="setSortOrder(option.order)"
+                    >
+                      <template #prepend>
+                        <v-icon
+                          :icon="option.icon"
+                          class="datastream-sort-menu__order-icon"
+                        />
+                      </template>
+                      <v-list-item-title>{{ option.label }}</v-list-item-title>
+                      <template #append>
+                        <v-icon
+                          :icon="mdiCheck"
+                          :class="{
+                            'datastream-sort-menu__check--hidden':
+                              activeSort.order !== option.order,
+                          }"
+                        />
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </div>
             </th>
           </tr>
         </thead>
 
         <tbody>
-          <tr
-            v-for="item in visibleTableItems"
-            :key="item.id"
-          >
+          <tr v-for="item in visibleTableItems" :key="item.id">
             <td class="datastream-plot-cell">
               <input
                 type="checkbox"
@@ -112,10 +181,7 @@
             </td>
 
             <td class="datastream-summary-cell">
-              <div
-                class="datastream-name"
-                :title="datastreamDisplayName(item)"
-              >
+              <div class="datastream-name" :title="datastreamDisplayName(item)">
                 <span
                   v-if="showMonitoringSiteContext && item.monitoringSiteName"
                   class="datastream-name__thing"
@@ -196,12 +262,26 @@
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
-import { mdiChevronRight, mdiDownload } from '@mdi/js'
+import {
+  mdiArrowDown,
+  mdiArrowUp,
+  mdiCheck,
+  mdiChevronDown,
+  mdiChevronRight,
+  mdiDownload,
+  mdiSort,
+} from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
-import { parseDatastreamQuery } from '@/utils/datastreamSearch'
+import {
+  parseDatastreamQuery,
+  serializeDatastreamQuery,
+  type DatastreamSort,
+  type DatastreamSortKey,
+  type DatastreamSortOrder,
+} from '@/utils/datastreamSearch'
 import HsQuerySearchInput from '@/components/base/HsQuerySearchInput.vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import DataVisTableFilters from './DataVisTableFilters.vue'
@@ -259,8 +339,85 @@ const searchQualifiers = computed(() => [
     label: 'Processing levels',
     values: uniqueSorted(processingLevels.value.map((item) => item.definition)),
   },
+  {
+    key: 'sort',
+    label: 'Sort',
+    values: [
+      'name-asc',
+      'name-desc',
+      'updated-asc',
+      'updated-desc',
+      'observations-asc',
+      'observations-desc',
+    ],
+  },
 ])
-const plainSearch = computed(() => parseDatastreamQuery(search.value).text)
+const parsedSearch = computed(() => parseDatastreamQuery(search.value))
+const plainSearch = computed(() => parsedSearch.value.text)
+
+const defaultSort: DatastreamSort = { key: 'name', order: 'asc' }
+const activeSort = computed(() => parsedSearch.value.sort ?? defaultSort)
+const sortOptions = computed(() => [
+  {
+    key: 'name' as const,
+    label: showMonitoringSiteContext.value
+      ? 'Site name, datastream name'
+      : 'Datastream name',
+  },
+  { key: 'updated' as const, label: 'Last updated' },
+  { key: 'observations' as const, label: 'Observation count' },
+])
+const sortButtonLabel = computed(() => {
+  const option = sortOptions.value.find(
+    (candidate) => candidate.key === activeSort.value.key
+  )
+  return option?.label ?? 'Sort'
+})
+const sortOrderOptions = computed(() => {
+  if (activeSort.value.key === 'name') {
+    return [
+      { order: 'asc' as const, label: 'A–Z', icon: mdiArrowUp },
+      { order: 'desc' as const, label: 'Z–A', icon: mdiArrowDown },
+    ]
+  }
+
+  if (activeSort.value.key === 'updated') {
+    return [
+      { order: 'asc' as const, label: 'Oldest', icon: mdiArrowUp },
+      { order: 'desc' as const, label: 'Newest', icon: mdiArrowDown },
+    ]
+  }
+
+  return [
+    { order: 'asc' as const, label: 'Least observations', icon: mdiArrowUp },
+    { order: 'desc' as const, label: 'Most observations', icon: mdiArrowDown },
+  ]
+})
+
+const defaultSortOrder = (key: DatastreamSortKey): DatastreamSortOrder =>
+  key === 'name' ? 'asc' : 'desc'
+
+const updateSort = (sort: DatastreamSort) => {
+  search.value = serializeDatastreamQuery(
+    parsedSearch.value.filters,
+    parsedSearch.value.text,
+    sort
+  )
+}
+
+const setSortKey = (key: DatastreamSortKey) => {
+  updateSort({
+    key,
+    order:
+      activeSort.value.key === key
+        ? activeSort.value.order
+        : defaultSortOrder(key),
+  })
+}
+
+const setSortOrder = (order: DatastreamSortOrder) => {
+  updateSort({ key: activeSort.value.key, order })
+}
 
 const displayDatastreams = computed(() => {
   if (!showOnlySelected.value) return filteredDatastreams.value
@@ -303,12 +460,77 @@ const visibleTableItems = computed(() => {
         item.phenomenonEndTime,
       ].some((value) => `${value ?? ''}`.toLocaleLowerCase().includes(query))
     })
-    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+    .sort(compareTableItems)
 })
 
 const showMonitoringSiteContext = computed(
   () => selectedMonitoringSites.value.length !== 1
 )
+
+const compareText = (
+  left: string | null | undefined,
+  right: string | null | undefined
+) =>
+  (left ?? '').localeCompare(right ?? '', undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  })
+
+const compareOptionalNumber = (
+  left: number | string | null | undefined,
+  right: number | string | null | undefined
+) => {
+  const leftNumber = Number(left)
+  const rightNumber = Number(right)
+  const leftIsValid = Number.isFinite(leftNumber)
+  const rightIsValid = Number.isFinite(rightNumber)
+
+  if (!leftIsValid && !rightIsValid) return 0
+  if (!leftIsValid) return 1
+  if (!rightIsValid) return -1
+  return leftNumber - rightNumber
+}
+
+const compareNames = (
+  left: DatastreamTableItem,
+  right: DatastreamTableItem
+) => {
+  if (showMonitoringSiteContext.value) {
+    const siteComparison = compareText(
+      left.monitoringSiteName,
+      right.monitoringSiteName
+    )
+    if (siteComparison) return siteComparison
+  }
+
+  return compareText(left.name, right.name)
+}
+
+const compareTableItems = (
+  left: DatastreamTableItem,
+  right: DatastreamTableItem
+) => {
+  const { key, order } = activeSort.value
+  const multiplier = order === 'asc' ? 1 : -1
+
+  if (key === 'name') return compareNames(left, right) * multiplier
+
+  const valueComparison =
+    key === 'updated'
+      ? compareOptionalNumber(
+          left.phenomenonEndTime
+            ? new Date(left.phenomenonEndTime).getTime()
+            : null,
+          right.phenomenonEndTime
+            ? new Date(right.phenomenonEndTime).getTime()
+            : null
+        )
+      : compareOptionalNumber(left.valueCount, right.valueCount)
+
+  return valueComparison
+    ? valueComparison * multiplier
+    : compareNames(left, right)
+}
 
 const datastreamName = (item: DatastreamTableItem) =>
   item.name?.trim() || 'Unnamed datastream'
@@ -377,6 +599,13 @@ const downloadSelected = async (datastreams: Datastream[]) => {
 const clearSelected = () => {
   showOnlySelected.value = false
   plottedDatastreams.value = []
+}
+
+const updateSearch = (value: string) => {
+  if (value === search.value) return
+
+  search.value = value
+  clearSelected()
 }
 
 const clearSearchAndSelection = () => {
@@ -491,6 +720,41 @@ function updatePlottedDatastreams(
   max-width: none;
 }
 
+.datastream-sort-button {
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+
+.datastream-sort-menu {
+  min-width: 270px;
+  padding: var(--hs-space-8) 0;
+  border: 1px solid var(--hs-border);
+}
+
+.datastream-sort-menu__title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-semibold);
+}
+
+.datastream-sort-menu :deep(.v-list-item) {
+  min-height: 40px;
+  padding-inline: var(--hs-space-16);
+}
+
+.datastream-sort-menu__item--selected :deep(.v-list-item-title) {
+  font-weight: var(--hs-font-weight-semibold);
+}
+
+.datastream-sort-menu__check--hidden {
+  visibility: hidden;
+}
+
+.datastream-sort-menu__order-icon {
+  color: var(--hs-text-secondary);
+}
+
 .datastreams-actions {
   margin-left: auto;
 }
@@ -533,6 +797,13 @@ function updatePlottedDatastreams(
   padding: var(--hs-space-12);
   text-align: left;
   background: var(--hs-surface-muted);
+}
+
+.datastream-filter-header__content {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
+  justify-content: space-between;
 }
 
 .datastream-selection-header {

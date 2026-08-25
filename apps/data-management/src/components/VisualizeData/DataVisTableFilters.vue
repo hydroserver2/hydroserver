@@ -314,7 +314,11 @@ const toggleFilter = (key: FilterKey, value: string) => {
   )
   if (index >= 0) filters[key].splice(index, 1)
   else filters[key].push(value)
-  tableSearch.value = serializeDatastreamQuery(filters, parsedQuery.value.text)
+  tableSearch.value = serializeDatastreamQuery(
+    filters,
+    parsedQuery.value.text,
+    parsedQuery.value.sort
+  )
 }
 
 const clearFilter = (key: FilterKey) => {
@@ -324,7 +328,11 @@ const clearFilter = (key: FilterKey) => {
       filterKey === key ? [] : [...values],
     ])
   ) as DatastreamQueryFilters
-  tableSearch.value = serializeDatastreamQuery(filters, parsedQuery.value.text)
+  tableSearch.value = serializeDatastreamQuery(
+    filters,
+    parsedQuery.value.text,
+    parsedQuery.value.sort
+  )
   filterSearches[key] = ''
 }
 </script>
