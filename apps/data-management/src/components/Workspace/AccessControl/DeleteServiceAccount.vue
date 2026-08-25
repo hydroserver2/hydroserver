@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar flat color="delete">
-      <v-card-title class="hs-text-md">
+      <v-card-title class="hs-subheading">
         <v-icon :icon="mdiAlert" />
         Confirm service account deletion
       </v-card-title>

@@ -1,7 +1,7 @@
 <template>
   <v-card>
-    <v-toolbar flat color="yellow-darken-4">
-      <v-card-title class="hs-text-md">
+    <v-toolbar flat color="warning">
+      <v-card-title class="hs-subheading">
         <v-icon :icon="mdiAlert" />
         Confirm service account API key regeneration
       </v-card-title>
@@ -16,7 +16,7 @@
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
       <v-btn-primary
-        color="yellow-darken-4"
+        color="warning"
         :loading="loading"
         :disabled="loading"
         @click="onDelete"

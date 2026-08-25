@@ -340,7 +340,11 @@
     </v-card>
   </div>
 
-  <v-dialog v-model="openCreate" width="40rem">
+  <v-dialog
+    v-model="openCreate"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <ServiceAccountForm
       @close="openCreate = false"
       @created="onCreate"
@@ -350,7 +354,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openRefresh" width="40rem">
+  <v-dialog
+    v-model="openRefresh"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <ServiceAccountRegenerateForm
       @close="openRefresh = false"
       @regenerated="onRegenerate"
@@ -358,7 +366,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openEdit" width="40rem">
+  <v-dialog
+    v-model="openEdit"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <ServiceAccountForm
       @close="openEdit = false"
       @updated="onUpdate"
@@ -369,7 +381,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openDelete" width="40rem">
+  <v-dialog
+    v-model="openDelete"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <DeleteServiceAccount
       :itemName="item.name"
       :loading="isDeleting"

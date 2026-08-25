@@ -1,0 +1,73 @@
+# HydroServer Design System Conventions
+
+Short version: don't invent values or one-off markup when this package
+already has an answer. Check here first, then `tokens.css`, `vuetify.ts`,
+`components.css`, and `vue/` for the actual definitions.
+
+## Where things live
+
+- `tokens.css` — spacing, radius, shadow, and font-size scale as CSS
+  variables (`--hs-space-*`, `--hs-radius-*`, `--hs-font-*`), plus the
+  `.hs-text-*` and `.hs-heading` / `.hs-subheading` / `.hs-title` /
+  `.hs-label` type-recipe classes.
+- `vuetify.ts` — the color palette and semantic roles (`primary`,
+  `surface`, `text-primary`, `danger`, …), plus component defaults
+  (button variants, text field/select/autocomplete behavior).
+- `components.css` — shared recipes for recurring hand-built controls
+  (search inputs, stat cards) that aren't plain Vuetify components.
+- `vue/` — shared Vue components (`Hs*.vue`). Use one of these before
+  building a bespoke layout that duplicates it.
+
+## Color
+
+- Never hardcode a hex value or `rgb()` literal in app code. Use a
+  Vuetify theme role (`rgb(var(--v-theme-primary))`, `color="primary"`,
+  utility classes like `.text-primary`) or, for custom chrome CSS, the
+  `--hs-*` compatibility variables defined in `tokens.css`.
+- Add a new color only in `vuetify.ts`, as a named semantic role next
+  to its literal — never as a raw value in a component or app.
+
+## Spacing & radius
+
+- Pick from `--hs-space-*` / `--hs-radius-*` instead of writing a new
+  px value. If nothing in the scale fits, that's a signal to reconsider
+  the layout before adding a token.
+- Perfect circles (avatars, status dots) stay literal `border-radius: 50%`
+  — that's a shape, not a step on the radius scale.
+
+## Typography
+
+- Use recipes from `tokens.css` (`.hs-heading`, `.hs-subheading`, `.hs-title`,
+  `.hs-label`) instead of recomposing it inline every time. The goal is to
+  keep to a small and set list of font recipes so the typography looks polished
+  and intentional.
+
+## Buttons
+
+- Use the semantic button aliases — `VBtnPrimary`, `VBtnSecondary`,
+  `VBtnDelete`, `VBtnCancel`, `VBtnAdd` — not bare `VBtn` with manual
+  `color`/`variant` props. Each alias already encodes the right color,
+  shape, and emphasis for its role.
+
+## Forms
+
+- Text fields, selects, autocompletes, textareas, and checkboxes inherit
+  shared defaults (`variant: 'outlined'`, autofill disabled on
+  menu-based inputs) from `vuetify.ts` — don't override these per
+  instance unless the field is genuinely special-cased.
+- Mark required fields with the `.required-label` class, not a manual
+  asterisk + color.
+
+## Shared components over bespoke markup
+
+- Before building a new empty state, nav rail, detail panel, stat
+  card, or search input, check `vue/` and `components.css` — there is
+  likely an `Hs*` component or `.hs-*` recipe already covering it.
+- Extend a shared component/recipe when the need is close but not
+  exact, rather than forking a parallel implementation in one app.
+
+## Adding to the system
+
+- A new token/role/recipe belongs in this package only if it's shared
+  across apps (or clearly will be soon). App-specific one-offs stay in
+  the app.

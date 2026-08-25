@@ -1,7 +1,7 @@
 <template>
   <v-card>
-    <v-toolbar color="blue-darken-4">
-      <v-card-title>
+    <v-toolbar flat color="primary">
+      <v-card-title class="hs-subheading">
         {{ isEdit ? 'Edit' : 'Create' }} service account
         <span v-if="isEdit" class="opacity-80">- {{ item.name }}</span>
       </v-card-title>

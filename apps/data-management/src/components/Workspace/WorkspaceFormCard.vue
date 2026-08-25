@@ -1,7 +1,9 @@
 <template>
   <v-card>
     <v-toolbar flat color="primary">
-      <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} workspace </v-card-title>
+      <v-card-title class="hs-subheading">
+        {{ isEdit ? 'Edit' : 'Add' }} workspace
+      </v-card-title>
     </v-toolbar>
     <v-divider />
 
@@ -11,7 +13,7 @@
       v-model="valid"
       validate-on="blur"
     >
-      <v-card-text v-if="item" class="mt-4">
+      <v-card-text v-if="item">
         <v-text-field
           v-model="item.name"
           label="Name *"

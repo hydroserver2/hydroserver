@@ -265,11 +265,19 @@
   </div>
   <FullScreenLoader v-else />
 
-  <v-dialog v-model="openCreate" width="30rem">
+  <v-dialog
+    v-model="openCreate"
+    width="30rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <WorkspaceFormCard @close="openCreate = false" @created="onCreated" />
   </v-dialog>
 
-  <v-dialog v-model="openEdit" width="30rem">
+  <v-dialog
+    v-model="openEdit"
+    width="30rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <WorkspaceFormCard
       @close="openEdit = false"
       :workspace="activeItem"
@@ -277,7 +285,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openDelete" width="30rem">
+  <v-dialog
+    v-model="openDelete"
+    width="30rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <DeleteWorkspaceCard
       @close="openDelete = false"
       @delete="onDelete"

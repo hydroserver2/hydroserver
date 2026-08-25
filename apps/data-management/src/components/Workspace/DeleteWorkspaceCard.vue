@@ -1,8 +1,9 @@
 <template>
   <v-card>
     <v-toolbar flat color="delete">
-      <v-card-title class="hs-text-md">
-        <v-icon :icon="mdiAlert" /> Confirm workspace deletion
+      <v-card-title class="hs-subheading">
+        <v-icon :icon="mdiAlert" />
+        Confirm workspace deletion
       </v-card-title>
     </v-toolbar>
     <v-divider />
@@ -32,7 +33,6 @@
           class="pt-2"
           v-model="deleteInput"
           label="Workspace name"
-          solo
           @keydown.enter.prevent="onDelete"
         ></v-text-field>
       </v-form>

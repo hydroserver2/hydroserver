@@ -26,8 +26,8 @@ const theme: ThemeDefinition = {
     default: '#757575',
     danger: '#B3261E',
     'danger-bg': '#FFEBEE',
-    delete: '#F44336',
-    error: '#F44336',
+    delete: '#C62828',
+    error: '#C62828',
     info: '#03A9F4',
     success: '#66AE5C',
     warning: '#FF9800',
@@ -41,7 +41,7 @@ const textFieldAttrs = {
 const btnAttrs = {
   color: 'primary',
   style: 'text-transform: none;', // Remove uppercase text
-  rounded: 'xl',
+  rounded: 'lg',
 }
 
 const menuDefaults = {
@@ -100,7 +100,7 @@ const vuetify = createVuetify({
     VBtnCancel: {
       ...btnAttrs,
       color: 'grey',
-      variant: 'outlined',
+      variant: 'text',
     },
     VBtnAdd: {
       ...btnAttrs,
