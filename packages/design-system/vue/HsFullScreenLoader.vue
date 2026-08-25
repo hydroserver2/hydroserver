@@ -5,12 +5,7 @@
         <h5 class="hs-text-md">{{ loadingText }}</h5>
       </v-col>
       <v-col cols="6" sm="2">
-        <v-progress-linear
-          color="blue-accent-4"
-          height="8"
-          indeterminate
-          rounded
-        ></v-progress-linear>
+        <v-progress-linear color="primary" height="8" indeterminate rounded />
       </v-col>
     </v-row>
   </v-container>
@@ -19,7 +14,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'HsFullScreenLoader' })
 
-const props = defineProps({
-  loadingText: { type: String, default: 'Loading page...' },
+withDefaults(defineProps<{ loadingText?: string }>(), {
+  loadingText: 'Loading page…',
 })
 </script>

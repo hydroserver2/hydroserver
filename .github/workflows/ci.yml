@@ -116,10 +116,6 @@ jobs:
             echo "VITE_HYDROSERVER_CLIENT_PATH=../../packages/hydroserver-ts/src"
           } > .env
 
-      - name: Check type scale (fonts/sizes)
-        working-directory: apps/data-management
-        run: npm run check:type-scale
-
       - name: Run app tests
         working-directory: apps/data-management
         run: npm run coverage

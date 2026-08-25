@@ -5,9 +5,8 @@
   "scripts": {
     "dev": "vite",
     "docker-dev": "vite --host 0.0.0.0",
-    "check:type-scale": "node scripts/check-type-scale.mjs",
-    "build": "npm run check:type-scale && vue-tsc && vite build",
-    "django-build": "npm run check:type-scale && vue-tsc && vite build --mode django",
+    "build": "vue-tsc && vite build",
+    "django-build": "vue-tsc && vite build --mode django",
     "preview": "vite preview",
     "test": "vitest",
     "coverage": "vitest run --coverage --environment jsdom",

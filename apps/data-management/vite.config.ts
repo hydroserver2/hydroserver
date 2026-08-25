@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
     env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
   const designSystemRoot = resolve(__dirname, '../../packages/design-system')
+  const workspaceNodeModules = resolve(__dirname, '../../node_modules')
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
 
@@ -55,10 +56,13 @@ export default defineConfig(({ mode }) => {
         },
       },
       fs: {
+        // Linked workspace packages resolve their dependencies from the root.
+        // Allow that dependency directory without exposing the whole repo.
         allow: [
+          resolve(__dirname),
           sdkRoot,
           designSystemRoot,
-          resolve(__dirname), // <- add this
+          workspaceNodeModules,
         ],
       },
     },
