@@ -71,7 +71,7 @@ describe('MonitoringSiteService', () => {
           latitude: 41.7,
           longitude: -111.8,
           code: 'SF-1',
-          tags: [{ key: 'network', value: 'main' }],
+          tags: { network: 'main' },
         },
       ]
 

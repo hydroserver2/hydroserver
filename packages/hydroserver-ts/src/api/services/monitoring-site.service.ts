@@ -10,14 +10,10 @@ import {
   SiteTypeIcon,
   MonitoringSiteMapSummary,
   MonitoringSiteTaskSummary,
-  Tag,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 import { normalizeAttachmentCollection } from './attachment-link'
 
-type TagPostBody = Data.components['schemas']['TagPostBody']
-type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
-type TagResponse = Data.components['schemas']['TagGetResponse']
 type FileAttachmentResponse =
   Data.components['schemas']['FileAttachmentGetResponse']
 
@@ -60,29 +56,21 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTags(monitoringSiteId: string) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.fetch<Tag[]>(url)
-  }
-
   getTagKeys(params: { workspace_id?: string; monitoring_site_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
     return apiMethods.fetch<Record<string, string[]>>(url)
   }
 
-  createTag(monitoringSiteId: string, tag: TagPostBody) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.post<TagResponse>(url, tag)
+  setTag(monitoringSiteId: string, key: string, value: string) {
+    return apiMethods.patch<MonitoringSite>(`${this._route}/${monitoringSiteId}`, {
+      tags: { [key]: value },
+    })
   }
 
-  updateTag(monitoringSiteId: string, tag: TagPostBody) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.put<TagResponse>(url, tag)
-  }
-
-  deleteTag(monitoringSiteId: string, tag: TagDeleteBody) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.delete<null>(url, tag)
+  deleteTag(monitoringSiteId: string, key: string) {
+    return apiMethods.patch<MonitoringSite>(`${this._route}/${monitoringSiteId}`, {
+      tags: { [key]: null },
+    })
   }
 
   /* ----------------- Sub-resources: File Attachments ----------------- */

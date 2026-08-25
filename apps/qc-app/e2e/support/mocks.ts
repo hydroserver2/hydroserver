@@ -251,10 +251,10 @@ export async function installMocks(
       return json(route, { data: ds })
     }
 
-    // --- Tags / attachments / other sub-resources the app may touch
+    // --- Attachments / other sub-resources the app may touch
     //     in DatastreamInformationCard — return empty arrays so the
     //     UI renders without errors.
-    if (path.includes('/tags') || path.includes('/attachments')) {
+    if (path.includes('/attachments')) {
       return json(route, { data: [] })
     }
 

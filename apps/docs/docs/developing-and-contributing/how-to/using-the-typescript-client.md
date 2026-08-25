@@ -271,9 +271,8 @@ await hs.monitoringSites.updatePrivacy(monitoringSite.id, true);
 ```ts
 const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
 
-await hs.monitoringSites.createTag(monitoringSiteId, { key: "Region", value: "A" });
-await hs.monitoringSites.updateTag(monitoringSiteId, { key: "Region", value: "B" });
-await hs.monitoringSites.deleteTag(monitoringSiteId, { key: "Region" });
+await hs.monitoringSites.setTag(monitoringSiteId, "Region", "A");
+await hs.monitoringSites.deleteTag(monitoringSiteId, "Region");
 ```
 
 ### Example: Manage monitoringSite file attachments
@@ -509,19 +508,8 @@ await hs.datastreams.update(created);
 ```ts
 const datastreamId = "00000000-0000-0000-0000-000000000000";
 
-await hs.datastreams.createTag(datastreamId, {
-  key: "MaxAllowableResult",
-  value: "100",
-});
-
-await hs.datastreams.updateTag(datastreamId, {
-  key: "MaxAllowableResult",
-  value: "120",
-});
-
-await hs.datastreams.deleteTag(datastreamId, {
-  key: "MaxAllowableResult",
-});
+await hs.datastreams.setTag(datastreamId, "MaxAllowableResult", "100");
+await hs.datastreams.deleteTag(datastreamId, "MaxAllowableResult");
 ```
 
 ### Example: Manage datastream file attachments

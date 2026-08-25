@@ -1981,11 +1981,12 @@
             "title": "Status"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -2037,7 +2038,6 @@
           "observedProperty",
           "processingLevel",
           "unit",
-          "tags",
           "fileAttachments"
         ],
         "title": "DatastreamDetailResponse",
@@ -2205,6 +2205,20 @@
               }
             ],
             "title": "Status"
+          },
+          "tags": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Tags",
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -2419,12 +2433,12 @@
             "title": "Status"
           },
           "tags": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/TagPostBody"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -3008,11 +3022,12 @@
             "title": "Status"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -3068,7 +3083,6 @@
           "timeAggregationIntervalUnit",
           "id",
           "workspaceId",
-          "tags",
           "fileAttachments"
         ],
         "title": "DatastreamSummaryResponse",
@@ -5089,11 +5103,12 @@
             "type": "string"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5114,7 +5129,6 @@
           "isPrivate",
           "id",
           "workspace",
-          "tags",
           "fileAttachments"
         ],
         "title": "MonitoringSiteDetailResponse",
@@ -5175,11 +5189,11 @@
             "type": "string"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5391,6 +5405,20 @@
             "title": "Name",
             "type": "string"
           },
+          "tags": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Tags",
+            "type": "object"
+          },
           "type": {
             "maxLength": 200,
             "title": "Type",
@@ -5517,12 +5545,12 @@
             "type": "string"
           },
           "tags": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/TagPostBody"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5827,11 +5855,12 @@
             "type": "string"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5854,7 +5883,6 @@
           "isPrivate",
           "id",
           "workspaceId",
-          "tags",
           "fileAttachments"
         ],
         "title": "MonitoringSiteSummaryResponse",
@@ -10185,66 +10213,6 @@
         "title": "SiteTypeIconResponse",
         "type": "object"
       },
-      "TagDeleteBody": {
-        "properties": {
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          }
-        },
-        "required": [
-          "key"
-        ],
-        "title": "TagDeleteBody",
-        "type": "object"
-      },
-      "TagGetResponse": {
-        "properties": {
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "value": {
-            "title": "Value",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "value"
-        ],
-        "title": "TagGetResponse",
-        "type": "object"
-      },
-      "TagPostBody": {
-        "properties": {
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "value": {
-            "title": "Value",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "value"
-        ],
-        "title": "TagPostBody",
-        "type": "object"
-      },
       "TaskRunOrderBy": {
         "enum": [
           "id",
@@ -11326,7 +11294,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.11.0"
+    "version": "1.11.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -14114,373 +14082,6 @@
         "tags": [
           "Datastreams",
           "Observations"
-        ]
-      }
-    },
-    "/api/data/datastreams/{datastream_id}/tags": {
-      "delete": {
-        "description": "Remove a tag from a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_remove_datastream_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Datastream Tag",
-        "tags": [
-          "Datastreams"
-        ]
-      },
-      "get": {
-        "description": "Get all tags associated with a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_tags",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TagGetResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Datastream Tags",
-        "tags": [
-          "Datastreams"
-        ]
-      },
-      "post": {
-        "description": "Add a tag to a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_add_datastream_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Add Datastream Tag",
-        "tags": [
-          "Datastreams"
-        ]
-      },
-      "put": {
-        "description": "Edit a tag of a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_edit_datastream_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Edit Datastream Tag",
-        "tags": [
-          "Datastreams"
         ]
       }
     },
@@ -18614,373 +18215,6 @@
           }
         ],
         "summary": "Replace Monitoring Site File Attachment",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/{monitoring_site_id}/tags": {
-      "delete": {
-        "description": "Remove a tag from a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Monitoring Site Tag",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
-      "get": {
-        "description": "Get all tags associated with a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_tags",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TagGetResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Monitoring Site Tags",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
-      "post": {
-        "description": "Add a tag to a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Add Monitoring Site Tag",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
-      "put": {
-        "description": "Edit a tag of a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_edit_monitoring_site_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Edit Monitoring Site Tag",
         "tags": [
           "Monitoring Sites"
         ]

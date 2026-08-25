@@ -6,9 +6,6 @@
 __pycache__/
 db.sqlite3
 /static/*
-!/static/css/
-/static/css/*
-!/static/css/input.css
 /media/
 staticfiles/
 /web/static/web/*

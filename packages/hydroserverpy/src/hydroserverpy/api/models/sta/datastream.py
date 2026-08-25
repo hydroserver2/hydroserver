@@ -232,12 +232,6 @@ class Datastream(HydroServerBaseModel):
 
         self.save()
 
-    @field_validator("tags", mode="before")
-    def transform_tags(cls, v):
-        if isinstance(v, list):
-            return {item["key"]: item["value"] for item in v if "key" in item and "value" in item}
-        return v
-
     @field_validator("file_attachments", mode="before")
     def transform_file_attachments(cls, v):
         if isinstance(v, list):
@@ -249,23 +243,17 @@ class Datastream(HydroServerBaseModel):
             }
         return v
 
-    def add_tag(self, key: str, value: str):
-        """Add a tag to this datastream."""
+    def set_tag(self, key: str, value: str):
+        """Create or update a tag on this datastream."""
 
-        self.client.datastreams.add_tag(uid=self.uid, key=key, value=value)
-        self.tags[key] = value
-
-    def update_tag(self, key: str, value: str):
-        """Edit a tag of this datastream."""
-
-        self.client.datastreams.update_tag(uid=self.uid, key=key, value=value)
+        self.client.datastreams.set_tag(uid=self.uid, key=key, value=value)
         self.tags[key] = value
 
     def delete_tag(self, key: str):
         """Delete a tag of this datastream."""
 
-        self.client.datastreams.delete_tag(uid=self.uid, key=key, value=self.tags[key])
-        del self.tags[key]
+        self.client.datastreams.delete_tag(uid=self.uid, key=key)
+        self.tags.pop(key, None)
 
     def add_file_attachment(self, file: IO[bytes], file_attachment_type: str):
         """Add a file attachment for this datastream."""

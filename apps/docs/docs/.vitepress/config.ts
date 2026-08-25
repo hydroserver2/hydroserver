@@ -159,6 +159,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/using-streaming-data-loader",
               },
               {
+                text: "Using the Job Orchestration System",
+                link: "/user-guides/how-to/using-job-orchestration",
+              },
+              {
                 text: "Visualizing Data",
                 link: "/user-guides/how-to/visualizing-data",
               },
@@ -267,6 +271,10 @@ export default defineConfig({
               {
                 text: "Using the Django Admin Dashboard",
                 link: "/hosting-and-deployment/how-to/using-the-administrator-dashboard",
+              },
+              {
+                text: "Building the Docker Image from Source",
+                link: "/hosting-and-deployment/how-to/building-the-docker-image-from-source",
               },
             ],
           },

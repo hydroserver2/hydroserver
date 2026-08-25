@@ -194,13 +194,13 @@ monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-00000
 tags = monitoring_site.tags
 
 # Add a tag to a monitoring_site
-monitoring_site.add_tag(
+monitoring_site.set_tag(
     key='Region',
     value='A'
 )
 
 # Modify a monitoring_site's tag
-monitoring_site.update_tag(
+monitoring_site.set_tag(
     key='Region',
     value='B'
 )

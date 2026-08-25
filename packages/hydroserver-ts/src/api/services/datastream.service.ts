@@ -46,9 +46,6 @@ export interface VisualizationBootstrap {
   processingLevels: ProcessingLevel[]
 }
 
-type TagPostBody = Data.components['schemas']['TagPostBody']
-type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
-type TagResponse = Data.components['schemas']['TagGetResponse']
 type TagKeyResponse = Record<string, string[]>
 type FileAttachmentResponse =
   Data.components['schemas']['FileAttachmentGetResponse']
@@ -80,29 +77,21 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTags(datastreamId: string) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.fetch<TagResponse[]>(url)
-  }
-
   getTagKeys(params: { workspace_id?: string; datastream_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
     return apiMethods.fetch<TagKeyResponse>(url)
   }
 
-  createTag(datastreamId: string, tag: TagPostBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.post<TagResponse>(url, tag)
+  setTag(datastreamId: string, key: string, value: string) {
+    return apiMethods.patch<M>(`${this._route}/${datastreamId}`, {
+      tags: { [key]: value },
+    })
   }
 
-  updateTag(datastreamId: string, tag: TagPostBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.put<TagResponse>(url, tag)
-  }
-
-  deleteTag(datastreamId: string, tag: TagDeleteBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.delete<NoContentResponse>(url, tag)
+  deleteTag(datastreamId: string, key: string) {
+    return apiMethods.patch<M>(`${this._route}/${datastreamId}`, {
+      tags: { [key]: null },
+    })
   }
 
   /* ----------------- Sub-resources: File Attachments ----------------- */

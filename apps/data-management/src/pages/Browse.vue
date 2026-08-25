@@ -238,8 +238,8 @@ const closeSiteRegistration = async () => {
 
 const resetSiteFormContext = () => {
   storedMonitoringSite.value = undefined
-  tags.value = []
-  previewTags.value = []
+  tags.value = {}
+  previewTags.value = {}
   photos.value = []
   newPhotos.value = []
   photosToDelete.value = []
@@ -261,18 +261,17 @@ const openSiteEditor = async (site: MonitoringSiteMapSummary) => {
   if (!hasSitePermission(site, PermissionAction.Edit)) return
 
   try {
-    const [monitoringSite, tagResponse, attachmentResponse] = await Promise.all([
+    const [monitoringSite, attachmentResponse] = await Promise.all([
       hs.monitoringSites.getItem(site.id),
-      hs.monitoringSites.getTags(site.id),
       hs.monitoringSites.getAttachments(site.id),
     ])
-    if (!monitoringSite || !tagResponse.ok || !attachmentResponse.ok) {
+    if (!monitoringSite || !attachmentResponse.ok) {
       throw new Error('The site editing context could not be loaded.')
     }
 
     resetSiteFormContext()
     storedMonitoringSite.value = monitoringSite
-    tags.value = tagResponse.data
+    tags.value = monitoringSite.tags ?? {}
     photos.value = attachmentResponse.data
     editingSite.value = site
     showEditSiteForm.value = true

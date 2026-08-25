@@ -1,131 +1,134 @@
 <template>
-  <div class="service-accounts-header">
-    <h6 class="text-h6">Service accounts</h6>
-    <v-icon
-      :icon="mdiHelpCircleOutline"
-      @click="showServiceAccountHelp = !showServiceAccountHelp"
-      color="grey"
-      size="18"
-      class="service-accounts-help-icon"
-      aria-label="Toggle service account help"
-      :aria-expanded="showServiceAccountHelp"
-    />
-  </div>
-
-  <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
-    Service accounts provide remote systems with a controlled set of
-    permissions. A service account can collaborate on other workspaces after it
-    is created.
-  </p>
-
-  <v-alert
-    v-if="loadError"
-    type="error"
-    variant="tonal"
-    density="compact"
-    class="mb-3"
-  >
-    <div class="d-flex align-center ga-2">
-      <span>{{ loadError }}</span>
-      <v-spacer />
-      <v-btn variant="text" size="small" @click="reloadData">Retry</v-btn>
-    </div>
-  </v-alert>
-  <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
-
-  <v-card-text v-if="showNewKey && newKey">
-    <v-alert
-      type="success"
-      border="start"
-      elevation="2"
-      variant="tonal"
-      class="mb-4"
-    >
-      Your service account API key has been generated. Please copy it and store
-      it somewhere safe — you won’t be able to see it again after leaving this
-      page.
-    </v-alert>
-
-    <v-sheet
-      color="grey-lighten-5"
-      class="pa-4 rounded d-flex align-center justify-space-between"
-      border
-    >
-      <span class="text-mono text-wrap break-all">{{ newKey.key }}</span>
-      <v-btn
-        :icon="mdiContentCopy"
-        variant="text"
-        @click="copyKey(newKey.key)"
-        aria-label="Copy service account API key"
+  <div class="service-accounts-section" data-testid="service-accounts-section">
+    <div class="service-accounts-header">
+      <h6 class="text-h6">Service accounts</h6>
+      <v-icon
+        :icon="mdiHelpCircleOutline"
+        @click="showServiceAccountHelp = !showServiceAccountHelp"
+        color="grey"
+        size="18"
+        class="service-accounts-help-icon"
+        aria-label="Toggle service account help"
+        :aria-expanded="showServiceAccountHelp"
       />
-    </v-sheet>
-  </v-card-text>
+    </div>
 
-  <v-card class="hs-table-card service-accounts-table-card" flat>
-    <v-toolbar flat density="compact">
-      <v-spacer />
-      <PermissionTooltip
-        :has-permission="canCreate"
-        message="You don't have permission to create service accounts for this workspace."
-      >
-        <template #default>
-          <v-btn-add class="mr-2" @click="openCreate = true">
-            Create service account
-          </v-btn-add>
-        </template>
-        <template #denied>
-          <v-btn-add class="mr-2" disabled>Create service account</v-btn-add>
-        </template>
-      </PermissionTooltip>
-    </v-toolbar>
+    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
+      Service accounts provide remote systems with a controlled set of
+      permissions. A service account can collaborate on other workspaces after
+      it is created.
+    </p>
 
-    <v-data-table-virtual
-      :headers="headers"
-      :items="items"
-      :sort-by="sortBy"
-      :search="search"
-      :style="{ 'max-height': `100vh` }"
-      no-data-text="No service accounts available"
-      fixed-header
+    <v-alert
+      v-if="loadError"
+      type="error"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
     >
-      <template #item.id="{ item }">
-        <div class="d-flex align-center">
-          {{ item.id }}
-          <v-icon size="x-small" class="ml-2" @click="copyKey(item.id)">
-            <v-icon :icon="mdiContentCopy" />
-          </v-icon>
-        </div>
-      </template>
+      <div class="d-flex align-center ga-2">
+        <span>{{ loadError }}</span>
+        <v-spacer />
+        <v-btn variant="text" size="small" @click="reloadData">Retry</v-btn>
+      </div>
+    </v-alert>
+    <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
 
-      <template v-slot:item.actions="{ item }">
+    <v-card-text v-if="showNewKey && newKey">
+      <v-alert
+        type="success"
+        border="start"
+        elevation="2"
+        variant="tonal"
+        class="mb-4"
+      >
+        Your service account API key has been generated. Please copy it and
+        store it somewhere safe — you won’t be able to see it again after
+        leaving this page.
+      </v-alert>
+
+      <v-sheet
+        color="grey-lighten-5"
+        class="pa-4 rounded d-flex align-center justify-space-between"
+        border
+      >
+        <span class="text-mono text-wrap break-all">{{ newKey.key }}</span>
         <v-btn
-          :icon="mdiRefresh"
+          :icon="mdiContentCopy"
           variant="text"
-          size="small"
-          :disabled="!canEdit"
-          :aria-label="`Regenerate ${item.name}`"
-          @click="onOpenRegenerateDialog(item)"
+          @click="copyKey(newKey.key)"
+          aria-label="Copy service account API key"
         />
-        <v-btn
-          :icon="mdiPencil"
-          variant="text"
-          size="small"
-          :disabled="!canEdit"
-          :aria-label="`Edit ${item.name}`"
-          @click="openDialog(item, 'edit')"
-        />
-        <v-btn
-          :icon="mdiTrashCanOutline"
-          variant="text"
-          size="small"
-          color="red-darken-2"
-          :disabled="!canDelete"
-          :aria-label="`Delete ${item.name}`"
-          @click="openDialog(item, 'delete')"
-        />
-      </template>
-    </v-data-table-virtual>
-  </v-card>
+      </v-sheet>
+    </v-card-text>
+
+    <v-card class="hs-table-card service-accounts-table-card" flat>
+      <v-toolbar flat density="compact">
+        <v-spacer />
+        <PermissionTooltip
+          :has-permission="canCreate"
+          message="You don't have permission to create service accounts for this workspace."
+        >
+          <template #default>
+            <v-btn-add class="mr-2" @click="openCreate = true">
+              Create service account
+            </v-btn-add>
+          </template>
+          <template #denied>
+            <v-btn-add class="mr-2" disabled>Create service account</v-btn-add>
+          </template>
+        </PermissionTooltip>
+      </v-toolbar>
+
+      <v-data-table-virtual
+        class="service-accounts-data-table"
+        :headers="headers"
+        :items="items"
+        :sort-by="sortBy"
+        :search="search"
+        height="100%"
+        no-data-text="No service accounts available"
+        fixed-header
+      >
+        <template #item.id="{ item }">
+          <div class="d-flex align-center">
+            {{ item.id }}
+            <v-icon size="x-small" class="ml-2" @click="copyKey(item.id)">
+              <v-icon :icon="mdiContentCopy" />
+            </v-icon>
+          </div>
+        </template>
+
+        <template v-slot:item.actions="{ item }">
+          <v-btn
+            :icon="mdiRefresh"
+            variant="text"
+            size="small"
+            :disabled="!canEdit"
+            :aria-label="`Regenerate ${item.name}`"
+            @click="onOpenRegenerateDialog(item)"
+          />
+          <v-btn
+            :icon="mdiPencil"
+            variant="text"
+            size="small"
+            :disabled="!canEdit"
+            :aria-label="`Edit ${item.name}`"
+            @click="openDialog(item, 'edit')"
+          />
+          <v-btn
+            :icon="mdiTrashCanOutline"
+            variant="text"
+            size="small"
+            color="red-darken-2"
+            :disabled="!canDelete"
+            :aria-label="`Delete ${item.name}`"
+            @click="openDialog(item, 'delete')"
+          />
+        </template>
+      </v-data-table-virtual>
+    </v-card>
+  </div>
 
   <v-dialog v-model="openCreate" width="40rem">
     <ServiceAccountForm
@@ -441,6 +444,13 @@ onMounted(loadRoles)
 </script>
 
 <style scoped>
+.service-accounts-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
 .service-accounts-header {
   display: flex;
   align-items: center;
@@ -458,6 +468,16 @@ onMounted(loadRoles)
   margin-bottom: 10px;
 }
 .service-accounts-table-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   margin-top: 6px;
+  overflow: hidden;
+}
+.service-accounts-data-table {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 </style>

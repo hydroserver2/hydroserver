@@ -27,3 +27,21 @@ def test_get_thing_returns_200(client):
 
     assert response.status_code == 200
     assert response.json()["@iot.id"] == str(site.id)
+
+
+def test_get_thing_includes_tags_in_properties(client):
+    site = MonitoringSiteFactory(tags={"basin": "logan-river"})
+
+    response = client.get(_detail_url(site.id))
+
+    assert response.status_code == 200
+    assert response.json()["properties"]["tags"] == {"basin": "logan-river"}
+
+
+def test_get_thing_returns_empty_tags_when_untagged(client):
+    site = MonitoringSiteFactory()
+
+    response = client.get(_detail_url(site.id))
+
+    assert response.status_code == 200
+    assert response.json()["properties"]["tags"] == {}

@@ -28,26 +28,23 @@ SECRET_KEY = env.str(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=True)
 
+# SECURITY WARNING: don't run with relaxed security in production!
+STRICT_SECURITY = env.bool("STRICT_SECURITY", default=False)
+
+if STRICT_SECURITY and SECRET_KEY.startswith("django-insecure-"):
+    raise ImproperlyConfigured("SECRET_KEY must be set for deployed instances")
+
 
 # Networking & Proxy
 
 PROXY_BASE_URL = env.str("PROXY_BASE_URL", default="http://127.0.0.1:8000")
 
-TRUSTED_LOCAL_ENVIRONMENT = env.bool(
-    "TRUSTED_LOCAL_ENVIRONMENT",
-    default=urlparse(PROXY_BASE_URL).hostname in {"127.0.0.1", "localhost"}
-)
+SAME_ORIGIN_FRONTEND = env.bool("SAME_ORIGIN_FRONTEND", default=False)
 
 WEB_CLIENT_URL = env.str(
     "WEB_CLIENT_URL",
-    default=(
-        f"http://{urlparse(PROXY_BASE_URL).hostname}:1203"
-        if TRUSTED_LOCAL_ENVIRONMENT else PROXY_BASE_URL
-    ),
+    default=PROXY_BASE_URL if SAME_ORIGIN_FRONTEND else "http://127.0.0.1:1203",
 )
-
-if not TRUSTED_LOCAL_ENVIRONMENT and SECRET_KEY.startswith("django-insecure-"):
-    raise ImproperlyConfigured("SECRET_KEY must be set for deployed instances")
 
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -56,7 +53,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 ALLOWED_HOSTS.append(urlparse(PROXY_BASE_URL).hostname)
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = TRUSTED_LOCAL_ENVIRONMENT
+CORS_ALLOW_CREDENTIALS = env.bool("CORS_ALLOW_CREDENTIALS", default=not STRICT_SECURITY)
 CORS_URLS_REGEX = r"^/$|^/(api|identity|\.well-known|media|static)/.*$"
 
 CORS_EXPOSE_HEADERS = [
@@ -83,8 +80,10 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.postgres",
     "allauth",
     "allauth.account",
     "allauth.idp.oidc",
@@ -129,7 +128,7 @@ MIDDLEWARE = [
     "core.web.middleware.NoIndexMiddleware",
 ]
 
-if TRUSTED_LOCAL_ENVIRONMENT:
+if not STRICT_SECURITY:
     MIDDLEWARE.remove("django.middleware.csrf.CsrfViewMiddleware")
 
 ROOT_URLCONF = "hydroserver.urls"
@@ -222,7 +221,7 @@ SERVICE_ACCOUNT_EMAIL_DOMAIN = env.str(
 ACCOUNT_SIGNUP_ENABLED = env.bool("ACCOUNT_SIGNUP_ENABLED", default=True)
 ACCOUNT_OWNERSHIP_ENABLED = env.bool("ACCOUNT_OWNERSHIP_ENABLED", default=True)
 ACCOUNT_RATE_LIMITS = env.json(
-    "ACCOUNT_RATE_LIMITS", default={} if not TRUSTED_LOCAL_ENVIRONMENT else False
+    "ACCOUNT_RATE_LIMITS", default={} if STRICT_SECURITY else False
 )
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
@@ -288,7 +287,7 @@ IDP_OIDC_PRIVATE_KEY = (
     )
 )
 
-if IDP_OIDC_ENABLED and not TRUSTED_LOCAL_ENVIRONMENT and not IDP_OIDC_PRIVATE_KEY:
+if IDP_OIDC_ENABLED and STRICT_SECURITY and not IDP_OIDC_PRIVATE_KEY:
     raise ImproperlyConfigured(
         "IDP_OIDC_PRIVATE_KEY must be set for deployed instances with "
         "IDP_OIDC_ENABLED"
@@ -316,7 +315,8 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost"
 
 # Storage
 
-STATIC_URL = "/static/"
+STATIC_HOST = env.str("STATIC_HOST", default="")
+STATIC_URL = STATIC_HOST + "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
@@ -337,7 +337,7 @@ STORAGES = {
             default="django.contrib.staticfiles.storage.StaticFilesStorage",
         ),
         "OPTIONS": env.json(
-            "STATIC_STORAGE_OPTIONS", default={"location": str(BASE_DIR / "static")}
+            "STATIC_STORAGE_OPTIONS", default={"location": str(BASE_DIR / "staticfiles")}
         ),
     },
 }
@@ -349,8 +349,21 @@ STATIC_STORAGE_IS_LOCAL = (
     STORAGES["staticfiles"]["BACKEND"] == "django.contrib.staticfiles.storage.StaticFilesStorage"
 )
 
+STATIC_ROOT = (
+    Path(STORAGES["staticfiles"]["OPTIONS"]["location"])
+    if STATIC_STORAGE_IS_LOCAL else None
+)
+
+if STATIC_STORAGE_IS_LOCAL:
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+WHITENOISE_USE_FINDERS = env.bool("WHITENOISE_USE_FINDERS", default=DEBUG)
+WHITENOISE_AUTOREFRESH = env.bool("WHITENOISE_AUTOREFRESH", default=DEBUG)
+WHITENOISE_MAX_AGE = env.int("WHITENOISE_MAX_AGE", default=60 * 60 * 24)
+WHITENOISE_IMMUTABLE_FILE_TEST = r"^/static/(web|qc)/assets/"
+
 TAILWIND_CLI_VERSION = "4.1.3"
-TAILWIND_CLI_SRC_CSS = "static/css/input.css"
+TAILWIND_CLI_SRC_CSS = ".django_tailwind_cli/source.css"
 
 
 # Celery

@@ -8,8 +8,8 @@ interface WithId {
 /**
  * Like useTableLogic, but for the merged "All" metadata view: fetches a
  * workspace's own items alongside the shared system items and tags each with
- * where it came from, so the table can show a Scope column and only allow
- * editing the rows this workspace actually owns.
+ * where it came from, so the table can show a Scope column and apply
+ * row-level permissions for workspace and system metadata.
  */
 export function useAllScopeTableLogic<T extends WithId>(
   fetchWorkspaceFn: (wsId: string) => Promise<T[]>,
@@ -59,8 +59,12 @@ export function useAllScopeTableLogic<T extends WithId>(
         fetchSystemFn(),
       ])
       items.value = [
-        ...workspaceItems.map((i) => Object.assign(i, { _scope: 'workspace' as const })),
-        ...systemItems.map((i) => Object.assign(i, { _scope: 'system' as const })),
+        ...workspaceItems.map((i) =>
+          Object.assign(i, { _scope: 'workspace' as const })
+        ),
+        ...systemItems.map((i) =>
+          Object.assign(i, { _scope: 'system' as const })
+        ),
       ]
     } catch (error) {
       console.error(`Error fetching table items`, error)

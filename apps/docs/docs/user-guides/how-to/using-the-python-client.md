@@ -230,8 +230,7 @@ hs_api.monitoring_sites.create(workspace, name, description, code, type,
 
 | Method | Description |
 |---|---|
-| `add_tag(key, value)` | Add a tag to this monitoring site |
-| `update_tag(key, value)` | Update an existing tag's value |
+| `set_tag(key, value)` | Add or update a tag on this monitoring site |
 | `delete_tag(key)` | Remove a tag |
 | `add_file_attachment(file, file_attachment_type)` | Upload a file; `file` is an open binary file object |
 | `delete_file_attachment(name)` | Remove a file attachment by filename |
@@ -456,7 +455,7 @@ Deletes observations within the given time range. If both parameters are omitted
 
 ### Tag and file attachment methods
 
-Same as monitoring sites — `add_tag`, `update_tag`, `delete_tag`, `add_file_attachment`, `delete_file_attachment`.
+Same as monitoring sites — `set_tag`, `delete_tag`, `add_file_attachment`, `delete_file_attachment`.
 
 ---
 

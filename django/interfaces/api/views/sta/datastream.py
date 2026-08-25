@@ -15,9 +15,6 @@ from interfaces.api.schemas import (
     DatastreamQueryParameters,
     DatastreamPostBody,
     DatastreamPatchBody,
-    TagGetResponse,
-    TagPostBody,
-    TagDeleteBody,
     FileAttachmentQueryParameters,
     FileAttachmentGetResponse,
     FileAttachmentPostBody,
@@ -283,107 +280,6 @@ def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.
 
     return 204, datastream_service.delete(
         principal=request.principal, uid=datastream_id
-    )
-
-
-@datastream_router.get(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
-    response={
-        200: list[TagGetResponse],
-        401: str,
-        403: str,
-    },
-    by_alias=True,
-)
-def get_datastream_tags(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID]
-):
-    """
-    Get all tags associated with a Datastream.
-    """
-
-    return 200, datastream_service.get_tags(
-        principal=request.principal,
-        uid=datastream_id,
-    )
-
-
-@datastream_router.post(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        201: TagGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def add_datastream_tag(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID], data: TagPostBody
-):
-    """
-    Add a tag to a Datastream.
-    """
-
-    return 201, datastream_service.add_tag(
-        principal=request.principal,
-        uid=datastream_id,
-        data=data,
-    )
-
-
-@datastream_router.put(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        200: TagGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def edit_datastream_tag(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID], data: TagPostBody
-):
-    """
-    Edit a tag of a Datastream.
-    """
-
-    return 200, datastream_service.update_tag(
-        principal=request.principal,
-        uid=datastream_id,
-        data=data,
-    )
-
-
-@datastream_router.delete(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        204: None,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def remove_datastream_tag(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID], data: TagDeleteBody
-):
-    """
-    Remove a tag from a Datastream.
-    """
-
-    return 204, datastream_service.remove_tag(
-        principal=request.principal,
-        uid=datastream_id,
-        data=data,
     )
 
 
