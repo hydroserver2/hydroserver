@@ -46,6 +46,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const tableHeight = ref(30)
   const showPlot = ref(true)
   const showTable = ref(true)
+  const datastreamDetailLevel = ref(1)
   const tableHeaders = reactive([
     { title: 'Plot', key: 'plot', visible: true },
     {
@@ -127,6 +128,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     dataZoomEnd.value = 100
     showPlot.value = true
     showTable.value = true
+    datastreamDetailLevel.value = 1
     tableHeaders.forEach((header) => {
       header.visible = header.key === 'plot'
     })
@@ -528,6 +530,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     tableHeight,
     showPlot,
     showTable,
+    datastreamDetailLevel,
     tableHeaders,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,

@@ -59,6 +59,7 @@ const {
   tableHeight,
   showPlot,
   showTable,
+  datastreamDetailLevel,
   showSummaryStatistics,
   tableHeaders,
   tableSearch,
@@ -117,6 +118,8 @@ const buildStateQuery = (): LocationQueryRaw => {
   if (!showPlot.value) query.plot = '0'
   if (!showTable.value) query.table = '0'
   if (showSummaryStatistics.value) query.summary = '1'
+  if (datastreamDetailLevel.value !== 1)
+    query.detailLevel = datastreamDetailLevel.value.toString()
 
   if (selectedDateBtnId.value < 0) {
     query.beginDate = beginDate.value.toISOString()
@@ -321,6 +324,14 @@ const parseUrlAndSetState = () => {
   const summaryParam = parseBoolean(route.query.summary)
   if (summaryParam !== null) showSummaryStatistics.value = summaryParam
 
+  const detailLevelParam = route.query.detailLevel
+  const detailLevelRaw = Array.isArray(detailLevelParam)
+    ? detailLevelParam.find((item): item is string => typeof item === 'string')
+    : detailLevelParam
+  const detailLevel = Number(detailLevelRaw)
+  if (detailLevel >= 1 && detailLevel <= 3)
+    datastreamDetailLevel.value = detailLevel
+
   const columnsParam = route.query.columns
   if (columnsParam) {
     const raw = Array.isArray(columnsParam)
@@ -367,6 +378,7 @@ watch(
     selectedDateBtnId,
     showPlot,
     showTable,
+    datastreamDetailLevel,
     showSummaryStatistics,
     tableHeaders,
     tableSearch,

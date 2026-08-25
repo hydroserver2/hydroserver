@@ -10,51 +10,24 @@
         </div>
 
         <div class="hs-table-actions datastreams-actions">
-          <v-menu :close-on-content-click="false" location="bottom end">
-            <template #activator="{ props: menuProps }">
-              <v-tooltip
-                text="Choose additional row details"
-                location="top"
-                :open-delay="0"
-                :close-delay="0"
-              >
-                <template #activator="{ props: tooltipProps }">
-                  <v-btn
-                    v-bind="{ ...menuProps, ...tooltipProps }"
-                    :icon="mdiTableColumnWidth"
-                    variant="text"
-                    size="small"
-                    class="hs-table-icon-action"
-                    aria-label="Choose additional row details"
-                  />
-                </template>
-              </v-tooltip>
-            </template>
-
-            <v-card class="datastream-details-menu">
-              <div class="datastream-details-menu__title hs-text-sm">
-                Additional row details
-              </div>
-              <v-list density="compact" class="py-1">
-                <v-list-item
-                  v-for="header in selectableHeaders"
-                  :key="header.key"
-                  @click="toggleHeader(header.key)"
-                >
-                  <template #prepend>
-                    <v-checkbox-btn
-                      :model-value="selectedHeaders.includes(header.key)"
-                      :aria-label="`Toggle ${header.title}`"
-                      color="primary"
-                      @update:model-value="toggleHeader(header.key)"
-                      @click.stop
-                    />
-                  </template>
-                  <v-list-item-title>{{ header.title }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-menu>
+          <v-btn
+            size="small"
+            variant="text"
+            :disabled="detailLevel === 1"
+            data-testid="show-less-datastream-details"
+            @click="detailLevel--"
+          >
+            Less detail
+          </v-btn>
+          <v-btn
+            size="small"
+            variant="text"
+            :disabled="detailLevel === 3"
+            data-testid="show-more-datastream-details"
+            @click="detailLevel++"
+          >
+            More detail
+          </v-btn>
         </div>
       </div>
 
@@ -159,7 +132,10 @@
                   {{ datastreamName(item) }}
                 </span>
               </div>
-              <div class="datastream-meta datastream-signature hs-text-sm">
+              <div
+                v-if="detailLevel >= 2"
+                class="datastream-meta datastream-signature hs-text-sm"
+              >
                 <span
                   v-for="value in datastreamSignature(item)"
                   :key="`${item.id}-${value}`"
@@ -169,22 +145,10 @@
                 </span>
               </div>
               <div
-                v-if="hasVisibleAdditionalDetails"
-                class="datastream-meta hs-text-sm"
+                v-if="detailLevel === 3"
+                class="datastream-meta datastream-observation-range hs-text-sm"
               >
-                <span
-                  v-if="isDetailVisible('valueCount')"
-                  class="datastream-meta__item datastream-meta__item--data"
-                >
-                  {{ formatObservationCount(item.valueCount) }} observations
-                </span>
-                <span
-                  v-if="isDetailVisible('phenomenonEndTime')"
-                  class="datastream-meta__item datastream-meta__item--data"
-                >
-                  <span class="datastream-meta__label hs-label">Updated</span>
-                  {{ formatTime(item.phenomenonEndTime) }}
-                </span>
+                {{ observationRange(item) }}
               </div>
             </td>
 
@@ -231,7 +195,7 @@
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
-import { mdiChevronRight, mdiDownload, mdiTableColumnWidth } from '@mdi/js'
+import { mdiChevronRight, mdiDownload } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
@@ -251,9 +215,10 @@ const dataVisStore = useDataVisStore()
 const {
   filteredDatastreams,
   plottedDatastreams,
-  tableHeaders: headers,
   tableSearch: search,
+  datastreamDetailLevel: detailLevel,
   monitoringSites,
+  selectedMonitoringSites,
   observedProperties,
   processingLevels,
 } = storeToRefs(dataVisStore)
@@ -338,32 +303,7 @@ const visibleTableItems = computed(() => {
 })
 
 const showMonitoringSiteContext = computed(
-  () =>
-    new Set(visibleTableItems.value.map((item) => item.monitoringSiteId)).size >
-    1
-)
-
-const selectableHeaders = computed(() =>
-  headers.value.filter((header) => header.key !== 'plot')
-)
-
-const selectedHeaders = computed({
-  get: () =>
-    headers.value
-      .filter((header) => header.visible)
-      .map((header) => header.key),
-  set: (keys: string[]) => {
-    headers.value.forEach((header) => {
-      header.visible = header.key === 'plot' || keys.includes(header.key)
-    })
-  },
-})
-
-const isDetailVisible = (key: string) =>
-  headers.value.find((header) => header.key === key)?.visible ?? true
-
-const hasVisibleAdditionalDetails = computed(() =>
-  ['valueCount', 'phenomenonEndTime'].some(isDetailVisible)
+  () => selectedMonitoringSites.value.length !== 1
 )
 
 const datastreamName = (item: DatastreamTableItem) =>
@@ -419,14 +359,6 @@ const datastreamSignature = (item: DatastreamTableItem) =>
     .map((value) => value?.trim())
     .filter((value): value is string => Boolean(value))
 
-const toggleHeader = (key: string) => {
-  const keys = [...selectedHeaders.value]
-  const index = keys.indexOf(key)
-  if (index >= 0) keys.splice(index, 1)
-  else keys.push(key)
-  selectedHeaders.value = keys
-}
-
 const downloadSelected = async (datastreams: Datastream[]) => {
   downloading.value = true
   try {
@@ -460,6 +392,17 @@ const openMetadata = (item: Datastream) => {
 const formatObservationCount = (value: number | string | null | undefined) => {
   const count = Number(value)
   return Number.isFinite(count) ? count.toLocaleString() : '—'
+}
+
+const observationRange = (item: DatastreamTableItem) => {
+  const count = Number(item.valueCount)
+  const observationLabel = count === 1 ? 'observation' : 'observations'
+  return [
+    `${formatObservationCount(item.valueCount)} ${observationLabel} between`,
+    formatTime(item.phenomenonBeginTime),
+    'and',
+    formatTime(item.phenomenonEndTime),
+  ].join(' ')
 }
 
 const onPlotChange = (datastream: Datastream, event: Event) => {
@@ -537,20 +480,6 @@ function updatePlottedDatastreams(
 
 .datastreams-actions {
   margin-left: auto;
-}
-
-.datastream-details-menu {
-  min-width: 260px;
-  padding: var(--hs-space-4) 0;
-  background: var(--hs-surface);
-  border: 1px solid var(--hs-border);
-  border-radius: var(--hs-radius-md);
-}
-
-.datastream-details-menu__title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-secondary);
-  font-weight: var(--hs-font-weight-semibold);
 }
 
 .datastreams-table-card {
@@ -729,26 +658,9 @@ function updatePlottedDatastreams(
   content: '·';
 }
 
-.datastream-meta__item {
-  display: inline-flex;
-  gap: var(--hs-space-4);
-  align-items: baseline;
-  min-width: 0;
-}
-
-.datastream-meta__label {
-  color: var(--hs-text-secondary);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.datastream-meta__item--data {
+.datastream-observation-range {
   font-family: var(--hs-font-data);
-  white-space: nowrap;
-}
-
-.datastream-meta__item--data .datastream-meta__label {
-  font-family: inherit;
+  line-height: 1.4;
 }
 
 .datastream-details-button {
