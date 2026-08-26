@@ -5,22 +5,34 @@
   "type": "module",
   "files": [
     "README.md",
+    "colors.css",
     "components.css",
     "fonts.css",
+    "html.css",
+    "layout.css",
     "settings.scss",
-    "tokens.css",
+    "scripts",
+    "typography.css",
+    "vuetify-colors.ts",
     "vuetify.ts",
     "vue"
   ],
+  "scripts": {
+    "generate:vuetify-colors": "node ./scripts/generate-vuetify-colors.mjs",
+    "check:vuetify-colors": "node ./scripts/generate-vuetify-colors.mjs --check"
+  },
   "sideEffects": [
     "*.css",
     "./vuetify.ts"
   ],
   "exports": {
     "./components.css": "./components.css",
+    "./colors.css": "./colors.css",
     "./fonts.css": "./fonts.css",
+    "./html.css": "./html.css",
+    "./layout.css": "./layout.css",
     "./settings.scss": "./settings.scss",
-    "./tokens.css": "./tokens.css",
+    "./typography.css": "./typography.css",
     "./vuetify": "./vuetify.ts",
     "./vue": "./vue/index.ts"
   },

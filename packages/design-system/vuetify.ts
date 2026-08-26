@@ -5,33 +5,13 @@ import { VBtn } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { vuetifyColors } from './vuetify-colors'
 
-// HydroServer's shared palette and semantic roles. Keep the literal beside its
-// role so the complete color system can be reviewed and changed in one place.
+// colors.css is the canonical palette. The generated adapter gives Vuetify the
+// concrete values it needs to create its runtime CSS variables.
 const theme: ThemeDefinition = {
   dark: false,
-  colors: {
-    'text-primary': '#1C1B1F',
-    'text-secondary': '#49454F',
-    'text-muted': '#9CA3AF',
-    background: '#F4F7FA',
-    surface: '#FFFFFF',
-    'surface-subtle': '#FCFDFF',
-    'surface-muted': '#EEF3F8',
-    'surface-floating': '#FFFFFFF5',
-    border: '#CED8E2',
-    'input-border': '#CAC4D0',
-    primary: '#32649C',
-    secondary: '#66AE5C',
-    default: '#757575',
-    danger: '#B3261E',
-    'danger-bg': '#FFEBEE',
-    delete: '#C62828',
-    error: '#C62828',
-    info: '#03A9F4',
-    success: '#66AE5C',
-    warning: '#FF9800',
-  },
+  colors: vuetifyColors,
 }
 
 const textFieldAttrs = {

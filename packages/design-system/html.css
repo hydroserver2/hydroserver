@@ -1,37 +1,12 @@
 /*
  * HTML adapter for server-rendered HydroServer pages.
  *
- * Vue applications receive these semantic roles from Vuetify. Django and
- * other non-Vue surfaces use this shared adapter so their native controls
- * retain the same theme, spacing, type recipes, and component treatments.
+ * Django and other non-Vue surfaces use this shared adapter so their native
+ * controls retain the same tokens and component treatments as Vue pages.
  */
-@import "./tokens.css";
-
-:root {
-  --hs-font-body: "Archivo Variable", Arial, sans-serif;
-  --hs-font-weight-regular: 400;
-  --hs-font-weight-medium: 500;
-  --hs-font-weight-semibold: 600;
-  --hs-font-weight-bold: 700;
-  --v-theme-text-primary: 28, 27, 31;
-  --v-theme-text-secondary: 73, 69, 79;
-  --v-theme-text-muted: 156, 163, 175;
-  --v-theme-background: 244, 247, 250;
-  --v-theme-surface: 255, 255, 255;
-  --v-theme-surface-subtle: 252, 253, 255;
-  --v-theme-surface-muted: 238, 243, 248;
-  --v-theme-surface-floating: 255, 255, 255;
-  --v-theme-border: 206, 216, 226;
-  --v-theme-input-border: 202, 196, 208;
-  --v-theme-primary: 50, 100, 156;
-  --v-theme-secondary: 102, 174, 92;
-  --v-theme-danger: 179, 38, 30;
-  --v-theme-danger-bg: 255, 235, 238;
-  --v-theme-delete: 198, 40, 40;
-  --v-theme-error: 198, 40, 40;
-  --v-theme-success: 102, 174, 92;
-  --v-theme-warning: 255, 152, 0;
-}
+@import './colors.css';
+@import './layout.css';
+@import './typography.css';
 
 .hs-card {
   padding: var(--hs-space-32);
@@ -67,14 +42,14 @@
 }
 
 .required-label::after {
-  color: rgb(var(--v-theme-error));
-  content: " *";
+  color: var(--hs-error);
+  content: ' *';
 }
 
 .hs-field__input,
 .hs-field__select,
 .hs-field__textarea,
-.hs-field input:not([type="checkbox"]):not([type="radio"]),
+.hs-field input:not([type='checkbox']):not([type='radio']),
 .hs-field select,
 .hs-field textarea {
   box-sizing: border-box;
@@ -104,19 +79,19 @@
 .hs-checkbox:focus-visible,
 .hs-button:focus-visible,
 .hs-link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
+  outline: 2px solid var(--hs-primary);
   outline-offset: 2px;
 }
 
 .hs-checkbox {
   width: var(--hs-space-16);
   height: var(--hs-space-16);
-  accent-color: rgb(var(--v-theme-primary));
+  accent-color: var(--hs-primary);
 }
 
 .hs-field__error {
   margin: 0;
-  color: rgb(var(--v-theme-error));
+  color: var(--hs-error);
 }
 
 .hs-help,
@@ -134,7 +109,7 @@
 }
 
 .hs-link {
-  color: rgb(var(--v-theme-primary));
+  color: var(--hs-primary);
   font-weight: var(--hs-font-weight-medium);
   text-decoration: none;
 }
@@ -144,7 +119,7 @@
 }
 
 .hs-link--danger {
-  color: rgb(var(--v-theme-danger));
+  color: var(--hs-danger);
 }
 
 .hs-button,
@@ -161,7 +136,7 @@
   line-height: 1.25;
   text-decoration: none;
   cursor: pointer;
-  background: rgb(var(--v-theme-primary));
+  background: var(--hs-primary);
   border: 1px solid transparent;
   border-radius: var(--hs-radius-lg);
 }
@@ -182,7 +157,7 @@
 }
 
 .hs-button--danger {
-  background: rgb(var(--v-theme-danger));
+  background: var(--hs-danger);
 }
 
 .hs-button-group,
@@ -214,18 +189,18 @@
 
 .hs-alert--error,
 .hs-alert--danger {
-  color: rgb(var(--v-theme-danger));
+  color: var(--hs-danger);
   background: var(--hs-danger-bg);
-  border-color: rgb(var(--v-theme-danger));
+  border-color: var(--hs-danger);
 }
 
 .hs-alert--success {
   color: var(--hs-text-primary);
-  border-color: rgb(var(--v-theme-success));
+  border-color: var(--hs-success);
 }
 
 .hs-alert--warning {
-  border-color: rgb(var(--v-theme-warning));
+  border-color: var(--hs-warning);
 }
 
 .hs-panel {
@@ -244,7 +219,7 @@
 .hs-divider::after {
   flex: 1;
   height: 1px;
-  content: "";
+  content: '';
   background: var(--hs-border);
 }
 
@@ -260,7 +235,7 @@
 }
 
 .hs-badge--danger {
-  color: rgb(var(--v-theme-danger));
+  color: var(--hs-danger);
   background: var(--hs-danger-bg);
 }
 

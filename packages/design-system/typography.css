@@ -1,0 +1,87 @@
+/* HydroServer type scale and reusable type recipes. */
+:root {
+  --hs-font-body: 'Archivo Variable', Arial, sans-serif;
+  --hs-font-data: 'JetBrains Mono', monospace;
+  --hs-font-weight-regular: 400;
+  --hs-font-weight-medium: 500;
+  --hs-font-weight-semibold: 600;
+  --hs-font-weight-bold: 700;
+  --hs-font-2xs: 0.625rem;
+  --hs-font-sm: 0.75rem;
+  --hs-font-md: 1.0625rem;
+  --hs-font-lg: 1.375rem;
+  --hs-font-xl: 1.625rem;
+
+  /* Framework integrations use the same font families as native HTML. */
+  --v-font-body: var(--hs-font-body);
+  --v-font-heading: var(--hs-font-body);
+  --default-font-family: var(--hs-font-body);
+  --default-mono-font-family: var(--hs-font-data);
+  --font-sans: var(--hs-font-body);
+  --font-mono: var(--hs-font-data);
+}
+
+html,
+body {
+  font-family: var(--hs-font-body);
+}
+
+.hs-font-data {
+  font-family: var(--hs-font-data);
+  font-weight: var(--hs-font-weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+.hs-text-2xs {
+  font-size: var(--hs-font-2xs);
+}
+
+.hs-text-sm {
+  font-size: var(--hs-font-sm);
+}
+
+.hs-text-md {
+  font-size: var(--hs-font-md);
+}
+
+.hs-text-lg {
+  font-size: var(--hs-font-lg);
+}
+
+.hs-text-xl {
+  font-size: var(--hs-font-xl);
+}
+
+/*
+ * hs-heading    — page / empty-state headings
+ * hs-subheading — card titles and section headings
+ * hs-title      — an item's primary name inside a row or card
+ * hs-label      — micro-labels, badges, and column headers
+ */
+.hs-heading {
+  font-size: var(--hs-font-lg);
+  font-weight: var(--hs-font-weight-bold);
+  line-height: 1.2;
+}
+
+.hs-subheading {
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.25;
+}
+
+.hs-title {
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-semibold);
+  line-height: 1.25;
+}
+
+.hs-label {
+  font-size: var(--hs-font-2xs);
+  font-weight: var(--hs-font-weight-bold);
+  line-height: 1.2;
+}
+
+small {
+  font-size: var(--hs-font-sm);
+}

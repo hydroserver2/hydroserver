@@ -6,12 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block head_title %}{% endblock %} - HydroServer</title>
-    <link rel="stylesheet" href="{% static 'design-system/django.css' %}">
+    <link rel="stylesheet" href="{% static 'design-system/html.css' %}">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="icon" type="image/png" href="{% static 'img/hydroserver-icon-min.png' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="v-theme--theme auth-page">
+<body class="auth-page">
     <div class="auth-shell">
         <header class="auth-header">
             <a class="auth-back-link" href="{% account_back_url %}">← {% trans "Go back" %}</a>

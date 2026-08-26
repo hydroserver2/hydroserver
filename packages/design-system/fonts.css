@@ -14,36 +14,5 @@
  * Fontsource bundles these OFL-licensed fonts with consuming applications.
  * Do not replace these imports with CDN-hosted stylesheets.
  */
-@import "@fontsource-variable/archivo/wght.css";
-@import "@fontsource/jetbrains-mono/400.css";
-
-:root {
-  --hs-font-body: "Archivo Variable", Arial, sans-serif;
-  --hs-font-data: "JetBrains Mono", monospace;
-  --hs-font-weight-regular: 400;
-  --hs-font-weight-medium: 500;
-  --hs-font-weight-semibold: 600;
-  --hs-font-weight-bold: 700;
-
-  /* Override Vuetify's Roboto fallbacks. Headings remain Body / UI by default;
-     page titles must opt into the Display role explicitly. */
-  --v-font-body: var(--hs-font-body);
-  --v-font-heading: var(--hs-font-body);
-
-  /* Keep Tailwind typography utilities on the same three-family system. */
-  --default-font-family: var(--hs-font-body);
-  --default-mono-font-family: var(--hs-font-data);
-  --font-sans: var(--hs-font-body);
-  --font-mono: var(--hs-font-data);
-}
-
-html,
-body {
-  font-family: var(--hs-font-body);
-}
-
-.hs-font-data {
-  font-family: var(--hs-font-data);
-  font-weight: var(--hs-font-weight-regular);
-  font-variant-numeric: tabular-nums;
-}
+@import '@fontsource-variable/archivo/wght.css';
+@import '@fontsource/jetbrains-mono/400.css';

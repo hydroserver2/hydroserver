@@ -51,7 +51,8 @@ def test_profile_page_loads_the_account_navigation_tag(client):
     response = client.get(reverse("account_profile"))
 
     assert response.status_code == 200
-    assert b"/static/design-system/django.css" in response.content
+    assert b"/static/design-system/html.css" in response.content
+    assert b"/static/design-system/django.css" not in response.content
     assert b"/static/css/auth.css" in response.content
     assert b"tailwind.css" not in response.content
 
@@ -60,6 +61,7 @@ def test_login_page_uses_the_shared_design_system_styles(client):
     response = client.get(reverse("account_login"))
 
     assert response.status_code == 200
-    assert b"/static/design-system/django.css" in response.content
+    assert b"/static/design-system/html.css" in response.content
+    assert b"/static/design-system/django.css" not in response.content
     assert b"/static/css/auth.css" in response.content
     assert b"tailwind.css" not in response.content

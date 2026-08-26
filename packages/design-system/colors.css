@@ -1,0 +1,28 @@
+/*
+ * HydroServer semantic color tokens.
+ *
+ * This is the canonical palette. The Vuetify adapter is generated from these
+ * --hs-* declarations; native HTML and custom CSS use them directly.
+ */
+:root {
+  --hs-text-primary: #1c1b1f;
+  --hs-text-secondary: #49454f;
+  --hs-text-muted: #9ca3af;
+  --hs-background: #f4f7fa;
+  --hs-surface: #ffffff;
+  --hs-surface-subtle: #fcfdff;
+  --hs-surface-muted: #eef3f8;
+  --hs-surface-floating: #fffffff5;
+  --hs-border: #ced8e2;
+  --hs-input-border: #cac4d0;
+  --hs-primary: #32649c;
+  --hs-secondary: #66ae5c;
+  --hs-default: #757575;
+  --hs-danger: #b3261e;
+  --hs-danger-bg: #ffebee;
+  --hs-delete: #c62828;
+  --hs-error: #c62828;
+  --hs-info: #03a9f4;
+  --hs-success: #66ae5c;
+  --hs-warning: #ff9800;
+}
