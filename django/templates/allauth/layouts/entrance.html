@@ -1,10 +1,13 @@
 {% extends "allauth/layouts/base.html" %}
+{% load static %}
 {% block content_outer %}
-<div class="flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
-        <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-8">
-            {% block content %}{% endblock %}
+<div class="auth-layout auth-layout--entrance">
+    <div class="hs-card">
+        <div class="auth-card__brand">
+            <img src="{% static 'img/hydroserver-icon-min.png' %}" alt="" class="auth-card__logo">
+            <span>HydroServer</span>
         </div>
+        {% block content %}{% endblock %}
     </div>
 </div>
 {% endblock %}

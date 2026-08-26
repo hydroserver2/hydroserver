@@ -1,11 +1,9 @@
 {% load allauth %}
 {% if attrs.href %}
 <a href="{{ attrs.href }}"
-   class="inline-flex items-center justify-center w-full rounded-md px-4 py-2 text-sm font-medium transition-colors
+   class="hs-button hs-button--full
    {% if 'outline' in attrs.tags %}
-       border border-gray-300 bg-white text-gray-700 hover:bg-gray-50
-   {% else %}
-       bg-blue-600 text-white hover:bg-blue-700
+       hs-button--outline
    {% endif %}">
     {% slot default %}{% endslot %}
 </a>
@@ -13,15 +11,13 @@
 <button type="{{ attrs.type|default:'submit' }}"
         {% if attrs.form %}form="{{ attrs.form }}"{% endif %}
         {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
-        class="inline-flex items-center justify-center w-full rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer
+        class="hs-button hs-button--full
         {% if 'danger' in attrs.tags %}
-            bg-red-600 text-white hover:bg-red-700
+            hs-button--danger
         {% elif 'outline' in attrs.tags %}
-            border border-gray-300 bg-white text-gray-700 hover:bg-gray-50
+            hs-button--outline
         {% elif 'secondary' in attrs.tags %}
-            bg-gray-100 text-gray-700 hover:bg-gray-200
-        {% else %}
-            bg-blue-600 text-white hover:bg-blue-700
+            hs-button--secondary
         {% endif %}">
     {% slot default %}{% endslot %}
 </button>

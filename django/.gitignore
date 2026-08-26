@@ -8,7 +8,12 @@ db.sqlite3
 /static/*
 !/static/css/
 /static/css/*
-!/static/css/input.css
+!/static/css/auth.css
+!/static/img/
+/static/img/*
+!/static/img/hydroserver-icon-min.png
+!/static/img/hydroserver-auth-topography.png
+!/static/img/archivo-latin-wght-normal.woff2
 /media/
 staticfiles/
 /web/static/web/*

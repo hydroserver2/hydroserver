@@ -24,7 +24,7 @@
         <h5 class="hs-text-md mb-8 has-text-shadow">
           Create an account to get started
         </h5>
-        <v-btn-primary :href="hs.session.accountSignupUrl">Sign Up</v-btn-primary>
+        <v-btn-primary :href="hs.session.getAccountSignupUrl()">Sign Up</v-btn-primary>
       </div>
     </div>
   </div>

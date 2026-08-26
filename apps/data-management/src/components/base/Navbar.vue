@@ -112,7 +112,7 @@
         <v-btn
           v-if="signupEnabled"
           :prepend-icon="mdiAccountPlusOutline"
-          :href="hs.session.accountSignupUrl"
+          :href="hs.session.getAccountSignupUrl()"
           >Sign up</v-btn
         >
       </template>
@@ -168,7 +168,7 @@
         <v-list-item
           v-if="signupEnabled"
           :prepend-icon="mdiAccountPlusOutline"
-          :href="hs.session.accountSignupUrl"
+          :href="hs.session.getAccountSignupUrl()"
           >Sign up</v-list-item
         >
       </template>

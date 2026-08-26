@@ -29,6 +29,16 @@ if (response.ok) {
 
 Use `host: ""` for same-origin requests. Applications that prefer dependency injection can instead call `HydroServer.initialize({ host })` and pass the returned instance explicitly.
 
+### Account return destinations
+
+When taking a user to a server-rendered account page, provide the in-app path
+that the auth shell should return to. This controls its **Go back** link:
+
+```ts
+window.location.assign(hs.session.getAccountSignupUrl('/browse'))
+window.location.assign(hs.session.getAccountProfileUrl('/settings'))
+```
+
 ## Services
 
 - Account: `session`, `user`

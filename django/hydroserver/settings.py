@@ -46,6 +46,15 @@ WEB_CLIENT_URL = env.str(
     ),
 )
 
+# Account pages accept return destinations only for explicitly configured app
+# hosts.  Local development commonly alternates between localhost and
+# 127.0.0.1, so accept both Vite origins when the environment is trusted.
+ACCOUNT_RETURN_URL_ALLOWED_HOSTS = set(
+    env.list("ACCOUNT_RETURN_URL_ALLOWED_HOSTS", default=[])
+)
+if TRUSTED_LOCAL_ENVIRONMENT:
+    ACCOUNT_RETURN_URL_ALLOWED_HOSTS.update({"127.0.0.1:1203", "localhost:1203"})
+
 if not TRUSTED_LOCAL_ENVIRONMENT and SECRET_KEY.startswith("django-insecure-"):
     raise ImproperlyConfigured("SECRET_KEY must be set for deployed instances")
 
@@ -99,7 +108,6 @@ INSTALLED_APPS = [
     "sensorthings.versions.v1_1.extensions.dataarray",
     "storages",
     "django_celery_beat",
-    "django_tailwind_cli",
     "interfaces.api.apps.ApiConfig",
     "interfaces.web.apps.WebConfig",
     "interfaces.actions.apps.ActionsConfig",
@@ -140,6 +148,9 @@ TEMPLATES = [
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
+            "libraries": {
+                "account_navigation": "core.iam.templatetags.account_navigation",
+            },
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
@@ -317,7 +328,10 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost"
 # Storage
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    ("design-system", BASE_DIR.parent / "packages" / "design-system"),
+]
 MEDIA_URL = "/media/"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 

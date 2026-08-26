@@ -24,7 +24,7 @@ export function useHydroShare() {
   const isConnected = computed(() => Boolean(user.value?.hydroShareConnected))
 
   function manageHydroShareConnection() {
-    window.location.assign(hs.session.accountProfileUrl)
+    window.location.assign(hs.session.getAccountProfileUrl())
   }
 
   return {

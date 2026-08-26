@@ -18,11 +18,7 @@ def _signup_data(**overrides):
         "password1": "a-very-strong-password-123",
         "password2": "a-very-strong-password-123",
         "first_name": "Jane",
-        "middle_name": "Q",
         "last_name": "Doe",
-        "phone": "555-0100",
-        "address": "123 Main St",
-        "link": "https://example.com",
         "user_type": "Researcher",
     }
     data.update(overrides)
@@ -34,11 +30,7 @@ def test_signup_persists_profile_fields(client):
 
     user = User.objects.get(email="new-user@example.com")
     assert user.first_name == "Jane"
-    assert user.middle_name == "Q"
     assert user.last_name == "Doe"
-    assert user.phone == "555-0100"
-    assert user.address == "123 Main St"
-    assert user.link == "https://example.com"
     assert user.user_type == "Researcher"
     assert user.organization is None
 

@@ -1,8 +1,7 @@
 {% load allauth %}
-<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
-    {% if 'success' in attrs.tags %}bg-green-100 text-green-700
-    {% elif 'danger' in attrs.tags %}bg-red-100 text-red-700
-    {% elif 'warning' in attrs.tags %}bg-yellow-100 text-yellow-700
-    {% else %}bg-gray-100 text-gray-700{% endif %}">
+<span class="hs-badge
+    {% if 'success' in attrs.tags %}hs-badge--success
+    {% elif 'danger' in attrs.tags %}hs-badge--danger
+    {% elif 'warning' in attrs.tags %}hs-badge--warning{% endif %}">
     {% slot default %}{% endslot %}
 </span>

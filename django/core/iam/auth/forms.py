@@ -6,11 +6,7 @@ from core.iam.models import Organization, OrganizationType, UserType
 
 class UserSignupForm(forms.Form):
     first_name = forms.CharField(max_length=30, required=False, label="First name")
-    middle_name = forms.CharField(max_length=30, required=False, label="Middle name")
     last_name = forms.CharField(max_length=100, required=False, label="Last name")
-    phone = forms.CharField(max_length=15, required=False)
-    address = forms.CharField(max_length=255, required=False)
-    link = forms.URLField(max_length=2000, required=False)
     user_type = forms.ChoiceField(choices=[], required=True, label="Account type")
 
     has_organization = forms.BooleanField(
@@ -56,10 +52,6 @@ class UserSignupForm(forms.Form):
 
     def signup(self, request, user):
         data = self.cleaned_data
-        user.middle_name = data.get("middle_name") or None
-        user.phone = data.get("phone") or None
-        user.address = data.get("address") or None
-        user.link = data.get("link") or None
         user.user_type = data["user_type"]
 
         if data.get("has_organization"):

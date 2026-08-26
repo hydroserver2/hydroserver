@@ -15,6 +15,9 @@ already has an answer. Check here first, then `tokens.css`, `vuetify.ts`,
   (button variants, text field/select/autocomplete behavior).
 - `components.css` — shared recipes for recurring hand-built controls
   (search inputs, stat cards) that aren't plain Vuetify components.
+- `django.css` — the shared HTML adapter for Django and other non-Vue pages;
+  it maps native cards, fields, alerts, and button aliases to the same theme
+  roles and tokens used by Vuetify.
 - `vue/` — shared Vue components (`Hs*.vue`). Use one of these before
   building a bespoke layout that duplicates it.
 
@@ -60,6 +63,9 @@ already has an answer. Check here first, then `tokens.css`, `vuetify.ts`,
   instance unless the field is genuinely special-cased.
 - Mark required fields with the `.required-label` class, not a manual
   asterisk + color.
+- For server-rendered pages, use the native-control classes in `django.css`
+  (`.hs-form`, `.hs-field`, `.hs-button`, `.hs-alert`) instead of creating
+  app-local form-control recipes.
 
 ## Shared components over bespoke markup
 

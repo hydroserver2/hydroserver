@@ -1,10 +1,10 @@
 {% load allauth %}
 {% if attrs.errors %}
-<div class="text-sm text-red-600 mb-1">{{ attrs.errors }}</div>
+<div class="hs-field__error">{{ attrs.errors }}</div>
 {% endif %}
-<div class="mb-4">
+<div class="hs-field">
     {% if attrs.type == "textarea" %}
-        <label for="{{ attrs.id }}" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="{{ attrs.id }}" class="hs-field__label {% if attrs.required %}required-label{% endif %}">
             {% slot label %}{% endslot %}
         </label>
         <textarea {% if attrs.required %}required{% endif %}
@@ -14,9 +14,9 @@
                   {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
                   {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
                   {% if attrs.placeholder %}placeholder="{{ attrs.placeholder }}"{% endif %}
-                  class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100">{% slot value %}{% endslot %}</textarea>
+                  class="hs-field__textarea">{% slot value %}{% endslot %}</textarea>
     {% elif attrs.type == "checkbox" or attrs.type == "radio" %}
-        <label for="{{ attrs.id }}" class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+        <label for="{{ attrs.id }}" class="hs-checkbox-label">
             <input {% if attrs.required %}required{% endif %}
                    {% if attrs.disabled %}disabled{% endif %}
                    {% if attrs.checked %}checked{% endif %}
@@ -24,11 +24,11 @@
                    {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
                    {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
                    type="{{ attrs.type }}"
-                   class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                   class="hs-checkbox">
             {% slot label %}{% endslot %}
         </label>
     {% else %}
-        <label for="{{ attrs.id }}" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="{{ attrs.id }}" class="hs-field__label {% if attrs.required %}required-label{% endif %}">
             {% slot label %}{% endslot %}
         </label>
         <input {% if attrs.required %}required{% endif %}
@@ -40,10 +40,10 @@
                {% if attrs.autocomplete %}autocomplete="{{ attrs.autocomplete }}"{% endif %}
                {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
                type="{{ attrs.type }}"
-               class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100">
+               class="hs-field__input">
     {% endif %}
     {% if slots.help_text %}
-        <p class="mt-1 text-xs text-gray-500">
+        <p class="hs-help">
             {% slot help_text %}{% endslot %}
         </p>
     {% endif %}
