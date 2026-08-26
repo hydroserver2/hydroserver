@@ -42,7 +42,7 @@ from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
-    FileAttachmentGetResponse,
+    LinkedResourceGetResponse,
 )
 from interfaces.api.schemas.sta.observed_property import (
     ObservedPropertySummaryResponse,
@@ -100,11 +100,10 @@ from interfaces.api.schemas.sta.observation import (
     ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
 )
-from interfaces.api.schemas.sta.attachment import (
-    FileAttachmentQueryParameters,
-    FileAttachmentGetResponse,
-    FileAttachmentPostBody,
-    FileAttachmentDeleteBody,
+from interfaces.api.schemas.sta.linked_resource import (
+    LinkedResourceQueryParameters,
+    LinkedResourceGetResponse,
+    LinkedResourcePostBody,
 )
 from interfaces.api.schemas.etl.data_connection import (
     DataConnectionResponse,

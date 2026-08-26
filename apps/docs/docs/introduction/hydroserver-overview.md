@@ -22,7 +22,7 @@ HydroServer includes client packages and applications to help users work with Hy
 
 1. `hydroserverpy` **(Python Package)**: This is a Python wrapper for the HydroServer REST API, designed for those who want to manage data programmatically. Beyond simple API interaction, the package includes specialized tools for performing time series ETL (Extract, Transform, Load) and automated quality control. You can use hydroserverpy to script or automate nearly everything you can do through the web user interface of the HydroServer Data management App.
 
-2. [`@hydroserver/client`](/developing-and-contributing/how-to/using-the-typescript-client) **(TypeScript npm Package)**: This typed browser client covers HydroServer authentication, data management, orchestration, file attachments, and quality-control histories.
+2. [`@hydroserver/client`](/developing-and-contributing/how-to/using-the-typescript-client) **(TypeScript npm Package)**: This typed browser client covers HydroServer authentication, data management, orchestration, and quality-control histories.
 
 3. **The Streaming Data Loader**: A desktop application designed to automate data ingestion from CSV data files into HydroServer. It monitors local or web accessible CSV files containing environmental time-series data and automatically loads them into your HydroServer instance, reducing the need for manual uploads. The Streaming Data Loader was designed to help integrate with commercial sensor software systems that interact with monitoring stations and produce datalogger files in CSV format.
 

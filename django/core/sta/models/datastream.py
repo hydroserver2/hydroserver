@@ -88,38 +88,50 @@ def datastream_file_attachment_storage_path(instance, filename):
     return f"datastreams/{instance.datastream.id}/{filename}"
 
 
-class DatastreamFileAttachment(models.Model):
+class DatastreamLinkedResource(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     datastream = models.ForeignKey(
         Datastream,
-        related_name="datastream_file_attachments",
+        related_name="datastream_linked_resources",
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    file_attachment = models.FileField(
-        upload_to=datastream_file_attachment_storage_path
-    )
-    file_attachment_type = models.CharField(max_length=200)
+    type = models.CharField(max_length=200)
+    file = models.FileField(upload_to=datastream_file_attachment_storage_path, blank=True, default="")
+    url = models.URLField(blank=True, default="", max_length=2000)
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     @property
     def link(self):
-        storage = self.file_attachment.storage
+        if self.url:
+            return self.url
+
+        storage = self.file.storage
 
         try:
-            file_attachment_link = storage.url(self.file_attachment.name, expire=3600)
+            file_link = storage.url(self.file.name, expire=3600)
         except TypeError:
-            file_attachment_link = storage.url(self.file_attachment.name)
+            file_link = storage.url(self.file.name)
 
         if settings.MEDIA_STORAGE_IS_LOCAL:
-            file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
+            file_link = settings.PROXY_BASE_URL + file_link
 
-        return file_attachment_link
+        return file_link
 
     class Meta:
         unique_together = ("datastream", "name")
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(file="") & ~models.Q(url="")) |
+                    (~models.Q(file="") & models.Q(url=""))
+                ),
+                name="datastream_linked_resource_file_xor_url",
+            )
+        ]
 
 
 class DatastreamAggregation(models.Model):

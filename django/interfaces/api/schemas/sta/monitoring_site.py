@@ -12,7 +12,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import FileAttachmentGetResponse
+from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 
 if TYPE_CHECKING:
@@ -163,18 +163,14 @@ class MonitoringSiteSummaryResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
     tags: dict[str, str] = {}
-    monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class MonitoringSiteDetailResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse"
     tags: dict[str, str] = {}
-    monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):

@@ -23,7 +23,7 @@ The TypeScript client exposes these services:
 | Authentication and account | `session`, `user` |
 | Data management | `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
 | Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
-| Files and quality control | `monitoringSiteFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
+| Rating curves and quality control | `ratingCurvePreview`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
 Services are created lazily, so reading a service property does not make a request.
 
@@ -58,7 +58,7 @@ Model-backed collection services support:
 
 They also provide `get`/`getItem`, `create`/`createItem`, `update`/`updateItem`, and `delete`. Methods ending in `Item` return the payload directly, with `null` or `[]` on failure; use the methods returning `ApiResponse` when the caller needs status or error details.
 
-QC sessions and operations use similar helpers but also require their parent history and session IDs. Authentication and file-attachment services expose purpose-specific methods instead.
+QC sessions and operations use similar helpers but also require their parent history and session IDs. Authentication and linked resource methods expose purpose-specific methods instead.
 
 Most endpoints support query params such as:
 
@@ -275,16 +275,30 @@ await hs.monitoringSites.setTag(monitoringSiteId, "Region", "A");
 await hs.monitoringSites.deleteTag(monitoringSiteId, "Region");
 ```
 
-### Example: Manage monitoringSite file attachments
+### Example: Manage monitoringSite linked resources
 
 ```ts
 const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
-const data = new FormData();
-data.append("file", fileInput.files![0]);
 
-await hs.monitoringSites.uploadAttachments(monitoringSiteId, data);
-await hs.monitoringSites.getAttachments(monitoringSiteId);
-await hs.monitoringSites.deleteAttachment(monitoringSiteId, "site-photo.png");
+const hostedData = new FormData();
+hostedData.append("name", "site-photo.png");
+hostedData.append("type", "Photo");
+hostedData.append("file", fileInput.files![0]);
+const created = await hs.monitoringSites.createLinkedResource(monitoringSiteId, hostedData);
+
+const externalData = new FormData();
+externalData.append("name", "Site report");
+externalData.append("type", "Document");
+externalData.append("link", "https://example.com/report.pdf");
+await hs.monitoringSites.createLinkedResource(monitoringSiteId, externalData);
+
+await hs.monitoringSites.getLinkedResources(monitoringSiteId);
+
+const renameData = new FormData();
+renameData.append("name", "Updated site photo");
+await hs.monitoringSites.updateLinkedResource(monitoringSiteId, created.data!.id, renameData);
+
+await hs.monitoringSites.deleteLinkedResource(monitoringSiteId, created.data!.id);
 ```
 
 ### Example: Get datastreams for a monitoringSite
@@ -511,16 +525,18 @@ await hs.datastreams.setTag(datastreamId, "MaxAllowableResult", "100");
 await hs.datastreams.deleteTag(datastreamId, "MaxAllowableResult");
 ```
 
-### Example: Manage datastream file attachments
+### Example: Manage datastream linked resources
 
 ```ts
 const datastreamId = "00000000-0000-0000-0000-000000000000";
 const data = new FormData();
+data.append("name", "rating-curve.csv");
+data.append("type", "Rating Curve");
 data.append("file", fileInput.files![0]);
 
-await hs.datastreams.uploadAttachments(datastreamId, data);
-await hs.datastreams.getAttachments(datastreamId);
-await hs.datastreams.deleteAttachment(datastreamId, "rating-curve.csv");
+const created = await hs.datastreams.createLinkedResource(datastreamId, data);
+await hs.datastreams.getLinkedResources(datastreamId);
+await hs.datastreams.deleteLinkedResource(datastreamId, created.data!.id);
 ```
 
 ### Example: Get related metadata for a datastream
@@ -828,32 +844,19 @@ const curve = await hs.ratingCurves.createItem(
 
 Use `listItemsForMonitoringSite(monitoringSiteId)` to retrieve all curves for one MonitoringSite.
 
-## Typed MonitoringSite File Attachments
+## Rating Curve Link Preview
 
-`hs.monitoringSites` accepts raw `FormData` for general attachment operations. `hs.monitoringSiteFileAttachments` provides typed upload, metadata update, replacement, deletion, and rating-curve preview helpers.
+`hs.monitoringSites`/`hs.datastreams` handle general linked resource management (see the examples above). `hs.ratingCurvePreview`
+provides a helper for previewing the first rows of a CSV-formatted link — for example, to show a quick preview of a
+rating curve file before it's fully processed.
 
 ```ts
-const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
-const file = fileInput.files![0];
-const replacementFile = replacementFileInput.files![0];
+const linkUrl = created.data!.link;
 
-const uploadRes = await hs.monitoringSiteFileAttachments.upload(monitoringSiteId, file, {
-  type: "rating_curve",
-  name: "rating-curve.csv",
-  description: "Approved field rating curve",
-});
-
-if (uploadRes.ok) {
-  await hs.monitoringSiteFileAttachments.replaceFile(
-    monitoringSiteId,
-    uploadRes.data.id,
-    replacementFile
-  );
+const previewRes = await hs.ratingCurvePreview.fetchRatingCurvePreview(linkUrl);
+if (previewRes.ok) {
+  // previewRes.data is an array of { inputValue, outputValue } rows
 }
-
-const attachments = await hs.monitoringSiteFileAttachments.listItems(monitoringSiteId, {
-  type: "rating_curve",
-});
 ```
 
 ## Quality Control Histories

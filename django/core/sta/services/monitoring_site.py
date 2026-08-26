@@ -17,17 +17,16 @@ from core.sta.cache import (
 )
 from core.sta.models import (
     MonitoringSite,
-    MonitoringSiteFileAttachment,
+    MonitoringSiteLinkedResource,
     SiteType,
-    FileAttachmentType,
+    LinkedResourceType,
 )
 from interfaces.api.schemas import (
     MonitoringSiteSummaryResponse,
     MonitoringSiteDetailResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
-    FileAttachmentPostBody,
-    FileAttachmentDeleteBody,
+    LinkedResourcePostBody,
 )
 from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSiteFields,
@@ -57,7 +56,7 @@ class MonitoringSiteService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.prefetch_related("monitoring_site_file_attachments")
+            queryset = queryset.prefetch_related("monitoring_site_linked_resources")
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -77,7 +76,7 @@ class MonitoringSiteService(ServiceUtils):
     def select_expanded_fields(queryset: QuerySet) -> QuerySet:
         return (
             queryset.select_related("workspace")
-            .prefetch_related("monitoring_site_file_attachments")
+            .prefetch_related("monitoring_site_linked_resources")
         )
 
     @staticmethod
@@ -457,7 +456,7 @@ class MonitoringSiteService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.prefetch_related("monitoring_site_file_attachments")
+            queryset = queryset.prefetch_related("monitoring_site_linked_resources")
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
@@ -573,7 +572,7 @@ class MonitoringSiteService(ServiceUtils):
 
         return {key: sorted(values) for key, values in tag_keys.items()}
 
-    def get_file_attachments(
+    def get_linked_resources(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
@@ -583,56 +582,70 @@ class MonitoringSiteService(ServiceUtils):
             principal=principal, uid=uid, action="view"
         )
 
-        queryset = monitoring_site.monitoring_site_file_attachments
+        queryset = monitoring_site.monitoring_site_linked_resources
 
-        if filtering.get("file_attachment_type"):
-            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
+        if filtering.get("type"):
+            queryset = self.apply_filters(queryset, "type", filtering["type"])
 
         return queryset.all()
 
-    def add_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    def add_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        file,
+        link: Optional[str],
+        data: LinkedResourcePostBody,
     ):
         monitoring_site = self.get_monitoring_site_for_action(
             principal=principal, uid=uid, action="edit"
         )
 
-        if MonitoringSiteFileAttachment.objects.filter(
-            monitoring_site=monitoring_site, name=file.name
-        ).exists():
-            raise HttpError(400, "File attachment already exists")
-
-        return MonitoringSiteFileAttachment.objects.create(
-            monitoring_site=monitoring_site,
-            name=file.name,
-            description=data.description,
-            file_attachment=file,
-            file_attachment_type=data.file_attachment_type,
+        return self.create_linked_resource(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            file=file,
+            link=link,
+            data=data,
         )
 
-    def replace_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
-    ):
-        self.remove_file_attachment(
-            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
-        )
-
-        return self.add_file_attachment(
-            principal=principal, uid=uid, file=file, data=data
-        )
-
-    def remove_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: FileAttachmentDeleteBody
+    def update_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+        name: Optional[str],
+        description: Optional[str],
+        type: Optional[str],
+        file,
+        link: Optional[str],
     ):
         monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
 
-        try:
-            file_attachment = MonitoringSiteFileAttachment.objects.get(monitoring_site=monitoring_site, name=data.name)
-        except MonitoringSiteFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
+        return self.update_linked_resource_fields(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            linked_resource_id=linked_resource_id,
+            name=name,
+            description=description,
+            type=type,
+            file=file,
+            link=link,
+        )
 
-        file_attachment.file_attachment.delete()
-        file_attachment.delete()
+    def remove_linked_resource(
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, linked_resource_id: uuid.UUID
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
+
+        self.delete_linked_resource(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            linked_resource_id=linked_resource_id,
+        )
 
     def list_site_types(
         self,
@@ -646,14 +659,14 @@ class MonitoringSiteService(ServiceUtils):
 
         return queryset.values_list("name", flat=True)
 
-    def list_file_attachment_types(
+    def list_linked_resource_types(
         self,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
         order_desc: bool = False,
     ):
-        queryset = FileAttachmentType.objects.order_by(
+        queryset = LinkedResourceType.objects.order_by(
             f"{'-' if order_desc else ''}name"
         )
         queryset, count = self.apply_pagination(queryset, response, page, page_size)

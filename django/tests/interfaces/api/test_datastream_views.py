@@ -5,7 +5,7 @@ from django.test.utils import CaptureQueriesContext
 from core.sta.models import (
     DatastreamAggregation,
     DatastreamStatus,
-    FileAttachmentType,
+    LinkedResourceType,
     SampledMedium,
 )
 from tests.core.iam.factories import (
@@ -199,11 +199,11 @@ def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
     assert set(response.json()) == {"Water", "Air"}
 
 
-def test_get_datastream_file_attachment_types_returns_registered_type_names(client):
-    FileAttachmentType.objects.create(name="Photo")
-    FileAttachmentType.objects.create(name="Report")
+def test_get_datastream_linked_resource_types_returns_registered_type_names(client):
+    LinkedResourceType.objects.create(name="Photo")
+    LinkedResourceType.objects.create(name="Report")
 
-    response = client.get(f"{DATASTREAMS_URL}/file-attachment-types")
+    response = client.get(f"{DATASTREAMS_URL}/linked-resource-types")
 
     assert response.status_code == 200
     assert set(response.json()) == {"Photo", "Report"}

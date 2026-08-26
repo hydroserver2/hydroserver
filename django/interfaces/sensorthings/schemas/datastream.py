@@ -26,7 +26,7 @@ class DatastreamProperties(BaseModel):
     is_private: bool
     is_visible: bool
     workspace: WorkspaceProperties
-    file_attachments: dict[str, str]
+    linked_resources: dict[str, str]
     tags: dict[str, str]
 
     model_config = ConfigDict(

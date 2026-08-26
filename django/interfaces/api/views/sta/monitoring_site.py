@@ -20,10 +20,9 @@ from interfaces.api.schemas import (
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
-    FileAttachmentQueryParameters,
-    FileAttachmentGetResponse,
-    FileAttachmentPostBody,
-    FileAttachmentDeleteBody,
+    LinkedResourceQueryParameters,
+    LinkedResourceGetResponse,
+    LinkedResourcePostBody,
 )
 from core.sta.services import MonitoringSiteService
 from core.web.models import SiteTypeIcon
@@ -212,17 +211,17 @@ def get_site_type_icons(request: HydroServerHttpRequest):
     return 200, SiteTypeIcon.objects.values("icon", "site_types")
 
 
-@monitoring_site_router.get("/file-attachment-types", response={200: list[str]}, by_alias=True)
-def get_file_attachment_types(
+@monitoring_site_router.get("/linked-resource-types", response={200: list[str]}, by_alias=True)
+def get_monitoring_site_linked_resource_types(
     request: HydroServerHttpRequest,
     response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get file attachment types.
+    Get linked resource types.
     """
 
-    return 200, monitoring_site_service.list_file_attachment_types(
+    return 200, monitoring_site_service.list_linked_resource_types(
         response=response,
         page=query.page,
         page_size=query.page_size,
@@ -306,25 +305,25 @@ def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: 
 
 
 @monitoring_site_router.get(
-    "/{monitoring_site_id}/file-attachments",
+    "/{monitoring_site_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[FileAttachmentGetResponse],
+        200: list[LinkedResourceGetResponse],
         401: str,
         403: str,
     },
     by_alias=True,
 )
-def get_monitoring_site_file_attachments(
+def get_monitoring_site_linked_resources(
     request: HydroServerHttpRequest,
     monitoring_site_id: Path[uuid.UUID],
-    query: Query[FileAttachmentQueryParameters],
+    query: Query[LinkedResourceQueryParameters],
 ):
     """
-    Get all file attachments associated with a MonitoringSite.
+    Get all linked resources associated with a MonitoringSite.
     """
 
-    return 200, monitoring_site_service.get_file_attachments(
+    return 200, monitoring_site_service.get_linked_resources(
         principal=request.principal,
         uid=monitoring_site_id,
         filtering=query.dict(exclude_unset=True),
@@ -332,10 +331,10 @@ def get_monitoring_site_file_attachments(
 
 
 @monitoring_site_router.post(
-    "/{monitoring_site_id}/file-attachments",
+    "/{monitoring_site_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: FileAttachmentGetResponse,
+        201: LinkedResourceGetResponse,
         400: str,
         401: str,
         403: str,
@@ -344,88 +343,95 @@ def get_monitoring_site_file_attachments(
     },
     by_alias=True,
 )
-def add_monitoring_site_file_attachment(
+def add_monitoring_site_linked_resource(
     request: HydroServerHttpRequest,
     monitoring_site_id: Path[uuid.UUID],
-    file: UploadedFile = File(...),
+    name: str = Form(..., min_length=1),
     description: Optional[str] = Form(None),
-    file_attachment_type: str = Form(...),
+    type: str = Form(..., min_length=1),
+    file: Optional[UploadedFile] = File(None),
+    link: Optional[str] = Form(None),
 ):
     """
-    Add a file attachment to a monitoring_site.
+    Add a linked resource to a monitoring_site.
     """
 
-    return 201, monitoring_site_service.add_file_attachment(
+    return 201, monitoring_site_service.add_linked_resource(
         principal=request.principal,
         uid=monitoring_site_id,
         file=file,
-        data=FileAttachmentPostBody(
-            name=file.name,
+        link=link,
+        data=LinkedResourcePostBody(
+            name=name,
             description=description,
-            file_attachment_type=file_attachment_type
+            type=type,
         )
     )
 
 
-@monitoring_site_router.put(
-    "/{monitoring_site_id}/file-attachments",
+@monitoring_site_router.patch(
+    "/{monitoring_site_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        204: None,
+        200: LinkedResourceGetResponse,
         400: str,
         401: str,
         403: str,
+        404: str,
         413: str,
         422: str,
     },
     by_alias=True,
 )
-def replace_monitoring_site_file_attachment(
+def update_monitoring_site_linked_resource(
     request: HydroServerHttpRequest,
     monitoring_site_id: Path[uuid.UUID],
-    file: UploadedFile = File(...),
+    linked_resource_id: Path[uuid.UUID],
+    name: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    file_attachment_type: str = Form(...),
+    type: Optional[str] = Form(None),
+    file: Optional[UploadedFile] = File(None),
+    link: Optional[str] = Form(None),
 ):
     """
-    Replace a file attachment for a monitoring_site.
+    Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.
+    external URL) cannot be changed in place — delete it and create a new one instead.
     """
 
-    return 204, monitoring_site_service.replace_file_attachment(
+    return 200, monitoring_site_service.update_linked_resource(
         principal=request.principal,
         uid=monitoring_site_id,
+        linked_resource_id=linked_resource_id,
+        name=name,
+        description=description,
+        type=type,
         file=file,
-        data=FileAttachmentPostBody(
-            name=file.name,
-            description=description,
-            file_attachment_type=file_attachment_type
-        )
+        link=link,
     )
 
 
 @monitoring_site_router.delete(
-    "/{monitoring_site_id}/file-attachments",
+    "/{monitoring_site_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
-        400: str,
         401: str,
         403: str,
-        422: str,
+        404: str,
     },
     by_alias=True,
 )
-def remove_monitoring_site_file_attachment(
+def remove_monitoring_site_linked_resource(
     request: HydroServerHttpRequest,
     monitoring_site_id: Path[uuid.UUID],
-    data: FileAttachmentDeleteBody,
+    linked_resource_id: Path[uuid.UUID],
 ):
     """
-    Remove a file attachment from a monitoring_site.
+    Remove a linked resource from a monitoring_site.
     """
 
-    return 204, monitoring_site_service.remove_file_attachment(
+    return 204, monitoring_site_service.remove_linked_resource(
         principal=request.principal,
         uid=monitoring_site_id,
-        data=data,
+        linked_resource_id=linked_resource_id,
     )

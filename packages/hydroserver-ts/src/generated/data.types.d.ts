@@ -48,7 +48,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/file-attachment-types": {
+    "/api/data/datastreams/linked-resource-types": {
         parameters: {
             query?: never;
             header?: never;
@@ -56,10 +56,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get File Attachment Types
-         * @description Get file attachment types.
+         * Get Datastream Linked Resource Types
+         * @description Get linked resource types.
          */
-        get: operations["interfaces_api_views_sta_datastream_get_file_attachment_types"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resource_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -196,7 +196,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/file-attachments": {
+    "/api/data/datastreams/{datastream_id}/linked-resources": {
         parameters: {
             query?: never;
             header?: never;
@@ -204,28 +204,45 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Datastream File Attachments
-         * @description Get all file attachments associated with a Datastream.
+         * Get Datastream Linked Resources
+         * @description Get all linked resources associated with a Datastream.
          */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_file_attachments"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resources"];
+        put?: never;
         /**
-         * Replace Datastream File Attachment
-         * @description Replace a file attachment for a datastream.
+         * Add Datastream Linked Resource
+         * @description Add a linked resource to a datastream.
          */
-        put: operations["interfaces_api_views_sta_datastream_replace_datastream_file_attachment"];
-        /**
-         * Add Datastream File Attachment
-         * @description Add a file attachment to a datastream.
-         */
-        post: operations["interfaces_api_views_sta_datastream_add_datastream_file_attachment"];
-        /**
-         * Remove Datastream File Attachment
-         * @description Remove a file attachment from a datastream.
-         */
-        delete: operations["interfaces_api_views_sta_datastream_remove_datastream_file_attachment"];
+        post: operations["interfaces_api_views_sta_datastream_add_datastream_linked_resource"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/data/datastreams/{datastream_id}/linked-resources/{linked_resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Datastream Linked Resource
+         * @description Remove a linked resource from a datastream.
+         */
+        delete: operations["interfaces_api_views_sta_datastream_remove_datastream_linked_resource"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Datastream Linked Resource
+         * @description Update a linked resource for a datastream. A linked resource's mode (hosted file vs.
+         *     external URL) cannot be changed in place — delete it and create a new one instead.
+         */
+        patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
     };
     "/api/data/datastreams/{datastream_id}/observations": {
@@ -576,7 +593,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-sites/file-attachment-types": {
+    "/api/data/monitoring-sites/linked-resource-types": {
         parameters: {
             query?: never;
             header?: never;
@@ -584,10 +601,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get File Attachment Types
-         * @description Get file attachment types.
+         * Get Monitoring Site Linked Resource Types
+         * @description Get linked resource types.
          */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_file_attachment_types"];
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -744,7 +761,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site"];
         trace?: never;
     };
-    "/api/data/monitoring-sites/{monitoring_site_id}/file-attachments": {
+    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources": {
         parameters: {
             query?: never;
             header?: never;
@@ -752,28 +769,45 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Monitoring Site File Attachments
-         * @description Get all file attachments associated with a MonitoringSite.
+         * Get Monitoring Site Linked Resources
+         * @description Get all linked resources associated with a MonitoringSite.
          */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_file_attachments"];
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources"];
+        put?: never;
         /**
-         * Replace Monitoring Site File Attachment
-         * @description Replace a file attachment for a monitoring_site.
+         * Add Monitoring Site Linked Resource
+         * @description Add a linked resource to a monitoring_site.
          */
-        put: operations["interfaces_api_views_sta_monitoring_site_replace_monitoring_site_file_attachment"];
-        /**
-         * Add Monitoring Site File Attachment
-         * @description Add a file attachment to a monitoring_site.
-         */
-        post: operations["interfaces_api_views_sta_monitoring_site_add_monitoring_site_file_attachment"];
-        /**
-         * Remove Monitoring Site File Attachment
-         * @description Remove a file attachment from a monitoring_site.
-         */
-        delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment"];
+        post: operations["interfaces_api_views_sta_monitoring_site_add_monitoring_site_linked_resource"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Monitoring Site Linked Resource
+         * @description Remove a linked resource from a monitoring_site.
+         */
+        delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Site Linked Resource
+         * @description Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.
+         *     external URL) cannot be changed in place — delete it and create a new one instead.
+         */
+        patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource"];
         trace?: never;
     };
     "/api/data/monitoring/tasks": {
@@ -2494,8 +2528,6 @@ export interface components {
             aggregationStatistic: string;
             /** Description */
             description: string;
-            /** Fileattachments */
-            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
             /**
              * Id
              * Format: uuid
@@ -2515,6 +2547,8 @@ export interface components {
              * @default true
              */
             isVisible: boolean;
+            /** Linkedresources */
+            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
             method: components["schemas"]["MethodSummaryResponse"];
             monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
             /** Name */
@@ -2871,8 +2905,6 @@ export interface components {
             aggregationStatistic: string;
             /** Description */
             description: string;
-            /** Fileattachments */
-            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
             /**
              * Id
              * Format: uuid
@@ -2892,6 +2924,8 @@ export interface components {
              * @default true
              */
             isVisible: boolean;
+            /** Linkedresources */
+            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
             /**
              * Methodid
              * Format: uuid
@@ -3252,45 +3286,6 @@ export interface components {
              */
             workspaceId: string;
         };
-        /** FileAttachmentDeleteBody */
-        FileAttachmentDeleteBody: {
-            /** Name */
-            name: string;
-        };
-        /** FileAttachmentGetResponse */
-        FileAttachmentGetResponse: {
-            /** Description */
-            description?: string | null;
-            /** Fileattachmenttype */
-            fileAttachmentType: string;
-            /** Id */
-            id: number;
-            /** Link */
-            link: string;
-            /** Name */
-            name: string;
-        };
-        /** FileAttachmentQueryParameters */
-        FileAttachmentQueryParameters: {
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
-            /**
-             * Type
-             * @description Filter by file attachment type.
-             * @default []
-             */
-            type: string[];
-        };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
@@ -3320,6 +3315,43 @@ export interface components {
              * @constant
              */
             type: "JSON";
+        };
+        /** LinkedResourceGetResponse */
+        LinkedResourceGetResponse: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Link */
+            link: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+        };
+        /** LinkedResourceQueryParameters */
+        LinkedResourceQueryParameters: {
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Type
+             * @description Filter by linked resource type.
+             * @default []
+             */
+            type: string[];
         };
         /** MethodDetailResponse */
         MethodDetailResponse: {
@@ -3629,8 +3661,6 @@ export interface components {
             elevationDatum?: string | null;
             /** Elevation M */
             elevation_m?: number | null;
-            /** Fileattachments */
-            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
             /**
              * Id
              * Format: uuid
@@ -3640,6 +3670,8 @@ export interface components {
             isPrivate: boolean;
             /** Latitude */
             latitude: number;
+            /** Linkedresources */
+            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
             /** Longitude */
             longitude: number;
             /** Name */
@@ -3907,8 +3939,6 @@ export interface components {
             elevationDatum?: string | null;
             /** Elevation M */
             elevation_m?: number | null;
-            /** Fileattachments */
-            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
             /**
              * Id
              * Format: uuid
@@ -3918,6 +3948,8 @@ export interface components {
             isPrivate: boolean;
             /** Latitude */
             latitude: number;
+            /** Linkedresources */
+            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
             /** Longitude */
             longitude: number;
             /** Name */
@@ -6028,7 +6060,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_datastream_get_file_attachment_types: {
+    interfaces_api_views_sta_datastream_get_datastream_linked_resource_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -6357,14 +6389,14 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_datastream_get_datastream_file_attachments: {
+    interfaces_api_views_sta_datastream_get_datastream_linked_resources: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
                 page?: number | null;
                 /** @description The number of items per page. */
                 page_size?: number | null;
-                /** @description Filter by file attachment type. */
+                /** @description Filter by linked resource type. */
                 type?: string[];
             };
             header?: never;
@@ -6381,7 +6413,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileAttachmentGetResponse"][];
+                    "application/json": components["schemas"]["LinkedResourceGetResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -6404,7 +6436,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_datastream_replace_datastream_file_attachment: {
+    interfaces_api_views_sta_datastream_add_datastream_linked_resource: {
         parameters: {
             query?: never;
             header?: never;
@@ -6418,92 +6450,14 @@ export interface operations {
                 "multipart/form-data": {
                     /** Description */
                     description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                    /** File Attachment Type */
-                    file_attachment_type: string;
-                };
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Content Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_add_datastream_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Description */
-                    description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                    /** File Attachment Type */
-                    file_attachment_type: string;
+                    /** File */
+                    file?: string | null;
+                    /** Link */
+                    link?: string | null;
+                    /** Name */
+                    name: string;
+                    /** Type */
+                    type: string;
                 };
             };
         };
@@ -6514,7 +6468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileAttachmentGetResponse"];
+                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6564,20 +6518,17 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_datastream_remove_datastream_file_attachment: {
+    interfaces_api_views_sta_datastream_remove_datastream_linked_resource: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 datastream_id: string;
+                linked_resource_id: string;
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileAttachmentDeleteBody"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description No Content */
             204: {
@@ -6585,6 +6536,71 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_update_datastream_linked_resource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datastream_id: string;
+                linked_resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Description */
+                    description?: string | null;
+                    /** File */
+                    file?: string | null;
+                    /** Link */
+                    link?: string | null;
+                    /** Name */
+                    name?: string | null;
+                    /** Type */
+                    type?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
+                };
             };
             /** @description Bad Request */
             400: {
@@ -6606,6 +6622,24 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Content Too Large */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8042,7 +8076,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_monitoring_site_get_file_attachment_types: {
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -8398,14 +8432,14 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_file_attachments: {
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
                 page?: number | null;
                 /** @description The number of items per page. */
                 page_size?: number | null;
-                /** @description Filter by file attachment type. */
+                /** @description Filter by linked resource type. */
                 type?: string[];
             };
             header?: never;
@@ -8422,7 +8456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileAttachmentGetResponse"][];
+                    "application/json": components["schemas"]["LinkedResourceGetResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -8445,7 +8479,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_monitoring_site_replace_monitoring_site_file_attachment: {
+    interfaces_api_views_sta_monitoring_site_add_monitoring_site_linked_resource: {
         parameters: {
             query?: never;
             header?: never;
@@ -8459,92 +8493,14 @@ export interface operations {
                 "multipart/form-data": {
                     /** Description */
                     description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                    /** File Attachment Type */
-                    file_attachment_type: string;
-                };
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Content Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_add_monitoring_site_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                monitoring_site_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Description */
-                    description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                    /** File Attachment Type */
-                    file_attachment_type: string;
+                    /** File */
+                    file?: string | null;
+                    /** Link */
+                    link?: string | null;
+                    /** Name */
+                    name: string;
+                    /** Type */
+                    type: string;
                 };
             };
         };
@@ -8555,7 +8511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileAttachmentGetResponse"];
+                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
                 };
             };
             /** @description Bad Request */
@@ -8605,20 +8561,17 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment: {
+    interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 monitoring_site_id: string;
+                linked_resource_id: string;
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileAttachmentDeleteBody"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description No Content */
             204: {
@@ -8626,6 +8579,71 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+                linked_resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Description */
+                    description?: string | null;
+                    /** File */
+                    file?: string | null;
+                    /** Link */
+                    link?: string | null;
+                    /** Name */
+                    name?: string | null;
+                    /** Type */
+                    type?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
+                };
             };
             /** @description Bad Request */
             400: {
@@ -8647,6 +8665,24 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Content Too Large */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };

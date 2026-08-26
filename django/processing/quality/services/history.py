@@ -44,8 +44,8 @@ class QCHistoryService(ServiceUtils):
                 "source_datastream__unit",
                 "source_datastream__processing_level",
             ).prefetch_related(
-                "managed_datastream__datastream_file_attachments",
-                "source_datastream__datastream_file_attachments",
+                "managed_datastream__datastream_linked_resources",
+                "source_datastream__datastream_linked_resources",
             )
 
         return queryset.select_related(

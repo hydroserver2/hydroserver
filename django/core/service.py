@@ -2,6 +2,8 @@ import uuid
 from typing import Union, Any, Optional, Type
 from ninja.errors import HttpError
 from pydantic.alias_generators import to_snake
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet, Model, Q
@@ -138,6 +140,146 @@ class ServiceUtils:
                 response["X-Total-Pages"] = str((count + page_size - 1) // page_size)
 
         return queryset[offset : offset + page_size], count
+
+    @staticmethod
+    def create_linked_resource(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        file,
+        link: Optional[str],
+        data: Any,
+    ):
+        if linked_resource_model.objects.filter(
+            **{parent_field: parent}, name=data.name
+        ).exists():
+            raise HttpError(400, "A linked resource with this name already exists")
+
+        if file and link:
+            raise HttpError(400, "Cannot provide both a file and a link")
+
+        if file:
+            if not settings.MEDIA_STORAGE_ENABLED:
+                raise HttpError(400, "Internal file uploads are disabled for this instance")
+
+            linked_resource = linked_resource_model(
+                **{parent_field: parent},
+                name=data.name,
+                description=data.description,
+                type=data.type,
+                file=file,
+            )
+        elif link:
+            linked_resource = linked_resource_model(
+                **{parent_field: parent},
+                name=data.name,
+                description=data.description,
+                type=data.type,
+                url=link,
+            )
+        else:
+            raise HttpError(400, "Either a file or a link is required")
+
+        try:
+            linked_resource.full_clean()
+        except ValidationError as e:
+            raise HttpError(422, "; ".join(e.messages))
+
+        linked_resource.save()
+
+        return linked_resource
+
+    @staticmethod
+    def update_linked_resource_fields(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+        name: Optional[str],
+        description: Optional[str],
+        type: Optional[str],
+        file,
+        link: Optional[str],
+    ):
+        try:
+            linked_resource = linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise HttpError(404, "Linked resource does not exist")
+
+        if name:
+            if linked_resource_model.objects.filter(
+                **{parent_field: parent}, name=name
+            ).exclude(id=linked_resource_id).exists():
+                raise HttpError(400, "A linked resource with this name already exists")
+            linked_resource.name = name
+        elif name is not None:
+            raise HttpError(400, "Name cannot be blank")
+
+        if description is not None:
+            linked_resource.description = description or None
+
+        if type:
+            linked_resource.type = type
+        elif type is not None:
+            raise HttpError(400, "Type cannot be blank")
+
+        if file and link:
+            raise HttpError(400, "Cannot provide both a file and a link")
+
+        stored_file = None
+        if file:
+            if not linked_resource.file:
+                raise HttpError(
+                    400,
+                    "Cannot switch a linked resource from external to hosted — "
+                    "delete it and create a new one instead",
+                )
+            if not settings.MEDIA_STORAGE_ENABLED:
+                raise HttpError(400, "Internal file uploads are disabled for this instance")
+            stored_file = linked_resource.file
+            linked_resource.file = file
+        elif link:
+            if not linked_resource.url:
+                raise HttpError(
+                    400,
+                    "Cannot switch a linked resource from hosted to external — "
+                    "delete it and create a new one instead",
+                )
+            linked_resource.url = link
+        elif link is not None:
+            raise HttpError(400, "Link cannot be blank")
+
+        try:
+            linked_resource.full_clean()
+        except ValidationError as e:
+            raise HttpError(422, "; ".join(e.messages))
+
+        linked_resource.save()
+
+        if stored_file:
+            stored_file.delete(save=False)
+
+        return linked_resource
+
+    @staticmethod
+    def delete_linked_resource(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+    ):
+        try:
+            linked_resource = linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise HttpError(404, "Linked resource does not exist")
+
+        if linked_resource.file:
+            linked_resource.file.delete(save=False)
+        linked_resource.delete()
 
 
 class VocabularyService(ServiceUtils):

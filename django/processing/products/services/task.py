@@ -58,9 +58,9 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         if expand_related:
             queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
                 "transformations__input_datastreams__datastream",
-                "transformations__input_datastreams__datastream__datastream_file_attachments",
+                "transformations__input_datastreams__datastream__datastream_linked_resources",
                 "transformations__output_datastream",
-                "transformations__output_datastream__datastream_file_attachments",
+                "transformations__output_datastream__datastream_linked_resources",
                 "transformations__rating_curve",
             )
         else:
@@ -129,9 +129,9 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
                 "monitoring_site__workspace", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related(
                 "transformations__input_datastreams__datastream",
-                "transformations__input_datastreams__datastream__datastream_file_attachments",
+                "transformations__input_datastreams__datastream__datastream_linked_resources",
                 "transformations__output_datastream",
-                "transformations__output_datastream__datastream_file_attachments",
+                "transformations__output_datastream__datastream_linked_resources",
                 "transformations__rating_curve",
             )
         else:

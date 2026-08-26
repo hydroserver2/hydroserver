@@ -27,15 +27,15 @@ urlpatterns += [
     ),
 ]
 
-if settings.MEDIA_STORAGE_IS_LOCAL:
+if settings.MEDIA_STORAGE_ENABLED and settings.MEDIA_STORAGE_IS_LOCAL:
     urlpatterns += static(
         settings.MEDIA_URL,
         document_root=settings.STORAGES["default"]["OPTIONS"]["location"],
     )
 
-# When using local filesystem storage, we want file attachments to remain
+# When using local filesystem storage, we want hosted resources to remain
 # accessible from the Django process even when DEBUG is false.
-if settings.MEDIA_STORAGE_IS_LOCAL and not settings.DEBUG:
+if settings.MEDIA_STORAGE_ENABLED and settings.MEDIA_STORAGE_IS_LOCAL and not settings.DEBUG:
     urlpatterns += [
         re_path(
             r"^media/(?P<path>.*)$",

@@ -12,10 +12,9 @@ import {
   MonitoringSiteTaskSummary,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
-import { normalizeAttachmentCollection } from './attachment-link'
+import { normalizeLinkCollection, normalizeLinkRecord } from './link-normalization'
 
-type FileAttachmentResponse =
-  Data.components['schemas']['FileAttachmentGetResponse']
+type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetResponse']
 
 export class MonitoringSiteService extends HydroServerBaseService<typeof C, MonitoringSite> {
   static route = C.route
@@ -73,40 +72,44 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     })
   }
 
-  /* ----------------- Sub-resources: File Attachments ----------------- */
+  /* ------------------ Sub-resources: Linked Resources ------------------ */
 
-  getFileAttachmentTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
+  getLinkedResourceTypes = () =>
+    apiMethods.fetch<string[]>(`${this._route}/linked-resource-types`)
 
-  async uploadAttachments(monitoringSiteId: string, data: FormData) {
-    const url = `${this._route}/${monitoringSiteId}/file-attachments`
-    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
+  async getLinkedResources(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources`
+    const res = await apiMethods.paginatedFetch<LinkedResourceResponse[]>(url)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse>
+      data: normalizeLinkCollection(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse[]>
   }
 
-  async getAttachments(monitoringSiteId: string) {
-    const url = `${this._route}/${monitoringSiteId}/file-attachments`
-    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
+  async createLinkedResource(monitoringSiteId: string, data: FormData) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources`
+    const res = await apiMethods.post<LinkedResourceResponse>(url, data)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse[]>
+      data: normalizeLinkRecord(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse>
   }
 
-  deleteAttachment(monitoringSiteId: string, name: string) {
-    const url = `${this._route}/${monitoringSiteId}/file-attachments`
-    return apiMethods.delete<null>(url, { name })
+  async updateLinkedResource(monitoringSiteId: string, linkedResourceId: string, data: FormData) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.patch<LinkedResourceResponse>(url, data)
+    if (!res.ok) return res
+    return {
+      ...res,
+      data: normalizeLinkRecord(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse>
+  }
+
+  deleteLinkedResource(monitoringSiteId: string, linkedResourceId: string) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
+    return apiMethods.delete<null>(url)
   }
 
   /* --------------- Sub-resources: HydroShare Archive ----------------- */

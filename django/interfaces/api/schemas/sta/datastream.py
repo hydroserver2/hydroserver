@@ -10,7 +10,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import FileAttachmentGetResponse
+from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 
 if TYPE_CHECKING:
@@ -222,9 +222,7 @@ class DatastreamSummaryResponse(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
     tags: dict[str, str] = {}
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
@@ -238,9 +236,7 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
     processing_level: "ProcessingLevelSummaryResponse"
     unit: "UnitSummaryResponse"
     tags: dict[str, str] = {}
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):

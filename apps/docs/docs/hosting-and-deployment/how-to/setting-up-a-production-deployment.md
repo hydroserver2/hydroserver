@@ -100,10 +100,18 @@ HydroServer’s Docker image supports the following environment variables for co
   Email address used for account management emails if SMTP is configured.  
   Example: `noreply@example.com`
 
+- **MEDIA_STORAGE_ENABLED**  
+  Whether HydroServer will accept file uploads for site/datastream linked resources, and expose them at `/media/`. 
+  Defaults to `False` — instances that don't want to manage file storage can leave this off and
+  only use external URL linked resources, without needing to configure `MEDIA_STORAGE_BACKEND` below at all. This
+  does not affect external URL-linked resources, which are always allowed.  
+  Example: `True`
+
 - **MEDIA_STORAGE_BACKEND**  
-  Dotted path to the Django storage backend used to store file attachments. Defaults to
-  `django.core.files.storage.FileSystemStorage` (local disk), which is **not** recommended for production —
-  set this explicitly to `storages.backends.s3.S3Storage` or `storages.backends.gcloud.GoogleCloudStorage`.  
+  Dotted path to the Django storage backend used to store hosted linked resources (only relevant when
+  `MEDIA_STORAGE_ENABLED` is `True`). Defaults to `django.core.files.storage.FileSystemStorage` (local disk), which
+  is **not** recommended for production — set this explicitly to `storages.backends.s3.S3Storage` or
+  `storages.backends.gcloud.GoogleCloudStorage`.  
   Example: `storages.backends.s3.S3Storage`
 
 - **MEDIA_STORAGE_OPTIONS**  
@@ -146,8 +154,9 @@ headers automatically. For higher-traffic deployments, set **STATIC_HOST** to a 
 pointed at your HydroServer instance as its origin; WhiteNoise's cache headers let the CDN serve cached static assets 
 without re-fetching from HydroServer on every request.
 
-**Media files** Django is not optimized for storing or serving user-uploaded media files in production. Recommended 
-approaches include:
+**Media files** are only relevant if **MEDIA_STORAGE_ENABLED** is `True` — instances that only use external URL
+linked resources for their sites/datastreams can leave media storage unconfigured. Django is not optimized for
+storing or serving user-uploaded media files in production. Recommended approaches include:
 
 - Using a reverse proxy (e.g., [**NGINX**](https://nginx.org/)) to serve the media volume.  
 - Offloading storage and delivery to a cloud service such as [**Amazon S3**](https://docs.aws.amazon.com/s3/) or 

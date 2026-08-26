@@ -11,7 +11,7 @@ import { TaskService } from './services/task.service'
 import { MonitoringTaskService } from './services/monitoring-task.service'
 import { DataProductTaskService } from './services/data-product-task.service'
 import { RatingCurveService } from './services/rating-curve.service'
-import { MonitoringSiteFileAttachmentService } from './services/monitoring-site-file-attachment.service'
+import { RatingCurvePreviewService } from './services/rating-curve-preview.service'
 import {
   QualityControlHistoryService,
   QualityControlOperationService,
@@ -55,7 +55,7 @@ export class HydroServer {
   private _monitoringTasks?: MonitoringTaskService
   private _dataProductTasks?: DataProductTaskService
   private _ratingCurves?: RatingCurveService
-  private _monitoringSiteFileAttachments?: MonitoringSiteFileAttachmentService
+  private _ratingCurvePreview?: RatingCurvePreviewService
   private _qualityControlHistories?: QualityControlHistoryService
   private _qualityControlSessions?: QualityControlSessionService
   private _qualityControlOperations?: QualityControlOperationService
@@ -144,9 +144,8 @@ export class HydroServer {
   get ratingCurves(): RatingCurveService {
     return (this._ratingCurves ??= new RatingCurveService(this))
   }
-  get monitoringSiteFileAttachments(): MonitoringSiteFileAttachmentService {
-    return (this._monitoringSiteFileAttachments ??=
-      new MonitoringSiteFileAttachmentService(this))
+  get ratingCurvePreview(): RatingCurvePreviewService {
+    return (this._ratingCurvePreview ??= new RatingCurvePreviewService(this))
   }
   get qualityControlHistories(): QualityControlHistoryService {
     return (this._qualityControlHistories ??= new QualityControlHistoryService(

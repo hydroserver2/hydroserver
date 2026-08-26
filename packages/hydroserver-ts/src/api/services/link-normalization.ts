@@ -22,7 +22,7 @@ export function preferredApiOrigin(host?: string | null) {
   }
 }
 
-export function normalizeAttachmentLink(
+export function normalizeLinkUrl(
   link: string,
   host?: string | null
 ): string {
@@ -46,7 +46,7 @@ export function normalizeAttachmentLink(
   }
 }
 
-export function normalizeAttachmentRecord<T extends LinkLike>(
+export function normalizeLinkRecord<T extends LinkLike>(
   value: T,
   host?: string | null
 ): T {
@@ -56,19 +56,19 @@ export function normalizeAttachmentRecord<T extends LinkLike>(
 
   return {
     ...value,
-    link: normalizeAttachmentLink(value.link, host),
+    link: normalizeLinkUrl(value.link, host),
   }
 }
 
-export function normalizeAttachmentCollection<T extends LinkLike>(
+export function normalizeLinkCollection<T extends LinkLike>(
   data: T[] | T | null | undefined,
   host?: string | null
 ): T[] | T | null | undefined {
   if (Array.isArray(data)) {
-    return data.map((item) => normalizeAttachmentRecord(item, host))
+    return data.map((item) => normalizeLinkRecord(item, host))
   }
   if (data && typeof data === 'object') {
-    return normalizeAttachmentRecord(data, host)
+    return normalizeLinkRecord(data, host)
   }
   return data
 }

@@ -3,7 +3,7 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 from core.sta.models import (
-    FileAttachmentType,
+    LinkedResourceType,
     SiteType,
 )
 from tests.core.iam.factories import (
@@ -142,11 +142,11 @@ def test_get_site_types_returns_registered_type_names(client):
     assert set(response.json()) == {"Stream", "Lake"}
 
 
-def test_get_file_attachment_types_returns_registered_type_names(client):
-    FileAttachmentType.objects.create(name="Photo")
-    FileAttachmentType.objects.create(name="Report")
+def test_get_linked_resource_types_returns_registered_type_names(client):
+    LinkedResourceType.objects.create(name="Photo")
+    LinkedResourceType.objects.create(name="Report")
 
-    response = client.get(f"{MONITORING_SITES_URL}/file-attachment-types")
+    response = client.get(f"{MONITORING_SITES_URL}/linked-resource-types")
 
     assert response.status_code == 200
     assert set(response.json()) == {"Photo", "Report"}

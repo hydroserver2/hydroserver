@@ -48,7 +48,7 @@ class Datastream(HydroServerBaseModel):
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
     tags: Dict[str, str]
-    file_attachments: Dict[str, Dict[str, str]]
+    linked_resources: Dict[str, Dict[str, str]]
 
     _editable_fields: ClassVar[set[str]] = {
         "name", "description", "observation_type", "sampled_medium", "no_data_value", "aggregation_statistic",
@@ -232,13 +232,14 @@ class Datastream(HydroServerBaseModel):
 
         self.save()
 
-    @field_validator("file_attachments", mode="before")
-    def transform_file_attachments(cls, v):
+    @field_validator("linked_resources", mode="before")
+    def transform_linked_resources(cls, v):
         if isinstance(v, list):
             return {
                 item["name"]: {
+                    "id": item["id"],
                     "link": item["link"],
-                    "file_attachment_type": item["fileAttachmentType"],
+                    "type": item["type"],
                 } for item in v if "name" in item and "link" in item
             }
         return v
@@ -255,19 +256,33 @@ class Datastream(HydroServerBaseModel):
         self.client.datastreams.delete_tag(uid=self.uid, key=key)
         self.tags.pop(key, None)
 
-    def add_file_attachment(self, file: IO[bytes], file_attachment_type: str):
-        """Add a file attachment for this datastream."""
+    def add_linked_resource(
+        self,
+        name: str,
+        type: str,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        """
+        Add a linked resource to this datastream. Exactly one of `file`/`url` must be given —
+        whichever one is provided determines whether the resource is hosted by HydroServer or
+        an external link.
+        """
 
-        file_attachment = self.client.datastreams.add_file_attachment(
-            uid=self.uid, file=file, file_attachment_type=file_attachment_type
+        linked_resource = self.client.datastreams.add_linked_resource(
+            uid=self.uid, name=name, type=type, file=file, url=url,
+            description=description,
         )
-        self.file_attachments[file_attachment["name"]] = {
-            "link": file_attachment["link"],
-            "file_attachment_type": file_attachment_type,
+        self.linked_resources[linked_resource["name"]] = {
+            "id": linked_resource["id"],
+            "link": linked_resource["link"],
+            "type": type,
         }
 
-    def delete_file_attachment(self, name: str):
-        """Delete a file attachment of this datastream."""
+    def delete_linked_resource(self, name: str):
+        """Delete a linked resource of this datastream."""
 
-        self.client.datastreams.delete_file_attachment(uid=self.uid, name=name)
-        del self.file_attachments[name]
+        linked_resource_id = self.linked_resources[name]["id"]
+        self.client.datastreams.delete_linked_resource(uid=self.uid, linked_resource_id=linked_resource_id)
+        del self.linked_resources[name]

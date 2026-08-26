@@ -64,34 +64,48 @@ def monitoring_site_file_attachment_storage_path(instance, filename):
     return f"monitoring-sites/{instance.monitoring_site.id}/{filename}"
 
 
-class MonitoringSiteFileAttachment(models.Model):
+class MonitoringSiteLinkedResource(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     monitoring_site = models.ForeignKey(
-        MonitoringSite, related_name="monitoring_site_file_attachments", on_delete=models.CASCADE
+        MonitoringSite, related_name="monitoring_site_linked_resources", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    file_attachment = models.FileField(upload_to=monitoring_site_file_attachment_storage_path)
-    file_attachment_type = models.CharField(max_length=200)
+    file = models.FileField(upload_to=monitoring_site_file_attachment_storage_path, blank=True, default="")
+    url = models.URLField(blank=True, default="", max_length=2000)
+    type = models.CharField(max_length=200)
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     @property
     def link(self):
-        storage = self.file_attachment.storage
+        if self.url:
+            return self.url
+
+        storage = self.file.storage
 
         try:
-            file_attachment_link = storage.url(self.file_attachment.name, expire=3600)
+            file_link = storage.url(self.file.name, expire=3600)
         except TypeError:
-            file_attachment_link = storage.url(self.file_attachment.name)
+            file_link = storage.url(self.file.name)
 
         if settings.MEDIA_STORAGE_IS_LOCAL:
-            file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
+            file_link = settings.PROXY_BASE_URL + file_link
 
-        return file_attachment_link
+        return file_link
 
     class Meta:
         unique_together = ("monitoring_site", "name")
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(file="") & ~models.Q(url="")) |
+                    (~models.Q(file="") & models.Q(url=""))
+                ),
+                name="monitoring_site_linked_resource_file_xor_url",
+            )
+        ]
 
 
 class SiteTypeManager(models.Manager):
@@ -107,5 +121,5 @@ class SiteType(models.Model):
         return (self.name,)
 
 
-class FileAttachmentType(models.Model):
+class LinkedResourceType(models.Model):
     name = models.CharField(max_length=200, unique=True)

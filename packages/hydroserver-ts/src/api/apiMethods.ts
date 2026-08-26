@@ -29,14 +29,20 @@ export const apiMethods = {
     originalBody: unknown = null,
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
+    
     options.method = 'PATCH'
-    options.body = originalBody
-      ? createPatchObject(
-          originalBody as Record<string, unknown>,
-          body as Record<string, unknown>
-        )
-      : body
+    options.body = isFormData
+      ? body
+      : originalBody
+        ? createPatchObject(
+            originalBody as Record<string, unknown>,
+            body as Record<string, unknown>
+          )
+        : body
+
     const bodyIsEmpty =
+      !isFormData &&
       typeof options.body === 'object' &&
       options.body !== null &&
       Object.keys(options.body).length === 0
