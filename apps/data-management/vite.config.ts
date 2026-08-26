@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       vuetify({
         autoImport: true,
-        styles: { configFile: resolve(designSystemRoot, 'settings.scss') },
+        styles: { configFile: resolve(designSystemRoot, 'vue/settings.scss') },
       }),
     ],
     optimizeDeps: {

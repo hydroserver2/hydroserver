@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 const colorsPath = new URL('../colors.css', import.meta.url)
-const outputPath = new URL('../vuetify-colors.ts', import.meta.url)
+const outputPath = new URL('../vue/vuetify-colors.ts', import.meta.url)
 const check = process.argv.includes('--check')
 const source = await readFile(colorsPath, 'utf8')
 const colorDeclarations = [

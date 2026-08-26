@@ -10,11 +10,8 @@
     "fonts.css",
     "html.css",
     "layout.css",
-    "settings.scss",
     "scripts",
     "typography.css",
-    "vuetify-colors.ts",
-    "vuetify.ts",
     "vue"
   ],
   "scripts": {
@@ -23,7 +20,7 @@
   },
   "sideEffects": [
     "*.css",
-    "./vuetify.ts"
+    "./vue/vuetify.ts"
   ],
   "exports": {
     "./components.css": "./components.css",
@@ -31,10 +28,10 @@
     "./fonts.css": "./fonts.css",
     "./html.css": "./html.css",
     "./layout.css": "./layout.css",
-    "./settings.scss": "./settings.scss",
     "./typography.css": "./typography.css",
-    "./vuetify": "./vuetify.ts",
-    "./vue": "./vue/index.ts"
+    "./vue": "./vue/index.ts",
+    "./vue/settings.scss": "./vue/settings.scss",
+    "./vue/vuetify": "./vue/vuetify.ts"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

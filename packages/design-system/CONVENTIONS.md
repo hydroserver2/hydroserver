@@ -2,18 +2,18 @@
 
 Short version: don't invent values or one-off markup when this package
 already has an answer. Check here first, then the organized token files,
-`vuetify.ts`, `components.css`, and `vue/` for the actual definitions.
+`components.css`, and `vue/` for the actual definitions.
 
 ## Where things live
 
 - `colors.css` — the canonical semantic color palette (`--hs-*`).
-  `vuetify-colors.ts` is generated from it for Vuetify.
+  `vue/vuetify-colors.ts` is generated from it for Vuetify.
 - `layout.css` — spacing, radius, and shadow tokens (`--hs-space-*`,
   `--hs-radius-*`, `--hs-shadow-*`).
 - `typography.css` — font families, weights, sizes (`--hs-font-*`), and the
   `.hs-text-*` and `.hs-heading` / `.hs-subheading` / `.hs-title` /
   `.hs-label` type-recipe classes.
-- `vuetify.ts` — the Vuetify adapter for the shared color roles, plus
+- `vue/vuetify.ts` — the Vuetify adapter for the shared color roles, plus
   component defaults (button variants, text field/select/autocomplete behavior).
 - `components.css` — shared recipes for recurring hand-built controls
   (search inputs, stat cards) that aren't plain Vuetify components.
@@ -30,7 +30,7 @@ already has an answer. Check here first, then the organized token files,
   utility classes like `.text-primary`) or an `--hs-*` semantic CSS token.
 - Add a new color only in `colors.css` as a named semantic role — never as a
   raw value in a component, app, or Vuetify adapter. Regenerate
-  `vuetify-colors.ts` after changing it.
+  `vue/vuetify-colors.ts` after changing it.
 
 ## Spacing & radius
 
@@ -61,7 +61,7 @@ already has an answer. Check here first, then the organized token files,
 
 - Text fields, selects, autocompletes, textareas, and checkboxes inherit
   shared defaults (`variant: 'outlined'`, autofill disabled on
-  menu-based inputs) from `vuetify.ts` — don't override these per
+  menu-based inputs) from `vue/vuetify.ts` — don't override these per
   instance unless the field is genuinely special-cased.
 - Mark required fields with the `.required-label` class, not a manual
   asterisk + color.
