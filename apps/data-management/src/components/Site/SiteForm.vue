@@ -187,7 +187,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn-cancel @click="closeDialog">Cancel</v-btn-cancel>
-        <v-btn-primary @click="uploadMonitoringSite">Save</v-btn-primary>
+        <v-btn-dialog-action @click="uploadMonitoringSite">Save</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

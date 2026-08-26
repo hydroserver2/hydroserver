@@ -252,14 +252,14 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')">
           Cancel
         </v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :color="QUALITY_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create quality task' }}
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

@@ -46,11 +46,11 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :loading="isSubmitting"
           :disabled="isSubmitting"
-          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-primary
+          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-dialog-action
         >
       </v-card-actions>
     </v-form>

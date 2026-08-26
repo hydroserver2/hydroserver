@@ -65,12 +65,12 @@
       <div class="d-flex align-center flex-wrap ga-2">
         <span>{{ workspaceLoadError }}</span>
         <v-spacer />
-        <v-btn-secondary
+        <v-btn
           :loading="isRetryingWorkspaceLoad"
           @click="retryWorkspaceLoad"
         >
           Retry
-        </v-btn-secondary>
+        </v-btn>
       </div>
     </v-alert>
 

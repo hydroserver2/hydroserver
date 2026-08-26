@@ -28,7 +28,7 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="cancelDeletion">Cancel</v-btn-cancel>
-      <v-btn-delete @click="deleteLink">Delete</v-btn-delete>
+      <v-btn-destructive @click="deleteLink">Delete</v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>

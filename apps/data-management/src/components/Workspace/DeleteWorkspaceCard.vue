@@ -40,9 +40,9 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete :loading="loading" :disabled="loading" @click="onDelete">
+      <v-btn-destructive :loading="loading" :disabled="loading" @click="onDelete">
         Delete
-      </v-btn-delete>
+      </v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>

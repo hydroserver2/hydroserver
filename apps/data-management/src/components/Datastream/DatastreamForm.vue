@@ -597,8 +597,8 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="emit('close')"> Cancel </v-btn-cancel>
-        <v-btn-primary type="submit" class="my-4"
-          >{{ isEdit ? 'Update' : 'Create' }} datastream</v-btn-primary
+        <v-btn-dialog-action type="submit" class="my-4"
+          >{{ isEdit ? 'Update' : 'Create' }} datastream</v-btn-dialog-action
         >
       </v-card-actions>
     </v-form>

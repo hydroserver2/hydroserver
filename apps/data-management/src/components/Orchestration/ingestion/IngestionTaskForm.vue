@@ -247,14 +247,14 @@
     <template #actions>
       <v-spacer />
       <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
-      <v-btn-primary
+      <v-btn-dialog-action
         :loading="submitLoading"
         :color="INGESTION_ACCENT"
         type="submit"
         @click="onSubmit"
       >
         Save task
-      </v-btn-primary>
+      </v-btn-dialog-action>
     </template>
   </StickyForm>
 

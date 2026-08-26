@@ -44,14 +44,14 @@
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn-secondary
+                <v-btn
                   variant="flat"
                   :disabled="!canCreate"
                   data-testid="add-ingestion-task"
                   @click="emit('add-task')"
                 >
                   Add task
-                </v-btn-secondary>
+                </v-btn>
               </span>
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -61,14 +61,14 @@
             <v-tooltip location="top" :disabled="canCreate">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn-secondary
+                  <v-btn
                     variant="flat"
                     :disabled="!canCreate"
                     data-testid="add-aggregation-task"
                     @click="emit('add-aggregation')"
                   >
                     Add aggregation
-                  </v-btn-secondary>
+                  </v-btn>
                 </span>
               </template>
               <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -76,14 +76,14 @@
             <v-tooltip location="top" :disabled="canCreate">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn-secondary
+                  <v-btn
                     variant="flat"
                     :disabled="!canCreate"
                     data-testid="add-derivation-task"
                     @click="emit('add-derivation')"
                   >
                     Add derivation
-                  </v-btn-secondary>
+                  </v-btn>
                 </span>
               </template>
               <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -91,14 +91,14 @@
             <v-tooltip location="top" :disabled="canCreateRatingCurve">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn-secondary
+                  <v-btn
                     variant="flat"
                     :disabled="!canCreateRatingCurve"
                     data-testid="add-rating-curve-task"
                     @click="emit('add-rating-curve')"
                   >
                     Add rating curve
-                  </v-btn-secondary>
+                  </v-btn>
                 </span>
               </template>
               <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -112,14 +112,14 @@
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn-secondary
+                <v-btn
                   variant="flat"
                   :disabled="!canCreate"
                   data-testid="add-quality-task"
                   @click="emit('add-quality')"
                 >
                   Add quality task
-                </v-btn-secondary>
+                </v-btn>
               </span>
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>

@@ -183,14 +183,14 @@
           >Cancel</v-btn-cancel
         >
 
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create aggregation task' }}
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

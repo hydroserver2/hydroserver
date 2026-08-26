@@ -14,13 +14,13 @@
           <WorkspaceSelector />
         </v-col>
         <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
-          <v-btn-secondary
+          <v-btn
             :to="{ name: 'Workspaces' }"
             density="comfortable"
             class="text-none font-weight-regular"
           >
             Manage workspaces
-          </v-btn-secondary>
+          </v-btn>
         </v-col>
         <v-col v-if="$slots.actions" cols="12" sm="auto">
           <slot name="actions" />
@@ -34,13 +34,13 @@
     class="flex items-center gap-2 min-w-0 flex-nowrap"
   >
     <WorkspaceSelector />
-    <v-btn-secondary
+    <v-btn
       v-if="!hideWorkspaceManagement"
       :to="{ name: 'Workspaces' }"
       density="comfortable"
     >
       Manage workspaces
-    </v-btn-secondary>
+    </v-btn>
   </div>
 
   <v-row v-else class="mt-0 mb-2" align="center">
@@ -48,9 +48,9 @@
       <WorkspaceSelector />
     </v-col>
     <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
-      <v-btn-secondary :to="{ name: 'Workspaces' }" density="comfortable">
+      <v-btn :to="{ name: 'Workspaces' }" density="comfortable">
         Manage workspaces
-      </v-btn-secondary>
+      </v-btn>
     </v-col>
   </v-row>
 </template>

@@ -36,11 +36,12 @@ const vuetify = createVuetify({
   blueprint: md3,
   directives,
   aliases: {
+    // Compatibility alias while existing non-dialog usages are migrated.
+    // Do not add new uses; choose a role-specific alias instead.
     VBtnPrimary: VBtn,
-    VBtnSecondary: VBtn,
+    VBtnDialogAction: VBtn,
     VBtnCancel: VBtn,
-    VBtnDelete: VBtn,
-    VBtnAdd: VBtn,
+    VBtnDestructive: VBtn,
     VBtnIcon: VBtn,
     VBtnPageAction: VBtn,
   },
@@ -65,17 +66,14 @@ const vuetify = createVuetify({
     VTextarea: textFieldAttrs,
     VCheckbox: textFieldAttrs,
     VBtn: btnAttrs,
-    VBtnPrimary: {
+    VBtnPrimary: btnAttrs,
+    VBtnDialogAction: {
       ...btnAttrs,
       color: 'primary',
-      // Primary actions are rectangular with rounded corners, not pills.
+      // Dialog actions are rectangular with rounded corners, not pills.
       rounded: 'lg',
     },
-    VBtnSecondary: {
-      ...btnAttrs,
-      color: 'secondary',
-    },
-    VBtnDelete: {
+    VBtnDestructive: {
       ...btnAttrs,
       color: 'delete',
     },
@@ -83,15 +81,6 @@ const vuetify = createVuetify({
       ...btnAttrs,
       color: 'grey',
       variant: 'text',
-    },
-    VBtnAdd: {
-      ...btnAttrs,
-      // An add/create control is the primary action for its table or view.
-      // Match the shared primary-action shape instead of using the legacy
-      // green pill treatment.
-      color: 'primary',
-      rounded: 'sm',
-      variant: 'flat',
     },
     VBtnIcon: {
       ...btnAttrs,

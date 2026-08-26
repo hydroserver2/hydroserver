@@ -190,7 +190,7 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
         >
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           class="text-none"
           :color="DATA_PRODUCT_ACCENT"
@@ -198,7 +198,7 @@
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create rating curve task' }}
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

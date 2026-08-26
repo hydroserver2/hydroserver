@@ -335,13 +335,13 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openCreate = false">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           :loading="saving"
           :disabled="!canCreateAttachment"
           @click="createAttachment"
         >
           Save
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -465,13 +465,13 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openEdit = false">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           :loading="saving"
           :disabled="!canSaveEditAttachment"
           @click="saveEditAttachment"
         >
           Save
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -489,13 +489,13 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openDelete = false">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-destructive
           color="error"
           :loading="saving"
           @click="deleteAttachment"
         >
           Delete
-        </v-btn-primary>
+        </v-btn-destructive>
       </v-card-actions>
     </v-card>
   </v-dialog>

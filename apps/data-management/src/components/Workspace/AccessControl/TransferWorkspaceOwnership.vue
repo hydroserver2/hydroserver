@@ -51,14 +51,14 @@
           >
             Confirm transfer
           </v-btn-primary>
-          <v-btn-secondary
+          <v-btn
             v-else
             :prepend-icon="mdiTransitTransfer"
             :disabled="!emailFormValid"
             @click="showTransferConfirmation = true"
           >
             Begin transfer
-          </v-btn-secondary>
+          </v-btn>
         </v-form>
 
         <v-alert

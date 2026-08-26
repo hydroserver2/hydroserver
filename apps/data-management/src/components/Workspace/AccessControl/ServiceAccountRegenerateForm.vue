@@ -15,9 +15,9 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary :loading="loading" :disabled="loading" @click="onDelete">
+      <v-btn-dialog-action :loading="loading" :disabled="loading" @click="onDelete">
         Regenerate key
-      </v-btn-primary>
+      </v-btn-dialog-action>
     </v-card-actions>
   </v-card>
 </template>

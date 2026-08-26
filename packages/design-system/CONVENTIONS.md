@@ -49,13 +49,15 @@ already has an answer. Check here first, then the organized token files,
 
 ## Buttons
 
-- Use the semantic button aliases — `VBtnPrimary`, `VBtnSecondary`,
-  `VBtnDelete`, `VBtnCancel`, `VBtnAdd`, `VBtnIcon`, and
-  `VBtnPageAction` — not bare `VBtn` with manual `color`/`variant` props.
-  `VBtnIcon` is the neutral treatment for compact icon-only controls.
-  `VBtnPageAction` is green and reserved for the one action that most advances
-  a page or major tab's goal; use blue `VBtnPrimary` for dialog submit actions.
-  Each alias already encodes the right color, shape, and emphasis for its role.
+- Use a role-based button alias when one applies: `VBtnPageAction`,
+  `VBtnDialogAction`, `VBtnDestructive`, `VBtnCancel`, or `VBtnIcon`.
+  Do not use aliases named for visual hierarchy (`Secondary`) or a specific
+  verb (`Add`). `VBtnIcon` is the neutral treatment for compact icon-only
+  controls. `VBtnPageAction` is green and reserved for the one action that most
+  advances a page or major tab's goal; use blue `VBtnDialogAction` for a
+  dialog's submit action. `VBtnDestructive` is for deleting or otherwise
+  irreversible actions. Each alias encodes the right color, shape, and emphasis
+  for its role.
 
 ## Forms
 

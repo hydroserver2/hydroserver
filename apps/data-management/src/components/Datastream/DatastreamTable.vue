@@ -29,7 +29,7 @@
           :to="{ name: 'VisualizeData', query: { sites: monitoringSite!.id } }"
           >View on Data Visualization Page</v-btn
         >
-        <v-btn-add
+        <v-btn-page-action
           v-if="
             hasPermission(
               PermissionResource.Datastream,
@@ -37,11 +37,10 @@
               workspace
             )
           "
-          color="white"
           :prependIcon="mdiPlus"
           data-testid="add-datastream-button"
           @click="openCreate = true"
-          >Add new datastream</v-btn-add
+          >Add new datastream</v-btn-page-action
         >
       </div>
     </div>

@@ -180,9 +180,9 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="emit('close')">Close</v-btn-cancel>
-        <v-btn-primary @click="onSubmit">{{
+        <v-btn-dialog-action @click="onSubmit">{{
           isEdit ? 'Update' : 'Create'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

@@ -10,9 +10,9 @@
       <div class="d-flex align-center ga-2">
         <span>{{ loadError }}</span>
         <v-spacer />
-        <v-btn-secondary size="small" @click="reloadData">
+        <v-btn size="small" @click="reloadData">
           Retry
-        </v-btn-secondary>
+        </v-btn>
       </div>
     </v-alert>
     <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
