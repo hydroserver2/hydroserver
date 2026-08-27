@@ -11613,7 +11613,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.11.2"
+    "version": "1.11.3"
   },
   "openapi": "3.1.0",
   "paths": {
