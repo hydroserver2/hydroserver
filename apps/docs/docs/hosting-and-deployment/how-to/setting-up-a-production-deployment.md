@@ -80,6 +80,12 @@ HydroServer’s Docker image supports the following environment variables for co
   PostgreSQL connection string.  
   Example: `postgresql://hsdbadmin:securepassword123@127.0.0.1:5432/hydroserver`
 
+- **CACHE_URL**  
+  Connection string for Django's cache backend. If unset, HydroServer defaults to a database-backed cache table in
+  `DATABASE_URL` shared across worker processes and replicas. Set this to use a dedicated cache service instead,
+  such as Redis.  
+  Example: `redis://127.0.0.1:6379/1`
+
 - **ACCOUNT_SIGNUP_ENABLED**  
   Whether public account creation is allowed.  
   Example: `True` / `False`

@@ -183,13 +183,15 @@ if env.bool("SSL_REQUIRED", default=False):
 
 # Caching
 
-if DEBUG:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "hydroserver-dev-cache",
-        }
-    }
+CACHES = {
+    "default": env.cache(
+        default=(
+            "dbcache://web_cache" 
+            if STRICT_SECURITY
+            else "locmemcache://hydroserver-dev-cache"
+        )
+    )
+}
 
 PUBLIC_THING_MARKERS_CACHE_TIMEOUT = env.int(
     "PUBLIC_THING_MARKERS_CACHE_TIMEOUT", default=300
