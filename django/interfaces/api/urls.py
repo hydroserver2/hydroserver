@@ -29,16 +29,16 @@ from interfaces.api.views import (
     qc_operation_router,
 )
 
+rate_limits = settings.API_RATE_LIMITS or {}
+throttle_classes = {"anonymous": AnonRateThrottle, "authenticated": AuthRateThrottle}
+
 api = NinjaAPI(
     title="HydroServer Data Management API",
     version=__version__,
     urls_namespace="data",
     docs_decorator=ensure_csrf_cookie,
     renderer=ORJSONRenderer(),
-    throttle=[
-        AnonRateThrottle(settings.ANON_THROTTLE_RATE),
-        AuthRateThrottle(settings.AUTH_THROTTLE_RATE),
-    ],
+    throttle=[cls(rate_limits[k]) for k, cls in throttle_classes.items() if rate_limits.get(k)],
 )
 
 api.add_router("workspaces", workspace_router)

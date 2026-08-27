@@ -463,8 +463,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # API
 
-ANON_THROTTLE_RATE = env.str("ANON_THROTTLE_RATE", default="20/s")
-AUTH_THROTTLE_RATE = env.str("AUTH_THROTTLE_RATE", default="20/s")
+API_RATE_LIMITS = env.json("API_RATE_LIMITS", default=None)
 
 
 # SensorThings

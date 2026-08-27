@@ -9,8 +9,6 @@ export PROXY_BASE_URL="${PROXY_BASE_URL:-http://localhost}"
 export WEB_CLIENT_URL="${WEB_CLIENT_URL:-http://localhost}"
 export SMTP_URL="${SMTP_URL:-smtp://127.0.0.1:1025}"
 export ALLOWED_HOSTS="${ALLOWED_HOSTS:-127.0.0.1,localhost,host.docker.internal}"
-export ANON_THROTTLE_RATE="${ANON_THROTTLE_RATE:-200/s}"
-export AUTH_THROTTLE_RATE="${AUTH_THROTTLE_RATE:-200/s}"
 
 if [[ -n "${PYTHON_BIN:-}" ]]; then
   PYTHON_BIN="$PYTHON_BIN"
