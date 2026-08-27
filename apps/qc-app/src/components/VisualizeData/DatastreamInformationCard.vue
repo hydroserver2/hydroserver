@@ -57,7 +57,7 @@
           color="deep-purple"
           variant="tonal"
           prepend-icon="mdi-layers"
-          :title="`Filter table by processing level: ${datastream.processingLevel.definition}`"
+          :title="`Filter table by processing level: ${datastream.processingLevel.name}`"
           @click="filterByProcessingLevel"
         >
           {{ datastream.processingLevel.code || '–' }}
@@ -258,9 +258,9 @@ function filterByObservedProperty() {
 }
 
 function filterByProcessingLevel() {
-  const def = props.datastream.processingLevel?.definition
-  if (!def) return
-  selectedProcessingLevelNames.value = [def]
+  const name = props.datastream.processingLevel?.name
+  if (!name) return
+  selectedProcessingLevelNames.value = [name]
   emit('close')
 }
 
@@ -394,9 +394,10 @@ const processingLevelItems = computed(() => {
   const pl = d.value.processingLevel
   if (!pl) return []
   return [
+    { label: 'Name', value: pl.name },
     { label: 'Code', value: pl.code },
+    { label: 'Description', value: pl.description },
     { label: 'Definition', value: pl.definition },
-    { label: 'Explanation', value: pl.explanation },
   ]
 })
 

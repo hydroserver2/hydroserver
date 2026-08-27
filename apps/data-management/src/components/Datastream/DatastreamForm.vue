@@ -330,12 +330,15 @@
                   </template>
 
                   <InfoCard
-                    :title="item.definition"
+                    :title="item.name"
                     :subtitle="{
                       label: 'Code',
                       value: item.code,
                     }"
-                    :items="[{ label: 'Explanation', value: item.explanation }]"
+                    :items="[
+                      { label: 'Description', value: item.description },
+                      { label: 'Definition', value: item.definition },
+                    ]"
                     :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>

@@ -72,7 +72,7 @@ class ObservedPropertyFactory(DjangoModelFactory):
     name = factory.Sequence(lambda seq: f"Observed Property {seq}")
     definition = factory.Faker("url")
     description = factory.Faker("sentence")
-    observed_property_type = "Hydrology"
+    type = "Hydrology"
     code = factory.Sequence(lambda seq: f"OP-{seq}")
 
     class Params:
@@ -89,8 +89,9 @@ class ProcessingLevelFactory(DjangoModelFactory):
 
     workspace = factory.SubFactory(WorkspaceFactory)
     code = factory.Sequence(lambda seq: f"Level {seq}")
-    definition = factory.Faker("sentence")
-    explanation = factory.Faker("paragraph")
+    name = factory.Sequence(lambda seq: f"Processing Level {seq}")
+    description = factory.Faker("paragraph")
+    definition = factory.Faker("url")
 
     class Params:
         global_ = factory.Trait(workspace=None)
@@ -123,8 +124,8 @@ class UnitFactory(DjangoModelFactory):
     workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Unit {seq}")
     symbol = factory.Sequence(lambda seq: f"u{seq}")
-    definition = factory.Faker("sentence")
-    unit_type = "Dimensionless"
+    definition = factory.Faker("url")
+    type = "Dimensionless"
 
     class Params:
         global_ = factory.Trait(workspace=None)

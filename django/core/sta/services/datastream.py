@@ -228,7 +228,7 @@ class DatastreamService(ServiceUtils):
                 "observed_property__name",
                 "observed_property__code",
                 "processing_level_id",
-                "processing_level__definition",
+                "processing_level__name",
                 "unit_id",
                 "no_data_value",
                 "value_count",
@@ -271,7 +271,7 @@ class DatastreamService(ServiceUtils):
                 processing_level_id,
                 {
                     "id": processing_level_id,
-                    "definition": row["processing_level__definition"],
+                    "name": row["processing_level__name"],
                 },
             )
             datastreams.append(
@@ -739,21 +739,22 @@ class DatastreamService(ServiceUtils):
             f"# Name: {datastream.observed_property.name}\n"
             f"# Definition: {datastream.observed_property.definition}\n"
             f"# Description: {datastream.observed_property.description}\n"
-            f"# VariableType: {datastream.observed_property.observed_property_type}\n"
-            f"# VariableCode: {datastream.observed_property.code}\n"
+            f"# Type: {datastream.observed_property.type}\n"
+            f"# Code: {datastream.observed_property.code}\n"
             f"#\n"
             f"# Unit Information:\n"
             f"# -------------------------------------\n"
             f"# Name: {datastream.unit.name}\n"
             f"# Symbol: {datastream.unit.symbol}\n"
             f"# Definition: {datastream.unit.definition}\n"
-            f"# UnitType: {datastream.unit.unit_type}\n"
+            f"# Type: {datastream.unit.type}\n"
             f"#\n"
             f"# Processing Level Information:\n"
             f"# -------------------------------------\n"
             f"# Code: {datastream.processing_level.code}\n"
+            f"# Name: {datastream.processing_level.name}\n"
+            f"# Description: {datastream.processing_level.description}\n"
             f"# Definition: {datastream.processing_level.definition}\n"
-            f"# Explanation: {datastream.processing_level.explanation}\n"
             f"#\n"
             f"# Data Disclaimer:\n"
             f"# -------------------------------------\n"

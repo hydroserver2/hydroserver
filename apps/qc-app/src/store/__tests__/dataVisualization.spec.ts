@@ -53,7 +53,7 @@ const makeDs = (overrides: Record<string, any> = {}) => ({
   name: 'Stream 1',
   monitoringSite: { id: 'monitoringSite-1' },
   observedProperty: { name: 'Temperature' },
-  processingLevel: { definition: 'Raw' },
+  processingLevel: { name: 'Raw' },
   ...overrides,
 })
 
@@ -102,12 +102,12 @@ describe('useDataVisStore.filteredDatastreams', () => {
     expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['b'])
   })
 
-  it('filters by processing level definition', async () => {
+  it('filters by processing level name', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     store.datastreams = [
-      makeDs({ id: 'a', processingLevel: { definition: 'Raw' } }),
-      makeDs({ id: 'b', processingLevel: { definition: 'QC' } }),
+      makeDs({ id: 'a', processingLevel: { name: 'Raw' } }),
+      makeDs({ id: 'b', processingLevel: { name: 'QC' } }),
     ] as any
     store.selectedProcessingLevelNames = ['QC']
     expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['b'])

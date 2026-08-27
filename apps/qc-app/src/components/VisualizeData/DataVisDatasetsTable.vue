@@ -303,7 +303,7 @@ const tableItems = computed(() => {
       siteCodeName: ds.monitoringSite?.code ?? '',
       siteName: ds.monitoringSite?.name ?? '',
       observedPropertyName: ds.observedProperty?.name ?? '',
-      qualityControlLevelDefinition: ds.processingLevel?.definition ?? '',
+      processingLevelName: ds.processingLevel?.name ?? '',
     }
   })
 })
@@ -364,7 +364,7 @@ const headers = reactive([
   },
   {
     title: 'Processing level',
-    key: 'qualityControlLevelDefinition',
+    key: 'processingLevelName',
     visible: true,
   },
   {

@@ -6866,13 +6866,20 @@
       "ObservedPropertyDetailResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -6889,7 +6896,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -6906,7 +6913,6 @@
         },
         "required": [
           "name",
-          "definition",
           "description",
           "type",
           "code",
@@ -6919,13 +6925,20 @@
       "ObservedPropertyPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -6937,7 +6950,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           }
@@ -6948,13 +6961,20 @@
       "ObservedPropertyPostBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -6978,7 +6998,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -6997,7 +7017,6 @@
         },
         "required": [
           "name",
-          "definition",
           "description",
           "type",
           "code",
@@ -7142,13 +7161,20 @@
       "ObservedPropertySummaryResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -7165,7 +7191,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -7184,7 +7210,6 @@
         },
         "required": [
           "name",
-          "definition",
           "description",
           "type",
           "code",
@@ -7465,20 +7490,18 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           },
           "workspace": {
@@ -7494,6 +7517,8 @@
         },
         "required": [
           "code",
+          "name",
+          "description",
           "id",
           "workspace"
         ],
@@ -7518,16 +7543,14 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
           }
         },
         "title": "ProcessingLevelPatchBody",
@@ -7551,16 +7574,9 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
           },
           "id": {
             "anyOf": [
@@ -7573,6 +7589,11 @@
               }
             ],
             "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
           },
           "workspaceId": {
             "anyOf": [
@@ -7588,7 +7609,9 @@
           }
         },
         "required": [
-          "code"
+          "code",
+          "name",
+          "description"
         ],
         "title": "ProcessingLevelPostBody",
         "type": "object"
@@ -7648,7 +7671,9 @@
                 "items": {
                   "enum": [
                     "code",
-                    "-code"
+                    "name",
+                    "-code",
+                    "-name"
                   ],
                   "type": "string"
                 },
@@ -7731,20 +7756,18 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           },
           "workspaceId": {
@@ -7762,6 +7785,8 @@
         },
         "required": [
           "code",
+          "name",
+          "description",
           "id",
           "workspaceId"
         ],
@@ -10435,8 +10460,15 @@
       "UnitDetailResponse": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "id": {
             "format": "uuid",
@@ -10472,7 +10504,6 @@
         "required": [
           "name",
           "symbol",
-          "definition",
           "type",
           "id",
           "workspace"
@@ -10483,8 +10514,15 @@
       "UnitPatchBody": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "name": {
             "maxLength": 255,
@@ -10508,8 +10546,15 @@
       "UnitPostBody": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "id": {
             "anyOf": [
@@ -10554,7 +10599,6 @@
         "required": [
           "name",
           "symbol",
-          "definition",
           "type"
         ],
         "title": "UnitPostBody",
@@ -10696,8 +10740,15 @@
       "UnitSummaryResponse": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "id": {
             "format": "uuid",
@@ -10735,7 +10786,6 @@
         "required": [
           "name",
           "symbol",
-          "definition",
           "type",
           "id",
           "workspaceId"
@@ -10916,25 +10966,20 @@
       },
       "VisualizationProcessingLevelResponse": {
         "properties": {
-          "definition": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Definition"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
           }
         },
         "required": [
-          "id"
+          "id",
+          "name"
         ],
         "title": "VisualizationProcessingLevelResponse",
         "type": "object"
@@ -20769,7 +20814,9 @@
                   "items": {
                     "enum": [
                       "code",
-                      "-code"
+                      "name",
+                      "-code",
+                      "-name"
                     ],
                     "type": "string"
                   },

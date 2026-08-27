@@ -29,6 +29,15 @@ def test_get_datastream_returns_200(client):
     assert response.json()["@iot.id"] == str(datastream.id)
 
 
+def test_get_datastream_with_unit_without_definition_returns_200(client):
+    datastream = DatastreamFactory(unit__definition=None)
+
+    response = client.get(_detail_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["unitOfMeasurement"]["definition"] == ""
+
+
 def test_get_datastream_includes_tags_in_properties(client):
     datastream = DatastreamFactory(tags={"season": "summer"})
 

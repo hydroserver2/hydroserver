@@ -101,7 +101,7 @@ function searchText(datastream: Datastream): string {
     ds.observedProperty?.name,
     ds.observedProperty?.code,
     ds.processingLevel?.code,
-    ds.processingLevel?.definition,
+    ds.processingLevel?.name,
     ds.unit?.name,
     ds.unit?.symbol,
     ds.method?.name,

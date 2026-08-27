@@ -71,7 +71,7 @@ class ObservedPropertyService(ServiceUtils):
             "workspace_id",
             "datastreams__monitoring_site_id",
             "datastreams__id",
-            "observed_property_type",
+            "type",
         ]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
@@ -81,7 +81,6 @@ class ObservedPropertyService(ServiceUtils):
                 queryset,
                 order_by,
                 list(get_args(ObservedPropertyOrderByFields)),
-                {"type": "observed_property_type"},
             )
         else:
             queryset = queryset.order_by("id")

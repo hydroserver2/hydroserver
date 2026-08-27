@@ -36,7 +36,7 @@ interface VisualizationBootstrapPayload {
     intendedTimeSpacingUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | null
   }>
   observedProperties: Array<{ id: string; name: string; code: string }>
-  processingLevels: Array<{ id: string; definition?: string | null }>
+  processingLevels: Array<{ id: string; name: string }>
 }
 
 export interface VisualizationBootstrap {

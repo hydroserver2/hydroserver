@@ -4339,7 +4339,7 @@ export interface components {
             /** Code */
             code: string;
             /** Definition */
-            definition: string;
+            definition?: string | null;
             /** Description */
             description: string;
             /**
@@ -4358,7 +4358,7 @@ export interface components {
             /** Code */
             code?: string;
             /** Definition */
-            definition?: string;
+            definition?: string | null;
             /** Description */
             description?: string;
             /** Name */
@@ -4371,7 +4371,7 @@ export interface components {
             /** Code */
             code: string;
             /** Definition */
-            definition: string;
+            definition?: string | null;
             /** Description */
             description: string;
             /** Id */
@@ -4435,7 +4435,7 @@ export interface components {
             /** Code */
             code: string;
             /** Definition */
-            definition: string;
+            definition?: string | null;
             /** Description */
             description: string;
             /**
@@ -4524,13 +4524,15 @@ export interface components {
             code: string;
             /** Definition */
             definition?: string | null;
-            /** Explanation */
-            explanation?: string | null;
+            /** Description */
+            description: string;
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            /** Name */
+            name: string;
             workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
         };
         /** ProcessingLevelPatchBody */
@@ -4539,8 +4541,10 @@ export interface components {
             code?: string;
             /** Definition */
             definition?: string | null;
-            /** Explanation */
-            explanation?: string | null;
+            /** Description */
+            description?: string;
+            /** Name */
+            name?: string;
         };
         /** ProcessingLevelPostBody */
         ProcessingLevelPostBody: {
@@ -4548,10 +4552,12 @@ export interface components {
             code: string;
             /** Definition */
             definition?: string | null;
-            /** Explanation */
-            explanation?: string | null;
+            /** Description */
+            description: string;
             /** Id */
             id?: string | null;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -4576,7 +4582,7 @@ export interface components {
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("code" | "-code")[] | null;
+            order_by: ("code" | "name" | "-code" | "-name")[] | null;
             /**
              * Page
              * @description Page number (1-based).
@@ -4602,13 +4608,15 @@ export interface components {
             code: string;
             /** Definition */
             definition?: string | null;
-            /** Explanation */
-            explanation?: string | null;
+            /** Description */
+            description: string;
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId: string | null;
         };
@@ -5588,7 +5596,7 @@ export interface components {
         /** UnitDetailResponse */
         UnitDetailResponse: {
             /** Definition */
-            definition: string;
+            definition?: string | null;
             /**
              * Id
              * Format: uuid
@@ -5605,7 +5613,7 @@ export interface components {
         /** UnitPatchBody */
         UnitPatchBody: {
             /** Definition */
-            definition?: string;
+            definition?: string | null;
             /** Name */
             name?: string;
             /** Symbol */
@@ -5616,7 +5624,7 @@ export interface components {
         /** UnitPostBody */
         UnitPostBody: {
             /** Definition */
-            definition: string;
+            definition?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -5678,7 +5686,7 @@ export interface components {
         /** UnitSummaryResponse */
         UnitSummaryResponse: {
             /** Definition */
-            definition: string;
+            definition?: string | null;
             /**
              * Id
              * Format: uuid
@@ -5766,13 +5774,13 @@ export interface components {
         };
         /** VisualizationProcessingLevelResponse */
         VisualizationProcessingLevelResponse: {
-            /** Definition */
-            definition?: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            /** Name */
+            name: string;
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
@@ -9748,7 +9756,7 @@ export interface operations {
                 page_size?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("code" | "-code")[] | null;
+                order_by?: ("code" | "name" | "-code" | "-name")[] | null;
                 /** @description Filter processing levels by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter processing levels by monitoring_site ID. */

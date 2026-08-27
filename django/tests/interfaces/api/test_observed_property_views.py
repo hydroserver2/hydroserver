@@ -76,6 +76,16 @@ def test_get_observed_properties_includes_workspace_properties_for_workspace_own
     assert str(observed_property.id) in [o["id"] for o in response.json()]
 
 
+def test_get_observed_properties_filters_by_type(client):
+    hydrology = ObservedPropertyFactory(global_=True, type="Hydrology")
+    ObservedPropertyFactory(global_=True, type="Meteorology")
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"type": "Hydrology"})
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [str(hydrology.id)]
+
+
 # --- create_observed_property ---------------------------------------------------------
 
 
@@ -92,6 +102,44 @@ def test_create_observed_property_succeeds_for_workspace_owner(client):
 
     assert response.status_code == 201
     assert response.json()["name"] == "New Observed Property"
+    assert response.json()["type"] == "Hydrology"
+
+
+def test_create_observed_property_allows_omitting_definition(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    body = _observed_property_body(workspaceId=str(workspace.id))
+    body.pop("definition")
+
+    response = client.post(
+        OBSERVED_PROPERTIES_URL,
+        data=body,
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["definition"] is None
+
+
+@pytest.mark.parametrize("field", ["type", "code"])
+def test_create_observed_property_allows_500_character_type_and_code(client, field):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    value = "x" * 500
+
+    response = client.post(
+        OBSERVED_PROPERTIES_URL,
+        data=_observed_property_body(
+            workspaceId=str(workspace.id),
+            **{field: value},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()[field] == value
 
 
 def test_create_observed_property_returns_401_when_unauthenticated(client):

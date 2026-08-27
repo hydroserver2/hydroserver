@@ -23,11 +23,11 @@
           class="pb-4"
         />
 
-        <v-textarea
+        <v-text-field
           v-model="item.definition"
-          label="Definition *"
-          :rules="rules.requiredDescription"
-        ></v-textarea>
+          label="Definition"
+          :rules="item.definition ? rules.urlFormat : []"
+        />
 
         <v-textarea
           v-model="item.description"
@@ -90,8 +90,8 @@ const vocabularyStore = useVocabularyStore()
 const handleNameUpdated = () => {
   const name = item.value.name
   if (name && OPNames.includes(name)) {
-    item.value.definition = OPNameTypes[name].definition
-    item.value.description = OPNameTypes[name].description
+    item.value.definition = ''
+    item.value.description = `${OPNameTypes[name].definition}. ${OPNameTypes[name].description}`
   }
 }
 

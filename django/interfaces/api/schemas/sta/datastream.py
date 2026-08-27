@@ -187,7 +187,7 @@ class VisualizationObservedPropertyResponse(BaseGetResponse):
 
 class VisualizationProcessingLevelResponse(BaseGetResponse):
     id: uuid.UUID
-    definition: Optional[str] = None
+    name: str = Field(..., max_length=255)
 
 
 class VisualizationDatastreamResponse(BaseGetResponse):

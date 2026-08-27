@@ -275,9 +275,9 @@ hs_api.methods.create(name, description, type, code=None, definition=None,
 |---|---|---|
 | `uid` | `UUID` | No |
 | `name` | `str` | Yes |
-| `definition` | `str` | Yes |
+| `definition` | `str \| None` | Yes |
 | `description` | `str` | Yes |
-| `observed_property_type` | `str` | Yes |
+| `type` | `str` | Yes |
 | `code` | `str` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
@@ -285,8 +285,8 @@ hs_api.methods.create(name, description, type, code=None, definition=None,
 ```python
 hs_api.observedproperties.list(workspace=None) -> HydroServerCollection[ObservedProperty]
 hs_api.observedproperties.get(uid) -> ObservedProperty
-hs_api.observedproperties.create(workspace, name, definition, description,
-                                 observed_property_type, code, uid=None) -> ObservedProperty
+hs_api.observedproperties.create(name, description, type, code, definition=None,
+                                 workspace=None, uid=None) -> ObservedProperty
 ```
 
 ### Units
@@ -298,15 +298,15 @@ hs_api.observedproperties.create(workspace, name, definition, description,
 | `uid` | `UUID` | No |
 | `name` | `str` | Yes |
 | `symbol` | `str` | Yes |
-| `definition` | `str` | Yes |
-| `unit_type` | `str` | Yes |
+| `definition` | `str \| None` | Yes |
+| `type` | `str` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
 hs_api.units.list(workspace=None) -> HydroServerCollection[Unit]
 hs_api.units.get(uid) -> Unit
-hs_api.units.create(workspace, name, symbol, definition, unit_type, uid=None) -> Unit
+hs_api.units.create(name, symbol, type, definition=None, workspace=None, uid=None) -> Unit
 ```
 
 ### Processing Levels
@@ -317,15 +317,16 @@ hs_api.units.create(workspace, name, symbol, definition, unit_type, uid=None) ->
 |---|---|---|
 | `uid` | `UUID` | No |
 | `code` | `str` | Yes |
+| `name` | `str` | Yes |
+| `description` | `str` | Yes |
 | `definition` | `str \| None` | Yes |
-| `explanation` | `str \| None` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
 hs_api.processinglevels.list(workspace=None) -> HydroServerCollection[ProcessingLevel]
 hs_api.processinglevels.get(uid) -> ProcessingLevel
-hs_api.processinglevels.create(workspace, code, definition=None, explanation=None, uid=None) -> ProcessingLevel
+hs_api.processinglevels.create(code, name, description, definition=None, workspace=None, uid=None) -> ProcessingLevel
 ```
 
 ### Result Qualifiers

@@ -102,7 +102,7 @@ class DatastreamMixin(SensorThingsUtils):
                         {
                             "name": datastream.unit.name,
                             "symbol": datastream.unit.symbol,
-                            "definition": datastream.unit.definition.split(";")[0],
+                            "definition": (datastream.unit.definition or "").split(";")[0],
                         }
                         if needs_unit else Absent
                     ),

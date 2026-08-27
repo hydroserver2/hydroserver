@@ -139,21 +139,22 @@ def _metadata(workspace, marker, scope):
             name=_name(f"{scope} Assigned Observed Property", marker),
             definition=f"https://example.com/e2e/{marker}",
             description=f"E2E scenario observed property {marker}",
-            observed_property_type=scope,
+            type=scope,
             code=f"{scope}-{marker}",
         ),
         "processing_level": ProcessingLevelFactory(
             workspace=workspace,
             code=f"{scope}Assigned-{marker}",
-            definition=f"E2E scenario processing level {marker}",
-            explanation=f"E2E scenario processing level {marker}",
+            name=_name(f"{scope} Assigned Processing Level", marker),
+            description=f"E2E scenario processing level {marker}",
+            definition=f"https://example.com/e2e/{marker}/processing-level",
         ),
         "unit": UnitFactory(
             workspace=workspace,
             name=_name(f"{scope} Assigned Unit", marker),
             symbol=f"{scope[:1]}{marker[-4:]}",
             definition=f"E2E scenario unit {marker}",
-            unit_type=f"{scope} Unit",
+            type=f"{scope} Unit",
         ),
     }
 
@@ -170,21 +171,22 @@ def _additional_workspace_metadata(workspace, marker, scope):
         name=_name(f"{scope} Observed Property", marker),
         definition=f"https://example.com/e2e/{marker}/additional",
         description=f"E2E scenario observed property {marker}",
-        observed_property_type=scope,
+        type=scope,
         code=f"{scope}-additional-{marker}",
     )
     ProcessingLevelFactory(
         workspace=workspace,
         code=f"{scope}Additional-{marker}",
-        definition=f"E2E scenario processing level {marker}",
-        explanation=f"E2E scenario processing level {marker}",
+        name=_name(f"{scope} Processing Level", marker),
+        description=f"E2E scenario processing level {marker}",
+        definition=f"https://example.com/e2e/{marker}/processing-level/additional",
     )
     UnitFactory(
         workspace=workspace,
         name=_name(f"{scope} Unit", marker),
         symbol=f"{scope[:1]}A{marker[-3:]}",
         definition=f"E2E scenario unit {marker}",
-        unit_type=f"{scope} Unit",
+        type=f"{scope} Unit",
     )
     ResultQualifierFactory(
         workspace=workspace,

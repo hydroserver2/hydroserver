@@ -118,7 +118,7 @@ describe('DatastreamService', () => {
               { id: 'ds-2', name: 'DS 2', monitoringSiteId: 'missing-monitoringSite', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
             ],
             observedProperties: [{ id: 'op-1', name: 'Temperature', code: 'temp' }],
-            processingLevels: [{ id: 'pl-1', definition: 'Raw data' }],
+            processingLevels: [{ id: 'pl-1', name: 'Raw data' }],
           })
         )
       )

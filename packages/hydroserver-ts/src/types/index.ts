@@ -253,15 +253,17 @@ export class ProcessingLevel {
   id: string
   workspaceId: string
   code: string
+  name: string
+  description: string
   definition: string
-  explanation: string
 
   constructor() {
     this.id = ''
     this.workspaceId = ''
     this.code = ''
+    this.name = ''
+    this.description = ''
     this.definition = ''
-    this.explanation = ''
   }
 }
 
