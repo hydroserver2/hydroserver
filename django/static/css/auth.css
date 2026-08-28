@@ -90,19 +90,15 @@ body.auth-page {
 
 .auth-card__brand {
   display: flex;
-  gap: var(--hs-space-8);
-  align-items: center;
+  justify-content: center;
   padding-bottom: var(--hs-space-20);
   margin-bottom: var(--hs-space-24);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
   border-bottom: 1px solid var(--hs-border);
 }
 
 .auth-card__logo {
-  width: var(--hs-space-24);
-  height: var(--hs-space-24);
+  width: min(100%, calc(var(--hs-space-32) * 10));
+  height: auto;
 }
 
 .auth-page-header {

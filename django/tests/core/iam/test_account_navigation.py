@@ -64,4 +64,7 @@ def test_login_page_uses_the_shared_design_system_styles(client):
     assert b"/static/design-system/html.css" in response.content
     assert b"/static/design-system/django.css" not in response.content
     assert b"/static/css/auth.css" in response.content
+    assert b"Log in to HydroServer" in response.content
+    assert b"/static/img/favicon-32x32.png" in response.content
+    assert b"/static/img/favicon-16x16.png" in response.content
     assert b"tailwind.css" not in response.content
