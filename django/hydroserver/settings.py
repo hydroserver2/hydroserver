@@ -363,10 +363,6 @@ STATIC_STORAGE_IS_LOCAL = (
     STORAGES["staticfiles"]["BACKEND"] == "django.contrib.staticfiles.storage.StaticFilesStorage"
 )
 
-TAILWIND_CLI_VERSION = "4.1.3"
-TAILWIND_CLI_SRC_CSS = "static/css/input.css"
-
-
 # Celery
 
 CELERY_ENABLED = env.bool("CELERY_ENABLED", default=True)

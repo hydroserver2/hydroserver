@@ -182,21 +182,21 @@
 
             <td class="datastream-summary-cell">
               <div class="datastream-name" :title="datastreamDisplayName(item)">
-                <span
-                  v-if="showMonitoringSiteContext && item.monitoringSiteName"
-                  class="datastream-name__thing"
-                >
-                  {{ item.monitoringSiteName }}
+                <span class="datastream-name__primary">
+                  {{ datastreamName(item) }}
                 </span>
                 <span
                   v-if="showMonitoringSiteContext && item.monitoringSiteName"
                   class="datastream-name__separator"
                   aria-hidden="true"
                 >
-                  /
+                  @
                 </span>
-                <span class="datastream-name__primary">
-                  {{ datastreamName(item) }}
+                <span
+                  v-if="showMonitoringSiteContext && item.monitoringSiteName"
+                  class="datastream-name__thing"
+                >
+                  {{ item.monitoringSiteName }}
                 </span>
               </div>
               <div
@@ -538,7 +538,7 @@ const datastreamName = (item: DatastreamTableItem) =>
 const datastreamDisplayName = (item: DatastreamTableItem) => {
   const name = datastreamName(item)
   return showMonitoringSiteContext.value && item.monitoringSiteName
-    ? `${item.monitoringSiteName} / ${name}`
+    ? `${name} @ ${item.monitoringSiteName}`
     : name
 }
 
@@ -913,6 +913,7 @@ function updatePlottedDatastreams(
 .datastream-name__separator {
   flex: 0 0 auto;
   color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-regular);
 }
 

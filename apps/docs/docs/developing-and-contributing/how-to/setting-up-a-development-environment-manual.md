@@ -43,10 +43,9 @@ This guide is for setting up a local development instance of HydroServer which m
    ```bash
    python manage.py createsuperuser
    ```
-5. Start the development server together with the Tailwind CSS watcher for the server-rendered account
-   and OIDC templates:
+5. Start the development server:
    ```bash
-   python manage.py tailwind runserver 127.0.0.1:8000
+   python manage.py runserver 127.0.0.1:8000
    ```
 
 ## HydroServer Frontend
