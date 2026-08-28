@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Literal, Optional, Union, TYPE_CHECKING
-from pydantic import Field, AliasPath
+from pydantic import AliasChoices, Field, AliasPath
 from ..base import HydroServerBaseModel
 from ..orchestration.run import TaskRun
 from .mapping import EtlMapping
@@ -15,7 +15,11 @@ class EtlTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     task_variables: Dict[str, Any] = Field(default_factory=dict)
-    data_connection_id: uuid.UUID
+    data_connection_id: uuid.UUID = Field(
+        validation_alias=AliasChoices(
+            "dataConnectionId", AliasPath("dataConnection", "id")
+        )
+    )
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))
@@ -41,6 +45,7 @@ class EtlTask(HydroServerBaseModel):
         if not self.uid:
             raise AttributeError("Data cannot be saved: UID is not set.")
 
+        mappings = self.mappings
         saved_resource = self.service.update(
             self.uid,
             name=self.name,
@@ -48,7 +53,7 @@ class EtlTask(HydroServerBaseModel):
             task_variables=self.task_variables,
             mappings=[
                 {"source_identifier": m.source_identifier, "target_datastream_id": str(m.target_datastream_id)}
-                for m in self.mappings
+                for m in mappings
             ],
             crontab=self.crontab,
             interval=self.interval,
@@ -56,6 +61,7 @@ class EtlTask(HydroServerBaseModel):
             start_time=self.start_time,
             enabled=self.enabled,
         )
+        saved_resource.mappings = mappings
         self._server_data = saved_resource.dict(by_alias=False).copy()
         self.__dict__.update(saved_resource.__dict__)
 
