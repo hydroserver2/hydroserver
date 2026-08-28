@@ -2,8 +2,7 @@
 {% if attrs.href %}
 <a href="{{ attrs.href }}"
    class="hs-button
-   {% if 'link' in attrs.tags %}hs-button--link{% elif 'outline' in attrs.tags %}hs-button--outline{% endif %}
-   {% if 'prominent' in attrs.tags %}hs-button--full{% endif %}">
+   {% if 'link' in attrs.tags %}hs-button--link{% elif 'outline' in attrs.tags %}hs-button--outline{% endif %}">
     {% slot default %}{% endslot %}
 </a>
 {% else %}
@@ -11,8 +10,7 @@
         {% if attrs.form %}form="{{ attrs.form }}"{% endif %}
         {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
         class="hs-button
-        {% if 'link' in attrs.tags %}hs-button--link{% elif 'danger' in attrs.tags %}hs-button--danger{% elif 'outline' in attrs.tags %}hs-button--outline{% elif 'secondary' in attrs.tags %}hs-button--secondary{% endif %}
-        {% if 'prominent' in attrs.tags %}hs-button--full{% endif %}">
+        {% if 'link' in attrs.tags %}hs-button--link{% elif 'danger' in attrs.tags %}hs-button--danger{% elif 'outline' in attrs.tags %}hs-button--outline{% elif 'secondary' in attrs.tags %}hs-button--secondary{% endif %}">
     {% slot default %}{% endslot %}
 </button>
 {% endif %}

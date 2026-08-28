@@ -303,24 +303,6 @@
   justify-content: flex-end;
 }
 
-/* Entrance forms (sign in, sign up, code flows) stack a single full-width
-   primary action, matching the calm single-column login layout. */
-.hs-form--entrance {
-  gap: var(--hs-space-20);
-}
-
-.hs-form--entrance .hs-actions {
-  margin-top: var(--hs-space-4);
-}
-
-.hs-form--entrance .hs-actions .hs-button {
-  flex: 1 1 100%;
-}
-
-.hs-form--entrance .hs-actions .hs-button--link {
-  flex: 0 0 auto;
-}
-
 .hs-button-group--vertical {
   flex-direction: column;
 }

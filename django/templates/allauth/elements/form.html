@@ -2,7 +2,7 @@
 <form {% if attrs.method %}method="{{ attrs.method }}"{% endif %}
       {% if attrs.action %}action="{{ attrs.action }}"{% endif %}
       {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
-      class="hs-form{% if 'entrance' in attrs.tags %} hs-form--entrance{% endif %}">
+      class="hs-form">
     {% slot body %}{% endslot %}
     <div class="hs-actions hs-actions--end">
         {% slot actions %}{% endslot %}
