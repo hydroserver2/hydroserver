@@ -159,7 +159,10 @@ body.auth-page {
 }
 
 .auth-organization-fields {
+  min-width: 0;
+  padding: 0;
   margin-top: var(--hs-space-16);
+  border: 0;
 }
 
 .is-hidden {

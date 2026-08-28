@@ -10,7 +10,11 @@ class UserSignupForm(forms.Form):
     user_type = forms.ChoiceField(choices=[], required=True, label="Account type")
 
     has_organization = forms.BooleanField(
-        required=False, label="Affiliated with an organization"
+        required=False,
+        label="Affiliated with an organization",
+        widget=forms.CheckboxInput(
+            attrs={"class": "hs-checkbox", "aria-controls": "org-fields"}
+        ),
     )
     org_name = forms.CharField(max_length=255, required=False, label="Organization name")
     org_code = forms.CharField(max_length=255, required=False, label="Organization code")
