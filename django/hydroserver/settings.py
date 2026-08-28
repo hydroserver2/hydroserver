@@ -238,6 +238,7 @@ ACCOUNT_RATE_LIMITS = env.json(
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
 

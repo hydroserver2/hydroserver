@@ -1,0 +1,31 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n allauth account %}
+{% block head_title %}
+    {% translate "Sign in" %}
+{% endblock head_title %}
+{% block content %}
+    {% element h1 %}
+        {% translate "Sign in with a code" %}
+    {% endelement %}
+    {% element p %}
+        {% translate "Enter your email address and we'll send you a sign-in code." %}
+    {% endelement %}
+    {% url 'account_request_login_code' as login_url %}
+    {% element form form=form method="post" action=login_url tags="entrance,login" %}
+        {% slot body %}
+            {% csrf_token %}
+            {% element fields form=form unlabeled=True %}
+            {% endelement %}
+            {{ redirect_field }}
+        {% endslot %}
+        {% slot actions %}
+            {% element button type="submit" tags="prominent,login" %}
+                {% translate "Send sign-in code" %}
+            {% endelement %}
+        {% endslot %}
+    {% endelement %}
+    {% url 'account_login' as login_url %}
+    {% element button href=login_url tags="link" %}
+        {% translate "Use another sign-in method" %}
+    {% endelement %}
+{% endblock content %}

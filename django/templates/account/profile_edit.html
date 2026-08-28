@@ -40,10 +40,10 @@
 
     <section class="auth-section">
         <label for="id_has_organization" class="hs-checkbox-label">
-            <input type="checkbox" name="has_organization" id="id_has_organization" {% if form.has_organization.value %}checked{% endif %} class="hs-checkbox" onchange="document.getElementById('org-fields').classList.toggle('is-hidden', !this.checked)">
+            <input type="checkbox" name="has_organization" id="id_has_organization" {% if has_organization %}checked{% endif %} class="hs-checkbox" aria-controls="org-fields" onchange="document.getElementById('org-fields').hidden = !this.checked">
             {% trans "Organization Affiliation" %}
         </label>
-        <div id="org-fields" class="auth-organization-fields {% if not form.has_organization.value %}is-hidden{% endif %}">
+        <div id="org-fields" class="auth-organization-fields" {% if not has_organization %}hidden{% endif %}>
             <div class="auth-definition-list">
                 {% for field in form %}
                     {% if field.name in "org_name,org_code,org_type,org_link,org_description" %}

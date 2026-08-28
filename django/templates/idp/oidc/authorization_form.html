@@ -1,13 +1,19 @@
 {% extends "allauth/layouts/entrance.html" %}
 {% load i18n %}
-{% block head_title %}{% trans "Authorize Application" %}{% endblock %}
-{% block content %}
-<h1 class="hs-heading">{% trans "Authorize Application" %}</h1>
-<p class="hs-copy">
+{% block head_title %}
     {% blocktrans with client_name=client.name|default:"An application" %}
-    {{ client_name }} is requesting access to your HydroServer account.
+        Authorize {{ client_name }}
     {% endblocktrans %}
-</p>
+{% endblock %}
+{% block content %}
+{% element h1 %}
+    {% blocktrans with client_name=client.name|default:"An application" %}
+    {{ client_name }} would like to access your HydroServer account.
+    {% endblocktrans %}
+{% endelement %}
+{% element p %}
+    {% trans "Review the permissions below before continuing." %}
+{% endelement %}
 
 <form method="post" class="hs-form">
     {% csrf_token %}
@@ -27,7 +33,9 @@
 
     {% if form.email %}
         <div class="hs-field">
-            <label for="id_email" class="hs-field__label">{% trans "Email to share:" %}</label>
+            <label for="id_email" class="hs-field__label">
+                {% trans "Email to share:" %}
+            </label>
             {{ form.email }}
         </div>
     {% endif %}
@@ -35,11 +43,11 @@
     <div class="hs-actions">
         <button type="submit" name="action" value="grant"
                 class="hs-button">
-            {% trans "Allow" %}
+            {% trans "Authorize" %}
         </button>
         <button type="submit" name="action" value="deny"
                 class="hs-button hs-button--outline">
-            {% trans "Deny" %}
+            {% trans "Cancel" %}
         </button>
     </div>
 </form>

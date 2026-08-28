@@ -26,7 +26,14 @@ def profile_edit(request):
     else:
         form = ProfileForm(instance=request.user)
 
-    return render(request, "account/profile_edit.html", {"form": form})
+    return render(
+        request,
+        "account/profile_edit.html",
+        {
+            "form": form,
+            "has_organization": bool(form["has_organization"].value()),
+        },
+    )
 
 
 @login_required

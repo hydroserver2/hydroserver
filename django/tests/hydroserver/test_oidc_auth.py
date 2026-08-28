@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.utils import timezone
 
@@ -122,6 +123,19 @@ def test_oidc_auth_succeeds_regardless_of_granted_scopes(oidc_client):
         result = oidc_auth(request)
 
     assert result == user
+
+
+def test_oidc_authorization_form_uses_clear_consent_language(oidc_client):
+    rendered = render_to_string(
+        "idp/oidc/authorization_form.html",
+        {"client": oidc_client},
+        request=RequestFactory().get("/identity/o/authorize"),
+    )
+
+    assert "Test OIDC Client would like to access your HydroServer account." in rendered
+    assert "Review the permissions below before continuing." in rendered
+    assert "Authorize" in rendered
+    assert "Cancel" in rendered
 
 
 # --- HydroServerOIDCAdapter (core/iam/auth/oidc_adapter.py) ------------------------
