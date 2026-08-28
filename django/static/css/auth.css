@@ -74,7 +74,7 @@ body.auth-page {
 .auth-layout--entrance {
   display: flex;
   flex: 1;
-  width: min(100%, calc(var(--hs-space-32) * 18));
+  width: min(100%, calc(var(--hs-space-32) * 14));
   align-items: center;
   padding: var(--hs-space-24) 0 var(--hs-space-32);
 }
@@ -99,7 +99,8 @@ body.auth-page {
 }
 
 .auth-layout--entrance .hs-heading {
-  margin: 0 0 var(--hs-space-8);
+  margin: 0 0 var(--hs-space-24);
+  font-size: var(--hs-font-lg);
   text-align: center;
 }
 
@@ -107,11 +108,16 @@ body.auth-page {
   max-width: calc(var(--hs-space-32) * 15);
 }
 
+.auth-layout--entrance .hs-form + .hs-divider,
+.auth-layout--entrance .hs-form + .hs-button-group,
+.auth-layout--entrance .hs-divider + .hs-button-group {
+  margin-top: var(--hs-space-16);
+}
+
 .auth-card__brand {
   display: flex;
   justify-content: center;
-  padding-bottom: var(--hs-space-8);
-  margin-bottom: var(--hs-space-16);
+  margin-bottom: var(--hs-space-20);
 }
 
 .auth-card__logo {
@@ -122,6 +128,16 @@ body.auth-page {
 .auth-alternate-form {
   margin: var(--hs-space-24) 0 0;
   text-align: center;
+}
+
+.auth-alternate-form a {
+  color: var(--hs-primary);
+  font-weight: var(--hs-font-weight-medium);
+  text-decoration: none;
+}
+
+.auth-alternate-form a:hover {
+  text-decoration: underline;
 }
 
 .auth-page-header {

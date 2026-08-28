@@ -1,5 +1,5 @@
 {% extends "allauth/layouts/entrance.html" %}
-{% load i18n %}
+{% load i18n allauth %}
 {% block head_title %}
     {% blocktrans with client_name=client.name|default:"An application" %}
         Authorize {{ client_name }}
@@ -33,10 +33,12 @@
 
     {% if form.email %}
         <div class="hs-field">
-            <label for="id_email" class="hs-field__label">
-                {% trans "Email to share:" %}
-            </label>
-            {{ form.email }}
+            <fieldset class="hs-field__control">
+                <legend class="hs-field__legend">
+                    {% trans "Email to share" %}{% if form.email.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                </legend>
+                {{ form.email }}
+            </fieldset>
         </div>
     {% endif %}
 

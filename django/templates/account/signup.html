@@ -20,10 +20,12 @@
                 {% for field in form %}
                     {% if field.name != "has_organization" and field.name not in "org_name,org_code,org_type,org_link,org_description" %}
                         <div class="hs-field">
-                            <label for="{{ field.id_for_label }}" class="hs-field__label {% if field.field.required %}required-label{% endif %}">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
+                            <fieldset class="hs-field__control">
+                                <legend class="hs-field__legend">
+                                    {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                                </legend>
+                                {{ field }}
+                            </fieldset>
                             {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
                         </div>
                     {% endif %}
@@ -38,10 +40,10 @@
                         {% for field in form %}
                             {% if field.name in "org_name,org_code,org_type,org_link,org_description" %}
                                 <div class="hs-field">
-                                    <label for="{{ field.id_for_label }}" class="hs-field__label">
-                                        {{ field.label }}
-                                    </label>
-                                    {{ field }}
+                                    <fieldset class="hs-field__control">
+                                        <legend class="hs-field__legend">{{ field.label }}</legend>
+                                        {{ field }}
+                                    </fieldset>
                                     {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
                                 </div>
                             {% endif %}

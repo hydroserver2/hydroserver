@@ -32,14 +32,14 @@ class UserSignupForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         user_types = UserType.objects.filter(public=True).values_list("name", flat=True)
-        self.fields["user_type"].choices = [("", "Select a type...")] + [
+        self.fields["user_type"].choices = [("", "Select an account type...")] + [
             (t, t) for t in user_types
         ]
 
         org_types = OrganizationType.objects.filter(public=True).values_list(
             "name", flat=True
         )
-        self.fields["org_type"].choices = [("", "Select a type...")] + [
+        self.fields["org_type"].choices = [("", "Select an organization type...")] + [
             (t, t) for t in org_types
         ]
 

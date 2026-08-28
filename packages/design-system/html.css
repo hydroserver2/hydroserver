@@ -64,6 +64,75 @@
   border-radius: var(--hs-radius-sm);
 }
 
+.hs-field__control {
+  min-inline-size: 0;
+  padding: 0 var(--hs-space-12);
+  margin: 0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-sm);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.hs-field__control:hover:not(:focus-within) {
+  border-color: var(--hs-text-secondary);
+}
+
+.hs-field__control:focus-within {
+  border-color: var(--hs-primary);
+  box-shadow: inset 0 0 0 1px var(--hs-primary);
+}
+
+.hs-field__legend {
+  max-width: calc(100% - var(--hs-space-16));
+  padding: 0 var(--hs-space-4);
+  margin-left: var(--hs-space-8);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-medium);
+  line-height: 1.2;
+  /* Opaque so the focus ring underneath is notched out, not drawn through
+     the label text. */
+  background: var(--hs-surface);
+  transition: color 0.15s ease;
+}
+
+.hs-field__control:focus-within .hs-field__legend {
+  color: var(--hs-primary);
+}
+
+.hs-field__required {
+  color: var(--hs-error);
+}
+
+.hs-field__control .hs-field__input,
+.hs-field__control .hs-field__select,
+.hs-field__control .hs-field__textarea,
+.hs-field__control input:not([type='checkbox']):not([type='radio']),
+.hs-field__control select,
+.hs-field__control textarea {
+  min-height: var(--hs-space-32);
+  padding: var(--hs-space-8) 0;
+  font-size: var(--hs-font-md);
+  line-height: 1.4;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+}
+
+.hs-field__control .hs-field__textarea,
+.hs-field__control textarea {
+  min-height: calc(3 * var(--hs-space-32));
+}
+
+.hs-field__control input::placeholder,
+.hs-field__control textarea::placeholder {
+  color: transparent;
+}
+
 .hs-field__textarea,
 .hs-field textarea {
   min-height: calc(3 * var(--hs-space-32));
@@ -83,6 +152,15 @@
   outline-offset: 2px;
 }
 
+.hs-field__control .hs-field__input:focus,
+.hs-field__control .hs-field__select:focus,
+.hs-field__control .hs-field__textarea:focus,
+.hs-field__control input:focus,
+.hs-field__control select:focus,
+.hs-field__control textarea:focus {
+  outline: 0;
+}
+
 .hs-checkbox {
   width: var(--hs-space-16);
   height: var(--hs-space-16);
@@ -94,6 +172,18 @@
   color: var(--hs-error);
 }
 
+.hs-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .hs-help,
 .hs-copy {
   color: var(--hs-text-secondary);
@@ -101,6 +191,17 @@
 
 .hs-help {
   margin: 0;
+  font-size: var(--hs-font-sm);
+}
+
+.hs-help a {
+  color: var(--hs-primary);
+  font-weight: var(--hs-font-weight-medium);
+  text-decoration: none;
+}
+
+.hs-help a:hover {
+  text-decoration: underline;
 }
 
 .hs-copy {
@@ -156,8 +257,32 @@
   border-color: var(--hs-border);
 }
 
+.hs-button--outline:hover,
+.hs-button--secondary:hover {
+  filter: none;
+  background: var(--hs-surface-muted);
+}
+
 .hs-button--danger {
   background: var(--hs-danger);
+}
+
+/* A submit/link control that should read as a quiet text link, not a button. */
+.hs-button--link,
+.hs-button--link:visited {
+  min-height: auto;
+  padding: var(--hs-space-8);
+  color: var(--hs-primary);
+  font-weight: var(--hs-font-weight-medium);
+  background: none;
+  border: 0;
+  border-radius: var(--hs-radius-sm);
+}
+
+.hs-button--link:hover {
+  filter: none;
+  background: none;
+  text-decoration: underline;
 }
 
 .hs-button-group,
@@ -176,6 +301,24 @@
 
 .hs-actions--end {
   justify-content: flex-end;
+}
+
+/* Entrance forms (sign in, sign up, code flows) stack a single full-width
+   primary action, matching the calm single-column login layout. */
+.hs-form--entrance {
+  gap: var(--hs-space-20);
+}
+
+.hs-form--entrance .hs-actions {
+  margin-top: var(--hs-space-4);
+}
+
+.hs-form--entrance .hs-actions .hs-button {
+  flex: 1 1 100%;
+}
+
+.hs-form--entrance .hs-actions .hs-button--link {
+  flex: 0 0 auto;
 }
 
 .hs-button-group--vertical {

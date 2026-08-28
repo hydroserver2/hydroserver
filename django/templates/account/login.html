@@ -13,6 +13,11 @@
         {% element form form=form method="post" action=login_url tags="entrance,login" %}
             {% slot body %}
                 {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="hs-alert hs-alert--error">
+                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                    </div>
+                {% endif %}
                 {% element fields form=form unlabeled=True %}
                 {% endelement %}
                 {{ redirect_field }}

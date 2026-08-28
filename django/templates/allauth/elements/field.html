@@ -1,20 +1,18 @@
 {% load allauth %}
-{% if attrs.errors %}
-<div class="hs-field__error">{{ attrs.errors }}</div>
-{% endif %}
 <div class="hs-field">
     {% if attrs.type == "textarea" %}
-        <label for="{{ attrs.id }}" class="hs-field__label {% if attrs.required %}required-label{% endif %}">
-            {% slot label %}{% endslot %}
-        </label>
-        <textarea {% if attrs.required %}required{% endif %}
-                  {% if attrs.rows %}rows="{{ attrs.rows }}"{% endif %}
-                  {% if attrs.disabled %}disabled{% endif %}
-                  {% if attrs.readonly %}readonly{% endif %}
-                  {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
-                  {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
-                  {% if attrs.placeholder %}placeholder="{{ attrs.placeholder }}"{% endif %}
-                  class="hs-field__textarea">{% slot value %}{% endslot %}</textarea>
+        <fieldset class="hs-field__control">
+            <legend class="hs-field__legend">
+                {% slot label %}{% endslot %}{% if attrs.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+            </legend>
+            <textarea {% if attrs.required %}required{% endif %}
+                      {% if attrs.rows %}rows="{{ attrs.rows }}"{% endif %}
+                      {% if attrs.disabled %}disabled{% endif %}
+                      {% if attrs.readonly %}readonly{% endif %}
+                      {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
+                      {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                      class="hs-field__textarea">{% slot value %}{% endslot %}</textarea>
+        </fieldset>
     {% elif attrs.type == "checkbox" or attrs.type == "radio" %}
         <label for="{{ attrs.id }}" class="hs-checkbox-label">
             <input {% if attrs.required %}required{% endif %}
@@ -28,23 +26,27 @@
             {% slot label %}{% endslot %}
         </label>
     {% else %}
-        <label for="{{ attrs.id }}" class="hs-field__label {% if attrs.required %}required-label{% endif %}">
-            {% slot label %}{% endslot %}
-        </label>
-        <input {% if attrs.required %}required{% endif %}
-               {% if attrs.disabled %}disabled{% endif %}
-               {% if attrs.readonly %}readonly{% endif %}
-               {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
-               {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
-               {% if attrs.placeholder %}placeholder="{{ attrs.placeholder }}"{% endif %}
-               {% if attrs.autocomplete %}autocomplete="{{ attrs.autocomplete }}"{% endif %}
-               {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
-               type="{{ attrs.type }}"
-               class="hs-field__input">
+        <fieldset class="hs-field__control">
+            <legend class="hs-field__legend">
+                {% slot label %}{% endslot %}{% if attrs.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+            </legend>
+            <input {% if attrs.required %}required{% endif %}
+                   {% if attrs.disabled %}disabled{% endif %}
+                   {% if attrs.readonly %}readonly{% endif %}
+                   {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
+                   {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                   {% if attrs.autocomplete %}autocomplete="{{ attrs.autocomplete }}"{% endif %}
+                   {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
+                   type="{{ attrs.type }}"
+                   class="hs-field__input">
+        </fieldset>
     {% endif %}
     {% if slots.help_text %}
         <p class="hs-help">
             {% slot help_text %}{% endslot %}
         </p>
+    {% endif %}
+    {% if attrs.errors %}
+        <p class="hs-field__error">{{ attrs.errors }}</p>
     {% endif %}
 </div>

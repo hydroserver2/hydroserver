@@ -21,10 +21,12 @@
 <form method="post" class="hs-form auth-section">
     {% csrf_token %}
     <div class="hs-field">
-        <label for="id_confirmation" class="hs-field__label required-label">
-            {{ form.confirmation.label }}
-        </label>
-        <input type="text" name="confirmation" id="id_confirmation" placeholder="delete my account and data" class="hs-field__input">
+        <fieldset class="hs-field__control">
+            <legend class="hs-field__legend">
+                {{ form.confirmation.label }}<span class="hs-field__required" aria-hidden="true"> *</span>
+            </legend>
+            <input type="text" name="confirmation" id="id_confirmation" class="hs-field__input">
+        </fieldset>
         {% if form.confirmation.errors %}<p class="hs-field__error">{{ form.confirmation.errors.0 }}</p>{% endif %}
     </div>
 
