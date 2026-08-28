@@ -1,8 +1,8 @@
 {% extends "allauth/layouts/entrance.html" %}
 {% load i18n %}
-{% block head_title %}{% trans "Sign Out" %}{% endblock %}
+{% block head_title %}{% trans "Sign out" %}{% endblock %}
 {% block content %}
-<h1 class="hs-heading">{% trans "Sign Out" %}</h1>
+<h1 class="hs-heading">{% trans "Sign out" %}</h1>
 <p class="hs-copy">{% trans "Are you sure you want to sign out of HydroServer?" %}</p>
 
 <form method="post" class="hs-form">
@@ -10,14 +10,14 @@
     {% for field in form %}
         {% if field.is_hidden %}{{ field }}{% endif %}
     {% endfor %}
-    <div class="hs-actions">
-        <button type="submit" name="action" value="logout"
-                class="hs-button hs-button--danger">
-            {% trans "Sign Out" %}
-        </button>
+    <div class="hs-actions hs-actions--end">
         <button type="submit" name="action" value="stay"
                 class="hs-button hs-button--outline">
             {% trans "Cancel" %}
+        </button>
+        <button type="submit" name="action" value="logout"
+                class="hs-button hs-button--danger">
+            {% trans "Sign out" %}
         </button>
     </div>
 </form>

@@ -12,6 +12,7 @@ db.sqlite3
 !/static/img/
 /static/img/*
 !/static/img/hydroserver-icon-min.png
+!/static/img/icon-color-thick.svg
 !/static/img/hydroserver-auth-topography.png
 !/static/img/archivo-latin-wght-normal.woff2
 !/static/img/favicon-16x16.png

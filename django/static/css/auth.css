@@ -36,15 +36,10 @@ body.auth-page {
   padding: var(--hs-space-16);
 }
 
-.auth-header,
 .auth-flashes,
 .auth-layout {
   width: min(100%, 672px);
   margin: 0 auto;
-}
-
-.auth-header {
-  padding: 0 var(--hs-space-16);
 }
 
 .auth-back-link {
@@ -79,8 +74,18 @@ body.auth-page {
 .auth-layout--entrance {
   display: flex;
   flex: 1;
+  width: min(100%, calc(var(--hs-space-32) * 18));
   align-items: center;
   padding: var(--hs-space-24) 0 var(--hs-space-32);
+}
+
+.auth-layout__stack {
+  width: 100%;
+}
+
+.auth-layout__stack .auth-back-link,
+.auth-layout--manage > .auth-back-link {
+  margin-bottom: var(--hs-space-8);
 }
 
 .auth-layout--manage {
@@ -90,10 +95,12 @@ body.auth-page {
 
 .auth-layout .hs-card {
   background: var(--hs-surface-floating);
+  border: 0;
 }
 
 .auth-layout--entrance .hs-heading {
   margin: 0 0 var(--hs-space-8);
+  text-align: center;
 }
 
 .auth-layout--entrance .hs-copy {
@@ -103,14 +110,18 @@ body.auth-page {
 .auth-card__brand {
   display: flex;
   justify-content: center;
-  padding-bottom: var(--hs-space-16);
-  margin-bottom: var(--hs-space-24);
-  border-bottom: 1px solid var(--hs-border);
+  padding-bottom: var(--hs-space-8);
+  margin-bottom: var(--hs-space-16);
 }
 
 .auth-card__logo {
-  width: min(100%, calc(var(--hs-space-32) * 10));
-  height: auto;
+  width: calc(var(--hs-space-32) + var(--hs-space-16));
+  height: calc(var(--hs-space-32) + var(--hs-space-16));
+}
+
+.auth-alternate-form {
+  margin: var(--hs-space-24) 0 0;
+  text-align: center;
 }
 
 .auth-page-header {
@@ -183,10 +194,6 @@ body.auth-page {
 
   .hs-card {
     padding: var(--hs-space-24);
-  }
-
-  .auth-header {
-    padding: 0;
   }
 
   .auth-definition-list {

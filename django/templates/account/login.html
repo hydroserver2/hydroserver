@@ -9,15 +9,6 @@
         {% trans "Sign in to HydroServer" %}
     {% endelement %}
     {% if not SOCIALACCOUNT_ONLY %}
-        {% setvar link %}
-            <a href="{{ signup_url }}">
-            {% endsetvar %}
-            {% setvar end_link %}
-            </a>
-        {% endsetvar %}
-        {% element p %}
-            {% blocktranslate %}New to HydroServer? {{ link }}Create an account{{ end_link }}.{% endblocktranslate %}
-        {% endelement %}
         {% url 'account_login' as login_url %}
         {% element form form=form method="post" action=login_url tags="entrance,login" %}
             {% slot body %}
@@ -51,6 +42,17 @@
     {% endif %}
     {% if SOCIALACCOUNT_ENABLED %}
         {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+    {% endif %}
+    {% if not SOCIALACCOUNT_ONLY %}
+        {% setvar link %}
+            <a href="{{ signup_url }}">
+        {% endsetvar %}
+        {% setvar end_link %}
+        </a>
+        {% endsetvar %}
+        <p class="hs-copy auth-alternate-form">
+            {% blocktranslate %}New to HydroServer? {{ link }}Create an account{{ end_link }}.{% endblocktranslate %}
+        </p>
     {% endif %}
 {% endblock content %}
 {% block extra_body %}

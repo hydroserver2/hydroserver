@@ -9,7 +9,7 @@
 
 <div>
     <section class="auth-section">
-        <h2 class="hs-subheading">{% trans "Personal Information" %}</h2>
+        <h2 class="hs-subheading">{% trans "Personal information" %}</h2>
         <dl class="auth-definition-list">
             <div>
                 <dt class="hs-label auth-definition-term">{% trans "Name" %}</dt>
@@ -20,7 +20,7 @@
                 <dd class="auth-definition-value">{{ user.email }}</dd>
             </div>
             <div>
-                <dt class="hs-label auth-definition-term">{% trans "User Type" %}</dt>
+                <dt class="hs-label auth-definition-term">{% trans "User type" %}</dt>
                 <dd class="auth-definition-value">{{ user.user_type }}</dd>
             </div>
         </dl>
@@ -59,12 +59,12 @@
     {% endif %}
 
     <section class="auth-section">
-        <h2 class="hs-subheading">{% trans "Account Management" %}</h2>
+        <h2 class="hs-subheading">{% trans "Account management" %}</h2>
         <div class="hs-inline-actions">
-            <a href="{% url 'account_change_password' %}" class="hs-link">{% trans "Change Password" %}</a>
-            <a href="{% url 'account_email' %}" class="hs-link">{% trans "Manage Email" %}</a>
-            <a href="{% url 'socialaccount_connections' %}" class="hs-link">{% trans "Connected Accounts" %}</a>
-            <a href="{% url 'account_delete' %}" class="hs-link hs-link--danger">{% trans "Delete Account" %}</a>
+            <a href="{% url 'account_change_password' %}" class="hs-link">{% trans "Change password" %}</a>
+            <a href="{% url 'account_email' %}" class="hs-link">{% trans "Manage email" %}</a>
+            <a href="{% url 'socialaccount_connections' %}" class="hs-link">{% trans "Connected accounts" %}</a>
+            <a href="{% url 'account_delete' %}" class="hs-link hs-link--danger">{% trans "Delete account" %}</a>
         </div>
     </section>
 </div>

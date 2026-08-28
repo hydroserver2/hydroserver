@@ -1,10 +1,11 @@
 {% extends "allauth/layouts/base.html" %}
-{% load static %}
+{% load static account_navigation i18n %}
 {% block content_outer %}
 <div class="auth-layout auth-layout--manage">
+    <a class="auth-back-link" href="{% account_back_url %}">← {% trans "Back to website" %}</a>
     <div class="hs-card">
         <div class="auth-card__brand">
-            <img src="{% static 'img/hydroserver-icon-min.png' %}" alt="HydroServer" class="auth-card__logo">
+            <img src="{% static 'img/icon-color-thick.svg' %}" alt="HydroServer" class="auth-card__logo">
         </div>
         {% block content %}{% endblock %}
     </div>

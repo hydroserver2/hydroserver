@@ -22,9 +22,6 @@
             {{ redirect_field }}
         {% endslot %}
         {% slot actions %}
-            {% element button type="submit" tags="prominent,confirm" %}
-                {% translate "Verify email" %}
-            {% endelement %}
             {% if cancel_url %}
                 {% element button href=cancel_url tags="link,cancel" %}
                     {% translate "Cancel" %}
@@ -34,6 +31,9 @@
                     {% translate "Cancel" %}
                 {% endelement %}
             {% endif %}
+            {% element button type="submit" tags="prominent,confirm" %}
+                {% translate "Verify email" %}
+            {% endelement %}
         {% endslot %}
     {% endelement %}
     {% if not cancel_url %}

@@ -1,8 +1,8 @@
 {% extends "allauth/layouts/manage.html" %}
 {% load i18n %}
-{% block head_title %}{% trans "Edit Profile" %}{% endblock %}
+{% block head_title %}{% trans "Edit profile" %}{% endblock %}
 {% block content %}
-<h1 class="hs-heading">{% trans "Edit Profile" %}</h1>
+<h1 class="hs-heading">{% trans "Edit profile" %}</h1>
 
 <form method="post" class="hs-form">
     {% csrf_token %}
@@ -14,7 +14,7 @@
     {% endif %}
 
     <section class="auth-section">
-        <h2 class="hs-subheading">{% trans "Personal Information" %}</h2>
+        <h2 class="hs-subheading">{% trans "Personal information" %}</h2>
         <div class="auth-definition-list">
             {% for field in form %}
                 {% if field.name in "first_name,last_name,user_type" %}
@@ -41,7 +41,7 @@
     <section class="auth-section">
         <label for="id_has_organization" class="hs-checkbox-label">
             <input type="checkbox" name="has_organization" id="id_has_organization" {% if has_organization %}checked{% endif %} class="hs-checkbox" aria-controls="org-fields" onchange="document.getElementById('org-fields').hidden = !this.checked">
-            {% trans "Organization Affiliation" %}
+            {% trans "Organization affiliation" %}
         </label>
         <div id="org-fields" class="auth-organization-fields" {% if not has_organization %}hidden{% endif %}>
             <div class="auth-definition-list">
@@ -68,9 +68,9 @@
         </div>
     </section>
 
-    <div class="hs-actions">
-        <button type="submit" class="hs-button">{% trans "Save Changes" %}</button>
+    <div class="hs-actions hs-actions--end">
         <a href="{% url 'account_profile' %}" class="hs-button hs-button--outline">{% trans "Cancel" %}</a>
+        <button type="submit" class="hs-button">{% trans "Save changes" %}</button>
     </div>
 </form>
 {% endblock %}

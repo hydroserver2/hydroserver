@@ -1,7 +1,7 @@
 {% load allauth %}
 {% if attrs.href %}
 <a href="{{ attrs.href }}"
-   class="hs-button hs-button--full
+   class="hs-button
    {% if 'outline' in attrs.tags %}
        hs-button--outline
    {% endif %}">
@@ -11,7 +11,7 @@
 <button type="{{ attrs.type|default:'submit' }}"
         {% if attrs.form %}form="{{ attrs.form }}"{% endif %}
         {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
-        class="hs-button hs-button--full
+        class="hs-button
         {% if 'danger' in attrs.tags %}
             hs-button--danger
         {% elif 'outline' in attrs.tags %}

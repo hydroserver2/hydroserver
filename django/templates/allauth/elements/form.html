@@ -4,5 +4,7 @@
       {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
       class="hs-form">
     {% slot body %}{% endslot %}
-    {% slot actions %}{% endslot %}
+    <div class="hs-actions hs-actions--end">
+        {% slot actions %}{% endslot %}
+    </div>
 </form>

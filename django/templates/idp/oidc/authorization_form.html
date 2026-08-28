@@ -40,14 +40,14 @@
         </div>
     {% endif %}
 
-    <div class="hs-actions">
-        <button type="submit" name="action" value="grant"
-                class="hs-button">
-            {% trans "Authorize" %}
-        </button>
+    <div class="hs-actions hs-actions--end">
         <button type="submit" name="action" value="deny"
                 class="hs-button hs-button--outline">
             {% trans "Cancel" %}
+        </button>
+        <button type="submit" name="action" value="grant"
+                class="hs-button">
+            {% trans "Authorize" %}
         </button>
     </div>
 </form>

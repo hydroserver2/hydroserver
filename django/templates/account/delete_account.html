@@ -1,8 +1,8 @@
 {% extends "allauth/layouts/manage.html" %}
 {% load i18n %}
-{% block head_title %}{% trans "Delete Account" %}{% endblock %}
+{% block head_title %}{% trans "Delete account" %}{% endblock %}
 {% block content %}
-<h1 class="hs-heading">{% trans "Delete Account" %}</h1>
+<h1 class="hs-heading">{% trans "Delete account" %}</h1>
 
 <div class="hs-alert hs-alert--danger">
     <p><strong>{% trans "This action cannot be undone." %}</strong></p>
@@ -28,9 +28,9 @@
         {% if form.confirmation.errors %}<p class="hs-field__error">{{ form.confirmation.errors.0 }}</p>{% endif %}
     </div>
 
-    <div class="hs-actions">
-        <button type="submit" class="hs-button hs-button--danger">{% trans "Delete My Account" %}</button>
+    <div class="hs-actions hs-actions--end">
         <a href="{% url 'account_profile' %}" class="hs-button hs-button--outline">{% trans "Cancel" %}</a>
+        <button type="submit" class="hs-button hs-button--danger">{% trans "Delete my account" %}</button>
     </div>
 </form>
 {% endblock %}
