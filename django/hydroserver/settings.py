@@ -136,9 +136,6 @@ MIDDLEWARE = [
     "core.web.middleware.NoIndexMiddleware",
 ]
 
-if not STRICT_SECURITY:
-    MIDDLEWARE.remove("django.middleware.csrf.CsrfViewMiddleware")
-
 ROOT_URLCONF = "hydroserver.urls"
 
 TEMPLATES = [
@@ -289,7 +286,7 @@ SOCIALACCOUNT_STORE_TOKENS = True
 
 IDP_OIDC_ENABLED = env.bool("IDP_OIDC_ENABLED", default=True)
 
-_dev_key_path = BASE_DIR / "dev_oidc2_private_key.pem"
+_dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
 
 IDP_OIDC_PRIVATE_KEY_FILE = env.str("IDP_OIDC_PRIVATE_KEY_FILE", default="")
 IDP_OIDC_PRIVATE_KEY = (

@@ -67,6 +67,6 @@ export async function requestInterceptor(
     ...options,
     headers,
     body,
-    credentials: 'include',
+    credentials: accessToken ? 'omit' : 'include',
   }
 }
