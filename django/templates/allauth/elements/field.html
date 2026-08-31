@@ -2,7 +2,7 @@
 <div class="hs-field">
     {% if attrs.type == "textarea" %}
         <fieldset class="hs-field__control">
-            <legend class="hs-field__legend">
+            <legend {% if attrs.id %}id="{{ attrs.id }}-label"{% endif %} class="hs-field__legend">
                 {% slot label %}{% endslot %}{% if attrs.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
             </legend>
             <textarea {% if attrs.required %}required{% endif %}
@@ -11,6 +11,7 @@
                       {% if attrs.readonly %}readonly{% endif %}
                       {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
                       {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                      {% if attrs.id %}aria-labelledby="{{ attrs.id }}-label"{% endif %}
                       class="hs-field__textarea">{% slot value %}{% endslot %}</textarea>
         </fieldset>
     {% elif attrs.type == "checkbox" or attrs.type == "radio" %}
@@ -27,7 +28,7 @@
         </label>
     {% else %}
         <fieldset class="hs-field__control">
-            <legend class="hs-field__legend">
+            <legend {% if attrs.id %}id="{{ attrs.id }}-label"{% endif %} class="hs-field__legend">
                 {% slot label %}{% endslot %}{% if attrs.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
             </legend>
             <input {% if attrs.required %}required{% endif %}
@@ -35,6 +36,7 @@
                    {% if attrs.readonly %}readonly{% endif %}
                    {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
                    {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                   {% if attrs.id %}aria-labelledby="{{ attrs.id }}-label"{% endif %}
                    {% if attrs.autocomplete %}autocomplete="{{ attrs.autocomplete }}"{% endif %}
                    {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
                    type="{{ attrs.type }}"

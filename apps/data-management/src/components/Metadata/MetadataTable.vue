@@ -56,6 +56,7 @@
         >
           <v-chip
             value="all"
+            data-testid="metadata-scope-all"
             class="metadata-scope-chip hs-text-sm"
             size="small"
             label
@@ -64,6 +65,7 @@
           </v-chip>
           <v-chip
             value="workspace"
+            data-testid="metadata-scope-workspace"
             class="metadata-scope-chip hs-text-sm"
             size="small"
             label
@@ -72,6 +74,7 @@
           </v-chip>
           <v-chip
             value="system"
+            data-testid="metadata-scope-system"
             class="metadata-scope-chip hs-text-sm"
             size="small"
             label

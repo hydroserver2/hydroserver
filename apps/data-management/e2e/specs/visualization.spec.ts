@@ -18,7 +18,9 @@ test.describe("visualization", () => {
     await page
       .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
       .click();
-    await expect(page.getByTestId("copy-visualization-state")).toBeVisible();
+    await expect(
+      page.getByTestId("clear-selected-datastreams"),
+    ).toBeVisible();
   }
 
   test("visualization page renders filter controls and seeded datastream rows", async ({
@@ -36,8 +38,8 @@ test.describe("visualization", () => {
       page.getByRole("button", { name: "Filter by site" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Clear Selected" }),
-    ).toBeVisible();
+      page.getByTestId("clear-selected-datastreams"),
+    ).toHaveCount(0);
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
     ).toBeVisible();
@@ -46,19 +48,11 @@ test.describe("visualization", () => {
     ).toBeVisible();
   });
 
-  test("visualization preserves selected datastream state in copied URLs and supports summary mode", async ({
+  test("visualization preserves selected datastream state in the URL and supports summary mode", async ({
     page,
     browser,
   }) => {
     await page.setViewportSize({ width: 500, height: 900 });
-    await page.addInitScript(() => {
-      const clipboard = navigator.clipboard;
-      if (!clipboard) return;
-      window.__e2eCopiedText = "";
-      clipboard.writeText = async (text: string) => {
-        window.__e2eCopiedText = text;
-      };
-    });
 
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
@@ -91,10 +85,13 @@ test.describe("visualization", () => {
     ).toBeVisible();
 
     await page.getByTestId("show-plot-view").click();
-    await page.getByTestId("copy-visualization-state").click();
-    const copiedUrl = await page.evaluate(
-      () => window.__e2eCopiedText as string,
+
+    // The visualization keeps all shareable state in the route query, so the
+    // current URL is the "copied" link.
+    await expect(page).toHaveURL(
+      new RegExp(`datastreams=${fixtures.datastreams.public.id}`),
     );
+    const copiedUrl = page.url();
 
     expect(copiedUrl).toContain(
       `/visualize-data?sites=${fixtures.monitoringSites.public.id}`,
@@ -114,7 +111,7 @@ test.describe("visualization", () => {
     await copiedPage.goto(copiedUrl);
 
     await expect(
-      copiedPage.getByRole("button", { name: "Copy State as URL" }),
+      copiedPage.getByTestId("clear-selected-datastreams"),
     ).toBeVisible();
     await expect(
       mobileDatastreamRow(copiedPage, fixtures.datastreams.public.name),
@@ -185,12 +182,15 @@ test.describe("visualization", () => {
       ),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Filter by site" }).click();
+    await page.getByRole("button", { name: "Filter by sites" }).click();
     await page
       .getByRole("checkbox", {
-        name: `Site: ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
+        name: `Sites: ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
       })
       .click();
+    // The filter menu stays open after a selection; dismiss it so its overlay
+    // stops intercepting clicks on the search controls.
+    await page.keyboard.press("Escape");
 
     const tableSearch = page.getByRole("combobox", { name: "Search" });
     const selectedSiteName = fixtures.monitoringSites.privateWorkspacePublic.name;
@@ -225,7 +225,7 @@ test.describe("visualization", () => {
 
     await tableSearch.fill(siteQualifier);
     await expect(
-      page.getByRole("button", { name: "Filter by site (1 selected)" }),
+      page.getByRole("button", { name: "Filter by sites (1 selected)" }),
     ).toBeVisible();
     await expect(
       mobileDatastreamRow(
@@ -250,7 +250,7 @@ test.describe("visualization", () => {
     });
     await expect(tableSearch).toBeVisible();
 
-    await tableSearch.fill("System Assigned Observed Property");
+    await tableSearch.fill(fixtures.datastreams.publicSystemMetadata.name);
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
     ).toBeVisible();
@@ -264,7 +264,7 @@ test.describe("visualization", () => {
     ).toBeVisible();
   });
 
-  test("visualization detail toggles hide and restore row metadata", async ({
+  test("visualization detail levels hide and restore row metadata", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
@@ -274,40 +274,42 @@ test.describe("visualization", () => {
       .getByRole("row")
       .filter({ hasText: fixtures.datastreams.public.name })
       .first();
-    await expect(
-      datastreamRow.getByText("Property", { exact: true }),
-    ).toBeVisible();
+    await expect(datastreamRow).toBeVisible();
 
-    const detailsButton = page.getByRole("button", {
-      name: "Choose row details",
-    });
-    await detailsButton.click();
-    await page
-      .getByRole("checkbox", { name: "Toggle Observed Property" })
-      .click();
-    await expect(
-      datastreamRow.getByText("Property", { exact: true }),
-    ).toHaveCount(0);
+    const signature = datastreamRow.locator(".datastream-signature");
+    const observationRange = datastreamRow.locator(
+      ".datastream-observation-range",
+    );
+    const moreDetail = page.getByTestId("show-more-datastream-details");
+    const lessDetail = page.getByTestId("show-less-datastream-details");
 
-    await page
-      .getByRole("checkbox", { name: "Toggle Observed Property" })
-      .click();
-    await expect(
-      datastreamRow.getByText("Property", { exact: true }),
-    ).toBeVisible();
+    // Level 1 (default) shows only the datastream name.
+    await expect(signature).toHaveCount(0);
+    await expect(observationRange).toHaveCount(0);
+    await expect(lessDetail).toBeDisabled();
+
+    // Level 2 adds the processing-level / unit signature.
+    await moreDetail.click();
+    await expect(signature).toBeVisible();
+    await expect(observationRange).toHaveCount(0);
+
+    // Level 3 also adds the observation-range line.
+    await moreDetail.click();
+    await expect(observationRange).toBeVisible();
+    await expect(moreDetail).toBeDisabled();
+
+    // Stepping back down restores the earlier levels.
+    await lessDetail.click();
+    await expect(observationRange).toHaveCount(0);
+    await expect(signature).toBeVisible();
+
+    await lessDetail.click();
+    await expect(signature).toHaveCount(0);
   });
 
   test("visualization quick-range date buttons update the time range", async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      const clipboard = navigator.clipboard;
-      if (!clipboard) return;
-      window.__e2eCopiedText = "";
-      clipboard.writeText = async (text: string) => {
-        window.__e2eCopiedText = text;
-      };
-    });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
@@ -326,10 +328,9 @@ test.describe("visualization", () => {
     await page.getByText("6m").first().click();
     await page.getByText("1y").first().click();
 
-    await page.getByTestId("copy-visualization-state").click();
-    const copiedUrl = new URL(
-      await page.evaluate(() => window.__e2eCopiedText as string),
-    );
+    // Quick-range selection is mirrored into the route query.
+    await expect(page).toHaveURL(/selectedDateBtnId=3/);
+    const copiedUrl = new URL(page.url());
 
     expect(copiedUrl.searchParams.get("selectedDateBtnId")).toBe("3");
     expect(copiedUrl.searchParams.has("beginDate")).toBe(false);

@@ -20,17 +20,17 @@
                 {% if field.name in "first_name,last_name,user_type" %}
                     <div class="hs-field">
                         <fieldset class="hs-field__control">
-                            <legend class="hs-field__legend">
+                            <legend id="{{ field.id_for_label }}-label" class="hs-field__legend">
                                 {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
                             </legend>
                         {% if field.name == "user_type" %}
-                            <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="hs-field__select" {% if field.field.required %}required{% endif %}>
+                            <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" class="hs-field__select" {% if field.field.required %}required{% endif %}>
                                 {% for value, label in field.field.choices %}
                                     <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         {% else %}
-                            <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default:'' }}" {% if field.field.required %}required{% endif %} class="hs-field__input">
+                            <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" {% if field.field.required %}required{% endif %} class="hs-field__input">
                         {% endif %}
                         </fieldset>
                         {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
@@ -51,17 +51,17 @@
                     {% if field.name in "org_name,org_code,org_type,org_link,org_description" %}
                         <div class="hs-field">
                             <fieldset class="hs-field__control">
-                                <legend class="hs-field__legend">{{ field.label }}</legend>
+                                <legend id="{{ field.id_for_label }}-label" class="hs-field__legend">{{ field.label }}</legend>
                             {% if field.name == "org_type" %}
-                                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="hs-field__select">
+                                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" class="hs-field__select">
                                     {% for value, label in field.field.choices %}
                                         <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             {% elif field.name == "org_description" %}
-                                <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}" rows="3" class="hs-field__textarea">{{ field.value|default:'' }}</textarea>
+                                <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" rows="3" class="hs-field__textarea">{{ field.value|default:'' }}</textarea>
                             {% else %}
-                                <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default:'' }}" class="hs-field__input">
+                                <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" class="hs-field__input">
                             {% endif %}
                             </fieldset>
                             {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}

@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env }
   const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
   const qcProxyTarget =
     env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'

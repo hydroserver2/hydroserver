@@ -22,10 +22,10 @@
     {% csrf_token %}
     <div class="hs-field">
         <fieldset class="hs-field__control">
-            <legend class="hs-field__legend">
+            <legend id="id_confirmation-label" class="hs-field__legend">
                 {{ form.confirmation.label }}<span class="hs-field__required" aria-hidden="true"> *</span>
             </legend>
-            <input type="text" name="confirmation" id="id_confirmation" class="hs-field__input">
+            <input type="text" name="confirmation" id="id_confirmation" aria-labelledby="id_confirmation-label" class="hs-field__input">
         </fieldset>
         {% if form.confirmation.errors %}<p class="hs-field__error">{{ form.confirmation.errors.0 }}</p>{% endif %}
     </div>

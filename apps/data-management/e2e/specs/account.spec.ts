@@ -26,14 +26,14 @@ test.describe('account management', () => {
 
     await page.getByTestId('account-menu-button').click()
     await page.getByTestId('account-menu-item').click()
-    await expect(page).toHaveURL(/\/accounts\/profile\/$/)
+    await expect(page).toHaveURL(/\/accounts\/profile\/(?:\?.*)?$/)
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Organization' })).toBeVisible()
 
     await page.getByRole('link', { name: 'Edit' }).click()
     await page.getByLabel('First name').fill('Profile Updated')
-    await page.getByRole('checkbox', { name: 'Organization Affiliation' }).uncheck()
-    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.getByRole('checkbox', { name: 'Organization affiliation' }).uncheck()
+    await page.getByRole('button', { name: 'Save changes' }).click()
 
     await expect(page.getByText('Profile Updated Example')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Organization' })).toHaveCount(0)
@@ -50,14 +50,14 @@ test.describe('account management', () => {
     await page.getByLabel('Type "delete my account and data" to confirm').fill(
       'delete my account and data'
     )
-    await page.getByRole('button', { name: 'Delete My Account' }).click()
+    await page.getByRole('button', { name: 'Delete my account' }).click()
 
-    await expect(page).toHaveURL(/\/accounts\/login\/$/)
+    await expect(page).toHaveURL(/\/accounts\/login\/(?:\?.*)?$/)
 
     await page.getByLabel('Email').fill(users.deleteMe.email)
     await page.getByLabel('Password').fill(users.deleteMe.password)
     await page.getByRole('button', { name: 'Sign In' }).click()
-    await expect(page).toHaveURL(/\/accounts\/login\/$/)
+    await expect(page).toHaveURL(/\/accounts\/login\/(?:\?.*)?$/)
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
   })
 })

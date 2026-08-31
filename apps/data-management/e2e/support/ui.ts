@@ -62,7 +62,7 @@ export async function createWorkspaceFromManagePage(
 ) {
   await page.getByRole('button', { name: 'Add workspace', exact: true }).click()
   const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('Name *').fill(workspaceName)
+  await dialog.getByLabel('Name').fill(workspaceName)
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(workspaceListItem(page, workspaceName)).toBeVisible()
 }
