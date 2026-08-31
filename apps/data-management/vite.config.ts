@@ -15,6 +15,10 @@ export default defineConfig(({ mode }) => {
     env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
   const designSystemRoot = resolve(__dirname, '../../packages/design-system')
+  const designSystemVuetifySettings = resolve(
+    __dirname,
+    'node_modules/@hydroserver/design-system/vue/settings.scss'
+  )
   const workspaceNodeModules = resolve(__dirname, '../../node_modules')
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
@@ -26,7 +30,9 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       vuetify({
         autoImport: true,
-        styles: { configFile: resolve(designSystemRoot, 'vue/settings.scss') },
+        // Resolve through this app's linked package so Sass finds the app's
+        // Vuetify installation in clean CI checkouts.
+        styles: { configFile: designSystemVuetifySettings },
       }),
     ],
     optimizeDeps: {
@@ -67,7 +73,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     resolve: {
-      preserveSymlinks: false,
+      // Keep the design-system package rooted in this app's node_modules.
+      // Otherwise imports generated for its Vuetify components resolve from
+      // packages/design-system, which has no node_modules in CI.
+      preserveSymlinks: true,
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
         'vuetify/styles': resolve(
