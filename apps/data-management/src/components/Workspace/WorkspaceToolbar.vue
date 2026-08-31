@@ -3,7 +3,9 @@
     <div class="px-6 py-3">
       <v-row class="ma-0 gap-3" align="center" no-gutters>
         <v-col cols="auto">
-          <h1 class="orchestration-header-title mb-0">
+          <h1
+            class="orchestration-header-title hs-text-lg font-weight-regular mb-0"
+          >
             {{ title || 'Job orchestration' }}
           </h1>
         </v-col>
@@ -14,9 +16,6 @@
         <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
           <v-btn
             :to="{ name: 'Workspaces' }"
-            rounded="lg"
-            color="primary"
-            variant="outlined"
             density="comfortable"
             class="text-none font-weight-regular"
           >
@@ -38,9 +37,6 @@
     <v-btn
       v-if="!hideWorkspaceManagement"
       :to="{ name: 'Workspaces' }"
-      rounded="xl"
-      color="secondary-darken-3"
-      variant="outlined"
       density="comfortable"
     >
       Manage workspaces
@@ -52,13 +48,7 @@
       <WorkspaceSelector />
     </v-col>
     <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
-      <v-btn
-        :to="{ name: 'Workspaces' }"
-        rounded="xl"
-        color="secondary-darken-3"
-        variant="outlined"
-        density="comfortable"
-      >
+      <v-btn :to="{ name: 'Workspaces' }" density="comfortable">
         Manage workspaces
       </v-btn>
     </v-col>
@@ -80,17 +70,11 @@ const { compactControls, layout, title } = defineProps<{
 .orchestration-header {
   /* Matches the Manage Workspaces header (Workspaces.vue) so the two
      workspace-scoped entry points read as the same product surface. */
-  background: linear-gradient(
-    120deg,
-    var(--hs-header-wash-start) 0%,
-    var(--hs-header-wash-end) 100%
-  );
-  border-bottom: 1px solid var(--hs-header-wash-border);
+  background: var(--hs-surface-subtle);
+  border-bottom: 1px solid var(--hs-border);
 }
 
 .orchestration-header-title {
-  font-size: var(--hs-font-lg);
-  font-weight: 400;
   color: var(--hs-text-primary);
   letter-spacing: 0;
   line-height: 1.2;

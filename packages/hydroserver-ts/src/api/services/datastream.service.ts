@@ -28,7 +28,11 @@ interface VisualizationBootstrapPayload {
     observedPropertyId: string
     processingLevelId: string
     unitId: string
+    unitSymbol: string
     noDataValue: number
+    aggregationStatistic: string
+    timeAggregationInterval: number
+    timeAggregationIntervalUnit: 'seconds' | 'minutes' | 'hours' | 'days'
     valueCount?: number | null
     phenomenonBeginTime?: string | null
     phenomenonEndTime?: string | null

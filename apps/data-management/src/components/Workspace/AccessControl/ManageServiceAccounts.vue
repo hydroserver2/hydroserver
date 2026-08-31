@@ -1,24 +1,5 @@
 <template>
   <div class="service-accounts-section" data-testid="service-accounts-section">
-    <div class="service-accounts-header">
-      <h6 class="text-h6">Service accounts</h6>
-      <v-icon
-        :icon="mdiHelpCircleOutline"
-        @click="showServiceAccountHelp = !showServiceAccountHelp"
-        color="grey"
-        size="18"
-        class="service-accounts-help-icon"
-        aria-label="Toggle service account help"
-        :aria-expanded="showServiceAccountHelp"
-      />
-    </div>
-
-    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
-      Service accounts provide remote systems with a controlled set of
-      permissions. A service account can collaborate on other workspaces after
-      it is created.
-    </p>
-
     <v-alert
       v-if="loadError"
       type="error"
@@ -29,7 +10,9 @@
       <div class="d-flex align-center ga-2">
         <span>{{ loadError }}</span>
         <v-spacer />
-        <v-btn variant="text" size="small" @click="reloadData">Retry</v-btn>
+        <v-btn size="small" @click="reloadData">
+          Retry
+        </v-btn>
       </div>
     </v-alert>
     <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
@@ -48,89 +31,307 @@
       </v-alert>
 
       <v-sheet
-        color="grey-lighten-5"
+        color="surface-muted"
         class="pa-4 rounded d-flex align-center justify-space-between"
         border
       >
         <span class="text-mono text-wrap break-all">{{ newKey.key }}</span>
-        <v-btn
+        <v-btn-icon
           :icon="mdiContentCopy"
-          variant="text"
           @click="copyKey(newKey.key)"
           aria-label="Copy service account API key"
         />
       </v-sheet>
     </v-card-text>
 
-    <v-card class="hs-table-card service-accounts-table-card" flat>
-      <v-toolbar flat density="compact">
-        <v-spacer />
+    <div class="hs-table-tools">
+      <div class="hs-query-search">
+        <v-icon :icon="mdiMagnify" size="16" class="hs-query-search__icon" />
+        <div class="hs-query-search__highlight hs-text-sm" aria-hidden="true">
+          <span
+            v-for="(segment, index) in highlightSegments"
+            :key="index"
+            :class="segment.cls"
+            >{{ segment.text }}</span
+          >
+        </div>
+        <input
+          ref="searchInputEl"
+          v-model="search"
+          placeholder="Search service accounts…"
+          class="hs-query-search__input hs-text-sm"
+          aria-label="Search service accounts"
+          autocomplete="off"
+          spellcheck="false"
+          role="combobox"
+          aria-autocomplete="list"
+          :aria-expanded="!!activeSuggestion"
+          @input="onSearchInput"
+          @click="syncCaret"
+          @keyup="syncCaret"
+          @keydown="onSearchKeydown"
+          @focus="onSearchFocus"
+          @blur="onSearchBlur"
+        />
+        <button
+          v-if="search"
+          type="button"
+          class="hs-query-search__clear"
+          aria-label="Clear service account search and filters"
+          @mousedown.prevent
+          @click="clearSearchAndFilters"
+        >
+          <v-icon :icon="mdiClose" size="16" />
+        </button>
+      </div>
+
+      <v-btn-icon
+        :icon="mdiHelpCircleOutline"
+        size="small"
+        title="About service accounts"
+        aria-label="Toggle service account help"
+        :aria-expanded="showServiceAccountHelp"
+        @click="showServiceAccountHelp = !showServiceAccountHelp"
+      />
+
+      <div class="hs-table-actions">
         <PermissionTooltip
           :has-permission="canCreate"
           message="You don't have permission to create service accounts for this workspace."
         >
           <template #default>
-            <v-btn-add class="mr-2" @click="openCreate = true">
+            <v-btn-page-action @click="openCreate = true">
               Create service account
-            </v-btn-add>
+            </v-btn-page-action>
           </template>
           <template #denied>
-            <v-btn-add class="mr-2" disabled>Create service account</v-btn-add>
+            <v-btn-page-action disabled>
+              Create service account
+            </v-btn-page-action>
           </template>
         </PermissionTooltip>
-      </v-toolbar>
+      </div>
+    </div>
 
-      <v-data-table-virtual
-        class="service-accounts-data-table"
-        :headers="headers"
-        :items="items"
-        :sort-by="sortBy"
-        :search="search"
-        height="100%"
-        no-data-text="No service accounts available"
-        fixed-header
+    <Teleport to="body">
+      <div
+        v-if="activeSuggestion && activeSuggestion.items.length"
+        class="hs-query-search-popover"
+        :style="suggestionStyle"
+        role="listbox"
       >
-        <template #item.id="{ item }">
-          <div class="d-flex align-center">
-            {{ item.id }}
-            <v-icon size="x-small" class="ml-2" @click="copyKey(item.id)">
-              <v-icon :icon="mdiContentCopy" />
-            </v-icon>
-          </div>
-        </template>
+        <div class="hs-query-search-popover__title">
+          {{ activeSuggestion.type === 'key' ? 'Filter by…' : 'Role values' }}
+        </div>
+        <button
+          v-for="(item, index) in activeSuggestion.items"
+          :key="item"
+          type="button"
+          class="hs-query-search-popover__option"
+          :class="{
+            'hs-query-search-popover__option--active':
+              index === suggestionIndex,
+          }"
+          role="option"
+          :aria-selected="index === suggestionIndex"
+          @mousedown.prevent="applySuggestion(item)"
+        >
+          {{ item }}{{ activeSuggestion.type === 'key' ? ':' : '' }}
+        </button>
+      </div>
+    </Teleport>
 
-        <template v-slot:item.actions="{ item }">
-          <v-btn
-            :icon="mdiRefresh"
-            variant="text"
-            size="small"
-            :disabled="!canEdit"
-            :aria-label="`Regenerate ${item.name}`"
-            @click="onOpenRegenerateDialog(item)"
-          />
-          <v-btn
-            :icon="mdiPencil"
-            variant="text"
-            size="small"
-            :disabled="!canEdit"
-            :aria-label="`Edit ${item.name}`"
-            @click="openDialog(item, 'edit')"
-          />
-          <v-btn
-            :icon="mdiTrashCanOutline"
-            variant="text"
-            size="small"
-            color="red-darken-2"
-            :disabled="!canDelete"
-            :aria-label="`Delete ${item.name}`"
-            @click="openDialog(item, 'delete')"
-          />
-        </template>
-      </v-data-table-virtual>
+    <p v-if="showServiceAccountHelp" class="service-accounts-help-text">
+      <small>
+        Service accounts provide remote systems with a controlled set of
+        permissions. A service account can collaborate on other workspaces after
+        it is created.
+      </small>
+    </p>
+
+    <v-card class="hs-table-card service-accounts-table-card" flat>
+      <v-table class="service-accounts-table" height="100%" fixed-header>
+        <thead>
+          <tr>
+            <th>
+              <div class="service-account-header-filters">
+                <v-menu
+                  :close-on-content-click="false"
+                  location="bottom start"
+                  attach="body"
+                >
+                  <template #activator="{ props: menuProps }">
+                    <v-btn-cancel
+                      v-bind="menuProps"
+                      size="small"
+                      class="service-account-filter-button"
+                      :class="{
+                        'service-account-filter-button--active':
+                          selectedRoles.length,
+                      }"
+                      :append-icon="mdiChevronDown"
+                      :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
+                    >
+                      Role
+                      <span
+                        v-if="selectedRoles.length"
+                        class="filter-count hs-label"
+                      >
+                        {{ selectedRoles.length }}
+                      </span>
+                    </v-btn-cancel>
+                  </template>
+                  <v-list class="service-account-filter-menu" density="compact">
+                    <div class="service-account-filter-title hs-subheading">
+                      Filter by role
+                    </div>
+                    <v-text-field
+                      v-model="roleFilterSearch"
+                      class="service-account-filter-search"
+                      placeholder="Filter roles"
+                      :prepend-inner-icon="mdiMagnify"
+                      density="compact"
+                      hide-details
+                      clearable
+                    />
+                    <v-list-item
+                      v-for="role in filteredRoles"
+                      :key="role"
+                      @click="toggleRole(role)"
+                    >
+                      <template #prepend>
+                        <v-checkbox
+                          :model-value="selectedRoles.includes(role)"
+                          hide-details
+                          density="compact"
+                          :aria-label="`Role: ${role}`"
+                          @click.stop="toggleRole(role)"
+                        />
+                      </template>
+                      <v-list-item-title>{{ role }}</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item
+                      v-if="selectedRoles.length"
+                      class="filter-clear-item"
+                      @click="selectedRoles = []"
+                    >
+                      <v-list-item-title>Clear filter</v-list-item-title>
+                    </v-list-item>
+                    <div v-if="!filteredRoles.length" class="filter-empty">
+                      No roles found
+                    </div>
+                  </v-list>
+                </v-menu>
+              </div>
+            </th>
+            <th class="service-account-actions-column text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="serviceAccountItem in filteredItems"
+            :key="serviceAccountItem.id"
+            :data-testid="`service-account-row-${serviceAccountItem.id}`"
+          >
+            <td>
+              <div class="service-account-name font-weight-medium">
+                {{ serviceAccountItem.name }}
+              </div>
+              <div class="hs-text-sm text-medium-emphasis">
+                {{ serviceAccountItem.role?.name || 'No role' }}
+              </div>
+            </td>
+            <td class="text-right">
+              <PermissionTooltip
+                :has-permission="canEdit"
+                message="You don't have permission to regenerate service accounts."
+              >
+                <template #default>
+                  <v-btn-icon
+                    :icon="mdiRefresh"
+                    size="small"
+                    class="hs-table-icon-action"
+                    :aria-label="`Regenerate ${serviceAccountItem.name}`"
+                    @click="onOpenRegenerateDialog(serviceAccountItem)"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn-icon
+                    :icon="mdiRefresh"
+                    size="small"
+                    class="hs-table-icon-action"
+                    disabled
+                    :aria-label="`Regenerate ${serviceAccountItem.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+              <PermissionTooltip
+                :has-permission="canEdit"
+                message="You don't have permission to edit service accounts."
+              >
+                <template #default>
+                  <v-btn-icon
+                    :icon="mdiPencil"
+                    size="small"
+                    class="hs-table-icon-action"
+                    :aria-label="`Edit ${serviceAccountItem.name}`"
+                    @click="openDialog(serviceAccountItem, 'edit')"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn-icon
+                    :icon="mdiPencilOffOutline"
+                    size="small"
+                    class="hs-table-icon-action"
+                    disabled
+                    :aria-label="`Edit ${serviceAccountItem.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+              <PermissionTooltip
+                :has-permission="canDelete"
+                message="You don't have permission to delete service accounts."
+              >
+                <template #default>
+                  <v-btn-icon
+                    :icon="mdiTrashCanOutline"
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    :aria-label="`Delete ${serviceAccountItem.name}`"
+                    @click="openDialog(serviceAccountItem, 'delete')"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn-icon
+                    :icon="mdiDeleteOffOutline"
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    disabled
+                    :aria-label="`Delete ${serviceAccountItem.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+            </td>
+          </tr>
+          <tr v-if="!filteredItems.length">
+            <td colspan="2" class="text-center text-medium-emphasis">
+              {{
+                search || hasActiveFilters
+                  ? 'No matching service accounts.'
+                  : 'No service accounts available'
+              }}
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
     </v-card>
   </div>
 
-  <v-dialog v-model="openCreate" width="40rem">
+  <v-dialog
+    v-model="openCreate"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <ServiceAccountForm
       @close="openCreate = false"
       @created="onCreate"
@@ -140,7 +341,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openRefresh" width="40rem">
+  <v-dialog
+    v-model="openRefresh"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <ServiceAccountRegenerateForm
       @close="openRefresh = false"
       @regenerated="onRegenerate"
@@ -148,7 +353,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openEdit" width="40rem">
+  <v-dialog
+    v-model="openEdit"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <ServiceAccountForm
       @close="openEdit = false"
       @updated="onUpdate"
@@ -159,7 +368,11 @@
     />
   </v-dialog>
 
-  <v-dialog v-model="openDelete" width="40rem">
+  <v-dialog
+    v-model="openDelete"
+    width="40rem"
+    max-width="calc(100vw - var(--hs-space-32))"
+  >
     <DeleteServiceAccount
       :itemName="item.name"
       :loading="isDeleting"
@@ -178,7 +391,8 @@ import hs, {
   Workspace,
 } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
@@ -186,10 +400,15 @@ import ServiceAccountForm from './ServiceAccountForm.vue'
 import DeleteServiceAccount from './DeleteServiceAccount.vue'
 import ServiceAccountRegenerateForm from './ServiceAccountRegenerateForm.vue'
 import {
+  mdiChevronDown,
+  mdiClose,
   mdiContentCopy,
+  mdiDeleteOffOutline,
   mdiTrashCanOutline,
   mdiHelpCircleOutline,
+  mdiMagnify,
   mdiPencil,
+  mdiPencilOffOutline,
   mdiRefresh,
 } from '@mdi/js'
 
@@ -197,6 +416,9 @@ const props = defineProps({
   workspace: { type: Object as () => Workspace, required: true },
 })
 const emits = defineEmits(['changed'])
+
+const route = useRoute()
+const router = useRouter()
 
 const workspaceId = computed(() => props.workspace.id)
 const { hasPermission } = useWorkspacePermissions()
@@ -249,9 +471,8 @@ const canDelete = computed(
 const openCreate = ref(false)
 const openRefresh = ref(false)
 const showServiceAccountHelp = ref(false)
-const sortBy = [{ key: 'OPName' }]
-const search = ref()
 const roles = ref<CollaboratorRole[]>([])
+const roleFilterSearch = ref('')
 const serviceAccountsLoadError = ref('')
 const rolesLoadError = ref('')
 const isLoading = ref(false)
@@ -303,10 +524,12 @@ const {
 
       serviceAccountsLoadError.value = ''
       serviceAccountsLoaded.value = true
-      return accountsRes.data.map((account) => ({
-        ...account,
-        role: roleByEmail.get(account.email),
-      }))
+      return accountsRes.data
+        .map((account) => ({
+          ...account,
+          role: roleByEmail.get(account.email),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
     } catch (error) {
       serviceAccountsLoadError.value = 'Unable to load service accounts.'
       serviceAccountsLoaded.value = false
@@ -327,11 +550,269 @@ const {
   workspaceId
 )
 
-const headers = [
-  { title: 'Name', key: 'name' },
-  { title: 'Role', key: 'role.name' },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
-] as const
+// The search bar is the single source of truth for filtering, following the
+// GitHub issues search pattern (mirrors ManageCollaborators.vue): a typed
+// qualifier like `role:Editor` drives both the role filter menu and the URL,
+// so the whole filter state can be shared or bookmarked as a link.
+const QUALIFIER_PATTERN = /(role):(?:"([^"]*)"|(\S+))/gi
+
+function quoteIfNeeded(value: string) {
+  return /\s/.test(value) ? `"${value}"` : value
+}
+
+function parseServiceAccountQuery(raw: string) {
+  const roleValues: string[] = []
+  const textParts: string[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = QUALIFIER_PATTERN.exec(raw))) {
+    textParts.push(raw.slice(lastIndex, match.index))
+    const value = (match[2] ?? match[3] ?? '').trim()
+    if (value) roleValues.push(value)
+    lastIndex = QUALIFIER_PATTERN.lastIndex
+  }
+  textParts.push(raw.slice(lastIndex))
+  return {
+    roles: roleValues,
+    text: textParts.join(' ').replace(/\s+/g, ' ').trim(),
+  }
+}
+
+function serializeServiceAccountQuery(roleValues: string[], text: string) {
+  return [
+    ...roleValues.map((role) => `role:${quoteIfNeeded(role)}`),
+    ...(text.trim() ? [text.trim()] : []),
+  ].join(' ')
+}
+
+const search = ref('')
+const parsedQuery = computed(() => parseServiceAccountQuery(search.value))
+
+function clearSearchAndFilters() {
+  search.value = ''
+  roleFilterSearch.value = ''
+  suggestionsEnabled.value = false
+  caret.value = 0
+  nextTick(() => searchInputEl.value?.focus())
+}
+
+const selectedRoles = computed<string[]>({
+  get: () => parsedQuery.value.roles,
+  set: (value) =>
+    (search.value = serializeServiceAccountQuery(
+      value,
+      parsedQuery.value.text
+    )),
+})
+
+function toggleRole(role: string) {
+  selectedRoles.value = selectedRoles.value.includes(role)
+    ? selectedRoles.value.filter((r) => r !== role)
+    : [...selectedRoles.value, role]
+}
+
+const hasActiveFilters = computed(() => selectedRoles.value.length > 0)
+const availableRoles = computed(() =>
+  [
+    ...new Set(
+      items.value.map((item) => item.role?.name).filter(Boolean) as string[]
+    ),
+  ].sort((a, b) => a.localeCompare(b))
+)
+const filteredRoles = computed(() => {
+  const query = roleFilterSearch.value.trim().toLocaleLowerCase()
+  return availableRoles.value.filter((role) =>
+    role.toLocaleLowerCase().includes(query)
+  )
+})
+const filteredItems = computed(() => {
+  const { roles: roleValues, text } = parsedQuery.value
+  const query = text.toLocaleLowerCase()
+  return items.value.filter(
+    (account) =>
+      (!query ||
+        [account.name, account.email, account.role?.name].some((value) =>
+          String(value ?? '')
+            .toLocaleLowerCase()
+            .includes(query)
+        )) &&
+      (!roleValues.length ||
+        roleValues.some(
+          (role) =>
+            role.toLocaleLowerCase() ===
+            String(account.role?.name ?? '').toLocaleLowerCase()
+        ))
+  )
+})
+
+// Syntax highlighting: colors the value of a `role:value` pair primary when
+// it matches a real role, the way GitHub highlights valid qualifier values.
+function isValidQualifierValue(value: string) {
+  return availableRoles.value.some(
+    (role) => role.toLocaleLowerCase() === value.toLocaleLowerCase()
+  )
+}
+
+const highlightSegments = computed(() => {
+  const raw = search.value
+  const segments: { text: string; cls: string }[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = QUALIFIER_PATTERN.exec(raw))) {
+    if (match.index > lastIndex)
+      segments.push({ text: raw.slice(lastIndex, match.index), cls: '' })
+    const quoted = match[2] !== undefined
+    const value = match[2] ?? match[3] ?? ''
+    segments.push({ text: match[1], cls: 'hl-key' })
+    segments.push({ text: ':', cls: 'hl-colon' })
+    segments.push({
+      text: quoted ? `"${value}"` : value,
+      cls: value && isValidQualifierValue(value) ? 'hl-value-valid' : '',
+    })
+    lastIndex = QUALIFIER_PATTERN.lastIndex
+  }
+  if (lastIndex < raw.length)
+    segments.push({ text: raw.slice(lastIndex), cls: '' })
+  return segments
+})
+
+// Autocomplete: suggests `role` while a qualifier key is being typed, and
+// suggests the matching role values once followed by `:`, mirroring
+// ManageCollaborators.vue's issue-search-style qualifier picker.
+const QUALIFIER_KEYS = ['role'] as const
+
+const searchInputEl = ref<HTMLInputElement | null>(null)
+const caret = ref(0)
+const suggestionIndex = ref(0)
+const suggestionsEnabled = ref(false)
+const suggestionStyle = computed(() => {
+  const input = searchInputEl.value
+  if (!input) return {}
+  const rect = input.getBoundingClientRect()
+  return {
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+  }
+})
+
+function syncCaret() {
+  const el = searchInputEl.value
+  if (el) caret.value = el.selectionStart ?? el.value.length
+}
+
+function onSearchInput() {
+  syncCaret()
+  suggestionsEnabled.value = true
+}
+
+function onSearchFocus() {
+  suggestionsEnabled.value = true
+  syncCaret()
+}
+
+function onSearchBlur() {
+  suggestionsEnabled.value = false
+}
+
+// Finds where the qualifier token under the caret begins, treating a space
+// inside an open quote as part of the value rather than a token boundary
+// (so `role:"Data Manager |` still resolves to the `role` key).
+function findTokenStart(raw: string, caretPos: number) {
+  let inQuotes = false
+  let tokenStart = 0
+  for (let i = 0; i < caretPos; i++) {
+    const char = raw[i]
+    if (char === '"') inQuotes = !inQuotes
+    else if (char === ' ' && !inQuotes) tokenStart = i + 1
+  }
+  return tokenStart
+}
+
+const currentToken = computed(() => {
+  const raw = search.value
+  const end = Math.min(caret.value, raw.length)
+  const start = findTokenStart(raw, end)
+  return { start, end, text: raw.slice(start, end) }
+})
+
+const activeSuggestion = computed(() => {
+  if (!suggestionsEnabled.value) return null
+  const { text, start, end } = currentToken.value
+  if (!text) return null
+
+  const colonIndex = text.indexOf(':')
+  if (colonIndex === -1) {
+    const query = text.toLocaleLowerCase()
+    const items = QUALIFIER_KEYS.filter((key) => key.startsWith(query))
+    return items.length ? { type: 'key' as const, items, start, end } : null
+  }
+
+  const key = text.slice(0, colonIndex).toLocaleLowerCase()
+  if (key !== 'role') return null
+
+  let valueQuery = text.slice(colonIndex + 1)
+  if (valueQuery.startsWith('"')) valueQuery = valueQuery.slice(1)
+  if (valueQuery.endsWith('"')) valueQuery = valueQuery.slice(0, -1)
+  const query = valueQuery.toLocaleLowerCase()
+
+  const items = availableRoles.value.filter(
+    (value) =>
+      !selectedRoles.value.includes(value) &&
+      value.toLocaleLowerCase().includes(query)
+  )
+  return { type: 'value' as const, items, start, end }
+})
+
+watch(activeSuggestion, () => {
+  suggestionIndex.value = 0
+})
+
+function replaceCurrentToken(replacement: string) {
+  const { start, end } = currentToken.value
+  const raw = search.value
+  const nextCaret = start + replacement.length
+  search.value = raw.slice(0, start) + replacement + raw.slice(end)
+  nextTick(() => {
+    const el = searchInputEl.value
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(nextCaret, nextCaret)
+    caret.value = nextCaret
+  })
+}
+
+function applySuggestion(item: string) {
+  const suggestion = activeSuggestion.value
+  if (!suggestion) return
+  // replaceCurrentToken swaps out the whole token (e.g. the full "role:"
+  // typed so far), so a value pick has to re-include the key prefix rather
+  // than just the value.
+  replaceCurrentToken(
+    suggestion.type === 'key' ? `${item}:` : `role:${quoteIfNeeded(item)} `
+  )
+}
+
+function onSearchKeydown(event: KeyboardEvent) {
+  const suggestion = activeSuggestion.value
+  if (!suggestion?.items.length) return
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    suggestionIndex.value =
+      (suggestionIndex.value + 1) % suggestion.items.length
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    suggestionIndex.value =
+      (suggestionIndex.value - 1 + suggestion.items.length) %
+      suggestion.items.length
+  } else if (event.key === 'Enter' || event.key === 'Tab') {
+    event.preventDefault()
+    applySuggestion(suggestion.items[suggestionIndex.value])
+  } else if (event.key === 'Escape') {
+    suggestionsEnabled.value = false
+  }
+}
 
 const onUpdate = (account: ServiceAccountRow) => {
   updateTableItem(account)
@@ -356,6 +837,7 @@ const onDelete = async () => {
 
 const onCreate = (account: ServiceAccountRow) => {
   items.value.push(account)
+  items.value.sort((a, b) => a.name.localeCompare(b.name))
   displayNewKey(account)
   emits('changed')
 }
@@ -440,7 +922,23 @@ async function reloadData() {
   isLoading.value = false
 }
 
-onMounted(loadRoles)
+// The `q` query param mirrors the search bar so the current filter/search
+// state can be reloaded or shared as a link, mirroring
+// ManageCollaborators.vue and GitHub's issue search.
+function queryString(value: unknown) {
+  return `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
+}
+
+onMounted(() => {
+  const queryValue = queryString(route.query.q)
+  if (queryValue) search.value = queryValue
+  loadRoles()
+})
+
+watch(search, (value) => {
+  if (queryString(route.query.q) === value) return
+  void router.replace({ query: { ...route.query, q: value || undefined } })
+})
 </script>
 
 <style scoped>
@@ -451,33 +949,117 @@ onMounted(loadRoles)
   min-height: 0;
   overflow: hidden;
 }
-.service-accounts-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-.service-accounts-help-icon {
-  cursor: pointer;
-}
 .service-accounts-help-text {
-  font-size: 12.5px;
-  color: #6b7280;
+  color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
-  margin-bottom: 10px;
+  margin-bottom: var(--hs-space-10);
+}
+.service-account-header-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+}
+.service-account-filter-button {
+  min-width: auto;
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+.service-account-filter-button--active {
+  color: rgb(var(--v-theme-primary));
+}
+.filter-count {
+  min-width: var(--hs-space-20);
+  margin-left: var(--hs-space-2);
+  padding: 0 var(--hs-space-4);
+  border-radius: var(--hs-radius-pill);
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  text-align: center;
+}
+.service-account-filter-menu {
+  min-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--hs-space-8) 0;
+}
+.service-account-filter-title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-primary);
+}
+.service-account-filter-search {
+  margin: 0 var(--hs-space-12) var(--hs-space-8);
+  height: 30px;
+}
+.service-account-filter-search :deep(.v-field) {
+  height: 30px;
+  min-height: 30px;
+  border-radius: var(--hs-radius-sm);
+  background: var(--hs-surface);
+  padding-inline-start: 0;
+}
+.service-account-filter-search :deep(.v-field__outline) {
+  color: var(--hs-input-border);
+  --v-field-border-opacity: 1;
+}
+.service-account-filter-search :deep(.v-field--focused) {
+  box-shadow: none;
+}
+.service-account-filter-search :deep(.v-field--focused .v-field__outline) {
+  color: rgb(var(--v-theme-primary));
+  --v-field-border-width: 2px;
+  --v-field-border-opacity: 1;
+}
+.service-account-filter-search :deep(.v-field__input) {
+  min-height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--hs-font-sm);
+}
+.service-account-filter-search :deep(.v-field__prepend-inner) {
+  padding-left: 8px;
+  padding-right: 0;
+}
+.service-account-filter-search :deep(.v-field__prepend-inner > .v-icon) {
+  width: 16px;
+  font-size: var(--hs-font-md);
+  color: var(--hs-input-border);
+  opacity: 1;
+}
+.service-account-filter-search :deep(.v-field__append-inner) {
+  padding-right: 8px;
+}
+.service-account-filter-search :deep(input::placeholder) {
+  color: var(--hs-text-secondary);
+  opacity: 1;
+}
+.filter-empty {
+  padding: var(--hs-space-12) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+}
+.filter-clear-item {
+  border-top: 1px solid var(--hs-border);
+  color: rgb(var(--v-theme-primary));
 }
 .service-accounts-table-card {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  margin-top: 6px;
+  margin-top: 0;
   overflow: hidden;
 }
-.service-accounts-data-table {
+.service-accounts-table {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+.service-accounts-table :deep(td) {
+  vertical-align: middle;
+  padding-top: var(--hs-space-12);
+  padding-bottom: var(--hs-space-12);
+}
+.service-account-actions-column {
+  width: 190px;
 }
 </style>

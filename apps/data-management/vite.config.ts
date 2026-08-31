@@ -5,14 +5,21 @@ import tailwindcss from '@tailwindcss/vite'
 import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env }
   const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
-  const qcProxyTarget = env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'
+  const qcProxyTarget =
+    env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'
   const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
   const sdkRoot = resolve(
     __dirname,
     env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
+  const designSystemRoot = resolve(__dirname, '../../packages/design-system')
+  const designSystemVuetifySettings = resolve(
+    __dirname,
+    'node_modules/@hydroserver/design-system/vue/settings.scss'
+  )
+  const workspaceNodeModules = resolve(__dirname, '../../node_modules')
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
 
@@ -23,11 +30,17 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       vuetify({
         autoImport: true,
-        styles: { configFile: 'src/styles/settings.scss' },
+        // Resolve through this app's linked package so Sass finds the app's
+        // Vuetify installation in clean CI checkouts.
+        styles: { configFile: designSystemVuetifySettings },
       }),
     ],
     optimizeDeps: {
-      exclude: ['vuetify', ...(useLocal ? ['@hydroserver/client'] : [])],
+      exclude: [
+        'vuetify',
+        '@hydroserver/design-system',
+        ...(useLocal ? ['@hydroserver/client'] : []),
+      ],
     },
     server: {
       host: '127.0.0.1',
@@ -49,15 +62,27 @@ export default defineConfig(({ mode }) => {
         },
       },
       fs: {
+        // Linked workspace packages resolve their dependencies from the root.
+        // Allow that dependency directory without exposing the whole repo.
         allow: [
+          resolve(__dirname),
           sdkRoot,
-          resolve(__dirname), // <- add this
+          designSystemRoot,
+          workspaceNodeModules,
         ],
       },
     },
     resolve: {
+      // Keep the design-system package rooted in this app's node_modules.
+      // Otherwise imports generated for its Vuetify components resolve from
+      // packages/design-system, which has no node_modules in CI.
+      preserveSymlinks: true,
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
+        'vuetify/styles': resolve(
+          __dirname,
+          'node_modules/vuetify/lib/styles/main.sass'
+        ),
         '@': resolve(__dirname, 'src'),
         ...(useLocal ? { '@hydroserver/client': sdkEntry } : {}),
       },

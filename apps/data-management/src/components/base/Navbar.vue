@@ -1,10 +1,5 @@
 <template>
-  <v-app-bar
-    app
-    :elevation="route.name === 'Orchestration' ? 0 : 2"
-    :class="route.name === 'Orchestration' ? 'navbar-flat' : ''"
-    density="default"
-  >
+  <v-app-bar app :elevation="0" class="navbar-flat" density="default">
     <template
       v-slot:prepend
       v-if="route.meta.hasSidebar && route.name !== 'VisualizeData'"
@@ -28,15 +23,20 @@
         size="large"
       />
     </template>
-    <router-link v-if="navbarLogo.route" :to="navbarLogo.route">
-      <v-img :src="navbarLogo.src" alt="Logo" :width="navbarLogo.width" />
+    <router-link
+      v-if="navbarLogo.route"
+      :to="navbarLogo.route"
+      class="navbar-home-link"
+    >
+      <v-img :src="navbarLogo.src" alt="Logo" width="146" height="62" />
     </router-link>
     <a
       v-else-if="navbarLogo.link"
       :href="navbarLogo.link"
       :target="navbarLogo.target || '_self'"
+      class="navbar-home-link"
     >
-      <v-img :src="navbarLogo.src" alt="Logo" :width="navbarLogo.width" />
+      <v-img :src="navbarLogo.src" alt="Logo" width="146" height="62" />
     </a>
 
     <template v-if="compactNavigation" v-slot:append>
@@ -48,14 +48,19 @@
     </template>
 
     <template v-if="!compactNavigation">
-      <div v-for="path of visiblePaths()" :key="path.label">
-        <v-btn
-          v-bind="path.attrs || {}"
-          @click="path.onClick"
-          density="comfortable"
-        >
-          {{ path.label }}
-        </v-btn>
+      <div
+        v-for="(path, index) of visiblePaths()"
+        :key="path.label"
+        class="main-nav-item-wrapper"
+        :class="{ 'main-nav-item-wrapper--first': index === 0 }"
+      >
+        <MainNavItem
+          :label="path.label"
+          :to="path.attrs?.to"
+          :href="path.attrs?.href"
+          :active="isNavItemActive(path)"
+          :on-click="path.onClick"
+        />
       </div>
 
       <v-spacer />
@@ -68,7 +73,9 @@
           class="account-menu-btn"
         >
           <v-avatar color="primary" size="36">
-            <span class="account-avatar-initials">{{ userInitials }}</span>
+            <span class="account-avatar-initials hs-title">{{
+              userInitials
+            }}</span>
           </v-avatar>
 
           <v-menu bottom left activator="parent">
@@ -105,7 +112,7 @@
         <v-btn
           v-if="signupEnabled"
           :prepend-icon="mdiAccountPlusOutline"
-          :href="hs.session.accountSignupUrl"
+          :href="hs.session.getAccountSignupUrl()"
           >Sign up</v-btn
         >
       </template>
@@ -161,7 +168,7 @@
         <v-list-item
           v-if="signupEnabled"
           :prepend-icon="mdiAccountPlusOutline"
-          :href="hs.session.accountSignupUrl"
+          :href="hs.session.getAccountSignupUrl()"
           >Sign up</v-list-item
         >
       </template>
@@ -176,6 +183,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUserStore } from '@/store/user'
 import { navbarLogo } from '@/config/navbarConfig'
+import MainNavItem from '@/components/base/MainNavItem.vue'
 import { RouteLocationRaw, useRoute } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
 import hs from '@hydroserver/client'
@@ -199,7 +207,8 @@ import {
 const route = useRoute()
 const { resetState } = useDataVisStore()
 const { user } = storeToRefs(useUserStore())
-const signupEnabled = import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
+const signupEnabled =
+  import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
@@ -308,6 +317,22 @@ function visiblePaths(): NavItem[] {
   return items
 }
 
+function isNavItemActive(item: NavItem) {
+  if (!item.attrs?.to) return false
+  const targetPath = router.resolve(item.attrs.to).path
+
+  // The orchestration nav target points to the default tab, but every
+  // orchestration tab and task-detail route belongs to the same main-nav item.
+  if (
+    targetPath === '/orchestration/ingestion' &&
+    route.path.startsWith('/orchestration/')
+  ) {
+    return true
+  }
+
+  return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
+}
+
 async function onLogin() {
   await hs.session.login(route.fullPath)
 }
@@ -321,11 +346,28 @@ async function onLogout() {
 <style scoped>
 .v-app-bar.navbar-flat,
 :deep(.v-app-bar.navbar-flat) {
-  border-bottom: 1px solid #e8e8e8 !important;
+  background: var(--hs-surface) !important;
+  border-bottom: 1px solid var(--hs-border) !important;
+  box-shadow: none !important;
+}
+.navbar-home-link {
+  width: 160px;
+  height: 64px;
+  margin: 0 0 0 4px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 0;
+}
+.main-nav-item-wrapper--first {
+  margin-left: -6px;
+}
+.account-menu-btn {
+  margin-right: var(--hs-space-8);
 }
 .account-avatar-initials {
-  font-size: 13px;
-  font-weight: 600;
   color: #ffffff;
   letter-spacing: 0.02em;
 }

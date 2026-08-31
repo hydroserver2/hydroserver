@@ -28,9 +28,6 @@ function removeHydroServerStorage() {
 }
 
 export class SessionService {
-  readonly accountSignupUrl: string
-  readonly accountProfileUrl: string
-
   private readonly _client: HydroServer
   private _manager: UserManager | null = null
   private _user: OidcUser | null = null
@@ -38,8 +35,34 @@ export class SessionService {
 
   constructor(client: HydroServer) {
     this._client = client
-    this.accountSignupUrl = this._client.resolveUrl('/accounts/signup/')
-    this.accountProfileUrl = this._client.resolveUrl('/accounts/profile/')
+  }
+
+  /**
+   * The sign-up URL with a return destination for the calling application.
+   * Supply a path or an app-relative URL to control the auth shell's
+   * “Go back” link.
+   */
+  getAccountSignupUrl(returnTo = this.getCurrentPath()): string {
+    return this.getAccountUrl('/accounts/signup/', returnTo)
+  }
+
+  /**
+   * The profile URL with a return destination for the calling application.
+   * Supply a path or an app-relative URL to control the auth shell's
+   * “Go back” link.
+   */
+  getAccountProfileUrl(returnTo = this.getCurrentPath()): string {
+    return this.getAccountUrl('/accounts/profile/', returnTo)
+  }
+
+  /** @deprecated Use getAccountSignupUrl() to choose a return destination. */
+  get accountSignupUrl(): string {
+    return this.getAccountSignupUrl()
+  }
+
+  /** @deprecated Use getAccountProfileUrl() to choose a return destination. */
+  get accountProfileUrl(): string {
+    return this.getAccountProfileUrl()
   }
 
   get isAuthenticated(): boolean {
@@ -72,9 +95,7 @@ export class SessionService {
   async login(returnTo = this.getCurrentPath()): Promise<void> {
     if (!this._client.oidc) {
       if (!isBrowser()) return
-      const url = new URL(this._client.resolveUrl('/accounts/login/'))
-      url.searchParams.set('next', this._client.resolveAppUrl(returnTo))
-      window.location.assign(url.toString())
+      window.location.assign(this.getAccountUrl('/accounts/login/', returnTo))
       return
     }
 
@@ -115,7 +136,10 @@ export class SessionService {
         post_logout_redirect_uri: this._client.resolveAppUrl(returnTo),
       })
     } catch (error) {
-      console.warn('OIDC sign-out redirect failed, falling back to local logout.', error)
+      console.warn(
+        'OIDC sign-out redirect failed, falling back to local logout.',
+        error
+      )
       if (isBrowser()) {
         window.location.assign(this._client.resolveAppUrl(returnTo))
       }
@@ -161,7 +185,9 @@ export class SessionService {
       this._manager = new UserManager({
         authority: this._client.resolvedHost,
         client_id: this._client.oidc.clientId,
-        redirect_uri: this._client.resolveAppUrl(this._client.oidc.redirectPath),
+        redirect_uri: this._client.resolveAppUrl(
+          this._client.oidc.redirectPath
+        ),
         post_logout_redirect_uri: this._client.resolveAppUrl(
           this._client.oidc.postLogoutRedirectPath
         ),
@@ -213,16 +239,23 @@ export class SessionService {
   private isExpiredOrExpiring(user: OidcUser | null): boolean {
     if (!user) return false
     if (user.expired) return true
-    return typeof user.expires_in === 'number' && user.expires_in <= EXPIRING_SOON_SECONDS
+    return (
+      typeof user.expires_in === 'number' &&
+      user.expires_in <= EXPIRING_SOON_SECONDS
+    )
   }
 
   private getCurrentPath(): string {
     if (!isBrowser()) return '/'
     return (
-      window.location.pathname +
-      window.location.search +
-      window.location.hash
+      window.location.pathname + window.location.search + window.location.hash
     )
+  }
+
+  private getAccountUrl(path: string, returnTo: string): string {
+    const url = new URL(this._client.resolveUrl(path))
+    url.searchParams.set('next', this._client.resolveAppUrl(returnTo))
+    return url.toString()
   }
 
   private getCurrentUrl(): string {

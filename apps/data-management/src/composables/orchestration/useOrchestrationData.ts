@@ -35,7 +35,13 @@ export function useOrchestrationData() {
   let fetchRequestId = 0
   let taskRequestId = 0
 
+  const invalidateTaskRequests = () => {
+    taskRequestId += 1
+    taskLoading.value = false
+  }
+
   const clearTaskLists = () => {
+    invalidateTaskRequests()
     workspaceTasks.value = []
     dataProductTasks.value = []
     monitoringTasks.value = []
@@ -106,6 +112,7 @@ export function useOrchestrationData() {
     force = false
   ) => {
     if (!requestedWorkspaceId || !groupId) {
+      invalidateTaskRequests()
       clearTaskListForTab(tab)
       loadedTaskGroup.value = null
       return

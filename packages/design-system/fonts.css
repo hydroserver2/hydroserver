@@ -1,0 +1,18 @@
+/*
+ * HydroServer type roles
+ *
+ * Body / UI — Archivo 400/500/600/700: navigation, headings, labels,
+ *   buttons, table content, forms, and all other interface copy. 700
+ *   (bold) is reserved for the smallest, punchiest text — uppercase
+ *   micro-labels, badges, pill counts — where 600 doesn't read as
+ *   distinct at that size. Don't reach past 700; if something needs to
+ *   be louder than bold, that's a size or color problem, not a weight
+ *   problem.
+ * Data — JetBrains Mono 400: IDs, UUIDs, timestamps, coordinates, and exact
+ *   or tabular numeric values.
+ *
+ * Fontsource bundles these OFL-licensed fonts with consuming applications.
+ * Do not replace these imports with CDN-hosted stylesheets.
+ */
+@import '@fontsource-variable/archivo/wght.css';
+@import '@fontsource/jetbrains-mono/400.css';

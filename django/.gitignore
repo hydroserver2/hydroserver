@@ -6,6 +6,17 @@
 __pycache__/
 db.sqlite3
 /static/*
+!/static/css/
+/static/css/*
+!/static/css/auth.css
+!/static/img/
+/static/img/*
+!/static/img/hydroserver-icon-min.png
+!/static/img/icon-color-thick.svg
+!/static/img/hydroserver-auth-topography.png
+!/static/img/archivo-latin-wght-normal.woff2
+!/static/img/favicon-16x16.png
+!/static/img/favicon-32x32.png
 /media/
 staticfiles/
 /web/static/web/*

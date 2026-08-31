@@ -393,14 +393,14 @@ test.describe('sites and workspaces', () => {
     await chooseOverlayOption(page, fixtures.workspaces.public.name)
     const siteFormDialog = page.getByRole('dialog')
 
-    await page.getByLabel('Site Code *').fill(siteCode)
-    await page.getByLabel('Site Name *').fill(siteName)
+    await page.getByLabel('Site Code').fill(siteCode)
+    await page.getByLabel('Site Name').fill(siteName)
     await page
-      .getByLabel('Site Description *')
+      .getByLabel('Site Description')
       .fill('Temporary site created by the Playwright release coverage suite.')
-    await fillCombobox(page, 'Select Site Type *', 'Lake')
-    await page.getByLabel('Latitude *').fill('41.7501')
-    await page.getByLabel('Longitude *').fill('-111.8102')
+    await fillCombobox(page, 'Select Site Type', 'Lake')
+    await page.getByLabel('Latitude').fill('41.7501')
+    await page.getByLabel('Longitude').fill('-111.8102')
     await page.getByLabel('Elevation (m)').fill('1380')
     const tagKey = siteFormDialog.getByRole('combobox', { name: 'Key' })
     await tagKey.fill('E2E')
@@ -432,7 +432,7 @@ test.describe('sites and workspaces', () => {
     await createdSiteRow
       .getByRole('button', { name: `Edit ${siteName}` })
       .click()
-    await page.getByLabel('Site Name *').fill(updatedSiteName)
+    await page.getByLabel('Site Name').fill(updatedSiteName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     const updatedSiteRow = page
@@ -482,7 +482,7 @@ test.describe('sites and workspaces', () => {
     ).toBeVisible()
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('Site Name *').fill(renamedSiteName)
+    await page.getByLabel('Site Name').fill(renamedSiteName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     await expect(
@@ -536,33 +536,33 @@ test.describe('sites and workspaces', () => {
     await page.getByTestId('add-datastream-button').click()
     await chooseAutocompleteOption(
       page,
-      'Select method *',
+      'Select method',
       fixtures.metadata.publicAssignedMethod.name
     )
     await chooseAutocompleteOption(
       page,
-      'Select observed property *',
+      'Select observed property',
       fixtures.metadata.publicAssignedObservedProperty.name
     )
     await chooseAutocompleteOption(
       page,
-      'Select unit *',
+      'Select unit',
       fixtures.metadata.publicAssignedUnit.name
     )
     await chooseAutocompleteOption(
       page,
-      'Select processing level *',
+      'Select processing level',
       fixtures.metadata.publicAssignedProcessingLevel.name
     )
-    await page.getByLabel('Time aggregation interval *').fill('1')
+    await page.getByLabel('Time aggregation interval').fill('1')
     await page.locator('button').filter({ hasText: 'hours' }).first().click()
-    await fillCombobox(page, 'Medium *', 'Surface Water')
-    await fillCombobox(page, 'Aggregation statistic *', 'Continuous')
-    await page.getByLabel('No data value *').fill('-9999')
+    await fillCombobox(page, 'Medium', 'Surface Water')
+    await fillCombobox(page, 'Aggregation statistic', 'Continuous')
+    await page.getByLabel('No data value').fill('-9999')
 
-    await page.getByLabel('Datastream name *').fill(datastreamName)
+    await page.getByLabel('Datastream name').fill(datastreamName)
     await page
-      .getByLabel('Datastream description *')
+      .getByLabel('Datastream description')
       .fill('Temporary datastream created by the Playwright CRUD suite.')
     await page.getByRole('button', { name: 'Create datastream' }).click()
 
@@ -571,7 +571,7 @@ test.describe('sites and workspaces', () => {
 
     await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
     await page.getByText('Edit datastream metadata').click()
-    await page.getByLabel('Datastream name *').fill(renamedDatastreamName)
+    await page.getByLabel('Datastream name').fill(renamedDatastreamName)
     await page.getByRole('button', { name: 'Update datastream' }).click()
 
     const renamedDatastreamRow = datastreamEntriesByName(
@@ -811,7 +811,7 @@ test.describe('sites and workspaces', () => {
       )
     )
     await expect(
-      page.getByRole('button', { name: 'Copy State as URL' })
+      page.getByTestId('clear-selected-datastreams')
     ).toBeVisible()
     await expect(
       page.getByText(fixtures.datastreams.public.name, { exact: true })

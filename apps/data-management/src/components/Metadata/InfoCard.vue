@@ -1,27 +1,15 @@
 <template>
-  <v-card
-    elevation="2"
-    rounded="lg"
-    class="ma-0 pa-0"
-    style="max-width: 480px; min-width: 300px"
-  >
+  <v-card elevation="2" rounded="lg" class="metadata-info-card ma-0 pa-0">
     <v-card-title class="px-4 py-2">
-      <v-row no-gutters align="center" style="width: 100%">
+      <v-row no-gutters align="center" class="w-100">
         <v-col>
-          <div
-            class="text-h6"
-            style="white-space: normal; word-break: break-word"
-          >
+          <div class="hs-subheading metadata-info-card__title">
             {{ title }}
           </div>
         </v-col>
 
         <v-col cols="auto">
-          <v-chip
-            small
-            :color="isWorkspace ? 'blue' : 'deep-orange-darken-4'"
-            text-color="black"
-          >
+          <v-chip small :color="isWorkspace ? 'primary' : 'default'">
             {{ isWorkspace ? 'Workspace' : 'System' }}
           </v-chip>
         </v-col>
@@ -63,3 +51,14 @@ defineProps<{
   isWorkspace: boolean
 }>()
 </script>
+
+<style scoped>
+.metadata-info-card {
+  min-width: 300px;
+  max-width: 480px;
+}
+
+.metadata-info-card__title {
+  overflow-wrap: anywhere;
+}
+</style>

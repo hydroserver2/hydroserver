@@ -1,7 +1,7 @@
 <template>
   <v-card>
-    <v-toolbar color="blue-darken-4">
-      <v-card-title>
+    <v-toolbar flat color="primary">
+      <v-card-title class="hs-subheading">
         {{ isEdit ? 'Edit' : 'Create' }} service account
         <span v-if="isEdit" class="opacity-80">- {{ item.name }}</span>
       </v-card-title>
@@ -17,7 +17,8 @@
       <v-card-text>
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength150"
         />
         <v-text-field v-model="item.description" label="Description" />
@@ -25,15 +26,15 @@
           v-model="selectedRole"
           :items="roles"
           data-testid="service-account-role"
-          label="Service account's role *"
+          class="required-label"
+          label="Service account's role"
           item-title="name"
           :return-object="true"
-          variant="outlined"
           :rules="required"
           :disabled="isEdit && !canAssignRole"
           :hint="
             isEdit && !canAssignRole
-              ? 'You do not have permission to change collaborator roles.'
+              ? `You don't have permission to change collaborator roles.`
               : undefined
           "
           :persistent-hint="isEdit && !canAssignRole"
@@ -45,11 +46,11 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :loading="isSubmitting"
           :disabled="isSubmitting"
-          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-primary
+          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-dialog-action
         >
       </v-card-actions>
     </v-form>

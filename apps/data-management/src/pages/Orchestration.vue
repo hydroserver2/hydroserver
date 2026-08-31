@@ -1,27 +1,13 @@
 <template>
   <div class="orchestration-page">
-    <div class="orchestration-page-toolbar">
-      <WorkspaceToolbar
-        layout="orchestration"
-        title="Job orchestration"
-        hide-workspace-management
-      />
-    </div>
-
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
-      <div class="orchestration-shell">
-        <div
-          class="orchestration-nav-column"
-          :style="{ '--accent': navAccent, '--accent-light': navAccentLight }"
-        >
-          <OrchestrationNavRail
-            :tabs="tabs"
-            @select-tab="setActiveTab"
-            @open-workspaces="openWorkspaceManager"
-          />
+      <HsMasterDetailLayout :show-sidebar="!!selectedWorkspace">
+        <template #rail>
+          <OrchestrationNavRail :tabs="tabs" @select-tab="setActiveTab" />
+        </template>
 
+        <template v-if="selectedWorkspace" #sidebar>
           <OrchestrationContextSidebar
-            v-if="selectedWorkspace"
             :connections="filteredConnections"
             :sites="filteredSites"
             :can-create="canCreateDataConnections"
@@ -40,37 +26,26 @@
             @delete-connection="openDeleteDialog"
             @create="openCreateDialog"
           />
-        </div>
+        </template>
 
-        <section
+        <HsEmptyState
           v-if="!selectedWorkspace"
-          class="no-workspace-state"
+          :icon="mdiBriefcaseOutline"
+          eyebrow="No selected workspace"
+          title="Select or create a workspace to manage jobs"
           data-testid="no-selected-workspace"
         >
-          <div class="no-workspace-state-content">
-            <div class="no-workspace-icon">
-              <v-icon :icon="mdiBriefcaseOutline" size="28" />
-            </div>
-            <p class="no-workspace-eyebrow">No selected workspace</p>
-            <h2>Select or create a workspace to manage jobs</h2>
-            <p>
-              Job orchestration is scoped to a workspace. Create a new workspace
-              from the Workspaces view, or ask a workspace owner or
-              administrator for edit permissions on the workspace whose jobs you
-              need to manage.
-            </p>
-            <div class="no-workspace-actions">
-              <v-btn
-                color="primary-darken-2"
-                variant="flat"
-                rounded="xl"
-                @click="openWorkspaceManager"
-              >
-                Open workspaces
-              </v-btn>
-            </div>
-          </div>
-        </section>
+          <p>
+            Job orchestration is scoped to a workspace. Create a new workspace
+            from the Workspaces view, or ask a workspace owner or administrator
+            for edit permissions on the workspace whose jobs you need to manage.
+          </p>
+          <template #actions>
+            <v-btn-primary @click="openWorkspaceManager">
+              Open workspaces
+            </v-btn-primary>
+          </template>
+        </HsEmptyState>
 
         <template v-else>
           <RouterView v-slot="{ Component }">
@@ -198,7 +173,7 @@
             @deleted="onQualityTaskChanged"
           />
         </v-dialog>
-      </div>
+      </HsMasterDetailLayout>
     </div>
   </div>
 </template>
@@ -228,10 +203,13 @@ import { useOrchestrationTaskRows } from '@/composables/orchestration/useOrchest
 import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowPolling'
 import { useOrchestrationRouteState } from '@/composables/orchestration/useOrchestrationRouteState'
 
-import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
 import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
 import OrchestrationContextSidebar from '@/components/Orchestration/workbench/OrchestrationContextSidebar.vue'
 import TaskListPanel from '@/components/Orchestration/workbench/TaskListPanel.vue'
+import {
+  HsEmptyState,
+  HsMasterDetailLayout,
+} from '@hydroserver/design-system/vue'
 import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
@@ -297,15 +275,6 @@ const {
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
-
-// Tints the accent bar spanning the nav rail + connections/sites sidebar
-// (.orchestration-nav-column below) with the active tab's color. Previously
-// this bar lived on the sidebar alone, which put it 88px in from the page
-// edge — floating past the end of the nav rail instead of anchored to it,
-// unlike the equivalent bar on Manage Workspaces (Workspaces.vue), which
-// sits flush against the page edge because that page has no nav rail.
-const navAccent = computed(() => TAB_META[activeTab.value].accent)
-const navAccentLight = computed(() => TAB_META[activeTab.value].accentLight)
 
 const applyRouteWorkspace = () => {
   const targetWorkspaceId = routeWorkspaceId.value
@@ -484,8 +453,9 @@ const taskAttentionCount = (connection: DataConnection) =>
 const productTaskAttentionCount = (monitoringSite: MonitoringSiteTaskSummary) =>
   monitoringSite.productTaskAttentionCount
 
-const monitoringTaskAttentionCount = (monitoringSite: MonitoringSiteTaskSummary) =>
-  monitoringSite.monitoringTaskAttentionCount
+const monitoringTaskAttentionCount = (
+  monitoringSite: MonitoringSiteTaskSummary
+) => monitoringSite.monitoringTaskAttentionCount
 
 const summaryDotColor = (total: number, issues: number) => {
   if (total === 0) return DOT_EMPTY
@@ -586,20 +556,82 @@ const visibleTasks = computed<TaskRow[]>(() => {
     )
   }
   if (!selectedMonitoringSiteId.value) return []
-  return activeTaskRows.value.filter((t) => t.monitoringSiteId === selectedMonitoringSiteId.value)
+  return activeTaskRows.value.filter(
+    (t) => t.monitoringSiteId === selectedMonitoringSiteId.value
+  )
 })
 
+const TASK_QUALIFIER_PATTERN = /(status|name|type):(?:"([^"]*)"|(\S+))/gi
+
+function parseTaskQuery(raw: string) {
+  const statuses: string[] = []
+  const names: string[] = []
+  const types: string[] = []
+  const textParts: string[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  TASK_QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = TASK_QUALIFIER_PATTERN.exec(raw))) {
+    textParts.push(raw.slice(lastIndex, match.index))
+    const key = match[1].toLowerCase()
+    const value = (match[2] ?? match[3] ?? '').trim()
+    if (value) {
+      if (key === 'status') statuses.push(value)
+      else if (key === 'type') types.push(value)
+      else names.push(value)
+    }
+    lastIndex = TASK_QUALIFIER_PATTERN.lastIndex
+  }
+  textParts.push(raw.slice(lastIndex))
+
+  return {
+    statuses,
+    names,
+    types,
+    text: textParts.join(' ').replace(/\s+/g, ' ').trim(),
+  }
+}
+
 const searchedVisibleTasks = computed<TaskRow[]>(() => {
-  const term = orchestrationSearch.value.trim().toLowerCase()
+  const parsedQuery = parseTaskQuery(orchestrationSearch.value)
+  const term = parsedQuery.text.toLowerCase()
   const filters = new Set(orchestrationStatusFilter.value)
   const taskTypeFilters = new Set(orchestrationTaskTypeFilter.value)
+  const queryStatuses = new Set(
+    parsedQuery.statuses.map((value) => value.toLowerCase())
+  )
+  const queryTaskTypes = new Set(
+    parsedQuery.types.map((value) => value.toLowerCase())
+  )
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
       const bucket = t.statusSort ?? 'Unknown'
       if (!filters.has(bucket)) return false
     }
+    if (
+      queryStatuses.size > 0 &&
+      !queryStatuses.has((t.statusSort ?? 'Unknown').toLowerCase())
+    ) {
+      return false
+    }
     if (activeTab.value === 'aggregation' && taskTypeFilters.size > 0) {
       if (!t.taskType || !taskTypeFilters.has(t.taskType)) return false
+    }
+    if (
+      activeTab.value === 'aggregation' &&
+      queryTaskTypes.size > 0 &&
+      (!t.taskType || !queryTaskTypes.has(t.taskType.toLowerCase()))
+    ) {
+      return false
+    }
+    if (parsedQuery.names.length > 0) {
+      const taskName = (t.name ?? '').toLowerCase()
+      if (
+        !parsedQuery.names.some((name) => taskName.includes(name.toLowerCase()))
+      ) {
+        return false
+      }
     }
     if (!term) return true
     const haystack = [
@@ -652,7 +684,7 @@ const emptyHeading = computed(() =>
 const emptyMessage = computed(() => {
   if (activeTab.value === 'ingestion') {
     if (dataConnections.value.length === 0) {
-      return "Click 'Add data connection' to get started."
+      return "Click the '+' icon in the data connections menu to get started."
     }
     return 'Pick a connection from the list to view its tasks.'
   }
@@ -687,7 +719,8 @@ const selectSidebarFromTaskDetails = () => {
       task.dataConnection?.id ?? task.dataConnectionId ?? null
     return !!selectedConnectionId.value
   }
-  selectedMonitoringSiteId.value = task.monitoringSite?.id ?? task.monitoringSiteId ?? null
+  selectedMonitoringSiteId.value =
+    task.monitoringSite?.id ?? task.monitoringSiteId ?? null
   return !!selectedMonitoringSiteId.value
 }
 
@@ -705,20 +738,26 @@ const selectSidebarFromRouteGroup = () => {
   return true
 }
 
-const autoSelectSidebar = () => {
-  if (activeTab.value === 'ingestion') {
+const selectValidGroupForTab = (tab: TabId) => {
+  if (tab === 'ingestion') {
     const current = selectedConnectionId.value
-    if (current && connectionsById.value.has(current)) return
+    if (current && connectionsById.value.has(current)) return current
     selectedConnectionId.value = dataConnections.value[0]?.id ?? null
-  } else {
-    const current = selectedMonitoringSiteId.value
-    if (current && monitoringSitesById.value.has(current)) return
-    selectedMonitoringSiteId.value = monitoringSites.value[0]?.id ?? null
+    return selectedConnectionId.value
   }
+
+  const current = selectedMonitoringSiteId.value
+  if (current && monitoringSitesById.value.has(current)) return current
+  selectedMonitoringSiteId.value = monitoringSites.value[0]?.id ?? null
+  return selectedMonitoringSiteId.value
 }
 
+const autoSelectSidebar = () => selectValidGroupForTab(activeTab.value)
+
 const selectedGroupIdForTab = (tab: TabId) =>
-  tab === 'ingestion' ? selectedConnectionId.value : selectedMonitoringSiteId.value
+  tab === 'ingestion'
+    ? selectedConnectionId.value
+    : selectedMonitoringSiteId.value
 
 const fetchVisibleTasks = async (force = false) => {
   if (!selectedWorkspaceId.value || hasTaskDetails.value) {
@@ -756,10 +795,7 @@ const closeTaskDetailsAndSync = async () => {
 
 const setActiveTab = async (tab: TabId) => {
   sidebarSearch.value = ''
-  await replaceView(tab, selectedGroupIdForTab(tab))
-  autoSelectSidebar()
-  await fetchVisibleTasks()
-  await syncSelectedGroupToRoute()
+  await replaceView(tab, selectValidGroupForTab(tab))
 }
 
 const openWorkspaceManager = async () => {
@@ -768,13 +804,11 @@ const openWorkspaceManager = async () => {
 
 const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
-  await fetchVisibleTasks()
   await replaceView('ingestion', id)
 }
 
 const selectSite = async (id: string) => {
   selectedMonitoringSiteId.value = id
-  await fetchVisibleTasks()
   await replaceView(activeTab.value, id)
 }
 
@@ -799,10 +833,16 @@ const closeWorkspaceScopedUi = () => {
   draftDatastreams.value = []
 }
 
+let workspaceSyncRequestId = 0
+
 watch(
   selectedWorkspaceId,
   async (newId, oldId) => {
     if (newId == null || routeWorkspaceDenied.value) return
+    const syncRequestId = ++workspaceSyncRequestId
+    const isCurrentWorkspaceSync = () =>
+      syncRequestId === workspaceSyncRequestId &&
+      selectedWorkspaceId.value === newId
     const workspaceChanged = oldId != null && oldId !== newId
     const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
     // The URL workspace wins; only push the new selection into the URL when
@@ -815,17 +855,23 @@ watch(
     selectedMonitoringSiteId.value = null
     if (workspaceChanged && !routeSelectedThisWorkspace)
       await closeTaskDetails()
+    if (!isCurrentWorkspaceSync()) return
     await fetchAll(newId)
+    if (!isCurrentWorkspaceSync()) return
     if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
       autoSelectSidebar()
     }
     await fetchVisibleTasks(true)
+    if (!isCurrentWorkspaceSync()) return
     await syncSelectedGroupToRoute(overrideWorkspaceId)
   },
   { immediate: true }
 )
 
+let routeSelectionSyncRequestId = 0
+
 watch([routeDataConnectionId, routeSiteId, routeView], async () => {
+  const syncRequestId = ++routeSelectionSyncRequestId
   if (loading.value || hasTaskDetails.value) {
     return
   }
@@ -841,7 +887,10 @@ watch([routeDataConnectionId, routeSiteId, routeView], async () => {
       : !!routeSiteId.value
   if (!hasRouteSelection) return
 
-  await autoSelectSidebarAndSync()
+  autoSelectSidebar()
+  await fetchVisibleTasks()
+  if (syncRequestId !== routeSelectionSyncRequestId) return
+  await syncSelectedGroupToRoute()
 })
 
 const openCreateDialog = () => {
@@ -992,16 +1041,12 @@ const goToTask = async (row: TaskRow) => {
 
 <style scoped>
 .orchestration-page {
-  background-color: var(--hs-surface);
+  background-color: var(--hs-background);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
   min-height: 0;
   overflow: hidden;
-}
-
-.orchestration-page-toolbar {
-  flex-shrink: 0;
 }
 
 .orchestration-page-body {
@@ -1011,106 +1056,34 @@ const goToTask = async (row: TaskRow) => {
   overflow: hidden;
 }
 
-.orchestration-shell {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  background: var(--hs-surface);
-  overflow: hidden;
-}
-
-/* Wraps the nav rail and the connections/sites sidebar so the accent bar
-   below spans both as one strip anchored to the page edge — the same
-   position the equivalent bar holds on Manage Workspaces (Workspaces.vue),
-   which has no nav rail in front of its sidebar. */
-.orchestration-nav-column {
-  position: relative;
-  display: flex;
-  flex-shrink: 0;
-  min-height: 0;
-}
-.orchestration-nav-column::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-light));
-  z-index: 1;
-}
-
-.no-workspace-state {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  overflow: auto;
-  background: var(--hs-surface);
-  padding: var(--hs-space-32);
-}
-
-.no-workspace-state-content {
-  max-width: 560px;
-  color: var(--hs-text-primary);
-}
-
-/* Matches the empty-state icon on Manage Workspaces (Workspaces.vue) so the
-   two workspace-scoped entry points read as the same product surface. */
-.no-workspace-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--hs-accent-blue-bg),
-    var(--hs-accent-green-bg)
-  );
-  color: var(--hs-accent-green);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--hs-space-16);
-}
-
-.no-workspace-eyebrow {
-  margin: 0 0 var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  font-size: var(--hs-font-sm);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Same size as the page's own h1 (WorkspaceToolbar.vue's
-   .orchestration-header-title) — this empty-state heading was previously a
-   step larger than the page title above it, which inverted the hierarchy. */
-.no-workspace-state h2 {
-  margin: 0 0 var(--hs-space-12);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-lg);
-  line-height: 1.25;
-}
-
-.no-workspace-state p {
-  line-height: 1.55;
-}
-
-.no-workspace-actions {
-  margin-top: var(--hs-space-24);
-}
-
 .detail {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--hs-surface);
+  background: var(--hs-background);
   min-width: 0;
 }
 
 .detail--task {
   padding: 0;
+}
+
+@media (max-width: 700px) {
+  .orchestration-page {
+    height: auto;
+    min-height: calc(
+      100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
+    );
+    overflow: visible;
+  }
+
+  .orchestration-page-body,
+  .detail {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
 }
 </style>

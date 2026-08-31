@@ -1,7 +1,7 @@
 <template>
   <v-card v-if="loaded">
     <v-toolbar flat color="delete">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" />
         {{
           hasDatastreams
@@ -30,8 +30,8 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete v-if="!hasDatastreams" @click="onDelete"
-        >Delete</v-btn-delete
+      <v-btn-destructive v-if="!hasDatastreams" @click="onDelete"
+        >Delete</v-btn-destructive
       >
     </v-card-actions>
   </v-card>
@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import hs, { Datastream } from '@hydroserver/client'
 import { computed, onMounted, ref } from 'vue'
-import FullScreenLoader from '../base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 import { mdiAlert } from '@mdi/js'
 
 const datastreams = ref<Datastream[]>([])

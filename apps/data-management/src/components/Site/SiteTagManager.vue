@@ -1,5 +1,5 @@
 <template>
-  <h6 class="text-h6 my-5">
+  <h6 class="hs-text-md my-5">
     Add Additional Metadata
     <v-tooltip>
       <template v-slot:activator="{ props }">

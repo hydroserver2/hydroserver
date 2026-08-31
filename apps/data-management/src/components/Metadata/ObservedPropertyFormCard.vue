@@ -17,10 +17,10 @@
         <v-text-field
           v-model="item.name"
           hide-details
-          label="Name *"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
           @update:modelValue="handleNameUpdated"
-          class="pb-4"
+          class="pb-4 required-label"
         />
 
         <v-text-field
@@ -31,20 +31,23 @@
 
         <v-textarea
           v-model="item.description"
-          label="Description *"
+          class="required-label"
+          label="Description"
           :rules="rules.requiredDescription"
         ></v-textarea>
 
         <v-combobox
           :items="vocabularyStore.variableTypes"
           v-model="item.type"
-          label="Variable Type *"
+          class="required-label"
+          label="Variable Type"
           :rules="rules.requiredAndMaxLength500"
         />
 
         <v-text-field
           v-model="item.code"
-          label="Variable Code *"
+          class="required-label"
+          label="Variable Code"
           :rules="rules.requiredAndMaxLength500"
         />
       </v-card-text>
@@ -54,9 +57,9 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
+        <v-btn-dialog-action type="submit">{{
           isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

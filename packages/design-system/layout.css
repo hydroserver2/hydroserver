@@ -1,0 +1,23 @@
+/* HydroServer spacing, shape, and elevation tokens. */
+:root {
+  /* Spacing scale (px). Pick from this set instead of a new value. */
+  --hs-space-2: 2px;
+  --hs-space-4: 4px;
+  --hs-space-6: 6px;
+  --hs-space-8: 8px;
+  --hs-space-10: 10px;
+  --hs-space-12: 12px;
+  --hs-space-16: 16px;
+  --hs-space-20: 20px;
+  --hs-space-24: 24px;
+  --hs-space-32: 32px;
+
+  /* Perfect circles (avatars, dots) stay literal 50%. */
+  --hs-radius-sm: 6px;
+  --hs-radius-md: 8px;
+  --hs-radius-lg: 12px;
+  --hs-radius-xl: 16px;
+  --hs-radius-pill: 999px;
+
+  --hs-shadow-popover: 0 4px 16px rgb(0 0 0 / 12%);
+}

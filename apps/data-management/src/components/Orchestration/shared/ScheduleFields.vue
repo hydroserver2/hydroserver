@@ -1,8 +1,10 @@
 <template>
   <div class="schedule-fields">
     <div class="schedule-heading mb-2">
-      <div class="section-heading">Schedule</div>
-      <span class="timezone-label">{{ timezoneLabel }}</span>
+      <div class="section-heading hs-text-sm font-weight-bold">Schedule</div>
+      <span class="timezone-label hs-text-sm font-weight-medium">{{
+        timezoneLabel
+      }}</span>
     </div>
 
     <v-switch
@@ -34,7 +36,7 @@
             :class="{ 'schedule-radio--selected': mode === 'interval' }"
           />
           <div
-            class="schedule-option__title"
+            class="schedule-option__title hs-text-sm font-weight-bold"
             :class="{ 'schedule-option__title--selected': mode === 'interval' }"
           >
             Repeating interval
@@ -42,7 +44,7 @@
         </div>
 
         <div v-if="mode === 'interval'" class="schedule-option__controls">
-          <span class="schedule-inline-label">Every</span>
+          <span class="schedule-inline-label hs-text-sm font-weight-medium">Every</span>
           <v-text-field
             v-model.number="interval"
             class="schedule-interval"
@@ -89,7 +91,7 @@
             :class="{ 'schedule-radio--selected': mode === 'crontab' }"
           />
           <div
-            class="schedule-option__title"
+            class="schedule-option__title hs-text-sm font-weight-bold"
             :class="{ 'schedule-option__title--selected': mode === 'crontab' }"
           >
             Crontab expression
@@ -112,7 +114,7 @@
       </div>
 
       <div class="schedule-start-row">
-        <label class="schedule-start-label" for="task-start-time">Start</label>
+        <label class="schedule-start-label hs-text-sm font-weight-medium" for="task-start-time">Start</label>
         <v-text-field
           id="task-start-time"
           v-model="startInput"
@@ -259,15 +261,11 @@ watch(enabled, (next) => {
 
 .section-heading {
   color: rgba(var(--v-theme-on-surface), 0.7);
-  font-size: 0.75rem;
-  font-weight: 800;
   text-transform: uppercase;
 }
 
 .timezone-label {
   color: rgba(var(--v-theme-on-surface), 0.7);
-  font-size: 0.78rem;
-  font-weight: 500;
   line-height: 1.3;
 }
 
@@ -329,8 +327,6 @@ watch(enabled, (next) => {
 
 .schedule-option__title {
   color: #1f1d24;
-  font-size: 0.86rem;
-  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -350,8 +346,6 @@ watch(enabled, (next) => {
 .schedule-inline-label,
 .schedule-start-label {
   color: #1f1d24;
-  font-size: 0.82rem;
-  font-weight: 500;
 }
 
 .schedule-interval {

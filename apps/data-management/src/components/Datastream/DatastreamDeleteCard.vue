@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar flat color="red-darken-4">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" /> Confirm datastream deletion
       </v-card-title>
     </v-toolbar>
@@ -23,7 +23,7 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete @click="onDelete">Confirm</v-btn-delete>
+      <v-btn-destructive @click="onDelete">Confirm</v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>

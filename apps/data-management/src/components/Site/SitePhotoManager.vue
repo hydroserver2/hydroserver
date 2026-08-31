@@ -1,5 +1,5 @@
 <template>
-  <h6 class="text-h6 mb-4">Add Photos</h6>
+  <h6 class="hs-text-md mb-4">Add Photos</h6>
 
   <v-btn-toggle
     v-if="fileUploadEnabled"
@@ -21,12 +21,16 @@
     id="drop-area"
     @dragover.prevent
     @drop="handleDrop"
-    class="drop-area text-subtitle-2 text-medium-emphasis d-flex mb-6"
+    class="drop-area text-medium-emphasis d-flex mb-6"
     data-testid="site-photo-drop-area"
   >
     <v-icon :icon="mdiPaperclip" class="mr-1" />
-    Drag and drop your photos here, or
-    <span @click="triggerFileInput" class="ml-1 add-link">click to upload</span>
+    <small>
+      Drag and drop your photos here, or
+      <span @click="triggerFileInput" class="ml-1 add-link"
+        >click to upload</span
+      >
+    </small>
 
     <input
       type="file"

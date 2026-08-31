@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 </script>

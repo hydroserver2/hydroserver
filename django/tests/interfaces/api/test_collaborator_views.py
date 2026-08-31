@@ -38,6 +38,39 @@ def test_get_collaborators_includes_collaborators_for_workspace_owner(client):
     assert collaborator.user.email in emails
 
 
+def test_get_collaborators_paginates_in_stable_id_order(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    role = RoleFactory(workspace=workspace)
+    first = CollaboratorFactory(
+        workspace=workspace,
+        role=role,
+        service_account_collaborator=True,
+    )
+    second = CollaboratorFactory(
+        workspace=workspace,
+        role=role,
+        service_account_collaborator=True,
+    )
+    collaborator = CollaboratorFactory(workspace=workspace, role=role)
+    client.force_login(owner)
+
+    first_page = client.get(
+        f"{_collaborators_url(workspace.id)}?page=1&page_size=2"
+    )
+    second_page = client.get(
+        f"{_collaborators_url(workspace.id)}?page=2&page_size=2"
+    )
+
+    assert first_page.status_code == 200
+    assert second_page.status_code == 200
+    assert [c["serviceAccount"]["email"] for c in first_page.json()] == [
+        first.service_account.email,
+        second.service_account.email,
+    ]
+    assert second_page.json()[0]["user"]["email"] == collaborator.user.email
+
+
 def test_get_collaborators_returns_404_for_workspace_outsider(client):
     workspace = WorkspaceFactory(is_private=True)
     outsider = UserFactory()

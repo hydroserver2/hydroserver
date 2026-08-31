@@ -1,12 +1,12 @@
 <template>
-  <h6 class="text-h6" style="color: #b71c1c">
+  <h6 class="hs-text-md" style="color: #b71c1c">
     {{ monitoringSite!.dataDisclaimer }}
   </h6>
 
   <v-card ref="datastreamSectionRef">
     <div class="datastream-toolbar">
       <div class="datastream-toolbar__left">
-        <h5 class="text-h6 datastream-toolbar__title">
+        <h5 class="hs-text-md datastream-toolbar__title">
           Datastreams available at this site
         </h5>
         <v-text-field
@@ -29,7 +29,7 @@
           :to="{ name: 'VisualizeData', query: { sites: monitoringSite!.id } }"
           >View on Data Visualization Page</v-btn
         >
-        <v-btn-add
+        <v-btn-page-action
           v-if="
             hasPermission(
               PermissionResource.Datastream,
@@ -37,11 +37,10 @@
               workspace
             )
           "
-          color="white"
           :prependIcon="mdiPlus"
           data-testid="add-datastream-button"
           @click="openCreate = true"
-          >Add new datastream</v-btn-add
+          >Add new datastream</v-btn-page-action
         >
       </div>
     </div>
@@ -59,7 +58,7 @@
         variant="outlined"
       >
         <div class="datastream-card__content">
-          <div class="datastream-card__title">
+          <div class="datastream-card__title hs-subheading">
             {{ item.name || item.OPName }}
           </div>
           <div
@@ -70,7 +69,7 @@
                 workspace
               ) && !item.isVisible
             "
-            class="text-body-2"
+            class="hs-text-sm"
           >
             Data is private for this datastream
           </div>
@@ -84,19 +83,19 @@
             />
             <div
               v-if="Number(item.valueCount) > 0"
-              class="mt-1 text-base leading-[1.3]"
+              class="mt-1 hs-text-md leading-[1.3]"
               :class="latestStatusClass(item)"
             >
-              <strong class="mr-2 font-semibold">Latest observation:</strong>
-              <span class="font-semibold">{{ item.endDate }}</span>
+              <strong class="mr-2 font-weight-semibold">Latest observation:</strong>
+              <span class="font-weight-semibold">{{ item.endDate }}</span>
             </div>
             <div
               v-if="shouldShowLatestValue(item.id)"
-              class="mt-1 text-base leading-[1.3]"
+              class="mt-1 hs-text-md leading-[1.3]"
               :class="latestStatusClass(item)"
             >
-              <strong class="mr-2 font-semibold">Latest value:</strong>
-              <span class="font-semibold">{{ latestValueDisplay(item) }}</span>
+              <strong class="mr-2 font-weight-semibold">Latest value:</strong>
+              <span class="font-weight-semibold">{{ latestValueDisplay(item) }}</span>
             </div>
           </div>
 
@@ -176,7 +175,7 @@
             />
             <div class="datastream-task-link__body">
               <div class="datastream-task-link__meta">
-                <span class="datastream-task-link__label">
+                <span class="datastream-task-link__label hs-label">
                   {{
                     linkedTasksForDatastream(item.id).length > 1
                       ? 'Multiple task targets'
@@ -187,7 +186,7 @@
                 </span>
                 <template v-if="linkedTasksForDatastream(item.id).length === 1">
                   <RouterLink
-                    class="datastream-task-link__name"
+                    class="datastream-task-link__name hs-title"
                     :to="linkedTasksForDatastream(item.id)[0].route"
                   >
                     {{ linkedTasksForDatastream(item.id)[0].displayName }}
@@ -206,12 +205,12 @@
                         ),
                       }"
                     />
-                    <span class="datastream-task-link__last-ran">
+                    <small class="datastream-task-link__last-ran font-weight-medium">
                       {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                    </span>
+                    </small>
                   </span>
                 </template>
-                <span v-else class="datastream-task-link__conflict-text">
+                <span v-else class="datastream-task-link__conflict-text font-weight-bold">
                   {{
                     linkedTasksForDatastream(item.id).length > 1
                       ? `${
@@ -229,6 +228,7 @@
                   v-for="task in linkedTasksForDatastream(item.id)"
                   :key="task.id"
                   :to="task.route"
+                  class="font-weight-bold"
                 >
                   {{ task.displayName }}
                 </RouterLink>
@@ -254,7 +254,7 @@
                 class="datastream-task-link__monitoring-icon"
               />
               <div class="datastream-task-link__monitoring-body">
-                <span class="datastream-task-link__label">
+                <span class="datastream-task-link__label hs-label">
                   Quality monitoring
                 </span>
                 <span
@@ -263,13 +263,13 @@
                   class="datastream-task-link__monitoring-task"
                 >
                   <RouterLink
-                    class="datastream-task-link__name"
+                    class="datastream-task-link__name hs-title"
                     :to="task.route"
                   >
                     {{ task.displayName }}
                   </RouterLink>
                   <span
-                    class="datastream-task-link__quality-outcome"
+                    class="datastream-task-link__quality-outcome hs-text-sm font-weight-bold"
                     :class="monitoringOutcomeClass(task)"
                   >
                     {{ monitoringOutcomeLabel(task) }}
@@ -284,9 +284,9 @@
                         backgroundColor: monitoringLastRunColor(task),
                       }"
                     />
-                    <span class="datastream-task-link__last-ran">
+                    <small class="datastream-task-link__last-ran font-weight-medium">
                       {{ lastRanLabel(task) }}
-                    </span>
+                    </small>
                   </span>
                 </span>
               </div>
@@ -498,7 +498,7 @@
           >
             View Full Metadata
           </v-btn>
-          <div v-if="downloading[item.id]" class="datastream-download mt-2">
+          <div v-if="downloading[item.id]" class="datastream-download hs-text-sm mt-2">
             <v-progress-circular
               indeterminate
               size="16"
@@ -512,7 +512,7 @@
     </div>
 
     <div v-else class="datastream-list">
-      <div class="datastream-list__head">
+      <div class="datastream-list__head hs-label">
         <span>Observation information</span>
         <span>Datastream information</span>
         <span class="datastream-list__head-actions">Actions</span>
@@ -528,7 +528,7 @@
       >
         <div class="ds-card__grid">
           <div class="datastream-latest">
-            <div class="datastream-title">
+            <div class="datastream-title hs-subheading">
               {{ item.name || item.OPName }}
             </div>
             <div class="mt-1">
@@ -540,7 +540,7 @@
                     workspace
                   ) && !item.isVisible
                 "
-                class="text-body-2"
+                class="hs-text-sm"
               >
                 Data is private for this datastream
               </div>
@@ -556,21 +556,21 @@
                 />
                 <div
                   v-if="Number(item.valueCount) > 0"
-                  class="mt-1 text-base leading-[1.3]"
+                  class="mt-1 hs-text-md leading-[1.3]"
                   :class="latestStatusClass(item)"
                 >
-                  <strong class="mr-2 font-semibold"
+                  <strong class="mr-2 font-weight-semibold"
                     >Latest observation:</strong
                   >
-                  <span class="font-semibold">{{ item.endDate }}</span>
+                  <span class="font-weight-semibold">{{ item.endDate }}</span>
                 </div>
                 <div
                   v-if="shouldShowLatestValue(item.id)"
-                  class="mt-1 text-base leading-[1.3]"
+                  class="mt-1 hs-text-md leading-[1.3]"
                   :class="latestStatusClass(item)"
                 >
-                  <strong class="mr-2 font-semibold">Latest value:</strong>
-                  <span class="font-semibold">{{
+                  <strong class="mr-2 font-weight-semibold">Latest value:</strong>
+                  <span class="font-weight-semibold">{{
                     latestValueDisplay(item)
                   }}</span>
                 </div>
@@ -809,7 +809,7 @@
             >
               View Full Metadata
             </v-btn>
-            <div v-if="downloading[item.id]" class="datastream-download mt-2">
+            <div v-if="downloading[item.id]" class="datastream-download hs-text-sm mt-2">
               <v-progress-circular
                 indeterminate
                 size="16"
@@ -844,7 +844,7 @@
           />
           <div class="datastream-task-link__body">
             <div class="datastream-task-link__meta">
-              <span class="datastream-task-link__label">
+              <span class="datastream-task-link__label hs-label">
                 {{
                   linkedTasksForDatastream(item.id).length > 1
                     ? 'Multiple task targets'
@@ -855,7 +855,7 @@
               </span>
               <template v-if="linkedTasksForDatastream(item.id).length === 1">
                 <RouterLink
-                  class="datastream-task-link__name"
+                  class="datastream-task-link__name hs-title"
                   :to="linkedTasksForDatastream(item.id)[0].route"
                 >
                   {{ linkedTasksForDatastream(item.id)[0].displayName }}
@@ -874,12 +874,12 @@
                       ),
                     }"
                   />
-                  <span class="datastream-task-link__last-ran">
+                  <small class="datastream-task-link__last-ran font-weight-medium">
                     {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                  </span>
+                  </small>
                 </span>
               </template>
-              <span v-else class="datastream-task-link__conflict-text">
+              <span v-else class="datastream-task-link__conflict-text font-weight-bold">
                 {{
                   linkedTasksForDatastream(item.id).length > 1
                     ? `${
@@ -897,6 +897,7 @@
                 v-for="task in linkedTasksForDatastream(item.id)"
                 :key="task.id"
                 :to="task.route"
+                class="font-weight-bold"
               >
                 {{ task.displayName }}
               </RouterLink>
@@ -922,7 +923,7 @@
               class="datastream-task-link__monitoring-icon"
             />
             <div class="datastream-task-link__monitoring-body">
-              <span class="datastream-task-link__label">
+              <span class="datastream-task-link__label hs-label">
                 Quality monitoring
               </span>
               <span
@@ -930,11 +931,11 @@
                 :key="task.id"
                 class="datastream-task-link__monitoring-task"
               >
-                <RouterLink class="datastream-task-link__name" :to="task.route">
+                <RouterLink class="datastream-task-link__name hs-title" :to="task.route">
                   {{ task.displayName }}
                 </RouterLink>
                 <span
-                  class="datastream-task-link__quality-outcome"
+                  class="datastream-task-link__quality-outcome hs-text-sm font-weight-bold"
                   :class="monitoringOutcomeClass(task)"
                 >
                   {{ monitoringOutcomeLabel(task) }}
@@ -947,9 +948,9 @@
                     class="datastream-task-link__dot"
                     :style="{ backgroundColor: monitoringLastRunColor(task) }"
                   />
-                  <span class="datastream-task-link__last-ran">
+                  <small class="datastream-task-link__last-ran font-weight-medium">
                     {{ lastRanLabel(task) }}
-                  </span>
+                  </small>
                 </span>
               </span>
             </div>
@@ -2037,8 +2038,6 @@ const loadDatastreams = async () => {
   padding: 0.5rem var(--datastream-list-inline);
   background: rgb(var(--v-theme-surface));
   border-bottom: 1px solid #e2e5e9;
-  font-size: 0.625rem;
-  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(var(--v-theme-on-surface), 0.56);
@@ -2181,11 +2180,6 @@ const loadDatastreams = async () => {
   gap: 0.4rem;
 }
 
-.datastream-card__title {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
 .datastream-card__icons {
   display: flex;
   align-items: center;
@@ -2204,8 +2198,6 @@ const loadDatastreams = async () => {
 }
 
 .datastream-title {
-  font-weight: 600;
-  font-size: 1rem;
   max-width: 360px;
   overflow-wrap: anywhere;
 }
@@ -2248,7 +2240,6 @@ const loadDatastreams = async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
 }
 
 .datastream-task-link {
@@ -2385,8 +2376,6 @@ const loadDatastreams = async () => {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.625rem;
-  font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: rgba(0, 0, 0, 0.42);
@@ -2394,8 +2383,6 @@ const loadDatastreams = async () => {
 
 .datastream-task-link__name {
   color: rgba(0, 0, 0, 0.87);
-  font-size: 0.8rem;
-  font-weight: 600;
   text-decoration: none;
 }
 
@@ -2419,14 +2406,8 @@ const loadDatastreams = async () => {
 }
 
 .datastream-task-link__last-ran {
-  font-size: 0.7rem;
-  font-weight: 500;
   white-space: nowrap;
   color: rgba(0, 0, 0, 0.42);
-}
-
-.datastream-task-link__conflict-text {
-  font-weight: 700;
 }
 
 .datastream-task-link__tasks {
@@ -2437,7 +2418,6 @@ const loadDatastreams = async () => {
 
 .datastream-task-link__tasks a {
   color: inherit;
-  font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -2474,8 +2454,6 @@ const loadDatastreams = async () => {
 .datastream-task-link__quality-outcome {
   padding: 0.08rem 0.4rem;
   border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
   white-space: nowrap;
 }
 

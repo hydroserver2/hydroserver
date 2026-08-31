@@ -186,8 +186,8 @@ export const routes: RouteRecordRaw[] = [
     path: '/profile',
     name: 'Profile',
     component: () => import('@/pages/Redirecting.vue'),
-    beforeEnter: () => {
-      window.location.assign(hs.session.accountProfileUrl)
+    beforeEnter: (_to, from) => {
+      window.location.assign(hs.session.getAccountProfileUrl(from.fullPath))
       return false
     },
     meta: { requiresAuth: true, title: 'Profile' },

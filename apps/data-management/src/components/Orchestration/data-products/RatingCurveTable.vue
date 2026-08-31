@@ -1,7 +1,7 @@
 <template>
   <div v-if="showHeader" class="rating-curve-manager">
     <div class="d-flex align-center mb-2">
-      <h6 class="text-h6 mb-0">Rating Curves</h6>
+      <h6 class="hs-text-md mb-0">Rating Curves</h6>
       <v-chip class="ml-2" size="small" variant="tonal">
         {{ attachmentCountLabel }}
       </v-chip>
@@ -23,9 +23,9 @@
     <div class="rating-curve-body">
       <div
         v-if="!loading && displayAttachments.length === 0"
-        class="text-body-2 text-medium-emphasis"
+        class="text-medium-emphasis"
       >
-        No rating curves have been added to this site yet.
+        <small>No rating curves have been added to this site yet.</small>
       </div>
 
       <div v-else class="rating-curve-list">
@@ -37,7 +37,7 @@
           <div class="rating-curve-item-preview">
             <div
               v-if="isPreviewLoading(attachment.id)"
-              class="text-caption text-medium-emphasis"
+              class="hs-text-2xs text-medium-emphasis"
             >
               Loading...
             </div>
@@ -62,20 +62,20 @@
             </div>
             <div
               v-else-if="getPreviewError(attachment.id)"
-              class="text-caption text-error"
+              class="hs-text-2xs text-error"
             >
               Preview unavailable
             </div>
-            <div v-else class="text-caption text-medium-emphasis">
+            <div v-else class="hs-text-2xs text-medium-emphasis">
               No points
             </div>
           </div>
 
           <div class="rating-curve-item-main">
-            <div class="text-subtitle-2">{{ attachment.name }}</div>
+            <div class="hs-text-sm">{{ attachment.name }}</div>
             <div
               v-if="attachment.description"
-              class="text-caption text-medium-emphasis"
+              class="hs-text-2xs text-medium-emphasis"
             >
               {{ attachment.description }}
             </div>
@@ -104,7 +104,7 @@
 
   <v-dialog v-model="openManage" width="56rem">
     <v-card>
-      <v-card-title class="text-h6 bg-teal-darken-1 text-white">
+      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
         Manage rating curves
       </v-card-title>
       <v-divider />
@@ -141,9 +141,9 @@
           <div class="rating-curve-body">
             <div
               v-if="!loading && displayAttachments.length === 0"
-              class="text-body-2 text-medium-emphasis"
+              class="text-medium-emphasis"
             >
-              No rating curves have been added to this site yet.
+              <small>No rating curves have been added to this site yet.</small>
             </div>
 
             <div v-else class="rating-curve-list">
@@ -155,7 +155,7 @@
                 <div class="rating-curve-item-preview">
                   <div
                     v-if="isPreviewLoading(attachment.id)"
-                    class="text-caption text-medium-emphasis"
+                    class="hs-text-2xs text-medium-emphasis"
                   >
                     Loading...
                   </div>
@@ -180,20 +180,20 @@
                   </div>
                   <div
                     v-else-if="getPreviewError(attachment.id)"
-                    class="text-caption text-error"
+                    class="hs-text-2xs text-error"
                   >
                     Preview unavailable
                   </div>
-                  <div v-else class="text-caption text-medium-emphasis">
+                  <div v-else class="hs-text-2xs text-medium-emphasis">
                     No points
                   </div>
                 </div>
 
                 <div class="rating-curve-item-main">
-                  <div class="text-subtitle-2">{{ attachment.name }}</div>
+                  <div class="hs-text-sm">{{ attachment.name }}</div>
                   <div
                     v-if="attachment.description"
-                    class="text-caption text-medium-emphasis"
+                    class="hs-text-2xs text-medium-emphasis"
                   >
                     {{ attachment.description }}
                   </div>
@@ -264,7 +264,7 @@
 
   <v-dialog v-model="openCreate" width="42rem">
     <v-card>
-      <v-card-title class="text-h6 bg-teal-darken-1 text-white">
+      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
         Add rating curve
       </v-card-title>
       <v-divider />
@@ -286,7 +286,7 @@
           {{ selectedFile ? 'Change CSV file' : 'Choose CSV file *' }}
         </v-btn>
         <div v-if="selectedFile" class="d-flex align-center mb-3">
-          <span class="text-caption text-medium-emphasis">
+          <span class="hs-text-2xs text-medium-emphasis">
             Selected:
             <strong>{{ selectedFile.name }}</strong>
             ({{ formatFileSize(selectedFile.size) }})
@@ -307,7 +307,7 @@
         </v-alert>
         <div
           v-else-if="createFileValidationPending"
-          class="text-caption text-medium-emphasis mb-3"
+          class="hs-text-2xs text-medium-emphasis mb-3"
         >
           Validating rating curve CSV...
         </div>
@@ -335,26 +335,29 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openCreate = false">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           :loading="saving"
           :disabled="!canCreateAttachment"
           @click="createAttachment"
         >
           Save
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
   <v-dialog v-model="openEdit" width="42rem">
     <v-card>
-      <v-card-title class="text-h6 bg-teal-darken-1 text-white">
+      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
         Update rating curve
       </v-card-title>
       <v-divider />
       <v-card-text class="pt-4">
-        <div class="text-body-2 mb-3">
-          Selected rating curve: <strong>{{ editAttachment?.name }}</strong>
+        <div class="mb-3">
+          <small
+            >Selected rating curve:
+            <strong>{{ editAttachment?.name }}</strong></small
+          >
         </div>
 
         <v-text-field
@@ -396,7 +399,7 @@
           }}
         </v-btn>
         <div v-if="selectedEditFile" class="d-flex align-center mb-3">
-          <span class="text-caption text-medium-emphasis">
+          <span class="hs-text-2xs text-medium-emphasis">
             Selected:
             <strong>{{ selectedEditFile.name }}</strong>
             ({{ formatFileSize(selectedEditFile.size) }})
@@ -418,13 +421,13 @@
         </v-alert>
         <div
           v-else-if="editFileValidationPending"
-          class="text-caption text-medium-emphasis mb-3"
+          class="hs-text-2xs text-medium-emphasis mb-3"
         >
           Validating rating curve CSV...
         </div>
         <div
           v-else-if="editPreviewLoading"
-          class="text-caption text-medium-emphasis mb-3"
+          class="hs-text-2xs text-medium-emphasis mb-3"
         >
           Loading current preview...
         </div>
@@ -439,7 +442,7 @@
         </v-alert>
 
         <div v-if="editPreviewPath" class="rating-curve-edit-preview">
-          <div class="text-caption text-medium-emphasis mb-1">Preview</div>
+          <div class="hs-text-2xs text-medium-emphasis mb-1">Preview</div>
           <div class="rating-curve-preview-box">
             <svg
               class="rating-curve-preview-svg"
@@ -462,20 +465,20 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openEdit = false">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           :loading="saving"
           :disabled="!canSaveEditAttachment"
           @click="saveEditAttachment"
         >
           Save
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
   <v-dialog v-model="openDelete" width="30rem">
     <v-card>
-      <v-card-title class="text-h6 text-error"
+      <v-card-title class="hs-text-md text-error"
         >Delete rating curve</v-card-title
       >
       <v-divider />
@@ -486,13 +489,13 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openDelete = false">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-destructive
           color="error"
           :loading="saving"
           @click="deleteAttachment"
         >
           Delete
-        </v-btn-primary>
+        </v-btn-destructive>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -500,17 +503,19 @@
   <v-dialog v-model="openLinkedTasks" width="42rem" max-width="95vw">
     <v-card>
       <v-toolbar flat color="red-darken-4">
-        <v-card-title class="text-h5">
+        <v-card-title class="hs-text-md">
           <v-icon :icon="mdiAlert" />
           Cannot delete rating curve
         </v-card-title>
       </v-toolbar>
       <v-divider />
       <v-card-text class="pt-4">
-        <div class="text-body-2 mb-3">
-          <strong>{{ blockedAttachment?.name }}</strong> is linked to one or
-          more tasks. Remove this rating curve from those tasks before deleting
-          it.
+        <div class="mb-3">
+          <small>
+            <strong>{{ blockedAttachment?.name }}</strong> is linked to one or
+            more tasks. Remove this rating curve from those tasks before
+            deleting it.
+          </small>
         </div>
         <div class="linked-task-buttons">
           <v-btn
@@ -522,8 +527,10 @@
             block
             class="text-none linked-task-btn"
           >
-            <span class="linked-task-btn-name">{{ task.name || task.id }}</span>
-            <span class="linked-task-btn-id">{{ task.id }}</span>
+            <span class="linked-task-btn-name font-weight-semibold">{{
+              task.name || task.id
+            }}</span>
+            <small class="linked-task-btn-id">{{ task.id }}</small>
           </v-btn>
         </div>
       </v-card-text>
@@ -1685,13 +1692,11 @@ watch(openEdit, (isOpen) => {
 }
 
 .linked-task-btn-name {
-  font-weight: 600;
   color: currentColor;
 }
 
 .linked-task-btn-id {
   margin-top: 0.15rem;
-  font-size: 0.75rem;
   opacity: 0.9;
   text-transform: none;
 }

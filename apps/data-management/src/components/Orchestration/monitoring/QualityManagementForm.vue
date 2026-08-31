@@ -105,7 +105,7 @@
         <v-divider class="mb-4" />
 
         <div class="d-flex align-center mb-3">
-          <div class="section-heading">Quality rules</div>
+          <div class="section-heading hs-text-sm font-weight-bold">Quality rules</div>
           <v-chip
             v-if="ruleRows.length === 0"
             size="x-small"
@@ -146,8 +146,8 @@
         <div v-for="(row, index) in ruleRows" :key="row.key" class="rule-card">
           <div class="rule-card__header">
             <div>
-              <div class="rule-card__title">Rule {{ index + 1 }}</div>
-              <div v-if="row.lastCheckedAt" class="rule-card__subtitle">
+              <div class="rule-card__title hs-text-md font-weight-bold">Rule {{ index + 1 }}</div>
+              <div v-if="row.lastCheckedAt" class="rule-card__subtitle hs-text-sm">
                 Last checked {{ formatTime(row.lastCheckedAt) }}
               </div>
             </div>
@@ -252,14 +252,14 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')">
           Cancel
         </v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :color="QUALITY_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create quality task' }}
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -731,8 +731,6 @@ onMounted(async () => {
 <style scoped>
 .section-heading {
   color: rgba(var(--v-theme-on-surface), 0.7);
-  font-size: 0.75rem;
-  font-weight: 800;
   text-transform: uppercase;
 }
 
@@ -758,14 +756,8 @@ onMounted(async () => {
   margin-bottom: 10px;
 }
 
-.rule-card__title {
-  font-size: 0.95rem;
-  font-weight: 800;
-}
-
 .rule-card__subtitle {
   color: rgba(var(--v-theme-on-surface), 0.62);
-  font-size: 0.78rem;
   margin-top: 2px;
 }
 

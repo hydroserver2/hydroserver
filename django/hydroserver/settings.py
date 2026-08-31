@@ -46,6 +46,15 @@ WEB_CLIENT_URL = env.str(
     default=PROXY_BASE_URL if SAME_ORIGIN_FRONTEND else "http://127.0.0.1:1203",
 )
 
+# Account pages accept return destinations only for explicitly configured app
+# hosts.  Local development commonly alternates between localhost and
+# 127.0.0.1, so accept both Vite origins outside strict deployments.
+ACCOUNT_RETURN_URL_ALLOWED_HOSTS = set(
+    env.list("ACCOUNT_RETURN_URL_ALLOWED_HOSTS", default=[])
+)
+if not STRICT_SECURITY:
+    ACCOUNT_RETURN_URL_ALLOWED_HOSTS.update({"127.0.0.1:1203", "localhost:1203"})
+
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -98,7 +107,6 @@ INSTALLED_APPS = [
     "sensorthings.versions.v1_1.extensions.dataarray",
     "storages",
     "django_celery_beat",
-    "django_tailwind_cli",
     "interfaces.api.apps.ApiConfig",
     "interfaces.web.apps.WebConfig",
     "interfaces.actions.apps.ActionsConfig",
@@ -139,6 +147,9 @@ TEMPLATES = [
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
+            "libraries": {
+                "account_navigation": "core.iam.templatetags.account_navigation",
+            },
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
@@ -186,7 +197,7 @@ if env.bool("SSL_REQUIRED", default=False):
 CACHES = {
     "default": env.cache(
         default=(
-            "dbcache://web_cache" 
+            "dbcache://web_cache"
             if STRICT_SECURITY
             else "locmemcache://hydroserver-dev-cache"
         )
@@ -228,6 +239,7 @@ ACCOUNT_RATE_LIMITS = env.json(
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
 
@@ -322,7 +334,10 @@ MEDIA_URL = "/media/"
 
 STATIC_HOST = env.str("STATIC_HOST", default="")
 STATIC_URL = STATIC_HOST + "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    ("design-system", BASE_DIR.parent / "packages" / "design-system"),
+]
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 

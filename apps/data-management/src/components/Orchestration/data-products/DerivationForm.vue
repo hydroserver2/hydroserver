@@ -72,7 +72,7 @@
 
         <!-- Input datastreams -->
         <div
-          class="text-caption text-medium-emphasis font-weight-bold text-uppercase mb-3"
+          class="hs-text-2xs text-medium-emphasis font-weight-bold text-uppercase mb-3"
         >
           Input datastreams
         </div>
@@ -131,14 +131,14 @@
 
         <!-- Formula -->
         <div
-          class="text-caption text-medium-emphasis font-weight-bold text-uppercase mb-2"
+          class="hs-text-2xs text-medium-emphasis font-weight-bold text-uppercase mb-2"
         >
           Formula
         </div>
 
         <div class="mb-3">
           <div class="d-flex flex-wrap align-center gap-1 mb-1">
-            <span class="text-caption text-medium-emphasis mr-1"
+            <span class="hs-text-2xs text-medium-emphasis mr-1"
               >Variables:</span
             >
             <v-chip
@@ -147,16 +147,16 @@
               size="x-small"
               :color="DATA_PRODUCT_ACCENT"
               variant="tonal"
-              class="font-weight-mono"
+              class="hs-font-data"
             >
               {{ inp.variableName }}
             </v-chip>
-            <span v-if="!namedInputs.length" class="text-caption text-disabled">
+            <span v-if="!namedInputs.length" class="hs-text-2xs text-disabled">
               (define variable names above)
             </span>
           </div>
           <div class="d-flex flex-wrap align-center gap-1">
-            <span class="text-caption text-medium-emphasis mr-1"
+            <span class="hs-text-2xs text-medium-emphasis mr-1"
               >Functions:</span
             >
             <v-chip
@@ -165,7 +165,7 @@
               size="x-small"
               variant="outlined"
               color="grey-darken-1"
-              class="font-weight-mono"
+              class="hs-font-data"
             >
               {{ fn }}
             </v-chip>
@@ -183,21 +183,20 @@
             formulaBalancedParens,
           ]"
           :disabled="loadingExisting"
-          class="mb-2 formula-field"
-          font-family="monospace"
+          class="mb-2 formula-field hs-font-data"
         />
 
         <v-divider class="mb-4" />
 
         <!-- Error handling -->
         <div
-          class="text-caption text-medium-emphasis font-weight-bold text-uppercase mb-1"
+          class="hs-text-2xs text-medium-emphasis font-weight-bold text-uppercase mb-1"
         >
           Error handling
         </div>
 
         <div class="d-flex align-center mb-1">
-          <div class="text-body-2">Stop on no-data value</div>
+          <div class="hs-text-sm">Stop on no-data value</div>
           <v-tooltip location="end" max-width="280">
             <template #activator="{ props: tp }">
               <v-icon v-bind="tp" size="16" color="grey-darken-1" class="ml-1">
@@ -218,7 +217,7 @@
         </div>
 
         <div class="d-flex align-center">
-          <div class="text-body-2">Stop on calculation error</div>
+          <div class="hs-text-sm">Stop on calculation error</div>
           <v-tooltip location="end" max-width="280">
             <template #activator="{ props: tp }">
               <v-icon v-bind="tp" size="16" color="grey-darken-1" class="ml-1">
@@ -247,14 +246,14 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
         >
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create derivation task' }}
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -716,8 +715,5 @@ onMounted(async () => {
   grid-template-columns: 1fr 140px 36px;
   gap: 8px;
   align-items: start;
-}
-.font-weight-mono {
-  font-family: monospace;
 }
 </style>

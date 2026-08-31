@@ -1,12 +1,13 @@
 <template>
-  <v-card>
-    <v-toolbar flat color="blue-darken-2">
+  <v-card class="datastream-information-card">
+    <v-toolbar flat color="surface-subtle">
       <v-card-title> Datastream information </v-card-title>
       <v-spacer />
       <v-btn
         :loading="downloading"
         :prepend-icon="mdiDownload"
-        color="blue-lighten-5"
+        color="primary"
+        variant="tonal"
         data-testid="download-datastream-csv"
         @click="downloadDatastream(datastream.id)"
         >Download</v-btn
@@ -16,20 +17,19 @@
     <DatastreamInformationPanels :datastream-id="datastream.id" />
 
     <v-card-actions>
-      <v-btn-primary
-        color="blue"
+      <v-btn-dialog-action
         variant="text"
         data-testid="add-datastream-to-plot"
         @click="addToPlot(datastream)"
-        >Add to Current Plot</v-btn-primary
+        >Add to Current Plot</v-btn-dialog-action
       >
       <v-spacer />
       <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary
+      <v-btn-dialog-action
         type="submit"
         data-testid="clear-and-plot-datastream"
         @click="clearAndPlot(datastream)"
-        >Clear and Plot</v-btn-primary
+        >Clear and Plot</v-btn-dialog-action
       >
     </v-card-actions>
   </v-card>

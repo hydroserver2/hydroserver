@@ -1,0 +1,45 @@
+{
+  "name": "@hydroserver/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "README.md",
+    "colors.css",
+    "components.css",
+    "fonts.css",
+    "html.css",
+    "layout.css",
+    "scripts",
+    "typography.css",
+    "vue"
+  ],
+  "scripts": {
+    "generate:vuetify-colors": "node ./scripts/generate-vuetify-colors.mjs",
+    "check:vuetify-colors": "node ./scripts/generate-vuetify-colors.mjs --check"
+  },
+  "sideEffects": [
+    "*.css",
+    "./vue/vuetify.ts"
+  ],
+  "exports": {
+    "./components.css": "./components.css",
+    "./colors.css": "./colors.css",
+    "./fonts.css": "./fonts.css",
+    "./html.css": "./html.css",
+    "./layout.css": "./layout.css",
+    "./typography.css": "./typography.css",
+    "./vue": "./vue/index.ts",
+    "./vue/settings.scss": "./vue/settings.scss",
+    "./vue/vuetify": "./vue/vuetify.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0"
+  },
+  "peerDependencies": {
+    "@mdi/js": "^7.4.47",
+    "vue": "^3.5.0",
+    "vuetify": "^4.1.0"
+  }
+}

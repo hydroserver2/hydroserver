@@ -31,6 +31,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const selectedProcessingLevelNames = ref<string[]>([])
 
   const showSummaryStatistics = ref(false)
+  const tableSearch = ref('')
   const summaryStatisticsArray = ref<SummaryStatistics[]>([])
 
   const graphSeriesArray = ref<GraphSeries[]>([])
@@ -45,32 +46,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const tableHeight = ref(30)
   const showPlot = ref(true)
   const showTable = ref(true)
+  const datastreamDetailLevel = ref(1)
   const tableHeaders = reactive([
     { title: 'Plot', key: 'plot', visible: true },
     {
-      title: 'Site Code',
-      key: 'siteCodeName',
-      visible: true,
-    },
-    {
-      title: 'Observed Property',
-      key: 'observedPropertyName',
-      visible: true,
-    },
-    {
-      title: 'Processing Level',
-      key: 'processingLevelName',
-      visible: true,
-    },
-    {
       title: 'Number Observations',
       key: 'valueCount',
-      visible: true,
+      visible: false,
     },
     {
       title: 'Date Last Updated',
       key: 'phenomenonEndTime',
-      visible: true,
+      visible: false,
     },
   ])
 
@@ -83,7 +70,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const xAxisRange = ref<{ start: number; end: number } | null>(null)
   const yAxisRanges = ref<Record<string, [number, number]>>({})
   const monitoringSiteById = computed(
-    () => new Map(monitoringSites.value.map((monitoringSite) => [monitoringSite.id, monitoringSite]))
+    () =>
+      new Map(
+        monitoringSites.value.map((monitoringSite) => [
+          monitoringSite.id,
+          monitoringSite,
+        ])
+      )
   )
   const observedPropertyById = computed(
     () =>
@@ -104,7 +97,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       )
   )
   const selectedMonitoringSiteIds = computed(
-    () => new Set(selectedMonitoringSites.value.map((monitoringSite) => monitoringSite.id))
+    () =>
+      new Set(
+        selectedMonitoringSites.value.map((monitoringSite) => monitoringSite.id)
+      )
   )
   const selectedWorkspaceIds = computed(
     () => new Set(selectedWorkspaces.value.map((workspace) => workspace.id))
@@ -123,6 +119,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
     showSummaryStatistics.value = false
+    tableSearch.value = ''
     summaryStatisticsArray.value = []
     endDate.value = new Date()
     beginDate.value = new Date(new Date().getTime() - oneMonth)
@@ -131,8 +128,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     dataZoomEnd.value = 100
     showPlot.value = true
     showTable.value = true
+    datastreamDetailLevel.value = 1
     tableHeaders.forEach((header) => {
-      header.visible = true
+      header.visible = header.key === 'plot'
     })
     xAxisRange.value = null
     yAxisRanges.value = {}
@@ -526,11 +524,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     loadingStates,
     selectedDateBtnId,
     showSummaryStatistics,
+    tableSearch,
     summaryStatisticsArray,
     cardHeight,
     tableHeight,
     showPlot,
     showTable,
+    datastreamDetailLevel,
     tableHeaders,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,

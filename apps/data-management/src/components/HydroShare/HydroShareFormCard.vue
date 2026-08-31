@@ -7,7 +7,7 @@
   />
   <v-card v-else-if="!openDelete">
     <v-card-title>
-      <v-row class="text-h5">
+      <v-row class="hs-text-md">
         <v-col v-if="linkToExistingAccount">
           Link Site to HydroShare Archival Resource
         </v-col>
@@ -33,7 +33,7 @@
       validate-on="blur"
       :disabled="loading"
     >
-      <h6 v-if="false" class="text-h6 my-4 d-flex justify-center align-center">
+      <h6 v-if="false" class="hs-text-md my-4 d-flex justify-center align-center">
         Archival Scheduling
 
         <v-tooltip open-delay="500">
@@ -180,9 +180,9 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="emit('close')">Close</v-btn-cancel>
-        <v-btn-primary @click="onSubmit">{{
+        <v-btn-dialog-action @click="onSubmit">{{
           isEdit ? 'Update' : 'Create'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

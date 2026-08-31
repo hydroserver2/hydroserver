@@ -1,7 +1,9 @@
 <template>
   <v-card>
     <v-toolbar flat color="primary">
-      <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} workspace </v-card-title>
+      <v-card-title class="hs-subheading">
+        {{ isEdit ? 'Edit' : 'Add' }} workspace
+      </v-card-title>
     </v-toolbar>
     <v-divider />
 
@@ -11,10 +13,11 @@
       v-model="valid"
       validate-on="blur"
     >
-      <v-card-text v-if="item" class="mt-4">
+      <v-card-text v-if="item">
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-checkbox
@@ -28,11 +31,11 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary
+        <v-btn-dialog-action
           type="submit"
           :loading="isSubmitting"
           :disabled="isSubmitting"
-          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-primary
+          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-dialog-action
         >
       </v-card-actions>
     </v-form>

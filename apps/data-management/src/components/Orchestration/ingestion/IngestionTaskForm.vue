@@ -2,12 +2,12 @@
   <StickyForm>
     <template #header>
       <div class="px-6 pt-4 pb-3 max-[640px]:px-4">
-        <h2 class="text-[1.15rem] leading-tight font-medium text-[#1c1b1f]">
+        <h2 class="hs-text-md leading-tight font-weight-medium text-[#1c1b1f]">
           {{ isEdit ? 'Edit task' : 'Add task' }}
         </h2>
         <div
           v-if="headerContextLabel"
-          class="mt-1 flex items-center gap-2 text-[0.82rem] font-medium text-[#4f4b59]"
+          class="mt-1 flex items-center gap-2 hs-text-sm font-weight-medium text-[#4f4b59]"
         >
           <span class="size-2.5 rounded-full bg-[#1565c0]" />
           <span>{{ headerContextLabel }}</span>
@@ -23,12 +23,12 @@
     >
       <div
         v-if="task"
-        class="task-form-shell mx-6 my-4 max-[640px]:mx-4 max-[640px]:my-3 [&_.v-messages]:min-h-3 [&_.v-messages]:text-[0.66rem]"
+        class="task-form-shell mx-6 my-4 max-[640px]:mx-4 max-[640px]:my-3 [&_.v-messages]:min-h-3 [&_.v-messages]:text-[length:var(--hs-font-2xs)]"
       >
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2">
             <label
-              class="text-[0.82rem] font-bold text-[#1f1d24]"
+              class="hs-text-sm font-weight-bold text-[#1f1d24]"
               for="task-name"
             >
               Task name <span class="text-[#d32f2f]">*</span>
@@ -55,11 +55,11 @@
         <div v-if="perTaskPlaceholders.length" class="flex flex-col gap-3">
           <div class="flex flex-col gap-1">
             <h3
-              class="text-[0.72rem] font-extrabold uppercase tracking-[0.08em] text-[#4f4b59]"
+              class="hs-text-sm font-weight-bold uppercase tracking-[0.08em] text-[#4f4b59]"
             >
               Template variables
             </h3>
-            <p class="text-[0.8rem] leading-[1.35] text-[#5f5a67]">
+            <p class="hs-text-sm leading-[1.35] text-[#5f5a67]">
               Fill in values for URL placeholders defined in this data
               connection.
             </p>
@@ -74,7 +74,7 @@
               class="flex flex-col gap-1"
             >
               <label
-                class="text-[0.82rem] font-bold text-[#1f1d24]"
+                class="hs-text-sm font-weight-bold text-[#1f1d24]"
                 :for="`task-variable-${variable.name}`"
               >
                 {{ variable.name }} <span class="text-[#d32f2f]">*</span>
@@ -98,11 +98,11 @@
         <div class="flex flex-col gap-3">
           <div class="flex flex-col gap-1">
             <h3
-              class="text-[0.72rem] font-extrabold uppercase tracking-[0.08em] text-[#4f4b59]"
+              class="hs-text-sm font-weight-bold uppercase tracking-[0.08em] text-[#4f4b59]"
             >
               Data mapping
             </h3>
-            <p class="text-[0.8rem] leading-[1.35] text-[#5f5a67]">
+            <p class="hs-text-sm leading-[1.35] text-[#5f5a67]">
               Map each source field (CSV column or JSON key) to a HydroServer
               datastream.
             </p>
@@ -123,13 +123,13 @@
               class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)_44px] gap-2 max-[640px]:hidden"
             >
               <div
-                class="text-[0.72rem] font-extrabold uppercase tracking-[0.04em] text-[#4f4b59]"
+                class="hs-text-sm font-weight-bold uppercase tracking-[0.04em] text-[#4f4b59]"
               >
                 Source field
               </div>
               <div />
               <div
-                class="text-[0.72rem] font-extrabold uppercase tracking-[0.04em] text-[#4f4b59]"
+                class="hs-text-sm font-weight-bold uppercase tracking-[0.04em] text-[#4f4b59]"
               >
                 Target datastream
               </div>
@@ -164,13 +164,13 @@
                     variant="outlined"
                     rounded="lg"
                     type="button"
-                    class="h-auto min-h-10 w-full justify-start border-2 border-dashed border-[#1565c0] bg-[#f6f9ff] px-3 py-1.5 text-left text-[0.84rem] text-[#1565c0] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
+                    class="h-auto min-h-10 w-full justify-start border-2 border-dashed border-[#1565c0] bg-[#f6f9ff] px-3 py-1.5 text-left hs-text-sm text-[#1565c0] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
                     :class="{
                       'border-[#d32f2f] text-[#d32f2f]': hasTargetError(mi),
                     }"
                     @click="openTargetSelector(mi)"
                   >
-                    <span class="inline-flex items-center gap-1.5 font-bold">
+                    <span class="inline-flex items-center gap-1.5 font-weight-bold">
                       <v-icon :icon="mdiPlusCircleOutline" size="18" />
                       <span>Select target datastream</span>
                     </span>
@@ -181,17 +181,17 @@
                     variant="outlined"
                     rounded="lg"
                     type="button"
-                    class="h-auto min-h-[48px] w-full justify-start border-2 border-solid border-[#1565c0] bg-white px-3 py-1.5 text-left text-[0.84rem] text-[#1c1b1f] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
+                    class="h-auto min-h-[48px] w-full justify-start border-2 border-solid border-[#1565c0] bg-white px-3 py-1.5 text-left hs-text-sm text-[#1c1b1f] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
                     @click="openTargetSelector(mi)"
                   >
                     <span class="block max-w-full leading-[1.25] py-[2px]">
                       <span
-                        class="block whitespace-normal font-semibold text-[#1c1b1f] [overflow-wrap:anywhere]"
+                        class="block whitespace-normal font-weight-semibold text-[#1c1b1f] [overflow-wrap:anywhere]"
                       >
                         {{ datastreamNameById(m.targetDatastreamId) }}
                       </span>
                       <span
-                        class="block whitespace-normal text-[0.72rem] text-[rgba(0,0,0,0.55)] [overflow-wrap:anywhere]"
+                        class="block whitespace-normal hs-text-sm text-[rgba(0,0,0,0.55)] [overflow-wrap:anywhere]"
                       >
                         {{ m.targetDatastreamId }}
                       </span>
@@ -200,7 +200,7 @@
 
                   <div
                     v-if="hasTargetError(mi)"
-                    class="text-error text-caption mt-1"
+                    class="text-error hs-text-2xs mt-1"
                   >
                     Target is required
                   </div>
@@ -232,7 +232,7 @@
                 variant="outlined"
                 rounded="lg"
                 type="button"
-                class="min-h-9 w-fit border-2 border-dashed border-[#d0c9d8] px-3 text-[0.84rem] text-[#1565c0] normal-case"
+                class="min-h-9 w-fit border-2 border-dashed border-[#d0c9d8] px-3 hs-text-sm text-[#1565c0] normal-case"
                 :prepend-icon="mdiPlus"
                 @click="addMapping"
               >
@@ -247,14 +247,14 @@
     <template #actions>
       <v-spacer />
       <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
-      <v-btn-primary
+      <v-btn-dialog-action
         :loading="submitLoading"
         :color="INGESTION_ACCENT"
         type="submit"
         @click="onSubmit"
       >
         Save task
-      </v-btn-primary>
+      </v-btn-dialog-action>
     </template>
   </StickyForm>
 

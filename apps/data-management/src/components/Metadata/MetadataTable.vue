@@ -4,136 +4,150 @@
     class="metadata-section"
     :data-testid="`${scope}-metadata-table`"
   >
-    <div class="metadata-header">
-      <h6 class="text-h6">Metadata</h6>
-      <v-icon
+    <div class="hs-table-tools">
+      <HsSearchInput v-model="search" placeholder="Search metadata…" />
+
+      <v-btn-icon
         :icon="mdiHelpCircleOutline"
+        size="small"
+        title="About metadata"
+        aria-label="Toggle metadata help"
+        :aria-expanded="showHelp"
         @click="showHelp = !showHelp"
-        color="grey"
-        size="18"
-        class="metadata-help-icon"
       />
+
+      <div class="hs-table-actions">
+        <v-btn-page-action
+          v-if="canCreateMetadata"
+          :data-testid="`add-${scope}-metadata-item`"
+          @click="metaMap[tab]?.openDialog()"
+          >Add new {{ metaMap[tab]?.singularName }}</v-btn-page-action
+        >
+      </div>
     </div>
 
     <p v-if="showHelp" class="metadata-help-text">
-      Methods, units, and other reference metadata used by this workspace's
-      datastreams. Workspace items are yours to edit; system items are shared
-      platform defaults managed by administrators.
+      <small>
+        Methods, units, and other reference metadata used by this workspace's
+        datastreams. Workspace items are yours to edit; system items are shared
+        platform defaults managed by administrators.
+      </small>
     </p>
 
-    <v-btn-toggle
-      v-model="scope"
-      mandatory
-      density="compact"
-      color="primary"
-      variant="outlined"
-      rounded="xl"
-      divided
-      class="mb-2"
-    >
-      <v-btn value="all">All</v-btn>
-      <v-btn value="workspace">Workspace metadata</v-btn>
-      <v-btn value="system">System metadata</v-btn>
-    </v-btn-toggle>
-
-    <v-tabs
-      v-model="tab"
-      color="primary"
-      density="compact"
-      class="metadata-type-tabs"
-      show-arrows
-    >
-      <v-tab v-for="item in metaMap" :key="item.name">{{ item.name }}</v-tab>
-    </v-tabs>
-
-    <v-card class="hs-table-card metadata-table-card" flat>
-      <v-toolbar flat density="compact">
-        <v-text-field
-          class="mx-4 metadata-search"
-          clearable
-          v-model="search"
-          :prepend-inner-icon="mdiMagnify"
-          label="Search metadata"
-          hide-details
-          variant="underlined"
+    <div class="hs-table-card metadata-table-frame">
+      <div class="metadata-table-selector">
+        <v-tabs
+          v-model="tab"
+          color="primary"
           density="compact"
-          rounded="xl"
-        />
-
-        <v-spacer />
-
-        <v-btn-add
-          v-if="canCreateMetadata"
-          class="mr-2"
-          :prependIcon="mdiPlus"
-          :data-testid="`add-${scope}-metadata-item`"
-          @click="metaMap[tab]?.openDialog()"
-          >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
+          class="metadata-type-tabs"
+          show-arrows
         >
-      </v-toolbar>
+          <v-tab v-for="item in metaMap" :key="item.name">
+            {{ item.name }}
+          </v-tab>
+        </v-tabs>
 
-      <v-window v-model="tab" class="metadata-window">
-        <v-window-item :value="0">
-          <MethodTable
-            :key="`${scope}-${methodKey}`"
-            :search="search"
-            :workspace-id="workspaceId"
-            :can-edit="canEditMetadata"
-            :can-delete="canDeleteMetadata"
-            :can-manage-system="canManageSystemMetadata"
-            :scope="scope"
-          />
-        </v-window-item>
+        <v-chip-group
+          v-model="scope"
+          variant="plain"
+          mandatory
+          selected-class="bg-primary-lighten-2"
+        >
+          <v-chip
+            value="all"
+            data-testid="metadata-scope-all"
+            class="metadata-scope-chip hs-text-sm"
+            size="small"
+            label
+          >
+            All
+          </v-chip>
+          <v-chip
+            value="workspace"
+            data-testid="metadata-scope-workspace"
+            class="metadata-scope-chip hs-text-sm"
+            size="small"
+            label
+          >
+            Workspace
+          </v-chip>
+          <v-chip
+            value="system"
+            data-testid="metadata-scope-system"
+            class="metadata-scope-chip hs-text-sm"
+            size="small"
+            label
+          >
+            System
+          </v-chip>
+        </v-chip-group>
+      </div>
 
-        <v-window-item :value="1">
-          <ObservedPropertyTable
-            :key="`${scope}-${OPKey}`"
-            :search="search"
-            :workspace-id="workspaceId"
-            :can-edit="canEditMetadata"
-            :can-delete="canDeleteMetadata"
-            :can-manage-system="canManageSystemMetadata"
-            :scope="scope"
-          />
-        </v-window-item>
+      <v-card class="metadata-table-card" flat>
+        <v-window v-model="tab" class="metadata-window">
+          <v-window-item :value="0">
+            <MethodTable
+              :key="`${scope}-${methodKey}`"
+              :search="search"
+              :workspace-id="workspaceId"
+              :can-edit="canEditMetadata"
+              :can-delete="canDeleteMetadata"
+              :can-manage-system="canManageSystemMetadata"
+              :scope="scope"
+            />
+          </v-window-item>
 
-        <v-window-item :value="2">
-          <ProcessingLevelTable
-            :key="`${scope}-${PLKey}`"
-            :search="search"
-            :workspace-id="workspaceId"
-            :can-edit="canEditMetadata"
-            :can-delete="canDeleteMetadata"
-            :can-manage-system="canManageSystemMetadata"
-            :scope="scope"
-          />
-        </v-window-item>
+          <v-window-item :value="1">
+            <ObservedPropertyTable
+              :key="`${scope}-${OPKey}`"
+              :search="search"
+              :workspace-id="workspaceId"
+              :can-edit="canEditMetadata"
+              :can-delete="canDeleteMetadata"
+              :can-manage-system="canManageSystemMetadata"
+              :scope="scope"
+            />
+          </v-window-item>
 
-        <v-window-item :value="3">
-          <UnitTable
-            :key="`${scope}-${unitKey}`"
-            :search="search"
-            :workspace-id="workspaceId"
-            :can-edit="canEditMetadata"
-            :can-delete="canDeleteMetadata"
-            :can-manage-system="canManageSystemMetadata"
-            :scope="scope"
-          />
-        </v-window-item>
+          <v-window-item :value="2">
+            <ProcessingLevelTable
+              :key="`${scope}-${PLKey}`"
+              :search="search"
+              :workspace-id="workspaceId"
+              :can-edit="canEditMetadata"
+              :can-delete="canDeleteMetadata"
+              :can-manage-system="canManageSystemMetadata"
+              :scope="scope"
+            />
+          </v-window-item>
 
-        <v-window-item :value="4">
-          <ResultQualifierTable
-            :key="`${scope}-${qualifierKey}`"
-            :search="search"
-            :workspace-id="workspaceId"
-            :can-edit="canEditMetadata"
-            :can-delete="canDeleteMetadata"
-            :can-manage-system="canManageSystemMetadata"
-            :scope="scope"
-          />
-        </v-window-item>
-      </v-window>
-    </v-card>
+          <v-window-item :value="3">
+            <UnitTable
+              :key="`${scope}-${unitKey}`"
+              :search="search"
+              :workspace-id="workspaceId"
+              :can-edit="canEditMetadata"
+              :can-delete="canDeleteMetadata"
+              :can-manage-system="canManageSystemMetadata"
+              :scope="scope"
+            />
+          </v-window-item>
+
+          <v-window-item :value="4">
+            <ResultQualifierTable
+              :key="`${scope}-${qualifierKey}`"
+              :search="search"
+              :workspace-id="workspaceId"
+              :can-edit="canEditMetadata"
+              :can-delete="canDeleteMetadata"
+              :can-manage-system="canManageSystemMetadata"
+              :scope="scope"
+            />
+          </v-window-item>
+        </v-window>
+      </v-card>
+    </div>
   </div>
 
   <v-dialog v-model="openMethodCreate" width="60rem">
@@ -188,6 +202,7 @@ import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCard.vue'
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
+import { HsSearchInput } from '@hydroserver/design-system/vue'
 import { computed, ref } from 'vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { storeToRefs } from 'pinia'
@@ -198,7 +213,7 @@ import {
   Workspace,
 } from '@hydroserver/client'
 import { useMetadata } from '@/store/metadata'
-import { mdiHelpCircleOutline, mdiMagnify, mdiPlus } from '@mdi/js'
+import { mdiHelpCircleOutline } from '@mdi/js'
 
 type MetadataScope = 'workspace' | 'system' | 'all'
 
@@ -213,7 +228,7 @@ const props = defineProps({
   workspace: Object as () => Workspace,
 })
 
-const scope = ref<MetadataScope>('workspace')
+const scope = ref<MetadataScope>('all')
 const search = ref('')
 const showHelp = ref(false)
 
@@ -285,7 +300,8 @@ const metaMap: Record<string, any> = {
 const hasMetadataPermission = (action: PermissionAction) => {
   if (scope.value === 'system') return isAdmin()
   const resource = metaMap[tab.value]?.resource as
-    PermissionResource | undefined
+    | PermissionResource
+    | undefined
   return !!(
     resource &&
     activeWorkspace.value &&
@@ -313,35 +329,54 @@ const canManageSystemMetadata = computed(() => isAdmin())
   min-height: 0;
   overflow: hidden;
 }
-.metadata-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 2px;
-}
-.metadata-help-icon {
-  cursor: pointer;
-}
 .metadata-help-text {
-  font-size: 12.5px;
-  color: #6b7280;
+  color: var(--hs-text-secondary);
   line-height: 1.5;
   max-width: 640px;
-  margin-bottom: 10px;
+  margin-bottom: var(--hs-space-10);
 }
 .metadata-type-tabs {
-  margin: 0 0 2px;
+  flex: 1;
+  min-width: 0;
+}
+.metadata-table-frame {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+.metadata-table-selector {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  background: var(--hs-surface-subtle);
+  border-bottom: 1px solid var(--hs-border);
+}
+.metadata-scope-toggle {
+  flex-shrink: 0;
+  margin: var(--hs-space-4) var(--hs-space-8) var(--hs-space-4)
+    var(--hs-space-12);
+  gap: var(--hs-space-4);
+}
+.metadata-scope-chip {
+  border-radius: var(--hs-radius-sm);
+  padding-inline: var(--hs-space-6);
+  min-height: var(--hs-space-24);
 }
 .metadata-table-card {
   display: flex;
-  flex: 1;
+  flex: 0 1 auto;
   flex-direction: column;
   min-height: 0;
-  margin-top: 6px;
+  margin-top: 0;
+  border-radius: 0;
   overflow: hidden;
 }
 .metadata-window {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
 }
 .metadata-window :deep(.v-window__container),
@@ -350,17 +385,45 @@ const canManageSystemMetadata = computed(() => isAdmin())
   min-height: 0;
 }
 .metadata-window :deep(.v-data-table) {
-  height: 100%;
+  height: auto;
   max-height: 100%;
   min-height: 0;
   overflow: hidden;
 }
-.metadata-search {
-  max-width: 260px;
-  flex-shrink: 0;
+.metadata-window :deep(.v-data-table .v-table__wrapper) {
+  max-height: 100%;
+  overflow-y: auto;
+}
+.metadata-window :deep(.metadata-table-loading-skeleton) {
+  min-height: 360px;
+  height: 100%;
+  background: var(--hs-surface);
+}
+.metadata-window
+  :deep(.v-table--fixed-header > .v-table__wrapper > table > thead) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.metadata-window
+  :deep(.v-table--fixed-header > .v-table__wrapper > table > thead > tr > th) {
+  background: var(--hs-surface-muted);
 }
 .metadata-window :deep(td),
 .metadata-window :deep(th) {
-  font-size: 13px;
+  /* No template element reachable inside v-data-table internals. */
+  font-size: var(--hs-font-sm);
+}
+
+@media (max-width: 900px) {
+  .metadata-table-selector {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .metadata-scope-toggle {
+    align-self: flex-end;
+    margin-top: 0;
+  }
 }
 </style>

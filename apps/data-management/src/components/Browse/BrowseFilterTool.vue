@@ -23,12 +23,9 @@
         <h1>Monitoring sites</h1>
 
         <div class="filter-header-actions">
-          <v-btn
+          <v-btn-primary
             v-if="showRegisterSite"
             class="register-site-button"
-            color="primary"
-            variant="flat"
-            rounded="xl"
             data-testid="register-site-button"
             aria-label="Create Site"
             :disabled="!canRegisterSite"
@@ -39,9 +36,8 @@
             "
             @click="$emit('register-site')"
           >
-            <v-icon :icon="mdiPlus" size="16" />
             Create Site
-          </v-btn>
+          </v-btn-primary>
 
           <v-btn
             icon
@@ -108,7 +104,7 @@
                 </v-chip>
                 <span
                   v-else-if="index === 2"
-                  class="text-caption text-medium-emphasis ms-1"
+                  class="hs-text-2xs text-medium-emphasis ms-1"
                 >
                   +{{ selectedWorkspaces.length - 2 }} more
                 </span>
@@ -410,7 +406,6 @@ import {
   mdiFilterOffOutline,
   mdiMagnify,
   mdiPencilOutline,
-  mdiPlus,
   mdiTagOutline,
   mdiTrashCanOutline,
 } from '@mdi/js'
@@ -896,13 +891,13 @@ pruneSelectionToAvailable(
 .filter-chip :deep(.v-btn__content) {
   gap: var(--hs-space-8);
   font-size: var(--hs-font-sm);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0;
 }
 
 .filter-chip-count {
   color: var(--hs-text-secondary);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
 }
 
 .filter-panel {
@@ -927,7 +922,7 @@ pruneSelectionToAvailable(
   margin: 0;
   color: var(--hs-text-primary);
   font-size: var(--hs-font-md);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   line-height: 1.25;
   letter-spacing: 0;
 }
@@ -942,7 +937,7 @@ pruneSelectionToAvailable(
 .register-site-button {
   padding-inline: var(--hs-space-16);
   font-size: var(--hs-font-sm);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -998,7 +993,7 @@ pruneSelectionToAvailable(
   border-radius: var(--hs-radius-md);
   padding-inline: var(--hs-space-10);
   font-size: var(--hs-font-sm);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -1016,7 +1011,7 @@ pruneSelectionToAvailable(
 .filter-group-title {
   color: var(--hs-text-primary);
   font-size: var(--hs-font-sm);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.6px;
   text-transform: uppercase;
 }
@@ -1030,7 +1025,7 @@ pruneSelectionToAvailable(
 .filter-section-title {
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-2xs);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.7px;
   text-transform: uppercase;
 }
@@ -1048,7 +1043,7 @@ pruneSelectionToAvailable(
   border-radius: var(--hs-radius-sm);
   padding-inline: var(--hs-space-6);
   font-size: var(--hs-font-sm);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   letter-spacing: 0;
 }
 
@@ -1129,7 +1124,7 @@ pruneSelectionToAvailable(
   color: var(--hs-text-secondary);
   border-color: var(--hs-border);
   font-size: var(--hs-font-sm);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
 }
 
 .filter-pill :deep(.v-btn__content) {
@@ -1149,7 +1144,7 @@ pruneSelectionToAvailable(
   min-width: 0;
   padding-inline: var(--hs-space-8);
   font-size: var(--hs-font-2xs);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   letter-spacing: 0;
 }
 
@@ -1176,7 +1171,7 @@ pruneSelectionToAvailable(
 .site-list-count {
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-2xs);
-  font-weight: 700;
+  font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.7px;
   text-transform: uppercase;
 }
@@ -1191,7 +1186,7 @@ pruneSelectionToAvailable(
   min-width: 0;
   padding-inline: var(--hs-space-6);
   font-size: var(--hs-font-2xs);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -1332,21 +1327,21 @@ pruneSelectionToAvailable(
 }
 
 .site-row-code {
-  font-family: 'Roboto Mono', monospace;
+  font-family: var(--hs-font-data);
   font-size: var(--hs-font-2xs);
 }
 
 .site-row-name {
   color: var(--hs-text-primary);
   font-size: var(--hs-font-sm);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   line-height: 1.25;
 }
 
 .site-row-workspace {
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-2xs);
-  font-weight: 500;
+  font-weight: var(--hs-font-weight-medium);
 }
 
 .empty-sites {
@@ -1356,7 +1351,7 @@ pruneSelectionToAvailable(
   justify-content: center;
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
-  font-weight: 600;
+  font-weight: var(--hs-font-weight-semibold);
   text-align: center;
 }
 

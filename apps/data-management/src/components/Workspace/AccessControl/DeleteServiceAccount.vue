@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar flat color="delete">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-subheading">
         <v-icon :icon="mdiAlert" />
         Confirm service account deletion
       </v-card-title>
@@ -16,9 +16,9 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete :loading="loading" :disabled="loading" @click="onDelete">
+      <v-btn-destructive :loading="loading" :disabled="loading" @click="onDelete">
         Delete
-      </v-btn-delete>
+      </v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>

@@ -138,13 +138,13 @@
         <v-btn-cancel @click="openLinkConflictModal = false"
           >Cancel</v-btn-cancel
         >
-        <v-btn-primary
+        <v-btn-dialog-action
           v-if="currentSourceId"
           color="yellow-darken-2"
           @click="goToDataConnection"
         >
           View existing data connection
-        </v-btn-primary>
+        </v-btn-dialog-action>
       </v-card-actions>
     </v-card>
   </v-dialog>

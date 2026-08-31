@@ -18,11 +18,7 @@ def _signup_data(**overrides):
         "password1": "a-very-strong-password-123",
         "password2": "a-very-strong-password-123",
         "first_name": "Jane",
-        "middle_name": "Q",
         "last_name": "Doe",
-        "phone": "555-0100",
-        "address": "123 Main St",
-        "link": "https://example.com",
         "user_type": "Researcher",
     }
     data.update(overrides)
@@ -34,11 +30,7 @@ def test_signup_persists_profile_fields(client):
 
     user = User.objects.get(email="new-user@example.com")
     assert user.first_name == "Jane"
-    assert user.middle_name == "Q"
     assert user.last_name == "Doe"
-    assert user.phone == "555-0100"
-    assert user.address == "123 Main St"
-    assert user.link == "https://example.com"
     assert user.user_type == "Researcher"
     assert user.organization is None
 
@@ -67,11 +59,33 @@ def test_signup_creates_and_links_organization(client):
 
 
 def test_signup_without_organization_leaves_it_unset(client):
-    client.post(reverse("account_signup"), data=_signup_data(has_organization=False))
+    client.post(
+        reverse("account_signup"),
+        data=_signup_data(
+            has_organization=False,
+            org_name="Organization that must not be created",
+            org_code="NONE",
+            org_description="This information was submitted while unchecked.",
+            org_link="https://example.com",
+            org_type="University",
+        ),
+    )
 
     user = User.objects.get(email="new-user@example.com")
     assert user.organization is None
     assert Organization.objects.count() == 0
+
+
+def test_signup_hides_and_disables_organization_fields_by_default(client):
+    response = client.get(reverse("account_signup"))
+
+    assert response.status_code == 200
+    assert b'id="id_has_organization" checked' not in response.content
+    assert (
+        b'id="org-fields" class="auth-organization-fields" hidden disabled'
+        in response.content
+    )
+    assert b"toggleOrganizationFields" in response.content
 
 
 def test_signup_requires_organization_fields_when_affiliated(client):

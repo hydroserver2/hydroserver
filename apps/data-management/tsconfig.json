@@ -3,6 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "preserveSymlinks": true,
 
     "strict": true,
     "useDefineForClassFields": true,

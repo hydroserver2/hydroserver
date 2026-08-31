@@ -100,6 +100,7 @@ export default defineConfig({
           process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
         SMTP_URL: process.env.SMTP_URL || 'memorymail://',
         PROXY_BASE_URL: appBaseUrl,
+        WEB_CLIENT_URL: appBaseUrl,
         ALLOWED_HOSTS: '127.0.0.1,localhost',
         DEPLOYMENT_BACKEND: 'dev',
         DEBUG: 'True',

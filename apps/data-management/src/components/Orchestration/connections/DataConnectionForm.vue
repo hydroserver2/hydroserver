@@ -130,7 +130,7 @@
     <template #actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')"> Cancel </v-btn-cancel>
-      <v-btn-primary type="button" @click="onSubmit"> Save </v-btn-primary>
+      <v-btn-dialog-action type="button" @click="onSubmit"> Save </v-btn-dialog-action>
     </template>
   </StickyForm>
 </template>

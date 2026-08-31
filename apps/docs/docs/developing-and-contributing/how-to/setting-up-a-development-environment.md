@@ -63,13 +63,10 @@ Before starting, make sure you have the following software installed on your mac
    ```bash
    ./scripts/dev-api-command manage.py createsuperuser
    ```
-5. Start the Django development web server together with the Tailwind CSS watcher for the
-   server-rendered account and OIDC templates:
+5. Start the Django development web server:
    ```bash
-   ./scripts/dev-api-command manage.py tailwind runserver 127.0.0.1:8000
+   ./scripts/dev-api-command manage.py runserver 127.0.0.1:8000
    ```
-   This uses [django-tailwind-cli](https://django-tailwind-cli.readthedocs.io/), which downloads
-   its own standalone Tailwind CSS binary on first run — no Node.js/npm required for this step.
 
 If you need OIDC identity provider features (discovery, authorize, token, and JWKS endpoints), generate a
 signing key first:

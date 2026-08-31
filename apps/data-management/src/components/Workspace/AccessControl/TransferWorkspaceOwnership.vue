@@ -1,16 +1,16 @@
 <template>
-  <h6 class="text-h6 ownership-title">Transfer workspace ownership</h6>
+  <h2 class="hs-subheading ownership-title">Transfer workspace ownership</h2>
 
   <v-card-text>
     <div class="ownership-card hs-table-card">
       <template v-if="showPendingTransferText">
-        <div class="ownership-pending">
+        <small class="ownership-pending">
           <v-icon :icon="mdiTransitTransfer" size="18" color="primary" />
           <span>
             An ownership transfer is pending to
             <strong>{{ workspace.pendingTransferTo?.name }}</strong>
           </span>
-        </div>
+        </small>
         <v-btn-cancel
           class="mt-4"
           :loading="isCancelling"
@@ -23,12 +23,15 @@
 
       <template v-else>
         <p class="ownership-copy">
-          Transfer is irreversible once accepted: the new owner gains the
-          ownership rights for this workspace, and its permissions will then
-          determine who can
-          <strong>rename</strong>, <strong>delete</strong>, and
-          <strong>change the privacy</strong> of this workspace. Unless the new
-          owner adds you as a collaborator, you may lose access to it entirely.
+          <small>
+            Transfer is irreversible once accepted: the new owner gains the
+            ownership rights for this workspace, and its permissions will then
+            determine who can
+            <strong>rename</strong>, <strong>delete</strong>, and
+            <strong>change the privacy</strong> of this workspace. Unless the
+            new owner adds you as a collaborator, you may lose access to it
+            entirely.
+          </small>
         </p>
 
         <v-form v-model="emailFormValid" class="ownership-form">
@@ -50,7 +53,6 @@
           </v-btn-primary>
           <v-btn
             v-else
-            variant="outlined"
             :prepend-icon="mdiTransitTransfer"
             :disabled="!emailFormValid"
             @click="showTransferConfirmation = true"
@@ -156,39 +158,37 @@ async function onCancelTransfer() {
 
 <style scoped>
 .ownership-title {
-  margin-bottom: 4px;
+  margin-bottom: var(--hs-space-4);
 }
 .ownership-card {
-  padding: 18px 20px;
+  padding: var(--hs-space-20);
 }
 .ownership-copy {
-  font-size: 12.5px;
-  color: #6b7280;
+  color: var(--hs-text-secondary);
   line-height: 1.6;
-  margin-bottom: 16px;
+  margin-bottom: var(--hs-space-16);
   max-width: 560px;
 }
 .ownership-copy strong {
-  color: #374151;
+  color: var(--hs-text-primary);
 }
 .ownership-form {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 12px;
+  gap: var(--hs-space-12);
   align-items: center;
   max-width: 560px;
 }
 .ownership-pending {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 13.5px;
-  color: #1c1b1f;
+  gap: var(--hs-space-8);
+  color: var(--hs-text-primary);
 }
 
 @media (max-width: 600px) {
   .ownership-card {
-    padding: 16px;
+    padding: var(--hs-space-16);
   }
   .ownership-form {
     grid-template-columns: 1fr;

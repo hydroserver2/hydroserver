@@ -9,34 +9,36 @@
           alt="Hydro Logo"
           style="max-width: 500px; width: 100%"
         />
-        <h4 class="text-h4 mb-8 has-text-shadow">
+        <h4 class="hs-text-lg mb-8 has-text-shadow">
           Collect and Manage Your Operational Hydrologic Data
         </h4>
       </div>
 
       <div v-if="hs.session.isAuthenticated">
-        <h5 class="text-h5 mb-8 has-text-shadow">
+        <h5 class="hs-text-md mb-8 has-text-shadow">
           Logged in as {{ user?.firstName }}
           {{ user?.lastName }}
         </h5>
       </div>
       <div v-else-if="disableAccountCreation !== 'true'">
-        <h5 class="text-h5 mb-8 has-text-shadow">
+        <h5 class="hs-text-md mb-8 has-text-shadow">
           Create an account to get started
         </h5>
-        <v-btn-primary :href="hs.session.accountSignupUrl">Sign Up</v-btn-primary>
+        <v-btn-primary :href="hs.session.getAccountSignupUrl()">Sign Up</v-btn-primary>
       </div>
     </div>
   </div>
 
   <v-container class="my-8">
     <div class="d-flex flex-column align-center text-center">
-      <h2 class="text-h4 mb-4">Manage your Operational Data</h2>
+      <h2 class="hs-text-lg mb-4">Manage your Operational Data</h2>
 
-      <p class="mb-8 text-body-1 text-medium-emphasis">
-        The HydroServer Hydrologic Information System provides services and
-        tools for collecting, storing, managing, and sharing your hydrologic
-        observations collected from in situ monitoring sites.
+      <p class="mb-8 text-medium-emphasis">
+        <small>
+          The HydroServer Hydrologic Information System provides services and
+          tools for collecting, storing, managing, and sharing your
+          hydrologic observations collected from in situ monitoring sites.
+        </small>
       </p>
     </div>
 
@@ -47,12 +49,14 @@
             <v-icon :icon="mdiResistor" size="4rem" />
           </div>
           <div>
-            <p class="text-body-1 font-weight-bold mb-2">
+            <p class="hs-text-sm font-weight-bold mb-2">
               Data Streaming
             </p>
-            <p class="text-body-2 text-medium-emphasis mb-2">
+            <p class="text-medium-emphasis mb-2">
+              <small>
               Stream data directly from your Internet connected
               datalogger or load data using our Streaming ETL System software.
+              </small>
             </p>
           </div>
         </div>
@@ -64,12 +68,14 @@
             <v-icon :icon="mdiDatabaseOutline" size="4rem" />
           </div>
           <div>
-            <p class="text-body-1 font-weight-bold mb-2">
+            <p class="hs-text-sm font-weight-bold mb-2">
               Performant Data Storage
             </p>
-            <p class="text-body-2 text-medium-emphasis mb-2">
+            <p class="text-medium-emphasis mb-2">
+              <small>
               Using TimeScale DB with PostgreSQL, we provide a performant data
               store for your operational data.
+              </small>
             </p>
           </div>
         </div>
@@ -81,12 +87,14 @@
             <v-icon :icon="mdiCogOutline" size="4rem" />
           </div>
           <div>
-            <p class="text-body-1 font-weight-bold mb-2">
+            <p class="hs-text-sm font-weight-bold mb-2">
               Easy Web Configuration
             </p>
-            <p class="text-body-2 text-medium-emphasis mb-2">
+            <p class="text-medium-emphasis mb-2">
+              <small>
               Create new monitoring locations, observed variables, methods, and
               data streams through our web user interface.
+              </small>
             </p>
           </div>
         </div>
@@ -98,12 +106,14 @@
             <v-icon :icon="mdiLockOpenOutline" size="4rem" />
           </div>
           <div>
-            <p class="text-body-1 font-weight-bold mb-2">
+            <p class="hs-text-sm font-weight-bold mb-2">
               Public Access to Your Data
             </p>
-            <p class="text-body-2 text-medium-emphasis mb-2">
+            <p class="text-medium-emphasis mb-2">
+              <small>
               Provide convenient and simple access to the data from your
               monitoring sites.
+              </small>
             </p>
           </div>
         </div>
@@ -137,15 +147,17 @@
         ></v-img>
       </v-col>
       <v-col class="d-flex justify-center flex-column" cols="12" sm="7">
-        <h4 class="text-h4 mb-4">Operational Data for Modeling</h4>
-        <p class="text-body-1 mb-2 font-weight-bold">
+        <h4 class="hs-text-lg mb-4">Operational Data for Modeling</h4>
+        <p class="hs-text-sm mb-2 font-weight-bold">
           Your data can improve NOAA's water prediction services
         </p>
-        <p class="text-body-1 text-medium-emphasis">
+        <p class="text-medium-emphasis">
+          <small>
           NOAA's National Water Model can assimilate streamflow data from
           operational monitoring sites like yours. Contribute your streamflow
           data to make it available to support continental-scale hydrologic
           modeling and forecasting via the National Water Model.
+          </small>
         </p>
       </v-col>
     </v-row>
@@ -156,10 +168,12 @@
   <v-container class="my-8">
     <v-row>
       <v-col class="d-flex flex-column justify-center" cols="12" sm="6">
-        <h4 class="text-h4 mb-8">Open Standards Data Sharing</h4>
-        <p class="text-body-1 text-medium-emphasis">
+        <h4 class="hs-text-lg mb-8">Open Standards Data Sharing</h4>
+        <p class="text-medium-emphasis">
+          <small>
           Share your data publicly using the latest Open Geospatial Consortium
           web services standard SensorThings.
+          </small>
         </p>
         <div>
           <v-img
@@ -177,7 +191,7 @@
           max-width="35rem"
           alt="SensorThings Database Schema"
         ></v-img>
-        <h4 class="text-h4">SensorThings</h4>
+        <h4 class="hs-text-lg">SensorThings</h4>
       </v-col>
     </v-row>
   </v-container>
@@ -192,9 +206,11 @@
       max-width="14rem"
       alt="CIROH Logo"
     ></v-img>
-    <p class="text-body-1 text-medium-emphasis text-center">
+    <p class="text-medium-emphasis text-center">
+      <small>
       This HydroServer instance is supported through the Cooperative Institute
       for Research to Operations in Hydrology (CIROH)
+      </small>
     </p>
   </v-container>
 </template>

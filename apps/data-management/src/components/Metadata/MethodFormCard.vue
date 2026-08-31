@@ -15,29 +15,27 @@
         <v-combobox
           v-model="item.type"
           :items="vocabularyStore.methodTypes"
-          label="Type *"
+          label="Type"
           hide-details
           density="comfortable"
           :rules="rules.required"
-          class="mb-4"
+          class="mb-4 required-label"
         />
 
         <v-text-field
           v-if="!isInstrument"
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
 
-        <v-text-field
-          v-model="item.code"
-          label="Code"
-          :rules="rules.name"
-        />
+        <v-text-field v-model="item.code" label="Code" :rules="rules.name" />
 
         <v-textarea
           v-model="item.description"
-          label="Description *"
+          class="required-label"
+          label="Description"
           rows="1"
           :rules="rules.requiredDescription"
         />
@@ -51,14 +49,16 @@
         <v-text-field
           v-if="isInstrument"
           v-model="item.sensorModelManufacturer"
-          label="Sensor Model Manufacturer *"
+          class="required-label"
+          label="Sensor Model Manufacturer"
           :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-if="isInstrument"
           v-model="item.sensorModel"
-          label="Sensor Model *"
+          class="required-label"
+          label="Sensor Model"
           :rules="rules.requiredAndMaxLength255"
         />
 
@@ -74,9 +74,9 @@
         <v-card-actions>
           <v-spacer />
           <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-          <v-btn-primary type="submit">{{
+          <v-btn-dialog-action type="submit">{{
             isEdit ? 'Update' : 'Save'
-          }}</v-btn-primary>
+          }}</v-btn-dialog-action>
         </v-card-actions>
       </v-card-text>
     </v-form>
@@ -106,9 +106,7 @@ const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
 )
 const vocabularyStore = useVocabularyStore()
 
-const isInstrument = computed(
-  () => item.value.type === 'Instrument Deployment'
-)
+const isInstrument = computed(() => item.value.type === 'Instrument Deployment')
 
 async function onSubmit() {
   const { type, sensorModelManufacturer, sensorModel } = item.value

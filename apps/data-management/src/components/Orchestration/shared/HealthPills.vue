@@ -1,13 +1,13 @@
 <template>
   <div class="health-pills">
-    <span class="count">
+    <span class="count hs-text-2xs">
       {{ tasks.length }} task{{ tasks.length === 1 ? '' : 's' }}
     </span>
     <component
       :is="interactive ? 'button' : 'span'"
       v-for="entry in pills"
       :key="entry.status"
-      class="pill"
+      class="pill hs-text-2xs font-weight-medium"
       :class="{
         'pill--interactive': interactive,
         'pill--active': interactive && activeStatuses.includes(entry.status),
@@ -73,15 +73,12 @@ const pills = computed(() => {
   flex-wrap: wrap;
 }
 .count {
-  font-size: 11px;
   color: #49454f;
 }
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
-  font-weight: 500;
 }
 .pill--interactive {
   background: transparent;

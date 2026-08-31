@@ -14,12 +14,14 @@
       <v-card-text v-if="item">
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-text-field
           v-model="item.symbol"
-          label="Symbol *"
+          class="required-label"
+          label="Symbol"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-text-field
@@ -29,7 +31,8 @@
         />
         <v-text-field
           v-model="item.type"
-          label="Unit Type *"
+          class="required-label"
+          label="Unit Type"
           :rules="rules.requiredAndMaxLength255"
         />
       </v-card-text>
@@ -39,9 +42,9 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
+        <v-btn-dialog-action type="submit">{{
           isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

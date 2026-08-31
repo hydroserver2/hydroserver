@@ -1,46 +1,17 @@
 import 'vuetify/styles'
 
-import { createVuetify, ThemeDefinition } from 'vuetify'
+import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { VBtn } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
-import { mdiPlus } from '@mdi/js'
-// add this import
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { vuetifyColors } from './vuetify-colors'
 
-// Material theme Colors: https://vuetifyjs.com/en/styles/colors/
+// colors.css is the canonical palette. The generated adapter gives Vuetify the
+// concrete values it needs to create its runtime CSS variables.
 const theme: ThemeDefinition = {
   dark: false,
-  colors: {
-    background: '#FAFAFA', // grey-lighten-5
-    surface: '#FFFFFF', // white
-    primary: '#2196F3', // blue
-    secondary: '#4CAF50', // green
-    default: '#757575', // grey-darken-1
-    delete: '#F44336', // red
-    error: '#F44336', // red
-    info: '#03A9F4', // light-blue
-    success: '#4CAF50', // green
-    warning: '#FF9800', // orange
-    navbar: '#272e3d',
-  },
-}
-
-const darkTheme: ThemeDefinition = {
-  dark: true,
-  colors: {
-    background: '#18212a',
-    surface: '#18212a',
-    primary: '#2196F3',
-    secondary: '#4CAF50',
-    default: '#cfd8dc',
-    delete: '#F44336',
-    error: '#F44336',
-    info: '#03A9F4',
-    success: '#4CAF50',
-    warning: '#FF9800',
-    navbar: '#272e3d',
-  },
+  colors: vuetifyColors,
 }
 
 const textFieldAttrs = {
@@ -50,7 +21,7 @@ const textFieldAttrs = {
 const btnAttrs = {
   color: 'primary',
   style: 'text-transform: none;', // Remove uppercase text
-  rounded: 'xl',
+  rounded: 'lg',
 }
 
 const menuDefaults = {
@@ -61,15 +32,18 @@ const menuDefaults = {
   autocomplete: 'off',
 }
 
-export default createVuetify({
+const vuetify = createVuetify({
   blueprint: md3,
   directives,
   aliases: {
+    // Compatibility alias while existing non-dialog usages are migrated.
+    // Do not add new uses; choose a role-specific alias instead.
     VBtnPrimary: VBtn,
-    VBtnSecondary: VBtn,
+    VBtnDialogAction: VBtn,
     VBtnCancel: VBtn,
-    VBtnDelete: VBtn,
-    VBtnAdd: VBtn,
+    VBtnDestructive: VBtn,
+    VBtnIcon: VBtn,
+    VBtnPageAction: VBtn,
   },
   defaults: {
     global: {
@@ -92,36 +66,42 @@ export default createVuetify({
     VTextarea: textFieldAttrs,
     VCheckbox: textFieldAttrs,
     VBtn: btnAttrs,
-    VBtnPrimary: {
+    VBtnPrimary: btnAttrs,
+    VBtnDialogAction: {
       ...btnAttrs,
       color: 'primary',
+      // Dialog actions are rectangular with rounded corners, not pills.
+      rounded: 'lg',
     },
-    VBtnSecondary: {
-      ...btnAttrs,
-      color: 'secondary',
-    },
-    VBtnDelete: {
+    VBtnDestructive: {
       ...btnAttrs,
       color: 'delete',
     },
     VBtnCancel: {
       ...btnAttrs,
       color: 'grey',
-      variant: 'outlined',
+      variant: 'text',
     },
-    VBtnAdd: {
+    VBtnIcon: {
       ...btnAttrs,
+      color: 'grey',
+      rounded: 'sm',
+      variant: 'text',
+    },
+    VBtnPageAction: {
+      ...btnAttrs,
+      // A page-level action gets the green emphasis. Use only for the one
+      // action that best advances the page's main task; dialogs keep blue
+      // primary actions so their submit action remains predictable.
       color: 'secondary',
-      prependIcon: mdiPlus,
-      rounded: true,
-      variant: 'elevated',
+      rounded: 'sm',
+      variant: 'flat',
     },
   },
   theme: {
     defaultTheme: 'theme',
     themes: {
       theme,
-      dark: darkTheme,
     },
     variations: {
       colors: ['primary', 'secondary', 'surface'],
@@ -135,3 +115,10 @@ export default createVuetify({
     sets: { mdi },
   },
 })
+
+// Vuetify merges its built-in `light` and `dark` themes into custom theme
+// options. HydroServer does not offer a dark mode, so do not ship the unused
+// built-in dark theme through this shared configuration.
+delete vuetify.theme.themes.value.dark
+
+export default vuetify

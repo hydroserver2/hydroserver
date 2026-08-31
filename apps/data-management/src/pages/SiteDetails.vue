@@ -5,7 +5,7 @@
         cols="12"
         class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
-        <h5 class="text-h5 mt-2 mb-0">{{ monitoringSite.name }}</h5>
+        <h5 class="hs-text-md mt-2 mb-0">{{ monitoringSite.name }}</h5>
 
         <div
           class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
@@ -118,7 +118,7 @@
                   class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
                   elevation="4"
                 >
-                  <div class="text-subtitle-2 font-weight-medium mb-2">
+                  <div class="hs-text-sm font-weight-medium mb-2">
                     Location
                   </div>
                   <div class="grid gap-1">
@@ -127,10 +127,10 @@
                       :key="detail.label"
                       class="flex flex-col"
                     >
-                      <span class="text-caption text-medium-emphasis">
+                      <span class="hs-text-2xs text-medium-emphasis">
                         {{ detail.label }}
                       </span>
-                      <span class="text-body-2">{{ detail.value }}</span>
+                      <span class="hs-text-sm">{{ detail.value }}</span>
                     </div>
                   </div>
                 </v-card>
@@ -142,17 +142,17 @@
             class="mt-3 w-full bg-white/95 px-3 py-2"
             elevation="4"
           >
-            <div class="text-subtitle-2 font-weight-medium mb-2">Location</div>
+            <div class="hs-text-sm font-weight-medium mb-2">Location</div>
             <div class="grid gap-1">
               <div
                 v-for="detail in locationDetails"
                 :key="detail.label"
                 class="flex flex-col"
               >
-                <span class="text-caption text-medium-emphasis">
+                <span class="hs-text-2xs text-medium-emphasis">
                   {{ detail.label }}
                 </span>
-                <span class="text-body-2">{{ detail.value }}</span>
+                <span class="hs-text-sm">{{ detail.value }}</span>
               </div>
             </div>
           </v-card>
@@ -167,8 +167,8 @@
 
       <v-col cols="12" md="4">
         <div class="d-flex align-center justify-space-between mb-2">
-          <h5 class="text-h6 mb-0">Site photos</h5>
-          <span v-if="hasPhotos" class="text-caption text-medium-emphasis">
+          <h5 class="hs-text-md mb-0">Site photos</h5>
+          <span v-if="hasPhotos" class="hs-text-2xs text-medium-emphasis">
             {{ photos?.length }} photos
           </span>
         </div>
@@ -186,7 +186,7 @@
             <v-img :src="photo.link" cover class="h-full w-full" />
             <div
               v-if="index === visiblePhotos.length - 1 && extraPhotoCount > 0"
-              class="absolute inset-0 flex items-center justify-center bg-black/55 text-base font-semibold text-white"
+              class="absolute inset-0 flex items-center justify-center bg-black/55 hs-subheading text-white"
             >
               +{{ extraPhotoCount }}
             </div>
@@ -199,8 +199,8 @@
           </p>
           <v-progress-circular indeterminate color="primary" />
         </div>
-        <div v-else class="text-body-2 text-medium-emphasis">
-          No photos added yet.
+        <div v-else class="text-medium-emphasis">
+          <small>No photos added yet.</small>
         </div>
       </v-col>
     </v-row>
@@ -220,7 +220,7 @@
         </div>
         <v-card-text
           v-if="selectedPhoto.name"
-          class="text-caption text-medium-emphasis"
+          class="hs-text-2xs text-medium-emphasis"
         >
           {{ selectedPhoto.name }}
         </v-card-text>
@@ -250,7 +250,7 @@
     </v-dialog>
   </div>
   <v-container v-else-if="loaded && !authorized">
-    <h5 class="text-h5 my-4">
+    <h5 class="hs-text-md my-4">
       You are not authorized to view this private site.
     </h5>
   </v-container>
@@ -277,7 +277,7 @@ import SiteAccessControl from '@/components/Site/SiteAccessControl.vue'
 import DatastreamTable from '@/components/Datastream/DatastreamTable.vue'
 import SiteDetailsTable from '@/components/Site/SiteDetailsTable.vue'
 import SiteDeleteModal from '@/components/Site/SiteDeleteModal.vue'
-import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useHydroShare } from '@/composables/useHydroShare'
 import { useHydroShareStore } from '@/store/hydroShare'

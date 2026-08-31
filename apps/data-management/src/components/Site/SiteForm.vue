@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title class="text-h5"
+    <v-card-title class="hs-text-md"
       >{{ monitoringSiteId ? 'Edit' : 'Register a' }} Site</v-card-title
     >
     <slot name="workspace" />
@@ -15,13 +15,13 @@
     </div>
     <v-divider />
 
-    <v-card-text
-      class="text-subtitle-2 text-medium-emphasis d-flex align-center"
-    >
+    <v-card-text class="text-medium-emphasis d-flex align-center">
       <v-icon :icon="mdiInformation" class="mr-1" />
-      Click on the map to
-      {{ monitoringSiteId ? 'edit' : 'populate' }}
-      site location data.
+      <small>
+        Click on the map to
+        {{ monitoringSiteId ? 'edit' : 'populate' }}
+        site location data.
+      </small>
     </v-card-text>
 
     <v-form
@@ -34,7 +34,7 @@
       <v-card-text>
         <v-row>
           <v-col cols="12" md="6">
-            <h6 class="text-h6 my-4">Site Information</h6>
+            <h6 class="hs-text-md my-4">Site Information</h6>
             <v-row>
               <v-col cols="12"
                 ><v-text-field
@@ -94,7 +94,7 @@
             </v-row>
           </v-col>
           <v-col cols="12" md="6">
-            <h6 class="text-h6 my-4">Site Location</h6>
+            <h6 class="hs-text-md my-4">Site Location</h6>
             <v-row>
               <v-col cols="12" sm="6">
                 <v-text-field
@@ -187,7 +187,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn-cancel @click="closeDialog">Cancel</v-btn-cancel>
-        <v-btn-primary @click="uploadMonitoringSite">Save</v-btn-primary>
+        <v-btn-dialog-action @click="uploadMonitoringSite">Save</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>

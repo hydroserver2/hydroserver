@@ -7,7 +7,7 @@
     <v-card-text>
       <v-row>
         <v-col cols="auto" class="pb-0">
-          <h6 class="text-h6 mt-4" v-if="monitoringSite">
+          <h6 class="hs-text-md mt-4" v-if="monitoringSite">
             Toggle Site Privacy
             <v-icon
               @click="showPrivacyHelp = !showPrivacyHelp"

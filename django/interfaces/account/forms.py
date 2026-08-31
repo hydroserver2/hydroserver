@@ -18,8 +18,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = [
-            "first_name", "middle_name", "last_name",
-            "phone", "address", "link", "user_type",
+            "first_name", "last_name", "user_type",
         ]
 
     def __init__(self, *args, **kwargs):

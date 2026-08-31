@@ -3,18 +3,13 @@
   <div v-else class="visualize-page">
     <DataVisNavRail />
     <div class="visualize-content">
-      <DataVisFiltersDrawer @drawer-change="handleDrawerChange" />
-
       <div class="visualize-layout">
         <div
           v-if="showPlot"
           class="plot-section"
           :style="{ flex: `${cardHeight} 1 0%` }"
         >
-          <DataVisualizationCard
-            :cardHeight="cardHeight"
-            @copy-state="copyStateToClipboard"
-          />
+          <DataVisualizationCard :cardHeight="cardHeight" />
         </div>
 
         <div
@@ -30,20 +25,19 @@
 </template>
 
 <script setup lang="ts">
-import DataVisFiltersDrawer from '@/components/VisualizeData/DataVisFiltersDrawer.vue'
 import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import hs from '@hydroserver/client'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useSidebarStore } from '@/store/useSidebar'
 import { storeToRefs } from 'pinia'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { Snackbar } from '@/utils/notifications'
-import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 
 const route = useRoute()
+const router = useRouter()
 
 const dataVisStore = useDataVisStore()
 const { onDateBtnClick, resetState } = dataVisStore
@@ -65,12 +59,13 @@ const {
   tableHeight,
   showPlot,
   showTable,
+  datastreamDetailLevel,
   showSummaryStatistics,
   tableHeaders,
+  tableSearch,
   xAxisRange,
   yAxisRanges,
 } = storeToRefs(dataVisStore)
-const sidebar = useSidebarStore()
 
 const fullHeight = 90
 const defaultPlotHeight = 45
@@ -99,73 +94,53 @@ watch(showPlot, (isVisible) => {
   if (!isVisible) showSummaryStatistics.value = false
 })
 
-const handleDrawerChange = () => {
-  setTimeout(() => {
-    window.dispatchEvent(new Event('resize'))
-    window.dispatchEvent(new Event('datavis-layout'))
-  }, 250)
-}
-
 const isValidAxisRange = (
   range: { start: number; end: number } | null
 ): range is { start: number; end: number } =>
   Boolean(
     range &&
-      Number.isFinite(range.start) &&
-      Number.isFinite(range.end) &&
-      range.start < range.end
+    Number.isFinite(range.start) &&
+    Number.isFinite(range.end) &&
+    range.start < range.end
   )
 
-const generateStateUrl = () => {
-  const BASE_URL = new URL('/visualize-data', window.location.origin).toString()
+const buildStateQuery = (): LocationQueryRaw => {
+  const query: LocationQueryRaw = {
+    sites: selectedMonitoringSites.value.map((site) => site.id),
+    datastreams: plottedDatastreams.value.map((datastream) => datastream.id),
+    PLs: selectedProcessingLevelNames.value,
+    OPs: selectedObservedPropertyNames.value,
+    q: tableSearch.value.trim() || undefined,
+  }
 
-  const queryParams = new URLSearchParams()
-
-  selectedMonitoringSites.value.forEach((t) => queryParams.append('sites', t.id))
-
-  plottedDatastreams.value.forEach((ds) =>
-    queryParams.append('datastreams', ds.id)
-  )
-
-  selectedProcessingLevelNames.value.forEach((pl) =>
-    queryParams.append('PLs', pl)
-  )
-
-  selectedObservedPropertyNames.value.forEach((op) =>
-    queryParams.append('OPs', op)
-  )
+  // The default layout is represented by the blank route so the main app-bar
+  // navigation always opens a clean `/visualize-data` URL.
+  if (!showPlot.value) query.plot = '0'
+  if (!showTable.value) query.table = '0'
+  if (showSummaryStatistics.value) query.summary = '1'
+  if (datastreamDetailLevel.value !== 1)
+    query.detailLevel = datastreamDetailLevel.value.toString()
 
   if (selectedDateBtnId.value < 0) {
-    queryParams.append('beginDate', beginDate.value.toISOString())
-    queryParams.append('endDate', endDate.value.toISOString())
-  } else {
-    // 0 is the default so no need to put it in the URL
-    if (selectedDateBtnId.value !== 0)
-      queryParams.append(
-        'selectedDateBtnId',
-        selectedDateBtnId.value.toString()
-      )
+    query.beginDate = beginDate.value.toISOString()
+    query.endDate = endDate.value.toISOString()
+  } else if (selectedDateBtnId.value !== 0) {
+    // 0 is the default so no need to put it in the URL.
+    query.selectedDateBtnId = selectedDateBtnId.value.toString()
   }
 
   if (dataZoomStart.value !== 0)
-    queryParams.append('dataZoomStart', dataZoomStart.value.toString())
+    query.dataZoomStart = dataZoomStart.value.toString()
   if (dataZoomEnd.value !== 0 && dataZoomEnd.value !== 100)
-    queryParams.append('dataZoomEnd', dataZoomEnd.value.toString())
+    query.dataZoomEnd = dataZoomEnd.value.toString()
 
   if (isValidAxisRange(xAxisRange.value)) {
-    queryParams.append('xStart', xAxisRange.value.start.toString())
-    queryParams.append('xEnd', xAxisRange.value.end.toString())
+    query.xStart = xAxisRange.value.start.toString()
+    query.xEnd = xAxisRange.value.end.toString()
   }
 
-  const yRangeKeys = Object.keys(yAxisRanges.value)
-  if (yRangeKeys.length) {
-    queryParams.append('yRanges', JSON.stringify(yAxisRanges.value))
-  }
-
-  queryParams.append('plot', showPlot.value ? '1' : '0')
-  queryParams.append('table', showTable.value ? '1' : '0')
-  queryParams.append('summary', showSummaryStatistics.value ? '1' : '0')
-  queryParams.append('drawer', sidebar.isOpen ? '1' : '0')
+  if (Object.keys(yAxisRanges.value).length)
+    query.yRanges = JSON.stringify(yAxisRanges.value)
 
   const visibleColumns = tableHeaders.value
     .filter((header) => header.visible && header.key !== 'plot')
@@ -174,21 +149,11 @@ const generateStateUrl = () => {
     .filter((header) => header.key !== 'plot')
     .map((header) => header.key)
 
-  if (visibleColumns.length !== allColumns.length) {
-    queryParams.append('columns', visibleColumns.join(','))
+  if (visibleColumns.length && visibleColumns.length !== allColumns.length) {
+    query.columns = visibleColumns.join(',')
   }
 
-  return `${BASE_URL}?${queryParams.toString()}`
-}
-
-const copyStateToClipboard = async () => {
-  try {
-    const stateUrl = generateStateUrl()
-    await navigator.clipboard.writeText(stateUrl)
-    Snackbar.info('Copied URL to clipboard')
-  } catch (err) {
-    console.error('Failed to copy URL:', err)
-  }
+  return query
 }
 
 const parseUrlAndSetState = () => {
@@ -200,12 +165,16 @@ const parseUrlAndSetState = () => {
   ) => {
     if (value === undefined || value === null) return null
     const raw = Array.isArray(value)
-      ? value.find((item): item is string => typeof item === 'string') ?? null
+      ? (value.find((item): item is string => typeof item === 'string') ?? null)
       : value
     if (!raw) return null
     const normalized = raw.toLowerCase()
     return normalized === '1' || normalized === 'true' || normalized === 'yes'
   }
+
+  const searchParam = route.query.q
+  const searchRaw = Array.isArray(searchParam) ? searchParam[0] : searchParam
+  tableSearch.value = typeof searchRaw === 'string' ? searchRaw : ''
 
   const selectedDateBtnIdParam = (route.query.selectedDateBtnId as string) || ''
   if (selectedDateBtnIdParam !== '') {
@@ -226,8 +195,8 @@ const parseUrlAndSetState = () => {
   const datastreamIdsArray = Array.isArray(datastreamIds)
     ? datastreamIds
     : datastreamIds
-    ? [datastreamIds]
-    : []
+      ? [datastreamIds]
+      : []
 
   const datastreamIdsStrings = datastreamIdsArray.filter(
     (id): id is string => typeof id === 'string'
@@ -248,8 +217,8 @@ const parseUrlAndSetState = () => {
   const siteIdsArray = Array.isArray(siteIds)
     ? siteIds
     : siteIds
-    ? [siteIds]
-    : []
+      ? [siteIds]
+      : []
 
   const siteIdsStrings = siteIdsArray.filter(
     (id): id is string => typeof id === 'string'
@@ -265,8 +234,8 @@ const parseUrlAndSetState = () => {
   const OPNamesArray = Array.isArray(OPNames)
     ? OPNames
     : OPNames
-    ? [OPNames]
-    : []
+      ? [OPNames]
+      : []
 
   const OPNamesStrings = OPNamesArray.filter(
     (op): op is string => typeof op === 'string'
@@ -280,8 +249,8 @@ const parseUrlAndSetState = () => {
   const PLNamesArray = Array.isArray(PLNames)
     ? PLNames
     : PLNames
-    ? [PLNames]
-    : []
+      ? [PLNames]
+      : []
 
   const PLNamesStrings = PLNamesArray.filter(
     (pl): pl is string => typeof pl === 'string'
@@ -355,10 +324,13 @@ const parseUrlAndSetState = () => {
   const summaryParam = parseBoolean(route.query.summary)
   if (summaryParam !== null) showSummaryStatistics.value = summaryParam
 
-  const drawerParam = parseBoolean(route.query.drawer)
-  if (drawerParam !== null) {
-    sidebar.setOpen(drawerParam, true)
-  }
+  const detailLevelParam = route.query.detailLevel
+  const detailLevelRaw = Array.isArray(detailLevelParam)
+    ? detailLevelParam.find((item): item is string => typeof item === 'string')
+    : detailLevelParam
+  const detailLevel = Number(detailLevelRaw)
+  if (detailLevel >= 1 && detailLevel <= 3)
+    datastreamDetailLevel.value = detailLevel
 
   const columnsParam = route.query.columns
   if (columnsParam) {
@@ -373,10 +345,49 @@ const parseUrlAndSetState = () => {
       dataVisStore.setTableVisibleColumns(keys)
     }
   }
-
 }
 
 const loading = ref(true)
+
+const syncRouteQuery = () => {
+  if (loading.value) return
+
+  const query = buildStateQuery()
+  const nextFullPath = router.resolve({
+    path: route.path,
+    hash: route.hash,
+    query,
+  }).fullPath
+  if (nextFullPath === route.fullPath) return
+
+  void router.replace({ query })
+}
+
+// Keep all shareable visualization state in the URL. `replace` avoids adding
+// a browser-history entry for every filter, zoom, or layout adjustment.
+watch(
+  [
+    selectedMonitoringSites,
+    plottedDatastreams,
+    selectedObservedPropertyNames,
+    selectedProcessingLevelNames,
+    beginDate,
+    endDate,
+    dataZoomStart,
+    dataZoomEnd,
+    selectedDateBtnId,
+    showPlot,
+    showTable,
+    datastreamDetailLevel,
+    showSummaryStatistics,
+    tableHeaders,
+    tableSearch,
+    xAxisRange,
+    yAxisRanges,
+  ],
+  syncRouteQuery,
+  { deep: true }
+)
 
 onMounted(async () => {
   try {
@@ -402,6 +413,7 @@ onMounted(async () => {
 
   parseUrlAndSetState()
   loading.value = false
+  syncRouteQuery()
 })
 
 onUnmounted(() => {
@@ -415,8 +427,8 @@ onUnmounted(() => {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  gap: 12px;
-  --visualize-margin: 16px;
+  gap: var(--hs-space-12);
+  --visualize-margin: var(--hs-space-16);
   margin: var(--visualize-margin);
   height: calc(
     100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px) -
@@ -427,11 +439,9 @@ onUnmounted(() => {
 .visualize-page {
   --datavis-rail-width: 64px;
   display: flex;
-  height: calc(
-    100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
-  );
+  height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
   overflow: hidden;
-  background-color: #eef2f6;
+  background-color: var(--hs-background);
 }
 
 .visualize-content {
@@ -455,8 +465,8 @@ onUnmounted(() => {
 
 @media (max-width: 600px) {
   .visualize-layout {
-    --visualize-margin: 8px;
-    gap: 8px;
+    --visualize-margin: var(--hs-space-8);
+    gap: var(--hs-space-8);
   }
   .visualize-page {
     --datavis-rail-width: 56px;

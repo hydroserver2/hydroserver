@@ -1,8 +1,8 @@
 <template>
   <div class="swimlanes-view">
     <div class="rc-mappings">
-      <div class="rc-mappings-head">Input datastream</div>
-      <div class="rc-mappings-head rc-mappings-head-target">
+      <div class="rc-mappings-head hs-label">Input datastream</div>
+      <div class="rc-mappings-head rc-mappings-head-target hs-label">
         Output datastream
       </div>
 
@@ -10,13 +10,13 @@
         <div class="rc-mapping-source">
           <div class="etl-source-display datastream-display">
             <div class="datastream-display__content">
-              <span class="target-name">{{
+              <span class="target-name hs-title">{{
                 t.inputDatastream?.name || '—'
               }}</span>
-              <span v-if="t.ratingCurve?.name" class="target-monitoringSite">
+              <small v-if="t.ratingCurve?.name" class="target-monitoringSite">
                 via {{ t.ratingCurve.name }}
-              </span>
-              <span class="target-id">{{ inputDatastreamId(t) || '—' }}</span>
+              </small>
+              <small class="target-id">{{ inputDatastreamId(t) || '—' }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="t.inputDatastream"
@@ -33,13 +33,16 @@
         <div class="rc-mapping-target">
           <div class="etl-target-display datastream-display">
             <div class="datastream-display__content">
-              <span class="target-name">{{
+              <span class="target-name hs-title">{{
                 t.outputDatastream?.name || '—'
               }}</span>
-              <span v-if="outputMonitoringSiteName(t)" class="target-monitoringSite">
+              <small
+                v-if="outputMonitoringSiteName(t)"
+                class="target-monitoringSite"
+              >
                 {{ outputMonitoringSiteName(t) }}
-              </span>
-              <span class="target-id">{{ outputDatastreamId(t) || '—' }}</span>
+              </small>
+              <small class="target-id">{{ outputDatastreamId(t) || '—' }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="t.outputDatastream"
@@ -121,11 +124,9 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   align-items: center;
 }
 .rc-mappings-head {
-  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #4f4b59;
-  font-size: 0.68rem;
   padding-bottom: 4px;
 }
 .rc-mappings-head:first-child {
@@ -157,7 +158,6 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   border-radius: 10px;
   padding: 6px 12px;
   background: #fdfdff;
-  font-size: 0.86rem;
   color: #1c1b1f;
   display: flex;
   flex-direction: column;
@@ -172,7 +172,6 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   border-radius: 10px;
   padding: 6px 12px;
   background: #f6f9ff;
-  font-size: 0.86rem;
   color: #1c1b1f;
   display: flex;
   flex-direction: column;
@@ -196,14 +195,10 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   color: rgba(0, 0, 0, 0.55);
   overflow-wrap: anywhere;
   white-space: normal;
-  font-size: 0.72rem;
   margin-top: 2px;
 }
 .target-name {
-  font-weight: 600;
   color: #1c1b1f;
-  font-size: 0.86rem;
-  line-height: 1.25;
   overflow-wrap: anywhere;
   white-space: normal;
 }
@@ -211,7 +206,6 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   color: rgba(0, 0, 0, 0.66);
   overflow-wrap: anywhere;
   white-space: normal;
-  font-size: 0.78rem;
   margin-top: 2px;
 }
 </style>

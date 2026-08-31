@@ -16,7 +16,8 @@
       <v-card-text>
         <v-text-field
           v-model="item.code"
-          label="Code *"
+          class="required-label"
+          label="Code"
           :rules="rules.requiredCode"
         ></v-text-field>
 
@@ -29,9 +30,9 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-          <v-btn-primary type="submit">{{
+          <v-btn-dialog-action type="submit">{{
             isEdit ? 'Update' : 'Save'
-          }}</v-btn-primary>
+          }}</v-btn-dialog-action>
         </v-card-actions>
       </v-card-text>
     </v-form>

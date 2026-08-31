@@ -2,27 +2,15 @@ import { expect, test, type Page } from "../support/test";
 
 import { authenticateSession } from "../support/auth";
 import { fixtures, users } from "../support/fixtures";
-import { chooseAutocompleteOption } from "../support/ui";
 
 test.describe("visualization", () => {
   function mobileDatastreamRow(page: Page, datastreamName: string) {
     return page.getByRole("row").filter({ hasText: datastreamName }).first();
   }
 
-  async function ensureFiltersDrawerOpen(page: Page) {
-    const workspaceFilter = page
-      .getByRole("combobox", { name: "Workspaces" })
-      .first();
-    if (
-      (await workspaceFilter.count()) > 0 &&
-      (await workspaceFilter.isVisible())
-    ) {
-      return;
-    }
-
-    await page.getByRole("button", { name: "Toggle filters drawer" }).click();
+  async function ensureTableFiltersVisible(page: Page) {
     await expect(
-      page.getByRole("combobox", { name: "Workspaces" }).first(),
+      page.getByRole("button", { name: "Filter by workspace" }),
     ).toBeVisible();
   }
 
@@ -30,7 +18,9 @@ test.describe("visualization", () => {
     await page
       .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
       .click();
-    await expect(page.getByTestId("copy-visualization-state")).toBeVisible();
+    await expect(
+      page.getByTestId("clear-selected-datastreams"),
+    ).toBeVisible();
   }
 
   test("visualization page renders filter controls and seeded datastream rows", async ({
@@ -39,15 +29,17 @@ test.describe("visualization", () => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
-    await ensureFiltersDrawerOpen(page);
+    await ensureTableFiltersVisible(page);
 
     await expect(
       page.getByRole("heading", { name: "Datastreams" }),
     ).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Sites" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Clear Selected" }),
+      page.getByRole("button", { name: "Filter by site" }),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("clear-selected-datastreams"),
+    ).toHaveCount(0);
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
     ).toBeVisible();
@@ -56,19 +48,11 @@ test.describe("visualization", () => {
     ).toBeVisible();
   });
 
-  test("visualization preserves selected datastream state in copied URLs and supports summary mode", async ({
+  test("visualization preserves selected datastream state in the URL and supports summary mode", async ({
     page,
     browser,
   }) => {
     await page.setViewportSize({ width: 500, height: 900 });
-    await page.addInitScript(() => {
-      const clipboard = navigator.clipboard;
-      if (!clipboard) return;
-      window.__e2eCopiedText = "";
-      clipboard.writeText = async (text: string) => {
-        window.__e2eCopiedText = text;
-      };
-    });
 
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
@@ -101,10 +85,13 @@ test.describe("visualization", () => {
     ).toBeVisible();
 
     await page.getByTestId("show-plot-view").click();
-    await page.getByTestId("copy-visualization-state").click();
-    const copiedUrl = await page.evaluate(
-      () => window.__e2eCopiedText as string,
+
+    // The visualization keeps all shareable state in the route query, so the
+    // current URL is the "copied" link.
+    await expect(page).toHaveURL(
+      new RegExp(`datastreams=${fixtures.datastreams.public.id}`),
     );
+    const copiedUrl = page.url();
 
     expect(copiedUrl).toContain(
       `/visualize-data?sites=${fixtures.monitoringSites.public.id}`,
@@ -124,7 +111,7 @@ test.describe("visualization", () => {
     await copiedPage.goto(copiedUrl);
 
     await expect(
-      copiedPage.getByRole("button", { name: "Copy State as URL" }),
+      copiedPage.getByTestId("clear-selected-datastreams"),
     ).toBeVisible();
     await expect(
       mobileDatastreamRow(copiedPage, fixtures.datastreams.public.name),
@@ -132,17 +119,26 @@ test.describe("visualization", () => {
     await copiedContext.close();
   });
 
-  test("visualization clear selected deselects all datastreams", async ({
+  test("visualization header checkbox clears selected datastreams", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
+    const tableHeader = page.locator("thead");
+    const clearSelectedCheckbox = tableHeader.getByRole("checkbox", {
+      name: "Clear selected datastreams",
+    });
+
+    await expect(clearSelectedCheckbox).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
 
     await plotPublicDatastream(page);
+    await expect(clearSelectedCheckbox).toBeVisible();
+    await expect(clearSelectedCheckbox).toHaveJSProperty("indeterminate", true);
+    await expect(tableHeader).toContainText("1 of 5 selected");
     await page.getByTestId("toggle-selected-datastreams").click();
 
     await expect(
@@ -155,8 +151,9 @@ test.describe("visualization", () => {
     ).toHaveCount(0);
 
     // clearSelected() resets showOnlySelected to false, so both rows are visible immediately
-    await page.getByTestId("clear-selected-datastreams").click();
+    await clearSelectedCheckbox.click();
 
+    await expect(clearSelectedCheckbox).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
@@ -173,7 +170,7 @@ test.describe("visualization", () => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto("/visualize-data");
-    await ensureFiltersDrawerOpen(page);
+    await ensureTableFiltersVisible(page);
 
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
@@ -185,11 +182,22 @@ test.describe("visualization", () => {
       ),
     ).toBeVisible();
 
-    await chooseAutocompleteOption(
-      page,
-      "Sites",
-      fixtures.monitoringSites.privateWorkspacePublic.name,
-    );
+    await page.getByRole("button", { name: "Filter by sites" }).click();
+    await page
+      .getByRole("checkbox", {
+        name: `Sites: ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
+      })
+      .click();
+    // The filter menu stays open after a selection; dismiss it so its overlay
+    // stops intercepting clicks on the search controls.
+    await page.keyboard.press("Escape");
+
+    const tableSearch = page.getByRole("combobox", { name: "Search" });
+    const selectedSiteName = fixtures.monitoringSites.privateWorkspacePublic.name;
+    const siteQualifier = /\s/.test(selectedSiteName)
+      ? `site:"${selectedSiteName}"`
+      : `site:${selectedSiteName}`;
+    await expect(tableSearch).toHaveValue(siteQualifier);
 
     await expect(
       mobileDatastreamRow(
@@ -201,7 +209,10 @@ test.describe("visualization", () => {
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
     ).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Clear filters" }).click();
+    await page
+      .getByRole("button", { name: "Clear search and filters" })
+      .click();
+    await expect(tableSearch).toHaveValue("");
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.public.name),
     ).toBeVisible();
@@ -211,6 +222,20 @@ test.describe("visualization", () => {
         fixtures.datastreams.privateWorkspacePublic.name,
       ),
     ).toBeVisible();
+
+    await tableSearch.fill(siteQualifier);
+    await expect(
+      page.getByRole("button", { name: "Filter by sites (1 selected)" }),
+    ).toBeVisible();
+    await expect(
+      mobileDatastreamRow(
+        page,
+        fixtures.datastreams.privateWorkspacePublic.name,
+      ),
+    ).toBeVisible();
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name),
+    ).toHaveCount(0);
   });
 
   test("visualization search filters the mobile datastream cards", async ({
@@ -220,12 +245,12 @@ test.describe("visualization", () => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
-    const tableSearch = page.getByRole("textbox", {
+    const tableSearch = page.getByRole("combobox", {
       name: "Search",
     });
     await expect(tableSearch).toBeVisible();
 
-    await tableSearch.fill("System Assigned Observed Property");
+    await tableSearch.fill(fixtures.datastreams.publicSystemMetadata.name);
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
     ).toBeVisible();
@@ -239,42 +264,52 @@ test.describe("visualization", () => {
     ).toBeVisible();
   });
 
-  test("visualization column toggles hide and restore table headers", async ({
+  test("visualization detail levels hide and restore row metadata", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
-    const columnsButton = page.getByRole("button", {
-      name: "Show or hide columns",
-    });
-    await columnsButton.click();
-    await page
-      .getByRole("checkbox", { name: "Toggle Observed Property" })
-      .click();
-    await expect(
-      page.getByRole("columnheader", { name: "Observed Property" }),
-    ).toHaveCount(0);
+    const datastreamRow = page
+      .getByRole("row")
+      .filter({ hasText: fixtures.datastreams.public.name })
+      .first();
+    await expect(datastreamRow).toBeVisible();
 
-    await page
-      .getByRole("checkbox", { name: "Toggle Observed Property" })
-      .click();
-    await expect(
-      page.getByRole("columnheader", { name: "Observed Property" }),
-    ).toBeVisible();
+    const signature = datastreamRow.locator(".datastream-signature");
+    const observationRange = datastreamRow.locator(
+      ".datastream-observation-range",
+    );
+    const moreDetail = page.getByTestId("show-more-datastream-details");
+    const lessDetail = page.getByTestId("show-less-datastream-details");
+
+    // Level 1 (default) shows only the datastream name.
+    await expect(signature).toHaveCount(0);
+    await expect(observationRange).toHaveCount(0);
+    await expect(lessDetail).toBeDisabled();
+
+    // Level 2 adds the processing-level / unit signature.
+    await moreDetail.click();
+    await expect(signature).toBeVisible();
+    await expect(observationRange).toHaveCount(0);
+
+    // Level 3 also adds the observation-range line.
+    await moreDetail.click();
+    await expect(observationRange).toBeVisible();
+    await expect(moreDetail).toBeDisabled();
+
+    // Stepping back down restores the earlier levels.
+    await lessDetail.click();
+    await expect(observationRange).toHaveCount(0);
+    await expect(signature).toBeVisible();
+
+    await lessDetail.click();
+    await expect(signature).toHaveCount(0);
   });
 
   test("visualization quick-range date buttons update the time range", async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      const clipboard = navigator.clipboard;
-      if (!clipboard) return;
-      window.__e2eCopiedText = "";
-      clipboard.writeText = async (text: string) => {
-        window.__e2eCopiedText = text;
-      };
-    });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
@@ -293,10 +328,9 @@ test.describe("visualization", () => {
     await page.getByText("6m").first().click();
     await page.getByText("1y").first().click();
 
-    await page.getByTestId("copy-visualization-state").click();
-    const copiedUrl = new URL(
-      await page.evaluate(() => window.__e2eCopiedText as string),
-    );
+    // Quick-range selection is mirrored into the route query.
+    await expect(page).toHaveURL(/selectedDateBtnId=3/);
+    const copiedUrl = new URL(page.url());
 
     expect(copiedUrl.searchParams.get("selectedDateBtnId")).toBe("3");
     expect(copiedUrl.searchParams.has("beginDate")).toBe(false);

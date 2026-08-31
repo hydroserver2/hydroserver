@@ -197,7 +197,13 @@ class VisualizationDatastreamResponse(BaseGetResponse):
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
+    unit_symbol: str = Field(..., max_length=255)
     no_data_value: float
+    aggregation_statistic: str = Field(..., max_length=255)
+    time_aggregation_interval: float
+    time_aggregation_interval_unit: Literal[
+        "seconds", "minutes", "hours", "days"
+    ]
     value_count: Optional[int] = Field(None, ge=0)
     phenomenon_begin_time: Optional[ISODatetime] = None
     phenomenon_end_time: Optional[ISODatetime] = None

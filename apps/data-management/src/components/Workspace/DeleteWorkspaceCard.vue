@@ -1,8 +1,9 @@
 <template>
   <v-card>
     <v-toolbar flat color="delete">
-      <v-card-title class="text-h5">
-        <v-icon :icon="mdiAlert" /> Confirm workspace deletion
+      <v-card-title class="hs-subheading">
+        <v-icon :icon="mdiAlert" />
+        Confirm workspace deletion
       </v-card-title>
     </v-toolbar>
     <v-divider />
@@ -13,8 +14,8 @@
       workspace. If you want to keep your data, you can backup to HydroShare or
       download a local copy before deletion. Alternatively, you can pass
       ownership of this workspace to someone else using the
-      <v-btn class="px-0" variant="text" @click="emit('switch-to-transfer')"
-        >Transfer ownership</v-btn
+      <v-btn-cancel class="px-0" @click="emit('switch-to-transfer')"
+        >Transfer ownership</v-btn-cancel
       >
       section.
     </v-card-text>
@@ -32,7 +33,6 @@
           class="pt-2"
           v-model="deleteInput"
           label="Workspace name"
-          solo
           @keydown.enter.prevent="onDelete"
         ></v-text-field>
       </v-form>
@@ -40,14 +40,9 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete
-        color="delete"
-        :loading="loading"
-        :disabled="loading"
-        @click="onDelete"
-      >
+      <v-btn-destructive :loading="loading" :disabled="loading" @click="onDelete">
         Delete
-      </v-btn-delete>
+      </v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>

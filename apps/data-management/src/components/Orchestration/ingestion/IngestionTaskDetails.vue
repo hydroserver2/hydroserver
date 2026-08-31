@@ -4,16 +4,22 @@
     class="flex flex-col flex-1 min-h-0 h-full bg-white overflow-hidden"
   >
     <header class="pt-[14px] border-b border-[#e8e8e8] bg-white shrink-0">
-      <button class="task-details-back" type="button" @click="close">
+      <button
+        class="task-details-back hs-text-sm font-weight-medium"
+        type="button"
+        @click="close"
+      >
         <v-icon :icon="mdiArrowLeft" size="16" />
         <span>{{ backLabel }}</span>
       </button>
 
       <div class="flex items-start gap-3 pb-3">
         <div class="flex items-center gap-[10px] flex-wrap min-w-0">
-          <h2 class="task-details-title">{{ task.name }}</h2>
+          <h2 class="task-details-title hs-text-md font-weight-regular">
+            {{ task.name }}
+          </h2>
           <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
-          <span v-if="scheduleText" class="schedule-pill">{{
+          <span v-if="scheduleText" class="schedule-pill hs-text-2xs">{{
             scheduleText
           }}</span>
         </div>
@@ -21,7 +27,7 @@
         <div class="ml-auto flex gap-2 shrink-0 flex-wrap">
           <button
             type="button"
-            class="header-btn header-btn--neutral"
+            class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
             :disabled="!!pauseDisabledReason"
             @click.stop="togglePaused"
           >
@@ -45,7 +51,7 @@
               <button
                 v-bind="props"
                 type="button"
-                class="header-btn header-btn--neutral"
+                class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
                 :disabled="!canEdit"
               >
                 <v-icon :icon="mdiPencil" size="16" />
@@ -65,7 +71,7 @@
               <button
                 v-bind="props"
                 type="button"
-                class="header-btn header-btn--danger"
+                class="header-btn header-btn--danger hs-text-sm font-weight-semibold"
                 :disabled="!canDelete"
               >
                 <v-icon :icon="mdiTrashCanOutline" size="16" />
@@ -81,7 +87,7 @@
 
           <button
             type="button"
-            class="header-btn header-btn--run"
+            class="header-btn header-btn--run hs-text-sm font-weight-semibold"
             :disabled="!!runNowDisabledReason"
             @click="runNow"
           >
@@ -92,23 +98,13 @@
       </div>
     </header>
 
-    <div class="flex">
-      <button
-        type="button"
-        class="task-details-tab"
-        :class="{ 'task-details-tab--active': tab === 'runs' }"
-        @click="tab = 'runs'"
-      >
-        Run history
-      </button>
-      <button
-        type="button"
-        class="task-details-tab"
-        :class="{ 'task-details-tab--active': tab === 'mappings' }"
-        @click="tab = 'mappings'"
-      >
-        Mappings
-      </button>
+    <div class="detail-tabbar">
+      <v-tabs v-model="tab" color="primary" density="comfortable" show-arrows>
+        <v-tab value="runs" :prepend-icon="mdiHistory">Run history</v-tab>
+        <v-tab value="mappings" :prepend-icon="mdiTransitConnectionVariant">
+          Mappings
+        </v-tab>
+      </v-tabs>
     </div>
 
     <section class="task-details-body">
@@ -144,9 +140,11 @@ import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
 import {
   mdiArrowLeft,
+  mdiHistory,
   mdiPause,
   mdiPencil,
   mdiPlay,
+  mdiTransitConnectionVariant,
   mdiTrashCanOutline,
 } from '@mdi/js'
 
@@ -204,8 +202,6 @@ header {
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
   color: #1565c0;
   padding: 3px 6px;
   border-radius: 6px;
@@ -215,14 +211,11 @@ header {
   background: rgba(0, 0, 0, 0.05);
 }
 h2.task-details-title {
-  font-size: 18px;
-  font-weight: 400;
   color: #1c1b1f;
   margin: 0;
   overflow-wrap: anywhere;
 }
 .schedule-pill {
-  font-size: 11px;
   background: #f5f7fa;
   border-radius: 4px;
   padding: 2px 7px;
@@ -241,8 +234,6 @@ h2.task-details-title {
   color: #1c1b1f;
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
   line-height: 1.1;
   transition:
     background-color 0.12s,
@@ -279,27 +270,11 @@ h2.task-details-title {
   background: rgba(179, 38, 30, 0.08);
   border-color: #b3261e;
 }
-.task-details-tab {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: #49454f;
-  padding: 8px 14px;
-  margin-bottom: -1px;
-  transition:
-    color 0.12s,
-    border-color 0.12s;
-}
-.task-details-tab:hover {
-  color: #1c1b1f;
-}
-.task-details-tab--active {
-  color: #1565c0;
-  border-bottom-color: #1565c0;
+.detail-tabbar {
+  padding: 0 var(--hs-space-24);
+  border-bottom: 1px solid var(--hs-border);
+  background: var(--hs-surface-subtle);
+  flex-shrink: 0;
 }
 .task-details-body {
   flex: 1;
@@ -322,5 +297,11 @@ h2.task-details-title {
   padding: 40px 20px;
   text-align: center;
   color: #5f5a67;
+}
+
+@media (max-width: 700px) {
+  .detail-tabbar {
+    padding: 0 var(--hs-space-8);
+  }
 }
 </style>

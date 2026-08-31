@@ -14,7 +14,7 @@ test.describe('orchestration', () => {
     await selectWorkspace(page, fixtures.workspaces.private.name)
 
     await expect(
-      page.getByRole('heading', { name: 'Job orchestration', exact: true })
+      page.getByRole('navigation', { name: 'Job orchestration sections' })
     ).toBeVisible()
     await expect(
       page.getByRole('heading', {
@@ -32,13 +32,9 @@ test.describe('orchestration', () => {
     await page.goto('/orchestration')
     await selectWorkspace(page, fixtures.workspaces.private.name)
 
-    await expect(
-      page.getByRole('heading', { name: 'Job orchestration', exact: true })
-    ).toBeVisible()
-
-    const statusFilter = page
-      .getByRole('combobox', { name: 'Status filters' })
-      .first()
+    const statusFilter = page.getByRole('button', {
+      name: 'Filter by status',
+    })
     await expect(statusFilter).toBeVisible()
 
     await statusFilter.click()
@@ -47,10 +43,10 @@ test.describe('orchestration', () => {
       page.getByRole('heading', { name: 'No tasks match your filter' })
     ).toBeVisible()
 
-    await page.getByRole('button', { name: 'Clear Status filters' }).click()
+    await page.getByRole('button', { name: 'Clear search and filters' }).click()
     await expect(page.getByText(fixtures.orchestration.taskName)).toBeVisible()
 
-    await statusFilter.click()
+    await page.getByRole('button', { name: /Filter by status/ }).click()
     await chooseOverlayOption(page, 'Loading paused')
     await expect(page.getByText(fixtures.orchestration.taskName)).toBeVisible()
   })
