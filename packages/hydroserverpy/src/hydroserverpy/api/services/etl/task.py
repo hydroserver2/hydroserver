@@ -36,6 +36,7 @@ class TaskService(HydroServerBaseService):
             page_size=page_size,
             order_by=order_by,
             fetch_all=fetch_all,
+            expand_related=True,
             workspace_id=normalize_uuid(workspace),
             data_connection_id=normalize_uuid(data_connection),
             latest_run_status=latest_run_status,
@@ -43,6 +44,16 @@ class TaskService(HydroServerBaseService):
             latest_run_started_at_max=latest_run_started_at_max,
             latest_run_finished_at_min=latest_run_finished_at_min,
             latest_run_finished_at_max=latest_run_finished_at_max,
+        )
+
+    def get(self, uid: Union[UUID, str]) -> EtlTask:
+        """Fetch a single ETL task."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
+        response = self.client.request("get", path, params={"expand_related": True}).json()
+
+        return self.model(
+            client=self.client, uid=UUID(str(response.pop("id"))), **response
         )
 
     def create(
@@ -92,7 +103,7 @@ class TaskService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str,
         mappings: List[dict],
-        description: Optional[str] = None,
+        description: Optional[str] = ...,
         task_variables: Optional[Dict[str, Any]] = None,
         crontab: Optional[str] = ...,
         interval: Optional[int] = ...,

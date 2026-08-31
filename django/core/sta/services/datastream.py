@@ -1,11 +1,11 @@
 import uuid
+from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet, Min, Max, Count, F
-from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import QuerySet, Min, Max, Count
 from django.utils import timezone
 from django.http import StreamingHttpResponse
 from core.service import ServiceUtils
@@ -14,20 +14,16 @@ from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import (
     Datastream,
     Observation,
-    DatastreamTag,
-    DatastreamFileAttachment,
+    DatastreamLinkedResource,
     DatastreamAggregation,
     DatastreamStatus,
     SampledMedium,
-    FileAttachmentType,
+    LinkedResourceType,
 )
 from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
-    TagPostBody,
-    TagDeleteBody,
-    FileAttachmentPostBody,
-    FileAttachmentDeleteBody,
+    LinkedResourcePostBody,
 )
 from interfaces.api.schemas.sta.datastream import (
     DatastreamOrderByFields,
@@ -75,7 +71,7 @@ class DatastreamService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_tags", "datastream_file_attachments"
+                "datastream_linked_resources"
             )
         queryset = principal.annotate_permissions(queryset)
 
@@ -104,7 +100,7 @@ class DatastreamService(ServiceUtils):
             "observed_property",
             "unit",
             "processing_level",
-        ).prefetch_related("datastream_tags", "datastream_file_attachments")
+        ).prefetch_related("datastream_linked_resources")
 
     @staticmethod
     def apply_tag_filter(queryset, tags: list[str]):
@@ -116,10 +112,9 @@ class DatastreamService(ServiceUtils):
                 raise ValueError(f"Invalid tag format: '{tag}'. Must be 'key:value'.")
 
             key, value = tag.split(":", 1)
+            queryset = queryset.filter(tags__contains={key: value})
 
-            queryset = queryset.filter(datastream_tags__key=key, datastream_tags__value=value)
-
-        return queryset.distinct()
+        return queryset
 
     def list(
         self,
@@ -188,7 +183,7 @@ class DatastreamService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_tags", "datastream_file_attachments"
+                "datastream_linked_resources"
             )
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -235,7 +230,7 @@ class DatastreamService(ServiceUtils):
                 "observed_property__name",
                 "observed_property__code",
                 "processing_level_id",
-                "processing_level__definition",
+                "processing_level__name",
                 "unit_id",
                 "unit__symbol",
                 "no_data_value",
@@ -282,7 +277,7 @@ class DatastreamService(ServiceUtils):
                 processing_level_id,
                 {
                     "id": processing_level_id,
-                    "definition": row["processing_level__definition"],
+                    "name": row["processing_level__name"],
                 },
             )
             datastreams.append(
@@ -400,19 +395,10 @@ class DatastreamService(ServiceUtils):
         try:
             datastream = Datastream.objects.create(
                 pk=data.id,
-                **data.dict(include=set(DatastreamPostBody.model_fields.keys()) - {"tags"})
+                **data.dict(include=set(DatastreamPostBody.model_fields.keys()))
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
-
-        if data.tags:
-            keys = [tag.key for tag in data.tags]
-            if len(keys) != len(set(keys)):
-                raise HttpError(400, "Duplicate tag keys are not allowed")
-            DatastreamTag.objects.bulk_create([
-                DatastreamTag(datastream=datastream, key=tag.key, value=tag.value)
-                for tag in data.tags
-            ])
 
         return self.get(
             principal=principal, uid=datastream.id, expand_related=expand_related
@@ -511,6 +497,11 @@ class DatastreamService(ServiceUtils):
                 400, "The given unit cannot be associated with this datastream"
             )
 
+        if (tags_payload := datastream_data.pop("tags", None)) is not None:
+            datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
+            merged_tags = {**(datastream.tags or {}), **tags_payload}
+            datastream.tags = {k: v for k, v in merged_tags.items() if v is not None}
+
         for field, value in datastream_data.items():
             setattr(datastream, field, value)
 
@@ -528,78 +519,31 @@ class DatastreamService(ServiceUtils):
 
         return "Datastream deleted"
 
-    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="view"
-        )
-
-        return datastream.datastream_tags.all()
-
     @staticmethod
     def get_tag_keys(
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[uuid.UUID],
         datastream_id: Optional[uuid.UUID],
     ):
-        queryset = DatastreamTag.objects.filter(
-            datastream__in=principal.filter_by_permission(Datastream.objects, "can_view")
-        )
+        queryset = principal.filter_by_permission(Datastream.objects, "can_view")
 
         if workspace_id:
-            queryset = queryset.filter(datastream__monitoring_site__workspace_id=workspace_id)
+            queryset = queryset.filter(monitoring_site__workspace_id=workspace_id)
 
         if datastream_id:
-            queryset = queryset.filter(datastream_id=datastream_id)
+            queryset = queryset.filter(id=datastream_id)
 
-        tags = queryset.values("key").annotate(values=ArrayAgg(F("value"), distinct=True))
+        tag_keys: dict[str, set[str]] = defaultdict(set)
+        for tags in queryset.values_list("tags", flat=True):
+            if not isinstance(tags, dict):
+                continue
+            for key, value in tags.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    tag_keys[key].add(value)
 
-        return {entry["key"]: entry["values"] for entry in tags}
+        return {key: sorted(values) for key, values in tag_keys.items()}
 
-    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-
-        if DatastreamTag.objects.filter(datastream=datastream, key=data.key).exists():
-            raise HttpError(400, "Tag already exists")
-
-        return DatastreamTag.objects.create(
-            datastream=datastream, key=data.key, value=data.value
-        )
-
-    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-
-        try:
-            tag = DatastreamTag.objects.get(datastream=datastream, key=data.key)
-        except DatastreamTag.DoesNotExist:
-            raise HttpError(404, "Tag does not exist")
-
-        tag.value = data.value
-        tag.save()
-
-        return tag
-
-    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-
-        queryset = DatastreamTag.objects.filter(datastream=datastream, key=data.key)
-
-        if data.value is not None:
-            queryset = queryset.filter(value=data.value)
-
-        deleted_count, _ = queryset.delete()
-
-        if deleted_count == 0:
-            raise HttpError(404, "Tag does not exist")
-
-        return f"{deleted_count} tag(s) deleted"
-
-    def get_file_attachments(
+    def get_linked_resources(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
@@ -609,60 +553,70 @@ class DatastreamService(ServiceUtils):
             principal=principal, uid=uid, action="view"
         )
 
-        queryset = datastream.datastream_file_attachments
+        queryset = datastream.datastream_linked_resources
 
-        if filtering.get("file_attachment_type"):
-            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
+        if filtering.get("type"):
+            queryset = self.apply_filters(queryset, "type", filtering["type"])
 
         return queryset.all()
 
-    def add_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    def add_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        file,
+        link: Optional[str],
+        data: LinkedResourcePostBody,
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
         )
 
-        if DatastreamFileAttachment.objects.filter(
-            datastream=datastream, name=file.name
-        ).exists():
-            raise HttpError(400, "File attachment already exists")
-
-        return DatastreamFileAttachment.objects.create(
-            datastream=datastream,
-            name=file.name,
-            description=data.description,
-            file_attachment=file,
-            file_attachment_type=data.file_attachment_type,
+        return self.create_linked_resource(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            file=file,
+            link=link,
+            data=data,
         )
 
-    def replace_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    def update_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+        name: Optional[str],
+        description: Optional[str],
+        type: Optional[str],
+        file,
+        link: Optional[str],
     ):
-        self.remove_file_attachment(
-            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
+        datastream = self.get_datastream_for_action(principal=principal, uid=uid, action="edit")
+
+        return self.update_linked_resource_fields(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            linked_resource_id=linked_resource_id,
+            name=name,
+            description=description,
+            type=type,
+            file=file,
+            link=link,
         )
 
-        return self.add_file_attachment(
-            principal=principal, uid=uid, file=file, data=data
-        )
-
-    def remove_file_attachment(
-        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: FileAttachmentDeleteBody
+    def remove_linked_resource(
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, linked_resource_id: uuid.UUID
     ):
-        datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="edit"
+        datastream = self.get_datastream_for_action(principal=principal, uid=uid, action="edit")
+
+        self.delete_linked_resource(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            linked_resource_id=linked_resource_id,
         )
-
-        try:
-            file_attachment = DatastreamFileAttachment.objects.get(
-                datastream=datastream, name=data.name
-            )
-        except DatastreamFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
-
-        file_attachment.file_attachment.delete()
-        file_attachment.delete()
 
     def list_aggregation_statistics(
         self,
@@ -702,14 +656,14 @@ class DatastreamService(ServiceUtils):
 
         return queryset.values_list("name", flat=True)
 
-    def list_file_attachment_types(
+    def list_linked_resource_types(
         self,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
         order_desc: bool = False,
     ):
-        queryset = FileAttachmentType.objects.order_by(
+        queryset = LinkedResourceType.objects.order_by(
             f"{'-' if order_desc else ''}name"
         )
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
@@ -797,21 +751,22 @@ class DatastreamService(ServiceUtils):
             f"# Name: {datastream.observed_property.name}\n"
             f"# Definition: {datastream.observed_property.definition}\n"
             f"# Description: {datastream.observed_property.description}\n"
-            f"# VariableType: {datastream.observed_property.observed_property_type}\n"
-            f"# VariableCode: {datastream.observed_property.code}\n"
+            f"# Type: {datastream.observed_property.type}\n"
+            f"# Code: {datastream.observed_property.code}\n"
             f"#\n"
             f"# Unit Information:\n"
             f"# -------------------------------------\n"
             f"# Name: {datastream.unit.name}\n"
             f"# Symbol: {datastream.unit.symbol}\n"
             f"# Definition: {datastream.unit.definition}\n"
-            f"# UnitType: {datastream.unit.unit_type}\n"
+            f"# Type: {datastream.unit.type}\n"
             f"#\n"
             f"# Processing Level Information:\n"
             f"# -------------------------------------\n"
             f"# Code: {datastream.processing_level.code}\n"
+            f"# Name: {datastream.processing_level.name}\n"
+            f"# Description: {datastream.processing_level.description}\n"
             f"# Definition: {datastream.processing_level.definition}\n"
-            f"# Explanation: {datastream.processing_level.explanation}\n"
             f"#\n"
             f"# Data Disclaimer:\n"
             f"# -------------------------------------\n"

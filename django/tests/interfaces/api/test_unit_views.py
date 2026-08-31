@@ -29,7 +29,7 @@ def _unit_body(**overrides):
     body = {
         "name": "New Unit",
         "symbol": "u",
-        "definition": "A new unit.",
+        "definition": "https://example.com/units/u",
         "type": "Dimensionless",
     }
     body.update(overrides)
@@ -71,6 +71,16 @@ def test_get_units_includes_workspace_units_for_workspace_owner(client):
     assert str(unit.id) in [u["id"] for u in response.json()]
 
 
+def test_get_units_filters_by_type(client):
+    length = UnitFactory(global_=True, type="Length")
+    UnitFactory(global_=True, type="Temperature")
+
+    response = client.get(UNITS_URL, {"type": "Length"})
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [str(length.id)]
+
+
 # --- create_unit ------------------------------------------------------------------
 
 
@@ -87,6 +97,24 @@ def test_create_unit_succeeds_for_workspace_owner(client):
 
     assert response.status_code == 201
     assert response.json()["name"] == "New Unit"
+    assert response.json()["type"] == "Dimensionless"
+
+
+def test_create_unit_allows_omitting_definition(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    body = _unit_body(workspaceId=str(workspace.id))
+    body.pop("definition")
+
+    response = client.post(
+        UNITS_URL,
+        data=body,
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["definition"] is None
 
 
 def test_create_unit_returns_401_when_unauthenticated(client):

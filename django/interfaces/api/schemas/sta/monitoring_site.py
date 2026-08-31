@@ -12,11 +12,8 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import (
-    FileAttachmentGetResponse,
-    TagGetResponse,
-    TagPostBody,
-)
+from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
+from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -159,32 +156,32 @@ class MonitoringSiteMapSummaryResponse(BaseGetResponse):
     is_private: bool
     latitude: float
     longitude: float
-    tags: list[TagGetResponse]
+    tags: dict[str, str]
 
 
 class MonitoringSiteSummaryResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
-    monitoring_site_tags: list[TagGetResponse] = Field(..., alias="tags")
-    monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    tags: dict[str, str] = {}
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class MonitoringSiteDetailResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse"
-    monitoring_site_tags: list[TagGetResponse] = Field(..., alias="tags")
-    monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    tags: dict[str, str] = {}
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
-    tags: list[TagPostBody] = []
+    tags: dict[str, str] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
 
 
 class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
-    pass
+    tags: dict[str, str | None] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

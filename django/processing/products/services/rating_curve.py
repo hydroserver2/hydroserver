@@ -38,7 +38,7 @@ class RatingCurveService(ServiceUtils):
                     "monitoring_site__workspace"
                 ).prefetch_related(
                     "points",
-                    "monitoring_site__monitoring_site_tags", "monitoring_site__monitoring_site_file_attachments",
+                    "monitoring_site__monitoring_site_linked_resources",
                 ).filter(pk=rating_curve)
                 if principal is not Unset:
                     queryset = principal.annotate_permissions(queryset)
@@ -86,7 +86,7 @@ class RatingCurveService(ServiceUtils):
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
             "points",
-            "monitoring_site__monitoring_site_tags", "monitoring_site__monitoring_site_file_attachments",
+            "monitoring_site__monitoring_site_linked_resources",
         )
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 

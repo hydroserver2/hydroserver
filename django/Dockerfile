@@ -1,34 +1,62 @@
-FROM python:3.14-slim
+ARG BUILDPLATFORM
+FROM --platform=$BUILDPLATFORM node:22-slim AS frontend-builder
 
-ARG RELEASE
-ENV RELEASE=${RELEASE}
+WORKDIR /build
+
+COPY packages/hydroserver-ts packages/hydroserver-ts
+WORKDIR /build/packages/hydroserver-ts
+RUN npm ci && npm run build
+
+WORKDIR /build
+COPY packages/qc-utils packages/qc-utils
+WORKDIR /build/packages/qc-utils
+RUN npm ci --workspaces=false && npm run build
+
+WORKDIR /build
+COPY apps/data-management apps/data-management
+WORKDIR /build/apps/data-management
+RUN npm ci && npm run django-build
+
+WORKDIR /build
+COPY apps/qc-app apps/qc-app
+WORKDIR /build/apps/qc-app
+RUN npm ci --workspaces=false && \
+    npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false && \
+    printf 'VITE_APP_ROUTE=/qc/\n' > .env && \
+    npm run django-build
+
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app/django
 
-RUN test -n "$RELEASE" || (echo "RELEASE is required but not set." && exit 1)
-
-RUN apt-get update && apt-get install -y unzip git && rm -rf /var/lib/apt/lists/*
-
 COPY django/requirements.txt .
+COPY packages/hydroserverpy /app/packages/hydroserverpy
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
-    pip install git+https://github.com/hydroserver2/hydroserver.git@${RELEASE}#subdirectory=packages/hydroserverpy
+    pip install ../packages/hydroserverpy
 
 COPY . /app
 
-RUN unzip /app/data_mgmt_app.zip -d /tmp/data_mgmt_app && \
-    mkdir -p interfaces/web/static/web && \
-    cp -f /tmp/data_mgmt_app/dist/index.html templates/index.html && \
-    cp -r /tmp/data_mgmt_app/dist/* interfaces/web/static/web/ && \
-    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" templates/index.html && \
-    rm -rf /tmp/data_mgmt_app /app/data_mgmt_app.zip
+RUN python manage.py tailwind build
 
-RUN unzip /app/qc_app.zip -d /tmp/qc_app && \
-    mkdir -p interfaces/web/static/qc && \
-    cp -f /tmp/qc_app/dist/index.html templates/qc/index.html && \
-    cp -r /tmp/qc_app/dist/* interfaces/web/static/qc/ && \
-    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" templates/qc/index.html && \
-    rm -rf /tmp/qc_app /app/qc_app.zip
+COPY --from=frontend-builder /build/apps/data-management/dist/index.html templates/index.html
+COPY --from=frontend-builder /build/apps/data-management/dist interfaces/web/static/web
+RUN sed -i \
+    -e "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" \
+    -e "s@<script id=\"current-user\" type=\"application/json\"></script>@{{ current_user|json_script:\"current-user\" }}@" \
+    templates/index.html
+
+COPY --from=frontend-builder /build/apps/qc-app/dist/index.html templates/qc/index.html
+COPY --from=frontend-builder /build/apps/qc-app/dist interfaces/web/static/qc
+RUN sed -i \
+    -e "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" \
+    -e "s@<script id=\"current-user\" type=\"application/json\"></script>@{{ current_user|json_script:\"current-user\" }}@" \
+    templates/qc/index.html
+
+RUN python manage.py collectstatic --noinput
+
+ENV STRICT_SECURITY=True
+ENV SAME_ORIGIN_FRONTEND=True

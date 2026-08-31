@@ -67,8 +67,8 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         if expand_related:
             queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
-                "rules__datastream", "rules__datastream__datastream_tags",
-                "rules__datastream__datastream_file_attachments", "recipients"
+                "rules__datastream",
+                "rules__datastream__datastream_linked_resources", "recipients"
             )
         else:
             queryset = queryset.prefetch_related("rules", "recipients")
@@ -129,8 +129,8 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             queryset = (queryset.select_related(
                 "monitoring_site", "monitoring_site__workspace", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related(
-                "rules__datastream", "rules__datastream__datastream_tags",
-                "rules__datastream__datastream_file_attachments", "recipients"
+                "rules__datastream",
+                "rules__datastream__datastream_linked_resources", "recipients"
             ))
         else:
             queryset = queryset.select_related(

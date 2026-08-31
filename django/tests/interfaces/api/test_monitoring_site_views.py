@@ -1,9 +1,10 @@
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from core.sta.models import (
-    FileAttachmentType,
+    LinkedResourceType,
     SiteType,
-    MonitoringSiteTag,
 )
 from tests.core.iam.factories import (
     CollaboratorFactory,
@@ -141,11 +142,11 @@ def test_get_site_types_returns_registered_type_names(client):
     assert set(response.json()) == {"Stream", "Lake"}
 
 
-def test_get_file_attachment_types_returns_registered_type_names(client):
-    FileAttachmentType.objects.create(name="Photo")
-    FileAttachmentType.objects.create(name="Report")
+def test_get_linked_resource_types_returns_registered_type_names(client):
+    LinkedResourceType.objects.create(name="Photo")
+    LinkedResourceType.objects.create(name="Report")
 
-    response = client.get(f"{MONITORING_SITES_URL}/file-attachment-types")
+    response = client.get(f"{MONITORING_SITES_URL}/linked-resource-types")
 
     assert response.status_code == 200
     assert set(response.json()) == {"Photo", "Report"}
@@ -274,155 +275,246 @@ def test_delete_monitoring_site_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-# --- get_monitoring_site_tags / add_monitoring_site_tag / edit_monitoring_site_tag / remove_monitoring_site_tag --------------
+# --- update_monitoring_site tags (PATCH merge semantics) --------------------------------
 
 
-def test_get_monitoring_site_tags_succeeds_for_workspace_owner(client):
+def test_update_monitoring_site_tags_adds_new_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
-    response = client.get(_tags_url(monitoring_site.id))
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"site": "upstream"}},
+        content_type="application/json",
+    )
 
     assert response.status_code == 200
-    assert {"key": "season", "value": "summer"} in response.json()
+    assert response.json()["tags"] == {"season": "summer", "site": "upstream"}
 
 
-def test_get_monitoring_site_tags_returns_404_for_private_monitoring_site_when_outsider(client):
-    workspace = WorkspaceFactory()
-    monitoring_site = MonitoringSiteFactory(workspace=workspace, private=True)
-    outsider = UserFactory()
-    client.force_login(outsider)
-
-    response = client.get(_tags_url(monitoring_site.id))
-
-    assert response.status_code == 404
-
-
-def test_add_monitoring_site_tag_succeeds_for_workspace_owner(client):
+def test_update_monitoring_site_tags_overwrites_existing_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"season": "winter"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["tags"] == {"season": "winter"}
+
+
+def test_update_monitoring_site_tags_removes_key_when_value_is_null(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    monitoring_site.tags = {"season": "summer", "site": "upstream"}
+    monitoring_site.save()
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"season": None}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["tags"] == {"site": "upstream"}
+
+
+def test_update_monitoring_site_tags_ignores_null_for_missing_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"unknown": None}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["tags"] == {"season": "summer"}
+
+
+@pytest.mark.parametrize("value", [{"nested": "value"}, ["summer"], 3, True])
+def test_update_monitoring_site_tags_returns_422_for_non_string_value(client, value):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"season": value}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_monitoring_site_tags_returns_422_for_empty_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"": "summer"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_monitoring_site_tags_returns_422_for_empty_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"season": ""}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_monitoring_site_tags_locks_row_for_update(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as queries:
+        client.patch(
+            _detail_url(monitoring_site.id),
+            data={"tags": {"season": "summer"}},
+            content_type="application/json",
+        )
+
+    assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+
+
+def test_update_monitoring_site_without_tags_does_not_lock_row(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace, name="Original Name")
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as queries:
+        client.patch(
+            _detail_url(monitoring_site.id),
+            data={"name": "Updated Name"},
+            content_type="application/json",
+        )
+
+    assert not any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+
+
+def test_update_monitoring_site_tags_returns_403_for_viewer_collaborator(client):
+    workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
+    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    client.force_login(collaborator.user)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"tags": {"season": "winter"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_monitoring_site_with_tags_succeeds(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
 
     response = client.post(
-        _tags_url(monitoring_site.id),
-        data={"key": "season", "value": "summer"},
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(workspace.id, tags={"season": "summer"}),
         content_type="application/json",
     )
 
     assert response.status_code == 201
-    assert response.json() == {"key": "season", "value": "summer"}
+    assert response.json()["tags"] == {"season": "summer"}
 
 
-def test_add_monitoring_site_tag_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
+def test_create_monitoring_site_returns_422_for_null_tag_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
 
     response = client.post(
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(workspace.id, tags={"season": None}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_monitoring_site_returns_422_for_empty_tag_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(workspace.id, tags={"": "summer"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_monitoring_site_returns_422_for_empty_tag_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(workspace.id, tags={"season": ""}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+# --- removed tag sub-resource endpoints ---------------------------------------------
+
+
+@pytest.mark.parametrize("method", ["get", "post", "put", "delete"])
+def test_monitoring_site_tags_sub_resource_is_removed(client, method):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = getattr(client, method)(
         _tags_url(monitoring_site.id),
         data={"key": "season", "value": "summer"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 403
-
-
-def test_add_monitoring_site_tag_returns_400_for_duplicate_key(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
-    client.force_login(owner)
-
-    response = client.post(
-        _tags_url(monitoring_site.id),
-        data={"key": "season", "value": "winter"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 400
-
-
-def test_edit_monitoring_site_tag_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
-    client.force_login(owner)
-
-    response = client.put(
-        _tags_url(monitoring_site.id),
-        data={"key": "season", "value": "winter"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 200
-    assert response.json()["value"] == "winter"
-
-
-def test_edit_monitoring_site_tag_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
-
-    response = client.put(
-        _tags_url(monitoring_site.id),
-        data={"key": "season", "value": "winter"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 403
-
-
-def test_remove_monitoring_site_tag_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
-    client.force_login(owner)
-
-    response = client.delete(
-        _tags_url(monitoring_site.id),
-        data={"key": "season"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 204
-    assert not MonitoringSiteTag.objects.filter(monitoring_site=monitoring_site, key="season").exists()
-
-
-def test_remove_monitoring_site_tag_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
-
-    response = client.delete(
-        _tags_url(monitoring_site.id),
-        data={"key": "season"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 403
-
-
-def test_remove_monitoring_site_tag_returns_404_for_unknown_key(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    client.force_login(owner)
-
-    response = client.delete(
-        _tags_url(monitoring_site.id),
-        data={"key": "unknown"},
         content_type="application/json",
     )
 
@@ -470,7 +562,8 @@ def test_get_monitoring_site_tag_keys_returns_keys_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
     response = client.get(f"{MONITORING_SITES_URL}/tags/keys")

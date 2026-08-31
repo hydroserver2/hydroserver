@@ -1,9 +1,8 @@
 from .monitoring_site import (
     MonitoringSite,
-    MonitoringSiteTag,
-    MonitoringSiteFileAttachment,
+    MonitoringSiteLinkedResource,
     SiteType,
-    FileAttachmentType,
+    LinkedResourceType,
 )
 from .observed_property import ObservedProperty, VariableType
 from .processing_level import ProcessingLevel
@@ -12,8 +11,7 @@ from .method import Method, MethodType
 from .unit import Unit, UnitType
 from .datastream import (
     Datastream,
-    DatastreamTag,
-    DatastreamFileAttachment,
+    DatastreamLinkedResource,
     DatastreamAggregation,
     DatastreamStatus,
     SampledMedium,

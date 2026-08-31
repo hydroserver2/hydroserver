@@ -288,7 +288,7 @@ import DataVisTableFilters from './DataVisTableFilters.vue'
 
 type DatastreamTableItem = Datastream & {
   monitoringSiteName?: string
-  qualityControlLevelDefinition?: string
+  processingLevelName?: string
   unitSymbol?: string
 }
 
@@ -337,7 +337,7 @@ const searchQualifiers = computed(() => [
   {
     key: 'processing-level',
     label: 'Processing levels',
-    values: uniqueSorted(processingLevels.value.map((item) => item.definition)),
+    values: uniqueSorted(processingLevels.value.map((item) => item.name)),
   },
   {
     key: 'sort',
@@ -438,7 +438,7 @@ const tableItems = computed<DatastreamTableItem[]>(() =>
     return {
       ...datastream,
       monitoringSiteName: monitoringSite?.name,
-      qualityControlLevelDefinition: processingLevel?.definition,
+      processingLevelName: processingLevel?.name,
     }
   })
 )
@@ -451,7 +451,7 @@ const visibleTableItems = computed(() => {
       return [
         item.name,
         item.monitoringSiteName,
-        item.qualityControlLevelDefinition,
+        item.processingLevelName,
         item.aggregationStatistic,
         item.intendedTimeSpacing,
         item.intendedTimeSpacingUnit,
@@ -574,7 +574,7 @@ const formatIntendedTimeSpacing = (
 
 const datastreamSignature = (item: DatastreamTableItem) =>
   [
-    item.qualityControlLevelDefinition,
+    item.processingLevelName,
     item.aggregationStatistic,
     formatIntendedTimeSpacing(
       item.intendedTimeSpacing,

@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
@@ -7,6 +8,41 @@ from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.core.tree_factories import bulk_create_observations
 
 pytestmark = pytest.mark.django_db
+
+
+# --- tags validation ---------------------------------------------------------------
+
+
+def test_full_clean_rejects_non_dict_tags():
+    datastream = DatastreamFactory()
+    datastream.tags = ["season", "summer"]
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_rejects_non_string_tag_values():
+    datastream = DatastreamFactory()
+    datastream.tags = {"count": 1}
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_rejects_empty_tag_key():
+    datastream = DatastreamFactory()
+    datastream.tags = {"": "summer"}
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_rejects_empty_tag_value():
+    datastream = DatastreamFactory()
+    datastream.tags = {"season": ""}
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
 
 
 # --- delete() --------------------------------------------------------------------

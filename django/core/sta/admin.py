@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.db import transaction
 from django.urls import path
@@ -9,10 +10,8 @@ from core.sta.models import (
     Datastream,
     Unit,
     ProcessingLevel,
-    MonitoringSiteFileAttachment,
-    MonitoringSiteTag,
-    DatastreamFileAttachment,
-    DatastreamTag,
+    MonitoringSiteLinkedResource,
+    DatastreamLinkedResource,
     ResultQualifier,
     Observation,
     SiteType,
@@ -22,7 +21,7 @@ from core.sta.models import (
     DatastreamAggregation,
     DatastreamStatus,
     SampledMedium,
-    FileAttachmentType,
+    LinkedResourceType,
 )
 from interfaces.actions.management.utils import generate_test_timeseries
 from hydroserver.admin import VocabularyAdmin
@@ -36,12 +35,14 @@ class MonitoringSiteAdmin(admin.ModelAdmin):
         queryset.delete()
 
 
-class MonitoringSiteFileAttachmentAdmin(admin.ModelAdmin):
+class MonitoringSiteLinkedResourceAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name")
 
-
-class MonitoringSiteTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "monitoring_site__name", "monitoring_site__workspace__name")
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if not settings.MEDIA_STORAGE_ENABLED:
+            fields = [f for f in fields if f != "file"]
+        return fields
 
 
 class MethodAdmin(admin.ModelAdmin):
@@ -93,7 +94,7 @@ class UnitAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class ProcessingLevelAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "code", "workspace__name")
+    list_display = ("id", "name", "code", "workspace__name")
     change_list_template = "admin/sta/processinglevel/change_list.html"
 
     def get_urls(self):
@@ -170,12 +171,14 @@ class DatastreamAdmin(admin.ModelAdmin):
     delete_observations.short_description = "Delete datastream observations"
 
 
-class DatastreamFileAttachmentAdmin(admin.ModelAdmin):
+class DatastreamLinkedResourceAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "datastream__name")
 
-
-class DatastreamTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "datastream__name")
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if not settings.MEDIA_STORAGE_ENABLED:
+            fields = [f for f in fields if f != "file"]
+        return fields
 
 
 class ResultQualifierAdmin(admin.ModelAdmin):
@@ -343,40 +346,38 @@ class SampledMediumAdmin(admin.ModelAdmin, VocabularyAdmin):
         )
 
 
-class FileAttachmentTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
+class LinkedResourceTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
     list_display = ("id", "name")
-    change_list_template = "admin/sta/fileattachmenttype/change_list.html"
+    change_list_template = "admin/sta/linkedresourcetype/change_list.html"
 
     def get_urls(self):
         urls = super().get_urls()
 
         return [
             path(
-                "load-default-file-attachment-type-data/",
+                "load-default-linked-resource-type-data/",
                 self.admin_site.admin_view(self.load_default_data),
-                name="file_attachment_type_load_default_data",
+                name="linked_resource_type_load_default_data",
             ),
         ] + urls
 
     def load_default_data(self, request):
         return self.load_fixtures(
             request,
-            "admin:sta_fileattachmenttype_changelist",
-            ["core/sta/fixtures/default_file_attachment_types.yaml"],
+            "admin:sta_linkedresourcetype_changelist",
+            ["core/sta/fixtures/default_linked_resource_types.yaml"],
         )
 
 
 admin.site.register(MonitoringSite, MonitoringSiteAdmin)
-admin.site.register(MonitoringSiteFileAttachment, MonitoringSiteFileAttachmentAdmin)
-admin.site.register(MonitoringSiteTag, MonitoringSiteTagAdmin)
+admin.site.register(MonitoringSiteLinkedResource, MonitoringSiteLinkedResourceAdmin)
 admin.site.register(Method, MethodAdmin)
 admin.site.register(ObservedProperty, ObservedPropertyAdmin)
 admin.site.register(Unit, UnitAdmin)
 admin.site.register(ProcessingLevel, ProcessingLevelAdmin)
 admin.site.register(Datastream, DatastreamAdmin)
-admin.site.register(DatastreamFileAttachment, DatastreamFileAttachmentAdmin)
-admin.site.register(DatastreamTag, DatastreamTagAdmin)
-admin.site.register(FileAttachmentType, FileAttachmentTypeAdmin)
+admin.site.register(DatastreamLinkedResource, DatastreamLinkedResourceAdmin)
+admin.site.register(LinkedResourceType, LinkedResourceTypeAdmin)
 admin.site.register(ResultQualifier, ResultQualifierAdmin)
 admin.site.register(SiteType, SiteTypeAdmin)
 admin.site.register(MethodType, MethodTypeAdmin)

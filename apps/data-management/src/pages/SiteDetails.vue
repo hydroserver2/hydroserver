@@ -178,7 +178,7 @@
         >
           <button
             v-for="(photo, index) in visiblePhotos"
-            :key="photo.name"
+            :key="photo.id"
             class="relative block aspect-square cursor-pointer appearance-none overflow-hidden rounded-lg border border-black/10 bg-transparent p-0"
             type="button"
             @click="openPhoto(photo)"
@@ -268,7 +268,7 @@ import hs, {
   PermissionAction,
   PermissionResource,
   Workspace,
-  FileAttachment,
+  LinkedResource,
 } from '@hydroserver/client'
 import router from '@/router/router'
 import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
@@ -383,11 +383,11 @@ function switchToAccessControlModal() {
 }
 
 async function loadMonitoringSitePhotos() {
-  const res = await hs.monitoringSites.getAttachments(monitoringSiteId)
+  const res = await hs.monitoringSites.getLinkedResources(monitoringSiteId)
   if (!res.ok || !Array.isArray(res.data)) return
 
   photos.value = res.data.filter(
-    (attachment: FileAttachment) => attachment.fileAttachmentType === 'Photo'
+    (linkedResource: LinkedResource) => linkedResource.type === 'Photo'
   )
 }
 
@@ -402,8 +402,8 @@ function onSiteFormClosed() {
   void loadRatingCurveCount()
 }
 
-function openPhoto(photo: FileAttachment) {
-  const index = photos.value?.findIndex((p) => p.name === photo.name) ?? -1
+function openPhoto(photo: LinkedResource) {
+  const index = photos.value?.findIndex((p) => p.id === photo.id) ?? -1
   if (index < 0) return
   selectedPhotoIndex.value = index
   isPhotoViewerOpen.value = true
@@ -450,20 +450,16 @@ onMounted(async () => {
     console.error('Error fetching rating curves from DB', error)
   )
 
-  const [monitoringSiteResponse, tagResponse] = await Promise.all([
-    hs.monitoringSites.getItem(monitoringSiteId).catch((error: any) => {
+  const monitoringSiteResponse = await hs.monitoringSites
+    .getItem(monitoringSiteId)
+    .catch((error: any) => {
       if (parseInt(error.status) === 403) authorized.value = false
       else console.error('Error fetching monitoringSite', error)
 
       return null
-    }),
-    hs.monitoringSites.getTags(monitoringSiteId).catch((error) => {
-      console.error('Error fetching additional metadata tags', error)
-      return null
-    }),
-  ])
+    })
 
-  tags.value = tagResponse?.ok ? tagResponse.data : []
+  tags.value = monitoringSiteResponse?.tags ?? {}
   monitoringSite.value = monitoringSiteResponse ?? undefined
   try {
     workspace.value =

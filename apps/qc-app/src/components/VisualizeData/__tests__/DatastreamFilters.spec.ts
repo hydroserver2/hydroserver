@@ -7,7 +7,7 @@ import { createTestVuetify } from '@/utils/test/vuetify'
 const monitoringSiteA = { id: 't-a', name: 'Alpha' }
 const monitoringSiteB = { id: 't-b', name: 'Beta' }
 const opX = { id: 'op-x', name: 'Temp' }
-const plY = { id: 'pl-y', definition: 'Raw' }
+const plY = { id: 'pl-y', name: 'Raw' }
 
 const monitoringSites = ref<any[]>([monitoringSiteA, monitoringSiteB])
 const datastreams = ref<any[]>([

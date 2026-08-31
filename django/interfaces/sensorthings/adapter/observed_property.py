@@ -51,11 +51,13 @@ class ObservedPropertyMixin(SensorThingsUtils):
                     id=self.select_field(select, "id", observed_property.id),
                     name=self.select_field(select, "name", observed_property.name),
                     description=self.select_field(select, "description", observed_property.description),
-                    definition=self.select_field(select, "definition", observed_property.definition),
+                    definition=self.select_field(
+                        select, "definition", observed_property.definition or ""
+                    ),
                     properties=(
                         {
                             "variable_code": observed_property.code,
-                            "variable_type": observed_property.observed_property_type,
+                            "variable_type": observed_property.type,
                             "workspace": (
                                 {
                                     "id": observed_property.workspace.id,

@@ -22,7 +22,7 @@ class UnitService(HydroServerBaseService):
         workspace: Union["Workspace", UUID, str] = ...,
         monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
         datastream: Optional[Union["Datastream", UUID, str]] = ...,
-        unit_type: str = ...,
+        type: str = ...,
         fetch_all: bool = False,
     ) -> List["Unit"]:
         """Fetch a collection of units."""
@@ -34,7 +34,7 @@ class UnitService(HydroServerBaseService):
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),
             datastream_id=normalize_uuid(datastream),
-            unit_type=unit_type,
+            type=type,
             fetch_all=fetch_all,
         )
 
@@ -42,10 +42,10 @@ class UnitService(HydroServerBaseService):
         self,
         name: str,
         symbol: str,
-        definition: str,
-        unit_type: str,
+        type: str,
+        definition: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
-        uid: Optional[UUID] = None
+        uid: Optional[UUID] = None,
     ) -> "Unit":
         """Create a new unit."""
 
@@ -54,7 +54,7 @@ class UnitService(HydroServerBaseService):
             "name": name,
             "symbol": symbol,
             "definition": definition,
-            "type": unit_type,
+            "type": type,
             "workspaceId": normalize_uuid(workspace),
         }
 
@@ -65,8 +65,8 @@ class UnitService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str = ...,
         symbol: str = ...,
-        definition: str = ...,
-        unit_type: str = ...,
+        type: str = ...,
+        definition: Optional[str] = ...,
     ) -> "Unit":
         """Update a unit."""
 
@@ -74,7 +74,7 @@ class UnitService(HydroServerBaseService):
             "name": name,
             "symbol": symbol,
             "definition": definition,
-            "type": unit_type,
+            "type": type,
         }
 
         return super().update(uid=str(uid), **body)

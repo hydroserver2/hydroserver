@@ -303,7 +303,7 @@ const tableItems = computed(() => {
       siteCodeName: ds.monitoringSite?.code ?? '',
       siteName: ds.monitoringSite?.name ?? '',
       observedPropertyName: ds.observedProperty?.name ?? '',
-      qualityControlLevelDefinition: ds.processingLevel?.definition ?? '',
+      processingLevelName: ds.processingLevel?.name ?? '',
     }
   })
 })
@@ -321,7 +321,7 @@ const searchedTableItems = computed(() => {
       item.siteCodeName,
       item.siteName,
       item.observedPropertyName,
-      item.qualityControlLevelDefinition,
+      item.processingLevelName,
       item.valueCount,
       item.phenomenonEndTime,
     ].some((value) => String(value ?? '').toLocaleLowerCase().includes(query))
@@ -383,7 +383,7 @@ const headers = reactive([
   },
   {
     title: 'Processing level',
-    key: 'qualityControlLevelDefinition',
+    key: 'processingLevelName',
     visible: true,
   },
   {

@@ -12,7 +12,7 @@ import {
   ObservedProperty,
   ProcessingLevel,
 } from '../../types'
-import { normalizeAttachmentCollection } from './attachment-link'
+import { normalizeLinkCollection, normalizeLinkRecord } from './link-normalization'
 
 interface VisualizationBootstrapPayload {
   monitoringSites: Array<{
@@ -40,7 +40,7 @@ interface VisualizationBootstrapPayload {
     intendedTimeSpacingUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | null
   }>
   observedProperties: Array<{ id: string; name: string; code: string }>
-  processingLevels: Array<{ id: string; definition?: string | null }>
+  processingLevels: Array<{ id: string; name: string }>
 }
 
 export interface VisualizationBootstrap {
@@ -50,12 +50,8 @@ export interface VisualizationBootstrap {
   processingLevels: ProcessingLevel[]
 }
 
-type TagPostBody = Data.components['schemas']['TagPostBody']
-type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
-type TagResponse = Data.components['schemas']['TagGetResponse']
 type TagKeyResponse = Record<string, string[]>
-type FileAttachmentResponse =
-  Data.components['schemas']['FileAttachmentGetResponse']
+type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetResponse']
 
 type ObservationListResponse =
   Data.operations['interfaces_api_views_sta_observation_get_observations']['responses'][200]['content']['application/json']
@@ -84,65 +80,61 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTags(datastreamId: string) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.fetch<TagResponse[]>(url)
-  }
-
   getTagKeys(params: { workspace_id?: string; datastream_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
     return apiMethods.fetch<TagKeyResponse>(url)
   }
 
-  createTag(datastreamId: string, tag: TagPostBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.post<TagResponse>(url, tag)
+  setTag(datastreamId: string, key: string, value: string) {
+    return apiMethods.patch<M>(`${this._route}/${datastreamId}`, {
+      tags: { [key]: value },
+    })
   }
 
-  updateTag(datastreamId: string, tag: TagPostBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.put<TagResponse>(url, tag)
+  deleteTag(datastreamId: string, key: string) {
+    return apiMethods.patch<M>(`${this._route}/${datastreamId}`, {
+      tags: { [key]: null },
+    })
   }
 
-  deleteTag(datastreamId: string, tag: TagDeleteBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.delete<NoContentResponse>(url, tag)
-  }
+  /* ------------------ Sub-resources: Linked Resources ------------------ */
 
-  /* ----------------- Sub-resources: File Attachments ----------------- */
+  getLinkedResourceTypes = () =>
+    apiMethods.fetch<string[]>(`${this._route}/linked-resource-types`)
 
-  getFileAttachmentTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
-
-  async uploadAttachments(datastreamId: string, data: FormData) {
-    const url = `${this._route}/${datastreamId}/file-attachments`
-    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
+  async getLinkedResources(datastreamId: string) {
+    const url = `${this._route}/${datastreamId}/linked-resources`
+    const res = await apiMethods.paginatedFetch<LinkedResourceResponse[]>(url)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse>
+      data: normalizeLinkCollection(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse[]>
   }
 
-  async getAttachments(datastreamId: string) {
-    const url = `${this._route}/${datastreamId}/file-attachments`
-    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
+  async createLinkedResource(datastreamId: string, data: FormData) {
+    const url = `${this._route}/${datastreamId}/linked-resources`
+    const res = await apiMethods.post<LinkedResourceResponse>(url, data)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse[]>
+      data: normalizeLinkRecord(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse>
   }
 
-  deleteAttachment(datastreamId: string, name: string) {
-    const url = `${this._route}/${datastreamId}/file-attachments`
-    return apiMethods.delete<NoContentResponse>(url, { name })
+  async updateLinkedResource(datastreamId: string, linkedResourceId: string, data: FormData) {
+    const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.patch<LinkedResourceResponse>(url, data)
+    if (!res.ok) return res
+    return {
+      ...res,
+      data: normalizeLinkRecord(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse>
+  }
+
+  deleteLinkedResource(datastreamId: string, linkedResourceId: string) {
+    const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
+    return apiMethods.delete<NoContentResponse>(url)
   }
 
   /* ============================== CSV =============================== */

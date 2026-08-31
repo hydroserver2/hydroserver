@@ -150,21 +150,21 @@ performing administrator-only maintenance.
 Additional vocabulary models also appear in this admin section and are documented under **Controlled Vocabularies**
 below.
 
-| Model | Purpose |
-| --- | --- |
-| **Things** | Manage monitoring sites and their workspace/privacy metadata. |
-| **Locations** | Review or edit site location records. |
+| Model | Purpose                                                                 |
+| --- |-------------------------------------------------------------------------|
+| **Things** | Manage monitoring sites and their workspace/privacy metadata.           |
+| **Locations** | Review or edit site location records.                                   |
 | **Methods** | Manage reusable method metadata, including optional instrument details. |
-| **Observed Properties** | Manage reusable observed property metadata. |
-| **Units** | Manage reusable unit metadata. |
-| **Processing Levels** | Manage reusable processing level metadata. |
-| **Datastreams** | Review datastream metadata and run selected maintenance actions. |
-| **Result Qualifiers** | Manage result qualifier codes. |
-| **File Attachment Types** | Manage file attachment type vocabulary values. |
-| **Monitoring Site File Attachments** | Review files attached to monitoring sites. |
-| **Datastream File Attachments** | Review files attached to datastreams. |
-| **Monitoring Site Tags** | Review key/value tags attached to monitoring sites. |
-| **Datastream Tags** | Review key/value tags attached to datastreams. |
+| **Observed Properties** | Manage reusable observed property metadata.                             |
+| **Units** | Manage reusable unit metadata.                                          |
+| **Processing Levels** | Manage reusable processing level metadata.                              |
+| **Datastreams** | Review datastream metadata and run selected maintenance actions.        |
+| **Result Qualifiers** | Manage result qualifier codes.                                          |
+| **Linked Resource Types** | Manage linked resource type vocabulary values.                          |
+| **Monitoring Site Linked Resources** | Review linked resources attached to monitoring sites.                   |
+| **Datastream Linked Resources** | Review linked resources associated with datastreams.                    |
+| **Monitoring Site Tags** | Review key/value tags associated with monitoring sites.                 |
+| **Datastream Tags** | Review key/value tags attached to datastreams.                          |
 
 The **Datastreams** admin page includes two actions for selected datastreams:
 
@@ -197,7 +197,7 @@ models below and click its **Load Default ...** button in the upper-right corner
 | **Measurement Data** | **Datastream Aggregations** | Default aggregation statistic vocabulary values. |
 | **Measurement Data** | **Datastream Statuses** | Default datastream status vocabulary values. |
 | **Measurement Data** | **Sampled Mediums** | Default sampled medium vocabulary values. |
-| **Measurement Data** | **File Attachment Types** | Default file attachment type vocabulary values. |
+| **Measurement Data** | **Linked Resource Types** | Default linked resource type vocabulary values. |
 
 The load action imports fixture data into the database. It does not replace the need to review locally customized
 metadata after upgrades.
@@ -210,7 +210,7 @@ see in metadata forms:
 | Section | Models |
 | --- | --- |
 | **Identity and Access Management** | **User Types**, **Organization Types**, **Roles** |
-| **Measurement Data** | **Datastream Aggregations**, **Datastream Statuses**, **File Attachment Types**, **Method Types**, **Sampled Mediums**, **Sampling Feature Types**, **Site Types**, **Unit Types**, **Variable Types** |
+| **Measurement Data** | **Datastream Aggregations**, **Datastream Statuses**, **Linked Resource Types**, **Method Types**, **Sampled Mediums**, **Sampling Feature Types**, **Site Types**, **Unit Types**, **Variable Types** |
 
 Workspace-scoped metadata such as observed properties, units, processing levels, methods, and result qualifiers can also
 be reviewed in the admin dashboard. When a record has no workspace, it is available as system-level metadata.

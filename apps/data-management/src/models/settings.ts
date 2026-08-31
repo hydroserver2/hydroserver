@@ -60,6 +60,10 @@ interface AnalyticsConfiguration {
   clarityProjectId?: string | null
 }
 
+interface ExtensionsConfiguration {
+  fileUploadEnabled: boolean
+}
+
 interface LegalInformation {
   termsOfUseLink?: string | null
   privacyPolicyLink?: string | null
@@ -71,5 +75,6 @@ export interface AppSettings {
   aboutInformation: AboutInformation
   mapConfiguration: MapConfiguration
   analyticsConfiguration: AnalyticsConfiguration
+  extensionsConfiguration: ExtensionsConfiguration
   legalInformation: LegalInformation
 }

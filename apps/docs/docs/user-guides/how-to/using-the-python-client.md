@@ -202,7 +202,7 @@ hs_api.workspaces.create(name, is_private=False) -> Workspace
 | `country` | `str \| None` | Yes | ISO 3166-1 alpha-2 |
 | `workspace_id` | `UUID` | No | |
 | `tags` | `Dict[str, str]` | No | Use tag methods to modify |
-| `file_attachments` | `Dict[str, dict]` | No | Use attachment methods to modify |
+| `linked_resources` | `Dict[str, dict]` | No | Use linked resource methods to modify |
 | `workspace` | `Workspace` | No | Computed |
 | `datastreams` | `List[Datastream]` | No | Computed |
 
@@ -226,15 +226,14 @@ hs_api.monitoring_sites.create(workspace, name, description, code, type,
 | `tag` | `tuple` | `(key, value)` filter by tag |
 | `is_private` | `bool` | Filter by privacy setting |
 
-### Tag and file attachment methods
+### Tag and linked resource methods
 
-| Method | Description |
-|---|---|
-| `add_tag(key, value)` | Add a tag to this monitoring site |
-| `update_tag(key, value)` | Update an existing tag's value |
-| `delete_tag(key)` | Remove a tag |
-| `add_file_attachment(file, file_attachment_type)` | Upload a file; `file` is an open binary file object |
-| `delete_file_attachment(name)` | Remove a file attachment by filename |
+| Method | Description                      |
+|---|----------------------------------|
+| `set_tag(key, value)` | Add or update a tag on this monitoring site |
+| `delete_tag(key)` | Remove a tag                     |
+| `add_linked_resource(name, type, file=None, url=None, description=None)` | Add a linked resource            |
+| `delete_linked_resource(name)` | Remove a linked resource by name |
 
 ---
 
@@ -276,9 +275,9 @@ hs_api.methods.create(name, description, type, code=None, definition=None,
 |---|---|---|
 | `uid` | `UUID` | No |
 | `name` | `str` | Yes |
-| `definition` | `str` | Yes |
+| `definition` | `str \| None` | Yes |
 | `description` | `str` | Yes |
-| `observed_property_type` | `str` | Yes |
+| `type` | `str` | Yes |
 | `code` | `str` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
@@ -286,8 +285,8 @@ hs_api.methods.create(name, description, type, code=None, definition=None,
 ```python
 hs_api.observedproperties.list(workspace=None) -> HydroServerCollection[ObservedProperty]
 hs_api.observedproperties.get(uid) -> ObservedProperty
-hs_api.observedproperties.create(workspace, name, definition, description,
-                                 observed_property_type, code, uid=None) -> ObservedProperty
+hs_api.observedproperties.create(name, description, type, code, definition=None,
+                                 workspace=None, uid=None) -> ObservedProperty
 ```
 
 ### Units
@@ -299,15 +298,15 @@ hs_api.observedproperties.create(workspace, name, definition, description,
 | `uid` | `UUID` | No |
 | `name` | `str` | Yes |
 | `symbol` | `str` | Yes |
-| `definition` | `str` | Yes |
-| `unit_type` | `str` | Yes |
+| `definition` | `str \| None` | Yes |
+| `type` | `str` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
 hs_api.units.list(workspace=None) -> HydroServerCollection[Unit]
 hs_api.units.get(uid) -> Unit
-hs_api.units.create(workspace, name, symbol, definition, unit_type, uid=None) -> Unit
+hs_api.units.create(name, symbol, type, definition=None, workspace=None, uid=None) -> Unit
 ```
 
 ### Processing Levels
@@ -318,15 +317,16 @@ hs_api.units.create(workspace, name, symbol, definition, unit_type, uid=None) ->
 |---|---|---|
 | `uid` | `UUID` | No |
 | `code` | `str` | Yes |
+| `name` | `str` | Yes |
+| `description` | `str` | Yes |
 | `definition` | `str \| None` | Yes |
-| `explanation` | `str \| None` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
 hs_api.processinglevels.list(workspace=None) -> HydroServerCollection[ProcessingLevel]
 hs_api.processinglevels.get(uid) -> ProcessingLevel
-hs_api.processinglevels.create(workspace, code, definition=None, explanation=None, uid=None) -> ProcessingLevel
+hs_api.processinglevels.create(code, name, description, definition=None, workspace=None, uid=None) -> ProcessingLevel
 ```
 
 ### Result Qualifiers
@@ -384,7 +384,7 @@ hs_api.resultqualifiers.create(workspace, code, description, uid=None) -> Result
 | `unit_id` | `UUID` | Yes | |
 | `workspace_id` | `UUID` | No | |
 | `tags` | `Dict[str, str]` | No | Use tag methods to modify |
-| `file_attachments` | `Dict[str, dict]` | No | Use attachment methods to modify |
+| `linked_resources` | `Dict[str, dict]` | No | Use linked resource methods to modify |
 | `workspace` | `Workspace` | No | Computed |
 | `monitoring_site` | `MonitoringSite` | No | Computed; also settable via assignment |
 | `method` | `Method` | No | Computed; also settable via assignment |
@@ -453,9 +453,9 @@ datastream.delete_observations(phenomenon_time_start=None, phenomenon_time_end=N
 
 Deletes observations within the given time range. If both parameters are omitted, all observations are deleted.
 
-### Tag and file attachment methods
+### Tag and linked resource methods
 
-Same as monitoring sites — `add_tag`, `update_tag`, `delete_tag`, `add_file_attachment`, `delete_file_attachment`.
+Same as monitoring sites — `set_tag`, `delete_tag`, `add_linked_resource`, `delete_linked_resource`.
 
 ---
 

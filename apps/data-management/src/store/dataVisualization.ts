@@ -152,7 +152,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
     const PLName = processingLevelById.value.get(
       datastream.processingLevelId
-    )?.definition
+    )?.name
     return (
       PLName !== undefined && selectedProcessingLevelNameSet.value.has(PLName)
     )

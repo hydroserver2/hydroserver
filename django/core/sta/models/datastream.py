@@ -1,11 +1,13 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
 from django.conf import settings
 
 from core.iam.permissions.registry import register_resource_type
 
 from .monitoring_site import MonitoringSite
+from .validators import validate_tags
 from .method import Method
 from .unit import Unit
 from .processing_level import ProcessingLevel
@@ -62,8 +64,18 @@ class Datastream(models.Model):
     result_begin_time = models.DateTimeField(null=True, blank=True)  # Unused
     is_private = models.BooleanField(default=True)
     is_visible = models.BooleanField(default=True)
+    tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
 
     objects = DatastreamQuerySet.as_manager()
+
+    class Meta:
+        indexes = [
+            GinIndex(
+                fields=["tags"],
+                name="sta_datastream_tags_gin",
+                opclasses=["jsonb_path_ops"],
+            ),
+        ]
 
     def __str__(self):
         return f"{self.name} — {self.id}"
@@ -72,53 +84,54 @@ class Datastream(models.Model):
         return type(self).objects.filter(pk=self.pk).delete()
 
 
-class DatastreamTag(models.Model):
-    datastream = models.ForeignKey(
-        Datastream, related_name="datastream_tags", on_delete=models.CASCADE
-    )
-    key = models.CharField(max_length=255)
-    value = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.key}: {self.value} - {self.id}"
-
-
 def datastream_file_attachment_storage_path(instance, filename):
     return f"datastreams/{instance.datastream.id}/{filename}"
 
 
-class DatastreamFileAttachment(models.Model):
+class DatastreamLinkedResource(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     datastream = models.ForeignKey(
         Datastream,
-        related_name="datastream_file_attachments",
+        related_name="datastream_linked_resources",
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    file_attachment = models.FileField(
-        upload_to=datastream_file_attachment_storage_path
-    )
-    file_attachment_type = models.CharField(max_length=200)
+    type = models.CharField(max_length=200)
+    file = models.FileField(upload_to=datastream_file_attachment_storage_path, blank=True, default="")
+    url = models.URLField(blank=True, default="", max_length=2000)
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     @property
     def link(self):
-        storage = self.file_attachment.storage
+        if self.url:
+            return self.url
+
+        storage = self.file.storage
 
         try:
-            file_attachment_link = storage.url(self.file_attachment.name, expire=3600)
+            file_link = storage.url(self.file.name, expire=3600)
         except TypeError:
-            file_attachment_link = storage.url(self.file_attachment.name)
+            file_link = storage.url(self.file.name)
 
         if settings.MEDIA_STORAGE_IS_LOCAL:
-            file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
+            file_link = settings.PROXY_BASE_URL + file_link
 
-        return file_attachment_link
+        return file_link
 
     class Meta:
         unique_together = ("datastream", "name")
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(file="") & ~models.Q(url="")) |
+                    (~models.Q(file="") & models.Q(url=""))
+                ),
+                name="datastream_linked_resource_file_xor_url",
+            )
+        ]
 
 
 class DatastreamAggregation(models.Model):

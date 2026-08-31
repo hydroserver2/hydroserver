@@ -15,13 +15,9 @@ from interfaces.api.schemas import (
     DatastreamQueryParameters,
     DatastreamPostBody,
     DatastreamPatchBody,
-    TagGetResponse,
-    TagPostBody,
-    TagDeleteBody,
-    FileAttachmentQueryParameters,
-    FileAttachmentGetResponse,
-    FileAttachmentPostBody,
-    FileAttachmentDeleteBody,
+    LinkedResourceQueryParameters,
+    LinkedResourceGetResponse,
+    LinkedResourcePostBody,
 )
 from core.sta.services import DatastreamService
 from interfaces.api.views.sta.observation import observation_router
@@ -190,18 +186,18 @@ def get_datastream_sampled_mediums(
 
 
 @datastream_router.get(
-    "/file-attachment-types", response={200: list[str]}, by_alias=True
+    "/linked-resource-types", response={200: list[str]}, by_alias=True
 )
-def get_file_attachment_types(
+def get_datastream_linked_resource_types(
     request: HydroServerHttpRequest,
     response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get file attachment types.
+    Get linked resource types.
     """
 
-    return 200, datastream_service.list_file_attachment_types(
+    return 200, datastream_service.list_linked_resource_types(
         response=response,
         page=query.page,
         page_size=query.page_size,
@@ -287,126 +283,25 @@ def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.
 
 
 @datastream_router.get(
-    "/{datastream_id}/tags",
+    "/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[TagGetResponse],
+        200: list[LinkedResourceGetResponse],
         401: str,
         403: str,
     },
     by_alias=True,
 )
-def get_datastream_tags(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID]
-):
-    """
-    Get all tags associated with a Datastream.
-    """
-
-    return 200, datastream_service.get_tags(
-        principal=request.principal,
-        uid=datastream_id,
-    )
-
-
-@datastream_router.post(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        201: TagGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def add_datastream_tag(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID], data: TagPostBody
-):
-    """
-    Add a tag to a Datastream.
-    """
-
-    return 201, datastream_service.add_tag(
-        principal=request.principal,
-        uid=datastream_id,
-        data=data,
-    )
-
-
-@datastream_router.put(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        200: TagGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def edit_datastream_tag(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID], data: TagPostBody
-):
-    """
-    Edit a tag of a Datastream.
-    """
-
-    return 200, datastream_service.update_tag(
-        principal=request.principal,
-        uid=datastream_id,
-        data=data,
-    )
-
-
-@datastream_router.delete(
-    "/{datastream_id}/tags",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={
-        204: None,
-        400: str,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def remove_datastream_tag(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID], data: TagDeleteBody
-):
-    """
-    Remove a tag from a Datastream.
-    """
-
-    return 204, datastream_service.remove_tag(
-        principal=request.principal,
-        uid=datastream_id,
-        data=data,
-    )
-
-
-@datastream_router.get(
-    "/{datastream_id}/file-attachments",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
-    response={
-        200: list[FileAttachmentGetResponse],
-        401: str,
-        403: str,
-    },
-    by_alias=True,
-)
-def get_datastream_file_attachments(
+def get_datastream_linked_resources(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
-    query: Query[FileAttachmentQueryParameters],
+    query: Query[LinkedResourceQueryParameters],
 ):
     """
-    Get all file attachments associated with a Datastream.
+    Get all linked resources associated with a Datastream.
     """
 
-    return 200, datastream_service.get_file_attachments(
+    return 200, datastream_service.get_linked_resources(
         principal=request.principal,
         uid=datastream_id,
         filtering=query.dict(exclude_unset=True),
@@ -414,10 +309,10 @@ def get_datastream_file_attachments(
 
 
 @datastream_router.post(
-    "/{datastream_id}/file-attachments",
+    "/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: FileAttachmentGetResponse,
+        201: LinkedResourceGetResponse,
         400: str,
         401: str,
         403: str,
@@ -426,90 +321,97 @@ def get_datastream_file_attachments(
     },
     by_alias=True,
 )
-def add_datastream_file_attachment(
+def add_datastream_linked_resource(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
-    file: UploadedFile = File(...),
+    name: str = Form(..., min_length=1),
     description: Optional[str] = Form(None),
-    file_attachment_type: str = Form(...),
+    type: str = Form(..., min_length=1),
+    file: Optional[UploadedFile] = File(None),
+    link: Optional[str] = Form(None),
 ):
     """
-    Add a file attachment to a datastream.
+    Add a linked resource to a datastream.
     """
 
-    return 201, datastream_service.add_file_attachment(
+    return 201, datastream_service.add_linked_resource(
         principal=request.principal,
         uid=datastream_id,
         file=file,
-        data=FileAttachmentPostBody(
-            name=file.name,
+        link=link,
+        data=LinkedResourcePostBody(
+            name=name,
             description=description,
-            file_attachment_type=file_attachment_type
+            type=type,
         )
     )
 
 
-@datastream_router.put(
-    "/{datastream_id}/file-attachments",
+@datastream_router.patch(
+    "/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        204: None,
+        200: LinkedResourceGetResponse,
         400: str,
         401: str,
         403: str,
+        404: str,
         413: str,
         422: str,
     },
     by_alias=True,
 )
-def replace_datastream_file_attachment(
+def update_datastream_linked_resource(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
-    file: UploadedFile = File(...),
+    linked_resource_id: Path[uuid.UUID],
+    name: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    file_attachment_type: str = Form(...),
+    type: Optional[str] = Form(None),
+    file: Optional[UploadedFile] = File(None),
+    link: Optional[str] = Form(None),
 ):
     """
-    Replace a file attachment for a datastream.
+    Update a linked resource for a datastream. A linked resource's mode (hosted file vs.
+    external URL) cannot be changed in place — delete it and create a new one instead.
     """
 
-    return 204, datastream_service.replace_file_attachment(
+    return 200, datastream_service.update_linked_resource(
         principal=request.principal,
         uid=datastream_id,
+        linked_resource_id=linked_resource_id,
+        name=name,
+        description=description,
+        type=type,
         file=file,
-        data=FileAttachmentPostBody(
-            name=file.name,
-            description=description,
-            file_attachment_type=file_attachment_type
-        )
+        link=link,
     )
 
 
 @datastream_router.delete(
-    "/{datastream_id}/file-attachments",
+    "/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
-        400: str,
         401: str,
         403: str,
-        422: str,
+        404: str,
     },
     by_alias=True,
 )
-def remove_datastream_file_attachment(
+def remove_datastream_linked_resource(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
-    data: FileAttachmentDeleteBody,
+    linked_resource_id: Path[uuid.UUID],
 ):
     """
-    Remove a file attachment from a datastream.
+    Remove a linked resource from a datastream.
     """
 
-    return 204, datastream_service.remove_file_attachment(
+    return 204, datastream_service.remove_linked_resource(
         principal=request.principal,
         uid=datastream_id,
-        data=data,
+        linked_resource_id=linked_resource_id,
     )
 
 

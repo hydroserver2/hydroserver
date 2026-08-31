@@ -109,10 +109,9 @@ class HydroServerBaseService:
 
     def prune_unset(self, obj):
         if isinstance(obj, dict):
-            cleaned = {
+            return {
                 k: self.prune_unset(v)
                 for k, v in obj.items()
-                if v is not ... and self.prune_unset(v) is not None
+                if v is not ...
             }
-            return cleaned if cleaned else None
         return obj

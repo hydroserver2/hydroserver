@@ -17,8 +17,9 @@ class ProcessingLevel(models.Model):
         null=True,
     )
     code = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
     definition = models.TextField(null=True, blank=True)
-    explanation = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} — {self.id}"
+        return f"{self.name} — {self.id}"

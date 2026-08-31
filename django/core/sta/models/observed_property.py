@@ -17,9 +17,9 @@ class ObservedProperty(models.Model):
         null=True,
     )
     name = models.CharField(max_length=255)
-    definition = models.TextField()
+    definition = models.TextField(null=True, blank=True)
     description = models.TextField()
-    observed_property_type = models.CharField(max_length=500)
+    type = models.CharField(max_length=500)
     code = models.CharField(max_length=500)
 
     def __str__(self):

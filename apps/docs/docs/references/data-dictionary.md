@@ -65,9 +65,9 @@ An ObservedProperty specifies the phenomenon of an Observation, such as flow, te
 | M        | id                     | A primary key unique identifier for the ObservedProperty.                                                                          | UUID      |
 | O        | workspace_id           | A foreign key identifier for the Workspace that owns the ObservedProperty. If omitted, the ObservedProperty is shared system-wide. | UUID      |
 | M        | name                   | A descriptive name for the ObservedProperty.                                                                                       | String    |
-| M        | definition             | A text definition of the ObservedProperty or a URL pointing to a controlled definition.                                            | Text      |
+| O        | definition             | A URI pointing to an externally controlled definition of the ObservedProperty.                                                     | URI       |
 | M        | description            | A text description of the ObservedProperty.                                                                                        | Text      |
-| M        | observed_property_type | The type of ObservedProperty.                                                                                                      | String    |
+| M        | type                   | The type of ObservedProperty.                                                                                                      | String    |
 | M        | code                   | A brief text code identifying the ObservedProperty.                                                                                | String    |
 
 ## Organization
@@ -119,8 +119,9 @@ The degree of quality control or processing to which a Datastream has been subje
 | M        | id           | A primary key unique identifier for the ProcessingLevel.                                                                         | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ProcessingLevel. If omitted, the ProcessingLevel is shared system-wide. | UUID      |
 | M        | code         | A brief text code identifying the ProcessingLevel.                                                                               | String    |
-| O        | definition   | A text definition of the ProcessingLevel.                                                                                        | Text      |
-| O        | explanation  | A longer text explanation of the ProcessingLevel.                                                                                | Text      |
+| M        | name         | A descriptive name for the ProcessingLevel.                                                                                      | String    |
+| M        | description  | A text description of the ProcessingLevel.                                                                                       | Text      |
+| O        | definition   | A URI pointing to an externally controlled definition of the ProcessingLevel.                                                    | URI       |
 
 ## ResultQualifier
 
@@ -180,9 +181,19 @@ A MonitoringSite stores a site and its single physical location in one row.
 
 A key-value tag associated with a MonitoringSite. The database enforces unique `(monitoring_site_id, key)` pairs.
 
-## MonitoringSiteFileAttachment
+## MonitoringSiteLinkedResource
 
-A file attached to a MonitoringSite, such as a site photo, document, or supporting artifact. The database enforces unique `(monitoring_site_id, name)` pairs.
+A linked resource associated with a MonitoringSite, pointing to either a hosted file (such as a site photo or document) or an external URL. The database enforces unique `(monitoring_site_id, name)` pairs, and a check constraint that exactly one of `file`/`url` is set.
+
+| Required | Attribute    | Definition                                                                | Data Type |
+| -------- | ------------ | -------------------------------------------------------------------------- | --------- |
+| M        | id           | A primary key unique identifier for the MonitoringSiteLinkedResource.     | UUID      |
+| M        | monitoring_site_id | A foreign key identifier for the MonitoringSite to which the linked resource belongs. | UUID      |
+| M        | name         | The name of the linked resource.                                          | String    |
+| O        | description  | A text description of the linked resource.                               | Text      |
+| O        | file         | The stored file object, if the resource is hosted by HydroServer.        | File      |
+| O        | url          | The external URL, if the resource is not hosted by HydroServer.          | String    |
+| M        | type         | A text string identifying the type of linked resource.                   | String    |
 
 ## Unit
 
@@ -194,8 +205,8 @@ The unit of measure associated with the Observations within a Datastream.
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the Unit. If omitted, the Unit is shared system-wide. | UUID      |
 | M        | name         | A descriptive name for the Unit.                                                                           | String    |
 | M        | symbol       | An abbreviation or symbol used for the Unit.                                                               | String    |
-| M        | definition   | A URL or text definition for the Unit.                                                                     | Text      |
-| M        | unit_type    | The type of Unit.                                                                                          | String    |
+| O        | definition   | A URI pointing to an externally controlled definition of the Unit.                                       | URI       |
+| M        | type         | The type of Unit.                                                                                          | String    |
 
 ## Workspace
 
@@ -290,20 +301,21 @@ A key-value tag associated with a Datastream.
 | M        | key           | The tag key.                                                          | String     |
 | M        | value         | The tag value.                                                        | String     |
 
-## DatastreamFileAttachment
+## DatastreamLinkedResource
 
-A file attached to a Datastream.
+A linked resource associated with a Datastream, pointing to either a hosted file or an external URL.
 
-| Required | Attribute            | Definition                                                                        | Data Type  |
-| -------- | -------------------- | --------------------------------------------------------------------------------- | ---------- |
-| M        | id                   | A primary key unique identifier for the DatastreamFileAttachment.                 | BigInteger |
-| M        | datastream_id        | A foreign key identifier for the Datastream to which the file attachment belongs. | UUID       |
-| M        | name                 | The name of the attached file.                                                    | String     |
-| O        | description          | A text description of the attached file.                                          | Text       |
-| M        | file_attachment      | The stored file object for the attachment.                                        | File       |
-| M        | file_attachment_type | A text string identifying the type of file attachment.                            | String     |
+| Required | Attribute     | Definition                                                                        | Data Type |
+| -------- | ------------- |-----------------------------------------------------------------------------------| --------- |
+| M        | id            | A primary key unique identifier for the DatastreamLinkedResource.                 | UUID      |
+| M        | datastream_id | A foreign key identifier for the Datastream to which the linked resource belongs. | UUID      |
+| M        | name          | The name of the linked resource.                                                  | String    |
+| O        | description   | A text description of the linked resource.                                        | Text      |
+| O        | file          | The stored file object, if the resource is hosted by HydroServer.                 | File      |
+| O        | url           | The external URL, if the resource is not hosted by HydroServer.                   | String    |
+| M        | type          | A text string identifying the type of linked resource.                            | String    |
 
-**NOTE**: The database enforces a unique constraint on `(datastream_id, name)`.
+**NOTE**: The database enforces a unique constraint on `(datastream_id, name)`, and a check constraint that exactly one of `file`/`url` is set.
 
 # Orchestration
 
@@ -549,7 +561,7 @@ HydroServer also includes simple lookup tables that primarily store controlled v
 | `UserType`              | `id`, `name`, `public` | BigInteger, String, Boolean |
 | `OrganizationType`      | `id`, `name`, `public` | BigInteger, String, Boolean |
 | `SiteType`              | `id`, `name`           | BigInteger, String          |
-| `FileAttachmentType`    | `id`, `name`           | BigInteger, String          |
+| `LinkedResourceType`    | `id`, `name`           | BigInteger, String          |
 | `VariableType`          | `id`, `name`           | BigInteger, String          |
 | `SensorEncodingType`    | `id`, `name`           | BigInteger, String          |
 | `MethodType`            | `id`, `name`           | BigInteger, String          |

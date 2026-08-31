@@ -68,7 +68,7 @@ class UnitService(ServiceUtils):
             "workspace_id",
             "datastreams__monitoring_site_id",
             "datastreams__id",
-            "unit_type",
+            "type",
         ]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
@@ -78,7 +78,6 @@ class UnitService(ServiceUtils):
                 queryset,
                 order_by,
                 list(get_args(UnitOrderByFields)),
-                {"type": "unit_type"},
             )
         else:
             queryset = queryset.order_by("id")

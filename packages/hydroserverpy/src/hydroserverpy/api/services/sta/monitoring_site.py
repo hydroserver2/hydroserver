@@ -84,7 +84,7 @@ class MonitoringSiteService(HydroServerBaseService):
             "adminArea1": admin_area_1,
             "adminArea2": admin_area_2,
             "country": country,
-            "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
+            "tags": tags or {},
         }
 
         return super().create(**body)
@@ -105,6 +105,7 @@ class MonitoringSiteService(HydroServerBaseService):
         admin_area_2: Optional[str] = ...,
         country: Optional[str] = ...,
         data_disclaimer: Optional[str] = ...,
+        tags: Dict[str, Optional[str]] = ...,
     ) -> "MonitoringSite":
         """Update a monitoring_site."""
 
@@ -122,66 +123,52 @@ class MonitoringSiteService(HydroServerBaseService):
             "adminArea1": admin_area_1,
             "adminArea2": admin_area_2,
             "country": country,
+            "tags": tags,
         }
 
         return super().update(uid=str(uid), **body)
 
-    def add_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Tag a HydroServer monitoring_site."""
+    def set_tag(self, uid: Union[UUID, str], key: str, value: str) -> "MonitoringSite":
+        """Create or update a tag on a HydroServer monitoring_site."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        return self.client.request(
-            "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
+        return self.update(uid=uid, tags={key: value})
 
-    def update_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Update the tag of a HydroServer monitoring_site."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
-        return self.client.request(
-            "put", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-    def delete_tag(self, uid: Union[UUID, str], key: str, value: str) -> None:
+    def delete_tag(self, uid: Union[UUID, str], key: str) -> "MonitoringSite":
         """Remove a tag from a HydroServer monitoring_site."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
+        return self.update(uid=uid, tags={key: None})
+
+    def add_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        name: str,
+        type: str,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Add a linked resource to a HydroServer monitoring_site. Exactly one of `file`/`url`
+        must be given; whichever one is provided determines whether the resource is hosted by
+        HydroServer or an external link.
+        """
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+        data = {
+            "name": name,
+            "type": type,
         }
-        self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        )
-
-    def add_file_attachment(self, uid: Union[UUID, str], file: IO[bytes], file_attachment_type: str) -> Dict[str, str]:
-        """Add a file attachment of a HydroServer monitoring_site."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
 
         return self.client.request(
-            "post", path, data={"file_attachment_type": file_attachment_type}, files={"file": file}
+            "post", path, data=data, files={"file": file} if file is not None else None
         ).json()
 
-    def delete_file_attachment(self, uid: Union[UUID, str], name: str) -> None:
-        """Delete a file attachment of a HydroServer monitoring_site."""
+    def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
+        """Delete a linked resource from a HydroServer monitoring_site."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "name": name
-        }
-        self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        )
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        self.client.request("delete", path)

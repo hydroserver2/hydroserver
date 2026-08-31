@@ -194,13 +194,13 @@ monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-00000
 tags = monitoring_site.tags
 
 # Add a tag to a monitoring_site
-monitoring_site.add_tag(
+monitoring_site.set_tag(
     key='Region',
     value='A'
 )
 
 # Modify a monitoring_site's tag
-monitoring_site.update_tag(
+monitoring_site.set_tag(
     key='Region',
     value='B'
 )
@@ -273,9 +273,9 @@ observed_property = hs_api.observedproperties.get(uid='00000000-0000-0000-0000-0
 # Create a new observed property in HydroServer
 new_observed_property = hs_api.observedproperties.create(
     name='Temperature',
-    definition='Air Temperature',
+    definition='http://vocabulary.odm2.org/variablename/airTemperature/',
     description='Air temperature',
-    observed_property_type='Climate',
+    type='Climate',
     code='AirTemp',
     workspace='00000000-0000-0000-0000-000000000000'
 )
@@ -335,8 +335,8 @@ unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
 new_unit = hs_api.units.create(
     name='Degree Celsius',
     symbol='C',
-    definition='Degree Celsius',
-    unit_type='Temperature',
+    definition='https://qudt.org/vocab/unit/DEG_C',
+    type='Temperature',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```
@@ -458,8 +458,8 @@ processing_level = hs_api.processinglevels.get(uid='00000000-0000-0000-0000-0000
 # Create a new processing level in HydroServer
 new_processing_level = hs_api.processinglevels.create(
     code='0',
-    definition='Raw',
-    explanation='Data have not been processed or quality controlled.',
+    name='Raw',
+    description='Data have not been processed or quality controlled.',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```

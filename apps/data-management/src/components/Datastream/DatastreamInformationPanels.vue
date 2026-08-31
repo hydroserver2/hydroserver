@@ -20,17 +20,17 @@
                 <strong>{{ item.label }}</strong
                 >:
                 <div class="tag-list-wrap">
-                  <span v-if="!item.value?.length">No tags</span>
+                  <span v-if="!Object.keys(item.value ?? {}).length">No tags</span>
                   <v-chip
-                    v-for="(tag, tagIndex) in item.value"
-                    :key="`${tag.key}:${tag.value}:${tagIndex}`"
+                    v-for="[key, value] in Object.entries(item.value ?? {})"
+                    :key="key"
                     class="tag-chip"
                     color="blue-grey-lighten-5"
                     size="small"
                     variant="flat"
                   >
-                    <strong>{{ tag.key }}</strong
-                    >: {{ tag.value }}
+                    <strong>{{ key }}</strong
+                    >: {{ value }}
                   </v-chip>
                 </div>
               </div>
@@ -114,7 +114,7 @@
 <script setup lang="ts">
 import { formatTimeWithZone } from '@/utils/time'
 import { onMounted, ref } from 'vue'
-import hs, { type Tag } from '@hydroserver/client'
+import hs, { type Tags } from '@hydroserver/client'
 
 const props = defineProps({
   datastreamId: { type: String, required: true },
@@ -136,19 +136,7 @@ onMounted(async () => {
     expand_related: true,
   })
   const d = datastream.value!
-  let datastreamTags: Tag[] = Array.isArray(d.tags) ? d.tags : []
-
-  if (!Array.isArray(d.tags)) {
-    try {
-      const tagsResponse = await hs.datastreams.getTags(d.id)
-      datastreamTags =
-        tagsResponse.ok && Array.isArray(tagsResponse.data)
-          ? tagsResponse.data
-          : []
-    } catch (error) {
-      console.error('Error fetching datastream tags', error)
-    }
-  }
+  const datastreamTags: Tags = d.tags ?? {}
 
   generalItems.value = [
     { label: 'Workspace Name', value: d.workspace.name },
@@ -250,9 +238,10 @@ onMounted(async () => {
 
   const pl = d.processingLevel
   processingLevelItems.value = [
+    { label: 'Name', value: pl.name },
     { label: 'Code', value: pl.code },
+    { label: 'Description', value: pl.description },
     { label: 'Definition', value: pl.definition },
-    { label: 'Explanation', value: pl.explanation },
   ]
 })
 </script>

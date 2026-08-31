@@ -38,7 +38,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   const formattedProcessingLevels = computed(() =>
     processingLevels.value.map((pl) => ({
       ...pl,
-      title: `${pl.code}: ${pl.definition}`,
+      title: `${pl.code}: ${pl.name}`,
     }))
   )
 

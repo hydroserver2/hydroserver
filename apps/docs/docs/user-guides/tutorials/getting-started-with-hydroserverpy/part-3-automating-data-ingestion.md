@@ -47,7 +47,7 @@ gage_height_property = hs_api.observedproperties.create(
     name='Gage Height',
     definition='http://vocabulary.odm2.org/variablename/gageHeight/',
     description='Height of the water surface above a local datum.',
-    observed_property_type='Hydrology',
+    type='Hydrology',
     code='GAGE_HEIGHT',
 )
 
@@ -57,15 +57,15 @@ feet_unit = hs_api.units.create(
     name='Foot',
     symbol='ft',
     definition='https://qudt.org/vocab/unit/FT',
-    unit_type='Length',
+    type='Length',
 )
 
 # Processing level (reuse the one we created in Part 1, or recreate it)
 raw_processing_level = hs_api.processinglevels.create(
     workspace=workspace,
     code='0',
-    definition='Raw',
-    explanation='Data have not been processed or quality controlled.',
+    name='Raw',
+    description='Data have not been processed or quality controlled.',
 )
 
 # Datastream

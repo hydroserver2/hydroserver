@@ -35,17 +35,17 @@
             class="metadata-chip-list"
           >
             <v-chip
-              v-for="(tag, index) in tagProperty.value"
+              v-for="([key, value], index) in Object.entries(tagProperty.value)"
               rounded="true"
               :color="materialColors[index % materialColors.length]"
-              :key="tag.key"
+              :key="key"
               class="mr-2 my-1"
             >
-              {{ tag.key }}:
-              <span v-if="isUrl(tag.value)">
-                <a :href="tag.value" target="_blank">{{ tag.value }}</a>
+              {{ key }}:
+              <span v-if="isUrl(value)">
+                <a :href="value" target="_blank">{{ value }}</a>
               </span>
-              <span v-else>{{ tag.value }}</span>
+              <span v-else>{{ value }}</span>
             </v-chip>
           </div>
           <div v-else-if="item.label === 'Rating Curves'">
@@ -99,17 +99,17 @@
         </div>
         <div v-else-if="item.label === 'Additional metadata'">
           <v-chip
-            v-for="(tag, index) in tagProperty.value"
+            v-for="([key, value], index) in Object.entries(tagProperty.value)"
             rounded="true"
             :color="materialColors[index % materialColors.length]"
-            :key="tag.key"
+            :key="key"
             class="mr-2 my-1"
           >
-            {{ tag.key }}:
-            <span v-if="isUrl(tag.value)">
-              <a :href="tag.value" target="_blank">{{ tag.value }}</a>
+            {{ key }}:
+            <span v-if="isUrl(value)">
+              <a :href="value" target="_blank">{{ value }}</a>
             </span>
-            <span v-else>{{ tag.value }}</span>
+            <span v-else>{{ value }}</span>
           </v-chip>
         </div>
         <div v-else-if="item.label === 'Rating Curves'">
@@ -159,8 +159,8 @@ import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { materialColors } from '@/utils/materialColors'
-import { useTagStore } from '@/store/tags'
 import { Snackbar } from '@/utils/notifications'
+import type { Tags } from '@hydroserver/client'
 import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import {
@@ -185,7 +185,6 @@ const props = withDefaults(
 )
 
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
-const { tags } = storeToRefs(useTagStore())
 const { smAndDown } = useDisplay()
 const isMobile = computed(() => smAndDown.value)
 const isRatingCurveDialogOpen = ref(false)
@@ -247,7 +246,7 @@ const monitoringSiteProperties = computed(() => {
     {
       icon: mdiTagMultipleOutline,
       label: 'Additional metadata',
-      value: tags.value || [],
+      value: monitoringSite.value.tags || {},
     },
   ]
 
@@ -266,7 +265,7 @@ const tagProperty = computed(() => {
   return {
     icon: mdiTagMultipleOutline,
     label: 'Additional metadata',
-    value: tags.value || [],
+    value: monitoringSite.value?.tags || {},
   }
 })
 
@@ -274,7 +273,7 @@ type MonitoringSitePropertyRow = {
   icon: string
   iconColor?: string
   label: string
-  value: string | number | { key: string; value: string }[]
+  value: string | number | Tags
 }
 </script>
 

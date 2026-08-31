@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 
 class ObservedPropertyFields(Schema):
     name: str = Field(..., max_length=255)
-    definition: str
+    definition: Optional[str] = None
     description: str
-    observed_property_type: str = Field(..., max_length=255, alias="type")
-    code: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=500)
+    code: str = Field(..., max_length=500)
 
 
 _order_by_fields = (
@@ -47,9 +47,7 @@ class ObservedPropertyQueryParameters(CollectionQueryParameters):
         description="Filter observed properties by datastream ID.",
         alias="datastream_id",
     )
-    observed_property_type: list[str] = Query(
-        [], description="Filter observed properties by type", alias="type"
-    )
+    type: list[str] = Query([], description="Filter observed properties by type")
 
 
 class ObservedPropertySummaryResponse(BaseGetResponse, ObservedPropertyFields):

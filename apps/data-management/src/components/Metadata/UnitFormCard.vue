@@ -26,9 +26,8 @@
         />
         <v-text-field
           v-model="item.definition"
-          class="required-label"
           label="Definition"
-          :rules="rules.requiredDescription"
+          :rules="item.definition ? rules.urlFormat : []"
         />
         <v-text-field
           v-model="item.type"

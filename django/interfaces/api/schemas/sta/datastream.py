@@ -1,5 +1,5 @@
 import uuid
-from pydantic import AliasPath, AliasChoices
+from pydantic import AliasPath, AliasChoices, field_validator
 from ninja import Schema, Field, Query
 from typing import Optional, Literal, TYPE_CHECKING
 from core.types import ISODatetime
@@ -10,7 +10,8 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, FileAttachmentGetResponse
+from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
+from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -186,7 +187,7 @@ class VisualizationObservedPropertyResponse(BaseGetResponse):
 
 class VisualizationProcessingLevelResponse(BaseGetResponse):
     id: uuid.UUID
-    definition: Optional[str] = None
+    name: str = Field(..., max_length=255)
 
 
 class VisualizationDatastreamResponse(BaseGetResponse):
@@ -226,10 +227,8 @@ class DatastreamSummaryResponse(
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
-    datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    tags: dict[str, str] = {}
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
@@ -242,16 +241,18 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
     observed_property: "ObservedPropertySummaryResponse"
     processing_level: "ProcessingLevelSummaryResponse"
     unit: "UnitSummaryResponse"
-    datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    tags: dict[str, str] = {}
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
 class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):
     id: Optional[uuid.UUID] = None
-    tags: list[TagPostBody] = []
+    tags: dict[str, str] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
 
 
 class DatastreamPatchBody(BasePatchBody, DatastreamFields, DatastreamRelatedFields):
-    pass
+    tags: dict[str, str | None] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

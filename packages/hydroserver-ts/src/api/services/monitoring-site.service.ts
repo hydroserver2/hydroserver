@@ -10,16 +10,11 @@ import {
   SiteTypeIcon,
   MonitoringSiteMapSummary,
   MonitoringSiteTaskSummary,
-  Tag,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
-import { normalizeAttachmentCollection } from './attachment-link'
+import { normalizeLinkCollection, normalizeLinkRecord } from './link-normalization'
 
-type TagPostBody = Data.components['schemas']['TagPostBody']
-type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
-type TagResponse = Data.components['schemas']['TagGetResponse']
-type FileAttachmentResponse =
-  Data.components['schemas']['FileAttachmentGetResponse']
+type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetResponse']
 
 export class MonitoringSiteService extends HydroServerBaseService<typeof C, MonitoringSite> {
   static route = C.route
@@ -60,65 +55,61 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTags(monitoringSiteId: string) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.fetch<Tag[]>(url)
-  }
-
   getTagKeys(params: { workspace_id?: string; monitoring_site_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
     return apiMethods.fetch<Record<string, string[]>>(url)
   }
 
-  createTag(monitoringSiteId: string, tag: TagPostBody) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.post<TagResponse>(url, tag)
+  setTag(monitoringSiteId: string, key: string, value: string) {
+    return apiMethods.patch<MonitoringSite>(`${this._route}/${monitoringSiteId}`, {
+      tags: { [key]: value },
+    })
   }
 
-  updateTag(monitoringSiteId: string, tag: TagPostBody) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.put<TagResponse>(url, tag)
+  deleteTag(monitoringSiteId: string, key: string) {
+    return apiMethods.patch<MonitoringSite>(`${this._route}/${monitoringSiteId}`, {
+      tags: { [key]: null },
+    })
   }
 
-  deleteTag(monitoringSiteId: string, tag: TagDeleteBody) {
-    const url = `${this._route}/${monitoringSiteId}/tags`
-    return apiMethods.delete<null>(url, tag)
-  }
+  /* ------------------ Sub-resources: Linked Resources ------------------ */
 
-  /* ----------------- Sub-resources: File Attachments ----------------- */
+  getLinkedResourceTypes = () =>
+    apiMethods.fetch<string[]>(`${this._route}/linked-resource-types`)
 
-  getFileAttachmentTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
-
-  async uploadAttachments(monitoringSiteId: string, data: FormData) {
-    const url = `${this._route}/${monitoringSiteId}/file-attachments`
-    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
+  async getLinkedResources(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources`
+    const res = await apiMethods.paginatedFetch<LinkedResourceResponse[]>(url)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse>
+      data: normalizeLinkCollection(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse[]>
   }
 
-  async getAttachments(monitoringSiteId: string) {
-    const url = `${this._route}/${monitoringSiteId}/file-attachments`
-    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
+  async createLinkedResource(monitoringSiteId: string, data: FormData) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources`
+    const res = await apiMethods.post<LinkedResourceResponse>(url, data)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse[]>
+      data: normalizeLinkRecord(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse>
   }
 
-  deleteAttachment(monitoringSiteId: string, name: string) {
-    const url = `${this._route}/${monitoringSiteId}/file-attachments`
-    return apiMethods.delete<null>(url, { name })
+  async updateLinkedResource(monitoringSiteId: string, linkedResourceId: string, data: FormData) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.patch<LinkedResourceResponse>(url, data)
+    if (!res.ok) return res
+    return {
+      ...res,
+      data: normalizeLinkRecord(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse>
+  }
+
+  deleteLinkedResource(monitoringSiteId: string, linkedResourceId: string) {
+    const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
+    return apiMethods.delete<null>(url)
   }
 
   /* --------------- Sub-resources: HydroShare Archive ----------------- */

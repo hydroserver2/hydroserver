@@ -169,7 +169,7 @@ watch(
     )
     selectedProcessingLevelNames.value = canonicalValues(
       processingLevels.value
-        .map((item) => item.definition)
+        .map((item) => item.name)
         .filter((value): value is string => Boolean(value)),
       filters['processing-level']
     )
@@ -239,10 +239,10 @@ const sortedProcessingLevelNames = computed(() => {
       !matchesSelectedWorkspace(datastream)
     )
       return
-    const definition = dataVisStore.processingLevelById.get(
+    const name = dataVisStore.processingLevelById.get(
       datastream.processingLevelId
-    )?.definition
-    if (definition) names.add(definition)
+    )?.name
+    if (name) names.add(name)
   })
   return [...names].sort()
 })

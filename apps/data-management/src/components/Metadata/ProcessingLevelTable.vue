@@ -160,9 +160,10 @@ const ProcLevelHeaders = computed(() => {
     sortable?: boolean
     align?: 'end'
   }[] = [
+    { title: 'Name', key: 'name' },
     { title: 'Code', key: 'code' },
+    { title: 'Description', key: 'description' },
     { title: 'Definition', key: 'definition' },
-    { title: 'Explanation', key: 'explanation' },
   ]
   if (props.scope === 'all')
     base.push({ title: 'Scope', key: 'scope', sortable: false })
@@ -171,6 +172,6 @@ const ProcLevelHeaders = computed(() => {
 })
 
 const sortedItems = computed(() =>
-  items.value.sort((a, b) => a.code.localeCompare(b.code))
+  items.value.sort((a, b) => a.name.localeCompare(b.name))
 )
 </script>

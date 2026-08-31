@@ -12,7 +12,7 @@
       <!-- Processing Level -->
       <div class="mb-3">
         <div class="hs-text-md font-weight-medium">
-          {{ datastream.processingLevel.definition }}
+          {{ datastream.processingLevel.name }}
         </div>
         <div class="hs-text-2xs text-grey-darken-1">Processing Level</div>
       </div>

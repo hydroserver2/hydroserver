@@ -1834,13 +1834,6 @@
             "title": "Description",
             "type": "string"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1883,6 +1876,13 @@
             "default": true,
             "title": "Isvisible",
             "type": "boolean"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
           },
           "method": {
             "$ref": "#/components/schemas/MethodSummaryResponse"
@@ -1981,11 +1981,12 @@
             "title": "Status"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -2037,8 +2038,7 @@
           "observedProperty",
           "processingLevel",
           "unit",
-          "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "DatastreamDetailResponse",
         "type": "object"
@@ -2205,6 +2205,20 @@
               }
             ],
             "title": "Status"
+          },
+          "tags": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Tags",
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -2419,12 +2433,12 @@
             "title": "Status"
           },
           "tags": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/TagPostBody"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -2853,13 +2867,6 @@
             "title": "Description",
             "type": "string"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2902,6 +2909,13 @@
             "default": true,
             "title": "Isvisible",
             "type": "boolean"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
           },
           "methodId": {
             "format": "uuid",
@@ -3008,11 +3022,12 @@
             "title": "Status"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "timeAggregationInterval": {
             "title": "Timeaggregationinterval",
@@ -3068,8 +3083,7 @@
           "timeAggregationIntervalUnit",
           "id",
           "workspaceId",
-          "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "DatastreamSummaryResponse",
         "type": "object"
@@ -3788,102 +3802,6 @@
         "title": "EtlTaskSummaryResponse",
         "type": "object"
       },
-      "FileAttachmentDeleteBody": {
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "FileAttachmentDeleteBody",
-        "type": "object"
-      },
-      "FileAttachmentGetResponse": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "fileAttachmentType": {
-            "title": "Fileattachmenttype",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "integer"
-          },
-          "link": {
-            "title": "Link",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "link",
-          "fileAttachmentType"
-        ],
-        "title": "FileAttachmentGetResponse",
-        "type": "object"
-      },
-      "FileAttachmentQueryParameters": {
-        "properties": {
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
-          },
-          "type": {
-            "default": [],
-            "description": "Filter by file attachment type.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Type",
-            "type": "array"
-          }
-        },
-        "title": "FileAttachmentQueryParameters",
-        "type": "object"
-      },
       "JSONPayloadPostBody": {
         "properties": {
           "dataIngestionWindow": {
@@ -3984,6 +3902,90 @@
           "timestampKey"
         ],
         "title": "JSONPayloadResponse",
+        "type": "object"
+      },
+      "LinkedResourceGetResponse": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "link"
+        ],
+        "title": "LinkedResourceGetResponse",
+        "type": "object"
+      },
+      "LinkedResourceQueryParameters": {
+        "properties": {
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          },
+          "type": {
+            "default": [],
+            "description": "Filter by linked resource type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Type",
+            "type": "array"
+          }
+        },
+        "title": "LinkedResourceQueryParameters",
         "type": "object"
       },
       "MethodDetailResponse": {
@@ -5055,13 +5057,6 @@
             ],
             "title": "Elevation M"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5077,6 +5072,13 @@
             "title": "Latitude",
             "type": "number"
           },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
+          },
           "longitude": {
             "maximum": 180,
             "minimum": -180,
@@ -5089,11 +5091,12 @@
             "type": "string"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5114,8 +5117,7 @@
           "isPrivate",
           "id",
           "workspace",
-          "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "MonitoringSiteDetailResponse",
         "type": "object"
@@ -5175,11 +5177,11 @@
             "type": "string"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5391,6 +5393,20 @@
             "title": "Name",
             "type": "string"
           },
+          "tags": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Tags",
+            "type": "object"
+          },
           "type": {
             "maxLength": 200,
             "title": "Type",
@@ -5517,12 +5533,12 @@
             "type": "string"
           },
           "tags": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/TagPostBody"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5793,13 +5809,6 @@
             ],
             "title": "Elevation M"
           },
-          "fileAttachments": {
-            "items": {
-              "$ref": "#/components/schemas/FileAttachmentGetResponse"
-            },
-            "title": "Fileattachments",
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5815,6 +5824,13 @@
             "title": "Latitude",
             "type": "number"
           },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
+          },
           "longitude": {
             "maximum": 180,
             "minimum": -180,
@@ -5827,11 +5843,12 @@
             "type": "string"
           },
           "tags": {
-            "items": {
-              "$ref": "#/components/schemas/TagGetResponse"
+            "additionalProperties": {
+              "type": "string"
             },
+            "default": {},
             "title": "Tags",
-            "type": "array"
+            "type": "object"
           },
           "type": {
             "maxLength": 200,
@@ -5854,8 +5871,7 @@
           "isPrivate",
           "id",
           "workspaceId",
-          "tags",
-          "fileAttachments"
+          "linkedResources"
         ],
         "title": "MonitoringSiteSummaryResponse",
         "type": "object"
@@ -6850,13 +6866,20 @@
       "ObservedPropertyDetailResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -6873,7 +6896,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -6890,7 +6913,6 @@
         },
         "required": [
           "name",
-          "definition",
           "description",
           "type",
           "code",
@@ -6903,13 +6925,20 @@
       "ObservedPropertyPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -6921,7 +6950,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           }
@@ -6932,13 +6961,20 @@
       "ObservedPropertyPostBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -6962,7 +6998,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -6981,7 +7017,6 @@
         },
         "required": [
           "name",
-          "definition",
           "description",
           "type",
           "code",
@@ -7126,13 +7161,20 @@
       "ObservedPropertySummaryResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Code",
             "type": "string"
           },
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "description": {
             "title": "Description",
@@ -7149,7 +7191,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 255,
+            "maxLength": 500,
             "title": "Type",
             "type": "string"
           },
@@ -7168,7 +7210,6 @@
         },
         "required": [
           "name",
-          "definition",
           "description",
           "type",
           "code",
@@ -7449,20 +7490,18 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           },
           "workspace": {
@@ -7478,6 +7517,8 @@
         },
         "required": [
           "code",
+          "name",
+          "description",
           "id",
           "workspace"
         ],
@@ -7502,16 +7543,14 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
           }
         },
         "title": "ProcessingLevelPatchBody",
@@ -7535,16 +7574,9 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
           },
           "id": {
             "anyOf": [
@@ -7557,6 +7589,11 @@
               }
             ],
             "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
           },
           "workspaceId": {
             "anyOf": [
@@ -7572,7 +7609,9 @@
           }
         },
         "required": [
-          "code"
+          "code",
+          "name",
+          "description"
         ],
         "title": "ProcessingLevelPostBody",
         "type": "object"
@@ -7632,7 +7671,9 @@
                 "items": {
                   "enum": [
                     "code",
-                    "-code"
+                    "name",
+                    "-code",
+                    "-name"
                   ],
                   "type": "string"
                 },
@@ -7715,20 +7756,18 @@
             ],
             "title": "Definition"
           },
-          "explanation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Explanation"
+          "description": {
+            "title": "Description",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           },
           "workspaceId": {
@@ -7746,6 +7785,8 @@
         },
         "required": [
           "code",
+          "name",
+          "description",
           "id",
           "workspaceId"
         ],
@@ -10160,66 +10201,6 @@
         "title": "SiteTypeIconResponse",
         "type": "object"
       },
-      "TagDeleteBody": {
-        "properties": {
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          }
-        },
-        "required": [
-          "key"
-        ],
-        "title": "TagDeleteBody",
-        "type": "object"
-      },
-      "TagGetResponse": {
-        "properties": {
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "value": {
-            "title": "Value",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "value"
-        ],
-        "title": "TagGetResponse",
-        "type": "object"
-      },
-      "TagPostBody": {
-        "properties": {
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "value": {
-            "title": "Value",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "value"
-        ],
-        "title": "TagPostBody",
-        "type": "object"
-      },
       "TaskRunOrderBy": {
         "enum": [
           "id",
@@ -10479,8 +10460,15 @@
       "UnitDetailResponse": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "id": {
             "format": "uuid",
@@ -10516,7 +10504,6 @@
         "required": [
           "name",
           "symbol",
-          "definition",
           "type",
           "id",
           "workspace"
@@ -10527,8 +10514,15 @@
       "UnitPatchBody": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "name": {
             "maxLength": 255,
@@ -10552,8 +10546,15 @@
       "UnitPostBody": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "id": {
             "anyOf": [
@@ -10598,7 +10599,6 @@
         "required": [
           "name",
           "symbol",
-          "definition",
           "type"
         ],
         "title": "UnitPostBody",
@@ -10740,8 +10740,15 @@
       "UnitSummaryResponse": {
         "properties": {
           "definition": {
-            "title": "Definition",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
           },
           "id": {
             "format": "uuid",
@@ -10779,7 +10786,6 @@
         "required": [
           "name",
           "symbol",
-          "definition",
           "type",
           "id",
           "workspaceId"
@@ -10988,25 +10994,20 @@
       },
       "VisualizationProcessingLevelResponse": {
         "properties": {
-          "definition": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Definition"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
           }
         },
         "required": [
-          "id"
+          "id",
+          "name"
         ],
         "title": "VisualizationProcessingLevelResponse",
         "type": "object"
@@ -11309,7 +11310,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.11.1"
+    "version": "2.0.0b2"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -12098,10 +12099,10 @@
         ]
       }
     },
-    "/api/data/datastreams/file-attachment-types": {
+    "/api/data/datastreams/linked-resource-types": {
       "get": {
-        "description": "Get file attachment types.",
-        "operationId": "interfaces_api_views_sta_datastream_get_file_attachment_types",
+        "description": "Get linked resource types.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resource_types",
         "parameters": [
           {
             "description": "Page number (1-based).",
@@ -12180,7 +12181,7 @@
             "description": "OK"
           }
         },
-        "summary": "Get File Attachment Types",
+        "summary": "Get Datastream Linked Resource Types",
         "tags": [
           "Datastreams"
         ]
@@ -12859,103 +12860,10 @@
         ]
       }
     },
-    "/api/data/datastreams/{datastream_id}/file-attachments": {
-      "delete": {
-        "description": "Remove a file attachment from a datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_remove_datastream_file_attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileAttachmentDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Datastream File Attachment",
-        "tags": [
-          "Datastreams"
-        ]
-      },
+    "/api/data/datastreams/{datastream_id}/linked-resources": {
       "get": {
-        "description": "Get all file attachments associated with a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_file_attachments",
+        "description": "Get all linked resources associated with a Datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resources",
         "parameters": [
           {
             "in": "path",
@@ -13009,13 +12917,13 @@
             }
           },
           {
-            "description": "Filter by file attachment type.",
+            "description": "Filter by linked resource type.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter by file attachment type.",
+              "description": "Filter by linked resource type.",
               "items": {
                 "type": "string"
               },
@@ -13030,7 +12938,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                    "$ref": "#/components/schemas/LinkedResourceGetResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -13076,14 +12984,14 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Get Datastream File Attachments",
+        "summary": "Get Datastream Linked Resources",
         "tags": [
           "Datastreams"
         ]
       },
       "post": {
-        "description": "Add a file attachment to a datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_add_datastream_file_attachment",
+        "description": "Add a linked resource to a datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_add_datastream_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -13113,18 +13021,42 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
+                  },
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "title": "Name",
                     "type": "string"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
+                  "type": {
+                    "minLength": 1,
+                    "title": "Type",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "file",
-                  "file_attachment_type"
+                  "name",
+                  "type"
                 ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
@@ -13138,7 +13070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
                 }
               }
             },
@@ -13214,14 +13146,16 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Add Datastream File Attachment",
+        "summary": "Add Datastream Linked Resource",
         "tags": [
           "Datastreams"
         ]
-      },
-      "put": {
-        "description": "Replace a file attachment for a datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_replace_datastream_file_attachment",
+      }
+    },
+    "/api/data/datastreams/{datastream_id}/linked-resources/{linked_resource_id}": {
+      "delete": {
+        "description": "Remove a linked resource from a datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_remove_datastream_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -13230,6 +13164,98 @@
             "schema": {
               "format": "uuid",
               "title": "Datastream Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Remove Datastream Linked Resource",
+        "tags": [
+          "Datastreams"
+        ]
+      },
+      "patch": {
+        "description": "Update a linked resource for a datastream. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
+        "operationId": "interfaces_api_views_sta_datastream_update_datastream_linked_resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
               "type": "string"
             }
           }
@@ -13251,19 +13277,51 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
-                    "type": "string"
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Name"
+                  },
+                  "type": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Type"
                   }
                 },
-                "required": [
-                  "file",
-                  "file_attachment_type"
-                ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
               }
@@ -13272,8 +13330,15 @@
           "required": true
         },
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
+                }
+              }
+            },
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -13307,6 +13372,17 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "413": {
             "content": {
@@ -13345,7 +13421,7 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Replace Datastream File Attachment",
+        "summary": "Update Datastream Linked Resource",
         "tags": [
           "Datastreams"
         ]
@@ -14097,373 +14173,6 @@
         "tags": [
           "Datastreams",
           "Observations"
-        ]
-      }
-    },
-    "/api/data/datastreams/{datastream_id}/tags": {
-      "delete": {
-        "description": "Remove a tag from a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_remove_datastream_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Datastream Tag",
-        "tags": [
-          "Datastreams"
-        ]
-      },
-      "get": {
-        "description": "Get all tags associated with a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_tags",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TagGetResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Datastream Tags",
-        "tags": [
-          "Datastreams"
-        ]
-      },
-      "post": {
-        "description": "Add a tag to a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_add_datastream_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Add Datastream Tag",
-        "tags": [
-          "Datastreams"
-        ]
-      },
-      "put": {
-        "description": "Edit a tag of a Datastream.",
-        "operationId": "interfaces_api_views_sta_datastream_edit_datastream_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Edit Datastream Tag",
-        "tags": [
-          "Datastreams"
         ]
       }
     },
@@ -17271,10 +16980,10 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/file-attachment-types": {
+    "/api/data/monitoring-sites/linked-resource-types": {
       "get": {
-        "description": "Get file attachment types.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_file_attachment_types",
+        "description": "Get linked resource types.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types",
         "parameters": [
           {
             "description": "Page number (1-based).",
@@ -17353,7 +17062,7 @@
             "description": "OK"
           }
         },
-        "summary": "Get File Attachment Types",
+        "summary": "Get Monitoring Site Linked Resource Types",
         "tags": [
           "Monitoring Sites"
         ]
@@ -18110,103 +17819,10 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/{monitoring_site_id}/file-attachments": {
-      "delete": {
-        "description": "Remove a file attachment from a monitoring_site.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileAttachmentDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Remove Monitoring Site File Attachment",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
+    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources": {
       "get": {
-        "description": "Get all file attachments associated with a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_file_attachments",
+        "description": "Get all linked resources associated with a MonitoringSite.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources",
         "parameters": [
           {
             "in": "path",
@@ -18260,13 +17876,13 @@
             }
           },
           {
-            "description": "Filter by file attachment type.",
+            "description": "Filter by linked resource type.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter by file attachment type.",
+              "description": "Filter by linked resource type.",
               "items": {
                 "type": "string"
               },
@@ -18281,7 +17897,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                    "$ref": "#/components/schemas/LinkedResourceGetResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -18327,14 +17943,14 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Get Monitoring Site File Attachments",
+        "summary": "Get Monitoring Site Linked Resources",
         "tags": [
           "Monitoring Sites"
         ]
       },
       "post": {
-        "description": "Add a file attachment to a monitoring_site.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_file_attachment",
+        "description": "Add a linked resource to a monitoring_site.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -18364,18 +17980,42 @@
                     "title": "Description"
                   },
                   "file": {
-                    "format": "binary",
-                    "title": "File",
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
+                  },
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "title": "Name",
                     "type": "string"
                   },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
+                  "type": {
+                    "minLength": 1,
+                    "title": "Type",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "file",
-                  "file_attachment_type"
+                  "name",
+                  "type"
                 ],
                 "title": "MultiPartBodyParams",
                 "type": "object"
@@ -18389,7 +18029,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileAttachmentGetResponse"
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
                 }
               }
             },
@@ -18465,147 +18105,16 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Add Monitoring Site File Attachment",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
-      "put": {
-        "description": "Replace a file attachment for a monitoring_site.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_replace_monitoring_site_file_attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "properties": {
-                  "description": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Description"
-                  },
-                  "file": {
-                    "format": "binary",
-                    "title": "File",
-                    "type": "string"
-                  },
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "file",
-                  "file_attachment_type"
-                ],
-                "title": "MultiPartBodyParams",
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "413": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Content Too Large"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Replace Monitoring Site File Attachment",
+        "summary": "Add Monitoring Site Linked Resource",
         "tags": [
           "Monitoring Sites"
         ]
       }
     },
-    "/api/data/monitoring-sites/{monitoring_site_id}/tags": {
+    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
       "delete": {
-        "description": "Remove a tag from a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_tag",
+        "description": "Remove a linked resource from a monitoring_site.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -18616,33 +18125,22 @@
               "title": "Monitoring Site Id",
               "type": "string"
             }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "204": {
             "description": "No Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "401": {
             "content": {
               "application/json": {
@@ -18665,7 +18163,7 @@
             },
             "description": "Forbidden"
           },
-          "422": {
+          "404": {
             "content": {
               "application/json": {
                 "schema": {
@@ -18674,7 +18172,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Not Found"
           }
         },
         "security": [
@@ -18691,14 +18189,14 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Remove Monitoring Site Tag",
+        "summary": "Remove Monitoring Site Linked Resource",
         "tags": [
           "Monitoring Sites"
         ]
       },
-      "get": {
-        "description": "Get all tags associated with a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_tags",
+      "patch": {
+        "description": "Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource",
         "parameters": [
           {
             "in": "path",
@@ -18709,185 +18207,82 @@
               "title": "Monitoring Site Id",
               "type": "string"
             }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
           }
         ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TagGetResponse"
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Description"
                   },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Monitoring Site Tags",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
-      "post": {
-        "description": "Add a tag to a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Add Monitoring Site Tag",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      },
-      "put": {
-        "description": "Edit a tag of a MonitoringSite.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_edit_monitoring_site_tag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "monitoring_site_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Monitoring Site Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagPostBody"
+                  "file": {
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "File"
+                  },
+                  "link": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Link"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Name"
+                  },
+                  "type": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Type"
+                  }
+                },
+                "title": "MultiPartBodyParams",
+                "type": "object"
               }
             }
           },
@@ -18898,7 +18293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TagGetResponse"
+                  "$ref": "#/components/schemas/LinkedResourceGetResponse"
                 }
               }
             },
@@ -18937,6 +18332,28 @@
             },
             "description": "Forbidden"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18963,7 +18380,7 @@
             "BasicAuth": []
           }
         ],
-        "summary": "Edit Monitoring Site Tag",
+        "summary": "Update Monitoring Site Linked Resource",
         "tags": [
           "Monitoring Sites"
         ]
@@ -21425,7 +20842,9 @@
                   "items": {
                     "enum": [
                       "code",
-                      "-code"
+                      "name",
+                      "-code",
+                      "-name"
                     ],
                     "type": "string"
                   },

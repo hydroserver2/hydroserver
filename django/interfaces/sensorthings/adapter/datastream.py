@@ -34,9 +34,7 @@ class DatastreamMixin(SensorThingsUtils):
         if related:
             datastreams = datastreams.select_related(*related)
         if needs_properties:
-            datastreams = datastreams.prefetch_related(
-                "datastream_file_attachments", "datastream_tags"
-            )
+            datastreams = datastreams.prefetch_related("datastream_linked_resources")
         datastreams = principal.filter_by_permission(datastreams, "can_view")
 
         if filters:
@@ -104,7 +102,7 @@ class DatastreamMixin(SensorThingsUtils):
                         {
                             "name": datastream.unit.name,
                             "symbol": datastream.unit.symbol,
-                            "definition": datastream.unit.definition.split(";")[0],
+                            "definition": (datastream.unit.definition or "").split(";")[0],
                         }
                         if needs_unit else Absent
                     ),
@@ -130,11 +128,11 @@ class DatastreamMixin(SensorThingsUtils):
                                 "name": datastream.monitoring_site.workspace.name,
                                 "is_private": datastream.monitoring_site.workspace.is_private,
                             },
-                            "tags": {tag.key: tag.value for tag in datastream.datastream_tags.all()},
-                            "file_attachments": {
-                                fa.name: fa.link
-                                for fa in datastream.datastream_file_attachments.all()
-                            },
+                            "tags": datastream.tags or {},
+                            "linked_resources": {
+                                link.name: link.link
+                                for link in datastream.datastream_linked_resources.all()
+                            }
                         }
                         if needs_properties else Absent
                     ),

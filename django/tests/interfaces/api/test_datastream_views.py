@@ -1,10 +1,11 @@
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from core.sta.models import (
     DatastreamAggregation,
     DatastreamStatus,
-    DatastreamTag,
-    FileAttachmentType,
+    LinkedResourceType,
     SampledMedium,
 )
 from tests.core.iam.factories import (
@@ -198,11 +199,11 @@ def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
     assert set(response.json()) == {"Water", "Air"}
 
 
-def test_get_datastream_file_attachment_types_returns_registered_type_names(client):
-    FileAttachmentType.objects.create(name="Photo")
-    FileAttachmentType.objects.create(name="Report")
+def test_get_datastream_linked_resource_types_returns_registered_type_names(client):
+    LinkedResourceType.objects.create(name="Photo")
+    LinkedResourceType.objects.create(name="Report")
 
-    response = client.get(f"{DATASTREAMS_URL}/file-attachment-types")
+    response = client.get(f"{DATASTREAMS_URL}/linked-resource-types")
 
     assert response.status_code == 200
     assert set(response.json()) == {"Photo", "Report"}
@@ -309,155 +310,278 @@ def test_delete_datastream_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-# --- get_datastream_tags / add / edit / remove ------------------------------------------
+# --- update_datastream tags (PATCH merge semantics) -------------------------------------
 
 
-def test_get_datastream_tags_succeeds_for_workspace_owner(client):
+def test_update_datastream_tags_adds_new_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
-    response = client.get(_tags_url(datastream.id))
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"site": "upstream"}},
+        content_type="application/json",
+    )
 
     assert response.status_code == 200
-    assert {"key": "season", "value": "summer"} in response.json()
+    assert response.json()["tags"] == {"season": "summer", "site": "upstream"}
 
 
-def test_get_datastream_tags_returns_404_for_private_datastream_when_outsider(client):
-    workspace = WorkspaceFactory()
-    datastream = _make_datastream(workspace, private=True)
-    outsider = UserFactory()
-    client.force_login(outsider)
-
-    response = client.get(_tags_url(datastream.id))
-
-    assert response.status_code == 404
-
-
-def test_add_datastream_tag_succeeds_for_workspace_owner(client):
+def test_update_datastream_tags_overwrites_existing_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
+    datastream.tags = {"season": "summer"}
+    datastream.save()
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"season": "winter"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["tags"] == {"season": "winter"}
+
+
+def test_update_datastream_tags_removes_key_when_value_is_null(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    datastream.tags = {"season": "summer", "site": "upstream"}
+    datastream.save()
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"season": None}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["tags"] == {"site": "upstream"}
+
+
+def test_update_datastream_tags_ignores_null_for_missing_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    datastream.tags = {"season": "summer"}
+    datastream.save()
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"unknown": None}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["tags"] == {"season": "summer"}
+
+
+@pytest.mark.parametrize("value", [["summer"], {"nested": "value"}, 3, True])
+def test_update_datastream_tags_returns_422_for_non_string_value(client, value):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"season": value}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_datastream_tags_returns_422_for_empty_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"": "summer"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_datastream_tags_returns_422_for_empty_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"season": ""}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_datastream_tags_locks_row_for_update(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as queries:
+        client.patch(
+            _detail_url(datastream.id),
+            data={"tags": {"season": "summer"}},
+            content_type="application/json",
+        )
+
+    assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+
+
+def test_update_datastream_without_tags_does_not_lock_row(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as queries:
+        client.patch(
+            _detail_url(datastream.id),
+            data={"name": "Updated Name"},
+            content_type="application/json",
+        )
+
+    assert not any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+
+
+def test_update_datastream_tags_returns_403_for_viewer_collaborator(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    datastream.tags = {"season": "summer"}
+    datastream.save()
+    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    client.force_login(collaborator.user)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"tags": {"season": "winter"}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_datastream_with_tags_succeeds(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(
-        _tags_url(datastream.id),
-        data={"key": "season", "value": "summer"},
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit,
+            tags={"season": "summer"},
+        ),
         content_type="application/json",
     )
 
     assert response.status_code == 201
-    assert response.json() == {"key": "season", "value": "summer"}
+    assert response.json()["tags"] == {"season": "summer"}
 
 
-def test_add_datastream_tag_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    datastream = _make_datastream(workspace)
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
+def test_create_datastream_returns_422_for_null_tag_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
 
     response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit,
+            tags={"season": None},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_datastream_returns_422_for_empty_tag_key(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit,
+            tags={"": "summer"},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_datastream_returns_422_for_empty_tag_value(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit,
+            tags={"season": ""},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+# --- removed tag sub-resource endpoints ---------------------------------------------
+
+
+@pytest.mark.parametrize("method", ["get", "post", "put", "delete"])
+def test_datastream_tags_sub_resource_is_removed(client, method):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = getattr(client, method)(
         _tags_url(datastream.id),
         data={"key": "season", "value": "summer"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 403
-
-
-def test_add_datastream_tag_returns_400_for_duplicate_key(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
-    client.force_login(owner)
-
-    response = client.post(
-        _tags_url(datastream.id),
-        data={"key": "season", "value": "winter"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 400
-
-
-def test_edit_datastream_tag_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
-    client.force_login(owner)
-
-    response = client.put(
-        _tags_url(datastream.id),
-        data={"key": "season", "value": "winter"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 200
-    assert response.json()["value"] == "winter"
-
-
-def test_edit_datastream_tag_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
-
-    response = client.put(
-        _tags_url(datastream.id),
-        data={"key": "season", "value": "winter"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 403
-
-
-def test_remove_datastream_tag_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
-    client.force_login(owner)
-
-    response = client.delete(
-        _tags_url(datastream.id),
-        data={"key": "season"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 204
-    assert not DatastreamTag.objects.filter(datastream=datastream, key="season").exists()
-
-
-def test_remove_datastream_tag_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
-
-    response = client.delete(
-        _tags_url(datastream.id),
-        data={"key": "season"},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 403
-
-
-def test_remove_datastream_tag_returns_404_for_unknown_key(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream = _make_datastream(workspace)
-    client.force_login(owner)
-
-    response = client.delete(
-        _tags_url(datastream.id),
-        data={"key": "unknown"},
         content_type="application/json",
     )
 
@@ -494,7 +618,8 @@ def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
     response = client.get(f"{DATASTREAMS_URL}/tags/keys")

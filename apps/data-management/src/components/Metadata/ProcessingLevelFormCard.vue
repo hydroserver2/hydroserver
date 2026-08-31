@@ -15,6 +15,12 @@
     >
       <v-card-text>
         <v-text-field
+          v-model="item.name"
+          label="Name *"
+          :rules="rules.requiredAndMaxLength255"
+        />
+
+        <v-text-field
           v-model="item.code"
           class="required-label"
           label="Code"
@@ -22,15 +28,15 @@
         />
 
         <v-textarea
-          v-model="item.definition"
-          label="Definition"
-          :rules="rules.maxLength(2000)"
+          v-model="item.description"
+          label="Description *"
+          :rules="rules.requiredDescription"
         />
 
-        <v-textarea
-          v-model="item.explanation"
-          label="Explanation"
-          :rules="rules.maxLength(2000)"
+        <v-text-field
+          v-model="item.definition"
+          label="Definition"
+          :rules="item.definition ? rules.urlFormat : []"
         />
 
         <v-card-actions>
