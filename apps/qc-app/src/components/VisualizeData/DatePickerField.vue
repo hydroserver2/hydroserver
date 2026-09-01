@@ -23,7 +23,9 @@
     />
   </div>
 
-  <v-dialog v-model="showDateDialog" max-width="20rem">
+  <!-- Pixels, not rem: the overlay location strategy runs parseFloat on
+       max-width, so "20rem" would be read as 20px. 328 matches v-date-picker. -->
+  <v-dialog v-model="showDateDialog" max-width="328">
     <v-card class="date-picker-card">
       <div class="d-flex align-center px-4 py-2">
         <span class="text-title-medium font-weight-medium">
