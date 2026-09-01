@@ -379,9 +379,6 @@ WHITENOISE_AUTOREFRESH = env.bool("WHITENOISE_AUTOREFRESH", default=DEBUG)
 WHITENOISE_MAX_AGE = env.int("WHITENOISE_MAX_AGE", default=60 * 60 * 24)
 WHITENOISE_IMMUTABLE_FILE_TEST = r"^/static/(web|qc)/assets/"
 
-TAILWIND_CLI_VERSION = "4.1.3"
-TAILWIND_CLI_SRC_CSS = ".django_tailwind_cli/source.css"
-
 
 # Celery
 

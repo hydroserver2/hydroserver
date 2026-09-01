@@ -41,8 +41,6 @@ RUN pip install --upgrade pip && \
 
 COPY . /app
 
-RUN python manage.py tailwind build
-
 COPY --from=frontend-builder /build/apps/data-management/dist/index.html templates/index.html
 COPY --from=frontend-builder /build/apps/data-management/dist interfaces/web/static/web
 RUN sed -i \
