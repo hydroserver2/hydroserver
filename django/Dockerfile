@@ -13,6 +13,7 @@ WORKDIR /build/packages/qc-utils
 RUN npm ci --workspaces=false && npm run build
 
 WORKDIR /build
+COPY packages/design-system packages/design-system
 COPY apps/data-management apps/data-management
 WORKDIR /build/apps/data-management
 RUN npm ci && npm run django-build
