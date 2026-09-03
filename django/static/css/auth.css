@@ -18,7 +18,7 @@ body.auth-page {
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-regular);
   background-color: var(--hs-background);
-  background-image: url("../img/hydroserver-auth-topography.png");
+  background-image: url("../img/ColoradoSite.svg");
   background-position: center;
   background-attachment: fixed;
   background-size: cover;
