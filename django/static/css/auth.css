@@ -162,7 +162,8 @@ body.auth-page {
   border-bottom: 1px solid var(--hs-border);
 }
 
-.auth-page-header .hs-heading {
+.auth-page-header .hs-heading,
+.auth-page-heading {
   margin: 0;
 }
 

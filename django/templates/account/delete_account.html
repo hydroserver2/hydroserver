@@ -1,6 +1,7 @@
 {% extends "allauth/layouts/manage.html" %}
 {% load i18n %}
 {% block head_title %}{% trans "Delete account" %}{% endblock %}
+{% block card_header %}{% endblock %}
 {% block content %}
 <h1 class="hs-heading">{% trans "Delete account" %}</h1>
 
@@ -31,7 +32,7 @@
     </div>
 
     <div class="hs-actions hs-actions--end">
-        <a href="{% url 'account_profile' %}" class="hs-button hs-button--outline">{% trans "Cancel" %}</a>
+        <a href="{% url 'account_profile' %}" class="hs-button hs-button--cancel">{% trans "Cancel" %}</a>
         <button type="submit" class="hs-button hs-button--danger">{% trans "Delete my account" %}</button>
     </div>
 </form>

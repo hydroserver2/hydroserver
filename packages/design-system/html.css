@@ -250,6 +250,15 @@
   width: 100%;
 }
 
+/* Native equivalent of VBtnDialogAction for compact card-form submissions. */
+.hs-button--dialog-action,
+.hs-button--dialog-action:visited {
+  min-width: calc(var(--hs-space-32) * 2);
+  min-height: var(--hs-space-24);
+  padding: 0 var(--hs-space-16);
+  border-radius: var(--hs-radius-md);
+}
+
 .hs-button--outline,
 .hs-button--secondary {
   color: var(--hs-text-secondary);
@@ -269,17 +278,29 @@
 
 /* A submit/link control that should read as a quiet text link, not a button. */
 .hs-button--link,
-.hs-button--link:visited {
+.hs-button--link:visited,
+.hs-button--cancel,
+.hs-button--cancel:visited {
   min-height: auto;
   padding: var(--hs-space-8);
-  color: var(--hs-primary);
   font-weight: var(--hs-font-weight-medium);
   background: none;
   border: 0;
   border-radius: var(--hs-radius-sm);
 }
 
-.hs-button--link:hover {
+.hs-button--link,
+.hs-button--link:visited {
+  color: var(--hs-primary);
+}
+
+.hs-button--cancel,
+.hs-button--cancel:visited {
+  color: var(--hs-text-secondary);
+}
+
+.hs-button--link:hover,
+.hs-button--cancel:hover {
   filter: none;
   background: none;
   text-decoration: underline;
@@ -301,6 +322,10 @@
 
 .hs-actions--end {
   justify-content: flex-end;
+}
+
+.hs-actions--between {
+  justify-content: space-between;
 }
 
 .hs-button-group--vertical {
