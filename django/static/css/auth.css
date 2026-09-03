@@ -114,6 +114,18 @@ body.auth-page {
   margin-top: var(--hs-space-16);
 }
 
+/* Entrance-card submissions are the page's primary action. Keep them aligned
+   with the form controls and use HydroServer's green page-action color. */
+.auth-layout--entrance .hs-actions .hs-button:not(.hs-button--link) {
+  width: 100%;
+}
+
+.auth-layout--entrance
+  .hs-actions
+  .hs-button:not(.hs-button--link):not(.hs-button--outline):not(.hs-button--secondary):not(.hs-button--danger) {
+  background: var(--hs-secondary);
+}
+
 .auth-card__brand {
   display: flex;
   justify-content: center;
