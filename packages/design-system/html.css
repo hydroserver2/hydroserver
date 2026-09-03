@@ -64,6 +64,13 @@
   border-radius: var(--hs-radius-sm);
 }
 
+/* Chrome's autofill background can otherwise show through native fields. */
+.hs-field__input:-webkit-autofill,
+.hs-field input:not([type='checkbox']):not([type='radio']):-webkit-autofill {
+  -webkit-text-fill-color: var(--hs-text-primary);
+  box-shadow: 0 0 0 100vmax var(--hs-surface) inset;
+}
+
 .hs-field__control {
   min-inline-size: 0;
   padding: 0 var(--hs-space-12);
