@@ -102,6 +102,20 @@ def test_create_workspace_returns_401_when_unauthenticated(client):
     assert response.status_code == 401
 
 
+def test_create_workspace_returns_422_for_duplicate_name_owned_by_user(client):
+    owner = UserFactory()
+    WorkspaceFactory(owner=owner, name="Existing Workspace")
+    client.force_login(owner)
+
+    response = client.post(
+        WORKSPACES_URL,
+        data={"name": "Existing Workspace", "isPrivate": False},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
 def test_create_workspace_returns_422_when_owner_at_workspace_limit(client):
     owner = UserFactory(owned_workspace_limit=1)
     WorkspaceFactory(owner=owner)
@@ -263,7 +277,7 @@ def test_transfer_workspace_succeeds_for_owner(client):
     assert workspace.transfer_confirmation.new_owner == new_owner
 
 
-def test_transfer_workspace_returns_400_when_transferring_to_self(client):
+def test_transfer_workspace_returns_422_when_transferring_to_self(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -274,7 +288,7 @@ def test_transfer_workspace_returns_400_when_transferring_to_self(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 def test_transfer_workspace_returns_403_for_viewer_collaborator(client):

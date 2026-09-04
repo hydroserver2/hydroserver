@@ -13,10 +13,10 @@ from interfaces.api.schemas import (
     UnitPatchBody,
     UnitQueryParameters,
 )
-from core.sta.services import UnitService
+from interfaces.api.services.sta import UnitAPIService
 
 unit_router = Router(tags=["Units"])
-unit_service = UnitService()
+unit_service = UnitAPIService()
 
 
 @unit_router.get(

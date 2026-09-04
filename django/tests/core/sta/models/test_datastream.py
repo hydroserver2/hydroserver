@@ -1,13 +1,39 @@
 import pytest
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from core.sta.models import Datastream, Observation
-from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
+from core.sta.models import Datastream, DatastreamLinkedResource, Observation
+from tests.core.iam.factories import WorkspaceFactory
+from tests.core.sta.factories import (
+    DatastreamFactory,
+    MethodFactory,
+    MonitoringSiteFactory,
+    ObservedPropertyFactory,
+    ProcessingLevelFactory,
+    UnitFactory,
+)
 from tests.core.tree_factories import bulk_create_observations
 
 pytestmark = pytest.mark.django_db
+
+
+# --- clean(): linked resource mode cannot be switched (shared mixin) -------------
+
+
+def test_full_clean_rejects_datastream_linked_resource_mode_switch():
+    linked_resource = DatastreamLinkedResource.objects.create(
+        datastream=DatastreamFactory(),
+        name="Datastream Report",
+        type="Report",
+        url="https://example.com/report.pdf",
+    )
+    linked_resource.url = ""
+    linked_resource.file = SimpleUploadedFile("photo.png", b"photo")
+
+    with pytest.raises(ValidationError):
+        linked_resource.full_clean()
 
 
 # --- tags validation ---------------------------------------------------------------
@@ -43,6 +69,114 @@ def test_full_clean_rejects_empty_tag_value():
 
     with pytest.raises(ValidationError):
         datastream.full_clean()
+
+
+# --- clean(): related items must share the monitoring_site's workspace -----------
+
+
+def test_full_clean_rejects_observed_property_from_another_workspace():
+    workspace = WorkspaceFactory()
+    other_workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory.build(
+        monitoring_site=monitoring_site,
+        observed_property=ObservedPropertyFactory(workspace=other_workspace),
+        processing_level=ProcessingLevelFactory(workspace=workspace),
+        method=MethodFactory(workspace=workspace),
+        unit=UnitFactory(workspace=workspace),
+    )
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_rejects_processing_level_from_another_workspace():
+    workspace = WorkspaceFactory()
+    other_workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory.build(
+        monitoring_site=monitoring_site,
+        observed_property=ObservedPropertyFactory(workspace=workspace),
+        processing_level=ProcessingLevelFactory(workspace=other_workspace),
+        method=MethodFactory(workspace=workspace),
+        unit=UnitFactory(workspace=workspace),
+    )
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_rejects_method_from_another_workspace():
+    workspace = WorkspaceFactory()
+    other_workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory.build(
+        monitoring_site=monitoring_site,
+        observed_property=ObservedPropertyFactory(workspace=workspace),
+        processing_level=ProcessingLevelFactory(workspace=workspace),
+        method=MethodFactory(workspace=other_workspace),
+        unit=UnitFactory(workspace=workspace),
+    )
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_rejects_unit_from_another_workspace():
+    workspace = WorkspaceFactory()
+    other_workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory.build(
+        monitoring_site=monitoring_site,
+        observed_property=ObservedPropertyFactory(workspace=workspace),
+        processing_level=ProcessingLevelFactory(workspace=workspace),
+        method=MethodFactory(workspace=workspace),
+        unit=UnitFactory(workspace=other_workspace),
+    )
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_allows_global_observed_property():
+    workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory.build(
+        monitoring_site=monitoring_site,
+        observed_property=ObservedPropertyFactory(workspace=None),
+        processing_level=ProcessingLevelFactory(workspace=workspace),
+        method=MethodFactory(workspace=workspace),
+        unit=UnitFactory(workspace=workspace),
+    )
+
+    datastream.full_clean()  # does not raise
+
+
+def test_full_clean_allows_same_workspace_related_items():
+    datastream = DatastreamFactory()
+
+    datastream.full_clean()  # does not raise
+
+
+# --- clean(): monitoring_site cannot move to another workspace -------------------
+
+
+def test_full_clean_rejects_monitoring_site_from_another_workspace():
+    workspace = WorkspaceFactory()
+    other_workspace = WorkspaceFactory()
+    datastream = DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace))
+    datastream.monitoring_site = MonitoringSiteFactory(workspace=other_workspace)
+
+    with pytest.raises(ValidationError):
+        datastream.full_clean()
+
+
+def test_full_clean_allows_monitoring_site_in_same_workspace():
+    workspace = WorkspaceFactory()
+    datastream = DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace))
+    datastream.monitoring_site = MonitoringSiteFactory(workspace=workspace)
+
+    datastream.full_clean()  # does not raise
 
 
 # --- delete() --------------------------------------------------------------------

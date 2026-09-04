@@ -68,6 +68,20 @@ def test_post_observation_returns_403_for_anonymous(client):
     assert response.status_code == 403
 
 
+def test_post_observation_returns_404_for_private_datastream_when_anonymous(client):
+    workspace = WorkspaceFactory(is_private=True)
+    thing = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory(monitoring_site=thing)
+
+    response = client.post(
+        OBSERVATIONS_URL,
+        data=_observation_post_body(datastream.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
+
+
 def test_post_observation_succeeds_for_authenticated_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)

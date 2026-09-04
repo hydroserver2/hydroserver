@@ -131,7 +131,7 @@ def test_create_monitoring_rule_returns_403_without_edit_permission(client):
     assert response.status_code == 403
 
 
-def test_create_monitoring_rule_returns_400_when_range_rule_missing_bounds(client):
+def test_create_monitoring_rule_returns_422_when_range_rule_missing_bounds(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, datastream = _make_task_with_datastream(workspace)
@@ -145,10 +145,10 @@ def test_create_monitoring_rule_returns_400_when_range_rule_missing_bounds(clien
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
-def test_create_monitoring_rule_returns_400_for_duplicate_rule_type_on_datastream(client):
+def test_create_monitoring_rule_returns_422_for_duplicate_rule_type_on_datastream(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, datastream = _make_task_with_datastream(workspace)
@@ -161,7 +161,7 @@ def test_create_monitoring_rule_returns_400_for_duplicate_rule_type_on_datastrea
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- get_monitoring_rule -----------------------------------------------------------------

@@ -136,7 +136,7 @@ def test_create_service_account_with_role_id_creates_collaborator(client):
     ).exists()
 
 
-def test_create_service_account_with_role_from_other_workspace_returns_400_without_orphaning(client):
+def test_create_service_account_with_role_from_other_workspace_returns_422_without_orphaning(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     other_workspace = WorkspaceFactory(owner=owner)
@@ -153,7 +153,7 @@ def test_create_service_account_with_role_from_other_workspace_returns_400_witho
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
     assert not ServiceAccount.objects.filter(workspace=workspace).exists()
 
 

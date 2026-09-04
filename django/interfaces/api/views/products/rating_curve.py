@@ -3,11 +3,10 @@ import uuid
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 
-from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.products.services.rating_curve import RatingCurveService
+from interfaces.api.services.products.rating_curve import RatingCurveAPIService
 from interfaces.api.schemas.products.rating_curve import (
     RatingCurveResponse,
     RatingCurvePostBody,
@@ -16,7 +15,7 @@ from interfaces.api.schemas.products.rating_curve import (
 )
 
 rating_curve_router = Router(tags=["Rating Curves"])
-rating_curve_service = RatingCurveService()
+rating_curve_service = RatingCurveAPIService()
 
 
 @rating_curve_router.get(
@@ -37,12 +36,11 @@ def get_rating_curves(
     Get rating curves accessible to the authenticated user.
     """
 
-    with raise_http_errors():
-        count, rating_curves = rating_curve_service.get_collection(
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by"}),
-        )
+    count, rating_curves = rating_curve_service.get_collection(
+        principal=request.principal,
+        order_by=[f.orm_field for f in query.order_by],
+        **query.model_dump(exclude_unset=True, exclude={"order_by"}),
+    )
 
     apply_response_pagination_headers(
         response=response,
@@ -75,12 +73,11 @@ def create_rating_curve(
     Create a new rating curve.
     """
 
-    with raise_http_errors():
-        rating_curve = rating_curve_service.create(
-            principal=request.principal,
-            monitoring_site=data.monitoring_site_id,
-            **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id"}),
-        )
+    rating_curve = rating_curve_service.create(
+        principal=request.principal,
+        monitoring_site=data.monitoring_site_id,
+        **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id"}),
+    )
 
     return 201, rating_curve
 
@@ -104,11 +101,10 @@ def get_rating_curve(
     Get a rating curve.
     """
 
-    with raise_http_errors():
-        rating_curve = rating_curve_service.get(
-            rating_curve=rating_curve_id,
-            principal=request.principal,
-        )
+    rating_curve = rating_curve_service.get(
+        rating_curve=rating_curve_id,
+        principal=request.principal,
+    )
 
     return 200, rating_curve
 
@@ -135,12 +131,11 @@ def update_rating_curve(
     Update a rating curve.
     """
 
-    with raise_http_errors():
-        rating_curve = rating_curve_service.update(
-            rating_curve=rating_curve_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True),
-        )
+    rating_curve = rating_curve_service.update(
+        rating_curve=rating_curve_id,
+        principal=request.principal,
+        **data.model_dump(exclude_unset=True),
+    )
 
     return 200, rating_curve
 
@@ -164,10 +159,9 @@ def delete_rating_curve(
     Delete a rating curve.
     """
 
-    with raise_http_errors():
-        rating_curve_service.delete(
-            rating_curve=rating_curve_id,
-            principal=request.principal,
-        )
+    rating_curve_service.delete(
+        rating_curve=rating_curve_id,
+        principal=request.principal,
+    )
 
     return 204, None

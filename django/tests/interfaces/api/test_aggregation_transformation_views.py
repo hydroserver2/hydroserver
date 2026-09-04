@@ -157,7 +157,7 @@ def test_create_aggregation_transformation_returns_403_without_edit_permission(c
     assert response.status_code == 403
 
 
-def test_create_aggregation_transformation_returns_400_when_timezone_missing_for_iana(client):
+def test_create_aggregation_transformation_returns_422_when_timezone_missing_for_iana(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, monitoring_site = _make_task_with_monitoring_site(workspace)
@@ -171,7 +171,7 @@ def test_create_aggregation_transformation_returns_400_when_timezone_missing_for
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- get_aggregation_transformation --------------------------------------------------------

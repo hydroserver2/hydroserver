@@ -4,11 +4,10 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 
-from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.quality.services.session import QCSessionService
+from interfaces.api.services.quality.session import QCSessionAPIService
 from interfaces.api.schemas.quality.session import (
     QualityControlSessionSummaryResponse,
     QualityControlSessionDetailResponse,
@@ -18,7 +17,7 @@ from interfaces.api.schemas.quality.session import (
 )
 
 qc_session_router = Router(tags=["Quality Control Sessions"])
-qc_session_service = QCSessionService()
+qc_session_service = QCSessionAPIService()
 
 
 @qc_session_router.get(
@@ -40,12 +39,11 @@ def get_qc_sessions(
 ):
     """Get sessions for a QC history. Supports range_start/range_end overlap filtering, ancestor_of, and include_ancestors."""
 
-    with raise_http_errors():
-        count, sessions = qc_session_service.get_collection(
-            history=history_id,
-            principal=request.principal,
-            **query.model_dump(exclude_unset=True),
-        )
+    count, sessions = qc_session_service.get_collection(
+        history=history_id,
+        principal=request.principal,
+        **query.model_dump(exclude_unset=True),
+    )
 
     apply_response_pagination_headers(
         response=response,
@@ -73,12 +71,11 @@ def create_qc_session(
 ):
     """Create a new in-progress session for a QC history."""
 
-    with raise_http_errors():
-        session = qc_session_service.create(
-            principal=request.principal,
-            history=history_id,
-            **data.model_dump(exclude_unset=True),
-        )
+    session = qc_session_service.create(
+        principal=request.principal,
+        history=history_id,
+        **data.model_dump(exclude_unset=True),
+    )
 
     return 201, session
 
@@ -102,10 +99,9 @@ def get_qc_session(
 ):
     """Get a QC session by ID. Includes dependencies and operations when expand_related=True."""
 
-    with raise_http_errors():
-        session = qc_session_service.get(
-            history=history_id, session=session_id, principal=request.principal, expand_related=expand_related
-        )
+    session = qc_session_service.get(
+        history=history_id, session=session_id, principal=request.principal, expand_related=expand_related
+    )
 
     if expand_related:
         return 200, QualityControlSessionDetailResponse.model_validate(session)
@@ -127,13 +123,12 @@ def update_qc_session(
 ):
     """Update an in-progress session's description."""
 
-    with raise_http_errors():
-        session = qc_session_service.update(
-            history=history_id,
-            session=session_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True),
-        )
+    session = qc_session_service.update(
+        history=history_id,
+        session=session_id,
+        principal=request.principal,
+        **data.model_dump(exclude_unset=True),
+    )
 
     return 200, session
 
@@ -151,10 +146,9 @@ def delete_qc_session(
 ):
     """Delete an in-progress session."""
 
-    with raise_http_errors():
-        qc_session_service.delete(
-            history=history_id, session=session_id, principal=request.principal
-        )
+    qc_session_service.delete(
+        history=history_id, session=session_id, principal=request.principal
+    )
 
     return 204, None
 
@@ -172,9 +166,8 @@ def commit_qc_session(
 ):
     """Commit an in-progress session after observations have been pushed to the managed datastream."""
 
-    with raise_http_errors():
-        session = qc_session_service.commit(
-            history=history_id, session=session_id, principal=request.principal
-        )
+    session = qc_session_service.commit(
+        history=history_id, session=session_id, principal=request.principal
+    )
 
     return 200, session

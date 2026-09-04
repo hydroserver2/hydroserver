@@ -8,6 +8,7 @@ from django.utils import timezone
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 
 from core.types import Unset
+from interfaces.api.http.errors import BadRequestError
 
 
 class SchedulingService:
@@ -31,9 +32,6 @@ class SchedulingService:
 
         now = timezone.now()
 
-        if crontab not in (None, Unset) and interval not in (None, Unset):
-            raise ValueError("Only one of crontab or interval can be set on a schedule.")
-
         current_crontab = (
             self.get_crontab_string(periodic_task)
             if periodic_task else None
@@ -51,11 +49,7 @@ class SchedulingService:
         interval_schedule = None
 
         if crontab not in (None, Unset):
-            try:
-                croniter(crontab, datetime.now())
-                minute, hour, day, month, weekday = crontab.strip().split()
-            except (ValueError, AttributeError):
-                raise ValueError(f"Invalid crontab schedule {crontab}.")
+            minute, hour, day, month, weekday = crontab.strip().split()
 
             if current_crontab:
                 if crontab != current_crontab:
@@ -65,6 +59,7 @@ class SchedulingService:
                     pt_crontab.day_of_month = day
                     pt_crontab.month_of_year = month
                     pt_crontab.day_of_week = weekday
+                    pt_crontab.full_clean()
                     pt_crontab.save()
                     crontab_schedule = pt_crontab
                 else:
@@ -76,27 +71,24 @@ class SchedulingService:
                     PeriodicTask.objects.filter(pk=periodic_task.pk).update(interval=None)
                     old_interval_schedule.delete()
 
-                crontab_schedule = CrontabSchedule.objects.create(
+                crontab_schedule = CrontabSchedule(
                     minute=minute,
                     hour=hour,
                     day_of_month=day,
                     month_of_year=month,
                     day_of_week=weekday,
                 )
+                crontab_schedule.full_clean()
+                crontab_schedule.save()
 
         if interval not in (None, Unset):
-            if interval < 1:
-                raise ValueError("Schedule interval must be at least 1.")
-
-            if interval_period is Unset:
-                raise ValueError("interval_period is required when setting an interval schedule.")
-
             if current_interval:
                 if interval != current_interval or current_interval_period != interval_period:
                     pt_interval: IntervalSchedule = periodic_task.interval
                     pt_interval.every = interval
                     if interval_period is not Unset:
                         pt_interval.period = interval_period
+                    pt_interval.full_clean()
                     pt_interval.save()
                     interval_schedule = pt_interval
                 else:
@@ -108,10 +100,12 @@ class SchedulingService:
                     PeriodicTask.objects.filter(pk=periodic_task.pk).update(crontab=None)
                     old_crontab.delete()
 
-                interval_schedule = IntervalSchedule.objects.create(
+                interval_schedule = IntervalSchedule(
                     every=interval,
                     period=interval_period if interval_period is not Unset else None,
                 )
+                interval_schedule.full_clean()
+                interval_schedule.save()
 
         if periodic_task:
             if (crontab is not Unset or interval is not Unset) and not crontab_schedule and not interval_schedule:
@@ -150,7 +144,7 @@ class SchedulingService:
 
             else:
                 if not celery_task_name:
-                    raise ValueError("celery_task_name is required when creating a new schedule.")
+                    raise BadRequestError("celery_task_name is required when creating a new schedule.")
 
                 effective_start = (
                     start_time if start_time not in (None, Unset) else now

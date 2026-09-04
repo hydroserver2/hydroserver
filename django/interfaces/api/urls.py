@@ -3,8 +3,11 @@ from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 from django.conf import settings
 from django.urls import path, include
 from django.views.decorators.csrf import ensure_csrf_cookie
+
 from hydroserver import __version__
+from interfaces.api.http import handlers
 from interfaces.api.http.renderer import ORJSONRenderer
+
 from interfaces.api.views import (
     workspace_router,
     role_router,
@@ -29,6 +32,7 @@ from interfaces.api.views import (
     qc_operation_router,
 )
 
+
 rate_limits = settings.API_RATE_LIMITS or {}
 throttle_classes = {"anonymous": AnonRateThrottle, "authenticated": AuthRateThrottle}
 
@@ -40,6 +44,8 @@ api = NinjaAPI(
     renderer=ORJSONRenderer(),
     throttle=[cls(rate_limits[k]) for k, cls in throttle_classes.items() if rate_limits.get(k)],
 )
+
+handlers.register(api)
 
 api.add_router("workspaces", workspace_router)
 api.add_router("roles", role_router)

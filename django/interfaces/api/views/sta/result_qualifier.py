@@ -12,10 +12,10 @@ from interfaces.api.schemas import (
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )
-from core.sta.services import ResultQualifierService
+from interfaces.api.services.sta import ResultQualifierAPIService
 
 result_qualifier_router = Router(tags=["Result Qualifiers"])
-result_qualifier_service = ResultQualifierService()
+result_qualifier_service = ResultQualifierAPIService()
 
 
 @result_qualifier_router.get(
@@ -53,6 +53,7 @@ def get_result_qualifiers(
     response={
         201: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
         401: str,
+        403: str,
         422: str,
     },
     by_alias=True,
@@ -138,7 +139,6 @@ def update_result_qualifier(
         204: None,
         401: str,
         403: str,
-        409: str,
     },
     by_alias=True,
 )

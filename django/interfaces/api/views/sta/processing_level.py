@@ -12,10 +12,10 @@ from interfaces.api.schemas import (
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
 )
-from core.sta.services import ProcessingLevelService
+from interfaces.api.services.sta import ProcessingLevelAPIService
 
 processing_level_router = Router(tags=["Processing Levels"])
-processing_level_service = ProcessingLevelService()
+processing_level_service = ProcessingLevelAPIService()
 
 
 @processing_level_router.get(

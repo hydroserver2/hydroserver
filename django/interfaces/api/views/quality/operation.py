@@ -3,11 +3,10 @@ import uuid
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 
-from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.quality.services.operation import QCOperationService, OperationInput
+from interfaces.api.services.quality.operation import QCOperationAPIService, OperationInput
 from interfaces.api.schemas.quality.operation import (
     QualityControlOperationResponse,
     QualityControlOperationQueryParameters,
@@ -16,7 +15,7 @@ from interfaces.api.schemas.quality.operation import (
 )
 
 qc_operation_router = Router(tags=["Quality Control Operations"])
-qc_operation_service = QCOperationService()
+qc_operation_service = QCOperationAPIService()
 
 
 @qc_operation_router.get(
@@ -34,13 +33,12 @@ def get_qc_operations(
 ):
     """Get all operations for a QC session in execution order."""
 
-    with raise_http_errors():
-        count, operations = qc_operation_service.get_collection(
-            history=history_id,
-            session=session_id,
-            principal=request.principal,
-            **query.model_dump(exclude_unset=True),
-        )
+    count, operations = qc_operation_service.get_collection(
+        history=history_id,
+        session=session_id,
+        principal=request.principal,
+        **query.model_dump(exclude_unset=True),
+    )
 
     apply_response_pagination_headers(
         response=response,
@@ -66,13 +64,12 @@ def create_qc_operations(
 ):
     """Append one or more operations to an in-progress session."""
 
-    with raise_http_errors():
-        operations = qc_operation_service.create(
-            principal=request.principal,
-            history=history_id,
-            session=session_id,
-            operations=[OperationInput(**item.model_dump()) for item in data],
-        )
+    operations = qc_operation_service.create(
+        principal=request.principal,
+        history=history_id,
+        session=session_id,
+        operations=[OperationInput(**item.model_dump()) for item in data],
+    )
 
     return 201, operations
 
@@ -91,13 +88,12 @@ def get_qc_operation(
 ):
     """Get a single QC operation by ID."""
 
-    with raise_http_errors():
-        operation = qc_operation_service.get(
-            history=history_id,
-            session=session_id,
-            operation=operation_id,
-            principal=request.principal,
-        )
+    operation = qc_operation_service.get(
+        history=history_id,
+        session=session_id,
+        operation=operation_id,
+        principal=request.principal,
+    )
 
     return 200, operation
 
@@ -117,14 +113,13 @@ def update_qc_operation(
 ):
     """Update the comment or arguments of an operation in an in-progress session."""
 
-    with raise_http_errors():
-        operation = qc_operation_service.update(
-            history=history_id,
-            session=session_id,
-            operation=operation_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True),
-        )
+    operation = qc_operation_service.update(
+        history=history_id,
+        session=session_id,
+        operation=operation_id,
+        principal=request.principal,
+        **data.model_dump(exclude_unset=True),
+    )
 
     return 200, operation
 
@@ -143,12 +138,11 @@ def delete_qc_operation(
 ):
     """Delete an operation from an in-progress session."""
 
-    with raise_http_errors():
-        qc_operation_service.delete(
-            history=history_id,
-            session=session_id,
-            operation=operation_id,
-            principal=request.principal,
-        )
+    qc_operation_service.delete(
+        history=history_id,
+        session=session_id,
+        operation=operation_id,
+        principal=request.principal,
+    )
 
     return 204, None

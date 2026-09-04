@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from typing import Literal, Optional, TYPE_CHECKING
 
 from country_list import countries_for_language
@@ -177,11 +178,17 @@ class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
     tags: dict[str, str] = {}
+    latitude: Decimal = Field(..., ge=-90, le=90)
+    longitude: Decimal = Field(..., ge=-180, le=180)
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999, alias="elevation_m")
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
 
 
 class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
     tags: dict[str, str | None] = {}
+    latitude: Decimal = Field(..., ge=-90, le=90)
+    longitude: Decimal = Field(..., ge=-180, le=180)
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999, alias="elevation_m")
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

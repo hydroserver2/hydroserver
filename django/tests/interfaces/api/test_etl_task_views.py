@@ -119,6 +119,37 @@ def test_create_etl_task_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
+def test_create_etl_task_returns_422_for_malformed_crontab(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        ETL_TASKS_URL,
+        data=_etl_task_body(data_connection.id, schedule={"crontab": "* * *"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_etl_task_with_valid_crontab_returns_schedule_in_response(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        ETL_TASKS_URL,
+        data=_etl_task_body(data_connection.id, schedule={"crontab": "0 5 * * *"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["schedule"]["crontab"] == "0 5 * * *"
+
+
 # --- get_etl_task ----------------------------------------------------------------------
 
 

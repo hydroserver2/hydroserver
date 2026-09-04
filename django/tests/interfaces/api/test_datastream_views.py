@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -107,6 +109,12 @@ def test_get_datastreams_includes_private_datastream_for_workspace_owner(client)
     assert str(datastream.id) in [d["id"] for d in response.json()]
 
 
+def test_get_datastreams_returns_400_for_malformed_tag(client):
+    response = client.get(DATASTREAMS_URL, {"tag": "no-colon-in-here"})
+
+    assert response.status_code == 400
+
+
 # --- create_datastream ---------------------------------------------------------------
 
 
@@ -164,6 +172,52 @@ def test_create_datastream_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
+
+
+def test_create_datastream_returns_422_for_nonexistent_observed_property(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site,
+            method,
+            observed_property,
+            processing_level,
+            unit,
+            observedPropertyId=str(uuid.uuid4()),
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_datastream_returns_422_for_observed_property_from_another_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=other_workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(monitoring_site, method, observed_property, processing_level, unit),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
 
 
 # --- vocabulary endpoints ------------------------------------------------------------
@@ -282,6 +336,57 @@ def test_update_datastream_returns_403_for_viewer_collaborator(client):
     )
 
     assert response.status_code == 403
+
+
+def test_update_datastream_returns_422_for_unit_from_another_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    other_unit = UnitFactory(workspace=other_workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"unitId": str(other_unit.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_datastream_returns_422_for_monitoring_site_from_another_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    other_monitoring_site = MonitoringSiteFactory(workspace=other_workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"monitoringSiteId": str(other_monitoring_site.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_datastream_succeeds_with_monitoring_site_in_same_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    other_monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"monitoringSiteId": str(other_monitoring_site.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["monitoringSiteId"] == str(other_monitoring_site.id)
 
 
 # --- delete_datastream -----------------------------------------------------------------
@@ -643,3 +748,47 @@ def test_get_datastream_csv_returns_csv_with_observations(client):
     assert response["Content-Type"] == "text/csv"
     body = b"".join(response.streaming_content).decode()
     assert "12.5" in body
+
+
+# --- linked resources ----------------------------------------------------------------
+
+
+def _linked_resources_url(datastream_id):
+    return f"{_detail_url(datastream_id)}/linked-resources"
+
+
+def test_add_datastream_linked_resource_succeeds_with_link(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _linked_resources_url(datastream.id),
+        data={
+            "name": "Datastream Report",
+            "type": "Report",
+            "link": "https://example.com/report.pdf",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["name"] == "Datastream Report"
+
+
+def test_add_datastream_linked_resource_returns_422_for_duplicate_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+    client.post(
+        _linked_resources_url(datastream.id),
+        data={"name": "Datastream Report", "type": "Report", "link": "https://example.com/a.pdf"},
+    )
+
+    response = client.post(
+        _linked_resources_url(datastream.id),
+        data={"name": "Datastream Report", "type": "Report", "link": "https://example.com/b.pdf"},
+    )
+
+    assert response.status_code == 422

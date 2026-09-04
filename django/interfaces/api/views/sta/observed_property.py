@@ -13,10 +13,10 @@ from interfaces.api.schemas import (
     ObservedPropertyPostBody,
     ObservedPropertyPatchBody,
 )
-from core.sta.services import ObservedPropertyService
+from interfaces.api.services.sta import ObservedPropertyAPIService
 
 observed_property_router = Router(tags=["Observed Properties"])
-observed_property_service = ObservedPropertyService()
+observed_property_service = ObservedPropertyAPIService()
 
 
 @observed_property_router.get(

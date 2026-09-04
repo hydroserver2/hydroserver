@@ -4,11 +4,10 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 
 from core.types import Unset
-from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.products.services.transformation import DataProductTransformationService, TransformationInput
+from interfaces.api.services.products.transformation import DataProductTransformationAPIService, TransformationInput
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationTypeQueryParameters,
     RatingCurveTransformationSummaryResponse,
@@ -22,7 +21,7 @@ from interfaces.api.schemas.products.transformation import (
     AggregationTransformationPatchBody,
 )
 
-_service = DataProductTransformationService()
+_service = DataProductTransformationAPIService()
 _auth = [session_auth, oidc_auth, apikey_auth, basic_auth]
 
 
@@ -47,16 +46,15 @@ def get_rating_curve_transformations(
 ):
     """Get rating curve transformations for a data product task."""
 
-    with raise_http_errors():
-        count, transformations = _service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            transformation_type=["rating_curve"],
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
-            **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
-            **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
-        )
+    count, transformations = _service.get_collection(
+        task=task_id,
+        principal=request.principal,
+        transformation_type=["rating_curve"],
+        order_by=[f.orm_field for f in query.order_by],
+        **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
+        **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
+        **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
+    )
 
     apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
 
@@ -76,19 +74,18 @@ def create_rating_curve_transformation(
 ):
     """Create a rating curve transformation on a data product task."""
 
-    with raise_http_errors():
-        transformation = _service.create(
-            task=task_id,
-            principal=request.principal,
-            transformation_type="rating_curve",
-            output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInput(datastream=data.input_datastream)],
-            **data.model_dump(
-                exclude_unset=True,
-                exclude={"uid", "output_datastream", "input_datastream"},
-            ),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
+    transformation = _service.create(
+        task=task_id,
+        principal=request.principal,
+        transformation_type="rating_curve",
+        output_datastream=data.output_datastream,
+        input_datastreams=[TransformationInput(datastream=data.input_datastream)],
+        **data.model_dump(
+            exclude_unset=True,
+            exclude={"uid", "output_datastream", "input_datastream"},
+        ),
+        **({"uid": data.uid} if data.uid is not Unset else {}),
+    )
 
     return 201, transformation
 
@@ -106,10 +103,9 @@ def get_rating_curve_transformation(
 ):
     """Get a rating curve transformation."""
 
-    with raise_http_errors():
-        transformation = _service.get(
-            transformation=transformation_id, task=task_id, principal=request.principal, action="view",
-        )
+    transformation = _service.get(
+        transformation=transformation_id, task=task_id, principal=request.principal, action="view",
+    )
 
     return 200, transformation
 
@@ -133,10 +129,9 @@ def update_rating_curve_transformation(
     if "input_datastream" in data.model_fields_set:
         update_kwargs["input_datastreams"] = [TransformationInput(datastream=data.input_datastream)]
 
-    with raise_http_errors():
-        transformation = _service.update(
-            transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
-        )
+    transformation = _service.update(
+        transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
+    )
 
     return 200, transformation
 
@@ -154,8 +149,7 @@ def delete_rating_curve_transformation(
 ):
     """Delete a rating curve transformation."""
 
-    with raise_http_errors():
-        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
+    _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
 
     return 204, None
 
@@ -180,16 +174,15 @@ def get_derivation_transformations(
 ):
     """Get derivation transformations for a data product task."""
 
-    with raise_http_errors():
-        count, transformations = _service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            transformation_type=["derivation"],
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
-            **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
-            **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
-        )
+    count, transformations = _service.get_collection(
+        task=task_id,
+        principal=request.principal,
+        transformation_type=["derivation"],
+        order_by=[f.orm_field for f in query.order_by],
+        **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
+        **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
+        **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
+    )
 
     apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
 
@@ -209,19 +202,18 @@ def create_derivation_transformation(
 ):
     """Create a derivation transformation on a data product task."""
 
-    with raise_http_errors():
-        transformation = _service.create(
-            task=task_id,
-            principal=request.principal,
-            transformation_type="derivation",
-            output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInput(**inp.model_dump()) for inp in data.input_datastreams],
-            **data.model_dump(
-                exclude_unset=True,
-                exclude={"uid", "output_datastream", "input_datastreams"},
-            ),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
+    transformation = _service.create(
+        task=task_id,
+        principal=request.principal,
+        transformation_type="derivation",
+        output_datastream=data.output_datastream,
+        input_datastreams=[TransformationInput(**inp.model_dump()) for inp in data.input_datastreams],
+        **data.model_dump(
+            exclude_unset=True,
+            exclude={"uid", "output_datastream", "input_datastreams"},
+        ),
+        **({"uid": data.uid} if data.uid is not Unset else {}),
+    )
 
     return 201, transformation
 
@@ -239,10 +231,9 @@ def get_derivation_transformation(
 ):
     """Get a derivation transformation."""
 
-    with raise_http_errors():
-        transformation = _service.get(
-            transformation=transformation_id, task=task_id, principal=request.principal, action="view",
-        )
+    transformation = _service.get(
+        transformation=transformation_id, task=task_id, principal=request.principal, action="view",
+    )
 
     return 200, transformation
 
@@ -266,10 +257,9 @@ def update_derivation_transformation(
     if "input_datastreams" in data.model_fields_set:
         update_kwargs["input_datastreams"] = [TransformationInput(**inp.model_dump()) for inp in data.input_datastreams]
 
-    with raise_http_errors():
-        transformation = _service.update(
-            transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
-        )
+    transformation = _service.update(
+        transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
+    )
 
     return 200, transformation
 
@@ -287,8 +277,7 @@ def delete_derivation_transformation(
 ):
     """Delete a derivation transformation."""
 
-    with raise_http_errors():
-        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
+    _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
 
     return 204, None
 
@@ -314,16 +303,15 @@ def get_aggregation_transformations(
 ):
     """Get aggregation transformations for a data product task."""
 
-    with raise_http_errors():
-        count, transformations = _service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            transformation_type=["aggregation"],
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
-            **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
-            **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
-        )
+    count, transformations = _service.get_collection(
+        task=task_id,
+        principal=request.principal,
+        transformation_type=["aggregation"],
+        order_by=[f.orm_field for f in query.order_by],
+        **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
+        **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
+        **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
+    )
 
     apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
 
@@ -343,19 +331,18 @@ def create_aggregation_transformation(
 ):
     """Create an aggregation transformation on a data product task."""
 
-    with raise_http_errors():
-        transformation = _service.create(
-            task=task_id,
-            principal=request.principal,
-            transformation_type="aggregation",
-            output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInput(datastream=data.input_datastream)],
-            **data.model_dump(
-                exclude_unset=True,
-                exclude={"uid", "output_datastream", "input_datastream"},
-            ),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
+    transformation = _service.create(
+        task=task_id,
+        principal=request.principal,
+        transformation_type="aggregation",
+        output_datastream=data.output_datastream,
+        input_datastreams=[TransformationInput(datastream=data.input_datastream)],
+        **data.model_dump(
+            exclude_unset=True,
+            exclude={"uid", "output_datastream", "input_datastream"},
+        ),
+        **({"uid": data.uid} if data.uid is not Unset else {}),
+    )
 
     return 201, transformation
 
@@ -373,10 +360,9 @@ def get_aggregation_transformation(
 ):
     """Get an aggregation transformation."""
 
-    with raise_http_errors():
-        transformation = _service.get(
-            transformation=transformation_id, task=task_id, principal=request.principal, action="view",
-        )
+    transformation = _service.get(
+        transformation=transformation_id, task=task_id, principal=request.principal, action="view",
+    )
 
     return 200, transformation
 
@@ -400,10 +386,9 @@ def update_aggregation_transformation(
     if "input_datastream" in data.model_fields_set:
         update_kwargs["input_datastreams"] = [TransformationInput(datastream=data.input_datastream)]
 
-    with raise_http_errors():
-        transformation = _service.update(
-            transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
-        )
+    transformation = _service.update(
+        transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
+    )
 
     return 200, transformation
 
@@ -421,7 +406,6 @@ def delete_aggregation_transformation(
 ):
     """Delete an aggregation transformation."""
 
-    with raise_http_errors():
-        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
+    _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
 
     return 204, None

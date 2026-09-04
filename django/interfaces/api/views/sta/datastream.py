@@ -19,11 +19,11 @@ from interfaces.api.schemas import (
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
 )
-from core.sta.services import DatastreamService
+from interfaces.api.services.sta import DatastreamAPIService
 from interfaces.api.views.sta.observation import observation_router
 
 datastream_router = Router(tags=["Datastreams"])
-datastream_service = DatastreamService()
+datastream_service = DatastreamAPIService()
 
 
 @datastream_router.get(

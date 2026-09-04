@@ -4,11 +4,10 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 
 from core.types import Unset
-from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.monitoring.services.rule import MonitoringRuleService
+from interfaces.api.services.monitoring.rule import MonitoringRuleAPIService
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleResponse,
     MonitoringRulePostBody,
@@ -17,7 +16,7 @@ from interfaces.api.schemas.monitoring.rule import (
 )
 
 monitoring_rule_router = Router(tags=["Monitoring Rules"])
-monitoring_rule_service = MonitoringRuleService()
+monitoring_rule_service = MonitoringRuleAPIService()
 
 
 @monitoring_rule_router.get(
@@ -41,14 +40,13 @@ def get_monitoring_rules(
     Get rules for a monitoring task.
     """
 
-    with raise_http_errors():
-        count, rules = monitoring_rule_service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "datastream"}),
-            **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
-        )
+    count, rules = monitoring_rule_service.get_collection(
+        task=task_id,
+        principal=request.principal,
+        order_by=[f.orm_field for f in query.order_by],
+        **query.model_dump(exclude_unset=True, exclude={"order_by", "datastream"}),
+        **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
+    )
 
     apply_response_pagination_headers(
         response=response,
@@ -82,13 +80,12 @@ def create_monitoring_rule(
     Create a monitoring rule on a datastream belonging to the given task.
     """
 
-    with raise_http_errors():
-        rule = monitoring_rule_service.create(
-            task=task_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"uid"}),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
+    rule = monitoring_rule_service.create(
+        task=task_id,
+        principal=request.principal,
+        **data.model_dump(exclude_unset=True, exclude={"uid"}),
+        **({"uid": data.uid} if data.uid is not Unset else {}),
+    )
 
     return 201, rule
 
@@ -113,12 +110,11 @@ def get_monitoring_rule(
     Get a monitoring rule.
     """
 
-    with raise_http_errors():
-        rule = monitoring_rule_service.get(
-            rule=rule_id,
-            task=task_id,
-            principal=request.principal,
-        )
+    rule = monitoring_rule_service.get(
+        rule=rule_id,
+        task=task_id,
+        principal=request.principal,
+    )
 
     return 200, rule
 
@@ -146,13 +142,12 @@ def update_monitoring_rule(
     Update a monitoring rule's parameters.
     """
 
-    with raise_http_errors():
-        rule = monitoring_rule_service.update(
-            rule=rule_id,
-            task=task_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True),
-        )
+    rule = monitoring_rule_service.update(
+        rule=rule_id,
+        task=task_id,
+        principal=request.principal,
+        **data.model_dump(exclude_unset=True),
+    )
 
     return 200, rule
 
@@ -177,11 +172,10 @@ def delete_monitoring_rule(
     Delete a monitoring rule.
     """
 
-    with raise_http_errors():
-        monitoring_rule_service.delete(
-            rule=rule_id,
-            task=task_id,
-            principal=request.principal,
-        )
+    monitoring_rule_service.delete(
+        rule=rule_id,
+        task=task_id,
+        principal=request.principal,
+    )
 
     return 204, None

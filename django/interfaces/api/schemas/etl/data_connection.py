@@ -15,7 +15,12 @@ from interfaces.api.schemas import (
     CollectionQueryParameters,
     WorkspaceSummaryResponse
 )
-from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, SchedulePostBody, SchedulePatchBody
+from interfaces.api.schemas.orchestration.schedule import (
+    ScheduleResponse,
+    SchedulePostBody,
+    SchedulePatchBody,
+    resolve_schedule,
+)
 
 
 class DataConnectionOrderBy(OrderByField):
@@ -103,6 +108,9 @@ class CSVPayloadResponse(BaseGetResponse):
 
 
 class CSVPayloadPostBody(BasePostBody, CSVPayloadResponse):
+    header_row: int
+    data_start_row: int
+    delimiter: Literal[",", "|", "\t", ";", " "] = Field(max_length=1)
     data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
@@ -120,6 +128,7 @@ class JSONPayloadResponse(BaseGetResponse):
 
 
 class JSONPayloadPostBody(BasePostBody, JSONPayloadResponse):
+    jmespath: str
     data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
@@ -160,18 +169,7 @@ class NotificationResponse(BaseGetResponse):
 
     @staticmethod
     def resolve_schedule(obj):
-        pt = obj.periodic_task
-        if not pt:
-            return None
-        ct = pt.crontab
-        return {
-            "enabled": pt.enabled,
-            "start_time": pt.start_time,
-            "crontab": f"{ct.minute} {ct.hour} {ct.day_of_month} {ct.month_of_year} {ct.day_of_week}" if ct else None,
-            "interval": pt.interval.every if pt.interval else None,
-            "interval_period": pt.interval.period if pt.interval else None,
-            "next_run_at": None,
-        }
+        return resolve_schedule(obj)
 
     @staticmethod
     def resolve_recipient_emails(obj):

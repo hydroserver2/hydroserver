@@ -1,5 +1,7 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
+from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.test.utils import CaptureQueriesContext
 
 from core.sta.models import (
@@ -85,6 +87,18 @@ def test_get_monitoring_sites_includes_private_monitoring_site_for_workspace_own
     assert str(monitoring_site.id) in [t["id"] for t in response.json()]
 
 
+def test_get_monitoring_sites_returns_400_for_malformed_bbox(client):
+    response = client.get(MONITORING_SITES_URL, {"bbox": "not,a,valid,bbox"})
+
+    assert response.status_code == 400
+
+
+def test_get_monitoring_sites_returns_400_for_malformed_tag(client):
+    response = client.get(MONITORING_SITES_URL, {"tag": "no-colon-in-here"})
+
+    assert response.status_code == 400
+
+
 # --- create_monitoring_site ------------------------------------------------------------------
 
 
@@ -101,6 +115,25 @@ def test_create_monitoring_site_succeeds_for_workspace_owner(client):
 
     assert response.status_code == 201
     assert response.json()["name"] == "New Monitoring Site"
+
+
+def test_create_monitoring_site_succeeds_with_non_terminating_binary_coordinates(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        MONITORING_SITES_URL,
+        data=_monitoring_site_body(
+            workspace.id, latitude=41.7501, longitude=-111.8102, elevation_m=1380.45
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["latitude"] == 41.7501
+    assert response.json()["longitude"] == -111.8102
+    assert response.json()["elevation_m"] == 1380.45
 
 
 def test_create_monitoring_site_returns_401_when_unauthenticated(client):
@@ -232,6 +265,23 @@ def test_update_monitoring_site_succeeds_for_workspace_owner(client):
 
     assert response.status_code == 200
     assert response.json()["name"] == "Updated Name"
+
+
+def test_update_monitoring_site_succeeds_with_non_terminating_binary_coordinates(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(monitoring_site.id),
+        data={"latitude": 41.7501, "longitude": -111.8102},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["latitude"] == 41.7501
+    assert response.json()["longitude"] == -111.8102
 
 
 def test_update_monitoring_site_returns_403_for_viewer_collaborator(client):
@@ -534,6 +584,12 @@ def test_get_monitoring_site_markers_returns_marker_for_public_monitoring_site(c
     assert str(monitoring_site.id) in [m["id"] for m in response.json()]
 
 
+def test_get_monitoring_site_markers_returns_400_for_malformed_bbox(client):
+    response = client.get(f"{MONITORING_SITES_URL}/markers", {"bbox": "not,a,valid,bbox"})
+
+    assert response.status_code == 400
+
+
 def test_get_monitoring_site_site_summaries_returns_summary_for_public_monitoring_site(client):
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -570,3 +626,133 @@ def test_get_monitoring_site_tag_keys_returns_keys_for_workspace_owner(client):
 
     assert response.status_code == 200
     assert response.json()["season"] == ["summer"]
+
+
+# --- linked resources ----------------------------------------------------------------
+
+
+def _linked_resources_url(monitoring_site_id):
+    return f"{_detail_url(monitoring_site_id)}/linked-resources"
+
+
+def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={
+            "name": "Site Report",
+            "type": "Report",
+            "link": "https://example.com/report.pdf",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["name"] == "Site Report"
+
+
+def test_add_monitoring_site_linked_resource_returns_422_for_duplicate_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+    client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={"name": "Site Report", "type": "Report", "link": "https://example.com/a.pdf"},
+    )
+
+    response = client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={"name": "Site Report", "type": "Report", "link": "https://example.com/b.pdf"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_add_monitoring_site_linked_resource_returns_422_without_file_or_link(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={"name": "Site Report", "type": "Report"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_monitoring_site_linked_resource_succeeds_for_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+    created = client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={"name": "Site Report", "type": "Report", "link": "https://example.com/report.pdf"},
+    )
+    linked_resource_id = created.json()["id"]
+
+    response = client.patch(
+        f"{_linked_resources_url(monitoring_site.id)}/{linked_resource_id}",
+        data=encode_multipart(BOUNDARY, {"name": "Updated Report"}),
+        content_type=MULTIPART_CONTENT,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Updated Report"
+
+
+def test_update_monitoring_site_linked_resource_returns_422_for_mode_switch(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+    created = client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={"name": "Site Report", "type": "Report", "link": "https://example.com/report.pdf"},
+    )
+    linked_resource_id = created.json()["id"]
+
+    response = client.patch(
+        f"{_linked_resources_url(monitoring_site.id)}/{linked_resource_id}",
+        data=encode_multipart(
+            BOUNDARY, {"file": SimpleUploadedFile("photo.png", b"photo")}
+        ),
+        content_type=MULTIPART_CONTENT,
+    )
+
+    assert response.status_code == 422
+
+
+def test_remove_monitoring_site_linked_resource_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+    created = client.post(
+        _linked_resources_url(monitoring_site.id),
+        data={"name": "Site Report", "type": "Report", "link": "https://example.com/report.pdf"},
+    )
+    linked_resource_id = created.json()["id"]
+
+    response = client.delete(f"{_linked_resources_url(monitoring_site.id)}/{linked_resource_id}")
+
+    assert response.status_code == 204
+
+
+def test_remove_monitoring_site_linked_resource_returns_404_for_missing_resource(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.delete(
+        f"{_linked_resources_url(monitoring_site.id)}/00000000-0000-0000-0000-000000000000"
+    )
+
+    assert response.status_code == 404

@@ -121,7 +121,7 @@ def test_create_rating_curve_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
-def test_create_rating_curve_returns_400_for_duplicate_input_value_in_points(client):
+def test_create_rating_curve_returns_409_for_duplicate_input_value_in_points(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -133,7 +133,7 @@ def test_create_rating_curve_returns_400_for_duplicate_input_value_in_points(cli
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- get_rating_curve ----------------------------------------------------------------------

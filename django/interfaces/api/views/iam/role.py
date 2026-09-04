@@ -9,10 +9,10 @@ from interfaces.api.schemas import (
     RoleDetailResponse,
     RoleQueryParameters,
 )
-from core.iam.services import RoleService
+from interfaces.api.services.iam import RoleAPIService
 
 role_router = Router(tags=["Roles"])
-role_service = RoleService()
+role_service = RoleAPIService()
 
 
 @role_router.get(

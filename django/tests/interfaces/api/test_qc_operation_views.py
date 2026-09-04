@@ -135,7 +135,7 @@ def test_create_qc_operations_returns_403_without_edit_permission(client):
     assert response.status_code == 403
 
 
-def test_create_qc_operations_returns_400_for_committed_session(client):
+def test_create_qc_operations_returns_422_for_committed_session(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     session = _make_session(workspace, committed=True)
@@ -147,7 +147,7 @@ def test_create_qc_operations_returns_400_for_committed_session(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- get_qc_operation --------------------------------------------------------------------
@@ -227,7 +227,7 @@ def test_update_qc_operation_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-def test_update_qc_operation_returns_400_for_committed_session(client):
+def test_update_qc_operation_returns_422_for_committed_session(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     session = _make_session(workspace, committed=True)
@@ -240,7 +240,7 @@ def test_update_qc_operation_returns_400_for_committed_session(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- delete_qc_operation --------------------------------------------------------------------

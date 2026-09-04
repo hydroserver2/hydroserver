@@ -10,10 +10,10 @@ from interfaces.api.schemas import (
     CollaboratorPostBody,
     CollaboratorDeleteBody,
 )
-from core.iam.services import CollaboratorService
+from interfaces.api.services.iam import CollaboratorAPIService
 
 collaborator_router = Router(tags=["Collaborators"])
-collaborator_service = CollaboratorService()
+collaborator_service = CollaboratorAPIService()
 
 
 @collaborator_router.get(

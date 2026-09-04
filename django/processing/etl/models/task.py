@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 
 from core.iam.permissions.mixins import ResourcePermissionMixin
@@ -38,3 +39,29 @@ class EtlMapping(models.Model):
 
     class Meta:
         app_label = "etl"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["target_datastream"],
+                name="unique_etl_mapping_target_datastream",
+                violation_error_message="This datastream is already mapped to by another task.",
+            )
+        ]
+
+    def clean(self):
+        if not self.target_datastream_id or not self.etl_task_id:
+            return
+
+        try:
+            datastream_workspace_id = self.target_datastream.monitoring_site.workspace_id
+        except ObjectDoesNotExist:
+            return
+
+        try:
+            task_workspace_id = self.etl_task.data_connection.workspace_id
+        except ObjectDoesNotExist:
+            return
+
+        if datastream_workspace_id != task_workspace_id:
+            raise ValidationError(
+                "The target datastream must belong to the same workspace as this task."
+            )

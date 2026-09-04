@@ -11,6 +11,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
 from processing.orchestration.models import Task, TaskRun
 from processing.orchestration.services.scheduling import SchedulingService
 
@@ -41,14 +42,14 @@ class TaskService(SchedulingService, Generic[T]):
                     queryset = principal.annotate_permissions(queryset)
                 task = queryset.get()
             except self.task_model.DoesNotExist:
-                raise LookupError(f"Task with ID {str(task)} does not exist.")
+                raise NotFoundError(f"Task with ID {str(task)} does not exist.")
 
         if principal is not Unset:
             if not principal.can_view(task):
-                raise LookupError(f"Task with ID {str(task.id)} does not exist.")
+                raise NotFoundError(f"Task with ID {str(task.id)} does not exist.")
 
             if action != "view" and not getattr(principal, f"can_{action}")(task):
-                raise PermissionError(f"You do not have permission to {action} this task.")
+                raise PermissionDeniedError(f"You do not have permission to {action} this task.")
 
         return task
 
@@ -115,7 +116,7 @@ class TaskService(SchedulingService, Generic[T]):
         try:
             return TaskRun.objects.get(pk=run, task=task)
         except TaskRun.DoesNotExist:
-            raise LookupError(f"TaskRun with ID {run} does not exist.")
+            raise NotFoundError(f"TaskRun with ID {run} does not exist.")
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_run_collection(
@@ -160,7 +161,7 @@ class TaskService(SchedulingService, Generic[T]):
             queryset = queryset.filter(finished_at__lte=finished_at__lte)
 
         if not all(term.lstrip("-") in self.task_run_order_by_fields for term in order_by):
-            raise ValueError(f"Invalid order_by field(s): {order_by}")
+            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
 
         queryset = queryset.order_by(*order_by, "-started_at", "-id")
 
@@ -191,7 +192,7 @@ class TaskService(SchedulingService, Generic[T]):
         Annotate a task queryset with fields from the latest run.
 
         Each annotation is a correlated subquery evaluated per row, so callers that only need a
-        subset (e.g. for filtering or ordering) should pass ``fields`` to avoid computing the
+        subset (e.g., for filtering or ordering) should pass ``fields`` to avoid computing the
         rest. See ``attach_latest_runs`` for resolving full latest-run data on a page of results
         without the per-row subqueries.
         """

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
@@ -47,10 +48,26 @@ class Collaborator(models.Model):
                 fields=["workspace", "user"],
                 condition=Q(user__isnull=False),
                 name="unique_workspace_user_collaborator",
+                violation_error_message="This account already collaborates on the workspace",
             ),
             models.UniqueConstraint(
                 fields=["workspace", "service_account"],
                 condition=Q(service_account__isnull=False),
                 name="unique_workspace_service_account_collaborator",
+                violation_error_message="This account already collaborates on the workspace",
             ),
         ]
+
+    def clean(self):
+        if self.user_id and self.workspace_id and self.user_id == self.workspace.owner_id:
+            raise ValidationError(
+                "Workspace owner cannot be added as a collaborator"
+            )
+
+        if (
+            self.role_id
+            and self.workspace_id
+            and self.role.workspace_id
+            and self.role.workspace_id != self.workspace_id
+        ):
+            raise ValidationError("Role does not belong to the workspace")

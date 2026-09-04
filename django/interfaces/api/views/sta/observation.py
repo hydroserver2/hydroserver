@@ -17,10 +17,10 @@ from interfaces.api.schemas import (
     ObservationBulkPostQueryParameters,
     ObservationBulkDeleteBody,
 )
-from core.sta.services import ObservationService
+from interfaces.api.services.sta import ObservationAPIService
 
 observation_router = Router(tags=["Observations"])
-observation_service = ObservationService()
+observation_service = ObservationAPIService()
 
 
 @observation_router.get(
@@ -93,7 +93,7 @@ def create_observation(
 @observation_router.post(
     "/bulk-create",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={201: None, 403: str, 404: str},
+    response={201: None, 400: str, 403: str, 404: str},
 )
 @transaction.atomic
 def insert_observations(
@@ -170,7 +170,7 @@ def get_observation(
         204: None,
         401: str,
         403: str,
-        409: str,
+        404: str,
     },
     by_alias=True,
 )

@@ -24,11 +24,11 @@ from interfaces.api.schemas import (
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
 )
-from core.sta.services import MonitoringSiteService
+from interfaces.api.services.sta import MonitoringSiteAPIService
 from core.web.models import SiteTypeIcon
 
 monitoring_site_router = Router(tags=["Monitoring Sites"])
-monitoring_site_service = MonitoringSiteService()
+monitoring_site_service = MonitoringSiteAPIService()
 
 
 @monitoring_site_router.get(

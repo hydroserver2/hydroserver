@@ -8,10 +8,10 @@ from sensorthings.types import Absent
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Observation, Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, ObservationDTO
-from core.sta.services.datastream import DatastreamService
+from interfaces.api.services.sta.datastream import DatastreamAPIService
 from .utils import SensorThingsUtils
 
-datastream_service = DatastreamService()
+datastream_service = DatastreamAPIService()
 
 
 class ObservationMixin(SensorThingsUtils):

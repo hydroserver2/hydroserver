@@ -137,7 +137,7 @@ def test_create_qc_session_returns_403_without_edit_permission(client):
     assert response.status_code == 403
 
 
-def test_create_qc_session_returns_400_when_end_before_start(client):
+def test_create_qc_session_returns_422_when_end_before_start(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -152,10 +152,10 @@ def test_create_qc_session_returns_400_when_end_before_start(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
-def test_create_qc_session_returns_400_when_in_progress_session_already_exists(client):
+def test_create_qc_session_returns_422_when_in_progress_session_already_exists(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -168,7 +168,7 @@ def test_create_qc_session_returns_400_when_in_progress_session_already_exists(c
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- get_qc_session --------------------------------------------------------------------
@@ -248,7 +248,7 @@ def test_update_qc_session_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-def test_update_qc_session_returns_400_for_committed_session(client):
+def test_update_qc_session_returns_422_for_committed_session(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -261,7 +261,7 @@ def test_update_qc_session_returns_400_for_committed_session(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- delete_qc_session --------------------------------------------------------------------
@@ -332,7 +332,7 @@ def test_commit_qc_session_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-def test_commit_qc_session_returns_400_when_already_committed(client):
+def test_commit_qc_session_returns_422_when_already_committed(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -341,4 +341,4 @@ def test_commit_qc_session_returns_400_when_already_committed(client):
 
     response = client.post(f"{_detail_url(history.id, session.id)}/commit")
 
-    assert response.status_code == 400
+    assert response.status_code == 422

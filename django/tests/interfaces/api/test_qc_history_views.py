@@ -126,7 +126,7 @@ def test_create_qc_history_returns_403_without_edit_permission(client):
     assert response.status_code == 403
 
 
-def test_create_qc_history_returns_400_when_processing_levels_match(client):
+def test_create_qc_history_returns_422_when_processing_levels_match(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -143,10 +143,10 @@ def test_create_qc_history_returns_400_when_processing_levels_match(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
-def test_create_qc_history_returns_400_when_managed_datastream_already_has_history(client):
+def test_create_qc_history_returns_422_when_managed_datastream_already_has_history(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -162,7 +162,7 @@ def test_create_qc_history_returns_400_when_managed_datastream_already_has_histo
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 # --- get_qc_history --------------------------------------------------------------------

@@ -4,11 +4,10 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 
-from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.quality.services.history import QCHistoryService
+from interfaces.api.services.quality.history import QCHistoryAPIService
 from interfaces.api.schemas.quality.history import (
     QualityControlHistorySummaryResponse,
     QualityControlHistoryDetailResponse,
@@ -17,7 +16,7 @@ from interfaces.api.schemas.quality.history import (
 )
 
 qc_history_router = Router(tags=["Quality Control Histories"])
-qc_history_service = QCHistoryService()
+qc_history_service = QCHistoryAPIService()
 
 
 @qc_history_router.get(
@@ -37,11 +36,10 @@ def get_qc_histories(
 ):
     """Get QC histories. Returns detail responses (with expanded datastreams) when expand_related=True."""
 
-    with raise_http_errors():
-        count, histories = qc_history_service.get_collection(
-            principal=request.principal,
-            **query.model_dump(exclude_unset=True),
-        )
+    count, histories = qc_history_service.get_collection(
+        principal=request.principal,
+        **query.model_dump(exclude_unset=True),
+    )
 
     apply_response_pagination_headers(
         response=response,
@@ -68,12 +66,11 @@ def create_qc_history(
 ):
     """Create a new QC history for a managed datastream."""
 
-    with raise_http_errors():
-        history = qc_history_service.create(
-            principal=request.principal,
-            managed_datastream=data.managed_datastream_id,
-            source_datastream=data.source_datastream_id,
-        )
+    history = qc_history_service.create(
+        principal=request.principal,
+        managed_datastream=data.managed_datastream_id,
+        source_datastream=data.source_datastream_id,
+    )
 
     return 201, history
 
@@ -96,10 +93,9 @@ def get_qc_history(
 ):
     """Get a QC history by ID."""
 
-    with raise_http_errors():
-        history = qc_history_service.get(
-            history=history_id, principal=request.principal, expand_related=expand_related
-        )
+    history = qc_history_service.get(
+        history=history_id, principal=request.principal, expand_related=expand_related
+    )
 
     if expand_related:
         return 200, QualityControlHistoryDetailResponse.model_validate(history)
@@ -119,7 +115,6 @@ def delete_qc_history(
 ):
     """Delete a QC history and all associated sessions."""
 
-    with raise_http_errors():
-        qc_history_service.delete(history=history_id, principal=request.principal)
+    qc_history_service.delete(history=history_id, principal=request.principal)
 
     return 204, None

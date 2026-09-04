@@ -19,10 +19,10 @@ from interfaces.api.schemas import (
     MethodPostBody,
     MethodPatchBody,
 )
-from core.sta.services import MethodService
+from interfaces.api.services.sta import MethodAPIService
 
 method_router = Router(tags=["Methods"])
-method_service = MethodService()
+method_service = MethodAPIService()
 
 
 @method_router.get(

@@ -44,6 +44,13 @@ class RatingCurvePoint(models.Model):
     class Meta:
         app_label = "products"
         ordering = ["input_value"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rating_curve", "input_value"],
+                name="unique_rating_curve_point_input_value",
+                violation_error_message="A point with this input_value already exists on this rating curve.",
+            )
+        ]
 
     def __str__(self):
         return f"{self.rating_curve}: {self.input_value} -> {self.output_value}"

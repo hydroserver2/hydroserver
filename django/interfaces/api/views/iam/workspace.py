@@ -13,12 +13,12 @@ from interfaces.api.schemas import (
     WorkspaceTransferBody,
     WorkspaceQueryParameters,
 )
-from core.iam.services import WorkspaceService
+from interfaces.api.services.iam import WorkspaceAPIService
 from interfaces.api.views.iam.service_account import service_account_router
 from interfaces.api.views.iam.collaborator import collaborator_router
 
 workspace_router = Router(tags=["Workspaces"])
-workspace_service = WorkspaceService()
+workspace_service = WorkspaceAPIService()
 
 
 @workspace_router.get(

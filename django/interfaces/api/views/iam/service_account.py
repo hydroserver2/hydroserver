@@ -14,10 +14,10 @@ from interfaces.api.schemas import (
     ServiceAccountSummaryPostResponse,
     ServiceAccountDetailPostResponse,
 )
-from core.iam.services import ServiceAccountService
+from interfaces.api.services.iam import ServiceAccountAPIService
 
 service_account_router = Router(tags=["Service Accounts"])
-service_account_service = ServiceAccountService()
+service_account_service = ServiceAccountAPIService()
 
 
 @service_account_router.get(

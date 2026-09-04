@@ -1,4 +1,4 @@
-from core.service import ServiceUtils
+from interfaces.api.service import APIService
 from core.sta.models import Datastream
 
 
@@ -14,10 +14,10 @@ def test_apply_ordering_appends_id_tiebreaker_for_deterministic_pagination():
     disappear from every page of results. Appending the primary key as a
     final sort key makes ordering - and therefore pagination - deterministic.
     """
-    queryset = ServiceUtils.apply_ordering(Datastream.objects.all(), ["name"], ["name"])
+    queryset = APIService.apply_ordering(Datastream.objects.all(), ["name"], ["name"])
     assert queryset.query.order_by == ("name", "id")
 
 
 def test_apply_ordering_does_not_duplicate_an_already_requested_id():
-    queryset = ServiceUtils.apply_ordering(Datastream.objects.all(), ["id"], ["id"])
+    queryset = APIService.apply_ordering(Datastream.objects.all(), ["id"], ["id"])
     assert queryset.query.order_by == ("id",)
