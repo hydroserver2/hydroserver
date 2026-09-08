@@ -288,23 +288,23 @@ test.describe("visualization", () => {
     await expect(observationRange).toHaveCount(0);
     await expect(lessDetail).toBeDisabled();
 
-    // Level 2 adds the processing-level / unit signature.
-    await moreDetail.click();
-    await expect(signature).toBeVisible();
-    await expect(observationRange).toHaveCount(0);
-
-    // Level 3 also adds the observation-range line.
+    // Level 2 adds the observation count and range.
     await moreDetail.click();
     await expect(observationRange).toBeVisible();
+    await expect(signature).toHaveCount(0);
+
+    // Level 3 also adds the four datastream fields.
+    await moreDetail.click();
+    await expect(signature).toBeVisible();
     await expect(moreDetail).toBeDisabled();
 
     // Stepping back down restores the earlier levels.
     await lessDetail.click();
-    await expect(observationRange).toHaveCount(0);
-    await expect(signature).toBeVisible();
+    await expect(signature).toHaveCount(0);
+    await expect(observationRange).toBeVisible();
 
     await lessDetail.click();
-    await expect(signature).toHaveCount(0);
+    await expect(observationRange).toHaveCount(0);
   });
 
   test("visualization quick-range date buttons update the time range", async ({

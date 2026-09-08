@@ -201,6 +201,12 @@
               </div>
               <div
                 v-if="detailLevel >= 2"
+                class="datastream-meta datastream-observation-range hs-text-sm"
+              >
+                {{ observationRange(item) }}
+              </div>
+              <div
+                v-if="detailLevel === 3"
                 class="datastream-meta datastream-signature hs-text-sm"
               >
                 <span
@@ -210,12 +216,6 @@
                 >
                   {{ value }}
                 </span>
-              </div>
-              <div
-                v-if="detailLevel === 3"
-                class="datastream-meta datastream-observation-range hs-text-sm"
-              >
-                {{ observationRange(item) }}
               </div>
             </td>
 
@@ -870,7 +870,7 @@ function updatePlottedDatastreams(
   display: block;
   width: 16px;
   height: 16px;
-  margin: 4px 0 0;
+  margin: var(--hs-space-6) 0 0;
   accent-color: rgb(var(--v-theme-primary));
   cursor: pointer;
 }
@@ -882,7 +882,8 @@ function updatePlottedDatastreams(
 .datastream-name {
   display: flex;
   gap: var(--hs-space-6);
-  align-items: baseline;
+  align-items: center;
+  min-height: 28px;
   max-width: 100%;
   padding: 0;
   overflow: hidden;
