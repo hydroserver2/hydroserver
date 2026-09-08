@@ -7,6 +7,7 @@ from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     CollectionQueryParameters,
+    PaginationMeta,
 )
 
 if TYPE_CHECKING:
@@ -76,12 +77,14 @@ class ObservationDetailResponse(BaseGetResponse, ObservationFields):
 class ObservationRowResponse(BaseGetResponse):
     fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
     data: list[list]
+    meta: PaginationMeta
 
 
 class ObservationColumnarResponse(BaseGetResponse):
     phenomenon_time: list
     result: list
     result_qualifier_codes: list
+    meta: PaginationMeta
 
 
 class ObservationPostBody(BasePostBody, ObservationFields):

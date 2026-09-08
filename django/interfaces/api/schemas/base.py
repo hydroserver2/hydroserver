@@ -1,6 +1,6 @@
 import copy
 from enum import Enum, EnumMeta
-from typing import Optional, Any, Union, Annotated
+from typing import Optional, Any, Union, Annotated, Generic, TypeVar
 from ninja import Schema, Query
 from pydantic import AliasGenerator, AliasChoices, ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
@@ -46,9 +46,9 @@ class BaseQueryParameters(Schema):
 
 
 class CollectionQueryParameters(BaseQueryParameters):
-    page: Optional[int] = Query(1, ge=1, description="Page number (1-based).")
-    page_size: Optional[int] = Query(
-        100, ge=0, le=100000, description="The number of items per page."
+    offset: Optional[int] = Query(0, ge=0, description="Number of items to skip.")
+    limit: Optional[int] = Query(
+        100, ge=0, le=100000, description="The maximum number of items to return."
     )
 
 
@@ -63,6 +63,24 @@ class BaseGetResponse(Schema):
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
     )
+
+
+class PaginationMeta(Schema):
+    limit: int
+    offset: int
+    total_count: int
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(Schema, Generic[T]):
+    data: list[T]
+    meta: PaginationMeta
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
 
 class BasePostBody(Schema):

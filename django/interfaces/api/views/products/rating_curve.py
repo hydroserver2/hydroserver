@@ -1,12 +1,12 @@
 import uuid
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.products.rating_curve import RatingCurveAPIService
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.products.rating_curve import (
     RatingCurveResponse,
     RatingCurvePostBody,
@@ -22,14 +22,13 @@ rating_curve_service = RatingCurveAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[RatingCurveResponse],
+        200: PaginatedResponse[RatingCurveResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_rating_curves(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[RatingCurveQueryParameters],
 ):
     """
@@ -42,14 +41,13 @@ def get_rating_curves(
         **query.model_dump(exclude_unset=True, exclude={"order_by"}),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, rating_curves
+    return 200, {"data": rating_curves, "meta": meta}
 
 
 @rating_curve_router.post(

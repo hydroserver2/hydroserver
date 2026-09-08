@@ -123,8 +123,8 @@ class TaskService(SchedulingService, Generic[T]):
         self,
         task: Union[T, uuid.UUID],
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
         status: list[str] | Unset = Unset,
@@ -166,9 +166,8 @@ class TaskService(SchedulingService, Generic[T]):
         queryset = queryset.order_by(*order_by, "-started_at", "-id")
 
         count = queryset.count()
-        offset = (page - 1) * page_size
 
-        queryset = queryset[offset:offset + page_size]
+        queryset = queryset[offset:offset + limit]
 
         return count, queryset
 

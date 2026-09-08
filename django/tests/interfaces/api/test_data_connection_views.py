@@ -78,7 +78,7 @@ def test_get_data_connections_includes_connection_for_workspace_owner(client):
     response = client.get(DATA_CONNECTIONS_URL)
 
     assert response.status_code == 200
-    assert str(data_connection.id) in [d["id"] for d in response.json()]
+    assert str(data_connection.id) in [d["id"] for d in response.json()["data"]]
 
 
 def test_get_data_connections_excludes_connection_for_outsider(client):
@@ -89,7 +89,7 @@ def test_get_data_connections_excludes_connection_for_outsider(client):
 
     response = client.get(DATA_CONNECTIONS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_data_connections_returns_401_when_unauthenticated(client):

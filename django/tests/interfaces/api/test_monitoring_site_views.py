@@ -61,7 +61,7 @@ def test_get_monitoring_sites_includes_public_monitoring_site_for_anonymous(clie
     response = client.get(MONITORING_SITES_URL)
 
     assert response.status_code == 200
-    assert str(monitoring_site.id) in [t["id"] for t in response.json()]
+    assert str(monitoring_site.id) in [t["id"] for t in response.json()["data"]]
 
 
 def test_get_monitoring_sites_excludes_private_monitoring_site_for_outsider(client):
@@ -72,7 +72,7 @@ def test_get_monitoring_sites_excludes_private_monitoring_site_for_outsider(clie
 
     response = client.get(MONITORING_SITES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_monitoring_sites_includes_private_monitoring_site_for_workspace_owner(client):
@@ -84,7 +84,7 @@ def test_get_monitoring_sites_includes_private_monitoring_site_for_workspace_own
     response = client.get(MONITORING_SITES_URL)
 
     assert response.status_code == 200
-    assert str(monitoring_site.id) in [t["id"] for t in response.json()]
+    assert str(monitoring_site.id) in [t["id"] for t in response.json()["data"]]
 
 
 def test_get_monitoring_sites_returns_400_for_malformed_bbox(client):
@@ -172,7 +172,7 @@ def test_get_site_types_returns_registered_type_names(client):
     response = client.get(f"{MONITORING_SITES_URL}/site-types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Stream", "Lake"}
+    assert set(response.json()["data"]) == {"Stream", "Lake"}
 
 
 def test_get_linked_resource_types_returns_registered_type_names(client):
@@ -182,7 +182,7 @@ def test_get_linked_resource_types_returns_registered_type_names(client):
     response = client.get(f"{MONITORING_SITES_URL}/linked-resource-types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Photo", "Report"}
+    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 def test_get_site_type_icons_returns_configured_icon_mappings(client):

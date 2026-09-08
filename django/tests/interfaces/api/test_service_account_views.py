@@ -41,7 +41,7 @@ def test_get_service_accounts_includes_accounts_for_workspace_owner(client):
     response = client.get(_service_accounts_url(workspace.id))
 
     assert response.status_code == 200
-    assert str(service_account.id) in [sa["id"] for sa in response.json()]
+    assert str(service_account.id) in [sa["id"] for sa in response.json()["data"]]
 
 
 def test_get_service_accounts_returns_404_for_workspace_outsider(client):

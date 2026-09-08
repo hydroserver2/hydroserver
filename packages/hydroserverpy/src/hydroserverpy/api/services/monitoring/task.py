@@ -17,8 +17,8 @@ class MonitoringTaskService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
@@ -30,8 +30,8 @@ class MonitoringTaskService(HydroServerBaseService):
         """Fetch a collection of monitoring tasks."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
             monitoring_site_id=normalize_uuid(monitoring_site),
@@ -121,8 +121,8 @@ class MonitoringTaskService(HydroServerBaseService):
     def list_runs(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         status: str = ...,
         started_at_min: datetime = ...,
@@ -133,8 +133,8 @@ class MonitoringTaskService(HydroServerBaseService):
         """Fetch a collection of task runs for a monitoring task."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
             "status": status,
             "started_at_min": started_at_min,
@@ -147,7 +147,7 @@ class MonitoringTaskService(HydroServerBaseService):
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs"
         response = self.client.request("get", path, params=params)
 
-        return [TaskRun(**run) for run in response.json()]
+        return [TaskRun(**run) for run in response.json()["data"]]
 
     def get_run(self, uid: Union[UUID, str], run_id: Union[UUID, str]) -> TaskRun:
         """Fetch a single task run for a monitoring task."""

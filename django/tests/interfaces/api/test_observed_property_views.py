@@ -46,7 +46,7 @@ def test_get_observed_properties_includes_global_properties_for_anonymous(client
     response = client.get(OBSERVED_PROPERTIES_URL)
 
     assert response.status_code == 200
-    assert str(observed_property.id) in [o["id"] for o in response.json()]
+    assert str(observed_property.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_observed_properties_excludes_private_workspace_properties_for_outsider(
@@ -59,7 +59,7 @@ def test_get_observed_properties_excludes_private_workspace_properties_for_outsi
 
     response = client.get(OBSERVED_PROPERTIES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_observed_properties_includes_workspace_properties_for_workspace_owner(
@@ -73,7 +73,7 @@ def test_get_observed_properties_includes_workspace_properties_for_workspace_own
     response = client.get(OBSERVED_PROPERTIES_URL)
 
     assert response.status_code == 200
-    assert str(observed_property.id) in [o["id"] for o in response.json()]
+    assert str(observed_property.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_observed_properties_filters_by_type(client):
@@ -83,7 +83,7 @@ def test_get_observed_properties_filters_by_type(client):
     response = client.get(OBSERVED_PROPERTIES_URL, {"type": "Hydrology"})
 
     assert response.status_code == 200
-    assert [item["id"] for item in response.json()] == [str(hydrology.id)]
+    assert [item["id"] for item in response.json()["data"]] == [str(hydrology.id)]
 
 
 # --- create_observed_property ---------------------------------------------------------
@@ -178,7 +178,7 @@ def test_get_variable_types_returns_registered_type_names(client):
     response = client.get(f"{OBSERVED_PROPERTIES_URL}/variable-types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Hydrology", "Meteorology"}
+    assert set(response.json()["data"]) == {"Hydrology", "Meteorology"}
 
 
 # --- get_observed_property -------------------------------------------------------------

@@ -15,8 +15,8 @@ class RatingCurveService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
@@ -25,8 +25,8 @@ class RatingCurveService(HydroServerBaseService):
         """Fetch a collection of rating curves."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
             monitoring_site_id=normalize_uuid(monitoring_site),

@@ -1,7 +1,6 @@
 import uuid
 from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet, Min, Max, Count
@@ -97,9 +96,8 @@ class DatastreamAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
@@ -166,16 +164,19 @@ class DatastreamAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return [
-            (
-                DatastreamDetailResponse.model_validate(datastream)
-                if expand_related
-                else DatastreamSummaryResponse.model_validate(datastream)
-            )
-            for datastream in queryset.all()
-        ]
+        return {
+            "data": [
+                (
+                    DatastreamDetailResponse.model_validate(datastream)
+                    if expand_related
+                    else DatastreamSummaryResponse.model_validate(datastream)
+                )
+                for datastream in queryset.all()
+            ],
+            "meta": meta,
+        }
 
     def list_visualization_bootstrap(
         self,
@@ -478,55 +479,51 @@ class DatastreamAPIService(APIService):
 
     def list_aggregation_statistics(
         self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = DatastreamAggregation.objects.order_by(
             f"{'-' if order_desc else ''}name"
         )
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
 
     def list_statuses(
         self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = DatastreamStatus.objects.order_by(f"{'-' if order_desc else ''}name")
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
 
     def list_sampled_mediums(
         self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = SampledMedium.objects.order_by(f"{'-' if order_desc else ''}name")
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
 
     def list_linked_resource_types(
         self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = LinkedResourceType.objects.order_by(
             f"{'-' if order_desc else ''}name"
         )
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
 
     @staticmethod
     def generate_csv(datastream: Datastream, observations=None):

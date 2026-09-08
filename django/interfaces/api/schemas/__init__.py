@@ -1,5 +1,5 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
-                   VocabularyQueryParameters, OrderByField)
+                   VocabularyQueryParameters, OrderByField, PaginationMeta, PaginatedResponse)
 from interfaces.api.schemas.iam.workspace import (
     WorkspaceSummaryResponse,
     WorkspaceDetailResponse,

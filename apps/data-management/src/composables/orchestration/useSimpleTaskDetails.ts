@@ -266,9 +266,9 @@ export function useSimpleTaskDetails(
     try {
       const response = await service.getTaskRuns(task.value.id, {
         order_by: ['-startedAt'],
-        page: 1,
-        page_size: 50,
-      } as any)
+        offset: 0,
+        limit: 50,
+      })
       if (!response.ok)
         throw new Error(response.message || 'Unable to fetch runs.')
       runs.value = response.data ?? []

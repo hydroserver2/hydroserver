@@ -1,6 +1,5 @@
 import uuid
 from typing import Optional, Literal, get_args
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from core.iam.models import ServiceAccount, Role
@@ -77,9 +76,8 @@ class RoleAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
@@ -107,11 +105,14 @@ class RoleAPIService(APIService):
             .distinct()
         )
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return [
-            self.serialize_role(role, expand_related) for role in queryset.all()
-        ]
+        return {
+            "data": [
+                self.serialize_role(role, expand_related) for role in queryset.all()
+            ],
+            "meta": meta,
+        }
 
     def get(
         self,

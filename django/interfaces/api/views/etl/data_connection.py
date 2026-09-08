@@ -1,10 +1,9 @@
 import uuid
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
 from core.types import Unset
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.etl.data_connection import DataConnectionAPIService
@@ -13,6 +12,7 @@ from interfaces.api.schemas import (
     DataConnectionPostBody,
     DataConnectionPatchBody,
     DataConnectionQueryParameters,
+    PaginatedResponse,
 )
 
 data_connection_router = Router(tags=["ETL Data Connections"])
@@ -23,14 +23,13 @@ data_connection_service = DataConnectionAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[DataConnectionResponse],
+        200: PaginatedResponse[DataConnectionResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_data_connections(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[DataConnectionQueryParameters],
 ):
     """
@@ -43,14 +42,13 @@ def get_data_connections(
         **query.model_dump(exclude_unset=True, exclude={"order_by"}),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, data_connections
+    return 200, {"data": data_connections, "meta": meta}
 
 
 @data_connection_router.post(

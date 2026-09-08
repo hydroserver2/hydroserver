@@ -27,8 +27,8 @@ class DatastreamService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
         monitoring_site: Union["MonitoringSite", UUID, str] = ...,
@@ -57,8 +57,8 @@ class DatastreamService(HydroServerBaseService):
         """Fetch a collection of HydroServer workspaces."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),
@@ -236,8 +236,8 @@ class DatastreamService(HydroServerBaseService):
     def get_observations(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = 100000,
+        offset: int = ...,
+        limit: int = 100000,
         order_by: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
@@ -247,8 +247,8 @@ class DatastreamService(HydroServerBaseService):
         """Retrieve observations of a datastream."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": ",".join(order_by) if order_by is not ... else order_by,
             "phenomenon_time_max": phenomenon_time_max,
             "phenomenon_time_min": phenomenon_time_min,
@@ -268,7 +268,7 @@ class DatastreamService(HydroServerBaseService):
             datastream=datastream,
             response=response,
             order_by=order_by if order_by is not ... else None,
-            filters={k: v for k, v in params.items() if k not in ["page", "page_size", "order_by", "format"]},
+            filters={k: v for k, v in params.items() if k not in ["offset", "limit", "order_by", "format"]},
         )
         if fetch_all is True:
             collection = collection.fetch_all()

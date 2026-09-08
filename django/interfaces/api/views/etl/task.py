@@ -2,15 +2,15 @@ import uuid
 from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
 from core.types import Unset
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.etl.task import EtlTaskAPIService
 from processing.etl.tasks import run_etl_task
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.etl.task import (
     EtlTaskQueryParameters,
     EtlTaskSummaryResponse,
@@ -28,14 +28,13 @@ etl_task_service = EtlTaskAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[EtlTaskSummaryResponse] | list[EtlTaskDetailResponse],
+        200: PaginatedResponse[EtlTaskSummaryResponse] | PaginatedResponse[EtlTaskDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_etl_tasks(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[EtlTaskQueryParameters],
 ):
     """
@@ -66,14 +65,13 @@ def get_etl_tasks(
 
     schema = EtlTaskDetailResponse if query.expand_related else EtlTaskSummaryResponse
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, [schema.model_validate(task) for task in etl_tasks]
+    return 200, {"data": [schema.model_validate(task) for task in etl_tasks], "meta": meta}
 
 
 @etl_task_router.post(
@@ -247,7 +245,7 @@ def trigger_etl_task(
     "/{task_id}/runs",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[TaskRunResponse],
+        200: PaginatedResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -256,7 +254,6 @@ def trigger_etl_task(
 )
 def get_etl_task_runs(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[TaskRunQueryParameters],
 ):
@@ -271,14 +268,13 @@ def get_etl_task_runs(
         **query.model_dump(exclude_unset=True, exclude={"order_by"}),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, runs
+    return 200, {"data": runs, "meta": meta}
 
 
 @etl_task_router.get(

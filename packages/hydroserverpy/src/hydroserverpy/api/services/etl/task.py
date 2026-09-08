@@ -17,8 +17,8 @@ class TaskService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         data_connection: Optional[Union[UUID, str]] = ...,
@@ -32,8 +32,8 @@ class TaskService(HydroServerBaseService):
         """Fetch a collection of ETL tasks."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
             expand_related=True,
@@ -148,8 +148,8 @@ class TaskService(HydroServerBaseService):
     def list_runs(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         status: str = ...,
         started_at_min: datetime = ...,
@@ -160,8 +160,8 @@ class TaskService(HydroServerBaseService):
         """Fetch a collection of task runs for an ETL task."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
             "status": status,
             "started_at_min": started_at_min,
@@ -173,7 +173,7 @@ class TaskService(HydroServerBaseService):
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs"
 
-        return [TaskRun(**run) for run in self.client.request("get", path, params=params).json()]
+        return [TaskRun(**run) for run in self.client.request("get", path, params=params).json()["data"]]
 
     def get_run(self, uid: Union[UUID, str], run_id: Union[UUID, str]) -> TaskRun:
         """Fetch a single task run for an ETL task."""

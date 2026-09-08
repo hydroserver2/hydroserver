@@ -2097,11 +2097,14 @@ export interface components {
         CSVPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Datastartrow */
-            dataStartRow?: number | null;
-            /** Delimiter */
-            delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
+            dataStartRow: number;
+            /**
+             * Delimiter
+             * @enum {string}
+             */
+            delimiter: "," | "|" | "\t" | ";" | " ";
             /** Headerrow */
-            headerRow?: number | null;
+            headerRow: number;
             /** Timestampformat */
             timestampFormat?: string | null;
             /** Timestampkey */
@@ -2155,17 +2158,17 @@ export interface components {
         /** CollaboratorQueryParameters */
         CollaboratorQueryParameters: {
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Role Id
              * @description Filter collaborators by role ID.
@@ -2236,23 +2239,23 @@ export interface components {
         /** DataConnectionQueryParameters */
         DataConnectionQueryParameters: {
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Payload Type
              * @description Filter data connections by payload type.
@@ -2406,11 +2409,23 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter data product tasks by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Order By
              * @description Select one or more fields to order the response by.
@@ -2423,18 +2438,6 @@ export interface components {
              * @default []
              */
             output_datastream_id: string[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Rating Curve Id
              * @description Filter data product tasks by rating curve ID.
@@ -2498,6 +2501,18 @@ export interface components {
              */
             input_datastream_id: string[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -2509,18 +2524,6 @@ export interface components {
              * @default []
              */
             output_datastream_id: string[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
         };
         /** DatastreamDetailResponse */
         DatastreamDetailResponse: {
@@ -2759,6 +2762,12 @@ export interface components {
              */
             is_private?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Method Id
              * @description Filter datastreams by method ID.
              * @default []
@@ -2783,23 +2792,17 @@ export interface components {
              */
             observed_property_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Phenomenon Begin Time Max
              * @description Sets the maximum phenomenon begin time of filtered datastreams.
@@ -3228,29 +3231,29 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter ETL tasks by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
@@ -3290,7 +3293,7 @@ export interface components {
         JSONPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Jmespath */
-            jmespath?: string | null;
+            jmespath: string;
             /** Timestampformat */
             timestampFormat?: string | null;
             /** Timestampkey */
@@ -3335,17 +3338,17 @@ export interface components {
         /** LinkedResourceQueryParameters */
         LinkedResourceQueryParameters: {
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Type
              * @description Filter by linked resource type.
@@ -3431,29 +3434,29 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter methods by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Sensor Model
              * @description Filter methods by sensor model
@@ -3595,23 +3598,23 @@ export interface components {
              */
             datastream_id: string[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Rule Type
              * @description Filter rules by rule type.
@@ -3792,13 +3795,13 @@ export interface components {
             /** Elevationdatum */
             elevationDatum?: string | null;
             /** Elevation M */
-            elevation_m?: number | null;
+            elevation_m?: number | string | null;
             /** Isprivate */
             isPrivate?: boolean;
             /** Latitude */
-            latitude?: number;
+            latitude?: number | string;
             /** Longitude */
-            longitude?: number;
+            longitude?: number | string;
             /** Name */
             name?: string;
             /** Tags */
@@ -3825,15 +3828,15 @@ export interface components {
             /** Elevationdatum */
             elevationDatum?: string | null;
             /** Elevation M */
-            elevation_m?: number | null;
+            elevation_m?: number | string | null;
             /** Id */
             id?: string | null;
             /** Isprivate */
             isPrivate: boolean;
             /** Latitude */
-            latitude: number;
+            latitude: number | string;
             /** Longitude */
-            longitude: number;
+            longitude: number | string;
             /** Name */
             name: string;
             /**
@@ -3885,23 +3888,23 @@ export interface components {
              */
             is_private?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Tag
              * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
@@ -4091,29 +4094,29 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter monitoring tasks by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Rule Type
              * @description Filter monitoring tasks by rule type.
@@ -4210,6 +4213,7 @@ export interface components {
         };
         /** ObservationColumnarResponse */
         ObservationColumnarResponse: {
+            meta: components["schemas"]["PaginationMeta"];
             /** Phenomenontime */
             phenomenonTime: unknown[];
             /** Result */
@@ -4263,23 +4267,23 @@ export interface components {
              */
             format?: ("record" | "row" | "column") | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("phenomenonTime" | "-phenomenonTime")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Phenomenon Time Max
              * @description Sets the maximum phenomenon time of filtered observations.
@@ -4303,6 +4307,7 @@ export interface components {
             data: unknown[][];
             /** Fields */
             fields: ("phenomenonTime" | "result" | "resultQualifierCodes")[];
+            meta: components["schemas"]["PaginationMeta"];
         };
         /** ObservationSummaryResponse */
         ObservationSummaryResponse: {
@@ -4394,29 +4399,29 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter observed properties by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Type
              * @description Filter observed properties by type
@@ -4449,6 +4454,267 @@ export interface components {
             type: string;
             /** Workspaceid */
             workspaceId?: string | null;
+        };
+        /** PaginatedResponse[AggregationTransformationSummaryResponse] */
+        PaginatedResponse_AggregationTransformationSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["AggregationTransformationSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[CollaboratorDetailResponse] */
+        PaginatedResponse_CollaboratorDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["CollaboratorDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DataConnectionResponse] */
+        PaginatedResponse_DataConnectionResponse_: {
+            /** Data */
+            data: components["schemas"]["DataConnectionResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DataProductTaskDetailResponse] */
+        PaginatedResponse_DataProductTaskDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["DataProductTaskDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DataProductTaskSummaryResponse] */
+        PaginatedResponse_DataProductTaskSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["DataProductTaskSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DatastreamDetailResponse] */
+        PaginatedResponse_DatastreamDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["DatastreamDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DatastreamSummaryResponse] */
+        PaginatedResponse_DatastreamSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["DatastreamSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DerivationTransformationSummaryResponse] */
+        PaginatedResponse_DerivationTransformationSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["DerivationTransformationSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[EtlTaskDetailResponse] */
+        PaginatedResponse_EtlTaskDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["EtlTaskDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[EtlTaskSummaryResponse] */
+        PaginatedResponse_EtlTaskSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["EtlTaskSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MethodDetailResponse] */
+        PaginatedResponse_MethodDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["MethodDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MethodSummaryResponse] */
+        PaginatedResponse_MethodSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["MethodSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringRuleResponse] */
+        PaginatedResponse_MonitoringRuleResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringRuleResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringSiteDetailResponse] */
+        PaginatedResponse_MonitoringSiteDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringSiteDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringSiteSummaryResponse] */
+        PaginatedResponse_MonitoringSiteSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringSiteSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringTaskDetailResponse] */
+        PaginatedResponse_MonitoringTaskDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringTaskDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringTaskSummaryResponse] */
+        PaginatedResponse_MonitoringTaskSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringTaskSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservationDetailResponse] */
+        PaginatedResponse_ObservationDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservationDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservationSummaryResponse] */
+        PaginatedResponse_ObservationSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservationSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservedPropertyDetailResponse] */
+        PaginatedResponse_ObservedPropertyDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservedPropertyDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservedPropertySummaryResponse] */
+        PaginatedResponse_ObservedPropertySummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservedPropertySummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ProcessingLevelDetailResponse] */
+        PaginatedResponse_ProcessingLevelDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["ProcessingLevelDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ProcessingLevelSummaryResponse] */
+        PaginatedResponse_ProcessingLevelSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["ProcessingLevelSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlHistoryDetailResponse] */
+        PaginatedResponse_QualityControlHistoryDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlHistoryDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlHistorySummaryResponse] */
+        PaginatedResponse_QualityControlHistorySummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlHistorySummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlOperationResponse] */
+        PaginatedResponse_QualityControlOperationResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlOperationResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlSessionDetailResponse] */
+        PaginatedResponse_QualityControlSessionDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlSessionDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlSessionSummaryResponse] */
+        PaginatedResponse_QualityControlSessionSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlSessionSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[RatingCurveResponse] */
+        PaginatedResponse_RatingCurveResponse_: {
+            /** Data */
+            data: components["schemas"]["RatingCurveResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[RatingCurveTransformationSummaryResponse] */
+        PaginatedResponse_RatingCurveTransformationSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["RatingCurveTransformationSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ResultQualifierDetailResponse] */
+        PaginatedResponse_ResultQualifierDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["ResultQualifierDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ResultQualifierSummaryResponse] */
+        PaginatedResponse_ResultQualifierSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["ResultQualifierSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[RoleDetailResponse] */
+        PaginatedResponse_RoleDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["RoleDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[RoleSummaryResponse] */
+        PaginatedResponse_RoleSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["RoleSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ServiceAccountDetailResponse] */
+        PaginatedResponse_ServiceAccountDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["ServiceAccountDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ServiceAccountSummaryResponse] */
+        PaginatedResponse_ServiceAccountSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["ServiceAccountSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[TaskRunResponse] */
+        PaginatedResponse_TaskRunResponse_: {
+            /** Data */
+            data: components["schemas"]["TaskRunResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[UnitDetailResponse] */
+        PaginatedResponse_UnitDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["UnitDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[UnitSummaryResponse] */
+        PaginatedResponse_UnitSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["UnitSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[WorkspaceDetailResponse] */
+        PaginatedResponse_WorkspaceDetailResponse_: {
+            /** Data */
+            data: components["schemas"]["WorkspaceDetailResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[WorkspaceSummaryResponse] */
+        PaginatedResponse_WorkspaceSummaryResponse_: {
+            /** Data */
+            data: components["schemas"]["WorkspaceSummaryResponse"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[str] */
+        PaginatedResponse_str_: {
+            /** Data */
+            data: string[];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginationMeta */
+        PaginationMeta: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Totalcount */
+            totalCount: number;
         };
         /** PayloadPatchBody */
         PayloadPatchBody: {
@@ -4572,29 +4838,29 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter processing levels by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("code" | "name" | "-code" | "-name")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Workspace Id
              * @description Filter processing levels by workspace ID.
@@ -4661,23 +4927,23 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Managed Datastream Id
              * @description Filter histories by managed datastream ID.
              * @default []
              */
             managed_datastream_id: string[];
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            offset: number | null;
             /**
              * Source Datastream Id
              * @description Filter histories by source datastream ID.
@@ -4746,17 +5012,17 @@ export interface components {
         /** QualityControlOperationQueryParameters */
         QualityControlOperationQueryParameters: {
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
         };
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
@@ -4861,17 +5127,17 @@ export interface components {
              */
             include_ancestors: boolean;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Range End
              * @description Return sessions overlapping with this range end.
@@ -4982,29 +5248,29 @@ export interface components {
         /** RatingCurveQueryParameters */
         RatingCurveQueryParameters: {
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter rating curves by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Workspace Id
              * @description Filter rating curves by workspace ID.
@@ -5167,29 +5433,29 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter result qualifiers by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("code" | "-code")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Workspace Id
              * @description Filter result qualifiers by workspace ID.
@@ -5231,23 +5497,23 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "-name")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Workspace Id
              * @description Filter roles by workspace ID.
@@ -5412,23 +5678,23 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
         };
         /** ServiceAccountSummaryPostResponse */
         ServiceAccountSummaryPostResponse: {
@@ -5517,23 +5783,23 @@ export interface components {
              */
             finished_at_min?: string | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Started At Max
              * @description Filters for task runs started on or before this date and time.
@@ -5647,29 +5913,29 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter units by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Type
              * @description Filter units by type
@@ -5796,23 +6062,23 @@ export interface components {
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order Desc
              * @description Sort terms by descending.
              * @default false
              */
             order_desc: boolean | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
         };
         /** WorkspaceDetailResponse */
         WorkspaceDetailResponse: {
@@ -5860,23 +6126,23 @@ export interface components {
              */
             is_private?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
         };
         /** WorkspaceSummaryResponse */
         WorkspaceSummaryResponse: {
@@ -5910,10 +6176,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
@@ -5976,7 +6242,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatastreamSummaryResponse"][] | components["schemas"]["DatastreamDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_DatastreamSummaryResponse_"] | components["schemas"]["PaginatedResponse_DatastreamDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -6055,10 +6321,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6074,7 +6340,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6082,10 +6348,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_linked_resource_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6101,7 +6367,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6109,10 +6375,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_sampled_mediums: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6128,7 +6394,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6136,10 +6402,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_statuses: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6155,7 +6421,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6411,10 +6677,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_linked_resources: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -6680,10 +6946,10 @@ export interface operations {
     interfaces_api_views_sta_observation_get_observations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("phenomenonTime" | "-phenomenonTime")[] | null;
@@ -6710,7 +6976,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ObservationSummaryResponse"][] | components["schemas"]["ObservationDetailResponse"][] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationSummaryResponse_"] | components["schemas"]["PaginatedResponse_ObservationDetailResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
                 };
             };
             /** @description Forbidden */
@@ -6821,6 +7087,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
             /** @description Forbidden */
             403: {
@@ -6964,8 +7239,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Conflict */
-            409: {
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6978,10 +7253,10 @@ export interface operations {
     interfaces_api_views_etl_data_connection_get_data_connections: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[];
                 /** @description Filter data connections by workspace ID. */
@@ -7001,7 +7276,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_DataConnectionResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7245,10 +7520,10 @@ export interface operations {
     interfaces_api_views_etl_task_get_etl_tasks: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
                 /** @description Filter ETL tasks by monitoring_site ID. */
@@ -7281,7 +7556,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskSummaryResponse"][] | components["schemas"]["EtlTaskDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_EtlTaskSummaryResponse_"] | components["schemas"]["PaginatedResponse_EtlTaskDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7536,10 +7811,10 @@ export interface operations {
     interfaces_api_views_etl_task_get_etl_task_runs: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -7567,7 +7842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7701,10 +7976,10 @@ export interface operations {
     interfaces_api_views_sta_method_get_methods: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
@@ -7733,7 +8008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MethodSummaryResponse"][] | components["schemas"]["MethodDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MethodSummaryResponse_"] | components["schemas"]["PaginatedResponse_MethodDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7812,10 +8087,10 @@ export interface operations {
     interfaces_api_views_sta_method_get_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -7831,7 +8106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -7992,10 +8267,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_sites: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
@@ -8028,7 +8303,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"][] | components["schemas"]["MonitoringSiteDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringSiteSummaryResponse_"] | components["schemas"]["PaginatedResponse_MonitoringSiteDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8098,10 +8373,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -8117,7 +8392,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -8215,10 +8490,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_site_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -8234,7 +8509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -8454,10 +8729,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -8723,10 +8998,10 @@ export interface operations {
     interfaces_api_views_monitoring_task_get_monitoring_tasks: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
                 /** @description Filter monitoring tasks by monitoring_site ID. */
@@ -8753,7 +9028,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"][] | components["schemas"]["MonitoringTaskDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringTaskSummaryResponse_"] | components["schemas"]["PaginatedResponse_MonitoringTaskDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -9008,10 +9283,10 @@ export interface operations {
     interfaces_api_views_monitoring_rule_get_monitoring_rules: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[];
                 /** @description Filter rules by datastream ID. */
@@ -9033,7 +9308,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringRuleResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringRuleResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -9309,10 +9584,10 @@ export interface operations {
     interfaces_api_views_monitoring_task_get_monitoring_task_runs: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -9340,7 +9615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -9474,10 +9749,10 @@ export interface operations {
     interfaces_api_views_sta_observed_property_get_observed_properties: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
@@ -9502,7 +9777,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ObservedPropertySummaryResponse"][] | components["schemas"]["ObservedPropertyDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ObservedPropertySummaryResponse_"] | components["schemas"]["PaginatedResponse_ObservedPropertyDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -9581,10 +9856,10 @@ export interface operations {
     interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -9600,7 +9875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -9761,10 +10036,10 @@ export interface operations {
     interfaces_api_views_sta_processing_level_get_processing_levels: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("code" | "name" | "-code" | "-name")[] | null;
@@ -9787,7 +10062,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessingLevelSummaryResponse"][] | components["schemas"]["ProcessingLevelDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ProcessingLevelSummaryResponse_"] | components["schemas"]["PaginatedResponse_ProcessingLevelDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10019,10 +10294,10 @@ export interface operations {
     interfaces_api_views_products_rating_curve_get_rating_curves: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[];
                 /** @description Filter rating curves by monitoring_site ID. */
@@ -10042,7 +10317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RatingCurveResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_RatingCurveResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10295,10 +10570,10 @@ export interface operations {
     interfaces_api_views_products_task_get_data_product_tasks: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
                 /** @description Filter data product tasks by monitoring_site ID. */
@@ -10329,7 +10604,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"][] | components["schemas"]["DataProductTaskDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_DataProductTaskSummaryResponse_"] | components["schemas"]["PaginatedResponse_DataProductTaskDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10584,10 +10859,10 @@ export interface operations {
     interfaces_api_views_products_task_get_data_product_task_runs: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -10615,7 +10890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10700,10 +10975,10 @@ export interface operations {
     interfaces_api_views_products_transformation_get_aggregation_transformations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
                 /** @description Filter by output datastream ID. */
@@ -10725,7 +11000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_AggregationTransformationSummaryResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11001,10 +11276,10 @@ export interface operations {
     interfaces_api_views_products_transformation_get_derivation_transformations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
                 /** @description Filter by output datastream ID. */
@@ -11026,7 +11301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_DerivationTransformationSummaryResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11302,10 +11577,10 @@ export interface operations {
     interfaces_api_views_products_transformation_get_rating_curve_transformations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
                 /** @description Filter by output datastream ID. */
@@ -11327,7 +11602,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_RatingCurveTransformationSummaryResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11652,10 +11927,10 @@ export interface operations {
     interfaces_api_views_quality_history_get_qc_histories: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Filter histories by managed datastream ID. */
                 managed_datastream_id?: string[];
@@ -11674,7 +11949,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlHistorySummaryResponse"][] | components["schemas"]["QualityControlHistoryDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QualityControlHistorySummaryResponse_"] | components["schemas"]["PaginatedResponse_QualityControlHistoryDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11867,10 +12142,10 @@ export interface operations {
     interfaces_api_views_quality_session_get_qc_sessions: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 status?: ("in_progress" | "committed") | null;
                 /** @description Return sessions overlapping with this range start. */
@@ -11896,7 +12171,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlSessionSummaryResponse"][] | components["schemas"]["QualityControlSessionDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QualityControlSessionSummaryResponse_"] | components["schemas"]["PaginatedResponse_QualityControlSessionDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12242,10 +12517,10 @@ export interface operations {
     interfaces_api_views_quality_operation_get_qc_operations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
             };
             header?: never;
             path: {
@@ -12262,7 +12537,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlOperationResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QualityControlOperationResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12542,10 +12817,10 @@ export interface operations {
     interfaces_api_views_sta_result_qualifier_get_result_qualifiers: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("code" | "-code")[] | null;
@@ -12568,7 +12843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResultQualifierSummaryResponse"][] | components["schemas"]["ResultQualifierDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ResultQualifierSummaryResponse_"] | components["schemas"]["PaginatedResponse_ResultQualifierDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12608,6 +12883,15 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12704,15 +12988,6 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_result_qualifier_update_result_qualifier: {
@@ -12773,10 +13048,10 @@ export interface operations {
     interfaces_api_views_iam_role_get_roles: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "-name")[] | null;
@@ -12795,7 +13070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleSummaryResponse"][] | components["schemas"]["RoleDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_RoleSummaryResponse_"] | components["schemas"]["PaginatedResponse_RoleDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12854,10 +13129,10 @@ export interface operations {
     interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
@@ -12882,7 +13157,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitSummaryResponse"][] | components["schemas"]["UnitDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_UnitSummaryResponse_"] | components["schemas"]["PaginatedResponse_UnitDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12952,10 +13227,10 @@ export interface operations {
     interfaces_api_views_sta_unit_get_unit_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -12971,7 +13246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -13132,10 +13407,10 @@ export interface operations {
     interfaces_api_views_iam_workspace_get_workspaces: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
@@ -13156,7 +13431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceDetailResponse"][] | components["schemas"]["WorkspaceSummaryResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_WorkspaceDetailResponse_"] | components["schemas"]["PaginatedResponse_WorkspaceSummaryResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -13352,10 +13627,10 @@ export interface operations {
     interfaces_api_views_iam_collaborator_get_collaborators: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Filter collaborators by role ID. */
                 role_id?: string[];
             };
@@ -13373,7 +13648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaboratorDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_CollaboratorDetailResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -13556,10 +13831,10 @@ export interface operations {
     interfaces_api_views_iam_service_account_get_service_accounts: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
@@ -13578,7 +13853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"][] | components["schemas"]["ServiceAccountDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ServiceAccountSummaryResponse_"] | components["schemas"]["PaginatedResponse_ServiceAccountDetailResponse_"];
                 };
             };
             /** @description Unauthorized */

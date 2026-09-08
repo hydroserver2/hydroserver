@@ -1,7 +1,6 @@
 import uuid
 from collections import defaultdict
 from typing import Optional, Literal, get_args
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import Count, QuerySet, Q, FloatField, Subquery, OuterRef, IntegerField
@@ -378,9 +377,8 @@ class MonitoringSiteAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
@@ -430,16 +428,19 @@ class MonitoringSiteAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return [
-            (
-                MonitoringSiteDetailResponse.model_validate(monitoring_site)
-                if expand_related
-                else MonitoringSiteSummaryResponse.model_validate(monitoring_site)
-            )
-            for monitoring_site in queryset.all()
-        ]
+        return {
+            "data": [
+                (
+                    MonitoringSiteDetailResponse.model_validate(monitoring_site)
+                    if expand_related
+                    else MonitoringSiteSummaryResponse.model_validate(monitoring_site)
+                )
+                for monitoring_site in queryset.all()
+            ],
+            "meta": meta,
+        }
 
     def get(
         self,
@@ -623,26 +624,24 @@ class MonitoringSiteAPIService(APIService):
 
     def list_site_types(
         self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = SiteType.objects.order_by(f"{'-' if order_desc else ''}name")
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
 
     def list_linked_resource_types(
         self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = LinkedResourceType.objects.order_by(
             f"{'-' if order_desc else ''}name"
         )
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

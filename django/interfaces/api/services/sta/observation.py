@@ -114,8 +114,8 @@ class ObservationAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         datastream_id: Optional[uuid.UUID] = None,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         response_format: Optional[str] = None,
@@ -176,33 +176,38 @@ class ObservationAPIService(APIService):
         else:
             queryset = queryset.select_related("datastream__monitoring_site")
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        response["X-Checksum"] = self.generate_checksum(checksum_uuid, count)
+        response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.total_count)
 
         if response_format == "row":
             fields = ["phenomenon_time", "result", "result_qualifier_codes"]
             return {
                 "fields": [to_camel(field) for field in fields],
                 "data": list(queryset.values_list(*fields)),
+                "meta": meta,
             }
         elif response_format == "column":
             fields = ["phenomenon_time", "result", "result_qualifier_codes"]
             observations = list(queryset.values_list(*fields))
-            return (
+            columns = (
                 dict(zip(fields, zip(*observations)))
                 if observations
                 else {to_camel(field): [] for field in fields}
             )
+            return {**columns, "meta": meta}
         else:
-            return [
-                (
-                    ObservationDetailResponse.model_validate(observation)
-                    if expand_related
-                    else ObservationSummaryResponse.model_validate(observation)
-                )
-                for observation in queryset.all()
-            ]
+            return {
+                "data": [
+                    (
+                        ObservationDetailResponse.model_validate(observation)
+                        if expand_related
+                        else ObservationSummaryResponse.model_validate(observation)
+                    )
+                    for observation in queryset.all()
+                ],
+                "meta": meta,
+            }
 
     def get(
         self,

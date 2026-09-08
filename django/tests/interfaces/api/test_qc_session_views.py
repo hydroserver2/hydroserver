@@ -66,7 +66,7 @@ def test_get_qc_sessions_includes_session_for_workspace_owner(client):
     response = client.get(_sessions_url(history.id))
 
     assert response.status_code == 200
-    assert str(session.id) in [s["id"] for s in response.json()]
+    assert str(session.id) in [s["id"] for s in response.json()["data"]]
 
 
 def test_get_qc_sessions_returns_404_for_outsider(client):

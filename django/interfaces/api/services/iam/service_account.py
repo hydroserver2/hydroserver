@@ -1,7 +1,6 @@
 import uuid
 
 from typing import Optional, Literal, get_args
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
@@ -70,10 +69,9 @@ class ServiceAccountAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
         workspace_id: uuid.UUID,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
@@ -96,16 +94,19 @@ class ServiceAccountAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return [
-            (
-                ServiceAccountDetailResponse.model_validate(service_account)
-                if expand_related
-                else ServiceAccountSummaryResponse.model_validate(service_account)
-            )
-            for service_account in queryset.all()
-        ]
+        return {
+            "data": [
+                (
+                    ServiceAccountDetailResponse.model_validate(service_account)
+                    if expand_related
+                    else ServiceAccountSummaryResponse.model_validate(service_account)
+                )
+                for service_account in queryset.all()
+            ],
+            "meta": meta,
+        }
 
     def get(
         self,

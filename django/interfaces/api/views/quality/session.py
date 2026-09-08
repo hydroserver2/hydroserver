@@ -2,12 +2,12 @@ import uuid
 from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.session import QCSessionAPIService
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.quality.session import (
     QualityControlSessionSummaryResponse,
     QualityControlSessionDetailResponse,
@@ -24,7 +24,8 @@ qc_session_service = QCSessionAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[QualityControlSessionSummaryResponse] | list[QualityControlSessionDetailResponse],
+        200: PaginatedResponse[QualityControlSessionSummaryResponse]
+        | PaginatedResponse[QualityControlSessionDetailResponse],
         401: str,
         403: str,
         404: str,
@@ -33,7 +34,6 @@ qc_session_service = QCSessionAPIService()
 )
 def get_qc_sessions(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     history_id: Path[uuid.UUID],
     query: Query[QualityControlSessionQueryParameters],
 ):
@@ -45,17 +45,22 @@ def get_qc_sessions(
         **query.model_dump(exclude_unset=True),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
     if query.expand_related:
-        return 200, [QualityControlSessionDetailResponse.model_validate(session) for session in sessions]
+        return 200, {
+            "data": [QualityControlSessionDetailResponse.model_validate(session) for session in sessions],
+            "meta": meta,
+        }
 
-    return 200, [QualityControlSessionSummaryResponse.model_validate(session) for session in sessions]
+    return 200, {
+        "data": [QualityControlSessionSummaryResponse.model_validate(session) for session in sessions],
+        "meta": meta,
+    }
 
 
 @qc_session_router.post(

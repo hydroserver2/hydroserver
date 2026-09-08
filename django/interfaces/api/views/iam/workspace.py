@@ -2,7 +2,6 @@ import uuid
 from typing import Optional
 from ninja import Router, Path, Query
 from django.db import transaction
-from django.http import HttpResponse
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.schemas import (
@@ -12,6 +11,7 @@ from interfaces.api.schemas import (
     WorkspacePatchBody,
     WorkspaceTransferBody,
     WorkspaceQueryParameters,
+    PaginatedResponse,
 )
 from interfaces.api.services.iam import WorkspaceAPIService
 from interfaces.api.views.iam.service_account import service_account_router
@@ -25,7 +25,8 @@ workspace_service = WorkspaceAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[WorkspaceDetailResponse] | list[WorkspaceSummaryResponse],
+        200: PaginatedResponse[WorkspaceDetailResponse]
+        | PaginatedResponse[WorkspaceSummaryResponse],
         401: str,
     },
     by_alias=True,
@@ -33,7 +34,6 @@ workspace_service = WorkspaceAPIService()
 )
 def get_workspaces(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[WorkspaceQueryParameters],
 ):
     """
@@ -42,9 +42,8 @@ def get_workspaces(
 
     return 200, workspace_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=True if query.expand_related is None else query.expand_related,

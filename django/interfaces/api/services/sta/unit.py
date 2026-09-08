@@ -2,7 +2,6 @@ import uuid
 
 from typing import Literal, get_args
 from django.db.models.deletion import ProtectedError
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
@@ -56,9 +55,8 @@ class UnitAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
-        page: int | None = None,
-        page_size: int | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
         order_by: list[str] | None = None,
         filtering: dict | None = None,
         expand_related: bool | None = None,
@@ -88,16 +86,19 @@ class UnitAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return [
-            (
-                UnitDetailResponse.model_validate(unit)
-                if expand_related
-                else UnitSummaryResponse.model_validate(unit)
-            )
-            for unit in queryset.all()
-        ]
+        return {
+            "data": [
+                (
+                    UnitDetailResponse.model_validate(unit)
+                    if expand_related
+                    else UnitSummaryResponse.model_validate(unit)
+                )
+                for unit in queryset.all()
+            ],
+            "meta": meta,
+        }
 
     def get(
         self,
@@ -179,12 +180,11 @@ class UnitAPIService(APIService):
 
     def list_unit_types(
         self,
-        response: HttpResponse,
-        page: int | None = None,
-        page_size: int | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
         order_desc: bool = False,
     ):
         queryset = UnitType.objects.order_by(f"{'-' if order_desc else ''}name")
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

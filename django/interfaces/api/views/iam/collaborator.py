@@ -1,6 +1,5 @@
 import uuid
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
@@ -9,6 +8,7 @@ from interfaces.api.schemas import (
     CollaboratorQueryParameters,
     CollaboratorPostBody,
     CollaboratorDeleteBody,
+    PaginatedResponse,
 )
 from interfaces.api.services.iam import CollaboratorAPIService
 
@@ -20,7 +20,7 @@ collaborator_service = CollaboratorAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[CollaboratorDetailResponse],
+        200: PaginatedResponse[CollaboratorDetailResponse],
         401: str,
         403: str,
     },
@@ -28,7 +28,6 @@ collaborator_service = CollaboratorAPIService()
 )
 def get_collaborators(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     workspace_id: Path[uuid.UUID],
     query: Query[CollaboratorQueryParameters],
 ):
@@ -39,9 +38,8 @@ def get_collaborators(
     return 200, collaborator_service.list(
         principal=request.principal,
         workspace_id=workspace_id,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         filtering=query.dict(exclude_unset=True),
     )
 

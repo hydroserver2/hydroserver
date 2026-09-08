@@ -2,14 +2,14 @@ import uuid
 from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.monitoring.task import MonitoringTaskAPIService
 from processing.monitoring.tasks import run_monitoring_task
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.monitoring.task import (
     MonitoringTaskSummaryResponse,
     MonitoringTaskDetailResponse,
@@ -27,14 +27,14 @@ monitoring_task_service = MonitoringTaskAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[MonitoringTaskSummaryResponse] | list[MonitoringTaskDetailResponse],
+        200: PaginatedResponse[MonitoringTaskSummaryResponse]
+        | PaginatedResponse[MonitoringTaskDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_monitoring_tasks(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[MonitoringTaskQueryParameters],
 ):
     """
@@ -55,14 +55,13 @@ def get_monitoring_tasks(
 
     schema = MonitoringTaskDetailResponse if query.expand_related else MonitoringTaskSummaryResponse
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, [schema.model_validate(task) for task in tasks]
+    return 200, {"data": [schema.model_validate(task) for task in tasks], "meta": meta}
 
 
 @monitoring_task_router.post(
@@ -230,7 +229,7 @@ def trigger_monitoring_task(
     "/{task_id}/runs",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[TaskRunResponse],
+        200: PaginatedResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -239,7 +238,6 @@ def trigger_monitoring_task(
 )
 def get_monitoring_task_runs(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[TaskRunQueryParameters],
 ):
@@ -254,14 +252,13 @@ def get_monitoring_task_runs(
         **query.model_dump(exclude_unset=True, exclude={"order_by"}),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, runs
+    return 200, {"data": runs, "meta": meta}
 
 
 @monitoring_task_router.get(

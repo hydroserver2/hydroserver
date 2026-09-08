@@ -2,7 +2,6 @@ import uuid
 from typing import Optional
 from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
-from django.http import HttpResponse
 from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
@@ -18,6 +17,7 @@ from interfaces.api.schemas import (
     LinkedResourceQueryParameters,
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
+    PaginatedResponse,
 )
 from interfaces.api.services.sta import DatastreamAPIService
 from interfaces.api.views.sta.observation import observation_router
@@ -30,14 +30,14 @@ datastream_service = DatastreamAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[DatastreamSummaryResponse] | list[DatastreamDetailResponse],
+        200: PaginatedResponse[DatastreamSummaryResponse]
+        | PaginatedResponse[DatastreamDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_datastreams(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[DatastreamQueryParameters],
 ):
     """
@@ -46,9 +46,8 @@ def get_datastreams(
 
     return 200, datastream_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
@@ -130,11 +129,10 @@ def get_datastream_tag_keys(
 
 
 @datastream_router.get(
-    "/aggregation-statistics", response={200: list[str]}, by_alias=True
+    "/aggregation-statistics", response={200: PaginatedResponse[str]}, by_alias=True
 )
 def get_datastream_aggregation_statistics(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -142,17 +140,15 @@ def get_datastream_aggregation_statistics(
     """
 
     return 200, datastream_service.list_aggregation_statistics(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
 
-@datastream_router.get("/statuses", response={200: list[str]}, by_alias=True)
+@datastream_router.get("/statuses", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_datastream_statuses(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -160,17 +156,15 @@ def get_datastream_statuses(
     """
 
     return 200, datastream_service.list_statuses(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
 
-@datastream_router.get("/sampled-mediums", response={200: list[str]}, by_alias=True)
+@datastream_router.get("/sampled-mediums", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_datastream_sampled_mediums(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -178,19 +172,17 @@ def get_datastream_sampled_mediums(
     """
 
     return 200, datastream_service.list_sampled_mediums(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
 
 @datastream_router.get(
-    "/linked-resource-types", response={200: list[str]}, by_alias=True
+    "/linked-resource-types", response={200: PaginatedResponse[str]}, by_alias=True
 )
 def get_datastream_linked_resource_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -198,9 +190,8 @@ def get_datastream_linked_resource_types(
     """
 
     return 200, datastream_service.list_linked_resource_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 

@@ -78,7 +78,7 @@ def test_get_rating_curve_transformations_includes_transformation_for_workspace_
     response = client.get(_transformations_url(task.id))
 
     assert response.status_code == 200
-    assert str(transformation.id) in [t["id"] for t in response.json()]
+    assert str(transformation.id) in [t["id"] for t in response.json()["data"]]
 
 
 def test_get_rating_curve_transformations_returns_404_for_outsider(client):

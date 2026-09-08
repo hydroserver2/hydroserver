@@ -48,8 +48,8 @@ class DataProductTask(HydroServerBaseModel):
 
     def list_runs(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         status: str = ...,
         started_at_min: datetime = ...,
@@ -61,8 +61,8 @@ class DataProductTask(HydroServerBaseModel):
 
         return self.client.dataproducttasks.list_runs(
             uid=self.uid,
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             status=status,
             started_at_min=started_at_min,

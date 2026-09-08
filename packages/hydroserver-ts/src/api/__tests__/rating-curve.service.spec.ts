@@ -17,8 +17,8 @@ describe('RatingCurveService', () => {
 
   it('lists rating curves for a monitoringSite with product query parameters', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse(
-        [
+      jsonResponse({
+        data: [
           {
             id: 'rating-curve-1',
             name: 'Stage to discharge',
@@ -30,8 +30,8 @@ describe('RatingCurveService', () => {
             ],
           },
         ],
-        { 'X-Total-Pages': '1' }
-      )
+        meta: { offset: 0, limit: 200, totalCount: 1 },
+      })
     )
     vi.stubGlobal('fetch', fetchMock)
 
@@ -43,7 +43,7 @@ describe('RatingCurveService', () => {
     expect(response).toHaveLength(1)
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves?order_by=name&monitoring_site_id=monitoringSite-1&page=1&page_size=200'
+      'https://hydro.example.com/api/data/products/rating-curves?order_by=name&monitoring_site_id=monitoringSite-1&offset=0&limit=200'
     )
   })
 

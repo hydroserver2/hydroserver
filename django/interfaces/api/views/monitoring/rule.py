@@ -1,13 +1,13 @@
 import uuid
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
 from core.types import Unset
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.monitoring.rule import MonitoringRuleAPIService
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleResponse,
     MonitoringRulePostBody,
@@ -23,7 +23,7 @@ monitoring_rule_service = MonitoringRuleAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[MonitoringRuleResponse],
+        200: PaginatedResponse[MonitoringRuleResponse],
         401: str,
         403: str,
         404: str,
@@ -32,7 +32,6 @@ monitoring_rule_service = MonitoringRuleAPIService()
 )
 def get_monitoring_rules(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[MonitoringRuleQueryParameters],
 ):
@@ -48,14 +47,13 @@ def get_monitoring_rules(
         **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, rules
+    return 200, {"data": rules, "meta": meta}
 
 
 @monitoring_rule_router.post(

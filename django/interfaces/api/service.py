@@ -2,12 +2,12 @@ import uuid
 from typing import Union, Any, Optional, Type
 from pydantic.alias_generators import to_snake
 from django.conf import settings
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet, Model, Q
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, NotFoundError
+from interfaces.api.schemas.base import PaginationMeta
 
 User = get_user_model()
 
@@ -108,34 +108,41 @@ class APIService:
         return queryset.order_by(*order_by_fields)
 
     @staticmethod
-    def apply_pagination(
-        queryset: QuerySet,
-        response: Optional[HttpResponse] = None,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
-    ):
-        page = page or 1
-        page_size = page_size if page_size is not None else 100
+    def build_pagination_meta(
+        count: int,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> PaginationMeta:
+        offset = offset or 0
+        limit = limit if limit is not None else 100
 
-        if page < 1:
-            raise BadRequestError("Page must be greater >= 1.")
-        if page_size < 0:
-            raise BadRequestError("Page size must be >= 0.")
-        if page_size > 100000:
-            raise BadRequestError("Page size must be <= 100000.")
+        return PaginationMeta(
+            limit=limit,
+            offset=offset,
+            total_count=count,
+        )
+
+    @classmethod
+    def apply_pagination(
+        cls,
+        queryset: QuerySet,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ):
+        offset = offset or 0
+        limit = limit if limit is not None else 100
+
+        if offset < 0:
+            raise BadRequestError("Offset must be >= 0.")
+        if limit < 0:
+            raise BadRequestError("Limit must be >= 0.")
+        if limit > 100000:
+            raise BadRequestError("Limit must be <= 100000.")
 
         count = queryset.count()
-        offset = (page - 1) * page_size
+        meta = cls.build_pagination_meta(count, offset, limit)
 
-        if response:
-            response["X-Total-Count"] = str(count)
-            response["X-Page-Size"] = str(page_size)
-
-            if page_size > 0:
-                response["X-Page"] = str(page)
-                response["X-Total-Pages"] = str((count + page_size - 1) // page_size)
-
-        return queryset[offset : offset + page_size], count
+        return queryset[offset : offset + limit], meta
 
     @staticmethod
     def create_linked_resource(
@@ -228,9 +235,8 @@ class VocabularyAPIService(APIService):
     def list(
         self,
         vocabulary_model: Type[Model],
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_desc: bool = False,
     ):
         queryset = vocabulary_model.objects
@@ -243,6 +249,12 @@ class VocabularyAPIService(APIService):
             ],
         )
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return queryset.values_list("name", flat=True)
+        return {
+            "data": list(queryset.values_list("name", flat=True)),
+            "meta": meta,
+        }
+
+
+build_pagination_meta = APIService.build_pagination_meta

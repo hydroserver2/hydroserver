@@ -88,8 +88,8 @@ class QCHistoryAPIService(APIService):
     def get_collection(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         expand_related: bool | None = None,
         managed_datastream_id: list[uuid.UUID] | Unset = Unset,
@@ -115,8 +115,7 @@ class QCHistoryAPIService(APIService):
         ).distinct()
 
         count = queryset.count()
-        offset = (page - 1) * page_size
-        queryset = queryset[offset:offset + page_size]
+        queryset = queryset[offset:offset + limit]
 
         return count, queryset
 

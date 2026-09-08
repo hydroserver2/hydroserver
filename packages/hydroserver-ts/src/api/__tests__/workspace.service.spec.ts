@@ -8,7 +8,7 @@ describe('WorkspaceService', () => {
 
   it('uses the service-account endpoint for the workspace management table', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify([]), {
+      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 200, totalCount: 0 } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -19,7 +19,7 @@ describe('WorkspaceService', () => {
     await client.workspaces.getServiceAccounts('workspace-1')
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?page=1&page_size=200'
+      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=0&limit=200'
     )
   })
 
@@ -27,19 +27,22 @@ describe('WorkspaceService', () => {
     const fetchMock = vi
       .fn()
       .mockImplementation(async (input: string | URL) => {
-        const page = new URL(String(input)).searchParams.get('page')
+        const offset = new URL(String(input)).searchParams.get('offset')
         const data =
-          page === '1'
+          offset === '0'
             ? [{ email: 'first@example.com' }]
             : [{ email: 'second@example.com' }]
 
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Total-Pages': '2',
-          },
-        })
+        return new Response(
+          JSON.stringify({
+            data,
+            meta: { offset: Number(offset), limit: 200, totalCount: 201 },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
       })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -52,8 +55,8 @@ describe('WorkspaceService', () => {
     ])
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?page=1&page_size=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?page=2&page_size=200',
+      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?offset=0&limit=200',
+      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?offset=200&limit=200',
     ])
   })
 
@@ -61,17 +64,17 @@ describe('WorkspaceService', () => {
     const fetchMock = vi
       .fn()
       .mockImplementation(async (input: string | URL) => {
-        const page = new URL(String(input)).searchParams.get('page')
+        const offset = new URL(String(input)).searchParams.get('offset')
 
-        if (page === '1') {
+        if (offset === '0') {
           return new Response(
-            JSON.stringify([{ email: 'first@example.com' }]),
+            JSON.stringify({
+              data: [{ email: 'first@example.com' }],
+              meta: { offset: 0, limit: 200, totalCount: 201 },
+            }),
             {
               status: 200,
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Total-Pages': '2',
-              },
+              headers: { 'Content-Type': 'application/json' },
             }
           )
         }
@@ -99,17 +102,20 @@ describe('WorkspaceService', () => {
     const fetchMock = vi
       .fn()
       .mockImplementation(async (input: string | URL) => {
-        const page = new URL(String(input)).searchParams.get('page')
+        const offset = new URL(String(input)).searchParams.get('offset')
         const data =
-          page === '1' ? [{ id: 'account-1' }] : [{ id: 'account-2' }]
+          offset === '0' ? [{ id: 'account-1' }] : [{ id: 'account-2' }]
 
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Total-Pages': '2',
-          },
-        })
+        return new Response(
+          JSON.stringify({
+            data,
+            meta: { offset: Number(offset), limit: 200, totalCount: 201 },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
       })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -119,8 +125,8 @@ describe('WorkspaceService', () => {
     expect(response.data).toEqual([{ id: 'account-1' }, { id: 'account-2' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?page=1&page_size=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?page=2&page_size=200',
+      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=0&limit=200',
+      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=200&limit=200',
     ])
   })
 })

@@ -1,13 +1,13 @@
 import uuid
 from typing import Optional
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
     RoleSummaryResponse,
     RoleDetailResponse,
     RoleQueryParameters,
+    PaginatedResponse,
 )
 from interfaces.api.services.iam import RoleAPIService
 
@@ -19,14 +19,13 @@ role_service = RoleAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[RoleSummaryResponse] | list[RoleDetailResponse],
+        200: PaginatedResponse[RoleSummaryResponse] | PaginatedResponse[RoleDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_roles(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[RoleQueryParameters],
 ):
     """
@@ -35,9 +34,8 @@ def get_roles(
 
     return 200, role_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,

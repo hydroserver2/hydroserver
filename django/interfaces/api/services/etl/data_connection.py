@@ -104,8 +104,8 @@ class DataConnectionAPIService(SchedulingService, APIService):
     def get_collection(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(gt=0, default=100),
         order_by: list[str] | Unset = Unset,
         search_term: str | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
@@ -145,10 +145,9 @@ class DataConnectionAPIService(SchedulingService, APIService):
         # Count before adding the task-count annotations so the COUNT(*) query does not have to
         # evaluate the per-connection task subqueries (they do not affect the row count).
         count = queryset.count()
-        offset = (page - 1) * page_size
 
         queryset = self.annotate_task_counts(queryset)
-        queryset = queryset[offset:offset + page_size]
+        queryset = queryset[offset:offset + limit]
 
         return count, queryset
 

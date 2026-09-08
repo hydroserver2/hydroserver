@@ -17,8 +17,8 @@ describe('QualityControl services', () => {
 
   it('lists histories with generated query parameters', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse(
-        [
+      jsonResponse({
+        data: [
           {
             id: 'history-1',
             managedDatastreamId: 'managed-1',
@@ -26,8 +26,8 @@ describe('QualityControl services', () => {
             createdAt: '2026-06-18T12:00:00Z',
           },
         ],
-        { 'X-Total-Pages': '1' }
-      )
+        meta: { offset: 0, limit: 200, totalCount: 1 },
+      })
     )
     vi.stubGlobal('fetch', fetchMock)
 
@@ -39,7 +39,7 @@ describe('QualityControl services', () => {
 
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/quality-control/histories?managed_datastream_id=managed-1&page=1&page_size=200'
+      'https://hydro.example.com/api/data/quality-control/histories?managed_datastream_id=managed-1&offset=0&limit=200'
     )
   })
 

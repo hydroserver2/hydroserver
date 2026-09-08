@@ -43,7 +43,7 @@ def test_get_processing_levels_includes_global_levels_for_anonymous(client):
     response = client.get(PROCESSING_LEVELS_URL)
 
     assert response.status_code == 200
-    assert str(processing_level.id) in [p["id"] for p in response.json()]
+    assert str(processing_level.id) in [p["id"] for p in response.json()["data"]]
 
 
 def test_get_processing_levels_excludes_private_workspace_levels_for_outsider(client):
@@ -54,7 +54,7 @@ def test_get_processing_levels_excludes_private_workspace_levels_for_outsider(cl
 
     response = client.get(PROCESSING_LEVELS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_processing_levels_includes_workspace_levels_for_workspace_owner(client):
@@ -66,7 +66,7 @@ def test_get_processing_levels_includes_workspace_levels_for_workspace_owner(cli
     response = client.get(PROCESSING_LEVELS_URL)
 
     assert response.status_code == 200
-    assert str(processing_level.id) in [p["id"] for p in response.json()]
+    assert str(processing_level.id) in [p["id"] for p in response.json()["data"]]
 
 
 # --- create_processing_level --------------------------------------------------------

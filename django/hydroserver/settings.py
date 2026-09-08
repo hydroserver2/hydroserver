@@ -65,11 +65,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = env.bool("CORS_ALLOW_CREDENTIALS", default=not STRICT_SECURITY)
 CORS_URLS_REGEX = r"^/$|^/(api|identity|\.well-known|media|static)/.*$"
 
-CORS_EXPOSE_HEADERS = [
-    "X-Total-Pages",
-    "X-Total-Count",
-]
-
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in env.list("CSRF_TRUSTED_ORIGINS", default=[PROXY_BASE_URL])

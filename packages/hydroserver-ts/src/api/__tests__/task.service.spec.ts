@@ -35,8 +35,8 @@ describe('TaskService', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        jsonResponse(
-          [
+        jsonResponse({
+          data: [
             {
               id: 'run-1',
               status: 'SUCCESS',
@@ -45,8 +45,8 @@ describe('TaskService', () => {
               result: rawResult,
             },
           ],
-          { 'X-Total-Pages': '1' }
-        )
+          meta: { offset: 0, limit: 200, totalCount: 1 },
+        })
       )
     )
 
@@ -61,21 +61,24 @@ describe('TaskService', () => {
 
   it('merges paginated results in page order when fetched concurrently', async () => {
     const pageData: Record<string, Array<{ id: string }>> = {
-      '1': [{ id: 'a' }, { id: 'b' }],
+      '0': [{ id: 'a' }, { id: 'b' }],
       '2': [{ id: 'c' }, { id: 'd' }],
-      '3': [{ id: 'e' }, { id: 'f' }],
+      '4': [{ id: 'e' }, { id: 'f' }],
     }
 
     const fetchMock = vi.fn((input: any) => {
-      const page = new URL(String(input)).searchParams.get('page') ?? '1'
+      const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
       return Promise.resolve(
-        jsonResponse(pageData[page], { 'X-Total-Pages': '3' })
+        jsonResponse({
+          data: pageData[offset],
+          meta: { offset: Number(offset), limit: 2, totalCount: 6 },
+        })
       )
     })
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
-    const items = await client.tasks.listAllItems()
+    const items = await client.tasks.listAllItems({ limit: 2 })
 
     expect(items.map((item: any) => item.id)).toEqual([
       'a',

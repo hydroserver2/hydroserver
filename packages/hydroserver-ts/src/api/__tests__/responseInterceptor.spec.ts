@@ -18,7 +18,7 @@ describe('responseInterceptor', () => {
   }
 
   it('processes a 200 status code response correctly', async () => {
-    const mockJsonResponse = { data: 'Some data' }
+    const mockJsonResponse = { data: 'Some data', meta: { totalCount: 1 } }
     const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -27,6 +27,23 @@ describe('responseInterceptor', () => {
     const result = await responseInterceptor(mockResponse)
     expect(result).toEqual({
       data: 'Some data',
+      status: 200,
+      message: 'OK',
+      meta: { totalCount: 1 },
+      ok: true,
+    })
+  })
+
+  it('does not unwrap a "data" property without an accompanying "meta"', async () => {
+    const mockJsonResponse = { data: 'Some data' }
+    const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const result = await responseInterceptor(mockResponse)
+    expect(result).toEqual({
+      data: mockJsonResponse,
       status: 200,
       message: 'OK',
       meta: undefined,

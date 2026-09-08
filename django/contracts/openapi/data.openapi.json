@@ -445,45 +445,24 @@
             ]
           },
           "dataStartRow": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datastartrow"
+            "title": "Datastartrow",
+            "type": "integer"
           },
           "delimiter": {
-            "anyOf": [
-              {
-                "enum": [
-                  ",",
-                  "|",
-                  "\t",
-                  ";",
-                  " "
-                ],
-                "maxLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "enum": [
+              ",",
+              "|",
+              "\t",
+              ";",
+              " "
             ],
-            "title": "Delimiter"
+            "maxLength": 1,
+            "title": "Delimiter",
+            "type": "string"
           },
           "headerRow": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Headerrow"
+            "title": "Headerrow",
+            "type": "integer"
           },
           "timestampFormat": {
             "anyOf": [
@@ -508,7 +487,10 @@
         },
         "required": [
           "type",
-          "timestampKey"
+          "timestampKey",
+          "headerRow",
+          "dataStartRow",
+          "delimiter"
         ],
         "title": "CSVPayloadPostBody",
         "type": "object"
@@ -660,21 +642,7 @@
       },
       "CollaboratorQueryParameters": {
         "properties": {
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
+          "limit": {
             "anyOf": [
               {
                 "maximum": 100000,
@@ -686,8 +654,22 @@
               }
             ],
             "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "role_id": {
             "default": [],
@@ -944,6 +926,35 @@
       },
       "DataConnectionQueryParameters": {
         "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "default": [],
             "description": "Select one or more fields to order the response by.",
@@ -971,35 +982,6 @@
             },
             "title": "Order By",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "payload_type": {
             "default": [],
@@ -1544,6 +1526,21 @@
             "title": "Latest Run Status",
             "type": "array"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter data product tasks by monitoring_site ID.",
@@ -1553,6 +1550,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "default": [],
@@ -1593,35 +1604,6 @@
             },
             "title": "Output Datastream Id",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "rating_curve_id": {
             "default": [],
@@ -1764,6 +1746,35 @@
             "title": "Input Datastream Id",
             "type": "array"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "default": [],
             "description": "Select one or more fields to order the response by.",
@@ -1789,35 +1800,6 @@
             },
             "title": "Output Datastream Id",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           }
         },
         "title": "DataProductTransformationTypeQueryParameters",
@@ -2516,6 +2498,21 @@
             "description": "Controls whether the datastreams should be private or public.",
             "title": "Is Private"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "method_id": {
             "default": [],
             "description": "Filter datastreams by method ID.",
@@ -2554,6 +2551,20 @@
             },
             "title": "Observed Property Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "anyOf": [
@@ -2594,35 +2605,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "phenomenon_begin_time_max": {
             "anyOf": [
@@ -3651,6 +3633,21 @@
             "title": "Latest Run Status",
             "type": "array"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter ETL tasks by monitoring_site ID.",
@@ -3660,6 +3657,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "default": [],
@@ -3690,35 +3701,6 @@
             },
             "title": "Order By",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "workspace_id": {
             "default": [],
@@ -3815,15 +3797,8 @@
             ]
           },
           "jmespath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Jmespath"
+            "title": "Jmespath",
+            "type": "string"
           },
           "timestampFormat": {
             "anyOf": [
@@ -3848,7 +3823,8 @@
         },
         "required": [
           "type",
-          "timestampKey"
+          "timestampKey",
+          "jmespath"
         ],
         "title": "JSONPayloadPostBody",
         "type": "object"
@@ -3946,21 +3922,7 @@
       },
       "LinkedResourceQueryParameters": {
         "properties": {
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
+          "limit": {
             "anyOf": [
               {
                 "maximum": 100000,
@@ -3972,8 +3934,22 @@
               }
             ],
             "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "type": {
             "default": [],
@@ -4310,6 +4286,21 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter methods by monitoring_site ID.",
@@ -4327,6 +4318,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "anyOf": [
@@ -4355,35 +4360,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "sensor_model": {
             "default": [],
@@ -4824,6 +4800,35 @@
             "title": "Datastream Id",
             "type": "array"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "default": [],
             "description": "Select one or more fields to order the response by.",
@@ -4841,35 +4846,6 @@
             },
             "title": "Order By",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "rule_type": {
             "default": [],
@@ -5362,9 +5338,13 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999,
-                "minimum": -99999,
+                "maximum": 99999.0,
+                "minimum": -99999.0,
                 "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -5377,16 +5357,32 @@
             "type": "boolean"
           },
           "latitude": {
-            "maximum": 90,
-            "minimum": -90,
-            "title": "Latitude",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Latitude"
           },
           "longitude": {
-            "maximum": 180,
-            "minimum": -180,
-            "title": "Longitude",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Longitude"
           },
           "name": {
             "maxLength": 200,
@@ -5489,9 +5485,13 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999,
-                "minimum": -99999,
+                "maximum": 99999.0,
+                "minimum": -99999.0,
                 "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -5516,16 +5516,32 @@
             "type": "boolean"
           },
           "latitude": {
-            "maximum": 90,
-            "minimum": -90,
-            "title": "Latitude",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Latitude"
           },
           "longitude": {
-            "maximum": 180,
-            "minimum": -180,
-            "title": "Longitude",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Longitude"
           },
           "name": {
             "maxLength": 200,
@@ -5625,6 +5641,35 @@
             "description": "Controls whether the returned monitoring sites should be private or public.",
             "title": "Is Private"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "anyOf": [
               {
@@ -5664,35 +5709,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "tag": {
             "default": [],
@@ -6171,6 +6187,21 @@
             "title": "Latest Run Status",
             "type": "array"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter monitoring tasks by monitoring_site ID.",
@@ -6180,6 +6211,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "default": [],
@@ -6210,35 +6255,6 @@
             },
             "title": "Order By",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "rule_type": {
             "default": [],
@@ -6553,6 +6569,9 @@
       },
       "ObservationColumnarResponse": {
         "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          },
           "phenomenonTime": {
             "items": {},
             "title": "Phenomenontime",
@@ -6572,7 +6591,8 @@
         "required": [
           "phenomenonTime",
           "result",
-          "resultQualifierCodes"
+          "resultQualifierCodes",
+          "meta"
         ],
         "title": "ObservationColumnarResponse",
         "type": "object"
@@ -6694,6 +6714,35 @@
             "description": "Controls the format of the observations response.",
             "title": "Format"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "anyOf": [
               {
@@ -6713,35 +6762,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "phenomenon_time_max": {
             "anyOf": [
@@ -6809,11 +6829,15 @@
             },
             "title": "Fields",
             "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
           }
         },
         "required": [
           "fields",
-          "data"
+          "data",
+          "meta"
         ],
         "title": "ObservationRowResponse",
         "type": "object"
@@ -7056,6 +7080,21 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter observed properties by monitoring_site ID.",
@@ -7073,6 +7112,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "anyOf": [
@@ -7097,35 +7150,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "type": {
             "default": [],
@@ -7216,6 +7240,869 @@
           "id"
         ],
         "title": "ObservedPropertySummaryResponse",
+        "type": "object"
+      },
+      "PaginatedResponse_AggregationTransformationSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[AggregationTransformationSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_CollaboratorDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CollaboratorDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[CollaboratorDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_DataConnectionResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DataConnectionResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DataConnectionResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_DataProductTaskDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DataProductTaskDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DataProductTaskDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_DataProductTaskSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DataProductTaskSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DataProductTaskSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_DatastreamDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DatastreamDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DatastreamDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_DatastreamSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DatastreamSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DatastreamSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_DerivationTransformationSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DerivationTransformationSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_EtlTaskDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EtlTaskDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[EtlTaskDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_EtlTaskSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EtlTaskSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[EtlTaskSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MethodDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MethodDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MethodDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MethodSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MethodSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MethodSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MonitoringRuleResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringRuleResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MonitoringRuleResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MonitoringSiteDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringSiteDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MonitoringSiteDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MonitoringSiteSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringSiteSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MonitoringSiteSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MonitoringTaskDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringTaskDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MonitoringTaskDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MonitoringTaskSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringTaskSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MonitoringTaskSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ObservationDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservationDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservationDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ObservationSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservationSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservationSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ObservedPropertyDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservedPropertyDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservedPropertyDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ObservedPropertySummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservedPropertySummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservedPropertySummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ProcessingLevelDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessingLevelDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ProcessingLevelDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ProcessingLevelSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessingLevelSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ProcessingLevelSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_QualityControlHistoryDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QualityControlHistoryDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[QualityControlHistoryDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_QualityControlHistorySummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QualityControlHistorySummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[QualityControlHistorySummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_QualityControlOperationResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QualityControlOperationResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[QualityControlOperationResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_QualityControlSessionDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[QualityControlSessionDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_QualityControlSessionSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QualityControlSessionSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[QualityControlSessionSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_RatingCurveResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RatingCurveResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[RatingCurveResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_RatingCurveTransformationSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[RatingCurveTransformationSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ResultQualifierDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ResultQualifierDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ResultQualifierDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ResultQualifierSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ResultQualifierSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ResultQualifierSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_RoleDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RoleDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[RoleDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_RoleSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RoleSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[RoleSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ServiceAccountDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceAccountDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ServiceAccountDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ServiceAccountSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceAccountSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ServiceAccountSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_TaskRunResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TaskRunResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[TaskRunResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_UnitDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/UnitDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[UnitDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_UnitSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/UnitSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[UnitSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_WorkspaceDetailResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceDetailResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[WorkspaceDetailResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_WorkspaceSummaryResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSummaryResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[WorkspaceSummaryResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_str_": {
+        "properties": {
+          "data": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[str]",
+        "type": "object"
+      },
+      "PaginationMeta": {
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "totalCount": {
+            "title": "Totalcount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "totalCount"
+        ],
+        "title": "PaginationMeta",
         "type": "object"
       },
       "PayloadPatchBody": {
@@ -7647,6 +8534,21 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter processing levels by monitoring_site ID.",
@@ -7664,6 +8566,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "anyOf": [
@@ -7686,35 +8602,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "workspace_id": {
             "default": [],
@@ -7900,31 +8787,7 @@
             ],
             "title": "Expand Related"
           },
-          "managed_datastream_id": {
-            "default": [],
-            "description": "Filter histories by managed datastream ID.",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Managed Datastream Id",
-            "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
+          "limit": {
             "anyOf": [
               {
                 "maximum": 100000,
@@ -7936,8 +8799,32 @@
               }
             ],
             "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "managed_datastream_id": {
+            "default": [],
+            "description": "Filter histories by managed datastream ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Managed Datastream Id",
+            "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "source_datastream_id": {
             "default": [],
@@ -8133,21 +9020,7 @@
       },
       "QualityControlOperationQueryParameters": {
         "properties": {
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
+          "limit": {
             "anyOf": [
               {
                 "maximum": 100000,
@@ -8159,8 +9032,22 @@
               }
             ],
             "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           }
         },
         "title": "QualityControlOperationQueryParameters",
@@ -8446,21 +9333,7 @@
             "title": "Include Ancestors",
             "type": "boolean"
           },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
+          "limit": {
             "anyOf": [
               {
                 "maximum": 100000,
@@ -8472,8 +9345,22 @@
               }
             ],
             "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "range_end": {
             "anyOf": [
@@ -8744,6 +9631,21 @@
       },
       "RatingCurveQueryParameters": {
         "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter rating curves by monitoring_site ID.",
@@ -8753,6 +9655,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "default": [],
@@ -8777,35 +9693,6 @@
             },
             "title": "Order By",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "workspace_id": {
             "default": [],
@@ -9145,6 +10032,21 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter result qualifiers by monitoring_site ID.",
@@ -9162,6 +10064,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "anyOf": [
@@ -9182,35 +10098,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "workspace_id": {
             "default": [],
@@ -9335,6 +10222,35 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "anyOf": [
               {
@@ -9354,35 +10270,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "workspace_id": {
             "default": [],
@@ -9961,6 +10848,35 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "anyOf": [
               {
@@ -9984,35 +10900,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           }
         },
         "title": "ServiceAccountQueryParameters",
@@ -10249,6 +11136,35 @@
             "description": "Filters for task runs finished on or after this date and time.",
             "title": "Finished At Min"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "default": [],
             "description": "Select one or more fields to order the response by.",
@@ -10268,35 +11184,6 @@
             },
             "title": "Order By",
             "type": "array"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "started_at_max": {
             "anyOf": [
@@ -10635,6 +11522,21 @@
             ],
             "title": "Expand Related"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
           "monitoring_site_id": {
             "default": [],
             "description": "Filter units by monitoring_site ID.",
@@ -10652,6 +11554,20 @@
             },
             "title": "Monitoring Site Id",
             "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
           },
           "order_by": {
             "anyOf": [
@@ -10676,35 +11592,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           },
           "type": {
             "default": [],
@@ -11014,6 +11901,35 @@
       },
       "VocabularyQueryParameters": {
         "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_desc": {
             "anyOf": [
               {
@@ -11026,35 +11942,6 @@
             "default": false,
             "description": "Sort terms by descending.",
             "title": "Order Desc"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           }
         },
         "title": "VocabularyQueryParameters",
@@ -11192,6 +12079,35 @@
             "description": "Whether the returned workspaces should be private or public.",
             "title": "Is Private"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
           "order_by": {
             "anyOf": [
               {
@@ -11213,35 +12129,6 @@
             "default": [],
             "description": "Select one or more fields to order the response by.",
             "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
           }
         },
         "title": "WorkspaceQueryParameters",
@@ -11320,29 +12207,29 @@
         "operationId": "interfaces_api_views_sta_datastream_get_datastreams",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -11356,8 +12243,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -11847,16 +12734,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/DatastreamSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_DatastreamSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/DatastreamDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_DatastreamDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -12017,29 +12898,29 @@
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12053,8 +12934,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -12082,11 +12963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -12105,29 +12982,29 @@
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resource_types",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12141,8 +13018,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -12170,11 +13047,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -12193,29 +13066,29 @@
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_sampled_mediums",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12229,8 +13102,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -12258,11 +13131,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -12281,29 +13150,29 @@
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_statuses",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12317,8 +13186,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -12346,11 +13215,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -12876,29 +13741,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12912,8 +13777,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -13443,29 +14308,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -13479,8 +14344,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -13615,16 +14480,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ObservationSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ObservationDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationDetailResponse_"
                     },
                     {
                       "$ref": "#/components/schemas/ObservationRowResponse"
@@ -13870,6 +14729,17 @@
           "201": {
             "description": "Created"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "403": {
             "content": {
               "application/json": {
@@ -14040,7 +14910,7 @@
             },
             "description": "Forbidden"
           },
-          "409": {
+          "404": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14049,7 +14919,7 @@
                 }
               }
             },
-            "description": "Conflict"
+            "description": "Not Found"
           }
         },
         "security": [
@@ -14182,29 +15052,29 @@
         "operationId": "interfaces_api_views_etl_data_connection_get_data_connections",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -14218,8 +15088,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -14293,11 +15163,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DataConnectionResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_DataConnectionResponse_"
                 }
               }
             },
@@ -14694,29 +15560,29 @@
         "operationId": "interfaces_api_views_etl_task_get_etl_tasks",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -14730,8 +15596,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -14953,16 +15819,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/EtlTaskSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_EtlTaskSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/EtlTaskDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_EtlTaskDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -15407,29 +16267,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -15443,8 +16303,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -15588,11 +16448,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TaskRunResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_TaskRunResponse_"
                 }
               }
             },
@@ -15830,29 +16686,29 @@
         "operationId": "interfaces_api_views_sta_method_get_methods",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -15866,8 +16722,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -16045,16 +16901,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/MethodSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_MethodSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/MethodDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_MethodDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -16215,29 +17065,29 @@
         "operationId": "interfaces_api_views_sta_method_get_types",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -16251,8 +17101,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -16280,11 +17130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -16593,29 +17439,29 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_sites",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -16629,8 +17475,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -16827,16 +17673,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/MonitoringSiteSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_MonitoringSiteSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/MonitoringSiteDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_MonitoringSiteDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -16986,29 +17826,29 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17022,8 +17862,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -17051,11 +17891,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -17284,29 +18120,29 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_get_site_types",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17320,8 +18156,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -17349,11 +18185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -17835,29 +18667,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17871,8 +18703,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -18392,29 +19224,29 @@
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_tasks",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18428,8 +19260,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -18578,16 +19410,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/MonitoringTaskSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_MonitoringTaskSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/MonitoringTaskDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_MonitoringTaskDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -19032,29 +19858,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -19068,8 +19894,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -19133,11 +19959,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MonitoringRuleResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_MonitoringRuleResponse_"
                 }
               }
             },
@@ -19623,29 +20445,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -19659,8 +20481,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -19804,11 +20626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TaskRunResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_TaskRunResponse_"
                 }
               }
             },
@@ -20046,29 +20864,29 @@
         "operationId": "interfaces_api_views_sta_observed_property_get_observed_properties",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20082,8 +20900,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -20227,16 +21045,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ObservedPropertySummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservedPropertySummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ObservedPropertyDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservedPropertyDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -20397,29 +21209,29 @@
         "operationId": "interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20433,8 +21245,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -20462,11 +21274,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -20775,29 +21583,29 @@
         "operationId": "interfaces_api_views_sta_processing_level_get_processing_levels",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20811,8 +21619,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -20939,16 +21747,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ProcessingLevelSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ProcessingLevelSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ProcessingLevelDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ProcessingLevelDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -21399,29 +22201,29 @@
         "operationId": "interfaces_api_views_products_rating_curve_get_rating_curves",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -21435,8 +22237,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -21507,11 +22309,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RatingCurveResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_RatingCurveResponse_"
                 }
               }
             },
@@ -21919,29 +22717,29 @@
         "operationId": "interfaces_api_views_products_task_get_data_product_tasks",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -21955,8 +22753,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -22137,16 +22935,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/DataProductTaskSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_DataProductTaskSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/DataProductTaskDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_DataProductTaskDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -22591,29 +23383,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22627,8 +23419,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -22772,11 +23564,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TaskRunResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_TaskRunResponse_"
                 }
               }
             },
@@ -22943,29 +23731,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22979,8 +23767,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -23043,11 +23831,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_AggregationTransformationSummaryResponse_"
                 }
               }
             },
@@ -23533,29 +24317,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23569,8 +24353,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -23633,11 +24417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_DerivationTransformationSummaryResponse_"
                 }
               }
             },
@@ -24123,29 +24903,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24159,8 +24939,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -24223,11 +25003,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_RatingCurveTransformationSummaryResponse_"
                 }
               }
             },
@@ -24784,29 +25560,29 @@
         "operationId": "interfaces_api_views_quality_history_get_qc_histories",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24820,8 +25596,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -24880,16 +25656,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/QualityControlHistorySummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_QualityControlHistorySummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/QualityControlHistoryDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_QualityControlHistoryDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -25234,29 +26004,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -25270,8 +26040,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -25393,16 +26163,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/QualityControlSessionSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_QualityControlSessionSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_QualityControlSessionDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -26039,29 +26803,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -26075,8 +26839,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           }
         ],
@@ -26085,11 +26849,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/QualityControlOperationResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_QualityControlOperationResponse_"
                 }
               }
             },
@@ -26613,29 +27373,29 @@
         "operationId": "interfaces_api_views_sta_result_qualifier_get_result_qualifiers",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -26649,8 +27409,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -26775,16 +27535,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ResultQualifierSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ResultQualifierSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ResultQualifierDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ResultQualifierDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -26885,6 +27639,17 @@
             },
             "description": "Unauthorized"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -26958,17 +27723,6 @@
               }
             },
             "description": "Forbidden"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Conflict"
           }
         },
         "security": [
@@ -27202,29 +27956,29 @@
         "operationId": "interfaces_api_views_iam_role_get_roles",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -27238,8 +27992,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -27316,16 +28070,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/RoleSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_RoleSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/RoleDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_RoleDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -27466,29 +28214,29 @@
         "operationId": "interfaces_api_views_sta_unit_get_units",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -27502,8 +28250,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -27647,16 +28395,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/UnitSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_UnitSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/UnitDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_UnitDetailResponse_"
                     }
                   ],
                   "title": "Response"
@@ -27806,29 +28548,29 @@
         "operationId": "interfaces_api_views_sta_unit_get_unit_types",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -27842,8 +28584,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -27871,11 +28613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_str_"
                 }
               }
             },
@@ -28184,29 +28922,29 @@
         "operationId": "interfaces_api_views_iam_workspace_get_workspaces",
         "parameters": [
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28220,8 +28958,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -28312,16 +29050,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/WorkspaceDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_WorkspaceDetailResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/WorkspaceSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_WorkspaceSummaryResponse_"
                     }
                   ],
                   "title": "Response"
@@ -28815,29 +29547,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28851,8 +29583,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -28877,11 +29609,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/CollaboratorDetailResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_CollaboratorDetailResponse_"
                 }
               }
             },
@@ -29121,29 +29849,29 @@
             }
           },
           {
-            "description": "Page number (1-based).",
+            "description": "Number of items to skip.",
             "in": "query",
-            "name": "page",
+            "name": "offset",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 1,
+                  "minimum": 0,
                   "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
             }
           },
           {
-            "description": "The number of items per page.",
+            "description": "The maximum number of items to return.",
             "in": "query",
-            "name": "page_size",
+            "name": "limit",
             "required": false,
             "schema": {
               "anyOf": [
@@ -29157,8 +29885,8 @@
                 }
               ],
               "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
             }
           },
           {
@@ -29215,16 +29943,10 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ServiceAccountSummaryResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ServiceAccountSummaryResponse_"
                     },
                     {
-                      "items": {
-                        "$ref": "#/components/schemas/ServiceAccountDetailResponse"
-                      },
-                      "type": "array"
+                      "$ref": "#/components/schemas/PaginatedResponse_ServiceAccountDetailResponse_"
                     }
                   ],
                   "title": "Response"

@@ -60,7 +60,7 @@ def test_get_monitoring_rules_includes_rule_for_workspace_owner(client):
     response = client.get(_rules_url(task.id))
 
     assert response.status_code == 200
-    assert str(rule.id) in [r["id"] for r in response.json()]
+    assert str(rule.id) in [r["id"] for r in response.json()["data"]]
 
 
 def test_get_monitoring_rules_returns_404_for_outsider(client):

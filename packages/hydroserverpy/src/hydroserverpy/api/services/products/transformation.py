@@ -64,7 +64,7 @@ class DataProductTransformationService:
 
         response = self.client.request("get", self._route(task_id, "rating-curve"), params=params)
 
-        return [RatingCurveTransformation(**t) for t in response.json()]
+        return [RatingCurveTransformation(**t) for t in response.json()["data"]]
 
     def get_rating_curve(
         self, task_id: Union[UUID, str], uid: Union[UUID, str]
@@ -138,7 +138,7 @@ class DataProductTransformationService:
 
         response = self.client.request("get", self._route(task_id, "derivation"), params=params)
 
-        return [DerivationTransformation(**t) for t in response.json()]
+        return [DerivationTransformation(**t) for t in response.json()["data"]]
 
     def get_derivation(
         self, task_id: Union[UUID, str], uid: Union[UUID, str]
@@ -241,7 +241,7 @@ class DataProductTransformationService:
 
         response = self.client.request("get", self._route(task_id, "aggregation"), params=params)
 
-        return [AggregationTransformation(**t) for t in response.json()]
+        return [AggregationTransformation(**t) for t in response.json()["data"]]
 
     def get_aggregation(
         self, task_id: Union[UUID, str], uid: Union[UUID, str]

@@ -1,13 +1,13 @@
 import uuid
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
 from core.types import Unset
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.products.transformation import DataProductTransformationAPIService, TransformationInput
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationTypeQueryParameters,
     RatingCurveTransformationSummaryResponse,
@@ -35,12 +35,11 @@ rating_curve_transformation_router = Router(tags=["Rating Curve Transformations"
 @rating_curve_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[RatingCurveTransformationSummaryResponse], 401: str, 403: str, 404: str},
+    response={200: PaginatedResponse[RatingCurveTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_rating_curve_transformations(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[DataProductTransformationTypeQueryParameters],
 ):
@@ -56,9 +55,9 @@ def get_rating_curve_transformations(
         **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
     )
 
-    apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
+    meta = build_pagination_meta(count=count, offset=query.offset, limit=query.limit)
 
-    return 200, transformations
+    return 200, {"data": transformations, "meta": meta}
 
 
 @rating_curve_transformation_router.post(
@@ -163,12 +162,11 @@ derivation_transformation_router = Router(tags=["Derivation Transformations"])
 @derivation_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[DerivationTransformationSummaryResponse], 401: str, 403: str, 404: str},
+    response={200: PaginatedResponse[DerivationTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_derivation_transformations(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[DataProductTransformationTypeQueryParameters],
 ):
@@ -184,9 +182,9 @@ def get_derivation_transformations(
         **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
     )
 
-    apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
+    meta = build_pagination_meta(count=count, offset=query.offset, limit=query.limit)
 
-    return 200, transformations
+    return 200, {"data": transformations, "meta": meta}
 
 
 @derivation_transformation_router.post(
@@ -292,12 +290,11 @@ aggregation_transformation_router = Router(tags=["Aggregation Transformations"])
 @aggregation_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[AggregationTransformationSummaryResponse], 401: str, 403: str, 404: str},
+    response={200: PaginatedResponse[AggregationTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_aggregation_transformations(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[DataProductTransformationTypeQueryParameters],
 ):
@@ -313,9 +310,9 @@ def get_aggregation_transformations(
         **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
     )
 
-    apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
+    meta = build_pagination_meta(count=count, offset=query.offset, limit=query.limit)
 
-    return 200, transformations
+    return 200, {"data": transformations, "meta": meta}
 
 
 @aggregation_transformation_router.post(

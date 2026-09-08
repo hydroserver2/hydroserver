@@ -19,8 +19,8 @@ class WorkspaceService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         is_private: bool = ...,
         is_associated: bool = ...,
@@ -29,8 +29,8 @@ class WorkspaceService(HydroServerBaseService):
         """Fetch a collection of HydroServer workspaces."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
             is_private=is_private,
@@ -71,7 +71,7 @@ class WorkspaceService(HydroServerBaseService):
 
         return [
             Collaborator(client=self.client, uid=None, workspace_id=uid, **obj)
-            for obj in response.json()
+            for obj in response.json()["data"]
         ]
 
     def add_collaborator(

@@ -45,7 +45,7 @@ def test_get_units_includes_global_units_for_anonymous(client):
     response = client.get(UNITS_URL)
 
     assert response.status_code == 200
-    assert str(unit.id) in [u["id"] for u in response.json()]
+    assert str(unit.id) in [u["id"] for u in response.json()["data"]]
 
 
 def test_get_units_excludes_private_workspace_units_for_outsider(client):
@@ -56,7 +56,7 @@ def test_get_units_excludes_private_workspace_units_for_outsider(client):
 
     response = client.get(UNITS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_units_includes_workspace_units_for_workspace_owner(client):
@@ -68,7 +68,7 @@ def test_get_units_includes_workspace_units_for_workspace_owner(client):
     response = client.get(UNITS_URL)
 
     assert response.status_code == 200
-    assert str(unit.id) in [u["id"] for u in response.json()]
+    assert str(unit.id) in [u["id"] for u in response.json()["data"]]
 
 
 def test_get_units_filters_by_type(client):
@@ -78,7 +78,7 @@ def test_get_units_filters_by_type(client):
     response = client.get(UNITS_URL, {"type": "Length"})
 
     assert response.status_code == 200
-    assert [item["id"] for item in response.json()] == [str(length.id)]
+    assert [item["id"] for item in response.json()["data"]] == [str(length.id)]
 
 
 # --- create_unit ------------------------------------------------------------------
@@ -153,7 +153,7 @@ def test_get_unit_types_returns_registered_type_names(client):
     response = client.get(f"{UNITS_URL}/types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Dimensionless", "Length"}
+    assert set(response.json()["data"]) == {"Dimensionless", "Length"}
 
 
 # --- get_unit --------------------------------------------------------------------

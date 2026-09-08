@@ -1,7 +1,6 @@
 import uuid
 from typing import Optional
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from django.db import transaction
 from interfaces.auth.security import (
     session_auth,
@@ -18,6 +17,7 @@ from interfaces.api.schemas import (
     MethodQueryParameters,
     MethodPostBody,
     MethodPatchBody,
+    PaginatedResponse,
 )
 from interfaces.api.services.sta import MethodAPIService
 
@@ -29,14 +29,13 @@ method_service = MethodAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[MethodSummaryResponse] | list[MethodDetailResponse],
+        200: PaginatedResponse[MethodSummaryResponse] | PaginatedResponse[MethodDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_methods(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[MethodQueryParameters],
 ):
     """
@@ -45,9 +44,8 @@ def get_methods(
 
     return 200, method_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
@@ -83,10 +81,9 @@ def create_method(
     )
 
 
-@method_router.get("types", response={200: list[str]}, by_alias=True)
+@method_router.get("types", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -94,9 +91,8 @@ def get_types(
     """
 
     return 200, method_service.list_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 

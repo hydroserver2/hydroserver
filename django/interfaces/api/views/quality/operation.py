@@ -1,12 +1,12 @@
 import uuid
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.operation import QCOperationAPIService, OperationInput
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.quality.operation import (
     QualityControlOperationResponse,
     QualityControlOperationQueryParameters,
@@ -21,12 +21,11 @@ qc_operation_service = QCOperationAPIService()
 @qc_operation_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: list[QualityControlOperationResponse], 401: str, 403: str, 404: str},
+    response={200: PaginatedResponse[QualityControlOperationResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_qc_operations(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     history_id: Path[uuid.UUID],
     session_id: Path[uuid.UUID],
     query: Query[QualityControlOperationQueryParameters],
@@ -40,14 +39,13 @@ def get_qc_operations(
         **query.model_dump(exclude_unset=True),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
-    return 200, operations
+    return 200, {"data": operations, "meta": meta}
 
 
 @qc_operation_router.post(

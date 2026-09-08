@@ -20,7 +20,7 @@ def test_get_roles_includes_global_roles_for_anonymous(client):
     response = client.get(ROLES_URL)
 
     assert response.status_code == 200
-    assert str(role.id) in [r["id"] for r in response.json()]
+    assert str(role.id) in [r["id"] for r in response.json()["data"]]
 
 
 def test_get_roles_excludes_workspace_roles_for_unrelated_user(client):
@@ -30,7 +30,7 @@ def test_get_roles_excludes_workspace_roles_for_unrelated_user(client):
 
     response = client.get(ROLES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_roles_includes_workspace_roles_for_workspace_owner(client):
@@ -42,7 +42,7 @@ def test_get_roles_includes_workspace_roles_for_workspace_owner(client):
     response = client.get(ROLES_URL)
 
     assert response.status_code == 200
-    assert str(role.id) in [r["id"] for r in response.json()]
+    assert str(role.id) in [r["id"] for r in response.json()["data"]]
 
 
 # --- get_role ------------------------------------------------------------------

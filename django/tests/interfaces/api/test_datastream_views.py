@@ -83,7 +83,7 @@ def test_get_datastreams_includes_public_datastream_for_anonymous(client):
     response = client.get(DATASTREAMS_URL)
 
     assert response.status_code == 200
-    assert str(datastream.id) in [d["id"] for d in response.json()]
+    assert str(datastream.id) in [d["id"] for d in response.json()["data"]]
 
 
 def test_get_datastreams_excludes_private_datastream_for_outsider(client):
@@ -94,7 +94,7 @@ def test_get_datastreams_excludes_private_datastream_for_outsider(client):
 
     response = client.get(DATASTREAMS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_datastreams_includes_private_datastream_for_workspace_owner(client):
@@ -106,7 +106,7 @@ def test_get_datastreams_includes_private_datastream_for_workspace_owner(client)
     response = client.get(DATASTREAMS_URL)
 
     assert response.status_code == 200
-    assert str(datastream.id) in [d["id"] for d in response.json()]
+    assert str(datastream.id) in [d["id"] for d in response.json()["data"]]
 
 
 def test_get_datastreams_returns_400_for_malformed_tag(client):
@@ -230,7 +230,7 @@ def test_get_datastream_aggregation_statistics_returns_registered_type_names(cli
     response = client.get(f"{DATASTREAMS_URL}/aggregation-statistics")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Average", "Maximum"}
+    assert set(response.json()["data"]) == {"Average", "Maximum"}
 
 
 def test_get_datastream_statuses_returns_registered_type_names(client):
@@ -240,7 +240,7 @@ def test_get_datastream_statuses_returns_registered_type_names(client):
     response = client.get(f"{DATASTREAMS_URL}/statuses")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Ongoing", "Completed"}
+    assert set(response.json()["data"]) == {"Ongoing", "Completed"}
 
 
 def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
@@ -250,7 +250,7 @@ def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
     response = client.get(f"{DATASTREAMS_URL}/sampled-mediums")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Water", "Air"}
+    assert set(response.json()["data"]) == {"Water", "Air"}
 
 
 def test_get_datastream_linked_resource_types_returns_registered_type_names(client):
@@ -260,7 +260,7 @@ def test_get_datastream_linked_resource_types_returns_registered_type_names(clie
     response = client.get(f"{DATASTREAMS_URL}/linked-resource-types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Photo", "Report"}
+    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 # --- get_datastream --------------------------------------------------------------------

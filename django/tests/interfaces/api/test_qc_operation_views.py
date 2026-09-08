@@ -64,7 +64,7 @@ def test_get_qc_operations_includes_operation_for_workspace_owner(client):
     response = client.get(_operations_url(session.history_id, session.id))
 
     assert response.status_code == 200
-    assert str(operation.id) in [o["id"] for o in response.json()]
+    assert str(operation.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_qc_operations_returns_404_for_outsider(client):

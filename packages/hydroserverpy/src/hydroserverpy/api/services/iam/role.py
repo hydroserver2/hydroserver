@@ -17,8 +17,8 @@ class RoleService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         is_user_role: bool = ...,
@@ -28,8 +28,8 @@ class RoleService(HydroServerBaseService):
         """Fetch a collection of HydroServer roles."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
             workspace_id=normalize_uuid(workspace),

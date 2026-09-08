@@ -98,9 +98,8 @@ class HydroServerCollection:
     items: List["HydroServerBaseModel"]
     filters: Optional[dict[str, Any]] = None
     order_by: Optional[List[str]] = None
-    page: Optional[int] = None
-    page_size: Optional[int] = None
-    total_pages: Optional[int] = None
+    offset: Optional[int] = None
+    limit: Optional[int] = None
     total_count: Optional[int] = None
 
     _service: Optional[Any] = field(init=False, repr=False)
@@ -117,39 +116,35 @@ class HydroServerCollection:
 
         self.filters = data.get("filters")
         self.order_by = data.get("order_by")
-        self.page = self._resolve_int_metadata("page", "X-Page", response, data)
-        self.page_size = self._resolve_int_metadata(
-            "page_size", "X-Page-Size", response, data
-        )
-        self.total_pages = self._resolve_int_metadata(
-            "total_pages", "X-Total-Pages", response, data
-        )
-        self.total_count = self._resolve_int_metadata(
-            "total_count", "X-Total-Count", response, data
-        )
+
+        payload = response.json() if response is not None else {}
+        meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
+
+        self.offset = self._resolve_int_metadata("offset", meta, data)
+        self.limit = self._resolve_int_metadata("limit", meta, data)
+        self.total_count = self._resolve_int_metadata("total_count", meta, data, meta_key="totalCount")
 
         if "items" in data:
             self.items = data["items"]
         elif response is not None:
-            self.items = [model(client=client, **entity) for entity in response.json()]
+            self.items = [model(client=client, **entity) for entity in payload.get("data", [])]
         else:
             self.items = []
 
     @staticmethod
     def _resolve_int_metadata(
         field_name: str,
-        header_name: str,
-        response: Optional[Response],
+        meta: dict,
         data: dict,
+        meta_key: Optional[str] = None,
     ) -> Optional[int]:
         field_value = data.get(field_name)
         if field_value is not None:
             return int(field_value)
 
-        if response:
-            header_value = response.headers.get(header_name)
-            if header_value is not None:
-                return int(header_value)
+        meta_value = meta.get(meta_key or field_name)
+        if meta_value is not None:
+            return int(meta_value)
 
         return None
 
@@ -163,10 +158,12 @@ class HydroServerCollection:
         if not self._service:
             raise NotImplementedError("Pagination not enabled for this collection.")
 
+        limit = self.limit or 100
+
         return self._service.list(
             **(self.filters or {}),
-            page=(self.page or 0) + 1,
-            page_size=self.page_size or 100,
+            offset=(self.offset or 0) + limit,
+            limit=limit,
             order_by=self.order_by or ...
         )
 
@@ -176,13 +173,15 @@ class HydroServerCollection:
         if not self._service:
             raise NotImplementedError("Pagination not enabled for this collection.")
 
-        if not self.page or self.page <= 1:
+        if not self.offset:
             return None
+
+        limit = self.limit or 100
 
         return self._service.list(
             **(self.filters or {}),
-            page=self.page - 1,
-            page_size=self.page_size or 100,
+            offset=max(0, self.offset - limit),
+            limit=limit,
             order_by=self.order_by or ...
         )
 
@@ -192,30 +191,26 @@ class HydroServerCollection:
         if not self._service:
             raise NotImplementedError("Pagination not enabled for this collection.")
 
-        all_items = []
-        current_page = self.page or 1
-        page_size = self.page_size or 100
-        total_pages = self.total_pages
+        all_items = list(self.items)
+        limit = self.limit or 100
+        total_count = self.total_count
+        next_offset = (self.offset or 0) + len(self.items)
 
-        page_num = 1
-        while total_pages is None or page_num <= total_pages:
-            if page_num == current_page:
-                all_items.extend(self.items)
-            else:
-                page = self._service.list(
-                    **(self.filters or {}),
-                    page=page_num,
-                    page_size=page_size,
-                    order_by=self.order_by or ...
-                )
-                if not page.items:
-                    break
-                all_items.extend(page.items)
+        while total_count is None or next_offset < total_count:
+            page = self._service.list(
+                **(self.filters or {}),
+                offset=next_offset,
+                limit=limit,
+                order_by=self.order_by or ...
+            )
+            if not page.items:
+                break
+            all_items.extend(page.items)
 
-                if page.total_pages is not None:
-                    total_pages = page.total_pages
+            if page.total_count is not None:
+                total_count = page.total_count
 
-            page_num += 1
+            next_offset += len(page.items)
 
         return self.__class__(
             model=type(self.items[0]) if self.items else None,
@@ -224,8 +219,7 @@ class HydroServerCollection:
             items=all_items,
             filters=self.filters,
             order_by=self.order_by,
-            page=1,
-            page_size=len(all_items),
-            total_pages=1,
-            total_count=len(all_items)
+            offset=0,
+            limit=len(all_items),
+            total_count=len(all_items) if total_count is None else total_count,
         )

@@ -2,12 +2,12 @@ import uuid
 from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.history import QCHistoryAPIService
+from interfaces.api.schemas import PaginatedResponse
 from interfaces.api.schemas.quality.history import (
     QualityControlHistorySummaryResponse,
     QualityControlHistoryDetailResponse,
@@ -23,7 +23,8 @@ qc_history_service = QCHistoryAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[QualityControlHistorySummaryResponse] | list[QualityControlHistoryDetailResponse],
+        200: PaginatedResponse[QualityControlHistorySummaryResponse]
+        | PaginatedResponse[QualityControlHistoryDetailResponse],
         401: str,
         403: str,
     },
@@ -31,7 +32,6 @@ qc_history_service = QCHistoryAPIService()
 )
 def get_qc_histories(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[QualityControlHistoryQueryParameters],
 ):
     """Get QC histories. Returns detail responses (with expanded datastreams) when expand_related=True."""
@@ -41,17 +41,22 @@ def get_qc_histories(
         **query.model_dump(exclude_unset=True),
     )
 
-    apply_response_pagination_headers(
-        response=response,
+    meta = build_pagination_meta(
         count=count,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
     )
 
     if query.expand_related:
-        return 200, [QualityControlHistoryDetailResponse.model_validate(history) for history in histories]
+        return 200, {
+            "data": [QualityControlHistoryDetailResponse.model_validate(history) for history in histories],
+            "meta": meta,
+        }
 
-    return 200, [QualityControlHistorySummaryResponse.model_validate(history) for history in histories]
+    return 200, {
+        "data": [QualityControlHistorySummaryResponse.model_validate(history) for history in histories],
+        "meta": meta,
+    }
 
 
 @qc_history_router.post(

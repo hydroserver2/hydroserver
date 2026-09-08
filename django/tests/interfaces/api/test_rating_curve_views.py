@@ -52,7 +52,7 @@ def test_get_rating_curves_includes_curve_for_workspace_owner(client):
     response = client.get(RATING_CURVES_URL)
 
     assert response.status_code == 200
-    assert str(rating_curve.id) in [r["id"] for r in response.json()]
+    assert str(rating_curve.id) in [r["id"] for r in response.json()["data"]]
 
 
 def test_get_rating_curves_excludes_curve_for_outsider(client):
@@ -63,7 +63,7 @@ def test_get_rating_curves_excludes_curve_for_outsider(client):
 
     response = client.get(RATING_CURVES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_rating_curves_returns_401_when_unauthenticated(client):

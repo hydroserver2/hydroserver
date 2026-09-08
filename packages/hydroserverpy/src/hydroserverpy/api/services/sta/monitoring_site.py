@@ -17,8 +17,8 @@ class MonitoringSiteService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
         bbox: Tuple[float, float, float, float] = ...,
@@ -33,8 +33,8 @@ class MonitoringSiteService(HydroServerBaseService):
         """Fetch a collection of monitoring_sites."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
             bbox=",".join([str(i) for i in bbox]) if bbox is not ... else bbox,

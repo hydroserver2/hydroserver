@@ -63,24 +63,25 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
   if (request.method() !== 'GET') return route.fallback()
   const origin = request.headers()['origin'] ?? '*'
   const path = new URL(request.url()).pathname
-  // Mirror the CORS + pagination headers `installMocks` sets so the
-  // HydroServer client treats our patched responses exactly the same
-  // as the base mocks. Dropping `Access-Control-Expose-Headers` made
-  // some clients trip on missing `X-Total-Pages`.
+  // Mirror the CORS headers `installMocks` sets so the HydroServer client
+  // treats our patched responses exactly the same as the base mocks.
   const headers: Record<string, string> = {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count',
-    'X-Total-Pages': '1',
   }
   if (/\/api\/data\/datastreams$/.test(path)) {
+    const patched = datastreams.map(withoutIntendedSpacing)
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
       headers,
-      body: JSON.stringify({ data: datastreams.map(withoutIntendedSpacing) }),
+      body: JSON.stringify({
+        data: patched,
+        meta: { limit: patched.length || 1, offset: 0, totalCount: patched.length },
+      }),
     })
   }
   const single = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
@@ -91,7 +92,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
       status: 200,
       contentType: 'application/json',
       headers,
-      body: JSON.stringify({ data: withoutIntendedSpacing(ds) }),
+      body: JSON.stringify(withoutIntendedSpacing(ds)),
     })
   }
   return route.fallback()

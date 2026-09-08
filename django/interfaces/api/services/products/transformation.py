@@ -82,8 +82,8 @@ class DataProductTransformationAPIService(APIService):
         self,
         principal: User | ServiceAccount | AnonymousPrincipal | Unset,
         task: Union[uuid.UUID, DataProductTask],
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         transformation_type: list[str] | Unset = Unset,
         input_datastream: list[uuid.UUID] | Unset = Unset,
@@ -125,8 +125,7 @@ class DataProductTransformationAPIService(APIService):
         queryset = queryset.order_by(*order_by, "id")
 
         count = queryset.count()
-        offset = (page - 1) * page_size
-        queryset = queryset[offset:offset + page_size]
+        queryset = queryset[offset:offset + limit]
 
         return count, queryset
 

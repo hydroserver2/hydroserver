@@ -17,8 +17,8 @@ class HydroServerBaseService:
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         fetch_all: bool = False,
         **kwargs
@@ -28,8 +28,8 @@ class HydroServerBaseService:
         }
         params = kwargs.copy()
         params.update({
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": [order_by_to_camel(order) for order in order_by] if order_by is not ... else order_by
         })
         params = {

@@ -16,8 +16,8 @@ class ResultQualifierService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         fetch_all: bool = False,
@@ -25,8 +25,8 @@ class ResultQualifierService(HydroServerBaseService):
         """Fetch a collection of result qualifiers."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
             fetch_all=fetch_all,

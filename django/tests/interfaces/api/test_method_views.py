@@ -49,7 +49,7 @@ def test_get_methods_includes_global_methods_for_anonymous(client):
     response = client.get(METHODS_URL)
 
     assert response.status_code == 200
-    assert str(method.id) in [s["id"] for s in response.json()]
+    assert str(method.id) in [s["id"] for s in response.json()["data"]]
 
 
 def test_get_methods_excludes_private_workspace_methods_for_outsider(client):
@@ -60,7 +60,7 @@ def test_get_methods_excludes_private_workspace_methods_for_outsider(client):
 
     response = client.get(METHODS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_methods_includes_workspace_methods_for_workspace_owner(client):
@@ -72,7 +72,7 @@ def test_get_methods_includes_workspace_methods_for_workspace_owner(client):
     response = client.get(METHODS_URL)
 
     assert response.status_code == 200
-    assert str(method.id) in [s["id"] for s in response.json()]
+    assert str(method.id) in [s["id"] for s in response.json()["data"]]
 
 
 # --- create_method ------------------------------------------------------------------
@@ -132,7 +132,7 @@ def test_get_method_types_returns_registered_type_names(client):
     response = client.get(f"{METHODS_URL}/types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Instrument Deployment", "Estimation"}
+    assert set(response.json()["data"]) == {"Instrument Deployment", "Estimation"}
 
 
 # --- get_method --------------------------------------------------------------------

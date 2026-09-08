@@ -34,7 +34,7 @@ def test_get_collaborators_includes_collaborators_for_workspace_owner(client):
     response = client.get(_collaborators_url(workspace.id))
 
     assert response.status_code == 200
-    emails = [c["user"]["email"] for c in response.json()]
+    emails = [c["user"]["email"] for c in response.json()["data"]]
     assert collaborator.user.email in emails
 
 
@@ -56,19 +56,19 @@ def test_get_collaborators_paginates_in_stable_id_order(client):
     client.force_login(owner)
 
     first_page = client.get(
-        f"{_collaborators_url(workspace.id)}?page=1&page_size=2"
+        f"{_collaborators_url(workspace.id)}?offset=0&limit=2"
     )
     second_page = client.get(
-        f"{_collaborators_url(workspace.id)}?page=2&page_size=2"
+        f"{_collaborators_url(workspace.id)}?offset=2&limit=2"
     )
 
     assert first_page.status_code == 200
     assert second_page.status_code == 200
-    assert [c["serviceAccount"]["email"] for c in first_page.json()] == [
+    assert [c["serviceAccount"]["email"] for c in first_page.json()["data"]] == [
         first.service_account.email,
         second.service_account.email,
     ]
-    assert second_page.json()[0]["user"]["email"] == collaborator.user.email
+    assert second_page.json()["data"][0]["user"]["email"] == collaborator.user.email
 
 
 def test_get_collaborators_returns_404_for_workspace_outsider(client):

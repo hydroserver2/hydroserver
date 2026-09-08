@@ -85,11 +85,15 @@ function json(route: Route, body: unknown, status = 200, extraHeaders: Record<st
     contentType: 'application/json',
     headers: {
       ...corsHeaders(route),
-      'X-Total-Pages': '1',
       ...extraHeaders,
     },
     body: JSON.stringify(body),
   })
+}
+
+/** Pagination meta for a list response that always returns everything in one shot. */
+function listMeta(count: number) {
+  return { limit: count || 1, offset: 0, totalCount: count }
 }
 
 /** Convenience: derives the path portion of the requested URL. */
@@ -187,7 +191,6 @@ export async function installMocks(
     if (obsList && method === 'GET') {
       const dsId = obsList[1]
       const params = new URL(url).searchParams
-      const page = Number(params.get('page') ?? '1')
       const series = observationsById[dsId] ?? observations
       // Honour the `phenomenon_time_min` / `phenomenon_time_max`
       // params the client always sends. Without this, the app's
@@ -201,10 +204,11 @@ export async function installMocks(
       const tMax = parseISOorNull(params.get('phenomenon_time_max'))
       const sliced =
         tMin == null && tMax == null ? series : sliceSeries(series, tMin, tMax)
-      // Only the first page carries data; subsequent pages are empty
-      // so the client's pagination loop terminates.
-      const data = page === 1 ? sliced : { phenomenonTime: [], result: [] }
-      return json(route, { data }, 200, { 'X-Total-Pages': '1' })
+      // The columnar format spreads its fields at the top level (no `data`
+      // wrapper) — the fixtures are always small enough that a single
+      // response covers everything, so `meta.totalCount` matching what's
+      // returned here means the client never requests a second page.
+      return json(route, { ...sliced, meta: listMeta(sliced.result.length) })
     }
 
     // --- Units ---
@@ -212,35 +216,35 @@ export async function installMocks(
     if (unitGet && method === 'GET') {
       const id = unitGet[1]
       const unit = units.find((u) => u.id === id) ?? units[0]
-      return json(route, { data: unit })
+      return json(route, unit)
     }
     if (path.endsWith('/api/data/units') && method === 'GET') {
-      return json(route, { data: units })
+      return json(route, { data: units, meta: listMeta(units.length) })
     }
 
     // --- Workspaces ---
     if (path.endsWith('/api/data/workspaces') && method === 'GET') {
-      return json(route, { data: workspaces })
+      return json(route, { data: workspaces, meta: listMeta(workspaces.length) })
     }
 
     // --- Monitoring sites / datastreams / processing levels / observed properties ---
     if (path.endsWith('/api/data/monitoring-sites') && method === 'GET') {
-      return json(route, { data: monitoringSites })
+      return json(route, { data: monitoringSites, meta: listMeta(monitoringSites.length) })
     }
     if (path.endsWith('/api/data/datastreams') && method === 'GET') {
-      return json(route, { data: datastreams })
+      return json(route, { data: datastreams, meta: listMeta(datastreams.length) })
     }
     if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
-      return json(route, { data: processingLevels })
+      return json(route, { data: processingLevels, meta: listMeta(processingLevels.length) })
     }
     if (path.endsWith('/api/data/observed-properties') && method === 'GET') {
-      return json(route, { data: observedProperties })
+      return json(route, { data: observedProperties, meta: listMeta(observedProperties.length) })
     }
     if (path.endsWith('/api/data/methods') && method === 'GET') {
-      return json(route, { data: methods })
+      return json(route, { data: methods, meta: listMeta(methods.length) })
     }
     if (path.endsWith('/api/data/result-qualifiers') && method === 'GET') {
-      return json(route, { data: resultQualifiers })
+      return json(route, { data: resultQualifiers, meta: listMeta(resultQualifiers.length) })
     }
 
     // --- Single datastream ---
@@ -248,19 +252,19 @@ export async function installMocks(
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
       const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]
-      return json(route, { data: ds })
+      return json(route, ds)
     }
 
     // --- Attachments / other sub-resources the app may touch
     //     in DatastreamInformationCard — return empty arrays so the
     //     UI renders without errors.
     if (path.includes('/attachments')) {
-      return json(route, { data: [] })
+      return json(route, { data: [], meta: listMeta(0) })
     }
 
     // Catch-all: return an empty list so unexpected endpoints don't
     // 404 and trigger console noise that masks real failures.
-    return json(route, { data: [] })
+    return json(route, { data: [], meta: listMeta(0) })
   })
 }
 

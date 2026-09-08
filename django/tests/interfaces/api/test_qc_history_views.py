@@ -44,7 +44,7 @@ def test_get_qc_histories_includes_history_for_workspace_owner(client):
     response = client.get(QC_HISTORIES_URL)
 
     assert response.status_code == 200
-    assert str(history.id) in [h["id"] for h in response.json()]
+    assert str(history.id) in [h["id"] for h in response.json()["data"]]
 
 
 def test_get_qc_histories_excludes_history_for_outsider(client):
@@ -55,7 +55,7 @@ def test_get_qc_histories_excludes_history_for_outsider(client):
 
     response = client.get(QC_HISTORIES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_qc_histories_returns_401_when_unauthenticated(client):

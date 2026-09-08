@@ -3,7 +3,6 @@ from typing import Optional
 from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
 from django.db import transaction
-from django.http import HttpResponse
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
@@ -23,6 +22,7 @@ from interfaces.api.schemas import (
     LinkedResourceQueryParameters,
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
+    PaginatedResponse,
 )
 from interfaces.api.services.sta import MonitoringSiteAPIService
 from core.web.models import SiteTypeIcon
@@ -35,14 +35,14 @@ monitoring_site_service = MonitoringSiteAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[MonitoringSiteSummaryResponse] | list[MonitoringSiteDetailResponse],
+        200: PaginatedResponse[MonitoringSiteSummaryResponse]
+        | PaginatedResponse[MonitoringSiteDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_monitoring_sites(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[MonitoringSiteQueryParameters],
 ):
     """
@@ -51,9 +51,8 @@ def get_monitoring_sites(
 
     return 200, monitoring_site_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
@@ -180,10 +179,9 @@ def get_monitoring_site_tag_keys(
     )
 
 
-@monitoring_site_router.get("/site-types", response={200: list[str]}, by_alias=True)
+@monitoring_site_router.get("/site-types", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_site_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -191,9 +189,8 @@ def get_site_types(
     """
 
     return 200, monitoring_site_service.list_site_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
@@ -211,10 +208,9 @@ def get_site_type_icons(request: HydroServerHttpRequest):
     return 200, SiteTypeIcon.objects.values("icon", "site_types")
 
 
-@monitoring_site_router.get("/linked-resource-types", response={200: list[str]}, by_alias=True)
+@monitoring_site_router.get("/linked-resource-types", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_monitoring_site_linked_resource_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -222,9 +218,8 @@ def get_monitoring_site_linked_resource_types(
     """
 
     return 200, monitoring_site_service.list_linked_resource_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 

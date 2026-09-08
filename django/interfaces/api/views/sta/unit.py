@@ -2,7 +2,6 @@ import uuid
 from typing import Optional
 from ninja import Router, Path, Query
 from django.db import transaction
-from django.http import HttpResponse
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
@@ -12,6 +11,7 @@ from interfaces.api.schemas import (
     UnitPostBody,
     UnitPatchBody,
     UnitQueryParameters,
+    PaginatedResponse,
 )
 from interfaces.api.services.sta import UnitAPIService
 
@@ -23,14 +23,13 @@ unit_service = UnitAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[UnitSummaryResponse] | list[UnitDetailResponse],
+        200: PaginatedResponse[UnitSummaryResponse] | PaginatedResponse[UnitDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_units(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[UnitQueryParameters],
 ):
     """
@@ -39,9 +38,8 @@ def get_units(
 
     return 200, unit_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
@@ -76,10 +74,9 @@ def create_unit(
     )
 
 
-@unit_router.get("/types", response={200: list[str]}, by_alias=True)
+@unit_router.get("/types", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_unit_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -87,9 +84,8 @@ def get_unit_types(
     """
 
     return 200, unit_service.list_unit_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 

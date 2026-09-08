@@ -95,7 +95,7 @@ export async function responseInterceptor<T = unknown>(
   if (response.ok) {
     const record = asRecord(body)
     const looksEnveloped =
-      record !== null && ('data' in record || 'meta' in record)
+      record !== null && 'data' in record && 'meta' in record
 
     const data = (looksEnveloped ? record!.data : body) as T
     const message = extractSuccessMessage(body, response)

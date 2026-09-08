@@ -16,6 +16,7 @@ from interfaces.api.schemas import (
     ObservationBulkColumnarPostBody,
     ObservationBulkPostQueryParameters,
     ObservationBulkDeleteBody,
+    PaginatedResponse,
 )
 from interfaces.api.services.sta import ObservationAPIService
 
@@ -27,8 +28,8 @@ observation_service = ObservationAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[ObservationSummaryResponse]
-        | list[ObservationDetailResponse]
+        200: PaginatedResponse[ObservationSummaryResponse]
+        | PaginatedResponse[ObservationDetailResponse]
         | ObservationRowResponse
         | ObservationColumnarResponse,
         403: str,
@@ -50,8 +51,8 @@ def get_observations(
         principal=request.principal,
         response=response,
         datastream_id=datastream_id,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         response_format=query.response_format,

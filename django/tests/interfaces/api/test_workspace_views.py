@@ -141,7 +141,7 @@ def test_get_workspaces_includes_workspaces_owned_by_the_user(client):
     response = client.get(WORKSPACES_URL)
 
     assert response.status_code == 200
-    assert str(workspace.id) in [w["id"] for w in response.json()]
+    assert str(workspace.id) in [w["id"] for w in response.json()["data"]]
 
 
 def test_get_workspaces_excludes_private_workspaces_of_others(client):
@@ -152,7 +152,7 @@ def test_get_workspaces_excludes_private_workspaces_of_others(client):
     response = client.get(WORKSPACES_URL)
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_workspaces_expands_collaborator_role_permissions(client):
@@ -166,7 +166,7 @@ def test_get_workspaces_expands_collaborator_role_permissions(client):
     )
 
     assert response.status_code == 200
-    assert response.json()[0]["collaboratorRole"]["permissions"] == [
+    assert response.json()["data"][0]["collaboratorRole"]["permissions"] == [
         {"resource": "Workspace", "action": "view"}
     ]
 
@@ -184,8 +184,8 @@ def test_get_workspaces_includes_pending_transfer_for_recipient(client):
     )
 
     assert response.status_code == 200
-    assert response.json()[0]["id"] == str(workspace.id)
-    assert response.json()[0]["pendingTransferTo"]["email"] == recipient.email
+    assert response.json()["data"][0]["id"] == str(workspace.id)
+    assert response.json()["data"][0]["pendingTransferTo"]["email"] == recipient.email
 
 
 # --- update_workspace ---------------------------------------------------------------

@@ -16,8 +16,8 @@ class MethodService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
@@ -30,8 +30,8 @@ class MethodService(HydroServerBaseService):
         """Fetch a collection of methods."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),

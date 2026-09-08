@@ -62,8 +62,8 @@ class QCOperationAPIService(APIService):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
     ) -> tuple[int, QuerySet[QCOperation]]:
         """Return all operations for a QC session in execution order."""
@@ -76,8 +76,7 @@ class QCOperationAPIService(APIService):
         queryset = QCOperation.objects.filter(session=session).order_by(*order_by, "order")
 
         count = queryset.count()
-        offset = (page - 1) * page_size
-        queryset = queryset[offset:offset + page_size]
+        queryset = queryset[offset:offset + limit]
 
         return count, queryset
 

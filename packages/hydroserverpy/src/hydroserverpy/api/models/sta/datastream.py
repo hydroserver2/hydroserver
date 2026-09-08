@@ -168,8 +168,8 @@ class Datastream(HydroServerBaseModel):
 
     def get_observations(
         self,
-        page: int = ...,
-        page_size: int = 100000,
+        offset: int = ...,
+        limit: int = 100000,
         order_by: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
@@ -180,8 +180,8 @@ class Datastream(HydroServerBaseModel):
 
         return self.client.datastreams.get_observations(
             uid=self.uid,
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             phenomenon_time_max=phenomenon_time_max,
             phenomenon_time_min=phenomenon_time_min,
@@ -221,10 +221,10 @@ class Datastream(HydroServerBaseModel):
 
         path = f"/{self.client.base_route}/{self.get_route()}/{str(self.uid)}/observations"
         response = self.client.request(
-            "get", path, params={"page_size": 1, "order_by": "-phenomenonTime"}
-
+            "get", path, params={"limit": 1, "order_by": "-phenomenonTime"}
         ).json()
 
+        response = response["data"]
         if len(response) > 0:
             self.phenomenon_end_time = datetime.fromisoformat(response[0]["phenomenonTime"])
         else:

@@ -27,8 +27,8 @@ class MonitoringRuleService:
     def list(
         self,
         task_id: Union[UUID, str],
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         datastream: Optional[Union[UUID, str]] = ...,
         rule_type: str = ...,
@@ -37,8 +37,8 @@ class MonitoringRuleService:
         """Fetch a collection of rules for a monitoring task."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
             "datastream_id": normalize_uuid(datastream),
             "rule_type": rule_type,
@@ -49,7 +49,7 @@ class MonitoringRuleService:
 
         items = [
             MonitoringRule(client=self.client, task_id=task_id, **entity)
-            for entity in response.json()
+            for entity in response.json()["data"]
         ]
 
         collection = HydroServerCollection(

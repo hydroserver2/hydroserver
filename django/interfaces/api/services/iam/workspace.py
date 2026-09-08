@@ -1,6 +1,5 @@
 import uuid
 from typing import Optional, get_args
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.db.utils import IntegrityError
@@ -55,9 +54,8 @@ class WorkspaceAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
@@ -117,7 +115,7 @@ class WorkspaceAPIService(APIService):
             )
         queryset = permitted_queryset.distinct()
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
         if expand_related:
             queryset = [
@@ -125,14 +123,17 @@ class WorkspaceAPIService(APIService):
                 for workspace in queryset
             ]
 
-        return [
-            (
-                WorkspaceDetailResponse.model_validate(workspace)
-                if expand_related
-                else WorkspaceSummaryResponse.model_validate(workspace)
-            )
-            for workspace in queryset
-        ]
+        return {
+            "data": [
+                (
+                    WorkspaceDetailResponse.model_validate(workspace)
+                    if expand_related
+                    else WorkspaceSummaryResponse.model_validate(workspace)
+                )
+                for workspace in queryset
+            ],
+            "meta": meta,
+        }
 
     def get(
         self,

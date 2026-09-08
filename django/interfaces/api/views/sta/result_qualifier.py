@@ -1,7 +1,6 @@
 import uuid
 from typing import Optional
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
@@ -11,6 +10,7 @@ from interfaces.api.schemas import (
     ResultQualifierQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
+    PaginatedResponse,
 )
 from interfaces.api.services.sta import ResultQualifierAPIService
 
@@ -22,14 +22,14 @@ result_qualifier_service = ResultQualifierAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[ResultQualifierSummaryResponse] | list[ResultQualifierDetailResponse],
+        200: PaginatedResponse[ResultQualifierSummaryResponse]
+        | PaginatedResponse[ResultQualifierDetailResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_result_qualifiers(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[ResultQualifierQueryParameters],
 ):
     """
@@ -38,9 +38,8 @@ def get_result_qualifiers(
 
     return 200, result_qualifier_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,

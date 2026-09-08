@@ -42,7 +42,7 @@ def test_get_result_qualifiers_includes_global_qualifiers_for_anonymous(client):
     response = client.get(RESULT_QUALIFIERS_URL)
 
     assert response.status_code == 200
-    assert str(result_qualifier.id) in [r["id"] for r in response.json()]
+    assert str(result_qualifier.id) in [r["id"] for r in response.json()["data"]]
 
 
 def test_get_result_qualifiers_excludes_private_workspace_qualifiers_for_outsider(
@@ -55,7 +55,7 @@ def test_get_result_qualifiers_excludes_private_workspace_qualifiers_for_outside
 
     response = client.get(RESULT_QUALIFIERS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_result_qualifiers_includes_workspace_qualifiers_for_workspace_owner(
@@ -69,7 +69,7 @@ def test_get_result_qualifiers_includes_workspace_qualifiers_for_workspace_owner
     response = client.get(RESULT_QUALIFIERS_URL)
 
     assert response.status_code == 200
-    assert str(result_qualifier.id) in [r["id"] for r in response.json()]
+    assert str(result_qualifier.id) in [r["id"] for r in response.json()["data"]]
 
 
 # --- create_result_qualifier ---------------------------------------------------------

@@ -64,8 +64,8 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
     def get_collection(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
         monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
@@ -125,8 +125,7 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         count = queryset.count()
-        offset = (page - 1) * page_size
-        tasks = self.attach_latest_runs(list(queryset[offset:offset + page_size]))
+        tasks = self.attach_latest_runs(list(queryset[offset:offset + limit]))
 
         return count, tasks
 

@@ -70,7 +70,7 @@ def test_get_observations_includes_public_observation_for_anonymous(client):
     response = client.get(_observations_url(datastream.id))
 
     assert response.status_code == 200
-    assert str(observation.id) in [o["id"] for o in response.json()]
+    assert str(observation.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_observations_returns_404_for_private_datastream_when_outsider(client):
@@ -95,7 +95,7 @@ def test_get_observations_includes_observation_for_workspace_owner(client):
     response = client.get(_observations_url(datastream.id))
 
     assert response.status_code == 200
-    assert str(observation.id) in [o["id"] for o in response.json()]
+    assert str(observation.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_observations_row_format_returns_field_rows(client):

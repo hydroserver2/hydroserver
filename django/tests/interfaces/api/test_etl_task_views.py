@@ -52,7 +52,7 @@ def test_get_etl_tasks_includes_task_for_workspace_owner(client):
     response = client.get(ETL_TASKS_URL)
 
     assert response.status_code == 200
-    assert str(task.id) in [t["id"] for t in response.json()]
+    assert str(task.id) in [t["id"] for t in response.json()["data"]]
 
 
 def test_get_etl_tasks_excludes_task_for_outsider(client):
@@ -63,7 +63,7 @@ def test_get_etl_tasks_excludes_task_for_outsider(client):
 
     response = client.get(ETL_TASKS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_etl_tasks_returns_401_when_unauthenticated(client):
@@ -298,7 +298,7 @@ def test_get_etl_task_runs_returns_runs_for_workspace_owner(client):
     response = client.get(f"{_detail_url(task.id)}/runs")
 
     assert response.status_code == 200
-    assert str(run.id) in [r["id"] for r in response.json()]
+    assert str(run.id) in [r["id"] for r in response.json()["data"]]
 
 
 def test_get_etl_task_run_returns_200_for_workspace_owner(client):

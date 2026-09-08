@@ -1,7 +1,6 @@
 import uuid
 from typing import Optional
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from django.db import transaction
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
@@ -13,6 +12,7 @@ from interfaces.api.schemas import (
     ServiceAccountPatchBody,
     ServiceAccountSummaryPostResponse,
     ServiceAccountDetailPostResponse,
+    PaginatedResponse,
 )
 from interfaces.api.services.iam import ServiceAccountAPIService
 
@@ -24,7 +24,8 @@ service_account_service = ServiceAccountAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[ServiceAccountSummaryResponse] | list[ServiceAccountDetailResponse],
+        200: PaginatedResponse[ServiceAccountSummaryResponse]
+        | PaginatedResponse[ServiceAccountDetailResponse],
         401: str,
     },
     by_alias=True,
@@ -32,7 +33,6 @@ service_account_service = ServiceAccountAPIService()
 )
 def get_service_accounts(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     workspace_id: Path[uuid.UUID],
     query: Query[ServiceAccountQueryParameters],
 ):
@@ -42,10 +42,9 @@ def get_service_accounts(
 
     return 200, service_account_service.list(
         principal=request.principal,
-        response=response,
         workspace_id=workspace_id,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,

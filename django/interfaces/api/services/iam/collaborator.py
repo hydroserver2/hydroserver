@@ -1,7 +1,6 @@
 import uuid
 from typing import Optional
 from django.db.models import Q
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from core.iam.models import Collaborator, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
@@ -52,10 +51,9 @@ class CollaboratorAPIService(APIService):
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        response: HttpResponse,
         workspace_id: uuid.UUID,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         filtering: Optional[dict] = None,
     ):
         workspace, _ = self.get_workspace(
@@ -80,9 +78,14 @@ class CollaboratorAPIService(APIService):
         # pages or disappear from the merged result.  Keep pagination stable.
         queryset = queryset.order_by("id")
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return [self.serialize_collaborator(collaborator) for collaborator in queryset]
+        return {
+            "data": [
+                self.serialize_collaborator(collaborator) for collaborator in queryset
+            ],
+            "meta": meta,
+        }
 
     def create(
         self,
