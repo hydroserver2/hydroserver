@@ -226,5 +226,9 @@ def reject_workspace_transfer(
     )
 
 
-workspace_router.add_router("{workspace_id}/collaborators", collaborator_router)
-workspace_router.add_router("{workspace_id}/service-accounts", service_account_router)
+workspace_router.add_router(
+    "{workspace_id}/collaborators", collaborator_router, tags=["Collaborators"]
+)
+workspace_router.add_router(
+    "{workspace_id}/service-accounts", service_account_router, tags=["Service Accounts"]
+)

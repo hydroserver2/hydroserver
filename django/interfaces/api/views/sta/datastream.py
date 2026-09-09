@@ -20,7 +20,6 @@ from interfaces.api.schemas import (
     PaginatedResponse,
 )
 from interfaces.api.services.sta import DatastreamAPIService
-from interfaces.api.views.sta.observation import observation_router
 
 datastream_router = Router(tags=["Datastreams"])
 datastream_service = DatastreamAPIService()
@@ -417,6 +416,3 @@ def get_datastream_csv(request: HydroServerHttpRequest, datastream_id: Path[uuid
     """
 
     return datastream_service.get_csv(principal=request.principal, uid=datastream_id)
-
-
-datastream_router.add_router("{datastream_id}/observations", observation_router)

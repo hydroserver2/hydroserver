@@ -6429,6 +6429,11 @@
       },
       "ObservationBulkColumnarPostBody": {
         "properties": {
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
+          },
           "phenomenonTime": {
             "items": {
               "anyOf": [
@@ -6471,6 +6476,7 @@
           }
         },
         "required": [
+          "datastreamId",
           "phenomenonTime",
           "result"
         ],
@@ -6479,6 +6485,11 @@
       },
       "ObservationBulkDeleteBody": {
         "properties": {
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
+          },
           "phenomenonTimeEnd": {
             "anyOf": [
               {
@@ -6510,6 +6521,9 @@
             "title": "Phenomenontimestart"
           }
         },
+        "required": [
+          "datastreamId"
+        ],
         "title": "ObservationBulkDeleteBody",
         "type": "object"
       },
@@ -6522,6 +6536,11 @@
             },
             "title": "Data",
             "type": "array"
+          },
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
           },
           "fields": {
             "items": {
@@ -6537,6 +6556,7 @@
           }
         },
         "required": [
+          "datastreamId",
           "fields",
           "data"
         ],
@@ -6640,6 +6660,11 @@
       },
       "ObservationPostBody": {
         "properties": {
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
+          },
           "id": {
             "anyOf": [
               {
@@ -6679,13 +6704,24 @@
         },
         "required": [
           "phenomenonTime",
-          "result"
+          "result",
+          "datastreamId"
         ],
         "title": "ObservationPostBody",
         "type": "object"
       },
       "ObservationQueryParameters": {
         "properties": {
+          "datastream_id": {
+            "default": [],
+            "description": "Filter observations by datastream ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Datastream Id",
+            "type": "array"
+          },
           "expand_related": {
             "anyOf": [
               {
@@ -6749,7 +6785,9 @@
                 "items": {
                   "enum": [
                     "phenomenonTime",
-                    "-phenomenonTime"
+                    "datastreamId",
+                    "-phenomenonTime",
+                    "-datastreamId"
                   ],
                   "type": "string"
                 },
@@ -14292,760 +14330,6 @@
         ]
       }
     },
-    "/api/data/datastreams/{datastream_id}/observations": {
-      "get": {
-        "description": "Get Datastream Observations.",
-        "operationId": "interfaces_api_views_sta_observation_get_observations",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          },
-          {
-            "description": "Select one or more fields to order the response by.",
-            "in": "query",
-            "name": "order_by",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "phenomenonTime",
-                      "-phenomenonTime"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
-            }
-          },
-          {
-            "description": "Controls the format of the observations response.",
-            "in": "query",
-            "name": "format",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "record",
-                    "row",
-                    "column"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Controls the format of the observations response.",
-              "title": "Format"
-            }
-          },
-          {
-            "description": "Sets the maximum phenomenon time of filtered observations.",
-            "in": "query",
-            "name": "phenomenon_time_max",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Sets the maximum phenomenon time of filtered observations.",
-              "title": "Phenomenon Time Max"
-            }
-          },
-          {
-            "description": "Sets the minimum phenomenon time of filtered observations.",
-            "in": "query",
-            "name": "phenomenon_time_min",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Sets the minimum phenomenon time of filtered observations.",
-              "title": "Phenomenon Time Min"
-            }
-          },
-          {
-            "description": "Filter observations by result qualifier code.",
-            "in": "query",
-            "name": "result_qualifier_code",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter observations by result qualifier code.",
-              "items": {
-                "type": "string"
-              },
-              "title": "Result Qualifier Code",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/PaginatedResponse_ObservationSummaryResponse_"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PaginatedResponse_ObservationDetailResponse_"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ObservationRowResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ObservationColumnarResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Observations",
-        "tags": [
-          "Datastreams",
-          "Observations"
-        ]
-      },
-      "post": {
-        "description": "Create a new Observation.",
-        "operationId": "interfaces_api_views_sta_observation_create_observation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ObservationPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/ObservationSummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ObservationDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Create Observation",
-        "tags": [
-          "Datastreams",
-          "Observations"
-        ]
-      }
-    },
-    "/api/data/datastreams/{datastream_id}/observations/bulk-create": {
-      "post": {
-        "description": "Insert Datastream Observations.",
-        "operationId": "interfaces_api_views_sta_observation_insert_observations",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
-            "in": "query",
-            "name": "mode",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "insert",
-                    "append",
-                    "backfill",
-                    "replace"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
-              "title": "Mode"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/ObservationBulkPostBody"
-                  },
-                  {
-                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
-                  }
-                ],
-                "title": "Data"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Insert Observations",
-        "tags": [
-          "Datastreams",
-          "Observations"
-        ]
-      }
-    },
-    "/api/data/datastreams/{datastream_id}/observations/bulk-delete": {
-      "post": {
-        "description": "Delete Datastream Observations between the given phenomenon start and end times.",
-        "operationId": "interfaces_api_views_sta_observation_delete_observations",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ObservationBulkDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Delete Observations",
-        "tags": [
-          "Datastreams",
-          "Observations"
-        ]
-      }
-    },
-    "/api/data/datastreams/{datastream_id}/observations/{observation_id}": {
-      "delete": {
-        "description": "Delete an Observation.",
-        "operationId": "interfaces_api_views_sta_observation_delete_observation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "observation_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Observation Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Delete Observation",
-        "tags": [
-          "Datastreams",
-          "Observations"
-        ]
-      },
-      "get": {
-        "description": "Get an Observation.",
-        "operationId": "interfaces_api_views_sta_observation_get_observation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "datastream_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Datastream Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "observation_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Observation Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/ObservationSummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ObservationDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Observation",
-        "tags": [
-          "Datastreams",
-          "Observations"
-        ]
-      }
-    },
     "/api/data/etl/data-connections": {
       "get": {
         "description": "Get ETL Data Connections associated with the authenticated user.",
@@ -20015,7 +19299,6 @@
         ],
         "summary": "Get Monitoring Rules",
         "tags": [
-          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -20127,7 +19410,6 @@
         ],
         "summary": "Create Monitoring Rule",
         "tags": [
-          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       }
@@ -20212,7 +19494,6 @@
         ],
         "summary": "Delete Monitoring Rule",
         "tags": [
-          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -20302,7 +19583,6 @@
         ],
         "summary": "Get Monitoring Rule",
         "tags": [
-          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -20424,7 +19704,6 @@
         ],
         "summary": "Update Monitoring Rule",
         "tags": [
-          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       }
@@ -20855,6 +20134,722 @@
         "summary": "Trigger Monitoring Task",
         "tags": [
           "Monitoring Tasks"
+        ]
+      }
+    },
+    "/api/data/observations": {
+      "get": {
+        "description": "Get Observations.",
+        "operationId": "interfaces_api_views_sta_observation_get_observations",
+        "parameters": [
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          },
+          {
+            "description": "Filter observations by datastream ID.",
+            "in": "query",
+            "name": "datastream_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter observations by datastream ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Datastream Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Select one or more fields to order the response by.",
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "phenomenonTime",
+                      "datastreamId",
+                      "-phenomenonTime",
+                      "-datastreamId"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to order the response by.",
+              "title": "Order By"
+            }
+          },
+          {
+            "description": "Controls the format of the observations response.",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "record",
+                    "row",
+                    "column"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Controls the format of the observations response.",
+              "title": "Format"
+            }
+          },
+          {
+            "description": "Sets the maximum phenomenon time of filtered observations.",
+            "in": "query",
+            "name": "phenomenon_time_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sets the maximum phenomenon time of filtered observations.",
+              "title": "Phenomenon Time Max"
+            }
+          },
+          {
+            "description": "Sets the minimum phenomenon time of filtered observations.",
+            "in": "query",
+            "name": "phenomenon_time_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sets the minimum phenomenon time of filtered observations.",
+              "title": "Phenomenon Time Min"
+            }
+          },
+          {
+            "description": "Filter observations by result qualifier code.",
+            "in": "query",
+            "name": "result_qualifier_code",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter observations by result qualifier code.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Result Qualifier Code",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationSummaryResponse_"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationDetailResponse_"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ObservationRowResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ObservationColumnarResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Observations",
+        "tags": [
+          "Observations"
+        ]
+      },
+      "post": {
+        "description": "Create a new Observation.",
+        "operationId": "interfaces_api_views_sta_observation_create_observation",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ObservationSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ObservationDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Observation",
+        "tags": [
+          "Observations"
+        ]
+      }
+    },
+    "/api/data/observations/bulk-create": {
+      "post": {
+        "description": "Insert Observations.",
+        "operationId": "interfaces_api_views_sta_observation_insert_observations",
+        "parameters": [
+          {
+            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "insert",
+                    "append",
+                    "backfill",
+                    "replace"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+              "title": "Mode"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkPostBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
+                  }
+                ],
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Insert Observations",
+        "tags": [
+          "Observations"
+        ]
+      }
+    },
+    "/api/data/observations/bulk-delete": {
+      "post": {
+        "description": "Delete Observations between the given phenomenon start and end times.",
+        "operationId": "interfaces_api_views_sta_observation_delete_observations",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationBulkDeleteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Observations",
+        "tags": [
+          "Observations"
+        ]
+      }
+    },
+    "/api/data/observations/{observation_id}": {
+      "delete": {
+        "description": "Delete an Observation.",
+        "operationId": "interfaces_api_views_sta_observation_delete_observation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "observation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Observation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Observation",
+        "tags": [
+          "Observations"
+        ]
+      },
+      "get": {
+        "description": "Get an Observation.",
+        "operationId": "interfaces_api_views_sta_observation_get_observation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "observation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Observation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ObservationSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ObservationDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Observation",
+        "tags": [
+          "Observations"
         ]
       }
     },
@@ -23887,7 +23882,6 @@
         ],
         "summary": "Get Aggregation Transformations",
         "tags": [
-          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -23999,7 +23993,6 @@
         ],
         "summary": "Create Aggregation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       }
@@ -24084,7 +24077,6 @@
         ],
         "summary": "Delete Aggregation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -24174,7 +24166,6 @@
         ],
         "summary": "Get Aggregation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -24296,7 +24287,6 @@
         ],
         "summary": "Update Aggregation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       }
@@ -24473,7 +24463,6 @@
         ],
         "summary": "Get Derivation Transformations",
         "tags": [
-          "Data Product Tasks",
           "Derivation Transformations"
         ]
       },
@@ -24585,7 +24574,6 @@
         ],
         "summary": "Create Derivation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Derivation Transformations"
         ]
       }
@@ -24670,7 +24658,6 @@
         ],
         "summary": "Delete Derivation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Derivation Transformations"
         ]
       },
@@ -24760,7 +24747,6 @@
         ],
         "summary": "Get Derivation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Derivation Transformations"
         ]
       },
@@ -24882,7 +24868,6 @@
         ],
         "summary": "Update Derivation Transformation",
         "tags": [
-          "Data Product Tasks",
           "Derivation Transformations"
         ]
       }
@@ -25059,7 +25044,6 @@
         ],
         "summary": "Get Rating Curve Transformations",
         "tags": [
-          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -25171,7 +25155,6 @@
         ],
         "summary": "Create Rating Curve Transformation",
         "tags": [
-          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       }
@@ -25256,7 +25239,6 @@
         ],
         "summary": "Delete Rating Curve Transformation",
         "tags": [
-          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -25346,7 +25328,6 @@
         ],
         "summary": "Get Rating Curve Transformation",
         "tags": [
-          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -25468,7 +25449,6 @@
         ],
         "summary": "Update Rating Curve Transformation",
         "tags": [
-          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       }
@@ -26225,7 +26205,6 @@
         ],
         "summary": "Get Qc Sessions",
         "tags": [
-          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -26337,7 +26316,6 @@
         ],
         "summary": "Create Qc Session",
         "tags": [
-          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -26422,7 +26400,6 @@
         ],
         "summary": "Delete Qc Session",
         "tags": [
-          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -26536,7 +26513,6 @@
         ],
         "summary": "Get Qc Session",
         "tags": [
-          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -26658,7 +26634,6 @@
         ],
         "summary": "Update Qc Session",
         "tags": [
-          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -26772,7 +26747,6 @@
         ],
         "summary": "Commit Qc Session",
         "tags": [
-          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -26905,7 +26879,6 @@
         ],
         "summary": "Get Qc Operations",
         "tags": [
-          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -27035,7 +27008,6 @@
         ],
         "summary": "Create Qc Operations",
         "tags": [
-          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       }
@@ -27130,7 +27102,6 @@
         ],
         "summary": "Delete Qc Operation",
         "tags": [
-          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -27230,7 +27201,6 @@
         ],
         "summary": "Get Qc Operation",
         "tags": [
-          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -27362,7 +27332,6 @@
         ],
         "summary": "Update Qc Operation",
         "tags": [
-          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       }
@@ -29528,7 +29497,6 @@
         ],
         "summary": "Remove Collaborator",
         "tags": [
-          "Workspaces",
           "Collaborators"
         ]
       },
@@ -29654,7 +29622,6 @@
         ],
         "summary": "Get Collaborators",
         "tags": [
-          "Workspaces",
           "Collaborators"
         ]
       },
@@ -29741,7 +29708,6 @@
         ],
         "summary": "Add Collaborator",
         "tags": [
-          "Workspaces",
           "Collaborators"
         ]
       },
@@ -29828,7 +29794,6 @@
         ],
         "summary": "Edit Collaborator Role",
         "tags": [
-          "Workspaces",
           "Collaborators"
         ]
       }
@@ -29983,7 +29948,6 @@
         ],
         "summary": "Get Service Accounts",
         "tags": [
-          "Workspaces",
           "Service Accounts"
         ]
       },
@@ -30086,7 +30050,6 @@
         ],
         "summary": "Create Service Account",
         "tags": [
-          "Workspaces",
           "Service Accounts"
         ]
       }
@@ -30154,7 +30117,6 @@
         ],
         "summary": "Delete Service Account",
         "tags": [
-          "Workspaces",
           "Service Accounts"
         ]
       },
@@ -30251,7 +30213,6 @@
         ],
         "summary": "Get Service Account",
         "tags": [
-          "Workspaces",
           "Service Accounts"
         ]
       },
@@ -30369,7 +30330,6 @@
         ],
         "summary": "Update Service Account",
         "tags": [
-          "Workspaces",
           "Service Accounts"
         ]
       }
@@ -30490,7 +30450,6 @@
         ],
         "summary": "Regenerate Service Account Key",
         "tags": [
-          "Workspaces",
           "Service Accounts"
         ]
       }

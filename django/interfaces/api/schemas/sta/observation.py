@@ -21,7 +21,7 @@ class ObservationFields(Schema):
     result_qualifier_codes: list[str] = []
 
 
-_order_by_fields = ("phenomenonTime",)
+_order_by_fields = ("phenomenonTime", "datastreamId")
 
 ObservationOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
@@ -30,6 +30,9 @@ ObservationOrderByFields = Literal[
 
 class ObservationQueryParameters(CollectionQueryParameters):
     expand_related: Optional[bool] = None
+    datastream_id: list[uuid.UUID] = Query(
+        [], description="Filter observations by datastream ID."
+    )
     order_by: Optional[list[ObservationOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -89,6 +92,7 @@ class ObservationColumnarResponse(BaseGetResponse):
 
 class ObservationPostBody(BasePostBody, ObservationFields):
     id: Optional[uuid.UUID] = None
+    datastream_id: uuid.UUID
 
 
 class ObservationBulkPostQueryParameters(Schema):
@@ -105,6 +109,7 @@ class ObservationBulkPostQueryParameters(Schema):
 
 
 class ObservationBulkPostBody(BasePostBody):
+    datastream_id: uuid.UUID
     fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
     data: list[list]
 
@@ -130,6 +135,7 @@ class ObservationBulkPostBody(BasePostBody):
 
 
 class ObservationBulkColumnarPostBody(BasePostBody):
+    datastream_id: uuid.UUID
     phenomenon_time: list[ISODatetime]
     result: list[Optional[float]]
     result_qualifier_codes: list[list[str]] = []
@@ -157,5 +163,6 @@ class ObservationBulkColumnarPostBody(BasePostBody):
 
 
 class ObservationBulkDeleteBody(BasePostBody):
+    datastream_id: uuid.UUID
     phenomenon_time_start: Optional[ISODatetime] = None
     phenomenon_time_end: Optional[ISODatetime] = None

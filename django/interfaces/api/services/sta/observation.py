@@ -7,7 +7,7 @@ from pydantic.alias_generators import to_camel
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet, Q, Count, Max, Func, F
+from django.db.models import QuerySet, Q, Count, Max, Func, F, Sum
 from django.db.utils import IntegrityError
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
 from core.iam.models import ServiceAccount
@@ -109,11 +109,30 @@ class ObservationAPIService(APIService):
                 f"Invalid result qualifier codes: {', '.join(sorted(invalid_codes))}",
             )
 
+    @staticmethod
+    def sum_datastream_value_count(
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        datastream_ids: list[uuid.UUID],
+    ) -> int:
+        """
+        Exact observation count for the given datastreams (or every datastream the
+        principal can view if none are given), via Datastream's maintained value_count
+        rather than a COUNT(*) over Observation.
+        """
+
+        queryset = (
+            Datastream.objects.filter(id__in=datastream_ids)
+            if datastream_ids
+            else Datastream.objects
+        )
+        queryset = principal.filter_by_permission(queryset, "can_view")
+
+        return queryset.aggregate(total=Sum("value_count"))["total"] or 0
+
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
-        datastream_id: Optional[uuid.UUID] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
@@ -123,13 +142,14 @@ class ObservationAPIService(APIService):
     ):
         queryset = Observation.objects
 
-        if datastream_id:
-            datastream = datastream_service.get_datastream_for_action(
-                principal, datastream_id, action="view"
-            )
-            queryset = queryset.filter(datastream=datastream)
+        datastream_ids = filtering.get("datastream_id") or []
 
-        for field in ["phenomenon_time__lte", "phenomenon_time__gte"]:
+        if response_format in ("row", "column") and len(datastream_ids) != 1:
+            raise BadRequestError(
+                "format=row and format=column require exactly one datastream_id filter value"
+            )
+
+        for field in ["datastream_id", "phenomenon_time__lte", "phenomenon_time__gte"]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
@@ -140,6 +160,16 @@ class ObservationAPIService(APIService):
             queryset = queryset.filter(code_filter)
 
         queryset = principal.filter_by_permission(queryset, "can_view")
+
+        count = (
+            self.resolve_count(queryset)
+            if bool(
+                filtering.get("phenomenon_time__lte")
+                or filtering.get("phenomenon_time__gte")
+                or filtering.get("result_qualifier_codes")
+            )
+            else self.sum_datastream_value_count(principal, datastream_ids)
+        )
 
         # TODO: Can't really fix this until PostgreSQL 18 UUID v7 support
         checksum_result = queryset.aggregate(
@@ -160,23 +190,20 @@ class ObservationAPIService(APIService):
         )
 
         if not order_by:
-            order_by.append("phenomenonTime")
+            order_by = ["datastreamId", "phenomenonTime"]
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(ObservationOrderByFields)),
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset = self.apply_ordering(
+            queryset,
+            order_by,
+            list(get_args(ObservationOrderByFields)),
+        )
 
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.select_related("datastream__monitoring_site")
 
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        queryset, meta = self.apply_pagination(queryset, offset, limit, count=count)
 
         response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.total_count)
 
@@ -289,15 +316,13 @@ class ObservationAPIService(APIService):
         datastream_id: Optional[uuid.UUID] = None,
         update_datastream_statistics: bool = True,
     ):
-        datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="view"
-        )
         observation = self.get_observation_for_action(
             principal=principal,
             uid=uid,
             action="delete",
             datastream_id=datastream_id,
         )
+        datastream = observation.datastream
         observation.delete()
 
         if update_datastream_statistics is True:
@@ -382,6 +407,7 @@ class ObservationAPIService(APIService):
             self.bulk_delete(
                 principal=principal,
                 data=ObservationBulkDeleteBody(
+                    datastream_id=datastream_id,
                     phenomenon_time_start=start_time,
                     phenomenon_time_end=end_time,
                 ),

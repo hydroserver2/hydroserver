@@ -219,9 +219,15 @@ class Datastream(HydroServerBaseModel):
     def sync_phenomenon_end_time(self):
         """Ensures the phenomenon_end_time field matches the actual end time of the observations."""
 
-        path = f"/{self.client.base_route}/{self.get_route()}/{str(self.uid)}/observations"
+        path = f"/{self.client.base_route}/observations"
         response = self.client.request(
-            "get", path, params={"limit": 1, "order_by": "-phenomenonTime"}
+            "get",
+            path,
+            params={
+                "datastream_id": str(self.uid),
+                "limit": 1,
+                "order_by": "-phenomenonTime",
+            },
         ).json()
 
         response = response["data"]

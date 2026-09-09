@@ -1,8 +1,11 @@
+import json
 import uuid
 from typing import Union, Any, Optional, Type
 from pydantic.alias_generators import to_snake
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import EmptyResultSet
+from django.db import connection
 from django.db.models import QuerySet, Model, Q
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
@@ -128,6 +131,7 @@ class APIService:
         queryset: QuerySet,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        count: Optional[int] = None,
     ):
         offset = offset or 0
         limit = limit if limit is not None else 100
@@ -139,10 +143,41 @@ class APIService:
         if limit > 100000:
             raise BadRequestError("Limit must be <= 100000.")
 
-        count = queryset.count()
+        if count is None:
+            count = queryset.count()
+
         meta = cls.build_pagination_meta(count, offset, limit)
 
         return queryset[offset : offset + limit], meta
+
+    @staticmethod
+    def estimate_count(queryset: QuerySet) -> int:
+        """Postgres's EXPLAIN row-estimate for the queryset's filter, without executing it."""
+
+        try:
+            sql, params = queryset.order_by().values("pk").query.sql_with_params()
+        except EmptyResultSet:
+            return 0
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"EXPLAIN (FORMAT JSON) {sql}", params)
+            raw = cursor.fetchone()[0]
+        plan = raw if isinstance(raw, list) else json.loads(raw)
+
+        return plan[0]["Plan"]["Plan Rows"]
+
+    @classmethod
+    def resolve_count(cls, queryset: QuerySet, threshold: int = 10_000) -> int:
+        """
+        Exact count for queries estimated at or under `threshold` rows; the estimate
+        itself otherwise, to avoid an expensive COUNT(*) over a large filtered result.
+        """
+
+        estimated = cls.estimate_count(queryset)
+        if estimated <= threshold:
+            return queryset.count()
+
+        return estimated
 
     @staticmethod
     def create_linked_resource(

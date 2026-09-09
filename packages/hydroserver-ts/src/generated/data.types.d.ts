@@ -245,94 +245,6 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/observations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Observations
-         * @description Get Datastream Observations.
-         */
-        get: operations["interfaces_api_views_sta_observation_get_observations"];
-        put?: never;
-        /**
-         * Create Observation
-         * @description Create a new Observation.
-         */
-        post: operations["interfaces_api_views_sta_observation_create_observation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}/observations/bulk-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Insert Observations
-         * @description Insert Datastream Observations.
-         */
-        post: operations["interfaces_api_views_sta_observation_insert_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}/observations/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Observations
-         * @description Delete Datastream Observations between the given phenomenon start and end times.
-         */
-        post: operations["interfaces_api_views_sta_observation_delete_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}/observations/{observation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Observation
-         * @description Get an Observation.
-         */
-        get: operations["interfaces_api_views_sta_observation_get_observation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Observation
-         * @description Delete an Observation.
-         */
-        delete: operations["interfaces_api_views_sta_observation_delete_observation"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/etl/data-connections": {
         parameters: {
             query?: never;
@@ -969,6 +881,94 @@ export interface paths {
          */
         post: operations["interfaces_api_views_monitoring_task_trigger_monitoring_task"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Observations
+         * @description Get Observations.
+         */
+        get: operations["interfaces_api_views_sta_observation_get_observations"];
+        put?: never;
+        /**
+         * Create Observation
+         * @description Create a new Observation.
+         */
+        post: operations["interfaces_api_views_sta_observation_create_observation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations/bulk-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Insert Observations
+         * @description Insert Observations.
+         */
+        post: operations["interfaces_api_views_sta_observation_insert_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Observations
+         * @description Delete Observations between the given phenomenon start and end times.
+         */
+        post: operations["interfaces_api_views_sta_observation_delete_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations/{observation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Observation
+         * @description Get an Observation.
+         */
+        get: operations["interfaces_api_views_sta_observation_get_observation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Observation
+         * @description Delete an Observation.
+         */
+        delete: operations["interfaces_api_views_sta_observation_delete_observation"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4179,6 +4179,11 @@ export interface components {
         };
         /** ObservationBulkColumnarPostBody */
         ObservationBulkColumnarPostBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Phenomenontime */
             phenomenonTime: (string)[];
             /** Result */
@@ -4191,6 +4196,11 @@ export interface components {
         };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Phenomenontimeend */
             phenomenonTimeEnd?: string | null;
             /** Phenomenontimestart */
@@ -4200,6 +4210,11 @@ export interface components {
         ObservationBulkPostBody: {
             /** Data */
             data: unknown[][];
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Fields */
             fields: ("phenomenonTime" | "result" | "resultQualifierCodes")[];
         };
@@ -4245,6 +4260,11 @@ export interface components {
         };
         /** ObservationPostBody */
         ObservationPostBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Id */
             id?: string | null;
             /** Phenomenontime */
@@ -4259,6 +4279,12 @@ export interface components {
         };
         /** ObservationQueryParameters */
         ObservationQueryParameters: {
+            /**
+             * Datastream Id
+             * @description Filter observations by datastream ID.
+             * @default []
+             */
+            datastream_id: string[];
             /** Expand Related */
             expand_related?: boolean | null;
             /**
@@ -4283,7 +4309,7 @@ export interface components {
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("phenomenonTime" | "-phenomenonTime")[] | null;
+            order_by: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
             /**
              * Phenomenon Time Max
              * @description Sets the maximum phenomenon time of filtered observations.
@@ -6943,313 +6969,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_observation_get_observations: {
-        parameters: {
-            query?: {
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                expand_related?: boolean | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("phenomenonTime" | "-phenomenonTime")[] | null;
-                /** @description Controls the format of the observations response. */
-                format?: ("record" | "row" | "column") | null;
-                /** @description Sets the maximum phenomenon time of filtered observations. */
-                phenomenon_time_max?: string | null;
-                /** @description Sets the minimum phenomenon time of filtered observations. */
-                phenomenon_time_min?: string | null;
-                /** @description Filter observations by result qualifier code. */
-                result_qualifier_code?: string[];
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ObservationSummaryResponse_"] | components["schemas"]["PaginatedResponse_ObservationDetailResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_create_observation: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ObservationSummaryResponse"] | components["schemas"]["ObservationDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_insert_observations: {
-        parameters: {
-            query?: {
-                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
-                mode?: ("insert" | "append" | "backfill" | "replace") | null;
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_delete_observations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationBulkDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_get_observation: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-                observation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ObservationSummaryResponse"] | components["schemas"]["ObservationDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_delete_observation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-                observation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_api_views_etl_data_connection_get_data_connections: {
         parameters: {
             query?: {
@@ -9716,6 +9435,314 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaskRunResponse"];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_get_observations: {
+        parameters: {
+            query?: {
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                expand_related?: boolean | null;
+                /** @description Filter observations by datastream ID. */
+                datastream_id?: string[];
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
+                /** @description Controls the format of the observations response. */
+                format?: ("record" | "row" | "column") | null;
+                /** @description Sets the maximum phenomenon time of filtered observations. */
+                phenomenon_time_max?: string | null;
+                /** @description Sets the minimum phenomenon time of filtered observations. */
+                phenomenon_time_min?: string | null;
+                /** @description Filter observations by result qualifier code. */
+                result_qualifier_code?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationSummaryResponse_"] | components["schemas"]["PaginatedResponse_ObservationDetailResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_create_observation: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationSummaryResponse"] | components["schemas"]["ObservationDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_insert_observations: {
+        parameters: {
+            query?: {
+                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
+                mode?: ("insert" | "append" | "backfill" | "replace") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_delete_observations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationBulkDeleteBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_get_observation: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationSummaryResponse"] | components["schemas"]["ObservationDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_delete_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

@@ -247,6 +247,7 @@ class DatastreamService(HydroServerBaseService):
         """Retrieve observations of a datastream."""
 
         params = {
+            "datastream_id": str(uid),
             "offset": offset,
             "limit": limit,
             "order_by": ",".join(order_by) if order_by is not ... else order_by,
@@ -261,14 +262,18 @@ class DatastreamService(HydroServerBaseService):
             if v is not ...
         }
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations"
+        path = f"/{self.client.base_route}/observations"
         response = self.client.request("get", path, params=params)
         datastream = self.get(uid=uid)
         collection = ObservationCollection(
             datastream=datastream,
             response=response,
             order_by=order_by if order_by is not ... else None,
-            filters={k: v for k, v in params.items() if k not in ["offset", "limit", "order_by", "format"]},
+            filters={
+                k: v
+                for k, v in params.items()
+                if k not in ["datastream_id", "offset", "limit", "order_by", "format"]
+            },
         )
         if fetch_all is True:
             collection = collection.fetch_all()
@@ -283,10 +288,11 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Load observations to a datastream."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations/bulk-create"
+        path = f"/{self.client.base_route}/observations/bulk-create"
         headers = {"Content-type": "application/json"}
         params = {"mode": mode}
         body = {
+            "datastreamId": str(uid),
             "fields": [to_camel(col) for col in observations.columns.tolist()],
             "data": observations.values.tolist()
         }
@@ -303,9 +309,9 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Delete observations from a datastream."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations/bulk-delete"
+        path = f"/{self.client.base_route}/observations/bulk-delete"
         headers = {"Content-type": "application/json"}
-        body = {}
+        body = {"datastreamId": str(uid)}
 
         if phenomenon_time_start is not None:
             body["phenomenonTimeStart"] = phenomenon_time_start

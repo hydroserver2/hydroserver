@@ -60,11 +60,18 @@ type ObservationResponse =
   | Data.components['schemas']['ObservationDetailResponse']
 type ObservationBulkPostQueryParameters =
   Data.components['schemas']['ObservationBulkPostQueryParameters']
-type ObservationBulkPostBody =
-  Data.components['schemas']['ObservationBulkPostBody']
-type ObservationBulkDeleteBody =
-  Data.components['schemas']['ObservationBulkDeleteBody']
-type ObservationPostBody = Data.components['schemas']['ObservationPostBody']
+type ObservationBulkPostBody = Omit<
+  Data.components['schemas']['ObservationBulkPostBody'],
+  'datastreamId'
+>
+type ObservationBulkDeleteBody = Omit<
+  Data.components['schemas']['ObservationBulkDeleteBody'],
+  'datastreamId'
+>
+type ObservationPostBody = Omit<
+  Data.components['schemas']['ObservationPostBody'],
+  'datastreamId'
+>
 type NoContentResponse = null
 /**
  * Transport layer for /datastreams routes.
@@ -152,16 +159,19 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     datastreamId: string,
     params: ObservationContract.QueryParameters
   ) {
-    const url = this.withQuery(
-      `${this._route}/${datastreamId}/observations`,
-      params
-    )
+    const url = this.withQuery(`${this._client.baseRoute}/observations`, {
+      ...params,
+      datastream_id: datastreamId,
+    })
     return apiMethods.paginatedFetch<ObservationListResponse>(url)
   }
 
   createObservation(datastreamId: string, body: ObservationPostBody) {
-    const url = `${this._route}/${datastreamId}/observations`
-    return apiMethods.post<ObservationResponse>(url, body)
+    const url = `${this._client.baseRoute}/observations`
+    return apiMethods.post<ObservationResponse>(url, {
+      ...body,
+      datastreamId,
+    })
   }
 
   createObservations(
@@ -170,29 +180,29 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     params?: ObservationBulkPostQueryParameters
   ) {
     const url = this.withQuery(
-      `${this._route}/${datastreamId}/observations/bulk-create`,
+      `${this._client.baseRoute}/observations/bulk-create`,
       params
     )
-    return apiMethods.post<NoContentResponse>(url, body)
+    return apiMethods.post<NoContentResponse>(url, { ...body, datastreamId })
   }
 
   deleteObservations(datastreamId: string, body?: ObservationBulkDeleteBody) {
-    const url = `${this._route}/${datastreamId}/observations/bulk-delete`
-    return apiMethods.post<NoContentResponse>(
-      url,
-      body || { phenomenonTimeStart: null, phenomenonTimeEnd: null }
-    )
+    const url = `${this._client.baseRoute}/observations/bulk-delete`
+    return apiMethods.post<NoContentResponse>(url, {
+      ...(body || { phenomenonTimeStart: null, phenomenonTimeEnd: null }),
+      datastreamId,
+    })
   }
 
-  getObservation(datastreamId: string, observationId: string) {
-    const url = `${this._route}/${encodeURIComponent(
-      datastreamId
-    )}/observations/${encodeURIComponent(observationId)}`
+  getObservation(_datastreamId: string, observationId: string) {
+    const url = `${this._client.baseRoute}/observations/${encodeURIComponent(
+      observationId
+    )}`
     return apiMethods.fetch<ObservationResponse>(url)
   }
 
-  deleteObservation(datastreamId: string, observationId: string) {
-    const url = `${this._route}/${datastreamId}/observations/${observationId}`
+  deleteObservation(_datastreamId: string, observationId: string) {
+    const url = `${this._client.baseRoute}/observations/${observationId}`
     return apiMethods.delete<NoContentResponse>(url)
   }
 

@@ -32,6 +32,7 @@ observation_service = ObservationAPIService()
         | PaginatedResponse[ObservationDetailResponse]
         | ObservationRowResponse
         | ObservationColumnarResponse,
+        400: str,
         403: str,
         404: str,
     },
@@ -40,17 +41,15 @@ observation_service = ObservationAPIService()
 def get_observations(
     request: HydroServerHttpRequest,
     response: HttpResponse,
-    datastream_id: Path[uuid.UUID],
     query: Query[ObservationQueryParameters],
 ):
     """
-    Get Datastream Observations.
+    Get Observations.
     """
 
     return 200, observation_service.list(
         principal=request.principal,
         response=response,
-        datastream_id=datastream_id,
         offset=query.offset,
         limit=query.limit,
         order_by=query.order_by,
@@ -75,7 +74,6 @@ def get_observations(
 @transaction.atomic
 def create_observation(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     data: ObservationPostBody,
     expand_related: Optional[bool] = None,
 ):
@@ -85,7 +83,7 @@ def create_observation(
 
     return 201, observation_service.create(
         principal=request.principal,
-        datastream_id=datastream_id,
+        datastream_id=data.datastream_id,
         data=data,
         expand_related=expand_related,
     )
@@ -99,18 +97,17 @@ def create_observation(
 @transaction.atomic
 def insert_observations(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     query: Query[ObservationBulkPostQueryParameters],
     data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
 ):
     """
-    Insert Datastream Observations.
+    Insert Observations.
     """
 
     return 201, observation_service.bulk_create(
         principal=request.principal,
         data=data,
-        datastream_id=datastream_id,
+        datastream_id=data.datastream_id,
         mode=query.mode or "append",
     )
 
@@ -123,15 +120,14 @@ def insert_observations(
 @transaction.atomic
 def delete_observations(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     data: ObservationBulkDeleteBody,
 ):
     """
-    Delete Datastream Observations between the given phenomenon start and end times.
+    Delete Observations between the given phenomenon start and end times.
     """
 
     return 204, observation_service.bulk_delete(
-        principal=request.principal, datastream_id=datastream_id, data=data
+        principal=request.principal, datastream_id=data.datastream_id, data=data
     )
 
 
@@ -148,7 +144,6 @@ def delete_observations(
 )
 def get_observation(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     observation_id: Path[uuid.UUID],
     expand_related: Optional[bool] = None,
 ):
@@ -159,7 +154,6 @@ def get_observation(
     return 200, observation_service.get(
         principal=request.principal,
         uid=observation_id,
-        datastream_id=datastream_id,
         expand_related=expand_related,
     )
 
@@ -178,7 +172,6 @@ def get_observation(
 @transaction.atomic
 def delete_observation(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     observation_id: Path[uuid.UUID],
 ):
     """
@@ -188,5 +181,4 @@ def delete_observation(
     return 204, observation_service.delete(
         principal=request.principal,
         uid=observation_id,
-        datastream_id=datastream_id,
     )
