@@ -75,8 +75,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   ])
 
   const endDate = ref<Date>(new Date())
-  const oneMonth = 30 * 24 * 60 * 60 * 1000
-  const beginDate = ref<Date>(new Date(endDate.value.getTime() - oneMonth))
+  const oneWeek = 7 * 24 * 60 * 60 * 1000
+  const beginDate = ref<Date>(new Date(endDate.value.getTime() - oneWeek))
   const selectedDateBtnId = ref(0)
   const dataZoomStart = ref(0)
   const dataZoomEnd = ref(100)
@@ -125,7 +125,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     showSummaryStatistics.value = false
     summaryStatisticsArray.value = []
     endDate.value = new Date()
-    beginDate.value = new Date(new Date().getTime() - oneMonth)
+    beginDate.value = new Date(new Date().getTime() - oneWeek)
     selectedDateBtnId.value = 0
     dataZoomStart.value = 0
     dataZoomEnd.value = 100
@@ -202,6 +202,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const dateOptions = ref([
     {
       id: 0,
+      label: '1w',
+      calculateBeginDate: () => {
+        const now = endDate.value
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+      },
+    },
+    {
+      id: 1,
       label: '1m',
       calculateBeginDate: () => {
         const now = endDate.value
@@ -209,7 +217,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       },
     },
     {
-      id: 1,
+      id: 2,
       label: '6m',
       calculateBeginDate: () => {
         const now = endDate.value
@@ -217,7 +225,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       },
     },
     {
-      id: 2,
+      id: 3,
       label: 'YTD',
       calculateBeginDate: () => {
         const now = endDate.value
@@ -225,7 +233,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       },
     },
     {
-      id: 3,
+      id: 4,
       label: '1y',
       calculateBeginDate: () => {
         const now = endDate.value
@@ -233,7 +241,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       },
     },
     {
-      id: 4,
+      id: 5,
       label: 'all',
       calculateBeginDate: () => {
         return getOldestBeginTime()
