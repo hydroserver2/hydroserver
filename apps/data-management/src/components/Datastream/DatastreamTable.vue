@@ -1,426 +1,258 @@
 <template>
-  <h6 class="hs-text-md" style="color: #b71c1c">
-    {{ monitoringSite!.dataDisclaimer }}
-  </h6>
+  <section
+    ref="datastreamSectionRef"
+    class="site-datastreams"
+    aria-labelledby="site-datastreams-heading"
+  >
+    <p
+      v-if="monitoringSite?.dataDisclaimer"
+      class="site-datastreams__disclaimer hs-text-sm"
+    >
+      {{ monitoringSite.dataDisclaimer }}
+    </p>
 
-  <v-card ref="datastreamSectionRef">
-    <div class="datastream-toolbar">
-      <div class="datastream-toolbar__left">
-        <h5 class="hs-text-md datastream-toolbar__title">
-          Datastreams available at this site
-        </h5>
-        <v-text-field
-          v-model="search"
-          clearable
-          :prepend-inner-icon="mdiMagnify"
-          label="Search"
-          hide-details
-          density="compact"
-          variant="underlined"
-          rounded="xl"
-          class="datastream-search ml-2"
-        />
+    <div class="hs-table-tools site-datastreams__tools">
+      <div class="site-datastreams__tools-primary">
+        <div class="site-datastreams__heading">
+          <h2 id="site-datastreams-heading" class="hs-subheading">
+            Datastreams
+          </h2>
+          <span class="hs-text-sm site-datastreams__count">
+            {{ tableDatastreams.length }} available
+          </span>
+        </div>
+
+        <div class="hs-table-actions">
+          <v-btn
+            size="small"
+            variant="text"
+            :prepend-icon="mdiChartLine"
+            :to="{
+              name: 'VisualizeData',
+              query: { sites: monitoringSite!.id },
+            }"
+          >
+            Visualize
+          </v-btn>
+          <v-btn-page-action
+            v-if="
+              hasPermission(
+                PermissionResource.Datastream,
+                PermissionAction.Create,
+                workspace
+              )
+            "
+            size="small"
+            :prepend-icon="mdiPlus"
+            data-testid="add-datastream-button"
+            @click="openCreate = true"
+          >
+            Add datastream
+          </v-btn-page-action>
+        </div>
       </div>
-      <div class="datastream-toolbar__actions">
-        <v-btn
-          color="white"
-          variant="outlined"
-          :prependIcon="mdiChartLine"
-          :to="{ name: 'VisualizeData', query: { sites: monitoringSite!.id } }"
-          >View on Data Visualization Page</v-btn
-        >
-        <v-btn-page-action
-          v-if="
-            hasPermission(
-              PermissionResource.Datastream,
-              PermissionAction.Create,
-              workspace
-            )
-          "
-          :prependIcon="mdiPlus"
-          data-testid="add-datastream-button"
-          @click="openCreate = true"
-          >Add new datastream</v-btn-page-action
-        >
-      </div>
+
+      <HsQuerySearchInput
+        :model-value="search"
+        placeholder="Search datastreams…"
+        aria-label="Search datastreams"
+        :qualifiers="searchQualifiers"
+        @update:model-value="updateSearch"
+        @clear="clearSearch"
+      />
     </div>
 
-    <div v-if="isMobile" class="datastream-mobile-list">
-      <v-card
-        v-for="(item, index) in renderedDatastreams"
-        :key="item.id"
-        class="datastream-card"
-        :class="{
-          'datastream-card--highlighted': isTargetDatastream(item.id),
-        }"
-        :data-datastream-id="item.id"
-        :data-load-more-trigger="isLoadMoreTrigger(index) ? 'true' : undefined"
-        variant="outlined"
-      >
-        <div class="datastream-card__content">
-          <div class="datastream-card__title hs-subheading">
-            {{ item.name || item.OPName }}
-          </div>
-          <div
-            v-if="
-              !hasPermission(
-                PermissionResource.Datastream,
-                PermissionAction.View,
-                workspace
-              ) && !item.isVisible
-            "
-            class="hs-text-sm"
-          >
-            Data is private for this datastream
-          </div>
-          <div v-else>
-            <Sparkline
-              class="mt-1"
-              :datastream="item"
-              @openChart="openCharts[item.id] = true"
-              @latest-value="(value) => handleLatestValueUpdate(item.id, value)"
-              :unitName="item.unitName"
-            />
-            <div
-              v-if="Number(item.valueCount) > 0"
-              class="mt-1 hs-text-md leading-[1.3]"
-              :class="latestStatusClass(item)"
+    <div class="hs-table-card site-datastreams__table-card">
+      <div class="site-datastreams__table-controls">
+        <div class="site-datastreams__filter-header-content">
+          <div class="site-datastreams__filters">
+            <v-menu
+              v-for="filter in filterDefinitions"
+              :key="filter.key"
+              :close-on-content-click="false"
+              location="bottom start"
+              attach="body"
             >
-              <strong class="mr-2 font-weight-semibold">Latest observation:</strong>
-              <span class="font-weight-semibold">{{ item.endDate }}</span>
-            </div>
-            <div
-              v-if="shouldShowLatestValue(item.id)"
-              class="mt-1 hs-text-md leading-[1.3]"
-              :class="latestStatusClass(item)"
-            >
-              <strong class="mr-2 font-weight-semibold">Latest value:</strong>
-              <span class="font-weight-semibold">{{ latestValueDisplay(item) }}</span>
-            </div>
-          </div>
-
-          <v-dialog v-model="openCharts[item.id]" width="80rem">
-            <DatastreamPopupPlot
-              :datastream="item"
-              @close="openCharts[item.id] = false"
-            />
-          </v-dialog>
-
-          <div class="datastream-info-list">
-            <p class="datastream-line">
-              <strong class="mr-2">Identifier:</strong>
-              <span class="datastream-id">
-                {{ item.id }}
-                <v-tooltip text="Copy ID">
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      size="default"
-                      variant="text"
-                      class="datastream-copy-btn"
-                      @click.stop="copyDatastreamId(item.id)"
-                    >
-                      <v-icon :icon="mdiContentCopy" size="small" />
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Sampled medium:</strong>
-              <span>{{ item.sampledMedium }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Method:</strong>
-              <span>{{ item.methodName }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">No data value:</strong>
-              <span>{{ item.noDataValue }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Begin date:</strong>
-              <span>{{ item.beginDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">End date:</strong>
-              <span>{{ item.endDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Number of observations:</strong>
-              <span>{{ item.valueCount }}</span>
-            </p>
-          </div>
-          <div
-            v-if="canViewOrchestrationInfo && linkedTasksLoaded"
-            class="datastream-task-link"
-            :class="datastreamTaskLinkClass(item.id)"
-          >
-            <v-icon
-              :class="[
-                'datastream-task-link__icon',
-                linkedTasksForDatastream(item.id).length === 1
-                  ? linkedTasksForDatastream(item.id)[0].iconClass
-                  : '',
-              ]"
-              :icon="
-                !linkedTasksForDatastream(item.id).length
-                  ? mdiLinkOff
-                  : linkedTasksForDatastream(item.id).length > 1
-                    ? mdiAlertOctagon
-                    : linkedTasksForDatastream(item.id)[0].icon
-              "
-              size="20"
-            />
-            <div class="datastream-task-link__body">
-              <div class="datastream-task-link__meta">
-                <span class="datastream-task-link__label hs-label">
-                  {{
-                    linkedTasksForDatastream(item.id).length > 1
-                      ? 'Multiple task targets'
-                      : linkedTasksForDatastream(item.id).length === 1
-                        ? linkedTasksForDatastream(item.id)[0].label
-                        : 'No task connected'
-                  }}
-                </span>
-                <template v-if="linkedTasksForDatastream(item.id).length === 1">
-                  <RouterLink
-                    class="datastream-task-link__name hs-title"
-                    :to="linkedTasksForDatastream(item.id)[0].route"
-                  >
-                    {{ linkedTasksForDatastream(item.id)[0].displayName }}
-                  </RouterLink>
-                  <span
-                    class="datastream-task-link__status"
-                    :title="
-                      displayedTaskStatus(linkedTasksForDatastream(item.id)[0])
-                    "
-                  >
-                    <span
-                      class="datastream-task-link__dot"
-                      :style="{
-                        backgroundColor: taskStatusColor(
-                          linkedTasksForDatastream(item.id)[0]
-                        ),
-                      }"
-                    />
-                    <small class="datastream-task-link__last-ran font-weight-medium">
-                      {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                    </small>
-                  </span>
-                </template>
-                <span v-else class="datastream-task-link__conflict-text font-weight-bold">
-                  {{
-                    linkedTasksForDatastream(item.id).length > 1
-                      ? `${
-                          linkedTasksForDatastream(item.id).length
-                        } tasks are feeding this datastream.`
-                      : ''
-                  }}
-                </span>
-              </div>
-              <div
-                v-if="linkedTasksForDatastream(item.id).length > 1"
-                class="datastream-task-link__tasks"
-              >
-                <RouterLink
-                  v-for="task in linkedTasksForDatastream(item.id)"
-                  :key="task.id"
-                  :to="task.route"
-                  class="font-weight-bold"
+              <template #activator="{ props: menuProps }">
+                <v-btn
+                  v-bind="menuProps"
+                  variant="text"
+                  size="small"
+                  class="site-datastreams__filter-button"
+                  :class="{
+                    'site-datastreams__filter-button--active':
+                      filter.selectedCount > 0,
+                  }"
+                  :append-icon="mdiChevronDown"
+                  :aria-label="`Filter by ${filter.label.toLowerCase()}`"
                 >
-                  {{ task.displayName }}
-                </RouterLink>
-              </div>
-            </div>
-            <v-btn
-              v-if="linkedTasksForDatastream(item.id).length === 1"
-              size="small"
-              variant="text"
-              color="primary"
-              :append-icon="mdiChevronRight"
-              :to="linkedTasksForDatastream(item.id)[0].route"
-            >
-              Manage task
-            </v-btn>
-            <div
-              v-if="monitoringTasksForDatastream(item.id).length"
-              class="datastream-task-link__monitoring"
-            >
-              <v-icon
-                :icon="mdiShieldCheckOutline"
-                size="20"
-                class="datastream-task-link__monitoring-icon"
-              />
-              <div class="datastream-task-link__monitoring-body">
-                <span class="datastream-task-link__label hs-label">
-                  Quality monitoring
-                </span>
-                <span
-                  v-for="task in monitoringTasksForDatastream(item.id)"
-                  :key="task.id"
-                  class="datastream-task-link__monitoring-task"
-                >
-                  <RouterLink
-                    class="datastream-task-link__name hs-title"
-                    :to="task.route"
-                  >
-                    {{ task.displayName }}
-                  </RouterLink>
+                  {{ filter.label }}
                   <span
-                    class="datastream-task-link__quality-outcome hs-text-sm font-weight-bold"
-                    :class="monitoringOutcomeClass(task)"
+                    v-if="filter.selectedCount"
+                    class="site-datastreams__filter-count"
                   >
-                    {{ monitoringOutcomeLabel(task) }}
+                    {{ filter.selectedCount }}
                   </span>
-                  <span
-                    class="datastream-task-link__status"
-                    :title="monitoringLastRunStatus(task)"
-                  >
-                    <span
-                      class="datastream-task-link__dot"
-                      :style="{
-                        backgroundColor: monitoringLastRunColor(task),
-                      }"
-                    />
-                    <small class="datastream-task-link__last-ran font-weight-medium">
-                      {{ lastRanLabel(task) }}
-                    </small>
-                  </span>
-                </span>
-              </div>
-              <v-btn
-                v-if="monitoringTasksForDatastream(item.id).length === 1"
-                size="small"
-                variant="text"
-                color="primary"
-                :append-icon="mdiChevronRight"
-                :to="monitoringTasksForDatastream(item.id)[0].route"
-              >
-                Manage monitoring
-              </v-btn>
-            </div>
-          </div>
-          <div
-            v-else-if="showTaskSkeleton"
-            class="datastream-task-link datastream-task-link--loading"
-            aria-label="Loading task information"
-          >
-            <span class="datastream-task-link__loading-icon" />
-            <div class="datastream-task-link__body">
-              <span
-                class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
-              />
-              <span
-                class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="datastream-card__actions">
-          <div class="datastream-card__icons">
-            <v-tooltip
-              bottom
-              :openDelay="500"
-              content-class="pa-0 ma-0 bg-transparent"
-              v-if="
-                hasPermission(
-                  PermissionResource.Datastream,
-                  PermissionAction.Edit,
-                  workspace
-                )
-              "
-            >
-              <template #activator="{ props: tp }">
-                <v-icon
-                  v-bind="tp"
-                  :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
-                  :color="item.isVisible ? 'green' : 'red-darken-2'"
-                  :data-testid="`data-visibility-toggle-${item.id}`"
-                  small
-                  @click="toggleDataVisibility(item)"
+                </v-btn>
+              </template>
+
+              <v-list class="site-datastreams__filter-menu" density="compact">
+                <div class="site-datastreams__filter-menu-title">
+                  Filter by {{ filter.label }}
+                </div>
+                <v-text-field
+                  v-model="filterSearches[filter.key]"
+                  class="site-datastreams__filter-search"
+                  :placeholder="`Filter ${filter.label.toLowerCase()}`"
+                  :prepend-inner-icon="mdiMagnify"
+                  density="compact"
+                  hide-details
+                  clearable
                 />
-              </template>
-
-              <VisibilityTooltipCard
-                title="Observations are currently"
-                :items="[
-                  {
-                    label: 'Clicking this will',
-                    value: item.isVisible
-                      ? 'Hide data for this datastream from guests of your site while keeping the datastream metadata publicly visible.'
-                      : 'Make the observations and metadata for this datastream visible to guests of your site.',
-                  },
-                ]"
-                :is-visible="item.isVisible"
-              />
-            </v-tooltip>
-
-            <v-tooltip
-              bottom
-              :openDelay="500"
-              v-if="
-                hasPermission(
-                  PermissionResource.Datastream,
-                  PermissionAction.Edit,
-                  workspace
-                )
-              "
-              content-class="pa-0 ma-0 bg-transparent"
-            >
-              <template v-slot:activator="{ props }">
-                <v-icon
-                  :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
-                  :color="item.isPrivate ? 'red-darken-2' : 'green'"
-                  :data-testid="`datastream-privacy-toggle-${item.id}`"
-                  small
-                  v-bind="props"
-                  @click="toggleVisibility(item)"
-                />
-              </template>
-
-              <VisibilityTooltipCard
-                title="Datastream is currently"
-                :items="[
-                  {
-                    label: 'Clicking this will',
-                    value: item.isPrivate
-                      ? 'Make this datastream and all its metadata and observations publicly visible.'
-                      : 'Hide this datastream from guests of your site along with all its metadata and observations.',
-                  },
-                ]"
-                :is-visible="!item.isPrivate"
-              />
-            </v-tooltip>
-
-            <v-tooltip
-              v-if="
-                !hasPermission(
-                  PermissionResource.Datastream,
-                  PermissionAction.View,
-                  workspace
-                ) && !item.isVisible
-              "
-              bottom
-              :openDelay="100"
-            >
-              <template v-slot:activator="{ props }">
-                <v-icon v-bind="props" :icon="mdiLock" color="red-darken-2" />
-              </template>
-              <span>The data for this datastream is private </span>
-            </v-tooltip>
-
-            <v-menu v-else>
-              <template v-slot:activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  :icon="mdiDotsVertical"
-                  :data-testid="`datastream-actions-${item.id}`"
-                />
-              </template>
-              <v-list>
                 <v-list-item
+                  v-for="option in filteredOptions(filter)"
+                  :key="option.value"
+                  @click="toggleFilter(filter.key, option.value)"
+                >
+                  <template #prepend>
+                    <v-checkbox
+                      :model-value="isFilterSelected(filter.key, option.value)"
+                      hide-details
+                      density="compact"
+                      :aria-label="`${filter.label}: ${option.label}`"
+                      @click.stop="toggleFilter(filter.key, option.value)"
+                    />
+                  </template>
+                  <v-list-item-title>{{ option.label }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  v-if="filter.selectedCount"
+                  class="site-datastreams__clear-filter"
+                  @click="clearFilter(filter.key)"
+                >
+                  <v-list-item-title>Clear filter</v-list-item-title>
+                </v-list-item>
+                <div
+                  v-if="!filteredOptions(filter).length"
+                  class="site-datastreams__filter-empty"
+                >
+                  No {{ filter.label.toLowerCase() }} found
+                </div>
+              </v-list>
+            </v-menu>
+          </div>
+
+          <v-menu location="bottom end" attach="body">
+            <template #activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                variant="text"
+                size="small"
+                :prepend-icon="mdiSort"
+                :append-icon="mdiChevronDown"
+                class="site-datastreams__sort-button"
+              >
+                {{ sortButtonLabel }}
+              </v-btn>
+            </template>
+            <v-list class="site-datastreams__sort-menu" density="comfortable">
+              <div class="site-datastreams__sort-menu-title">Sort by</div>
+              <v-list-item
+                v-for="option in sortOptions"
+                :key="option.key"
+                @click="setSortKey(option.key)"
+              >
+                <template #prepend>
+                  <v-icon
+                    :icon="mdiCheck"
+                    :class="{
+                      'site-datastreams__sort-check--hidden':
+                        activeSort.key !== option.key,
+                    }"
+                  />
+                </template>
+                <v-list-item-title>{{ option.label }}</v-list-item-title>
+              </v-list-item>
+              <v-divider class="my-1" />
+              <div class="site-datastreams__sort-menu-title">Order</div>
+              <v-list-item
+                v-for="option in sortOrderOptions"
+                :key="option.order"
+                @click="setSortOrder(option.order)"
+              >
+                <template #prepend>
+                  <v-icon :icon="option.icon" />
+                </template>
+                <v-list-item-title>{{ option.label }}</v-list-item-title>
+                <template #append>
+                  <v-icon
+                    :icon="mdiCheck"
+                    :class="{
+                      'site-datastreams__sort-check--hidden':
+                        activeSort.order !== option.order,
+                    }"
+                  />
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+      </div>
+      <table class="site-datastreams__table hs-text-sm">
+        <tbody>
+          <tr
+            v-for="(item, index) in renderedDatastreams"
+            :key="item.id"
+            :class="{
+              'site-datastreams__row--highlighted': isTargetDatastream(item.id),
+            }"
+            :data-datastream-id="item.id"
+            :data-load-more-trigger="
+              isLoadMoreTrigger(index) ? 'true' : undefined
+            "
+          >
+            <td class="site-datastreams__name-cell" data-label="Datastream">
+              <div class="site-datastreams__name" :title="datastreamName(item)">
+                {{ datastreamName(item) }}
+              </div>
+            </td>
+            <td
+              class="site-datastreams__observations-cell"
+              data-label="Recent observations"
+            >
+              <div
+                v-if="!canViewData(item)"
+                class="site-datastreams__private-data"
+              >
+                <v-icon :icon="mdiLock" size="16" />
+                Data is private
+              </div>
+              <div v-else class="site-datastreams__observations">
+                <Sparkline
+                  class="site-datastreams__sparkline"
+                  :datastream="item"
+                  :unit-name="item.unitName"
+                  @open-chart="selectedChartDatastream = item"
+                  @latest-value="
+                    (value) => handleLatestValueUpdate(item.id, value)
+                  "
+                />
+                <div
+                  class="site-datastreams__latest"
+                  :class="latestStatusClass(item)"
+                >
+                  <span v-if="Number(item.valueCount) > 0">
+                    Latest observation {{ item.endDate }}
+                  </span>
+                  <span v-if="shouldShowLatestValue(item.id)">
+                    Latest value {{ latestValueDisplay(item) }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="site-datastreams__actions-cell" data-label="Actions">
+              <div class="site-datastreams__row-actions">
+                <v-tooltip
                   v-if="
                     hasPermission(
                       PermissionResource.Datastream,
@@ -428,562 +260,214 @@
                       workspace
                     )
                   "
-                  :prepend-icon="mdiPencil"
-                  title="Edit datastream metadata"
-                  :data-testid="`edit-datastream-${item.id}`"
-                  @click="openDialog(item, 'edit')"
-                />
-                <div
+                  bottom
+                  :open-delay="500"
+                  content-class="pa-0 ma-0 bg-transparent"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn-icon
+                      v-bind="tooltipProps"
+                      :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
+                      size="small"
+                      :color="item.isVisible ? 'success' : 'error'"
+                      :data-testid="`data-visibility-toggle-${item.id}`"
+                      :aria-label="`${item.isVisible ? 'Hide' : 'Show'} data`"
+                      @click="toggleDataVisibility(item)"
+                    />
+                  </template>
+                  <VisibilityTooltipCard
+                    title="Observations are currently"
+                    :items="[
+                      {
+                        label: 'Clicking this will',
+                        value: item.isVisible
+                          ? 'Hide data for this datastream from guests of your site while keeping the datastream metadata publicly visible.'
+                          : 'Make the observations and metadata for this datastream visible to guests of your site.',
+                      },
+                    ]"
+                    :is-visible="item.isVisible"
+                  />
+                </v-tooltip>
+
+                <v-tooltip
                   v-if="
                     hasPermission(
                       PermissionResource.Datastream,
-                      PermissionAction.Delete,
+                      PermissionAction.Edit,
                       workspace
                     )
                   "
+                  bottom
+                  :open-delay="500"
+                  content-class="pa-0 ma-0 bg-transparent"
                 >
-                  <v-list-item
-                    :prepend-icon="mdiTrashCanOutline"
-                    title="Delete datastream"
-                    :data-testid="`delete-datastream-${item.id}`"
-                    @click="openDialog(item, 'delete')"
-                  />
-                </div>
-                <v-list-item
-                  v-if="
-                    hasPermission(
-                      PermissionResource.Observation,
-                      PermissionAction.Delete,
-                      workspace
-                    )
-                  "
-                  :prepend-icon="mdiTrashCanOutline"
-                  title="Delete data from datastream"
-                  :data-testid="`delete-datastream-data-${item.id}`"
-                  @click="openObservationDialog(item)"
-                />
-                <v-list-item
-                  :prepend-icon="mdiChartLine"
-                  title="Visualize data"
-                  :data-testid="`visualize-datastream-${item.id}`"
-                  :to="{
-                    name: 'VisualizeData',
-                    query: {
-                      sites: item.monitoringSiteId,
-                      datastreams: item.id,
-                    },
-                  }"
-                />
-                <v-list-item
-                  v-if="canOpenQcEditor"
-                  :prepend-icon="mdiShieldCheckOutline"
-                  title="Open in QC editor"
-                  :data-testid="`qc-edit-datastream-${item.id}`"
-                  :href="qcEditHref(item.id)"
-                />
-                <v-list-item
-                  :prepend-icon="mdiDownload"
-                  title="Download data"
-                  :data-testid="`download-datastream-${item.id}`"
-                  @click="onDownload(item.id)"
-                />
-              </v-list>
-            </v-menu>
-          </div>
-          <v-btn
-            variant="outlined"
-            class="datastream-card__meta-btn"
-            :data-testid="`datastream-metadata-${item.id}`"
-            @click="openInfoCardFor(item)"
-          >
-            View Full Metadata
-          </v-btn>
-          <div v-if="downloading[item.id]" class="datastream-download hs-text-sm mt-2">
-            <v-progress-circular
-              indeterminate
-              size="16"
-              width="2"
-              color="primary"
-            />
-            preparing file...
-          </div>
-        </div>
-      </v-card>
-    </div>
-
-    <div v-else class="datastream-list">
-      <div class="datastream-list__head hs-label">
-        <span>Observation information</span>
-        <span>Datastream information</span>
-        <span class="datastream-list__head-actions">Actions</span>
-      </div>
-
-      <div
-        v-for="(item, index) in renderedDatastreams"
-        :key="item.id"
-        class="ds-card"
-        :class="{ 'ds-card--highlighted': isTargetDatastream(item.id) }"
-        :data-datastream-id="item.id"
-        :data-load-more-trigger="isLoadMoreTrigger(index) ? 'true' : undefined"
-      >
-        <div class="ds-card__grid">
-          <div class="datastream-latest">
-            <div class="datastream-title hs-subheading">
-              {{ item.name || item.OPName }}
-            </div>
-            <div class="mt-1">
-              <div
-                v-if="
-                  !hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.View,
-                    workspace
-                  ) && !item.isVisible
-                "
-                class="hs-text-sm"
-              >
-                Data is private for this datastream
-              </div>
-              <div v-else>
-                <Sparkline
-                  class="mt-1"
-                  :datastream="item"
-                  @openChart="openCharts[item.id] = true"
-                  @latest-value="
-                    (value) => handleLatestValueUpdate(item.id, value)
-                  "
-                  :unitName="item.unitName"
-                />
-                <div
-                  v-if="Number(item.valueCount) > 0"
-                  class="mt-1 hs-text-md leading-[1.3]"
-                  :class="latestStatusClass(item)"
-                >
-                  <strong class="mr-2 font-weight-semibold"
-                    >Latest observation:</strong
-                  >
-                  <span class="font-weight-semibold">{{ item.endDate }}</span>
-                </div>
-                <div
-                  v-if="shouldShowLatestValue(item.id)"
-                  class="mt-1 hs-text-md leading-[1.3]"
-                  :class="latestStatusClass(item)"
-                >
-                  <strong class="mr-2 font-weight-semibold">Latest value:</strong>
-                  <span class="font-weight-semibold">{{
-                    latestValueDisplay(item)
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <v-dialog v-model="openCharts[item.id]" width="80rem">
-              <DatastreamPopupPlot
-                :datastream="item"
-                @close="openCharts[item.id] = false"
-              />
-            </v-dialog>
-          </div>
-          <div class="datastream-info-list">
-            <p class="datastream-line">
-              <strong class="mr-2">Identifier:</strong>
-              <span class="datastream-id">
-                {{ item.id }}
-                <v-tooltip text="Copy ID">
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn-icon
+                      v-bind="tooltipProps"
+                      :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
                       size="small"
-                      variant="text"
-                      @click.stop="copyDatastreamId(item.id)"
-                    >
-                      <v-icon :icon="mdiContentCopy" size="small" />
-                    </v-btn>
+                      :color="item.isPrivate ? 'error' : 'success'"
+                      :data-testid="`datastream-privacy-toggle-${item.id}`"
+                      :aria-label="`Make datastream ${item.isPrivate ? 'public' : 'private'}`"
+                      @click="toggleVisibility(item)"
+                    />
                   </template>
+                  <VisibilityTooltipCard
+                    title="Datastream is currently"
+                    :items="[
+                      {
+                        label: 'Clicking this will',
+                        value: item.isPrivate
+                          ? 'Make this datastream and all its metadata and observations publicly visible.'
+                          : 'Hide this datastream from guests of your site along with all its metadata and observations.',
+                      },
+                    ]"
+                    :is-visible="!item.isPrivate"
+                  />
                 </v-tooltip>
-              </span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Sampled medium:</strong>
-              <span>{{ item.sampledMedium }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Method:</strong>
-              <span>{{ item.methodName }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">No data value:</strong>
-              <span>{{ item.noDataValue }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Begin date:</strong>
-              <span>{{ item.beginDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">End date:</strong>
-              <span>{{ item.endDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Number of observations:</strong>
-              <span>{{ item.valueCount }}</span>
-            </p>
-          </div>
-          <div class="datastream-actions">
-            <div class="datastream-actions__icons">
-              <v-tooltip
-                bottom
-                :openDelay="500"
-                content-class="pa-0 ma-0 bg-transparent"
-                v-if="
-                  hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.Edit,
-                    workspace
-                  )
-                "
-              >
-                <template #activator="{ props: tp }">
-                  <v-icon
-                    v-bind="tp"
-                    :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
-                    :color="item.isVisible ? 'green' : 'red-darken-2'"
-                    :data-testid="`data-visibility-toggle-${item.id}`"
-                    small
-                    @click="toggleDataVisibility(item)"
-                  />
-                </template>
 
-                <VisibilityTooltipCard
-                  title="Observations are currently"
-                  :items="[
-                    {
-                      label: 'Clicking this will',
-                      value: item.isVisible
-                        ? 'Hide data for this datastream from guests of your site while keeping the datastream metadata publicly visible.'
-                        : 'Make the observations and metadata for this datastream visible to guests of your site.',
-                    },
-                  ]"
-                  :is-visible="item.isVisible"
-                />
-              </v-tooltip>
+                <v-tooltip
+                  v-if="
+                    !hasPermission(
+                      PermissionResource.Datastream,
+                      PermissionAction.View,
+                      workspace
+                    ) && !item.isVisible
+                  "
+                  bottom
+                  :open-delay="100"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-icon
+                      v-bind="tooltipProps"
+                      :icon="mdiLock"
+                      color="error"
+                    />
+                  </template>
+                  <span>The data for this datastream is private</span>
+                </v-tooltip>
 
-              <v-tooltip
-                bottom
-                :openDelay="500"
-                v-if="
-                  hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.Edit,
-                    workspace
-                  )
-                "
-                content-class="pa-0 ma-0 bg-transparent"
-              >
-                <template v-slot:activator="{ props }">
-                  <v-icon
-                    :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
-                    :color="item.isPrivate ? 'red-darken-2' : 'green'"
-                    :data-testid="`datastream-privacy-toggle-${item.id}`"
-                    small
-                    v-bind="props"
-                    @click="toggleVisibility(item)"
-                  />
-                </template>
-
-                <VisibilityTooltipCard
-                  title="Datastream is currently"
-                  :items="[
-                    {
-                      label: 'Clicking this will',
-                      value: item.isPrivate
-                        ? 'Make this datastream and all its metadata and observations publicly visible.'
-                        : 'Hide this datastream from guests of your site along with all its metadata and observations.',
-                    },
-                  ]"
-                  :is-visible="!item.isPrivate"
-                />
-              </v-tooltip>
-
-              <v-tooltip
-                v-if="
-                  !hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.View,
-                    workspace
-                  ) && !item.isVisible
-                "
-                bottom
-                :openDelay="100"
-              >
-                <template v-slot:activator="{ props }">
-                  <v-icon v-bind="props" :icon="mdiLock" color="red-darken-2" />
-                </template>
-                <span>The data for this datastream is private </span>
-              </v-tooltip>
-
-              <v-menu v-else>
-                <template v-slot:activator="{ props }">
-                  <v-icon
-                    v-bind="props"
-                    :icon="mdiDotsVertical"
-                    :data-testid="`datastream-actions-${item.id}`"
-                  />
-                </template>
-                <v-list>
-                  <v-list-item
-                    v-if="
-                      hasPermission(
-                        PermissionResource.Datastream,
-                        PermissionAction.Edit,
-                        workspace
-                      )
-                    "
-                    :prepend-icon="mdiPencil"
-                    title="Edit datastream metadata"
-                    :data-testid="`edit-datastream-${item.id}`"
-                    @click="openDialog(item, 'edit')"
-                  />
-                  <div
-                    v-if="
-                      hasPermission(
-                        PermissionResource.Datastream,
-                        PermissionAction.Delete,
-                        workspace
-                      )
-                    "
-                  >
+                <v-menu v-else>
+                  <template #activator="{ props: menuProps }">
+                    <v-btn-icon
+                      v-bind="menuProps"
+                      :icon="mdiDotsVertical"
+                      size="small"
+                      :aria-label="`Actions for ${datastreamName(item)}`"
+                      :data-testid="`datastream-actions-${item.id}`"
+                    />
+                  </template>
+                  <v-list>
                     <v-list-item
+                      v-if="
+                        hasPermission(
+                          PermissionResource.Datastream,
+                          PermissionAction.Edit,
+                          workspace
+                        )
+                      "
+                      :prepend-icon="mdiPencil"
+                      title="Edit datastream metadata"
+                      :data-testid="`edit-datastream-${item.id}`"
+                      @click="openDialog(item, 'edit')"
+                    />
+                    <v-list-item
+                      v-if="
+                        hasPermission(
+                          PermissionResource.Datastream,
+                          PermissionAction.Delete,
+                          workspace
+                        )
+                      "
                       :prepend-icon="mdiTrashCanOutline"
                       title="Delete datastream"
                       :data-testid="`delete-datastream-${item.id}`"
                       @click="openDialog(item, 'delete')"
                     />
-                  </div>
-                  <v-list-item
-                    v-if="
-                      hasPermission(
-                        PermissionResource.Observation,
-                        PermissionAction.Delete,
-                        workspace
-                      )
-                    "
-                    :prepend-icon="mdiTrashCanOutline"
-                    title="Delete data from datastream"
-                    :data-testid="`delete-datastream-data-${item.id}`"
-                    @click="openObservationDialog(item)"
-                  />
-                  <v-list-item
-                    :prepend-icon="mdiChartLine"
-                    title="Visualize data"
-                    :data-testid="`visualize-datastream-${item.id}`"
-                    :to="{
-                      name: 'VisualizeData',
-                      query: {
-                        sites: item.monitoringSiteId,
-                        datastreams: item.id,
-                      },
-                    }"
-                  />
-                  <v-list-item
-                    v-if="canOpenQcEditor"
-                    :prepend-icon="mdiShieldCheckOutline"
-                    title="Open in QC editor"
-                    :data-testid="`qc-edit-datastream-${item.id}`"
-                    :href="qcEditHref(item.id)"
-                  />
-                  <v-list-item
-                    :prepend-icon="mdiDownload"
-                    title="Download data"
-                    :data-testid="`download-datastream-${item.id}`"
-                    @click="onDownload(item.id)"
-                  />
-                </v-list>
-              </v-menu>
-            </div>
-            <v-btn
-              variant="outlined"
-              class="mt-2 datastream-meta-btn"
-              :data-testid="`datastream-metadata-${item.id}`"
-              @click="openInfoCardFor(item)"
-            >
-              View Full Metadata
-            </v-btn>
-            <div v-if="downloading[item.id]" class="datastream-download hs-text-sm mt-2">
-              <v-progress-circular
-                indeterminate
-                size="16"
-                width="2"
-                color="primary"
-              />
-              preparing file...
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-if="showTaskRow"
-          class="datastream-task-link datastream-task-link--card"
-          :class="datastreamTaskLinkClass(item.id)"
-        >
-          <v-icon
-            :class="[
-              'datastream-task-link__icon',
-              linkedTasksForDatastream(item.id).length === 1
-                ? linkedTasksForDatastream(item.id)[0].iconClass
-                : '',
-            ]"
-            :icon="
-              !linkedTasksForDatastream(item.id).length
-                ? mdiLinkOff
-                : linkedTasksForDatastream(item.id).length > 1
-                  ? mdiAlertOctagon
-                  : linkedTasksForDatastream(item.id)[0].icon
-            "
-            size="20"
-          />
-          <div class="datastream-task-link__body">
-            <div class="datastream-task-link__meta">
-              <span class="datastream-task-link__label hs-label">
-                {{
-                  linkedTasksForDatastream(item.id).length > 1
-                    ? 'Multiple task targets'
-                    : linkedTasksForDatastream(item.id).length === 1
-                      ? linkedTasksForDatastream(item.id)[0].label
-                      : 'No task connected'
-                }}
-              </span>
-              <template v-if="linkedTasksForDatastream(item.id).length === 1">
-                <RouterLink
-                  class="datastream-task-link__name hs-title"
-                  :to="linkedTasksForDatastream(item.id)[0].route"
-                >
-                  {{ linkedTasksForDatastream(item.id)[0].displayName }}
-                </RouterLink>
-                <span
-                  class="datastream-task-link__status"
-                  :title="
-                    displayedTaskStatus(linkedTasksForDatastream(item.id)[0])
-                  "
-                >
-                  <span
-                    class="datastream-task-link__dot"
-                    :style="{
-                      backgroundColor: taskStatusColor(
-                        linkedTasksForDatastream(item.id)[0]
-                      ),
-                    }"
-                  />
-                  <small class="datastream-task-link__last-ran font-weight-medium">
-                    {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                  </small>
-                </span>
-              </template>
-              <span v-else class="datastream-task-link__conflict-text font-weight-bold">
-                {{
-                  linkedTasksForDatastream(item.id).length > 1
-                    ? `${
-                        linkedTasksForDatastream(item.id).length
-                      } tasks are feeding this datastream.`
-                    : ''
-                }}
-              </span>
-            </div>
-            <div
-              v-if="linkedTasksForDatastream(item.id).length > 1"
-              class="datastream-task-link__tasks"
-            >
-              <RouterLink
-                v-for="task in linkedTasksForDatastream(item.id)"
-                :key="task.id"
-                :to="task.route"
-                class="font-weight-bold"
+                    <v-list-item
+                      v-if="
+                        hasPermission(
+                          PermissionResource.Observation,
+                          PermissionAction.Delete,
+                          workspace
+                        )
+                      "
+                      :prepend-icon="mdiTrashCanOutline"
+                      title="Delete data from datastream"
+                      :data-testid="`delete-datastream-data-${item.id}`"
+                      @click="openObservationDialog(item)"
+                    />
+                    <v-list-item
+                      :prepend-icon="mdiChartLine"
+                      title="Visualize data"
+                      :data-testid="`visualize-datastream-${item.id}`"
+                      :to="{
+                        name: 'VisualizeData',
+                        query: {
+                          sites: item.monitoringSiteId,
+                          datastreams: item.id,
+                        },
+                      }"
+                    />
+                    <v-list-item
+                      v-if="canOpenQcEditor"
+                      :prepend-icon="mdiShieldCheckOutline"
+                      title="Open in QC editor"
+                      :data-testid="`qc-edit-datastream-${item.id}`"
+                      :href="qcEditHref(item.id)"
+                    />
+                    <v-list-item
+                      :prepend-icon="mdiDownload"
+                      title="Download data"
+                      :data-testid="`download-datastream-${item.id}`"
+                      @click="onDownload(item.id)"
+                    />
+                  </v-list>
+                </v-menu>
+              </div>
+              <v-btn
+                size="small"
+                variant="outlined"
+                class="site-datastreams__metadata-button"
+                :data-testid="`datastream-metadata-${item.id}`"
+                @click="openInfoCardFor(item)"
               >
-                {{ task.displayName }}
-              </RouterLink>
-            </div>
-          </div>
-          <v-btn
-            v-if="linkedTasksForDatastream(item.id).length === 1"
-            size="small"
-            variant="text"
-            color="primary"
-            :append-icon="mdiChevronRight"
-            :to="linkedTasksForDatastream(item.id)[0].route"
-          >
-            Manage task
-          </v-btn>
-          <div
-            v-if="monitoringTasksForDatastream(item.id).length"
-            class="datastream-task-link__monitoring"
-          >
-            <v-icon
-              :icon="mdiShieldCheckOutline"
-              size="20"
-              class="datastream-task-link__monitoring-icon"
-            />
-            <div class="datastream-task-link__monitoring-body">
-              <span class="datastream-task-link__label hs-label">
-                Quality monitoring
-              </span>
-              <span
-                v-for="task in monitoringTasksForDatastream(item.id)"
-                :key="task.id"
-                class="datastream-task-link__monitoring-task"
+                View full metadata
+              </v-btn>
+              <div
+                v-if="downloading[item.id]"
+                class="site-datastreams__download"
               >
-                <RouterLink class="datastream-task-link__name hs-title" :to="task.route">
-                  {{ task.displayName }}
-                </RouterLink>
-                <span
-                  class="datastream-task-link__quality-outcome hs-text-sm font-weight-bold"
-                  :class="monitoringOutcomeClass(task)"
-                >
-                  {{ monitoringOutcomeLabel(task) }}
-                </span>
-                <span
-                  class="datastream-task-link__status"
-                  :title="monitoringLastRunStatus(task)"
-                >
-                  <span
-                    class="datastream-task-link__dot"
-                    :style="{ backgroundColor: monitoringLastRunColor(task) }"
-                  />
-                  <small class="datastream-task-link__last-ran font-weight-medium">
-                    {{ lastRanLabel(task) }}
-                  </small>
-                </span>
-              </span>
-            </div>
-            <v-btn
-              v-if="monitoringTasksForDatastream(item.id).length === 1"
-              size="small"
-              variant="text"
-              color="primary"
-              :append-icon="mdiChevronRight"
-              :to="monitoringTasksForDatastream(item.id)[0].route"
-            >
-              Manage monitoring
-            </v-btn>
-          </div>
-        </div>
-        <div
-          v-else-if="showTaskSkeleton"
-          class="datastream-task-link datastream-task-link--card datastream-task-link--loading"
-          aria-label="Loading task information"
-        >
-          <span class="datastream-task-link__loading-icon" />
-          <div class="datastream-task-link__body">
-            <span
-              class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
-            />
-            <span
-              class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
-            />
-          </div>
-        </div>
-      </div>
+                <v-progress-circular
+                  indeterminate
+                  size="16"
+                  width="2"
+                  color="primary"
+                />
+                Preparing file…
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!renderedDatastreams.length">
+            <td colspan="3" class="site-datastreams__empty">
+              No datastreams match the current filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </v-card>
+
+    <v-dialog
+      v-if="selectedChartDatastream"
+      v-model="isChartOpen"
+      width="80rem"
+    >
+      <DatastreamPopupPlot
+        :datastream="selectedChartDatastream"
+        @close="isChartOpen = false"
+      />
+    </v-dialog>
+  </section>
 
   <v-dialog v-model="openCreate" width="80rem">
     <DatastreamForm
@@ -1059,6 +543,14 @@ import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
 import { buildQcEditUrl } from '@/utils/qcLinks'
 import {
+  parseDatastreamQuery,
+  serializeDatastreamQuery,
+  type DatastreamQueryFilters,
+  type DatastreamSort,
+  type DatastreamSortKey,
+  type DatastreamSortOrder,
+} from '@/utils/datastreamSearch'
+import {
   countDistinctMonitoringViolationRules,
   getMonitoringRulesViolated,
   getMonitoringRunViolations,
@@ -1069,21 +561,21 @@ import DatastreamTableInfoCard from './DatastreamTableInfoCard.vue'
 import ObservationsDeleteCard from '../Observation/ObservationsDeleteCard.vue'
 import VisibilityTooltipCard from '@/components/Datastream/VisibilityTooltipCard.vue'
 import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
-import { useDisplay } from 'vuetify/lib/framework.mjs'
+import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
 import {
-  mdiAlertOctagon,
+  mdiArrowDown,
+  mdiArrowUp,
   mdiCallMerge,
   mdiChartBellCurve,
   mdiChartLine,
-  mdiChevronRight,
-  mdiContentCopy,
+  mdiCheck,
+  mdiChevronDown,
   mdiTrashCanOutline,
   mdiDotsVertical,
   mdiDownload,
   mdiFileEyeOutline,
   mdiFileRemove,
   mdiLightningBolt,
-  mdiLinkOff,
   mdiLock,
   mdiLockOpenVariant,
   mdiMagnify,
@@ -1091,6 +583,7 @@ import {
   mdiPlus,
   mdiShieldCheckOutline,
   mdiSigma,
+  mdiSort,
 } from '@mdi/js'
 
 const props = defineProps({
@@ -1123,12 +616,22 @@ type LinkedMonitoringTask = LinkedDatastreamTask & {
   lastRunStatus: StatusType
 }
 
+type SiteDatastreamFilterKey =
+  'observed-property' | 'unit' | 'method' | 'processing-level'
+type FilterOption = { value: string; label: string }
+type FilterDefinition = {
+  key: SiteDatastreamFilterKey
+  label: string
+  options: FilterOption[]
+  selectedCount: number
+}
+
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const openCreate = ref(false)
 const workspaceRef = toRef(props, 'workspace')
 const monitoringSiteIdRef = computed(() => monitoringSite.value!.id)
 const downloading = reactive<Record<string, boolean>>({})
-const search = ref()
+const search = ref('')
 const datastreamSectionRef = ref<any>(null)
 const highlightedDatastreamId = ref('')
 const DATASTREAM_HIGHLIGHT_DURATION_MS = 2500
@@ -1137,8 +640,6 @@ const DATASTREAM_PRELOAD_AHEAD_COUNT = 10
 const renderedDatastreamCount = ref(DATASTREAM_RENDER_BATCH_SIZE)
 let highlightTimeout: number | undefined
 let loadMoreObserver: IntersectionObserver | undefined
-const { smAndDown } = useDisplay()
-const isMobile = computed(() => smAndDown.value)
 
 const openObservationsDelete = ref(false)
 function openObservationDialog(selectedItem: any) {
@@ -1206,7 +707,13 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
 const { methods, units, observedProperties, processingLevels, fetchMetadata } =
   useMetadata(toRef(props, 'workspace'))
 
-const openCharts = reactive<Record<string, boolean>>({})
+const selectedChartDatastream = ref<Datastream | null>(null)
+const isChartOpen = computed({
+  get: () => Boolean(selectedChartDatastream.value),
+  set: (isOpen) => {
+    if (!isOpen) selectedChartDatastream.value = null
+  },
+})
 const latestValues = reactive<
   Record<string, { text: string; showUnit: boolean; isBad: boolean }>
 >({})
@@ -1239,10 +746,10 @@ const latestValueDisplay = (datastream: { id: string; unitName?: string }) => {
 }
 
 const latestStatusClass = (datastream: Datastream) => {
-  if (isDatastreamStale(datastream)) return 'text-[#9e9e9e]'
+  if (isDatastreamStale(datastream)) return 'site-datastreams__latest--stale'
   const latestValue = latestValueFor(datastream.id)
-  if (latestValue.isBad) return 'text-[#c86060]'
-  return 'text-[#2e7d32]'
+  if (latestValue.isBad) return 'site-datastreams__latest--error'
+  return 'site-datastreams__latest--success'
 }
 
 const visibleDatastreams = computed(() => {
@@ -1274,6 +781,7 @@ const visibleDatastreams = computed(() => {
       const mapped = {
         ...d,
         OPName: op ? `${op.name} (${op.code})` : '',
+        observedPropertyName: op?.name ?? '',
         processingLevelCode: pl?.code ?? '',
         processingLevelName: pl?.name ?? '',
         methodName: method?.name ?? '',
@@ -1310,20 +818,249 @@ const visibleDatastreams = computed(() => {
     })
 })
 
+const parsedSearch = computed(() => parseDatastreamQuery(search.value))
 const normalizedSearch = computed(() =>
-  (search.value ?? '').toString().trim().toLowerCase()
+  parsedSearch.value.text.toLocaleLowerCase()
 )
-
-const tableDatastreams = computed(() => {
-  const sorted = [...visibleDatastreams.value].sort((a, b) =>
-    (a.name || a.OPName || '').localeCompare(b.name || b.OPName || '')
-  )
-
-  if (!normalizedSearch.value) return sorted
-  return sorted.filter((item) =>
-    (item.searchText || '').includes(normalizedSearch.value)
-  )
+const filterSearches = reactive<Record<SiteDatastreamFilterKey, string>>({
+  'observed-property': '',
+  unit: '',
+  method: '',
+  'processing-level': '',
 })
+const uniqueSorted = (values: Array<string | null | undefined>) =>
+  [...new Set(values.filter((value): value is string => Boolean(value)))].sort(
+    (a, b) => a.localeCompare(b)
+  )
+const option = (value: string): FilterOption => ({ value, label: value })
+const filterDefinitions = computed<FilterDefinition[]>(() => [
+  {
+    key: 'observed-property',
+    label: 'Observed property',
+    options: uniqueSorted(
+      visibleDatastreams.value.map((item) => item.observedPropertyName)
+    ).map(option),
+    selectedCount: parsedSearch.value.filters['observed-property'].length,
+  },
+  {
+    key: 'unit',
+    label: 'Unit',
+    options: uniqueSorted(
+      visibleDatastreams.value.map((item) => item.unitName)
+    ).map(option),
+    selectedCount: parsedSearch.value.filters.unit.length,
+  },
+  {
+    key: 'method',
+    label: 'Method',
+    options: uniqueSorted(
+      visibleDatastreams.value.map((item) => item.methodName)
+    ).map(option),
+    selectedCount: parsedSearch.value.filters.method.length,
+  },
+  {
+    key: 'processing-level',
+    label: 'Processing level',
+    options: uniqueSorted(
+      visibleDatastreams.value.map((item) => item.processingLevelName)
+    ).map(option),
+    selectedCount: parsedSearch.value.filters['processing-level'].length,
+  },
+])
+const searchQualifiers = computed(() => [
+  ...filterDefinitions.value.map((filter) => ({
+    key: filter.key,
+    label: filter.label,
+    values: filter.options.map((item) => item.value),
+  })),
+  {
+    key: 'sort',
+    label: 'Sort',
+    values: [
+      'name-asc',
+      'name-desc',
+      'updated-asc',
+      'updated-desc',
+      'observations-asc',
+      'observations-desc',
+    ],
+  },
+])
+const defaultSort: DatastreamSort = { key: 'name', order: 'asc' }
+const activeSort = computed(() => parsedSearch.value.sort ?? defaultSort)
+const sortOptions = [
+  { key: 'name' as const, label: 'Datastream name' },
+  { key: 'updated' as const, label: 'Last updated' },
+  { key: 'observations' as const, label: 'Observation count' },
+]
+const sortButtonLabel = computed(
+  () =>
+    sortOptions.find((option) => option.key === activeSort.value.key)?.label ??
+    'Sort'
+)
+const sortOrderOptions = computed(() =>
+  activeSort.value.key === 'name'
+    ? [
+        { order: 'asc' as const, label: 'A–Z', icon: mdiArrowUp },
+        { order: 'desc' as const, label: 'Z–A', icon: mdiArrowDown },
+      ]
+    : activeSort.value.key === 'updated'
+      ? [
+          { order: 'asc' as const, label: 'Oldest', icon: mdiArrowUp },
+          { order: 'desc' as const, label: 'Newest', icon: mdiArrowDown },
+        ]
+      : [
+          {
+            order: 'asc' as const,
+            label: 'Least observations',
+            icon: mdiArrowUp,
+          },
+          {
+            order: 'desc' as const,
+            label: 'Most observations',
+            icon: mdiArrowDown,
+          },
+        ]
+)
+const matchesFilter = (values: string[], candidate: string) =>
+  !values.length ||
+  values.some(
+    (value) => value.toLocaleLowerCase() === candidate.toLocaleLowerCase()
+  )
+const compareText = (left: string, right: string) =>
+  left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
+const compareNumbers = (
+  left: number | string | null | undefined,
+  right: number | string | null | undefined
+) => {
+  const leftNumber = Number(left)
+  const rightNumber = Number(right)
+  if (!Number.isFinite(leftNumber) && !Number.isFinite(rightNumber)) return 0
+  if (!Number.isFinite(leftNumber)) return 1
+  if (!Number.isFinite(rightNumber)) return -1
+  return leftNumber - rightNumber
+}
+const compareDatastreams = (
+  left: (typeof visibleDatastreams.value)[number],
+  right: (typeof visibleDatastreams.value)[number]
+) => {
+  const { key, order } = activeSort.value
+  const multiplier = order === 'asc' ? 1 : -1
+  if (key === 'name') {
+    return compareText(datastreamName(left), datastreamName(right)) * multiplier
+  }
+  const comparison =
+    key === 'updated'
+      ? compareNumbers(
+          left.phenomenonEndTime
+            ? new Date(left.phenomenonEndTime).getTime()
+            : null,
+          right.phenomenonEndTime
+            ? new Date(right.phenomenonEndTime).getTime()
+            : null
+        )
+      : compareNumbers(left.valueCount, right.valueCount)
+  return comparison
+    ? comparison * multiplier
+    : compareText(datastreamName(left), datastreamName(right))
+}
+const tableDatastreams = computed(() => {
+  const { filters } = parsedSearch.value
+  return visibleDatastreams.value
+    .filter(
+      (item) =>
+        matchesFilter(
+          filters['observed-property'],
+          item.observedPropertyName
+        ) &&
+        matchesFilter(filters.unit, item.unitName) &&
+        matchesFilter(filters.method, item.methodName) &&
+        matchesFilter(filters['processing-level'], item.processingLevelName) &&
+        (!normalizedSearch.value ||
+          item.searchText.includes(normalizedSearch.value))
+    )
+    .sort(compareDatastreams)
+})
+
+function updateSearch(value: string) {
+  search.value = value
+}
+function clearSearch() {
+  search.value = ''
+}
+function filteredOptions(filter: FilterDefinition) {
+  const query = filterSearches[filter.key].trim().toLocaleLowerCase()
+  return query
+    ? filter.options.filter((item) =>
+        item.label.toLocaleLowerCase().includes(query)
+      )
+    : filter.options
+}
+function isFilterSelected(key: SiteDatastreamFilterKey, value: string) {
+  return parsedSearch.value.filters[key].some(
+    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
+  )
+}
+function updateSearchFilters(filters: DatastreamQueryFilters) {
+  search.value = serializeDatastreamQuery(
+    filters,
+    parsedSearch.value.text,
+    parsedSearch.value.sort
+  )
+}
+function toggleFilter(key: SiteDatastreamFilterKey, value: string) {
+  const filters = structuredClone(
+    parsedSearch.value.filters
+  ) as DatastreamQueryFilters
+  const index = filters[key].findIndex(
+    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
+  )
+  if (index >= 0) filters[key].splice(index, 1)
+  else filters[key].push(value)
+  updateSearchFilters(filters)
+}
+function clearFilter(key: SiteDatastreamFilterKey) {
+  const filters = structuredClone(
+    parsedSearch.value.filters
+  ) as DatastreamQueryFilters
+  filters[key] = []
+  filterSearches[key] = ''
+  updateSearchFilters(filters)
+}
+function updateSort(sort: DatastreamSort) {
+  search.value = serializeDatastreamQuery(
+    parsedSearch.value.filters,
+    parsedSearch.value.text,
+    sort
+  )
+}
+function setSortKey(key: DatastreamSortKey) {
+  updateSort({
+    key,
+    order:
+      activeSort.value.key === key
+        ? activeSort.value.order
+        : key === 'name'
+          ? 'asc'
+          : 'desc',
+  })
+}
+function setSortOrder(order: DatastreamSortOrder) {
+  updateSort({ key: activeSort.value.key, order })
+}
+function datastreamName(datastream: Datastream) {
+  return datastream.name?.trim() || 'Unnamed datastream'
+}
+function canViewData(datastream: Datastream) {
+  return (
+    datastream.isVisible ||
+    hasPermission(
+      PermissionResource.Datastream,
+      PermissionAction.View,
+      props.workspace
+    )
+  )
+}
 
 const renderedDatastreams = computed(() =>
   tableDatastreams.value.slice(0, renderedDatastreamCount.value)
@@ -1874,18 +1611,9 @@ const monitoringTasksByDatastreamId = computed<
 })
 
 watch(
-  [() => props.workspace.id, canViewOrchestrationInfo, monitoringSiteIdRef],
-  () => {
-    void loadLinkedTasks()
-  },
-  { immediate: true }
-)
-
-watch(
   [
     deepLinkedDatastreamId,
     () => tableDatastreams.value.map((datastream) => datastream.id).join(','),
-    isMobile,
   ],
   () => {
     void scrollToTargetDatastream()
@@ -1894,7 +1622,7 @@ watch(
 )
 
 watch(
-  normalizedSearch,
+  search,
   () => {
     renderedDatastreamCount.value = Math.min(
       DATASTREAM_RENDER_BATCH_SIZE,
@@ -1905,7 +1633,7 @@ watch(
 )
 
 watch(
-  [renderedDatastreamCount, () => tableDatastreams.value.length, isMobile],
+  [renderedDatastreamCount, () => tableDatastreams.value.length],
   () => {
     renderedDatastreamCount.value = Math.min(
       Math.max(renderedDatastreamCount.value, DATASTREAM_RENDER_BATCH_SIZE),
@@ -1972,15 +1700,6 @@ async function toggleVisibility(computedDatastream: Datastream) {
   if (!didPersist) {
     datastream.isVisible = previousIsVisible
     datastream.isPrivate = previousIsPrivate
-  }
-}
-
-const copyDatastreamId = async (id: string) => {
-  try {
-    await navigator.clipboard.writeText(id)
-    Snackbar.success('Datastream ID copied to clipboard')
-  } catch {
-    Snackbar.error('Failed to copy datastream ID')
   }
 }
 
@@ -2524,6 +2243,226 @@ const loadDatastreams = async () => {
   .datastream-info-list,
   .datastream-time-list {
     gap: 0.2rem;
+  }
+}
+/* Site details datastream table */
+.site-datastreams {
+  min-width: 0;
+}
+.site-datastreams__disclaimer {
+  margin: 0 0 var(--hs-space-8);
+  color: var(--hs-error);
+}
+.site-datastreams__tools {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.site-datastreams__tools-primary,
+.site-datastreams__heading,
+.site-datastreams__table-controls,
+.site-datastreams__filter-header-content,
+.site-datastreams__filters,
+.site-datastreams__row-actions,
+.site-datastreams__private-data,
+.site-datastreams__latest {
+  display: flex;
+  align-items: center;
+}
+.site-datastreams__tools-primary {
+  flex: 1 1 28rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--hs-space-12);
+}
+.site-datastreams__heading {
+  gap: var(--hs-space-8);
+  align-items: baseline;
+}
+.site-datastreams__heading h2 {
+  margin: 0;
+}
+.site-datastreams__count,
+.site-datastreams__latest,
+.site-datastreams__details dt,
+.site-datastreams__empty,
+.site-datastreams__private-data {
+  color: var(--hs-text-secondary);
+}
+.site-datastreams__tools :deep(.hs-query-search) {
+  flex: 1 0 100%;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+}
+.site-datastreams__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.site-datastreams__table-controls {
+  padding: var(--hs-space-6) var(--hs-space-8);
+  background: var(--hs-surface-muted);
+  border-bottom: 1px solid var(--hs-border);
+}
+.site-datastreams__filter-header-content {
+  justify-content: space-between;
+  gap: var(--hs-space-8);
+}
+.site-datastreams__filters {
+  flex-wrap: wrap;
+  gap: var(--hs-space-4);
+}
+.site-datastreams__filter-button,
+.site-datastreams__sort-button {
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+.site-datastreams__filter-button--active {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+.site-datastreams__filter-count {
+  min-width: var(--hs-space-16);
+  padding-inline: var(--hs-space-4);
+  color: rgb(var(--v-theme-on-primary));
+  font-size: var(--hs-font-2xs);
+  line-height: var(--hs-space-16);
+  text-align: center;
+  background: rgb(var(--v-theme-primary));
+  border-radius: var(--hs-radius-pill);
+}
+.site-datastreams__table tbody tr {
+  border-bottom: 1px solid var(--hs-border);
+}
+.site-datastreams__table tbody tr:hover {
+  background: var(--hs-surface-muted);
+}
+.site-datastreams__row--highlighted {
+  background: rgb(var(--v-theme-primary) / 0.08) !important;
+}
+.site-datastreams__table td {
+  padding: var(--hs-space-12);
+  vertical-align: top;
+}
+.site-datastreams__name-cell {
+  width: 24%;
+  min-width: 11rem;
+}
+.site-datastreams__name {
+  overflow: hidden;
+  color: var(--hs-text-primary);
+  font-weight: var(--hs-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-datastreams__observations-cell {
+  min-width: 16rem;
+}
+.site-datastreams__sparkline {
+  min-width: 13rem;
+}
+.site-datastreams__latest {
+  flex-wrap: wrap;
+  gap: var(--hs-space-8);
+  margin-top: var(--hs-space-4);
+  font-family: var(--hs-font-data);
+  font-size: var(--hs-font-2xs);
+}
+.site-datastreams__latest--stale {
+  color: var(--hs-text-muted);
+}
+.site-datastreams__latest--error {
+  color: var(--hs-error);
+}
+.site-datastreams__latest--success {
+  color: var(--hs-success);
+}
+.site-datastreams__private-data {
+  gap: var(--hs-space-6);
+  min-height: var(--hs-space-32);
+}
+.site-datastreams__actions-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+.site-datastreams__row-actions {
+  justify-content: flex-end;
+  gap: var(--hs-space-2);
+}
+.site-datastreams__metadata-button {
+  width: 100%;
+  margin-top: var(--hs-space-6);
+}
+.site-datastreams__download {
+  display: flex;
+  gap: var(--hs-space-6);
+  align-items: center;
+  margin-top: var(--hs-space-6);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-2xs);
+}
+.site-datastreams__empty {
+  padding: var(--hs-space-16) !important;
+  text-align: center;
+}
+.site-datastreams__filter-menu,
+.site-datastreams__sort-menu {
+  min-width: 17rem;
+  max-height: 20rem;
+  padding-block: var(--hs-space-8);
+  overflow-y: auto;
+}
+.site-datastreams__filter-menu-title,
+.site-datastreams__sort-menu-title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-semibold);
+}
+.site-datastreams__filter-search {
+  margin: 0 var(--hs-space-12) var(--hs-space-8);
+}
+.site-datastreams__clear-filter {
+  color: rgb(var(--v-theme-primary));
+  border-top: 1px solid var(--hs-border);
+}
+.site-datastreams__filter-empty {
+  padding: var(--hs-space-12) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+}
+.site-datastreams__sort-check--hidden {
+  visibility: hidden;
+}
+@media (max-width: 60rem) {
+  .site-datastreams__table,
+  .site-datastreams__table tbody,
+  .site-datastreams__table tr,
+  .site-datastreams__table td {
+    display: block;
+    width: 100%;
+  }
+  .site-datastreams__table tbody tr {
+    padding: var(--hs-space-12);
+  }
+  .site-datastreams__table td {
+    padding: var(--hs-space-6) 0;
+  }
+  .site-datastreams__name-cell {
+    padding-top: 0 !important;
+  }
+  .site-datastreams__actions-cell {
+    padding-bottom: 0 !important;
+  }
+  .site-datastreams__row-actions {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 40rem) {
+  .site-datastreams__tools-primary,
+  .site-datastreams__filter-header-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .site-datastreams__sparkline {
+    min-width: 0;
   }
 }
 </style>
