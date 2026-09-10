@@ -7,7 +7,7 @@
       }}</span>
     </div>
 
-    <v-switch
+    <v-checkbox
       v-model="enabled"
       :color="color"
       :disabled="disabled"

@@ -181,7 +181,16 @@
 
           <TaskFormSection title="Error handling">
             <div class="toggle-row">
-              <div class="hs-text-sm">Stop on no-data value</div>
+              <v-checkbox
+                v-model="stopOnNoData"
+                :color="DATA_PRODUCT_ACCENT"
+                hide-details
+                :disabled="loadingExisting"
+              >
+                <template #label>
+                  <span class="hs-text-sm">Stop on no-data value</span>
+                </template>
+              </v-checkbox>
               <v-tooltip location="end" max-width="280">
                 <template #activator="{ props: tp }">
                   <v-icon v-bind="tp" size="16" class="toggle-row__info">
@@ -191,17 +200,19 @@
                 If an input is set to a no-data value, stop the run there
                 instead of writing the output's no-data value and continuing.
               </v-tooltip>
-              <v-spacer />
-              <v-switch
-                v-model="stopOnNoData"
-                :color="DATA_PRODUCT_ACCENT"
-                hide-details
-                :disabled="loadingExisting"
-              />
             </div>
 
             <div class="toggle-row">
-              <div class="hs-text-sm">Stop on calculation error</div>
+              <v-checkbox
+                v-model="stopOnError"
+                :color="DATA_PRODUCT_ACCENT"
+                hide-details
+                :disabled="loadingExisting"
+              >
+                <template #label>
+                  <span class="hs-text-sm">Stop on calculation error</span>
+                </template>
+              </v-checkbox>
               <v-tooltip location="end" max-width="280">
                 <template #activator="{ props: tp }">
                   <v-icon v-bind="tp" size="16" class="toggle-row__info">
@@ -212,13 +223,6 @@
                 zero), stop the run there instead of writing the output's
                 no-data value and continuing.
               </v-tooltip>
-              <v-spacer />
-              <v-switch
-                v-model="stopOnError"
-                :color="DATA_PRODUCT_ACCENT"
-                hide-details
-                :disabled="loadingExisting"
-              />
             </div>
           </TaskFormSection>
         </TaskFormLayout>
