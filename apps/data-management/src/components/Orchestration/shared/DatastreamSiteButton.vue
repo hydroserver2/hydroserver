@@ -10,7 +10,7 @@
         <v-btn
           v-bind="tooltipProps"
           icon
-          size="x-small"
+          size="small"
           variant="text"
           color="primary"
           rounded="lg"
@@ -20,7 +20,11 @@
           :aria-label="ariaLabel"
           :data-testid="testId"
         >
-          <v-icon :icon="mdiOpenInNew" size="16" />
+          <v-icon
+            :icon="mdiOpenInNew"
+            size="18"
+            class="task-datastream-site-button__icon"
+          />
         </v-btn>
       </template>
     </v-tooltip>
@@ -102,6 +106,11 @@ const testId = computed(() =>
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
 }
 
 .task-datastream-site-button__button :deep(.v-btn__content) {
@@ -109,5 +118,11 @@ const testId = computed(() =>
   align-items: center;
   justify-content: center;
   line-height: 1;
+}
+
+.task-datastream-site-button__icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
 }
 </style>
