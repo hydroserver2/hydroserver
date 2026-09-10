@@ -147,6 +147,10 @@ describe('orchestration store', () => {
     expect(orchestrationStore.workspaceDatastreams.map((d) => d.id)).toEqual([
       'ds-2',
     ])
+    expect(listAllItemsMock).toHaveBeenCalledWith({
+      workspace_id: ['workspace-2'],
+      expand_related: true,
+    })
 
     workspaceOneRequest.resolve([{ id: 'ds-1', name: 'Datastream 1' }])
     await workspaceOneLoad

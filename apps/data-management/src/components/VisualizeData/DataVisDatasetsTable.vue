@@ -276,7 +276,9 @@ import DataVisTableFilters from './DataVisTableFilters.vue'
 
 type DatastreamTableItem = Datastream & {
   monitoringSiteName?: string
+  methodName?: string
   processingLevelName?: string
+  unitName?: string
   unitSymbol?: string
 }
 
@@ -290,6 +292,8 @@ const {
   selectedMonitoringSites,
   selectedWorkspaces,
   selectedObservedPropertyNames,
+  selectedUnitNames,
+  selectedMethodNames,
   selectedProcessingLevelNames,
   observedProperties,
   processingLevels,
@@ -321,6 +325,24 @@ const searchQualifiers = computed(() => [
     key: 'observed-property',
     label: 'Observed properties',
     values: uniqueSorted(observedProperties.value.map((item) => item.name)),
+  },
+  {
+    key: 'unit',
+    label: 'Units',
+    values: uniqueSorted(
+      dataVisStore.datastreams.map(
+        (item) => (item as DatastreamTableItem).unitName
+      )
+    ),
+  },
+  {
+    key: 'method',
+    label: 'Methods',
+    values: uniqueSorted(
+      dataVisStore.datastreams.map(
+        (item) => (item as DatastreamTableItem).methodName
+      )
+    ),
   },
   {
     key: 'processing-level',
@@ -550,6 +572,8 @@ const clearSearchAndSelection = () => {
   selectedWorkspaces.value = []
   selectedMonitoringSites.value = []
   selectedObservedPropertyNames.value = []
+  selectedUnitNames.value = []
+  selectedMethodNames.value = []
   selectedProcessingLevelNames.value = []
   clearSelected()
 }

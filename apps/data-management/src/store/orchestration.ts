@@ -90,6 +90,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     const requestId = ++workspaceDatastreamRequestId
     const list = await hs.datastreams.listAllItems({
       workspace_id: [requestedWorkspaceId],
+      expand_related: true,
     })
     if (requestId !== workspaceDatastreamRequestId) {
       return workspaceDatastreams.value
@@ -108,7 +109,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
       return []
     }
 
-    if (!force && loadedWorkspaceMonitoringSitesId.value === requestedWorkspaceId) {
+    if (
+      !force &&
+      loadedWorkspaceMonitoringSitesId.value === requestedWorkspaceId
+    ) {
       return workspaceMonitoringSites.value
     }
 

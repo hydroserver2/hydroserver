@@ -96,6 +96,8 @@ type FilterDefinition = {
 const dataVisStore = useDataVisStore()
 const {
   matchesSelectedObservedProperty,
+  matchesSelectedUnit,
+  matchesSelectedMethod,
   matchesSelectedProcessingLevel,
   matchesSelectedMonitoringSite,
   matchesSelectedWorkspace,
@@ -108,6 +110,8 @@ const {
   selectedMonitoringSites,
   selectedWorkspaces,
   selectedObservedPropertyNames,
+  selectedUnitNames,
+  selectedMethodNames,
   selectedProcessingLevelNames,
   tableSearch,
 } = storeToRefs(dataVisStore)
@@ -117,6 +121,8 @@ const filterSearches = reactive<Record<FilterKey, string>>({
   workspace: '',
   site: '',
   'observed-property': '',
+  unit: '',
+  method: '',
   'processing-level': '',
 })
 
@@ -124,6 +130,8 @@ const initialFilters: DatastreamQueryFilters = {
   workspace: selectedWorkspaces.value.map((item) => item.name),
   site: selectedMonitoringSites.value.map((item) => item.name),
   'observed-property': [...selectedObservedPropertyNames.value],
+  unit: [...selectedUnitNames.value],
+  method: [...selectedMethodNames.value],
   'processing-level': [...selectedProcessingLevelNames.value],
 }
 if (!tableSearch.value.trim()) {
@@ -167,6 +175,20 @@ watch(
         .filter((value): value is string => Boolean(value)),
       filters['observed-property']
     )
+    selectedUnitNames.value = canonicalValues(
+      datastreams.value
+        .map((item) => (item as typeof item & { unitName?: string }).unitName)
+        .filter((value): value is string => Boolean(value)),
+      filters.unit
+    )
+    selectedMethodNames.value = canonicalValues(
+      datastreams.value
+        .map(
+          (item) => (item as typeof item & { methodName?: string }).methodName
+        )
+        .filter((value): value is string => Boolean(value)),
+      filters.method
+    )
     selectedProcessingLevelNames.value = canonicalValues(
       processingLevels.value
         .map((item) => item.name)
@@ -183,6 +205,8 @@ const sortedWorkspaces = computed(() => {
     if (
       !matchesSelectedMonitoringSite(datastream) ||
       !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedProcessingLevel(datastream)
     )
       return
@@ -202,6 +226,8 @@ const sortedMonitoringSites = computed(() => {
   datastreams.value.forEach((datastream) => {
     if (
       !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedProcessingLevel(datastream) ||
       !matchesSelectedWorkspace(datastream)
     )
@@ -218,6 +244,8 @@ const sortedObservedPropertyNames = computed(() => {
   datastreams.value.forEach((datastream) => {
     if (
       !matchesSelectedMonitoringSite(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedProcessingLevel(datastream) ||
       !matchesSelectedWorkspace(datastream)
     )
@@ -236,12 +264,50 @@ const sortedProcessingLevelNames = computed(() => {
     if (
       !matchesSelectedMonitoringSite(datastream) ||
       !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedWorkspace(datastream)
     )
       return
     const name = dataVisStore.processingLevelById.get(
       datastream.processingLevelId
     )?.name
+    if (name) names.add(name)
+  })
+  return [...names].sort()
+})
+
+const sortedUnitNames = computed(() => {
+  const names = new Set<string>()
+  datastreams.value.forEach((datastream) => {
+    if (
+      !matchesSelectedMonitoringSite(datastream) ||
+      !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedMethod(datastream) ||
+      !matchesSelectedProcessingLevel(datastream) ||
+      !matchesSelectedWorkspace(datastream)
+    )
+      return
+    const name = (datastream as typeof datastream & { unitName?: string })
+      .unitName
+    if (name) names.add(name)
+  })
+  return [...names].sort()
+})
+
+const sortedMethodNames = computed(() => {
+  const names = new Set<string>()
+  datastreams.value.forEach((datastream) => {
+    if (
+      !matchesSelectedMonitoringSite(datastream) ||
+      !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedProcessingLevel(datastream) ||
+      !matchesSelectedWorkspace(datastream)
+    )
+      return
+    const name = (datastream as typeof datastream & { methodName?: string })
+      .methodName
     if (name) names.add(name)
   })
   return [...names].sort()
@@ -274,6 +340,24 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       label: item,
     })),
     selectedCount: selectedObservedPropertyNames.value.length,
+  },
+  {
+    key: 'unit',
+    label: 'Units',
+    options: sortedUnitNames.value.map((item) => ({
+      value: item,
+      label: item,
+    })),
+    selectedCount: selectedUnitNames.value.length,
+  },
+  {
+    key: 'method',
+    label: 'Methods',
+    options: sortedMethodNames.value.map((item) => ({
+      value: item,
+      label: item,
+    })),
+    selectedCount: selectedMethodNames.value.length,
   },
   {
     key: 'processing-level',

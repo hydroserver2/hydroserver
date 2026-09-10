@@ -368,6 +368,8 @@ const filterSearches = reactive<Record<DatastreamQualifierKey, string>>({
   workspace: '',
   site: '',
   'observed-property': '',
+  unit: '',
+  method: '',
   'processing-level': '',
 })
 const activeWorkspaceId = computed(
@@ -412,6 +414,8 @@ const filteredDatastreams = computed(() =>
         filters['observed-property'],
         observedPropertyName(datastream)
       ) &&
+      matchesFilter(filters.unit, unitName(datastream)) &&
+      matchesFilter(filters.method, methodName(datastream)) &&
       matchesFilter(
         filters['processing-level'],
         processingLevelName(datastream)
@@ -449,6 +453,16 @@ const searchQualifiers = computed(() => [
     key: 'observed-property',
     label: 'Observed properties',
     values: uniqueSorted(scopedDatastreams.value.map(observedPropertyName)),
+  },
+  {
+    key: 'unit',
+    label: 'Units',
+    values: uniqueSorted(scopedDatastreams.value.map(unitName)),
+  },
+  {
+    key: 'method',
+    label: 'Methods',
+    values: uniqueSorted(scopedDatastreams.value.map(methodName)),
   },
   {
     key: 'processing-level',
@@ -492,6 +506,18 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       scopedDatastreams.value.map(observedPropertyName)
     ).map(option),
     selectedCount: parsedSearch.value.filters['observed-property'].length,
+  },
+  {
+    key: 'unit',
+    label: 'Units',
+    options: uniqueSorted(scopedDatastreams.value.map(unitName)).map(option),
+    selectedCount: parsedSearch.value.filters.unit.length,
+  },
+  {
+    key: 'method',
+    label: 'Methods',
+    options: uniqueSorted(scopedDatastreams.value.map(methodName)).map(option),
+    selectedCount: parsedSearch.value.filters.method.length,
   },
   {
     key: 'processing-level',
@@ -580,6 +606,14 @@ function datastreamWorkspaceId(datastream: Datastream): string {
 }
 function observedPropertyName(datastream: Datastream): string {
   return (datastream as SelectorDatastream).observedProperty?.name ?? ''
+}
+function unitName(datastream: Datastream): string {
+  const ds = datastream as SelectorDatastream
+  return ds.unit?.name ?? ds.unitName ?? ''
+}
+function methodName(datastream: Datastream): string {
+  const ds = datastream as SelectorDatastream
+  return ds.method?.name ?? ds.methodName ?? ''
 }
 function processingLevelName(datastream: Datastream): string {
   return (datastream as SelectorDatastream).processingLevel?.name ?? ''
