@@ -7,7 +7,6 @@
             {{ isEdit ? 'Edit ingestion task' : 'Create ingestion task' }}
           </h2>
           <div v-if="headerContextLabel" class="task-form-header__context">
-            <span class="task-form-header__dot" />
             <span class="hs-text-sm">{{ headerContextLabel }}</span>
           </div>
         </div>
@@ -411,14 +410,6 @@ watch(
   margin-top: var(--hs-space-4);
   color: var(--hs-surface);
   opacity: 0.8;
-}
-
-.task-form-header__dot {
-  width: 10px;
-  height: 10px;
-  background: var(--hs-surface);
-  /* A dot is a shape, not a step on the radius scale. */
-  border-radius: 50%;
 }
 
 .task-form-shell {
