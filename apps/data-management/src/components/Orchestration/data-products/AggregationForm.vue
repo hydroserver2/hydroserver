@@ -57,28 +57,17 @@
 
         <v-divider class="mb-4" />
 
-        <v-alert
-          type="info"
-          variant="tonal"
-          density="compact"
-          :color="DATA_PRODUCT_ACCENT"
-          class="mb-4"
-        >
-          Choose an input datastream from any monitoring site in the selected
-          workspace. The output datastream must belong to the selected
-          monitoring site. Inputs from other sites include the site name after
-          <code>@</code>.
-        </v-alert>
-
         <DatastreamCardSelector
           v-model="inputDatastreamId"
           :datastreams="datastreams"
           :workspace-id="selectedWorkspaceId"
           label="Input datastream *"
+          hint="Inputs may come from any monitoring site in this workspace."
+          :scope-note="inputScopeNote"
           :loading="loadingDatastreams"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
           :rules="rules.required"
-          class="mb-2"
+          class="mb-6"
         />
 
         <DatastreamCardSelector
@@ -87,10 +76,12 @@
           :workspace-id="selectedWorkspaceId"
           :monitoring-site-id="selectedMonitoringSiteId"
           label="Output datastream *"
+          hint="Outputs must belong to the site this task is being added to."
+          :scope-note="outputScopeNote"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
-          class="mb-2"
+          class="mb-6"
         />
 
         <v-divider class="mb-4" />
@@ -238,7 +229,9 @@ import {
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useOrchestrationStore } from '@/store/orchestration'
 
 const props = defineProps<{
   initialMonitoringSiteId?: string | null
@@ -255,6 +248,8 @@ const emit = defineEmits<{
 const isEditMode = computed(() => !!props.editTaskId)
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+const orchestrationStore = useOrchestrationStore()
+const { workspaceMonitoringSites } = storeToRefs(orchestrationStore)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -281,6 +276,34 @@ const timezone = ref<string | null>(null)
 
 const selectedMonitoringSiteId = computed(
   () => props.initialMonitoringSiteId ?? null
+)
+
+const selectedMonitoringSiteName = computed(() => {
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  if (!monitoringSiteId) return null
+
+  const fromStore = workspaceMonitoringSites.value.find(
+    (monitoringSite) => monitoringSite.id === monitoringSiteId
+  )?.name
+  if (fromStore) return fromStore
+
+  const siteDatastream = datastreams.value.find(
+    (datastream) => datastreamMonitoringSiteId(datastream) === monitoringSiteId
+  ) as (Datastream & Record<string, any>) | undefined
+  return siteDatastream?.monitoringSite?.name ?? null
+})
+
+const monitoringSiteLabel = computed(() =>
+  selectedMonitoringSiteName.value
+    ? `the ${selectedMonitoringSiteName.value} site`
+    : 'the selected site'
+)
+
+const inputScopeNote =
+  'Inputs may come from any monitoring site in this workspace.'
+
+const outputScopeNote = computed(
+  () => `Outputs must belong to ${monitoringSiteLabel.value}.`
 )
 
 const aggregationMethodOptions = [
@@ -566,7 +589,11 @@ watch(
 )
 
 onMounted(async () => {
-  await loadDatastreams()
+  await Promise.all([
+    loadDatastreams(),
+    // Names the site in the scope notes even when it has no datastreams yet.
+    orchestrationStore.ensureWorkspaceMonitoringSites(selectedWorkspaceId.value),
+  ])
   if (isEditMode.value) await loadExistingTask()
 })
 </script>

@@ -1,30 +1,77 @@
 <template>
-  <v-text-field
-    :model-value="selectedDatastreamLabel"
-    :label="label"
-    :placeholder="placeholder"
-    :loading="loading"
-    :disabled="disabled"
+  <v-input
+    v-bind="$attrs"
+    :model-value="modelValue"
     :rules="rules"
-    :density="density"
-    :clearable="clearable && Boolean(modelValue)"
+    :disabled="disabled"
     :hide-details="hideDetails"
-    readonly
     class="datastream-card-selector"
-    @click="openSelector"
-    @click:clear.stop="emit('update:modelValue', null)"
+    :class="`datastream-card-selector--${density}`"
   >
-    <template #append-inner>
-      <v-icon :icon="mdiChevronDown" />
+    <template #default="{ isValid }">
+      <div class="datastream-card-selector__body">
+        <p v-if="hint" class="datastream-card-selector__hint hs-text-sm">
+          {{ hint }}
+        </p>
+
+        <div class="datastream-card-selector__control">
+          <v-btn
+            variant="outlined"
+            type="button"
+            :disabled="disabled"
+            :loading="loading"
+            :aria-label="buttonAriaLabel"
+            class="datastream-card-selector__button"
+            :class="{
+              'datastream-card-selector__button--empty': !selectedDatastream,
+              'datastream-card-selector__button--invalid':
+                isValid.value === false,
+            }"
+            @click="openSelector"
+          >
+            <span
+              v-if="!selectedDatastream"
+              class="datastream-card-selector__prompt"
+            >
+              <v-icon :icon="mdiPlusCircleOutline" size="18" />
+              <span>{{ promptText }}</span>
+            </span>
+            <span v-else class="datastream-card-selector__selection">
+              <span class="datastream-card-selector__name">{{
+                selectedDatastreamName
+              }}</span>
+              <template v-if="selectedMonitoringSiteName">
+                <span
+                  class="datastream-card-selector__separator"
+                  aria-hidden="true"
+                  >@</span
+                >
+                <span class="datastream-card-selector__site">{{
+                  selectedMonitoringSiteName
+                }}</span>
+              </template>
+            </span>
+          </v-btn>
+
+          <v-btn-icon
+            v-if="clearable && modelValue && !disabled"
+            :icon="mdiClose"
+            size="small"
+            :aria-label="`Clear ${labelText.toLocaleLowerCase()}`"
+            @click.stop="emit('update:modelValue', null)"
+          />
+        </div>
+      </div>
     </template>
-  </v-text-field>
+  </v-input>
 
   <v-dialog v-model="selectorOpen" width="75rem">
     <DatastreamSelectorCard
-      :card-title="`Select ${label.replace(/\s*\*$/, '').toLocaleLowerCase()}`"
+      :card-title="`Select ${labelText.toLocaleLowerCase()}`"
       :datastreams="datastreams"
       :workspace-id="workspaceId"
       :monitoring-site-id="monitoringSiteId"
+      :scope-note="scopeNote"
       @selected-datastream="selectDatastream"
       @close="selectorOpen = false"
     />
@@ -34,7 +81,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Datastream, DatastreamExtended } from '@hydroserver/client'
-import { mdiChevronDown } from '@mdi/js'
+import { mdiClose, mdiPlusCircleOutline } from '@mdi/js'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 
@@ -48,7 +95,13 @@ const props = withDefaults(
     label: string
     workspaceId?: string | null
     monitoringSiteId?: string | null
-    placeholder?: string
+    // Static helper text between the label and the control, so it reads as
+    // belonging to this field rather than to the one below it.
+    hint?: string | null
+    // Explanation shown inside the selector dialog, where a scoped list is
+    // what surprises people. Safe to interpolate loaded data into.
+    scopeNote?: string | null
+    placeholder?: string | null
     loading?: boolean
     disabled?: boolean
     rules?: Rule[]
@@ -59,19 +112,38 @@ const props = withDefaults(
   {
     workspaceId: null,
     monitoringSiteId: null,
-    placeholder: 'Select a datastream',
+    hint: null,
+    scopeNote: null,
+    placeholder: null,
     loading: false,
     disabled: false,
     rules: () => [],
     density: 'default',
     clearable: true,
-    hideDetails: false,
+    hideDetails: 'auto',
   }
 )
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | null): void
 }>()
+
+// The template has two roots (the input and its dialog), so fallthrough attrs
+// would otherwise be dropped — callers pass spacing classes here.
+defineOptions({ inheritAttrs: false })
 const selectorOpen = ref(false)
+
+// Callers pass the label with a trailing asterisk. It is no longer rendered as
+// a caption, but still names the field for the dialog title and screen readers.
+const labelText = computed(() => props.label.replace(/\s*\*$/, ''))
+const promptText = computed(
+  () => props.placeholder ?? `Select ${labelText.value.toLocaleLowerCase()}`
+)
+
+const buttonAriaLabel = computed(() =>
+  props.modelValue
+    ? `${labelText.value}: ${selectedDatastreamName.value}`
+    : promptText.value
+)
 
 const selectedDatastream = computed(() =>
   props.datastreams.find((datastream) => datastream.id === props.modelValue)
@@ -82,14 +154,15 @@ const showMonitoringSiteContext = computed(
     new Set(props.datastreams.map(datastreamMonitoringSiteId).filter(Boolean))
       .size > 1
 )
-const selectedDatastreamLabel = computed(() => {
-  const datastream = selectedDatastream.value
-  if (!datastream) return ''
-  const siteName = (datastream as Datastream & Record<string, any>)
-    .monitoringSite?.name
-  return showMonitoringSiteContext.value && siteName
-    ? `${datastream.name || 'Unnamed datastream'} @ ${siteName}`
-    : datastream.name || 'Unnamed datastream'
+const selectedDatastreamName = computed(
+  () => selectedDatastream.value?.name || 'Unnamed datastream'
+)
+const selectedMonitoringSiteName = computed(() => {
+  if (!showMonitoringSiteContext.value) return null
+  const datastream = selectedDatastream.value as
+    | (Datastream & Record<string, any>)
+    | undefined
+  return datastream?.monitoringSite?.name ?? null
 })
 
 function openSelector() {
@@ -102,7 +175,71 @@ function selectDatastream(datastream: DatastreamExtended) {
 </script>
 
 <style scoped>
-.datastream-card-selector :deep(input) {
-  cursor: pointer;
+.datastream-card-selector :deep(.v-input__control) {
+  display: block;
+}
+.datastream-card-selector__hint {
+  margin: 0 0 var(--hs-space-6);
+  color: var(--hs-text-secondary);
+}
+.datastream-card-selector__control {
+  display: flex;
+  gap: var(--hs-space-4);
+  align-items: center;
+}
+
+/* Doubled class beats Vuetify's own `.v-btn--variant-outlined` border. */
+.datastream-card-selector .datastream-card-selector__button {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  padding-block: var(--hs-space-12);
+  padding-inline: var(--hs-space-12);
+  color: var(--hs-text-primary);
+  letter-spacing: normal;
+  text-transform: none;
+  background: var(--hs-surface);
+  border: 2px solid rgb(var(--v-theme-primary));
+  border-radius: var(--hs-radius-lg);
+}
+.datastream-card-selector--compact .datastream-card-selector__button {
+  padding-block: var(--hs-space-8);
+}
+.datastream-card-selector .datastream-card-selector__button--empty {
+  color: rgb(var(--v-theme-primary));
+  background: var(--hs-surface-muted);
+  border-style: dashed;
+}
+.datastream-card-selector .datastream-card-selector__button--invalid {
+  color: var(--hs-error);
+  border-color: var(--hs-error);
+}
+.datastream-card-selector__button :deep(.v-btn__content) {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  overflow: visible;
+  text-align: left;
+  white-space: normal;
+}
+.datastream-card-selector__prompt {
+  display: inline-flex;
+  gap: var(--hs-space-6);
+  align-items: center;
+  font-weight: var(--hs-font-weight-bold);
+}
+.datastream-card-selector__selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hs-space-4);
+  align-items: baseline;
+  min-width: 0;
+}
+.datastream-card-selector__name {
+  font-weight: var(--hs-font-weight-semibold);
+}
+.datastream-card-selector__separator,
+.datastream-card-selector__site {
+  color: var(--hs-text-secondary);
 }
 </style>

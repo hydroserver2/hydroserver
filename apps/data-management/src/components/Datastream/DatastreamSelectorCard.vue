@@ -37,6 +37,10 @@
             >
           </div>
         </div>
+        <p v-if="scopeNote" class="datastream-selector-scope hs-text-sm">
+          <v-icon :icon="mdiInformationOutline" size="small" />
+          <span>{{ scopeNote }}</span>
+        </p>
         <HsQuerySearchInput
           :model-value="search"
           placeholder="Search datastreams…"
@@ -231,7 +235,7 @@
             </tr>
             <tr v-if="!visibleDatastreams.length">
               <td colspan="2" class="datastreams-empty hs-text-sm">
-                No datastreams match the current filters.
+                {{ emptyMessage }}
               </td>
             </tr>
           </tbody>
@@ -300,6 +304,7 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiClose,
+  mdiInformationOutline,
   mdiMagnify,
   mdiSort,
 } from '@mdi/js'
@@ -339,6 +344,7 @@ const props = withDefaults(
     enforceUniqueSelections?: boolean
     draftDatastreams?: DatastreamExtended[]
     selectedDatastreamId?: string | null
+    scopeNote?: string | null
   }>(),
   {
     datastreams: undefined,
@@ -348,6 +354,7 @@ const props = withDefaults(
     enforceUniqueSelections: false,
     draftDatastreams: undefined,
     selectedDatastreamId: null,
+    scopeNote: null,
   }
 )
 const emit = defineEmits<{
@@ -433,6 +440,11 @@ const visibleDatastreams = computed(() =>
   filteredDatastreams.value
     .filter((datastream) => matchesPlainSearch(datastream, plainSearch.value))
     .sort(compareDatastreams)
+)
+const emptyMessage = computed(() =>
+  scopedDatastreams.value.length
+    ? 'No datastreams match the current filters.'
+    : 'No datastreams are available for this selection.'
 )
 const uniqueSorted = (values: Array<string | null | undefined>) =>
   [...new Set(values.filter((value): value is string => Boolean(value)))].sort(
@@ -839,8 +851,15 @@ onMounted(loadFallbackData)
 }
 .datastream-selector-count,
 .datastream-observation-range,
-.datastreams-empty {
+.datastreams-empty,
+.datastream-selector-scope {
   color: var(--hs-text-secondary);
+}
+.datastream-selector-scope {
+  display: flex;
+  gap: var(--hs-space-6);
+  align-items: center;
+  margin: var(--hs-space-8) 0 0;
 }
 .datastream-selector-tools :deep(.hs-query-search) {
   width: 100%;
