@@ -29,160 +29,154 @@
       @submit.prevent="onSubmit"
     >
       <v-card-text class="overflow-y-auto grow">
-        <v-alert
-          v-if="showInfo"
-          :color="DATA_PRODUCT_ACCENT"
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-5"
-        >
-          Aggregate observations from an input datastream into fixed-length time
-          buckets and write the results to an output datastream.
-        </v-alert>
+        <TaskFormLayout>
+          <v-alert
+            v-if="showInfo"
+            :color="DATA_PRODUCT_ACCENT"
+            type="info"
+            variant="tonal"
+            density="compact"
+          >
+            Aggregate observations from an input datastream into fixed-length
+            time buckets and write the results to an output datastream.
+          </v-alert>
 
-        <v-text-field
-          v-model="taskName"
-          label="Task name *"
-          :rules="rules.requiredAndMaxLength255"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+          <TaskFormSection>
+            <v-text-field
+              v-model="taskName"
+              label="Task name"
+              class="required-label"
+              :rules="rules.requiredAndMaxLength255"
+              :disabled="loadingExisting"
+            />
+          </TaskFormSection>
 
-        <ScheduleFields
-          v-model="schedule"
-          :disabled="loadingExisting"
-          :color="DATA_PRODUCT_ACCENT"
-        />
+          <v-divider />
 
-        <v-divider class="mb-4" />
-
-        <DatastreamCardSelector
-          v-model="inputDatastreamId"
-          :datastreams="datastreams"
-          :workspace-id="selectedWorkspaceId"
-          label="Input datastream *"
-          hint="Inputs may come from any monitoring site in this workspace."
-          :scope-note="inputScopeNote"
-          :loading="loadingDatastreams"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :rules="rules.required"
-          class="mb-6"
-        />
-
-        <DatastreamCardSelector
-          v-model="outputDatastreamId"
-          :datastreams="datastreams"
-          :workspace-id="selectedWorkspaceId"
-          :monitoring-site-id="selectedMonitoringSiteId"
-          label="Output datastream *"
-          hint="Outputs must belong to the site this task is being added to."
-          :scope-note="outputScopeNote"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :loading="loadingDatastreams"
-          :rules="rules.required"
-          class="mb-6"
-        />
-
-        <v-divider class="mb-4" />
-
-        <div
-          class="hs-text-2xs text-medium-emphasis mb-3 font-weight-bold text-uppercase"
-        >
-          Aggregation settings
-        </div>
-
-        <v-select
-          v-model="aggregationMethod"
-          :items="aggregationMethodOptions"
-          item-title="title"
-          item-value="value"
-          label="Aggregation method *"
-          :rules="rules.required"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
-
-        <div class="d-flex gap-3 mb-2">
-          <v-text-field
-            v-model.number="outputInterval"
-            label="Output interval *"
-            type="number"
-            min="1"
-            :rules="[...rules.required, positiveInteger]"
+          <ScheduleFields
+            v-model="schedule"
             :disabled="loadingExisting"
-            class="shrink"
-            style="max-width: 160px"
+            :color="DATA_PRODUCT_ACCENT"
           />
-          <v-select
-            v-model="outputIntervalUnits"
-            :items="intervalUnitOptions"
-            item-title="title"
-            item-value="value"
-            label="Unit *"
-            :rules="rules.required"
-            :disabled="loadingExisting"
-            class="grow"
-          />
-        </div>
 
-        <v-text-field
-          v-model.number="minValues"
-          label="Minimum values per bucket"
-          type="number"
-          min="1"
-          hint="Buckets with fewer than this many values will be skipped."
-          persistent-hint
-          :rules="
-            minValues !== null && minValues !== undefined
-              ? [positiveInteger]
-              : []
-          "
-          :disabled="loadingExisting"
-          clearable
-          class="mb-2"
-          @click:clear="minValues = null"
-        />
+          <v-divider />
 
-        <v-divider class="mb-4 mt-2" />
+          <TaskFormSection>
+            <DatastreamCardSelector
+              v-model="inputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              label="Input datastream"
+              :hint="inputScopeNote"
+              :scope-note="inputScopeNote"
+              :loading="loadingDatastreams"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :rules="rules.required"
+            />
 
-        <div
-          class="hs-text-2xs text-medium-emphasis mb-3 font-weight-bold text-uppercase"
-        >
-          Timezone
-        </div>
+            <DatastreamCardSelector
+              v-model="outputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              :monitoring-site-id="selectedMonitoringSiteId"
+              label="Output datastream"
+              :hint="outputScopeNote"
+              :scope-note="outputScopeNote"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :loading="loadingDatastreams"
+              :rules="rules.required"
+            />
+          </TaskFormSection>
 
-        <v-select
-          v-model="timezoneMode"
-          :items="timezoneOptions"
-          item-title="title"
-          item-value="value"
-          label="Timezone type"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+          <v-divider />
 
-        <v-autocomplete
-          v-if="timezoneMode === 'fixedOffset'"
-          v-model="timezone"
-          label="Fixed UTC offset *"
-          hint="Select the fixed UTC offset for this data."
-          :items="FIXED_OFFSET_TIMEZONES"
-          :rules="rules.required"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+          <TaskFormSection title="Aggregation settings">
+            <v-select
+              v-model="aggregationMethod"
+              :items="aggregationMethodOptions"
+              item-title="title"
+              item-value="value"
+              label="Aggregation method"
+              class="required-label"
+              :rules="rules.required"
+              :disabled="loadingExisting"
+            />
 
-        <v-autocomplete
-          v-if="timezoneMode === 'iana'"
-          v-model="timezone"
-          label="IANA timezone *"
-          hint="Select an IANA timezone for this data."
-          :items="DST_AWARE_TIMEZONES"
-          :rules="rules.required"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+            <div class="interval-fields">
+              <v-text-field
+                v-model.number="outputInterval"
+                label="Output interval"
+                class="required-label"
+                type="number"
+                min="1"
+                :rules="[...rules.required, positiveInteger]"
+                :disabled="loadingExisting"
+              />
+              <v-select
+                v-model="outputIntervalUnits"
+                :items="intervalUnitOptions"
+                item-title="title"
+                item-value="value"
+                label="Unit"
+                class="required-label"
+                :rules="rules.required"
+                :disabled="loadingExisting"
+              />
+            </div>
+
+            <v-text-field
+              v-model.number="minValues"
+              label="Minimum values per bucket"
+              type="number"
+              min="1"
+              hint="Buckets with fewer than this many values will be skipped."
+              persistent-hint
+              :rules="
+                minValues !== null && minValues !== undefined
+                  ? [positiveInteger]
+                  : []
+              "
+              :disabled="loadingExisting"
+              clearable
+              @click:clear="minValues = null"
+            />
+          </TaskFormSection>
+
+          <v-divider />
+
+          <TaskFormSection title="Timezone">
+            <v-select
+              v-model="timezoneMode"
+              :items="timezoneOptions"
+              item-title="title"
+              item-value="value"
+              label="Timezone type"
+              :disabled="loadingExisting"
+            />
+
+            <v-autocomplete
+              v-if="timezoneMode === 'fixedOffset'"
+              v-model="timezone"
+              label="Fixed UTC offset"
+              class="required-label"
+              hint="Select the fixed UTC offset for this data."
+              :items="FIXED_OFFSET_TIMEZONES"
+              :rules="rules.required"
+              :disabled="loadingExisting"
+            />
+
+            <v-autocomplete
+              v-if="timezoneMode === 'iana'"
+              v-model="timezone"
+              label="IANA timezone"
+              class="required-label"
+              hint="Select an IANA timezone for this data."
+              :items="DST_AWARE_TIMEZONES"
+              :rules="rules.required"
+              :disabled="loadingExisting"
+            />
+          </TaskFormSection>
+        </TaskFormLayout>
       </v-card-text>
 
       <v-divider />
@@ -229,7 +223,9 @@ import {
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
-import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import TaskFormLayout from '../shared/TaskFormLayout.vue'
+import TaskFormSection from '../shared/TaskFormSection.vue'
+import { useDatastreamScopeNotes } from '@/composables/orchestration/useDatastreamScopeNotes'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useOrchestrationStore } from '@/store/orchestration'
 
@@ -249,7 +245,6 @@ const isEditMode = computed(() => !!props.editTaskId)
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 const orchestrationStore = useOrchestrationStore()
-const { workspaceMonitoringSites } = storeToRefs(orchestrationStore)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -278,32 +273,9 @@ const selectedMonitoringSiteId = computed(
   () => props.initialMonitoringSiteId ?? null
 )
 
-const selectedMonitoringSiteName = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  if (!monitoringSiteId) return null
-
-  const fromStore = workspaceMonitoringSites.value.find(
-    (monitoringSite) => monitoringSite.id === monitoringSiteId
-  )?.name
-  if (fromStore) return fromStore
-
-  const siteDatastream = datastreams.value.find(
-    (datastream) => datastreamMonitoringSiteId(datastream) === monitoringSiteId
-  ) as (Datastream & Record<string, any>) | undefined
-  return siteDatastream?.monitoringSite?.name ?? null
-})
-
-const monitoringSiteLabel = computed(() =>
-  selectedMonitoringSiteName.value
-    ? `the ${selectedMonitoringSiteName.value} site`
-    : 'the selected site'
-)
-
-const inputScopeNote =
-  'Inputs may come from any monitoring site in this workspace.'
-
-const outputScopeNote = computed(
-  () => `Outputs must belong to ${monitoringSiteLabel.value}.`
+const { inputScopeNote, outputScopeNote } = useDatastreamScopeNotes(
+  datastreams,
+  selectedMonitoringSiteId
 )
 
 const aggregationMethodOptions = [
@@ -592,8 +564,24 @@ onMounted(async () => {
   await Promise.all([
     loadDatastreams(),
     // Names the site in the scope notes even when it has no datastreams yet.
-    orchestrationStore.ensureWorkspaceMonitoringSites(selectedWorkspaceId.value),
+    orchestrationStore.ensureWorkspaceMonitoringSites(
+      selectedWorkspaceId.value
+    ),
   ])
   if (isEditMode.value) await loadExistingTask()
 })
 </script>
+
+<style scoped>
+.interval-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) minmax(160px, 0.6fr);
+  gap: var(--hs-space-12);
+}
+
+@media (max-width: 700px) {
+  .interval-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

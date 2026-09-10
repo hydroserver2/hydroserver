@@ -30,228 +30,223 @@
       @submit.prevent="onSubmit"
     >
       <v-card-text class="overflow-y-auto grow">
-        <v-alert
-          v-if="showInfo"
-          :color="QUALITY_ACCENT"
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-5"
-        >
-          Quality tasks monitor one or more datastreams for range, rate of
-          change, persistence, and missing-data conditions. Each rule belongs to
-          this task and can notify the recipients below.
-        </v-alert>
-
-        <v-text-field
-          v-model="taskName"
-          label="Task name *"
-          :rules="rules.requiredAndMaxLength255"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
-
-        <v-textarea
-          v-model="description"
-          label="Description"
-          :rules="rules.description"
-          :disabled="loadingExisting"
-          rows="2"
-          auto-grow
-          class="mb-2"
-        />
-
-        <v-combobox
-          v-model="recipientEmails"
-          v-model:search="recipientInput"
-          :items="[]"
-          label="Notification recipients"
-          placeholder="Type an email address and press Enter"
-          multiple
-          clearable
-          hide-no-data
-          hide-selected
-          :disabled="loadingExisting"
-          :rules="recipientRules"
-          :error-messages="recipientInputError ? [recipientInputError] : []"
-          class="mb-2"
-          @keydown.enter.prevent="addRecipient"
-          @keydown.tab="addRecipient"
-          @blur="addRecipient"
-        >
-          <template #selection="{ item, index }">
-            <v-chip
-              size="small"
-              color="teal-darken-2"
-              variant="tonal"
-              rounded
-              closable
-              class="mr-1 mb-1 max-w-full"
-              @click:close="removeRecipient(index)"
-            >
-              <span class="truncate">{{ recipientEmails[index] }}</span>
-            </v-chip>
-          </template>
-        </v-combobox>
-
-        <v-divider class="mb-4" />
-
-        <ScheduleFields
-          v-model="schedule"
-          :disabled="loadingExisting"
-          :color="QUALITY_ACCENT"
-        />
-
-        <v-divider class="mb-4" />
-
-        <div class="d-flex align-center mb-3">
-          <div class="section-heading hs-text-sm font-weight-bold">
-            Quality rules
-          </div>
-          <v-chip
-            v-if="ruleRows.length === 0"
-            size="x-small"
-            color="warning"
-            variant="tonal"
-            class="ml-2"
-          >
-            at least 1 required
-          </v-chip>
-          <v-spacer />
-          <v-btn
-            variant="outlined"
-            size="small"
-            :prepend-icon="mdiPlus"
+        <TaskFormLayout>
+          <v-alert
+            v-if="showInfo"
             :color="QUALITY_ACCENT"
-            :disabled="loadingExisting"
-            class="text-none"
-            @click="addRule"
+            type="info"
+            variant="tonal"
+            density="compact"
           >
-            Add rule
-          </v-btn>
-        </div>
+            Quality tasks monitor one or more datastreams for range, rate of
+            change, persistence, and missing-data conditions. Each rule belongs
+            to this task and can notify the recipients below.
+          </v-alert>
 
-        <v-alert
-          v-if="ruleErrors.length"
-          type="error"
-          variant="tonal"
-          density="compact"
-          class="mb-3"
-        >
-          <div v-for="error in ruleErrors" :key="error">{{ error }}</div>
-        </v-alert>
-
-        <div v-if="ruleRows.length === 0" class="empty-rules mb-4">
-          Add a quality rule to define what this task checks.
-        </div>
-
-        <div v-for="(row, index) in ruleRows" :key="row.key" class="rule-card">
-          <div class="rule-card__header">
-            <div>
-              <div class="rule-card__title hs-text-md font-weight-bold">
-                Rule {{ index + 1 }}
-              </div>
-              <div
-                v-if="row.lastCheckedAt"
-                class="rule-card__subtitle hs-text-sm"
-              >
-                Last checked {{ formatTime(row.lastCheckedAt) }}
-              </div>
-            </div>
-            <v-btn
-              icon
-              variant="text"
-              size="small"
-              color="error"
+          <TaskFormSection>
+            <v-text-field
+              v-model="taskName"
+              label="Task name"
+              class="required-label"
+              :rules="rules.requiredAndMaxLength255"
               :disabled="loadingExisting"
-              aria-label="Remove rule"
-              @click="removeRule(index)"
+            />
+
+            <v-textarea
+              v-model="description"
+              label="Description"
+              :rules="rules.description"
+              :disabled="loadingExisting"
+              rows="2"
+              auto-grow
+            />
+
+            <v-combobox
+              v-model="recipientEmails"
+              v-model:search="recipientInput"
+              :items="[]"
+              label="Notification recipients"
+              placeholder="Type an email address and press Enter"
+              multiple
+              clearable
+              hide-no-data
+              hide-selected
+              :disabled="loadingExisting"
+              :rules="recipientRules"
+              :error-messages="recipientInputError ? [recipientInputError] : []"
+              @keydown.enter.prevent="addRecipient"
+              @keydown.tab="addRecipient"
+              @blur="addRecipient"
             >
-              <v-icon>{{ mdiTrashCanOutline }}</v-icon>
-            </v-btn>
-          </div>
+              <template #selection="{ item, index }">
+                <v-chip
+                  :color="QUALITY_ACCENT"
+                  size="small"
+                  variant="tonal"
+                  rounded
+                  closable
+                  class="mr-1 mb-1 max-w-full"
+                  @click:close="removeRecipient(index)"
+                >
+                  <span class="truncate">{{ recipientEmails[index] }}</span>
+                </v-chip>
+              </template>
+            </v-combobox>
+          </TaskFormSection>
 
-          <DatastreamCardSelector
-            v-model="row.datastreamId"
-            :datastreams="datastreams"
-            :workspace-id="selectedWorkspaceId"
-            :monitoring-site-id="selectedMonitoringSiteId"
-            label="Datastream *"
-            :loading="loadingDatastreams"
-            :disabled="!selectedMonitoringSiteId || loadingExisting"
-            :rules="rules.required"
-            density="compact"
-            class="mb-2"
-          />
+          <v-divider />
 
-          <v-select
-            v-model="row.ruleType"
-            :items="ruleTypeOptions"
-            item-title="title"
-            item-value="value"
-            label="Rule type *"
-            density="compact"
-            :rules="rules.required"
+          <ScheduleFields
+            v-model="schedule"
             :disabled="loadingExisting"
-            class="mb-2"
-            @update:model-value="normalizeRuleForType(row)"
+            :color="QUALITY_ACCENT"
           />
 
-          <div v-if="row.ruleType === 'range'" class="rule-fields">
-            <v-text-field
-              v-model.number="row.minValue"
-              label="Minimum value"
-              type="number"
-              density="compact"
-              clearable
-              :disabled="loadingExisting"
-              @click:clear="row.minValue = null"
-            />
-            <v-text-field
-              v-model.number="row.maxValue"
-              label="Maximum value"
-              type="number"
-              density="compact"
-              clearable
-              :disabled="loadingExisting"
-              @click:clear="row.maxValue = null"
-            />
-          </div>
+          <v-divider />
 
-          <div v-else class="rule-fields">
-            <v-text-field
-              v-if="row.ruleType === 'rate_of_change'"
-              v-model.number="row.maxValue"
-              label="Maximum change *"
-              type="number"
-              density="compact"
-              :rules="rules.requiredNumber"
-              :disabled="loadingExisting"
-              class="rule-fields__full"
-            />
-            <div class="window-interval-fields">
-              <v-text-field
-                v-model.number="row.windowInterval"
-                label="Window interval *"
-                type="number"
-                min="1"
-                density="compact"
-                :rules="[...rules.required, positiveInteger]"
+          <TaskFormSection>
+            <div class="rules-heading">
+              <h3 class="rules-heading__title hs-title">Quality rules</h3>
+              <v-chip
+                v-if="ruleRows.length === 0"
+                size="x-small"
+                color="warning"
+                variant="tonal"
+              >
+                at least 1 required
+              </v-chip>
+              <v-spacer />
+              <v-btn
+                variant="outlined"
+                size="small"
+                :prepend-icon="mdiPlus"
+                :color="QUALITY_ACCENT"
                 :disabled="loadingExisting"
+                @click="addRule"
+              >
+                Add rule
+              </v-btn>
+            </div>
+
+            <v-alert
+              v-if="ruleErrors.length"
+              type="error"
+              variant="tonal"
+              density="compact"
+            >
+              <div v-for="error in ruleErrors" :key="error">{{ error }}</div>
+            </v-alert>
+
+            <p v-if="ruleRows.length === 0" class="empty-rules hs-text-sm">
+              Add a quality rule to define what this task checks.
+            </p>
+
+            <div
+              v-for="(row, index) in ruleRows"
+              :key="row.key"
+              class="rule-card"
+            >
+              <div class="rule-card__header">
+                <div>
+                  <div class="rule-card__title hs-title">
+                    Rule {{ index + 1 }}
+                  </div>
+                  <div
+                    v-if="row.lastCheckedAt"
+                    class="rule-card__subtitle hs-text-sm"
+                  >
+                    Last checked {{ formatTime(row.lastCheckedAt) }}
+                  </div>
+                </div>
+                <v-btn-icon
+                  :icon="mdiTrashCanOutline"
+                  size="small"
+                  :disabled="loadingExisting"
+                  aria-label="Remove rule"
+                  @click="removeRule(index)"
+                />
+              </div>
+
+              <DatastreamCardSelector
+                v-model="row.datastreamId"
+                :datastreams="datastreams"
+                :workspace-id="selectedWorkspaceId"
+                :monitoring-site-id="selectedMonitoringSiteId"
+                label="Datastream"
+                :hint="index === 0 ? siteScopeNote : null"
+                :scope-note="siteScopeNote"
+                :loading="loadingDatastreams"
+                :disabled="!selectedMonitoringSiteId || loadingExisting"
+                :rules="rules.required"
+                density="compact"
               />
+
               <v-select
-                v-model="row.windowIntervalUnits"
-                :items="windowUnitOptions"
+                v-model="row.ruleType"
+                :items="ruleTypeOptions"
                 item-title="title"
                 item-value="value"
-                label="Window interval unit *"
-                density="compact"
+                label="Rule type"
+                class="required-label"
                 :rules="rules.required"
                 :disabled="loadingExisting"
+                @update:model-value="normalizeRuleForType(row)"
               />
+
+              <div v-if="row.ruleType === 'range'" class="rule-fields">
+                <v-text-field
+                  v-model.number="row.minValue"
+                  label="Minimum value"
+                  type="number"
+                  clearable
+                  :disabled="loadingExisting"
+                  @click:clear="row.minValue = null"
+                />
+                <v-text-field
+                  v-model.number="row.maxValue"
+                  label="Maximum value"
+                  type="number"
+                  clearable
+                  :disabled="loadingExisting"
+                  @click:clear="row.maxValue = null"
+                />
+              </div>
+
+              <div v-else class="rule-fields">
+                <v-text-field
+                  v-if="row.ruleType === 'rate_of_change'"
+                  v-model.number="row.maxValue"
+                  label="Maximum change"
+                  class="required-label rule-fields__full"
+                  type="number"
+                  :rules="rules.requiredNumber"
+                  :disabled="loadingExisting"
+                />
+                <div class="window-interval-fields">
+                  <v-text-field
+                    v-model.number="row.windowInterval"
+                    label="Window interval"
+                    class="required-label"
+                    type="number"
+                    min="1"
+                    :rules="[...rules.required, positiveInteger]"
+                    :disabled="loadingExisting"
+                  />
+                  <v-select
+                    v-model="row.windowIntervalUnits"
+                    :items="windowUnitOptions"
+                    item-title="title"
+                    item-value="value"
+                    label="Window interval unit"
+                    class="required-label"
+                    :rules="rules.required"
+                    :disabled="loadingExisting"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </TaskFormSection>
+        </TaskFormLayout>
       </v-card-text>
 
       <v-divider />
@@ -297,6 +292,10 @@ import {
 } from '../workbench/orchestrationTabs'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
+import TaskFormLayout from '../shared/TaskFormLayout.vue'
+import TaskFormSection from '../shared/TaskFormSection.vue'
+import { useDatastreamScopeNotes } from '@/composables/orchestration/useDatastreamScopeNotes'
+import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
@@ -354,6 +353,11 @@ const saving = ref(false)
 const deleting = ref(false)
 const datastreams = ref<Datastream[]>([])
 const originalRulesById = ref<Record<string, RuleRow>>({})
+
+const { siteScopeNote } = useDatastreamScopeNotes(
+  datastreams,
+  selectedMonitoringSiteId
+)
 
 const taskName = ref('')
 const description = ref('')
@@ -730,48 +734,65 @@ watch(
 )
 
 onMounted(async () => {
-  await loadDatastreams()
+  await Promise.all([
+    loadDatastreams(),
+    // Names the site in the scope notes even when it has no datastreams yet.
+    useOrchestrationStore().ensureWorkspaceMonitoringSites(
+      selectedWorkspaceId.value
+    ),
+  ])
   if (isEditMode.value) await loadExistingTask()
 })
 </script>
 
 <style scoped>
-.section-heading {
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  text-transform: uppercase;
+.rules-heading {
+  display: flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+}
+
+.rules-heading__title {
+  color: var(--hs-text-secondary);
 }
 
 .empty-rules {
-  border: 1px dashed rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  color: rgba(var(--v-theme-on-surface), 0.62);
-  padding: 18px;
+  margin: 0;
+  padding: var(--hs-space-20);
+  color: var(--hs-text-secondary);
   text-align: center;
+  border: 1px dashed var(--hs-border);
+  border-radius: var(--hs-radius-md);
 }
 
 .rule-card {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  margin-bottom: 12px;
-  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-16);
+  padding: var(--hs-space-16);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
 }
 
 .rule-card__header {
-  align-items: flex-start;
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 10px;
+}
+
+.rule-card__title {
+  color: var(--hs-text-primary);
 }
 
 .rule-card__subtitle {
-  color: rgba(var(--v-theme-on-surface), 0.62);
-  margin-top: 2px;
+  margin-top: var(--hs-space-2);
+  color: var(--hs-text-secondary);
 }
 
 .rule-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--hs-space-12);
 }
 
 .rule-fields > :only-child {
@@ -786,14 +807,11 @@ onMounted(async () => {
 .window-interval-fields {
   display: grid;
   grid-template-columns: minmax(120px, 0.4fr) minmax(160px, 0.6fr);
-  gap: 10px;
+  gap: var(--hs-space-12);
 }
 
 @media (max-width: 760px) {
-  .rule-fields {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
+  .rule-fields,
   .window-interval-fields {
     grid-template-columns: minmax(0, 1fr);
   }

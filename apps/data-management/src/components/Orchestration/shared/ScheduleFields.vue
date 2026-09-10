@@ -1,8 +1,8 @@
 <template>
   <div class="schedule-fields">
-    <div class="schedule-heading mb-2">
-      <div class="section-heading hs-text-sm font-weight-bold">Schedule</div>
-      <span class="timezone-label hs-text-sm font-weight-medium">{{
+    <div class="schedule-heading">
+      <h3 class="schedule-heading__title hs-title">Schedule</h3>
+      <span class="schedule-heading__timezone hs-text-sm">{{
         timezoneLabel
       }}</span>
     </div>
@@ -10,14 +10,12 @@
     <v-switch
       v-model="enabled"
       :color="color"
-      density="compact"
-      hide-details
       :disabled="disabled"
       label="Run this task on a schedule"
-      class="mb-2"
+      hide-details
     />
 
-    <div v-if="enabled" class="schedule-body mb-4">
+    <div v-if="enabled" class="schedule-body">
       <div
         class="schedule-option"
         :class="{
@@ -36,7 +34,7 @@
             :class="{ 'schedule-radio--selected': mode === 'interval' }"
           />
           <div
-            class="schedule-option__title hs-text-sm font-weight-bold"
+            class="schedule-option__title hs-title"
             :class="{ 'schedule-option__title--selected': mode === 'interval' }"
           >
             Repeating interval
@@ -44,16 +42,13 @@
         </div>
 
         <div v-if="mode === 'interval'" class="schedule-option__controls">
-          <span class="schedule-inline-label hs-text-sm font-weight-medium">Every</span>
+          <span class="schedule-inline-label hs-text-sm">Every</span>
           <v-text-field
             v-model.number="interval"
             class="schedule-interval"
             type="number"
             min="1"
             hide-details
-            variant="outlined"
-            rounded="lg"
-            density="compact"
             :rules="[...rules.required, positiveInteger]"
             :disabled="disabled"
           />
@@ -64,9 +59,6 @@
             item-title="title"
             item-value="value"
             hide-details
-            variant="outlined"
-            rounded="lg"
-            density="compact"
             :rules="rules.required"
             :disabled="disabled"
           />
@@ -91,7 +83,7 @@
             :class="{ 'schedule-radio--selected': mode === 'crontab' }"
           />
           <div
-            class="schedule-option__title hs-text-sm font-weight-bold"
+            class="schedule-option__title hs-title"
             :class="{ 'schedule-option__title--selected': mode === 'crontab' }"
           >
             Crontab expression
@@ -101,12 +93,9 @@
         <div v-if="mode === 'crontab'" class="schedule-option__controls">
           <v-text-field
             v-model="crontab"
-            class="schedule-crontab"
+            class="schedule-crontab hs-font-data"
             placeholder="0 9 * * *"
             hide-details
-            variant="outlined"
-            rounded="lg"
-            density="compact"
             :rules="rules.required"
             :disabled="disabled"
           />
@@ -114,16 +103,15 @@
       </div>
 
       <div class="schedule-start-row">
-        <label class="schedule-start-label hs-text-sm font-weight-medium" for="task-start-time">Start</label>
+        <label class="schedule-start-label hs-text-sm" for="task-start-time"
+          >Start</label
+        >
         <v-text-field
           id="task-start-time"
           v-model="startInput"
           class="schedule-start-input"
           type="datetime-local"
           hide-details
-          variant="outlined"
-          rounded="lg"
-          density="compact"
           :disabled="disabled"
         />
       </div>
@@ -235,12 +223,9 @@ watch(
   { immediate: true }
 )
 
-watch(
-  [enabled, mode, interval, intervalPeriod, crontab, startTime],
-  () => {
-    if (!hydrating.value) emit('update:modelValue', buildSchedule())
-  }
-)
+watch([enabled, mode, interval, intervalPeriod, crontab, startTime], () => {
+  if (!hydrating.value) emit('update:modelValue', buildSchedule())
+})
 
 watch(enabled, (next) => {
   if (next && !startTime.value) startTime.value = new Date().toISOString()
@@ -249,41 +234,51 @@ watch(enabled, (next) => {
 
 <style scoped>
 .schedule-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-16);
   width: 100%;
 }
 
 .schedule-heading {
-  align-items: baseline;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--hs-space-8);
+  align-items: baseline;
 }
 
-.section-heading {
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  text-transform: uppercase;
+.schedule-heading__title {
+  color: var(--hs-text-secondary);
 }
 
-.timezone-label {
-  color: rgba(var(--v-theme-on-surface), 0.7);
+.schedule-heading__timezone {
+  color: var(--hs-text-secondary);
   line-height: 1.3;
 }
 
+/*
+ * Two option cards side by side, with the start row spanning both. `auto-fit`
+ * can't be used here: the spanning row keeps every track occupied, so the
+ * cards would stay pinned at the minimum column width however wide the form
+ * gets.
+ */
 .schedule-body {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--hs-space-12);
 }
 
 .schedule-option {
-  background: #fff;
-  border: 1px solid #d0c9d8;
-  border-radius: 8px;
-  cursor: pointer;
   min-height: 92px;
+  padding: var(--hs-space-12);
   outline: none;
-  padding: 12px;
-  transition: border-color 160ms ease-in-out, background-color 160ms ease-in-out,
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-md);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease-in-out,
+    background-color 160ms ease-in-out,
     box-shadow 160ms ease-in-out;
 }
 
@@ -293,40 +288,41 @@ watch(enabled, (next) => {
 }
 
 .schedule-option--selected {
-  background: color-mix(in srgb, v-bind(color) 8%, white);
+  background: color-mix(in srgb, v-bind(color) 8%, var(--hs-surface));
   border-color: v-bind(color);
   border-width: 2px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, v-bind(color) 8%, transparent);
 }
 
 .schedule-option--disabled {
-  cursor: default;
   opacity: 0.72;
+  cursor: default;
 }
 
 .schedule-option__header {
-  align-items: flex-start;
   display: flex;
-  gap: 8px;
+  gap: var(--hs-space-8);
+  align-items: flex-start;
 }
 
 .schedule-radio {
-  border: 2px solid #7e7886;
-  border-radius: 50%;
   flex: 0 0 auto;
-  height: 16px;
-  margin-top: 1px;
   width: 16px;
+  height: 16px;
+  margin-top: var(--hs-space-2);
+  border: 2px solid var(--hs-text-secondary);
+  /* A perfect circle is a shape, not a step on the radius scale. */
+  border-radius: 50%;
 }
 
 .schedule-radio--selected {
-  background: #fff;
+  background: var(--hs-surface);
   border-color: v-bind(color);
   box-shadow: inset 0 0 0 3px v-bind(color);
 }
 
 .schedule-option__title {
-  color: #1f1d24;
+  color: var(--hs-text-primary);
   line-height: 1.2;
 }
 
@@ -335,17 +331,18 @@ watch(enabled, (next) => {
 }
 
 .schedule-option__controls {
-  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-  padding-left: 24px;
+  gap: var(--hs-space-8);
+  align-items: center;
+  margin-top: var(--hs-space-12);
+  padding-left: var(--hs-space-24);
 }
 
 .schedule-inline-label,
 .schedule-start-label {
-  color: #1f1d24;
+  color: var(--hs-text-primary);
+  font-weight: var(--hs-font-weight-medium);
 }
 
 .schedule-interval {
@@ -353,9 +350,10 @@ watch(enabled, (next) => {
   max-width: 80px;
 }
 
+/* Wide enough for the longest unit ("Minutes") to render untruncated. */
 .schedule-unit {
-  flex: 0 0 112px;
-  max-width: 112px;
+  flex: 0 0 120px;
+  max-width: 120px;
 }
 
 .schedule-crontab {
@@ -365,17 +363,17 @@ watch(enabled, (next) => {
 }
 
 .schedule-start-row {
-  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--hs-space-8);
+  align-items: center;
   grid-column: 1 / -1;
 }
 
 .schedule-start-input {
   flex: 0 1 250px;
-  max-width: 250px;
   min-width: 220px;
+  max-width: 250px;
 }
 
 @media (max-width: 700px) {
@@ -388,8 +386,8 @@ watch(enabled, (next) => {
   }
 
   .schedule-start-input {
-    max-width: none;
     width: 100%;
+    max-width: none;
   }
 }
 </style>

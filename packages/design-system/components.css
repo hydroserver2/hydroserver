@@ -7,7 +7,15 @@
  */
 
 /* Shared form affordances. */
-.required-label .v-label::after {
+
+/*
+ * `.required-label` goes on the field — Vuetify keeps the caption in a nested
+ * `.v-label` — or straight on a `<label>` that owns its own caption, such as a
+ * column header over a repeating row of inputs. Never write the asterisk by
+ * hand.
+ */
+.required-label .v-label::after,
+label.required-label::after {
   content: ' *';
   color: rgb(var(--v-theme-error));
 }

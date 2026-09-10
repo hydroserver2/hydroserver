@@ -69,9 +69,13 @@
     <DatastreamSelectorCard
       :card-title="`Select ${labelText.toLocaleLowerCase()}`"
       :datastreams="datastreams"
+      :monitoring-sites="monitoringSites"
       :workspace-id="workspaceId"
       :monitoring-site-id="monitoringSiteId"
       :scope-note="scopeNote"
+      :draft-datastreams="draftDatastreams"
+      :enforce-unique-selections="enforceUniqueSelections"
+      :selected-datastream-id="modelValue"
       @selected-datastream="selectDatastream"
       @close="selectorOpen = false"
     />
@@ -80,7 +84,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Datastream, DatastreamExtended } from '@hydroserver/client'
+import type {
+  Datastream,
+  DatastreamExtended,
+  MonitoringSite,
+} from '@hydroserver/client'
 import { mdiClose, mdiPlusCircleOutline } from '@mdi/js'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
@@ -94,7 +102,10 @@ const props = withDefaults(
     datastreams: Datastream[]
     label: string
     workspaceId?: string | null
+    monitoringSites?: MonitoringSite[]
     monitoringSiteId?: string | null
+    draftDatastreams?: DatastreamExtended[]
+    enforceUniqueSelections?: boolean
     // Static helper text between the label and the control, so it reads as
     // belonging to this field rather than to the one below it.
     hint?: string | null
@@ -111,7 +122,10 @@ const props = withDefaults(
   }>(),
   {
     workspaceId: null,
+    monitoringSites: undefined,
     monitoringSiteId: null,
+    draftDatastreams: undefined,
+    enforceUniqueSelections: false,
     hint: null,
     scopeNote: null,
     placeholder: null,
@@ -125,6 +139,8 @@ const props = withDefaults(
 )
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | null): void
+  // The resolved record, for callers that need more than the id.
+  (e: 'select', datastream: DatastreamExtended): void
 }>()
 
 // The template has two roots (the input and its dialog), so fallthrough attrs
@@ -132,8 +148,9 @@ const emit = defineEmits<{
 defineOptions({ inheritAttrs: false })
 const selectorOpen = ref(false)
 
-// Callers pass the label with a trailing asterisk. It is no longer rendered as
-// a caption, but still names the field for the dialog title and screen readers.
+// The label is not rendered as a caption — the button says what it selects,
+// and the hint above it carries the scope. It names the field for the dialog
+// title and for screen readers. Strip a trailing asterisk from older callers.
 const labelText = computed(() => props.label.replace(/\s*\*$/, ''))
 const promptText = computed(
   () => props.placeholder ?? `Select ${labelText.value.toLocaleLowerCase()}`
@@ -160,8 +177,7 @@ const selectedDatastreamName = computed(
 const selectedMonitoringSiteName = computed(() => {
   if (!showMonitoringSiteContext.value) return null
   const datastream = selectedDatastream.value as
-    | (Datastream & Record<string, any>)
-    | undefined
+    (Datastream & Record<string, any>) | undefined
   return datastream?.monitoringSite?.name ?? null
 })
 
@@ -170,6 +186,7 @@ function openSelector() {
 }
 function selectDatastream(datastream: DatastreamExtended) {
   emit('update:modelValue', datastream.id)
+  emit('select', datastream)
   selectorOpen.value = false
 }
 </script>
