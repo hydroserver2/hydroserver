@@ -264,7 +264,7 @@ test.describe("visualization", () => {
     ).toBeVisible();
   });
 
-  test("visualization detail levels hide and restore row metadata", async ({
+  test("visualization detail levels hide and restore observation metadata", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
@@ -276,7 +276,6 @@ test.describe("visualization", () => {
       .first();
     await expect(datastreamRow).toBeVisible();
 
-    const signature = datastreamRow.locator(".datastream-signature");
     const observationRange = datastreamRow.locator(
       ".datastream-observation-range",
     );
@@ -284,25 +283,15 @@ test.describe("visualization", () => {
     const lessDetail = page.getByTestId("show-less-datastream-details");
 
     // Level 1 (default) shows only the datastream name.
-    await expect(signature).toHaveCount(0);
     await expect(observationRange).toHaveCount(0);
     await expect(lessDetail).toBeDisabled();
 
     // Level 2 adds the observation count and range.
     await moreDetail.click();
     await expect(observationRange).toBeVisible();
-    await expect(signature).toHaveCount(0);
-
-    // Level 3 also adds the four datastream fields.
-    await moreDetail.click();
-    await expect(signature).toBeVisible();
     await expect(moreDetail).toBeDisabled();
 
-    // Stepping back down restores the earlier levels.
-    await lessDetail.click();
-    await expect(signature).toHaveCount(0);
-    await expect(observationRange).toBeVisible();
-
+    // Stepping back down hides the observation count and range.
     await lessDetail.click();
     await expect(observationRange).toHaveCount(0);
   });

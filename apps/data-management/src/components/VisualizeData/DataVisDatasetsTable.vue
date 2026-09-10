@@ -22,7 +22,7 @@
           <v-btn
             size="small"
             variant="text"
-            :disabled="detailLevel === 3"
+            :disabled="detailLevel === 2"
             data-testid="show-more-datastream-details"
             @click="detailLevel++"
           >
@@ -204,18 +204,6 @@
                 class="datastream-meta datastream-observation-range hs-text-sm"
               >
                 {{ observationRange(item) }}
-              </div>
-              <div
-                v-if="detailLevel === 3"
-                class="datastream-meta datastream-signature hs-text-sm"
-              >
-                <span
-                  v-for="value in datastreamSignature(item)"
-                  :key="`${item.id}-${value}`"
-                  class="datastream-signature__item"
-                >
-                  {{ value }}
-                </span>
               </div>
             </td>
 
@@ -541,49 +529,6 @@ const datastreamDisplayName = (item: DatastreamTableItem) => {
     ? `${name} @ ${item.monitoringSiteName}`
     : name
 }
-
-type TimeSpacingUnit = NonNullable<Datastream['intendedTimeSpacingUnit']>
-
-const formatIntendedTimeSpacing = (
-  interval: number | string | null | undefined,
-  unit: Datastream['intendedTimeSpacingUnit']
-) => {
-  if (interval === null || interval === undefined || !unit) return ''
-
-  const numericInterval = Number(interval)
-  if (!Number.isFinite(numericInterval)) return ''
-
-  if (numericInterval === 1) {
-    const namedPeriods: Record<TimeSpacingUnit, string> = {
-      seconds: 'every second',
-      minutes: 'every minute',
-      hours: 'hourly',
-      days: 'daily',
-    }
-    return namedPeriods[unit]
-  }
-
-  const abbreviations: Record<TimeSpacingUnit, string> = {
-    seconds: 'sec',
-    minutes: 'min',
-    hours: 'hr',
-    days: 'day',
-  }
-  return `every ${numericInterval} ${abbreviations[unit]}`
-}
-
-const datastreamSignature = (item: DatastreamTableItem) =>
-  [
-    item.processingLevelName,
-    item.aggregationStatistic,
-    formatIntendedTimeSpacing(
-      item.intendedTimeSpacing,
-      item.intendedTimeSpacingUnit
-    ),
-    item.unitSymbol,
-  ]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value))
 
 const downloadSelected = async (datastreams: Datastream[]) => {
   downloading.value = true
@@ -935,15 +880,6 @@ function updatePlottedDatastreams(
   color: var(--hs-text-secondary);
 }
 
-.datastream-signature {
-  gap: 0;
-}
-
-.datastream-signature__item:not(:first-child)::before {
-  margin: 0 var(--hs-space-8);
-  content: '·';
-}
-
 .datastream-observation-range {
   font-family: var(--hs-font-data);
   line-height: 1.4;
@@ -998,11 +934,6 @@ function updatePlottedDatastreams(
     flex-direction: column;
     gap: var(--hs-space-2);
     align-items: flex-start;
-  }
-
-  .datastream-meta.datastream-signature {
-    flex-direction: row;
-    gap: 0;
   }
 
   .datastream-name {
