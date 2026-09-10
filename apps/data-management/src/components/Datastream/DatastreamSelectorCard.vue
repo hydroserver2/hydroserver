@@ -17,10 +17,13 @@
               v-if="enforceUniqueSelections"
               v-model="showLinkedDatastreams"
               color="primary"
-              label="Show already linked"
               hide-details
               density="compact"
-            />
+            >
+              <template #label>
+                <span class="hs-text-sm">Show already linked</span>
+              </template>
+            </v-checkbox>
             <v-btn
               size="small"
               variant="text"
@@ -191,7 +194,8 @@
               v-for="datastream in visibleDatastreams"
               :key="datastream.id"
               :class="{
-                'datastream-selector-row--linked': isLinked(datastream),
+                'datastream-selector-row--linked':
+                  enforceUniqueSelections && isLinked(datastream),
               }"
               @click="onDatastreamClick(datastream)"
             >
@@ -275,8 +279,9 @@
           links</v-card-title
         ></v-toolbar
       ><v-card-text
-        >This datastream is already being linked to another data connection in
-        the Task form.</v-card-text
+        >This datastream is already linked to another orchestration task, so
+        this action can't be completed. Choose a different
+        datastream.</v-card-text
       ><v-card-actions
         ><v-spacer /><v-btn-cancel @click="openLinkConflictModal = false"
           >Cancel</v-btn-cancel
@@ -915,8 +920,15 @@ onMounted(loadFallbackData)
 }
 .datastream-selector-table tbody tr.datastream-selector-row--linked,
 .datastream-selector-table tbody tr.datastream-selector-row--linked:hover {
-  color: var(--hs-text-secondary);
+  color: var(--hs-error);
   background: var(--hs-danger-bg);
+}
+.datastream-selector-row--linked .datastream-name,
+.datastream-selector-row--linked .datastream-name__thing,
+.datastream-selector-row--linked .datastream-name__separator,
+.datastream-selector-row--linked .datastream-observation-range,
+.datastream-selector-row--linked :deep(.v-btn) {
+  color: var(--hs-error);
 }
 .datastream-summary-cell {
   padding: var(--hs-space-12) var(--hs-space-16);

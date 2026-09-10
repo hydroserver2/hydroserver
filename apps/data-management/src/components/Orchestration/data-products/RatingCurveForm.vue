@@ -82,6 +82,7 @@
               :disabled="!selectedMonitoringSiteId || loadingExisting"
               :loading="loading"
               :rules="rules.required"
+              enforce-unique-selections
             />
           </TaskFormSection>
 

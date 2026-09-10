@@ -2,7 +2,6 @@ import { defineStore, storeToRefs } from 'pinia'
 import hs, {
   Datastream,
   DatastreamExtended,
-  TaskMapping,
   MonitoringSite,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
@@ -20,6 +19,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const workspaceDatastreams = ref<Datastream[]>([])
   const draftDatastreams = ref<DatastreamExtended[]>([])
   const workspaceTasks = ref<Task[]>([])
+  const persistedLinkedDatastreamIds = ref<Set<string>>(new Set())
   const workspaceMonitoringSites = ref<MonitoringSite[]>([])
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])
@@ -32,8 +32,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const selectedMonitoringSiteId = ref<string | null>(null)
   const sidebarSearch = ref('')
   const loadedWorkspaceDatastreamId = ref<string | null>(null)
+  const loadedLinkedDatastreamWorkspaceId = ref<string | null>(null)
   const loadedWorkspaceMonitoringSitesId = ref<string | null>(null)
   let workspaceDatastreamRequestId = 0
+  let linkedDatastreamRequestId = 0
   let workspaceMonitoringSitesRequestId = 0
 
   const resetWorkspaceDatastreams = () => {
@@ -48,12 +50,18 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     loadedWorkspaceMonitoringSitesId.value = null
   }
 
+  const resetLinkedDatastreams = () => {
+    linkedDatastreamRequestId += 1
+    persistedLinkedDatastreamIds.value = new Set()
+    loadedLinkedDatastreamWorkspaceId.value = null
+  }
+
   const resetDraftDatastreams = () => {
     draftDatastreams.value = []
   }
 
   const linkedDatastreamIds = computed(() => {
-    const ids = new Set<string>()
+    const ids = new Set(persistedLinkedDatastreamIds.value)
 
     for (const task of workspaceTasks.value) {
       for (const mapping of task.mappings ?? []) {
@@ -67,6 +75,65 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
 
     return ids
   })
+
+  const ensureWorkspaceLinkedDatastreams = async (
+    requestedWorkspaceId = workspaceId.value,
+    force = false
+  ) => {
+    if (!requestedWorkspaceId) {
+      resetLinkedDatastreams()
+      return linkedDatastreamIds.value
+    }
+
+    if (
+      !force &&
+      loadedLinkedDatastreamWorkspaceId.value === requestedWorkspaceId
+    ) {
+      return linkedDatastreamIds.value
+    }
+
+    const requestId = ++linkedDatastreamRequestId
+    const [etlTasks, dataProductTasks] = await Promise.all([
+      hs.tasks.listAllItems({
+        workspace_id: [requestedWorkspaceId],
+        expand_related: true,
+      } as any),
+      hs.dataProductTasks.listAllItems({
+        workspace_id: [requestedWorkspaceId],
+      } as any),
+    ])
+    if (requestId !== linkedDatastreamRequestId) {
+      return linkedDatastreamIds.value
+    }
+
+    const ids = new Set<string>()
+    for (const task of etlTasks ?? []) {
+      for (const mapping of (task as any).mappings ?? []) {
+        const id =
+          mapping.targetDatastream?.id ?? mapping.targetDatastreamId ?? null
+        if (id) ids.add(String(id))
+      }
+    }
+
+    for (const task of dataProductTasks ?? []) {
+      const transformations = [
+        ...((task as any).aggregationTransformations ?? []),
+        ...((task as any).derivationTransformations ?? []),
+        ...((task as any).ratingCurveTransformations ?? []),
+      ]
+      for (const transformation of transformations) {
+        const id =
+          transformation.outputDatastream?.id ??
+          transformation.outputDatastreamId ??
+          null
+        if (id) ids.add(String(id))
+      }
+    }
+
+    persistedLinkedDatastreamIds.value = ids
+    loadedLinkedDatastreamWorkspaceId.value = requestedWorkspaceId
+    return linkedDatastreamIds.value
+  }
 
   const linkedDatastreams = computed(() =>
     workspaceDatastreams.value.filter((d) =>
@@ -134,6 +201,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     (wsId) => {
       if (!wsId) {
         resetWorkspaceDatastreams()
+        resetLinkedDatastreams()
         resetWorkspaceMonitoringSites()
         resetDraftDatastreams()
         return
@@ -141,6 +209,9 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
       if (loadedWorkspaceDatastreamId.value !== wsId) {
         resetWorkspaceDatastreams()
         resetDraftDatastreams()
+      }
+      if (loadedLinkedDatastreamWorkspaceId.value !== wsId) {
+        resetLinkedDatastreams()
       }
       if (loadedWorkspaceMonitoringSitesId.value !== wsId) {
         resetWorkspaceMonitoringSites()
@@ -164,8 +235,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     selectedMonitoringSiteId,
     sidebarSearch,
     ensureWorkspaceDatastreams,
+    ensureWorkspaceLinkedDatastreams,
     ensureWorkspaceMonitoringSites,
     resetWorkspaceDatastreams,
+    resetLinkedDatastreams,
     resetWorkspaceMonitoringSites,
     resetDraftDatastreams,
   }

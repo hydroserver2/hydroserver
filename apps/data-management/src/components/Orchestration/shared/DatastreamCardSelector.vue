@@ -19,7 +19,7 @@
             variant="outlined"
             type="button"
             :disabled="disabled"
-            :loading="loading"
+            :loading="loading || loadingLinkedDatastreams"
             :aria-label="buttonAriaLabel"
             class="datastream-card-selector__button"
             :class="{
@@ -91,6 +91,8 @@ import type {
 } from '@hydroserver/client'
 import { mdiClose, mdiPlusCircleOutline } from '@mdi/js'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import { Snackbar } from '@/utils/notifications'
+import { useOrchestrationStore } from '@/store/orchestration'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 
 type Rule = (value: any) => true | string
@@ -147,6 +149,8 @@ const emit = defineEmits<{
 // would otherwise be dropped — callers pass spacing classes here.
 defineOptions({ inheritAttrs: false })
 const selectorOpen = ref(false)
+const loadingLinkedDatastreams = ref(false)
+const { ensureWorkspaceLinkedDatastreams } = useOrchestrationStore()
 
 // The label is not rendered as a caption — the button says what it selects,
 // and the hint above it carries the scope. It names the field for the dialog
@@ -181,8 +185,26 @@ const selectedMonitoringSiteName = computed(() => {
   return datastream?.monitoringSite?.name ?? null
 })
 
-function openSelector() {
-  if (!props.disabled) selectorOpen.value = true
+async function openSelector() {
+  if (props.disabled || loadingLinkedDatastreams.value) return
+
+  if (props.enforceUniqueSelections && props.workspaceId) {
+    loadingLinkedDatastreams.value = true
+    try {
+      // Refresh immediately before selection so a task created in another
+      // browser session cannot leave this list with stale availability.
+      await ensureWorkspaceLinkedDatastreams(props.workspaceId, true)
+    } catch (error: any) {
+      Snackbar.error(
+        error?.message || 'Unable to check already linked datastreams.'
+      )
+      return
+    } finally {
+      loadingLinkedDatastreams.value = false
+    }
+  }
+
+  selectorOpen.value = true
 }
 function selectDatastream(datastream: DatastreamExtended) {
   emit('update:modelValue', datastream.id)
