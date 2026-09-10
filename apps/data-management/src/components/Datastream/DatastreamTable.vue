@@ -2522,20 +2522,27 @@ const loadDatastreams = async () => {
 .site-datastreams__actions-cell {
   width: 1%;
   white-space: nowrap;
+  display: flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+  justify-content: flex-end;
 }
 .site-datastreams__row-actions {
+  order: 2;
   justify-content: flex-end;
   gap: var(--hs-space-2);
 }
 .site-datastreams__metadata-button {
-  width: 100%;
-  margin-top: var(--hs-space-6);
+  order: 1;
+  flex: none;
+  margin: 0;
 }
 .site-datastreams__download {
+  order: 3;
   display: flex;
   gap: var(--hs-space-6);
   align-items: center;
-  margin-top: var(--hs-space-6);
+  margin: 0;
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-2xs);
 }
@@ -2571,6 +2578,26 @@ const loadDatastreams = async () => {
 .site-datastreams__sort-check--hidden {
   visibility: hidden;
 }
+@media (min-width: 60.0625rem) {
+  .site-datastreams__table tbody tr {
+    position: relative;
+    display: block;
+  }
+  .site-datastreams__name-cell {
+    display: block;
+    width: 100%;
+  }
+  .site-datastreams__name {
+    padding-right: calc(9 * var(--hs-space-32));
+  }
+  .site-datastreams__actions-cell {
+    position: absolute;
+    top: var(--hs-space-12);
+    right: 0;
+    width: max-content;
+    padding: 0;
+  }
+}
 @media (max-width: 60rem) {
   .site-datastreams__table,
   .site-datastreams__table tbody,
@@ -2590,6 +2617,7 @@ const loadDatastreams = async () => {
     min-width: 0;
   }
   .site-datastreams__actions-cell {
+    position: static;
     padding-bottom: 0 !important;
   }
   .site-datastreams__row-actions {
