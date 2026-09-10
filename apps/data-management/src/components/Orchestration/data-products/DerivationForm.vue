@@ -60,7 +60,9 @@
 
         <DatastreamCardSelector
           v-model="outputDatastreamId"
-          :datastreams="siteDatastreams"
+          :datastreams="datastreams"
+          :workspace-id="selectedWorkspaceId"
+          :monitoring-site-id="selectedMonitoringSiteId"
           label="Output datastream *"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loadingDatastreams"
@@ -82,6 +84,7 @@
             <DatastreamCardSelector
               v-model="inp.datastreamId"
               :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
               :label="`Input datastream ${i + 1} *`"
               :loading="loadingDatastreams"
               :disabled="loadingExisting"
@@ -203,8 +206,8 @@
                 {{ mdiInformationOutline }}
               </v-icon>
             </template>
-            If an input is set to a no-data value, stop the run there
-            instead of writing the output's no-data value and continuing.
+            If an input is set to a no-data value, stop the run there instead of
+            writing the output's no-data value and continuing.
           </v-tooltip>
           <v-spacer />
           <v-switch
@@ -224,9 +227,9 @@
                 {{ mdiInformationOutline }}
               </v-icon>
             </template>
-            If the formula produces a non-finite result (e.g. divide by
-            zero), stop the run there instead of writing the output's
-            no-data value and continuing.
+            If the formula produces a non-finite result (e.g. divide by zero),
+            stop the run there instead of writing the output's no-data value and
+            continuing.
           </v-tooltip>
           <v-spacer />
           <v-switch
@@ -272,7 +275,6 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -352,7 +354,9 @@ const formula = ref('')
 const stopOnNoData = ref(true)
 const stopOnError = ref(true)
 
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
 
 const namedInputs = computed(() =>
   inputs.value.filter((inp) => inp.variableName.trim())
@@ -363,11 +367,6 @@ const formulaPlaceholder = computed(() => {
   if (vars.length >= 2) return `e.g. (${vars[0]} + ${vars[1]}) / 2`
   if (vars.length === 1) return `e.g. (${vars[0]} - 32) * 5/9`
   return 'e.g. (x - 32) * 5/9'
-})
-
-const siteDatastreams = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 function nextVarName(): string {

@@ -54,9 +54,23 @@
 
         <v-divider class="mb-4" />
 
+        <v-alert
+          type="info"
+          variant="tonal"
+          density="compact"
+          :color="DATA_PRODUCT_ACCENT"
+          class="mb-4"
+        >
+          Choose an input datastream from any monitoring site in the selected
+          workspace. The output datastream must belong to the selected
+          monitoring site. Inputs from other sites include the site name after
+          <code>@</code>.
+        </v-alert>
+
         <DatastreamCardSelector
           v-model="inputDatastreamId"
-          :datastreams="siteDatastreams"
+          :datastreams="datastreams"
+          :workspace-id="selectedWorkspaceId"
           label="Input datastream *"
           :loading="loadingDatastreams"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
@@ -66,7 +80,9 @@
 
         <DatastreamCardSelector
           v-model="outputDatastreamId"
-          :datastreams="siteDatastreams"
+          :datastreams="datastreams"
+          :workspace-id="selectedWorkspaceId"
+          :monitoring-site-id="selectedMonitoringSiteId"
           label="Output datastream *"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loadingDatastreams"
@@ -213,7 +229,6 @@ import hs, {
 import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -261,7 +276,9 @@ const minValues = ref<number | null>(null)
 const timezoneType = ref<'offset' | 'iana' | null>(null)
 const timezone = ref<string | null>(null)
 
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
 
 const aggregationMethodOptions = [
   { title: 'Arithmetic Mean', value: 'mean' },
@@ -305,11 +322,6 @@ const timezoneMode = computed({
       timezone.value = 'America/Denver'
     }
   },
-})
-
-const siteDatastreams = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 type Rule = (v: any) => true | string

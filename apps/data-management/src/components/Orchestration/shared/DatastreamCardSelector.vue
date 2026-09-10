@@ -1,59 +1,53 @@
 <template>
-  <v-autocomplete
-    :model-value="modelValue"
-    :items="selectorItems"
-    item-title="title"
-    item-value="value"
+  <v-text-field
+    :model-value="selectedDatastreamLabel"
     :label="label"
     :placeholder="placeholder"
     :loading="loading"
     :disabled="disabled"
     :rules="rules"
     :density="density"
-    :clearable="clearable"
+    :clearable="clearable && Boolean(modelValue)"
     :hide-details="hideDetails"
-    :menu-props="menuProps"
-    no-data-text="No datastreams match your search."
+    readonly
     class="datastream-card-selector"
-    @update:model-value="onUpdate"
+    @click="openSelector"
+    @click:clear.stop="emit('update:modelValue', null)"
   >
-    <template #selection="{ item }">
-      <span class="selected-datastream-name">
-        {{ item.datastream.name }}
-      </span>
+    <template #append-inner>
+      <v-icon :icon="mdiChevronDown" />
     </template>
+  </v-text-field>
 
-    <template #item="{ props: itemProps, item }">
-      <v-list-item
-        v-bind="itemProps"
-        :title="undefined"
-        class="datastream-card-selector__item"
-      >
-        <DatastreamResultCard :datastream="item.datastream" />
-      </v-list-item>
-    </template>
-  </v-autocomplete>
+  <v-dialog v-model="selectorOpen" width="75rem">
+    <DatastreamSelectorCard
+      :card-title="`Select ${label.replace(/\s*\*$/, '').toLocaleLowerCase()}`"
+      :datastreams="datastreams"
+      :workspace-id="workspaceId"
+      :monitoring-site-id="monitoringSiteId"
+      @selected-datastream="selectDatastream"
+      @close="selectorOpen = false"
+    />
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Datastream } from '@hydroserver/client'
-import DatastreamResultCard from './DatastreamResultCard.vue'
+import { computed, ref } from 'vue'
+import type { Datastream, DatastreamExtended } from '@hydroserver/client'
+import { mdiChevronDown } from '@mdi/js'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 
 type Rule = (value: any) => true | string
 type Density = 'default' | 'comfortable' | 'compact'
-
-type DatastreamSelectorItem = {
-  value: string
-  title: string
-  datastream: Datastream
-}
 
 const props = withDefaults(
   defineProps<{
     modelValue: string | null
     datastreams: Datastream[]
     label: string
+    workspaceId?: string | null
+    monitoringSiteId?: string | null
     placeholder?: string
     loading?: boolean
     disabled?: boolean
@@ -63,7 +57,9 @@ const props = withDefaults(
     hideDetails?: boolean | 'auto'
   }>(),
   {
-    placeholder: 'Search by name, site, property, unit...',
+    workspaceId: null,
+    monitoringSiteId: null,
+    placeholder: 'Select a datastream',
     loading: false,
     disabled: false,
     rules: () => [],
@@ -72,111 +68,41 @@ const props = withDefaults(
     hideDetails: false,
   }
 )
-
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | null): void
 }>()
+const selectorOpen = ref(false)
 
-const menuProps = {
-  maxHeight: 480,
-  contentClass: 'datastream-card-selector-menu',
-}
-
-const selectorItems = computed<DatastreamSelectorItem[]>(() =>
-  props.datastreams.map((datastream) => ({
-    value: datastream.id,
-    title: searchText(datastream),
-    datastream,
-  }))
+const selectedDatastream = computed(() =>
+  props.datastreams.find((datastream) => datastream.id === props.modelValue)
 )
+const showMonitoringSiteContext = computed(
+  () =>
+    !props.monitoringSiteId &&
+    new Set(props.datastreams.map(datastreamMonitoringSiteId).filter(Boolean))
+      .size > 1
+)
+const selectedDatastreamLabel = computed(() => {
+  const datastream = selectedDatastream.value
+  if (!datastream) return ''
+  const siteName = (datastream as Datastream & Record<string, any>)
+    .monitoringSite?.name
+  return showMonitoringSiteContext.value && siteName
+    ? `${datastream.name || 'Unnamed datastream'} @ ${siteName}`
+    : datastream.name || 'Unnamed datastream'
+})
 
-function onUpdate(value: unknown) {
-  emit('update:modelValue', typeof value === 'string' ? value : null)
+function openSelector() {
+  if (!props.disabled) selectorOpen.value = true
 }
-
-function searchText(datastream: Datastream): string {
-  const ds = datastream as Datastream & Record<string, any>
-  const related = [
-    ds.monitoringSite?.name,
-    ds.observedProperty?.name,
-    ds.observedProperty?.code,
-    ds.processingLevel?.code,
-    ds.processingLevel?.name,
-    ds.unit?.name,
-    ds.unit?.symbol,
-    ds.method?.name,
-    ds.method?.code,
-    ds.method?.type,
-  ]
-
-  return [
-    datastream.id,
-    datastream.name,
-    datastream.sampledMedium,
-    datastream.aggregationStatistic,
-    datastream.valueCount,
-    formatSpacing(
-      datastream.intendedTimeSpacing,
-      datastream.intendedTimeSpacingUnit
-    ),
-    formatSpacing(
-      datastream.timeAggregationInterval,
-      datastream.timeAggregationIntervalUnit
-    ),
-    ...related,
-  ]
-    .filter((value) => value !== null && value !== undefined && value !== '')
-    .join(' ')
-}
-
-function formatSpacing(
-  interval: number | null | undefined,
-  unit: string | null | undefined
-) {
-  if (interval === null || interval === undefined || !unit) return ''
-  return `${interval} ${unit}`
+function selectDatastream(datastream: DatastreamExtended) {
+  emit('update:modelValue', datastream.id)
+  selectorOpen.value = false
 }
 </script>
 
 <style scoped>
-.selected-datastream-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.datastream-card-selector__item {
-  padding: 0;
-  border-radius: 8px;
-  background: transparent;
-}
-
-.datastream-card-selector__item :deep(.v-list-item__content) {
-  overflow: visible;
-}
-
-.datastream-card-selector__item :deep(.v-list-item__overlay),
-.datastream-card-selector__item :deep(.v-list-item__underlay) {
-  display: none;
-}
-</style>
-
-<style>
-.datastream-card-selector-menu .v-list {
-  padding: 8px;
-}
-
-.datastream-card-selector-menu .v-list-item {
-  margin: 0 0 8px;
-  min-height: 0;
-}
-
-.datastream-card-selector-menu .v-list-item:last-child {
-  margin-bottom: 0;
-}
-
-.datastream-card-selector-menu .v-list-item:hover .datastream-result-card,
-.datastream-card-selector-menu .v-list-item--active .datastream-result-card {
-  border-color: rgba(var(--v-theme-primary), 0.65);
+.datastream-card-selector :deep(input) {
+  cursor: pointer;
 }
 </style>

@@ -170,7 +170,9 @@
                     }"
                     @click="openTargetSelector(mi)"
                   >
-                    <span class="inline-flex items-center gap-1.5 font-weight-bold">
+                    <span
+                      class="inline-flex items-center gap-1.5 font-weight-bold"
+                    >
                       <v-icon :icon="mdiPlusCircleOutline" size="18" />
                       <span>Select target datastream</span>
                     </span>
@@ -184,16 +186,22 @@
                     class="h-auto min-h-[48px] w-full justify-start border-2 border-solid border-[#1565c0] bg-white px-3 py-1.5 text-left hs-text-sm text-[#1c1b1f] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
                     @click="openTargetSelector(mi)"
                   >
-                    <span class="block max-w-full leading-[1.25] py-[2px]">
-                      <span
-                        class="block whitespace-normal font-weight-semibold text-[#1c1b1f] [overflow-wrap:anywhere]"
-                      >
+                    <span class="ingestion-datastream-selection">
+                      <span class="ingestion-datastream-selection__name">
                         {{ datastreamNameById(m.targetDatastreamId) }}
                       </span>
                       <span
-                        class="block whitespace-normal hs-text-sm text-[rgba(0,0,0,0.55)] [overflow-wrap:anywhere]"
+                        v-if="datastreamSiteNameById(m.targetDatastreamId)"
+                        class="ingestion-datastream-selection__separator"
+                        aria-hidden="true"
                       >
-                        {{ m.targetDatastreamId }}
+                        @
+                      </span>
+                      <span
+                        v-if="datastreamSiteNameById(m.targetDatastreamId)"
+                        class="ingestion-datastream-selection__site"
+                      >
+                        {{ datastreamSiteNameById(m.targetDatastreamId) }}
                       </span>
                     </span>
                   </v-btn>
@@ -264,6 +272,9 @@
       @selected-datastream="onTargetSelected"
       @close="datastreamSelectorOpen = false"
       enforce-unique-selections
+      :datastreams="workspaceDatastreams"
+      :monitoring-sites="workspaceMonitoringSites"
+      :workspace-id="selectedWorkspaceId"
       :draft-datastreams="draftDatastreams"
     />
   </v-dialog>
@@ -326,7 +337,8 @@ const {
   workspaceDatastreams,
   workspaceMonitoringSites,
 } = storeToRefs(orchestrationStore)
-const { ensureWorkspaceDatastreams, ensureWorkspaceMonitoringSites } = orchestrationStore
+const { ensureWorkspaceDatastreams, ensureWorkspaceMonitoringSites } =
+  orchestrationStore
 
 const showErrors = ref(false)
 const missingTargetKeys = ref<Set<string>>(new Set())
@@ -353,8 +365,8 @@ function editableMappingFrom(mapping: any): FormMapping {
   const id = mapping.targetDatastreamId
     ? String(mapping.targetDatastreamId)
     : mapping.targetDatastream?.id
-    ? String(mapping.targetDatastream.id)
-    : ''
+      ? String(mapping.targetDatastream.id)
+      : ''
   return {
     sourceIdentifier: String(mapping.sourceIdentifier ?? ''),
     targetDatastreamId: id,
@@ -432,6 +444,19 @@ function datastreamNameById(id: string | undefined | null) {
   return datastreamById(id)?.name || ''
 }
 
+function datastreamSiteNameById(id: string | undefined | null) {
+  const datastream = datastreamById(id)
+  if (datastream?.monitoringSite?.name) return datastream.monitoringSite.name
+
+  const monitoringSiteId =
+    datastream?.monitoringSiteId ?? datastream?.monitoringSite?.id
+  return (
+    workspaceMonitoringSites.value.find(
+      (monitoringSite) => monitoringSite.id === monitoringSiteId
+    )?.name || ''
+  )
+}
+
 function openTargetSelector(mi: number) {
   activeMappingIndex.value = mi
   datastreamSelectorOpen.value = true
@@ -506,12 +531,10 @@ function taskToPayload(): Task {
     taskVariables: task.value.taskVariables,
     dataConnectionId: props.dataConnection.id,
     schedule: task.value.schedule,
-    mappings: formMappings.value.map(
-      (m): EtlMappingPostBody => ({
-        sourceIdentifier: m.sourceIdentifier,
-        targetDatastreamId: m.targetDatastreamId,
-      })
-    ),
+    mappings: formMappings.value.map((m): EtlMappingPostBody => ({
+      sourceIdentifier: m.sourceIdentifier,
+      targetDatastreamId: m.targetDatastreamId,
+    })),
   })
 }
 
@@ -552,7 +575,10 @@ watch(
         ensureWorkspaceMonitoringSites(workspaceId),
       ])
     } catch (error) {
-      console.error('Error fetching workspace datastreams and monitoringSites', error)
+      console.error(
+        'Error fetching workspace datastreams and monitoringSites',
+        error
+      )
     }
   },
   { immediate: true }
@@ -585,14 +611,47 @@ watch(
   padding-right: 8px;
 }
 :deep(
-    .schedule-start-input
-      input[type='datetime-local']::-webkit-calendar-picker-indicator
-  ) {
+  .schedule-start-input
+    input[type='datetime-local']::-webkit-calendar-picker-indicator
+) {
   height: 16px;
   margin: 0 4px 0 2px;
   padding: 0;
   width: 16px;
   opacity: 0.82;
   transform: translateY(-1px);
+}
+
+.ingestion-datastream-selection {
+  display: flex;
+  gap: var(--hs-space-6);
+  align-items: baseline;
+  max-width: 100%;
+  text-align: left;
+}
+
+.ingestion-datastream-selection__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hs-text-primary);
+  font-weight: var(--hs-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingestion-datastream-selection__separator,
+.ingestion-datastream-selection__site {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingestion-datastream-selection__separator {
+  flex: 0 0 auto;
 }
 </style>

@@ -105,7 +105,9 @@
         <v-divider class="mb-4" />
 
         <div class="d-flex align-center mb-3">
-          <div class="section-heading hs-text-sm font-weight-bold">Quality rules</div>
+          <div class="section-heading hs-text-sm font-weight-bold">
+            Quality rules
+          </div>
           <v-chip
             v-if="ruleRows.length === 0"
             size="x-small"
@@ -146,8 +148,13 @@
         <div v-for="(row, index) in ruleRows" :key="row.key" class="rule-card">
           <div class="rule-card__header">
             <div>
-              <div class="rule-card__title hs-text-md font-weight-bold">Rule {{ index + 1 }}</div>
-              <div v-if="row.lastCheckedAt" class="rule-card__subtitle hs-text-sm">
+              <div class="rule-card__title hs-text-md font-weight-bold">
+                Rule {{ index + 1 }}
+              </div>
+              <div
+                v-if="row.lastCheckedAt"
+                class="rule-card__subtitle hs-text-sm"
+              >
                 Last checked {{ formatTime(row.lastCheckedAt) }}
               </div>
             </div>
@@ -166,7 +173,9 @@
 
           <DatastreamCardSelector
             v-model="row.datastreamId"
-            :datastreams="siteDatastreams"
+            :datastreams="datastreams"
+            :workspace-id="selectedWorkspaceId"
+            :monitoring-site-id="selectedMonitoringSiteId"
             label="Datastream *"
             :loading="loadingDatastreams"
             :disabled="!selectedMonitoringSiteId || loadingExisting"
@@ -282,7 +291,6 @@ import hs, {
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { formatTime } from '@/utils/time'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   QUALITY_ACCENT,
   QUALITY_ACCENT_LIGHT,
@@ -331,8 +339,11 @@ const makeRuleRow = (init: Partial<RuleRow> = {}): RuleRow => ({
 })
 
 const isEditMode = computed(() => !!props.editTaskId)
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -366,10 +377,6 @@ const windowUnitOptions: { title: string; value: MonitoringRuleWindowUnit }[] =
     { title: 'Hours', value: 'hours' },
     { title: 'Days', value: 'days' },
   ]
-
-const siteDatastreams = computed(() =>
-  datastreamsForMonitoringSite(datastreams.value, selectedMonitoringSiteId.value)
-)
 
 type Rule = (v: any) => true | string
 

@@ -51,7 +51,9 @@
 
         <DatastreamCardSelector
           v-model="inputDatastreamId"
-          :datastreams="siteDatastreams"
+          :datastreams="datastreams"
+          :workspace-id="selectedWorkspaceId"
+          :monitoring-site-id="selectedMonitoringSiteId"
           label="Input datastream *"
           :loading="loading"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
@@ -61,7 +63,9 @@
 
         <DatastreamCardSelector
           v-model="outputDatastreamId"
-          :datastreams="siteDatastreams"
+          :datastreams="datastreams"
+          :workspace-id="selectedWorkspaceId"
+          :monitoring-site-id="selectedMonitoringSiteId"
           label="Output datastream *"
           :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loading"
@@ -222,7 +226,6 @@ import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -281,12 +284,9 @@ const fittingMethodOptions = [
   { title: 'Linear', value: 'linear' },
   { title: 'Power law', value: 'power_law' },
 ]
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
-
-const siteDatastreams = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
-})
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
 
 const ratingCurveOptions = computed(() =>
   ratingCurves.value.map((curve) => ({
@@ -320,7 +320,8 @@ async function loadOptions() {
       expand_related: true,
     } as any)
     datastreams.value = datastreamItems as Datastream[]
-    if (selectedMonitoringSiteId.value) await loadRatingCurves(selectedMonitoringSiteId.value)
+    if (selectedMonitoringSiteId.value)
+      await loadRatingCurves(selectedMonitoringSiteId.value)
   } catch (error: any) {
     Snackbar.error(
       error?.message || 'Unable to load rating curve form options.'
@@ -366,9 +367,12 @@ async function loadExistingTask() {
 async function loadRatingCurves(monitoringSiteId: string) {
   ratingCurvesLoading.value = true
   try {
-    const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId, {
-      order_by: ['name'],
-    })
+    const items = await hs.ratingCurves.listItemsForMonitoringSite(
+      monitoringSiteId,
+      {
+        order_by: ['name'],
+      }
+    )
     ratingCurves.value = [...items].sort((a, b) => a.name.localeCompare(b.name))
   } catch (error: any) {
     ratingCurves.value = []
@@ -437,7 +441,11 @@ async function resolveRatingCurveId() {
     return selectedRatingCurveId.value
 
   const file = selectedCreateFile.value
-  if (!selectedMonitoringSiteId.value || !file || !createCurveName.value.trim()) {
+  if (
+    !selectedMonitoringSiteId.value ||
+    !file ||
+    !createCurveName.value.trim()
+  ) {
     Snackbar.error('Choose a CSV file and rating curve name.')
     return null
   }

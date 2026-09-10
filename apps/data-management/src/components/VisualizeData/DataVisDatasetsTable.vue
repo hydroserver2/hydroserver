@@ -436,17 +436,9 @@ const visibleTableItems = computed(() => {
   return tableItems.value
     .filter((item) => {
       if (!query) return true
-      return [
-        item.name,
-        item.monitoringSiteName,
-        item.processingLevelName,
-        item.aggregationStatistic,
-        item.intendedTimeSpacing,
-        item.intendedTimeSpacingUnit,
-        item.unitSymbol,
-        item.valueCount,
-        item.phenomenonEndTime,
-      ].some((value) => `${value ?? ''}`.toLocaleLowerCase().includes(query))
+      return [item.name, item.monitoringSiteName].some((value) =>
+        `${value ?? ''}`.toLocaleLowerCase().includes(query)
+      )
     })
     .sort(compareTableItems)
 })
@@ -584,6 +576,7 @@ const formatObservationCount = (value: number | string | null | undefined) => {
 const observationRange = (item: DatastreamTableItem) => {
   const count = Number(item.valueCount)
   const observationLabel = count === 1 ? 'observation' : 'observations'
+  if (count === 0) return '0 observations'
   return [
     `${formatObservationCount(item.valueCount)} ${observationLabel} between`,
     formatTime(item.phenomenonBeginTime),
