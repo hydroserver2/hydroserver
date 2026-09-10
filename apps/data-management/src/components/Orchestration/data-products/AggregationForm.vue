@@ -1,31 +1,34 @@
 <template>
-  <v-card>
-    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>{{
-        isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
-      }}</v-card-title>
-      <v-btn
-        :icon="mdiInformationOutline"
-        variant="text"
-        aria-label="Toggle task info"
-        @click="showInfo = !showInfo"
-      />
-    </v-toolbar>
-    <v-divider />
+  <v-card class="d-flex flex-column" style="max-height: 90vh">
+    <div class="shrink-0">
+      <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
+        <v-card-title>{{
+          isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
+        }}</v-card-title>
+        <v-btn
+          :icon="mdiInformationOutline"
+          variant="text"
+          aria-label="Toggle task info"
+          @click="showInfo = !showInfo"
+        />
+      </v-toolbar>
+      <v-divider />
 
-    <v-progress-linear
-      v-if="loadingExisting"
-      indeterminate
-      :color="DATA_PRODUCT_ACCENT"
-    />
+      <v-progress-linear
+        v-if="loadingExisting"
+        indeterminate
+        :color="DATA_PRODUCT_ACCENT"
+      />
+    </div>
 
     <v-form
       ref="formRef"
       v-model="valid"
       validate-on="input"
+      class="d-flex flex-column grow overflow-hidden"
       @submit.prevent="onSubmit"
     >
-      <v-card-text>
+      <v-card-text class="overflow-y-auto grow">
         <v-alert
           v-if="showInfo"
           :color="DATA_PRODUCT_ACCENT"
@@ -193,7 +196,7 @@
 
       <v-divider />
 
-      <v-card-actions>
+      <v-card-actions class="shrink-0">
         <v-spacer />
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel

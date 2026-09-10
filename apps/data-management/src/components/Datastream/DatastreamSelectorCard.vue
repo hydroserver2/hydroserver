@@ -1,9 +1,9 @@
 <template>
-  <v-card class="datastream-selector-card">
-    <v-toolbar color="primary-darken-2"
+  <v-card class="datastream-selector-card d-flex flex-column">
+    <v-toolbar class="shrink-0" color="primary-darken-2"
       ><v-card-title>{{ cardTitle }}</v-card-title></v-toolbar
     >
-    <v-card-text class="datastream-selector-card__content">
+    <v-card-text class="datastream-selector-card__content grow overflow-y-auto">
       <div class="hs-table-tools datastream-selector-tools">
         <div class="datastream-selector-tools__primary">
           <div class="datastream-selector-heading">
@@ -238,7 +238,7 @@
         </table>
       </div>
     </v-card-text>
-    <v-card-actions
+    <v-card-actions class="datastream-selector-card__actions shrink-0"
       ><v-spacer /><v-btn-cancel @click="$emit('close')"
         >Cancel</v-btn-cancel
       ></v-card-actions
@@ -308,6 +308,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { formatTime } from '@/utils/time'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import { isDatastreamLinked } from '@/utils/orchestration/datastreamSelection'
 import {
   parseDatastreamQuery,
   serializeDatastreamQuery,
@@ -337,6 +338,7 @@ const props = withDefaults(
     monitoringSiteId?: string | null
     enforceUniqueSelections?: boolean
     draftDatastreams?: DatastreamExtended[]
+    selectedDatastreamId?: string | null
   }>(),
   {
     datastreams: undefined,
@@ -345,6 +347,7 @@ const props = withDefaults(
     monitoringSiteId: null,
     enforceUniqueSelections: false,
     draftDatastreams: undefined,
+    selectedDatastreamId: null,
   }
 )
 const emit = defineEmits<{
@@ -651,10 +654,11 @@ function compareDatastreams(left: Datastream, right: Datastream) {
   return comparison ? comparison * multiplier : compareNames(left, right)
 }
 function isLinked(datastream: Datastream) {
-  const id = String(datastream.id)
-  return (
-    props.draftDatastreams?.some((item) => String(item.id) === id) ||
-    linkedDatastreamIds.value.has(id)
+  return isDatastreamLinked(
+    datastream.id,
+    linkedDatastreamIds.value,
+    props.draftDatastreams,
+    props.selectedDatastreamId
   )
 }
 function onDatastreamClick(datastream: Datastream) {
@@ -761,8 +765,18 @@ onMounted(loadFallbackData)
 </script>
 
 <style scoped>
+.datastream-selector-card {
+  height: 90vh;
+  max-height: 90vh;
+  overflow: hidden;
+}
 .datastream-selector-card__content {
+  min-height: 0;
   padding-block: var(--hs-space-16);
+}
+.datastream-selector-card__actions {
+  background: var(--hs-surface);
+  border-top: 1px solid var(--hs-border);
 }
 .datastream-selector-tools {
   flex-direction: column;
@@ -801,6 +815,11 @@ onMounted(loadFallbackData)
 .datastream-selector-table {
   width: 100%;
   border-collapse: collapse;
+}
+.datastream-selector-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 .datastream-filter-header {
   padding: var(--hs-space-6) var(--hs-space-8);

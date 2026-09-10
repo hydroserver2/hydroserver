@@ -138,6 +138,7 @@ export function useOrchestrationData() {
           workspace_id: [requestedWorkspaceId],
           data_connection_id: [groupId],
           order_by: ['name'],
+          expand_related: true,
         } as any)
         if (requestId !== taskRequestId) return
         workspaceTasks.value = items as any

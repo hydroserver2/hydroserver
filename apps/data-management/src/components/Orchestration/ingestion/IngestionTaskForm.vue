@@ -276,6 +276,7 @@
       :monitoring-sites="workspaceMonitoringSites"
       :workspace-id="selectedWorkspaceId"
       :draft-datastreams="draftDatastreams"
+      :selected-datastream-id="activeMappingTargetDatastreamId"
     />
   </v-dialog>
 </template>
@@ -421,6 +422,12 @@ if (task.value.mappings.length === 0) {
 const formMappings = computed(
   () => task.value.mappings as unknown as FormMapping[]
 )
+const activeMappingTargetDatastreamId = computed(() => {
+  const index = activeMappingIndex.value
+  return index == null
+    ? null
+    : (formMappings.value[index]?.targetDatastreamId ?? null)
+})
 
 function templateVariablePlaceholder(name: string) {
   return `e.g. ${name.toUpperCase()}`

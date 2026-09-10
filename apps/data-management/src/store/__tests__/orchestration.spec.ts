@@ -30,7 +30,7 @@ describe('orchestration store', () => {
     listAllItemsMock.mockReset()
   })
 
-  it('derives linked datastream ids from task mappings', async () => {
+  it('derives linked datastream ids from loaded task mappings', async () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.selectedWorkspace = {
       id: 'workspace-1',
