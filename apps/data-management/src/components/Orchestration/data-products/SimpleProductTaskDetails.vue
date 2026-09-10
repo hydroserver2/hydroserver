@@ -99,7 +99,7 @@
         </v-dialog>
         <button
           type="button"
-          class="header-btn header-btn--run hs-text-sm font-weight-semibold"
+          class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
           :disabled="!!runNowDisabledReason"
           @click="runNow"
         >
@@ -330,13 +330,6 @@ h2 {
 .header-btn--neutral {
   border-color: #cac4d0;
   color: #1c1b1f;
-}
-.header-btn--run {
-  border-color: #2e7d32;
-  color: #2e7d32;
-}
-.header-btn--run:hover:not(:disabled) {
-  background: rgba(46, 125, 50, 0.08);
 }
 .header-btn--danger {
   border-color: #b3261e;
