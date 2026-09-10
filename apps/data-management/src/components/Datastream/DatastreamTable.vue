@@ -43,7 +43,6 @@
               )
             "
             size="small"
-            :prepend-icon="mdiPlus"
             data-testid="add-datastream-button"
             @click="openCreate = true"
           >
@@ -215,38 +214,158 @@
               <div class="site-datastreams__name" :title="datastreamName(item)">
                 {{ datastreamName(item) }}
               </div>
-            </td>
-            <td
-              class="site-datastreams__observations-cell"
-              data-label="Recent observations"
-            >
-              <div
-                v-if="!canViewData(item)"
-                class="site-datastreams__private-data"
-              >
-                <v-icon :icon="mdiLock" size="16" />
-                Data is private
-              </div>
-              <div v-else class="site-datastreams__observations">
-                <Sparkline
-                  class="site-datastreams__sparkline"
-                  :datastream="item"
-                  :unit-name="item.unitName"
-                  @open-chart="selectedChartDatastream = item"
-                  @latest-value="
-                    (value) => handleLatestValueUpdate(item.id, value)
-                  "
-                />
+              <div class="site-datastreams__observation-line">
                 <div
-                  class="site-datastreams__latest"
-                  :class="latestStatusClass(item)"
+                  v-if="!canViewData(item)"
+                  class="site-datastreams__private-data"
                 >
-                  <span v-if="Number(item.valueCount) > 0">
-                    Latest observation {{ item.endDate }}
-                  </span>
-                  <span v-if="shouldShowLatestValue(item.id)">
-                    Latest value {{ latestValueDisplay(item) }}
-                  </span>
+                  <v-icon :icon="mdiLock" size="16" />
+                  Data is private
+                </div>
+                <div v-else class="site-datastreams__observations">
+                  <Sparkline
+                    class="site-datastreams__sparkline"
+                    :datastream="item"
+                    :unit-name="item.unitName"
+                    compact
+                    @open-chart="selectedChartDatastream = item"
+                    @latest-value="
+                      (value) => handleLatestValueUpdate(item.id, value)
+                    "
+                  />
+                  <div
+                    class="site-datastreams__latest"
+                    :class="latestStatusClass(item)"
+                  >
+                    <span v-if="shouldShowLatestValue(item.id)">
+                      Latest <strong>{{ latestValueDisplay(item) }}</strong>
+                    </span>
+                    <span v-if="Number(item.valueCount) > 0">
+                      <span aria-hidden="true">·</span>
+                      {{ item.endDate }}
+                    </span>
+                    <span
+                      v-if="Number(item.valueCount) > 0"
+                      class="site-datastreams__observation-count"
+                    >
+                      <span aria-hidden="true">·</span>
+                      {{ formatObservationCount(item.valueCount) }} obs
+                    </span>
+                  </div>
+                </div>
+                <div
+                  v-if="showTaskRow"
+                  class="datastream-task-link"
+                  :class="datastreamTaskLinkClass(item.id)"
+                >
+                  <v-icon
+                    :class="[
+                      'datastream-task-link__icon',
+                      linkedTasksForDatastream(item.id).length === 1
+                        ? linkedTasksForDatastream(item.id)[0].iconClass
+                        : '',
+                    ]"
+                    :icon="
+                      !linkedTasksForDatastream(item.id).length
+                        ? mdiLinkOff
+                        : linkedTasksForDatastream(item.id).length > 1
+                          ? mdiAlertOctagon
+                          : linkedTasksForDatastream(item.id)[0].icon
+                    "
+                    size="20"
+                  />
+                  <div class="datastream-task-link__body">
+                    <div class="datastream-task-link__meta">
+                      <span class="datastream-task-link__label hs-label">
+                        {{
+                          linkedTasksForDatastream(item.id).length > 1
+                            ? 'Multiple task targets'
+                            : linkedTasksForDatastream(item.id).length === 1
+                              ? linkedTasksForDatastream(item.id)[0].label
+                              : 'No task connected'
+                        }}
+                      </span>
+                      <template
+                        v-if="linkedTasksForDatastream(item.id).length === 1"
+                      >
+                        <RouterLink
+                          class="datastream-task-link__name hs-title"
+                          :to="linkedTasksForDatastream(item.id)[0].route"
+                        >
+                          {{ linkedTasksForDatastream(item.id)[0].displayName }}
+                        </RouterLink>
+                        <span
+                          class="datastream-task-link__status"
+                          :title="
+                            displayedTaskStatus(
+                              linkedTasksForDatastream(item.id)[0]
+                            )
+                          "
+                        >
+                          <span
+                            class="datastream-task-link__dot"
+                            :style="{
+                              backgroundColor: taskStatusColor(
+                                linkedTasksForDatastream(item.id)[0]
+                              ),
+                            }"
+                          />
+                          <small
+                            class="datastream-task-link__last-ran font-weight-medium"
+                          >
+                            {{
+                              lastRanLabel(linkedTasksForDatastream(item.id)[0])
+                            }}
+                          </small>
+                        </span>
+                      </template>
+                      <span
+                        v-else-if="linkedTasksForDatastream(item.id).length > 1"
+                        class="datastream-task-link__conflict-text font-weight-bold"
+                      >
+                        {{ linkedTasksForDatastream(item.id).length }} tasks are
+                        feeding this datastream.
+                      </span>
+                    </div>
+                    <div
+                      v-if="linkedTasksForDatastream(item.id).length > 1"
+                      class="datastream-task-link__tasks"
+                    >
+                      <RouterLink
+                        v-for="task in linkedTasksForDatastream(item.id)"
+                        :key="task.id"
+                        :to="task.route"
+                        class="font-weight-bold"
+                      >
+                        {{ task.displayName }}
+                      </RouterLink>
+                    </div>
+                  </div>
+                  <v-btn
+                    v-if="linkedTasksForDatastream(item.id).length === 1"
+                    size="small"
+                    variant="text"
+                    color="primary"
+                    :append-icon="mdiChevronRight"
+                    :to="linkedTasksForDatastream(item.id)[0].route"
+                  >
+                    Manage task
+                  </v-btn>
+                </div>
+                <div
+                  v-else-if="showTaskSkeleton"
+                  class="datastream-task-link datastream-task-link--loading"
+                  aria-label="Loading task information"
+                >
+                  <span class="datastream-task-link__loading-icon" />
+                  <div class="datastream-task-link__body">
+                    <span
+                      class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
+                    />
+                    <span
+                      class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
+                    />
+                  </div>
                 </div>
               </div>
             </td>
@@ -449,7 +568,7 @@
             </td>
           </tr>
           <tr v-if="!renderedDatastreams.length">
-            <td colspan="3" class="site-datastreams__empty">
+            <td colspan="2" class="site-datastreams__empty">
               No datastreams match the current filters.
             </td>
           </tr>
@@ -563,6 +682,7 @@ import VisibilityTooltipCard from '@/components/Datastream/VisibilityTooltipCard
 import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
 import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
 import {
+  mdiAlertOctagon,
   mdiArrowDown,
   mdiArrowUp,
   mdiCallMerge,
@@ -570,17 +690,18 @@ import {
   mdiChartLine,
   mdiCheck,
   mdiChevronDown,
+  mdiChevronRight,
   mdiTrashCanOutline,
   mdiDotsVertical,
   mdiDownload,
   mdiFileEyeOutline,
   mdiFileRemove,
   mdiLightningBolt,
+  mdiLinkOff,
   mdiLock,
   mdiLockOpenVariant,
   mdiMagnify,
   mdiPencil,
-  mdiPlus,
   mdiShieldCheckOutline,
   mdiSigma,
   mdiSort,
@@ -1050,6 +1171,10 @@ function setSortOrder(order: DatastreamSortOrder) {
 }
 function datastreamName(datastream: Datastream) {
   return datastream.name?.trim() || 'Unnamed datastream'
+}
+function formatObservationCount(value: number | string | null | undefined) {
+  const count = Number(value)
+  return Number.isFinite(count) ? count.toLocaleString() : '—'
 }
 function canViewData(datastream: Datastream) {
   return (
@@ -1609,6 +1734,14 @@ const monitoringTasksByDatastreamId = computed<
 
   return groupedMonitoring
 })
+
+watch(
+  [() => props.workspace.id, canViewOrchestrationInfo, monitoringSiteIdRef],
+  () => {
+    void loadLinkedTasks()
+  },
+  { immediate: true }
+)
 
 watch(
   [
@@ -2304,6 +2437,7 @@ const loadDatastreams = async () => {
   border-bottom: 1px solid var(--hs-border);
 }
 .site-datastreams__filter-header-content {
+  width: 100%;
   justify-content: space-between;
   gap: var(--hs-space-8);
 }
@@ -2332,9 +2466,6 @@ const loadDatastreams = async () => {
 .site-datastreams__table tbody tr {
   border-bottom: 1px solid var(--hs-border);
 }
-.site-datastreams__table tbody tr:hover {
-  background: var(--hs-surface-muted);
-}
 .site-datastreams__row--highlighted {
   background: rgb(var(--v-theme-primary) / 0.08) !important;
 }
@@ -2343,28 +2474,34 @@ const loadDatastreams = async () => {
   vertical-align: top;
 }
 .site-datastreams__name-cell {
-  width: 24%;
-  min-width: 11rem;
+  min-width: 28rem;
 }
 .site-datastreams__name {
   overflow: hidden;
   color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
   font-weight: var(--hs-font-weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.site-datastreams__observations-cell {
-  min-width: 16rem;
+.site-datastreams__observation-line {
+  margin-top: var(--hs-space-8);
+}
+.site-datastreams__observations {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
 }
 .site-datastreams__sparkline {
-  min-width: 13rem;
+  flex: 0 0 calc(5 * var(--hs-space-32));
+  min-width: 0;
 }
 .site-datastreams__latest {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--hs-space-8);
-  margin-top: var(--hs-space-4);
-  font-family: var(--hs-font-data);
-  font-size: var(--hs-font-2xs);
+  min-width: 0;
+  font-size: var(--hs-font-sm);
+  white-space: nowrap;
 }
 .site-datastreams__latest--stale {
   color: var(--hs-text-muted);
@@ -2374,6 +2511,9 @@ const loadDatastreams = async () => {
 }
 .site-datastreams__latest--success {
   color: var(--hs-success);
+}
+.site-datastreams__observation-count {
+  color: var(--hs-text-secondary);
 }
 .site-datastreams__private-data {
   gap: var(--hs-space-6);
@@ -2447,6 +2587,7 @@ const loadDatastreams = async () => {
   }
   .site-datastreams__name-cell {
     padding-top: 0 !important;
+    min-width: 0;
   }
   .site-datastreams__actions-cell {
     padding-bottom: 0 !important;
@@ -2462,7 +2603,7 @@ const loadDatastreams = async () => {
     flex-direction: column;
   }
   .site-datastreams__sparkline {
-    min-width: 0;
+    flex-basis: calc(4 * var(--hs-space-32));
   }
 }
 </style>

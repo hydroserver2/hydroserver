@@ -1,8 +1,11 @@
 <template>
   <v-progress-linear v-if="loading" color="secondary" indeterminate />
-  <div v-else-if="!loading && canShowSparkline">
+  <div v-else-if="!loading && canShowSparkline" class="sparkline">
     <div class="w-[300px] max-w-full max-[600px]:w-full">
-      <div class="sparkline-subtitle mb-1 hs-text-sm font-weight-light opacity-70">
+      <div
+        v-if="!compact"
+        class="sparkline-subtitle mb-1 hs-text-sm font-weight-light opacity-70"
+      >
         Sparkline is showing most recent {{ validObservations.length }}
         values
       </div>
@@ -61,6 +64,10 @@ const props = defineProps({
     required: true,
   },
   unitName: String,
+  compact: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 type LatestValuePayload = { text: string; showUnit: boolean; isBad: boolean }
@@ -271,10 +278,10 @@ const sparklineColors = computed(() =>
 )
 
 const sparklineContainerStyle = computed(() => ({
-  height: '100px',
+  height: props.compact ? 'var(--hs-space-32)' : '100px',
   width: '100%',
-  border: `2px solid ${sparklineColors.value.border}`,
-  borderRadius: '4px',
+  border: props.compact ? 'none' : `2px solid ${sparklineColors.value.border}`,
+  borderRadius: props.compact ? '0' : '4px',
   overflow: 'hidden',
 }))
 
@@ -328,8 +335,8 @@ const fetchSparklineObservations = async (ds: Datastream) => {
       spacingMs >= 86_400_000
         ? 30 // daily data should display 30 values
         : spacingMs >= 3_600_000
-        ? 50 // hourly data should display 50 values
-        : 200 // sub-hourly data should display 200 values
+          ? 50 // hourly data should display 50 values
+          : 200 // sub-hourly data should display 200 values
 
     const observationCount = timeIntervalCount - 1
     const totalDurationMs = spacingMs * observationCount
