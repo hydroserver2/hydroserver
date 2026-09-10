@@ -18,7 +18,7 @@
         <div class="contents">
           <div class="min-w-0 flex items-center">
             <div
-              class="etl-source-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-2 bg-[#fdfdff] hs-text-sm text-[#1c1b1f] flex items-center [overflow-wrap:anywhere] [word-break:break-word]"
+              class="etl-source-display w-full min-h-[40px] border rounded-[10px] px-3 py-2 hs-text-sm flex items-center [overflow-wrap:anywhere] [word-break:break-word]"
             >
               {{ m.sourceIdentifier || '—' }}
             </div>
@@ -32,7 +32,7 @@
 
           <div class="min-w-0 flex items-center">
             <div
-              class="etl-target-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-[6px] bg-[#f6f9ff] hs-text-sm text-[#1c1b1f] flex items-center gap-2 overflow-hidden"
+              class="etl-target-display w-full min-h-[40px] border rounded-[10px] px-3 py-[6px] hs-text-sm flex items-center gap-2 overflow-hidden"
             >
               <div class="min-w-0 flex flex-1 flex-col justify-center">
                 <span
@@ -110,7 +110,11 @@ function resolveTargetName(mapping: TaskMapping) {
 function resolveMonitoringSiteName(mapping: TaskMapping) {
   const monitoringSiteId = resolveMonitoringSiteId(mapping)
   if (!monitoringSiteId) return ''
-  return workspaceMonitoringSites.value.find((t) => t.id === String(monitoringSiteId))?.name || ''
+  return (
+    workspaceMonitoringSites.value.find(
+      (t) => t.id === String(monitoringSiteId)
+    )?.name || ''
+  )
 }
 
 function resolveMonitoringSiteId(mapping: TaskMapping) {
@@ -124,6 +128,17 @@ function resolveMonitoringSiteId(mapping: TaskMapping) {
     workspaceDatastreams.value.find((d) => d.id === key) ||
     linkedDatastreams.value.find((d) => d.id === key) ||
     draftDatastreams.value.find((d) => String(d.id) === key)
-  return relatedDatastream ? datastreamMonitoringSiteId(relatedDatastream as any) : ''
+  return relatedDatastream
+    ? datastreamMonitoringSiteId(relatedDatastream as any)
+    : ''
 }
 </script>
+
+<style scoped>
+.etl-source-display,
+.etl-target-display {
+  color: var(--hs-text-primary);
+  background: var(--hs-surface);
+  border-color: var(--hs-border);
+}
+</style>

@@ -15,13 +15,20 @@
       </div>
     </header>
 
-    <div v-if="$slots.toolbar" class="hs-detail-panel__toolbar">
+    <div
+      v-if="$slots.toolbar"
+      class="hs-detail-panel__toolbar"
+      :class="toolbarClass"
+    >
       <slot name="toolbar" />
     </div>
 
     <div
       class="hs-detail-panel__body"
-      :class="{ 'hs-detail-panel__body--after-toolbar': !!$slots.toolbar }"
+      :class="[
+        bodyClass,
+        { 'hs-detail-panel__body--after-toolbar': !!$slots.toolbar },
+      ]"
     >
       <slot />
     </div>
@@ -30,6 +37,17 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'HsDetailPanel' })
+
+withDefaults(
+  defineProps<{
+    bodyClass?: string
+    toolbarClass?: string
+  }>(),
+  {
+    bodyClass: '',
+    toolbarClass: '',
+  }
+)
 </script>
 
 <style scoped>

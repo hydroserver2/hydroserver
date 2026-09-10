@@ -9,7 +9,7 @@
 
     <v-checkbox
       v-model="enabled"
-      :color="color"
+      color="primary"
       :disabled="disabled"
       label="Run this task on a schedule"
       hide-details
@@ -129,11 +129,9 @@ const props = withDefaults(
   defineProps<{
     modelValue: TaskSchedule | null
     disabled?: boolean
-    color?: string
   }>(),
   {
     disabled: false,
-    color: 'primary',
   }
 )
 
@@ -284,14 +282,15 @@ watch(enabled, (next) => {
 
 .schedule-option:hover,
 .schedule-option:focus-visible {
-  border-color: v-bind(color);
+  border-color: var(--hs-primary);
 }
 
 .schedule-option--selected {
-  background: color-mix(in srgb, v-bind(color) 8%, var(--hs-surface));
-  border-color: v-bind(color);
+  background: color-mix(in srgb, var(--hs-primary) 8%, var(--hs-surface));
+  border-color: var(--hs-primary);
   border-width: 2px;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, v-bind(color) 8%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--hs-primary) 8%, transparent);
 }
 
 .schedule-option--disabled {
@@ -317,8 +316,8 @@ watch(enabled, (next) => {
 
 .schedule-radio--selected {
   background: var(--hs-surface);
-  border-color: v-bind(color);
-  box-shadow: inset 0 0 0 3px v-bind(color);
+  border-color: var(--hs-primary);
+  box-shadow: inset 0 0 0 3px var(--hs-primary);
 }
 
 .schedule-option__title {
@@ -327,7 +326,7 @@ watch(enabled, (next) => {
 }
 
 .schedule-option__title--selected {
-  color: v-bind(color);
+  color: var(--hs-primary);
 }
 
 .schedule-option__controls {

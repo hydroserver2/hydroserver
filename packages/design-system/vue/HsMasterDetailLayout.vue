@@ -37,6 +37,9 @@ withDefaults(
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.hs-master-detail:not(.hs-workbench-canvas) {
   background: var(--hs-background);
 }
 

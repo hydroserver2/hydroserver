@@ -26,10 +26,15 @@
               class="run-entry-status"
             />
           </div>
-          <div class="run-entry-summary hs-text-sm font-weight-medium" :title="run.message">
+          <div
+            class="run-entry-summary hs-text-sm font-weight-medium"
+            :title="run.message"
+          >
             {{ run.message }}
           </div>
-          <div class="run-entry-runid-right hs-text-sm font-weight-bold">Run {{ shortId(run.id) }}</div>
+          <div class="run-entry-runid-right hs-text-sm font-weight-bold">
+            Run {{ shortId(run.id) }}
+          </div>
         </div>
 
         <div class="run-entry-meta">
@@ -52,7 +57,9 @@
         >
           <div class="run-entry-footer-content">
             <div v-if="run.runtimeUrl" class="run-entry-detail-row">
-              <div class="run-entry-detail-label hs-text-sm font-weight-bold">Runtime source URI</div>
+              <div class="run-entry-detail-label hs-text-sm font-weight-bold">
+                Runtime source URI
+              </div>
               <div class="run-entry-detail-value">
                 <div class="run-entry-detail-linkwrap">
                   <a
@@ -86,7 +93,9 @@
               v-if="run.violations.length"
               class="run-entry-detail-row run-entry-violations-row"
             >
-              <div class="run-entry-detail-label hs-text-sm font-weight-bold">Rule violations</div>
+              <div class="run-entry-detail-label hs-text-sm font-weight-bold">
+                Rule violations
+              </div>
               <div class="run-entry-detail-value">
                 <div class="run-entry-violations">
                   <div
@@ -94,13 +103,19 @@
                     :key="violation.key"
                     class="run-entry-violation"
                   >
-                    <div class="run-entry-violation-title hs-text-sm font-weight-bold">
+                    <div
+                      class="run-entry-violation-title hs-text-sm font-weight-bold"
+                    >
                       {{ violation.datastreamName }}
-                      <span class="run-entry-violation-type hs-text-sm font-weight-bold">
+                      <span
+                        class="run-entry-violation-type hs-text-sm font-weight-bold"
+                      >
                         {{ violation.ruleTypeLabel }}
                       </span>
                     </div>
-                    <div class="run-entry-violation-meta hs-text-sm font-weight-semibold">
+                    <div
+                      class="run-entry-violation-meta hs-text-sm font-weight-semibold"
+                    >
                       {{ violation.violationCount }} violating observation{{
                         violation.violationCount === 1 ? '' : 's'
                       }}
@@ -225,8 +240,8 @@ const runDurationText = (run?: TaskRun | null) => {
 .run-entry {
   border-radius: 10px;
   overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #ebebeb;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-border);
 }
 
 .run-entry-top {
@@ -298,7 +313,7 @@ const runDurationText = (run?: TaskRun | null) => {
 
 .run-entry-duration {
   color: #334155;
-  background: #ffffff;
+  background: var(--hs-surface);
   border: 1px solid #e2e8f0;
   border-radius: 999px;
   padding: 2px 10px;
@@ -353,9 +368,9 @@ const runDurationText = (run?: TaskRun | null) => {
 }
 
 .run-entry-violation {
-  border: 1px solid #fee2e2;
+  border: 1px solid var(--hs-danger);
   border-radius: 6px;
-  background: #fff7f7;
+  background: var(--hs-danger-bg);
   padding: 8px 10px;
 }
 
@@ -391,7 +406,7 @@ const runDurationText = (run?: TaskRun | null) => {
     background: rgba(255, 235, 59, 0.35);
   }
   100% {
-    background: #ffffff;
+    background: var(--hs-surface);
   }
 }
 

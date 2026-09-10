@@ -1,23 +1,24 @@
 <template>
   <v-card class="d-flex flex-column" style="max-height: 90vh">
     <div class="shrink-0">
-      <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-        <v-card-title>{{
-          isEditMode ? 'Edit derivation task' : 'Create derivation task'
-        }}</v-card-title>
-        <v-btn
-          :icon="mdiInformationOutline"
-          variant="text"
-          aria-label="Toggle task info"
-          @click="showInfo = !showInfo"
-        />
+      <v-toolbar color="primary" flat>
+        <div class="d-flex align-center px-4">
+          <v-card-title class="hs-subheading pa-0">{{
+            isEditMode ? 'Edit derivation task' : 'Create derivation task'
+          }}</v-card-title>
+          <v-btn
+            icon
+            class="ml-n1"
+            variant="text"
+            aria-label="Toggle task info"
+            @click="showInfo = !showInfo"
+          >
+            <v-icon :icon="mdiInformationOutline" size="17" />
+          </v-btn>
+        </div>
       </v-toolbar>
       <v-divider />
-      <v-progress-linear
-        v-if="loadingExisting"
-        indeterminate
-        :color="DATA_PRODUCT_ACCENT"
-      />
+      <v-progress-linear v-if="loadingExisting" indeterminate color="primary" />
     </div>
 
     <v-form
@@ -31,7 +32,7 @@
         <TaskFormLayout>
           <v-alert
             v-if="showInfo"
-            :color="DATA_PRODUCT_ACCENT"
+            color="primary"
             type="info"
             variant="tonal"
             density="compact"
@@ -54,11 +55,7 @@
 
           <v-divider />
 
-          <ScheduleFields
-            v-model="schedule"
-            :disabled="loadingExisting"
-            :color="DATA_PRODUCT_ACCENT"
-          />
+          <ScheduleFields v-model="schedule" :disabled="loadingExisting" />
 
           <v-divider />
 
@@ -100,7 +97,6 @@
             <div>
               <v-btn
                 variant="outlined"
-                :color="DATA_PRODUCT_ACCENT"
                 size="small"
                 :prepend-icon="mdiPlus"
                 :disabled="loadingExisting"
@@ -134,7 +130,7 @@
                   v-for="inp in namedInputs"
                   :key="inp.variableName"
                   size="x-small"
-                  :color="DATA_PRODUCT_ACCENT"
+                  color="primary"
                   variant="tonal"
                   class="hs-font-data"
                 >
@@ -154,7 +150,7 @@
                   :key="fn"
                   size="x-small"
                   variant="outlined"
-                  color="grey-darken-1"
+                  color="default"
                   class="hs-font-data"
                 >
                   {{ fn }}
@@ -183,7 +179,7 @@
             <div class="toggle-row">
               <v-checkbox
                 v-model="stopOnNoData"
-                :color="DATA_PRODUCT_ACCENT"
+                color="primary"
                 hide-details
                 :disabled="loadingExisting"
               >
@@ -205,7 +201,7 @@
             <div class="toggle-row">
               <v-checkbox
                 v-model="stopOnError"
-                :color="DATA_PRODUCT_ACCENT"
+                color="primary"
                 hide-details
                 :disabled="loadingExisting"
               >
@@ -237,7 +233,6 @@
         >
         <v-btn-dialog-action
           type="submit"
-          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
@@ -261,10 +256,6 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import {
-  DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_TOOLBAR_STYLE,
-} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
 import TaskFormLayout from '../shared/TaskFormLayout.vue'

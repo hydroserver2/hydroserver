@@ -65,10 +65,7 @@
       <div class="d-flex align-center flex-wrap ga-2">
         <span>{{ workspaceLoadError }}</span>
         <v-spacer />
-        <v-btn
-          :loading="isRetryingWorkspaceLoad"
-          @click="retryWorkspaceLoad"
-        >
+        <v-btn :loading="isRetryingWorkspaceLoad" @click="retryWorkspaceLoad">
           Retry
         </v-btn>
       </div>
@@ -88,7 +85,11 @@
           />
         </template>
 
-        <section v-if="selected" class="detail" data-testid="workspace-detail">
+        <section
+          v-if="selected"
+          class="detail hs-workbench-canvas"
+          data-testid="workspace-detail"
+        >
           <header class="detail-header">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
@@ -703,28 +704,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--hs-background);
-  background-image:
-    radial-gradient(
-      1100px 760px at 12% -8%,
-      rgb(var(--v-theme-primary) / 0.045),
-      transparent 62%
-    ),
-    radial-gradient(
-      900px 680px at 102% 28%,
-      rgb(var(--v-theme-primary) / 0.038),
-      transparent 58%
-    ),
-    radial-gradient(
-      700px 900px at 50% 115%,
-      rgb(var(--v-theme-primary) / 0.028),
-      transparent 60%
-    );
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-position:
-    0 0,
-    0 0,
-    0 0;
   min-width: 0;
 }
 .detail-header {

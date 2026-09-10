@@ -1,5 +1,8 @@
 <template>
-  <HsDetailPanel>
+  <HsDetailPanel
+    toolbar-class="hs-workbench-canvas"
+    body-class="hs-workbench-canvas"
+  >
     <template #header>
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-2">
@@ -360,7 +363,11 @@ const clearTaskTypeFilter = () => {
 
 .detail-filterbar {
   padding: 0 var(--hs-space-24);
-  margin: var(--hs-space-24) 0 var(--hs-space-10);
+  margin: var(--hs-space-24) 0 0;
+}
+
+:deep(.hs-detail-panel__body--after-toolbar) {
+  padding-top: var(--hs-space-10);
 }
 
 .detail-filterbar .hs-table-actions {

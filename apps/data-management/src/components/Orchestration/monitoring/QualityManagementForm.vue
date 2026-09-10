@@ -1,25 +1,26 @@
 <template>
   <v-card class="d-flex flex-column" style="max-height: 90vh">
     <div class="shrink-0">
-      <v-toolbar :color="QUALITY_ACCENT" flat>
-        <v-card-title>{{
-          isEditMode
-            ? 'Edit quality monitoring task'
-            : 'Create quality monitoring task'
-        }}</v-card-title>
-        <v-btn
-          :icon="mdiInformationOutline"
-          variant="text"
-          aria-label="Toggle task info"
-          @click="showInfo = !showInfo"
-        />
+      <v-toolbar color="primary" flat>
+        <div class="d-flex align-center px-4">
+          <v-card-title class="hs-subheading pa-0">{{
+            isEditMode
+              ? 'Edit quality monitoring task'
+              : 'Create quality monitoring task'
+          }}</v-card-title>
+          <v-btn
+            icon
+            class="ml-n1"
+            variant="text"
+            aria-label="Toggle task info"
+            @click="showInfo = !showInfo"
+          >
+            <v-icon :icon="mdiInformationOutline" size="17" />
+          </v-btn>
+        </div>
       </v-toolbar>
       <v-divider />
-      <v-progress-linear
-        v-if="loadingExisting"
-        indeterminate
-        :color="QUALITY_ACCENT"
-      />
+      <v-progress-linear v-if="loadingExisting" indeterminate color="primary" />
     </div>
 
     <v-form
@@ -33,7 +34,7 @@
         <TaskFormLayout>
           <v-alert
             v-if="showInfo"
-            :color="QUALITY_ACCENT"
+            color="primary"
             type="info"
             variant="tonal"
             density="compact"
@@ -80,7 +81,7 @@
             >
               <template #selection="{ item, index }">
                 <v-chip
-                  :color="QUALITY_ACCENT"
+                  color="primary"
                   size="small"
                   variant="tonal"
                   rounded
@@ -96,11 +97,7 @@
 
           <v-divider />
 
-          <ScheduleFields
-            v-model="schedule"
-            :disabled="loadingExisting"
-            :color="QUALITY_ACCENT"
-          />
+          <ScheduleFields v-model="schedule" :disabled="loadingExisting" />
 
           <v-divider />
 
@@ -120,7 +117,6 @@
                 variant="outlined"
                 size="small"
                 :prepend-icon="mdiPlus"
-                :color="QUALITY_ACCENT"
                 :disabled="loadingExisting"
                 @click="addRule"
               >
@@ -258,7 +254,6 @@
         </v-btn-cancel>
         <v-btn-dialog-action
           type="submit"
-          :color="QUALITY_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
@@ -286,10 +281,6 @@ import hs, {
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { formatTime } from '@/utils/time'
-import {
-  QUALITY_ACCENT,
-  QUALITY_ACCENT_LIGHT,
-} from '../workbench/orchestrationTabs'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
 import TaskFormLayout from '../shared/TaskFormLayout.vue'

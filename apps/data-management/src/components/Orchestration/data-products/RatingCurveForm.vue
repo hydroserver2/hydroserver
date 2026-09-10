@@ -1,16 +1,21 @@
 <template>
   <v-card class="d-flex flex-column" style="max-height: 90vh">
     <div class="shrink-0">
-      <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-        <v-card-title>{{
-          isEditMode ? 'Edit rating curve task' : 'Create rating curve task'
-        }}</v-card-title>
-        <v-btn
-          :icon="mdiInformationOutline"
-          variant="text"
-          aria-label="Toggle task info"
-          @click="showInfo = !showInfo"
-        />
+      <v-toolbar color="primary" flat>
+        <div class="d-flex align-center px-4">
+          <v-card-title class="hs-subheading pa-0">{{
+            isEditMode ? 'Edit rating curve task' : 'Create rating curve task'
+          }}</v-card-title>
+          <v-btn
+            icon
+            class="ml-n1"
+            variant="text"
+            aria-label="Toggle task info"
+            @click="showInfo = !showInfo"
+          >
+            <v-icon :icon="mdiInformationOutline" size="17" />
+          </v-btn>
+        </div>
       </v-toolbar>
       <v-divider />
     </div>
@@ -26,7 +31,7 @@
         <TaskFormLayout>
           <v-alert
             v-if="showInfo"
-            :color="DATA_PRODUCT_ACCENT"
+            color="primary"
             type="info"
             variant="tonal"
             density="compact"
@@ -48,11 +53,7 @@
 
           <v-divider />
 
-          <ScheduleFields
-            v-model="schedule"
-            :disabled="loadingExisting"
-            :color="DATA_PRODUCT_ACCENT"
-          />
+          <ScheduleFields v-model="schedule" :disabled="loadingExisting" />
 
           <v-divider />
 
@@ -136,12 +137,7 @@
                   class="d-none"
                   @change="onCreateFileSelected"
                 />
-                <v-btn
-                  variant="outlined"
-                  :color="DATA_PRODUCT_ACCENT"
-                  block
-                  @click="openCreateFilePicker"
-                >
+                <v-btn variant="outlined" block @click="openCreateFilePicker">
                   {{
                     selectedCreateFile ? 'Change CSV file' : 'Choose CSV file'
                   }}
@@ -214,7 +210,6 @@
         >
         <v-btn-dialog-action
           type="submit"
-          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
@@ -243,10 +238,6 @@ import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
-import {
-  DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_TOOLBAR_STYLE,
-} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import RatingCurvePreview from './RatingCurvePreview.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'

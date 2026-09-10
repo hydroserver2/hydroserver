@@ -1,15 +1,17 @@
 <template>
   <StickyForm>
     <template #header>
-      <div class="task-form-header">
-        <h2 class="hs-subheading">
-          {{ isEdit ? 'Edit task' : 'Add task' }}
-        </h2>
-        <div v-if="headerContextLabel" class="task-form-header__context">
-          <span class="task-form-header__dot" />
-          <span class="hs-text-sm">{{ headerContextLabel }}</span>
+      <v-toolbar color="primary" flat>
+        <div class="task-form-header">
+          <h2 class="hs-subheading">
+            {{ isEdit ? 'Edit ingestion task' : 'Create ingestion task' }}
+          </h2>
+          <div v-if="headerContextLabel" class="task-form-header__context">
+            <span class="task-form-header__dot" />
+            <span class="hs-text-sm">{{ headerContextLabel }}</span>
+          </div>
         </div>
-      </div>
+      </v-toolbar>
     </template>
 
     <v-form
@@ -32,7 +34,7 @@
 
           <v-divider />
 
-          <ScheduleFields v-model="task.schedule" :color="INGESTION_ACCENT" />
+          <ScheduleFields v-model="task.schedule" />
 
           <template v-if="perTaskPlaceholders.length">
             <v-divider />
@@ -125,7 +127,6 @@
                   variant="outlined"
                   size="small"
                   type="button"
-                  :color="INGESTION_ACCENT"
                   :prepend-icon="mdiPlus"
                   @click="addMapping"
                 >
@@ -143,7 +144,6 @@
       <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
       <v-btn-dialog-action
         :loading="submitLoading"
-        :color="INGESTION_ACCENT"
         type="submit"
         @click="onSubmit"
       >
@@ -176,7 +176,6 @@ import { rules } from '@/utils/rules'
 import { ensureIsoUtc } from '@/utils/time'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
-import { INGESTION_ACCENT } from '../workbench/orchestrationTabs'
 import { mdiArrowRight, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
 
 type FormMapping = { sourceIdentifier: string; targetDatastreamId: string }
@@ -402,7 +401,7 @@ watch(
 
 <style scoped>
 .task-form-header {
-  padding: var(--hs-space-16) var(--hs-space-24) var(--hs-space-12);
+  padding: var(--hs-space-8) var(--hs-space-16);
 }
 
 .task-form-header__context {
@@ -410,13 +409,14 @@ watch(
   gap: var(--hs-space-8);
   align-items: center;
   margin-top: var(--hs-space-4);
-  color: var(--hs-text-secondary);
+  color: var(--hs-surface);
+  opacity: 0.8;
 }
 
 .task-form-header__dot {
   width: 10px;
   height: 10px;
-  background: v-bind(INGESTION_ACCENT);
+  background: var(--hs-surface);
   /* A dot is a shape, not a step on the radius scale. */
   border-radius: 50%;
 }
@@ -461,6 +461,10 @@ watch(
 
 :deep(.sticky-form-card) {
   border-radius: var(--hs-radius-lg) !important;
+}
+
+:deep(.sticky-header-content) {
+  padding: 0;
 }
 
 :deep(.sticky-header .v-divider),

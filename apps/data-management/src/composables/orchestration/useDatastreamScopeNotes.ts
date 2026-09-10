@@ -47,7 +47,7 @@ export function useDatastreamScopeNotes(
   )
 
   const siteScopeNote = computed(
-    () => `Only datastreams at ${monitoringSiteLabel.value} can be selected.`
+    () => `Inputs must belong to ${monitoringSiteLabel.value}.`
   )
 
   return {

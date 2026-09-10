@@ -117,7 +117,7 @@
         </v-tab>
       </v-tabs>
     </div>
-    <section class="body">
+    <section class="body hs-workbench-canvas">
       <div v-if="tab === 'runs'" class="run-history-list">
         <TaskRunHistory
           :rows="runRows"
@@ -240,7 +240,7 @@ function onFormUpdated() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--hs-surface);
 }
 .bar {
   display: grid;
@@ -280,7 +280,7 @@ h2 {
   margin: 0;
 }
 .pill {
-  background: #f5f7fa;
+  background: var(--hs-surface-muted);
   border-radius: 4px;
   padding: 2px 7px;
   text-transform: capitalize;
@@ -303,10 +303,10 @@ h2 {
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
-  background: #ffffff;
-  border: 1px solid #cac4d0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-input-border);
   border-radius: 8px;
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
   cursor: pointer;
   font-family: inherit;
   line-height: 1.1;
@@ -357,7 +357,6 @@ h2 {
   min-height: 0;
   overflow: auto;
   padding: 16px 22px;
-  background: #f5f7fa;
 }
 .run-history-list {
   display: flex;

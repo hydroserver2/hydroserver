@@ -28,7 +28,9 @@
               >
                 {{ monitoringSiteName(row.sourceDatastream) }}
               </small>
-              <small class="target-id">{{ row.sourceDatastreamId || '—' }}</small>
+              <small class="target-id">{{
+                row.sourceDatastreamId || '—'
+              }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="row.sourceDatastream"
@@ -58,7 +60,9 @@
               >
                 {{ monitoringSiteName(row.targetDatastream) }}
               </small>
-              <small class="target-id">{{ row.targetDatastreamId || '—' }}</small>
+              <small class="target-id">{{
+                row.targetDatastreamId || '—'
+              }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="row.targetDatastream"
@@ -218,7 +222,9 @@ function monitoringSiteName(datastream: DatastreamLike) {
   const id = monitoringSiteId(datastream)
   if (!id) return ''
   return (
-    workspaceMonitoringSites.value.find((monitoringSite) => monitoringSite.id === String(id))?.name || ''
+    workspaceMonitoringSites.value.find(
+      (monitoringSite) => monitoringSite.id === String(id)
+    )?.name || ''
   )
 }
 </script>
@@ -270,7 +276,7 @@ function monitoringSiteName(datastream: DatastreamLike) {
   border: 1px solid #d0c9d8;
   border-radius: 8px;
   padding: 6px 12px;
-  background: #fdfdff;
+  background: var(--hs-surface);
   color: #1c1b1f;
   display: flex;
   flex-direction: column;
@@ -284,7 +290,7 @@ function monitoringSiteName(datastream: DatastreamLike) {
   border: 1px solid #d0c9d8;
   border-radius: 8px;
   padding: 6px 12px;
-  background: #f6f9ff;
+  background: var(--hs-surface);
   color: #1c1b1f;
   display: flex;
   flex-direction: column;

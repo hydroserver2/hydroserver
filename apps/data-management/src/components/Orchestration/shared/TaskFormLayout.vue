@@ -11,7 +11,7 @@
  * The vertical rhythm every orchestration task form shares.
  *
  * Vuetify reserves a fixed strip under each field for validation messages, so
- * a stack of fields and non-field controls (switches, dividers, the datastream
+ * a stack of fields and non-field controls (checkboxes, dividers, the datastream
  * selector) ends up unevenly spaced. Collapsing that strip until a message
  * exists lets one gap own the spacing for the whole form.
  */
@@ -22,7 +22,6 @@ const FIELD_DEFAULTS = {
   VAutocomplete: { hideDetails: 'auto' },
   VCombobox: { hideDetails: 'auto' },
   VCheckbox: { hideDetails: 'auto' },
-  VSwitch: { hideDetails: 'auto' },
   VRadioGroup: { hideDetails: 'auto' },
   VInput: { hideDetails: 'auto' },
 }
