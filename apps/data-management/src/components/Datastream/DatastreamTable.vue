@@ -253,120 +253,6 @@
                     </span>
                   </div>
                 </div>
-                <div
-                  v-if="showTaskRow"
-                  class="datastream-task-link"
-                  :class="datastreamTaskLinkClass(item.id)"
-                >
-                  <v-icon
-                    :class="[
-                      'datastream-task-link__icon',
-                      linkedTasksForDatastream(item.id).length === 1
-                        ? linkedTasksForDatastream(item.id)[0].iconClass
-                        : '',
-                    ]"
-                    :icon="
-                      !linkedTasksForDatastream(item.id).length
-                        ? mdiLinkOff
-                        : linkedTasksForDatastream(item.id).length > 1
-                          ? mdiAlertOctagon
-                          : linkedTasksForDatastream(item.id)[0].icon
-                    "
-                    size="20"
-                  />
-                  <div class="datastream-task-link__body">
-                    <div class="datastream-task-link__meta">
-                      <span class="datastream-task-link__label hs-label">
-                        {{
-                          linkedTasksForDatastream(item.id).length > 1
-                            ? 'Multiple task targets'
-                            : linkedTasksForDatastream(item.id).length === 1
-                              ? linkedTasksForDatastream(item.id)[0].label
-                              : 'No task connected'
-                        }}
-                      </span>
-                      <template
-                        v-if="linkedTasksForDatastream(item.id).length === 1"
-                      >
-                        <RouterLink
-                          class="datastream-task-link__name hs-title"
-                          :to="linkedTasksForDatastream(item.id)[0].route"
-                        >
-                          {{ linkedTasksForDatastream(item.id)[0].displayName }}
-                        </RouterLink>
-                        <span
-                          class="datastream-task-link__status"
-                          :title="
-                            displayedTaskStatus(
-                              linkedTasksForDatastream(item.id)[0]
-                            )
-                          "
-                        >
-                          <span
-                            class="datastream-task-link__dot"
-                            :style="{
-                              backgroundColor: taskStatusColor(
-                                linkedTasksForDatastream(item.id)[0]
-                              ),
-                            }"
-                          />
-                          <small
-                            class="datastream-task-link__last-ran font-weight-medium"
-                          >
-                            {{
-                              lastRanLabel(linkedTasksForDatastream(item.id)[0])
-                            }}
-                          </small>
-                        </span>
-                      </template>
-                      <span
-                        v-else-if="linkedTasksForDatastream(item.id).length > 1"
-                        class="datastream-task-link__conflict-text font-weight-bold"
-                      >
-                        {{ linkedTasksForDatastream(item.id).length }} tasks are
-                        feeding this datastream.
-                      </span>
-                    </div>
-                    <div
-                      v-if="linkedTasksForDatastream(item.id).length > 1"
-                      class="datastream-task-link__tasks"
-                    >
-                      <RouterLink
-                        v-for="task in linkedTasksForDatastream(item.id)"
-                        :key="task.id"
-                        :to="task.route"
-                        class="font-weight-bold"
-                      >
-                        {{ task.displayName }}
-                      </RouterLink>
-                    </div>
-                  </div>
-                  <v-btn
-                    v-if="linkedTasksForDatastream(item.id).length === 1"
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    :append-icon="mdiChevronRight"
-                    :to="linkedTasksForDatastream(item.id)[0].route"
-                  >
-                    Manage task
-                  </v-btn>
-                </div>
-                <div
-                  v-else-if="showTaskSkeleton"
-                  class="datastream-task-link datastream-task-link--loading"
-                  aria-label="Loading task information"
-                >
-                  <span class="datastream-task-link__loading-icon" />
-                  <div class="datastream-task-link__body">
-                    <span
-                      class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
-                    />
-                    <span
-                      class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
-                    />
-                  </div>
-                </div>
               </div>
             </td>
             <td class="site-datastreams__actions-cell" data-label="Actions">
@@ -566,6 +452,126 @@
                 Preparing file…
               </div>
             </td>
+            <td
+              v-if="showTaskRow || showTaskSkeleton"
+              colspan="2"
+              class="site-datastreams__task-cell"
+            >
+              <div
+                v-if="showTaskRow"
+                class="datastream-task-link datastream-task-link--card"
+                :class="datastreamTaskLinkClass(item.id)"
+              >
+                <v-icon
+                  :class="[
+                    'datastream-task-link__icon',
+                    linkedTasksForDatastream(item.id).length === 1
+                      ? linkedTasksForDatastream(item.id)[0].iconClass
+                      : '',
+                  ]"
+                  :icon="
+                    !linkedTasksForDatastream(item.id).length
+                      ? mdiLinkOff
+                      : linkedTasksForDatastream(item.id).length > 1
+                        ? mdiAlertOctagon
+                        : linkedTasksForDatastream(item.id)[0].icon
+                  "
+                  size="20"
+                />
+                <div class="datastream-task-link__body">
+                  <div class="datastream-task-link__meta">
+                    <span class="datastream-task-link__label hs-label">
+                      {{
+                        linkedTasksForDatastream(item.id).length > 1
+                          ? 'Multiple task targets'
+                          : linkedTasksForDatastream(item.id).length === 1
+                            ? linkedTasksForDatastream(item.id)[0].label
+                            : 'No task connected'
+                      }}
+                    </span>
+                    <template
+                      v-if="linkedTasksForDatastream(item.id).length === 1"
+                    >
+                      <RouterLink
+                        class="datastream-task-link__name hs-title"
+                        :to="linkedTasksForDatastream(item.id)[0].route"
+                      >
+                        {{ linkedTasksForDatastream(item.id)[0].displayName }}
+                      </RouterLink>
+                      <span
+                        class="datastream-task-link__status"
+                        :title="
+                          displayedTaskStatus(
+                            linkedTasksForDatastream(item.id)[0]
+                          )
+                        "
+                      >
+                        <span
+                          class="datastream-task-link__dot"
+                          :style="{
+                            backgroundColor: taskStatusColor(
+                              linkedTasksForDatastream(item.id)[0]
+                            ),
+                          }"
+                        />
+                        <small
+                          class="datastream-task-link__last-ran font-weight-medium"
+                        >
+                          {{
+                            lastRanLabel(linkedTasksForDatastream(item.id)[0])
+                          }}
+                        </small>
+                      </span>
+                    </template>
+                    <span
+                      v-else-if="linkedTasksForDatastream(item.id).length > 1"
+                      class="datastream-task-link__conflict-text font-weight-bold"
+                    >
+                      {{ linkedTasksForDatastream(item.id).length }} tasks are
+                      feeding this datastream.
+                    </span>
+                  </div>
+                  <div
+                    v-if="linkedTasksForDatastream(item.id).length > 1"
+                    class="datastream-task-link__tasks"
+                  >
+                    <RouterLink
+                      v-for="task in linkedTasksForDatastream(item.id)"
+                      :key="task.id"
+                      :to="task.route"
+                      class="font-weight-bold"
+                    >
+                      {{ task.displayName }}
+                    </RouterLink>
+                  </div>
+                </div>
+                <v-btn
+                  v-if="linkedTasksForDatastream(item.id).length === 1"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  :append-icon="mdiChevronRight"
+                  :to="linkedTasksForDatastream(item.id)[0].route"
+                >
+                  Manage task
+                </v-btn>
+              </div>
+              <div
+                v-else
+                class="datastream-task-link datastream-task-link--card datastream-task-link--loading"
+                aria-label="Loading task information"
+              >
+                <span class="datastream-task-link__loading-icon" />
+                <div class="datastream-task-link__body">
+                  <span
+                    class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
+                  />
+                  <span
+                    class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
+                  />
+                </div>
+              </div>
+            </td>
           </tr>
           <tr v-if="!renderedDatastreams.length">
             <td colspan="2" class="site-datastreams__empty">
@@ -738,7 +744,10 @@ type LinkedMonitoringTask = LinkedDatastreamTask & {
 }
 
 type SiteDatastreamFilterKey =
-  'observed-property' | 'unit' | 'method' | 'processing-level'
+  | 'observed-property'
+  | 'unit'
+  | 'method'
+  | 'processing-level'
 type FilterOption = { value: string; label: string }
 type FilterDefinition = {
   key: SiteDatastreamFilterKey
@@ -2429,7 +2438,9 @@ const loadDatastreams = async () => {
 }
 .site-datastreams__table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--hs-background);
 }
 .site-datastreams__table-controls {
   padding: var(--hs-space-6) var(--hs-space-8);
@@ -2463,8 +2474,19 @@ const loadDatastreams = async () => {
   background: rgb(var(--v-theme-primary));
   border-radius: var(--hs-radius-pill);
 }
+.site-datastreams__table tbody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-8);
+  padding: var(--hs-space-8);
+}
 .site-datastreams__table tbody tr {
-  border-bottom: 1px solid var(--hs-border);
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
 }
 .site-datastreams__row--highlighted {
   background: rgb(var(--v-theme-primary) / 0.08) !important;
@@ -2527,6 +2549,11 @@ const loadDatastreams = async () => {
   align-items: center;
   justify-content: flex-end;
 }
+.site-datastreams__task-cell {
+  display: block;
+  width: 100%;
+  padding: 0 !important;
+}
 .site-datastreams__row-actions {
   order: 2;
   justify-content: flex-end;
@@ -2579,10 +2606,6 @@ const loadDatastreams = async () => {
   visibility: hidden;
 }
 @media (min-width: 60.0625rem) {
-  .site-datastreams__table tbody tr {
-    position: relative;
-    display: block;
-  }
   .site-datastreams__name-cell {
     display: block;
     width: 100%;
@@ -2607,18 +2630,21 @@ const loadDatastreams = async () => {
     width: 100%;
   }
   .site-datastreams__table tbody tr {
-    padding: var(--hs-space-12);
+    padding: 0;
   }
   .site-datastreams__table td {
-    padding: var(--hs-space-6) 0;
+    padding: var(--hs-space-6) var(--hs-space-12);
   }
   .site-datastreams__name-cell {
-    padding-top: 0 !important;
+    padding-top: var(--hs-space-12) !important;
     min-width: 0;
   }
   .site-datastreams__actions-cell {
     position: static;
-    padding-bottom: 0 !important;
+    padding-bottom: var(--hs-space-12) !important;
+  }
+  .site-datastreams__task-cell {
+    padding: 0 !important;
   }
   .site-datastreams__row-actions {
     justify-content: flex-start;
