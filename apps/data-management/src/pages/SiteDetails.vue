@@ -5,37 +5,12 @@
         cols="12"
         class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
-        <div class="mt-2">
-          <h5 class="hs-text-md mb-0">{{ monitoringSite.name }}</h5>
-          <div
-            v-if="siteSummary.length || ratingCurveCount"
-            class="hs-text-sm text-medium-emphasis mt-1 flex flex-wrap items-center gap-x-1"
-          >
-            <span v-if="siteSummary.length">{{ siteSummary.join(' • ') }}</span>
-            <span
-              v-if="siteSummary.length && ratingCurveCount"
-              aria-hidden="true"
-            >
-              •
-            </span>
-            <v-btn
-              v-if="ratingCurveCount"
-              class="site-rating-curve-link"
-              variant="text"
-              color="teal-darken-1"
-              @click="siteDetailsTable?.openRatingCurveDialog()"
-            >
-              View rating curves ({{ ratingCurveCount }})
-            </v-btn>
-          </div>
-        </div>
+        <h5 class="hs-text-md mt-2 mb-0">{{ monitoringSite.name }}</h5>
 
         <div
           class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
         >
-          <HydroShareArchivalButton
-            v-if="canEditMonitoringSite && hydroShareConnected"
-          />
+          <HydroShareArchivalButton v-if="canEditMonitoringSite && hydroShareConnected" />
 
           <v-btn
             v-if="canEditMonitoringSite"
@@ -94,10 +69,7 @@
 
           <v-btn
             v-if="
-              hasPermission(
-                PermissionResource.MonitoringSite,
-                PermissionAction.Delete
-              )
+              hasPermission(PermissionResource.MonitoringSite, PermissionAction.Delete)
             "
             color="red-darken-3"
             data-testid="delete-site-button"
@@ -107,11 +79,7 @@
           </v-btn>
         </div>
 
-        <v-dialog
-          v-model="isDeleteModalOpen"
-          v-if="monitoringSite"
-          width="40rem"
-        >
+        <v-dialog v-model="isDeleteModalOpen" v-if="monitoringSite" width="40rem">
           <SiteDeleteModal
             :monitoringSite="monitoringSite"
             @switch-to-access-control="switchToAccessControlModal"
@@ -125,11 +93,7 @@
             :monitoring-site-id="monitoringSiteId"
           />
         </v-dialog>
-        <v-dialog
-          v-if="monitoringSite"
-          v-model="isRegisterModalOpen"
-          width="80rem"
-        >
+        <v-dialog v-if="monitoringSite" v-model="isRegisterModalOpen" width="80rem">
           <SiteForm
             @close="onSiteFormClosed"
             :monitoring-site-id="monitoringSiteId"
@@ -139,148 +103,105 @@
       </v-col>
     </v-row>
 
-    <v-row v-if="monitoringSite" class="site-details-layout align-stretch mb-0">
-      <v-col cols="12" md="8" class="site-details-main">
-        <p v-if="monitoringSite.description" class="site-description">
-          {{ monitoringSite.description }}
-        </p>
-
-        <v-divider v-if="monitoringSite.description" class="my-4" />
-
-        <template v-if="metadataEntries.length">
-          <h5 class="hs-text-md mb-1">Additional metadata</h5>
-          <dl
-            id="site-additional-metadata"
-            class="site-metadata-list"
-            :style="{ '--site-metadata-row-count': metadataRowCount }"
-          >
-            <div
-              v-for="[key, value] in visibleMetadataEntries"
-              :key="key"
-              class="site-metadata-item"
-            >
-              <dt>{{ key }}</dt>
-              <dd>
-                <a
-                  v-if="isUrl(value)"
-                  :href="value"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ value }}
-                </a>
-                <span v-else>{{ value }}</span>
-              </dd>
-            </div>
-          </dl>
-          <v-btn
-            v-if="metadataEntries.length > metadataSummarySize"
-            class="site-metadata-toggle"
-            variant="text"
-            color="primary"
-            :append-icon="showAllMetadata ? mdiChevronUp : mdiChevronDown"
-            :aria-expanded="showAllMetadata"
-            aria-controls="site-additional-metadata"
-            @click="showAllMetadata = !showAllMetadata"
-          >
-            {{
-              showAllMetadata
-                ? 'Show fewer'
-                : `View all ${metadataEntries.length}`
-            }}
-          </v-btn>
-        </template>
-
-        <div
-          class="site-photos-section d-flex align-center justify-space-between mb-2"
-        >
-          <h5 class="hs-text-md mb-0">Site photos</h5>
-        </div>
-        <div class="site-photos-content">
-          <div v-if="hasPhotos" class="flex w-full gap-2 overflow-x-auto">
-            <button
-              v-for="(photo, index) in visiblePhotos"
-              :key="photo.id"
-              class="relative block aspect-square w-24 shrink-0 cursor-pointer appearance-none overflow-hidden rounded-lg border border-black/10 bg-transparent p-0"
-              type="button"
-              @click="openPhoto(photo)"
-            >
-              <v-img :src="photo.link" cover class="h-full w-full" />
-              <div
-                v-if="index === visiblePhotos.length - 1 && extraPhotoCount > 0"
-                class="absolute inset-0 flex items-center justify-center bg-black/55 hs-subheading text-white"
-              >
-                +{{ extraPhotoCount }}
-              </div>
-            </button>
-          </div>
-          <div v-else-if="loading" class="text-center">
-            <p>
-              Your photos are being uploaded. They will appear once the upload
-              is complete.
-            </p>
-            <v-progress-circular indeterminate color="primary" />
-          </div>
-          <div v-else class="text-medium-emphasis">
-            <small>No photos added yet.</small>
-          </div>
-        </div>
-      </v-col>
-
-      <v-col cols="12" md="4" class="site-details-sidebar">
-        <v-card
-          class="site-location-card"
-          color="surface"
-          variant="flat"
-          border
-        >
-          <div class="site-location-map">
+    <v-row v-if="monitoringSite">
+      <v-col>
+        <div class="w-full">
+          <div class="h-88 w-full max-[960px]:h-72">
             <OpenLayersMap
               :monitoringSites="[monitoringSite]"
               startInSatellite
               class="h-full w-full"
-            />
+            >
+              <template #overlay>
+                <v-card
+                  v-if="!isMobile"
+                  class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
+                  elevation="4"
+                >
+                  <div class="hs-text-sm font-weight-medium mb-2">
+                    Location
+                  </div>
+                  <div class="grid gap-1">
+                    <div
+                      v-for="detail in locationDetails"
+                      :key="detail.label"
+                      class="flex flex-col"
+                    >
+                      <span class="hs-text-2xs text-medium-emphasis">
+                        {{ detail.label }}
+                      </span>
+                      <span class="hs-text-sm">{{ detail.value }}</span>
+                    </div>
+                  </div>
+                </v-card>
+              </template>
+            </OpenLayersMap>
           </div>
-
-          <div v-if="placeLine" class="site-location-summary">
-            {{ placeLine }}
-          </div>
-
-          <dl class="site-identity-list">
-            <div>
-              <dt>Coordinates</dt>
-              <dd>
-                <span class="hs-font-data" :title="coordinateLine">
-                  {{ coordinateLine }}
+          <v-card
+            v-if="isMobile"
+            class="mt-3 w-full bg-white/95 px-3 py-2"
+            elevation="4"
+          >
+            <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+            <div class="grid gap-1">
+              <div
+                v-for="detail in locationDetails"
+                :key="detail.label"
+                class="flex flex-col"
+              >
+                <span class="hs-text-2xs text-medium-emphasis">
+                  {{ detail.label }}
                 </span>
-                <v-btn-icon
-                  size="small"
-                  density="comfortable"
-                  :icon="mdiContentCopy"
-                  aria-label="Copy coordinates"
-                  @click="copyValue(coordinateLine, 'Coordinates')"
-                />
-              </dd>
+                <span class="hs-text-sm">{{ detail.value }}</span>
+              </div>
             </div>
-            <div>
-              <dt>Site ID</dt>
-              <dd>
-                <span class="hs-font-data" :title="monitoringSite.id">
-                  {{ monitoringSite.id }}
-                </span>
-                <v-btn-icon
-                  size="small"
-                  density="comfortable"
-                  :icon="mdiContentCopy"
-                  aria-label="Copy site ID"
-                  @click="copyValue(monitoringSite.id, 'Site ID')"
-                />
-              </dd>
-            </div>
-          </dl>
-        </v-card>
+          </v-card>
+        </div>
+      </v-col>
+    </v-row>
 
-        <SiteDetailsTable ref="siteDetailsTable" dialog-only />
+    <v-row class="mb-0">
+      <v-col cols="12" md="8">
+        <SiteDetailsTable :rating-curve-count="ratingCurveCount" />
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <div class="d-flex align-center justify-space-between mb-2">
+          <h5 class="hs-text-md mb-0">Site photos</h5>
+          <span v-if="hasPhotos" class="hs-text-2xs text-medium-emphasis">
+            {{ photos?.length }} photos
+          </span>
+        </div>
+        <div
+          v-if="hasPhotos"
+          class="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2 min-[961px]:grid-cols-[repeat(auto-fit,85px)] min-[961px]:justify-start min-[961px]:max-h-48 min-[961px]:overflow-hidden"
+        >
+          <button
+            v-for="(photo, index) in visiblePhotos"
+            :key="photo.id"
+            class="relative block aspect-square cursor-pointer appearance-none overflow-hidden rounded-lg border border-black/10 bg-transparent p-0"
+            type="button"
+            @click="openPhoto(photo)"
+          >
+            <v-img :src="photo.link" cover class="h-full w-full" />
+            <div
+              v-if="index === visiblePhotos.length - 1 && extraPhotoCount > 0"
+              class="absolute inset-0 flex items-center justify-center bg-black/55 hs-subheading text-white"
+            >
+              +{{ extraPhotoCount }}
+            </div>
+          </button>
+        </div>
+        <div v-else-if="loading" class="text-center">
+          <p>
+            Your photos are being uploaded. They will appear once the upload is
+            complete.
+          </p>
+          <v-progress-circular indeterminate color="primary" />
+        </div>
+        <div v-else class="text-medium-emphasis">
+          <small>No photos added yet.</small>
+        </div>
       </v-col>
     </v-row>
 
@@ -343,7 +264,6 @@ import { usePhotosStore } from '@/store/photos'
 import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { useTagStore } from '@/store/tags'
 import { storeToRefs } from 'pinia'
-import { Snackbar } from '@/utils/notifications'
 import hs, {
   PermissionAction,
   PermissionResource,
@@ -368,11 +288,10 @@ import {
   mdiDownloadBoxOutline,
   mdiCloudUploadOutline,
   mdiChevronDown,
-  mdiChevronUp,
   mdiCogSyncOutline,
-  mdiContentCopy,
   mdiLanguagePython,
 } from '@mdi/js'
+import { useDisplay } from 'vuetify/lib/framework.mjs'
 
 const pythonClientGuideUrl =
   'https://hydroserver2.github.io/hydroserver/user-guides/how-to/using-the-python-client.html'
@@ -381,7 +300,7 @@ const route = useRoute()
 const monitoringSiteId = route.params.id.toString()
 const targetDatastreamId = computed(() => {
   const param = route.query.datastream
-  return Array.isArray(param) ? (param[0] ?? '') : `${param ?? ''}`
+  return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
 })
 const orchestrationIngestionRoute = computed(() => ({
   name: 'OrchestrationView',
@@ -394,10 +313,8 @@ const orchestrationIngestionRoute = computed(() => ({
 const { photos, loading } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 
-const {
-  isConnectionEnabled: hydroShareEnabled,
-  isConnected: hydroShareConnected,
-} = useHydroShare()
+const { isConnectionEnabled: hydroShareEnabled, isConnected: hydroShareConnected } =
+  useHydroShare()
 const { hydroShareArchive } = storeToRefs(useHydroShareStore())
 
 const { hasPermission } = useWorkspacePermissions(workspace)
@@ -405,45 +322,11 @@ const loaded = ref(false)
 const authorized = ref(true)
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags } = storeToRefs(useTagStore())
+const { xs } = useDisplay()
+const isMobile = computed(() => xs.value)
 const canEditMonitoringSite = computed(() =>
   hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit)
 )
-const siteSummary = computed(() =>
-  [
-    monitoringSite.value?.code,
-    monitoringSite.value?.type,
-    monitoringSite.value?.isPrivate ? 'Private' : 'Public',
-  ].filter((value): value is string => Boolean(value))
-)
-const metadataEntries = computed(() =>
-  Object.entries(tags.value).sort(([firstKey], [secondKey]) =>
-    firstKey.localeCompare(secondKey)
-  )
-)
-const metadataSummarySize = 8
-const showAllMetadata = ref(false)
-const visibleMetadataEntries = computed(() =>
-  showAllMetadata.value
-    ? metadataEntries.value
-    : metadataEntries.value.slice(0, metadataSummarySize)
-)
-const metadataRowCount = computed(() =>
-  Math.ceil(visibleMetadataEntries.value.length / 2)
-)
-const placeLine = computed(() => {
-  const site = monitoringSite.value
-  if (!site) return ''
-
-  return [site.adminArea2, site.adminArea1, site.country]
-    .filter((value): value is string => Boolean(value))
-    .join(', ')
-})
-const coordinateLine = computed(() => {
-  const site = monitoringSite.value
-  if (!site) return ''
-
-  return `${formatCoordinate(site.latitude)}, ${formatCoordinate(site.longitude)}`
-})
 
 const hasPhotos = computed(() => !loading.value && photos.value?.length > 0)
 const maxPhotoThumbnails = 6
@@ -458,13 +341,40 @@ const isRegisterModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
 const isAccessControlModalOpen = ref(false)
 const ratingCurveCount = ref(0)
-const siteDetailsTable = ref<InstanceType<typeof SiteDetailsTable> | null>(null)
 const selectedPhotoIndex = ref<number | null>(null)
 const isPhotoViewerOpen = ref(false)
 const hasMultiplePhotos = computed(() => (photos.value?.length ?? 0) > 1)
 const selectedPhoto = computed(() => {
   if (selectedPhotoIndex.value === null) return null
   return photos.value?.[selectedPhotoIndex.value] ?? null
+})
+
+const locationDetails = computed(() => {
+  const location = monitoringSite.value
+  if (!location) return []
+
+  return [
+    {
+      label: 'Latitude',
+      value: formatCoordinate(location.latitude),
+    },
+    {
+      label: 'Longitude',
+      value: formatCoordinate(location.longitude),
+    },
+    {
+      label: 'State/Province',
+      value: formatLocationValue(location.adminArea1),
+    },
+    {
+      label: 'County/District',
+      value: formatLocationValue(location.adminArea2),
+    },
+    {
+      label: 'Country',
+      value: formatLocationValue(location.country),
+    },
+  ]
 })
 
 function switchToAccessControlModal() {
@@ -482,8 +392,7 @@ async function loadMonitoringSitePhotos() {
 }
 
 async function loadRatingCurveCount() {
-  const items =
-    await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId)
+  const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId)
   ratingCurveCount.value = items.length
 }
 
@@ -518,22 +427,9 @@ function formatCoordinate(value?: number | string | null) {
   return value.toString()
 }
 
-function isUrl(value: string): boolean {
-  try {
-    new URL(value)
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function copyValue(value: string, label: string) {
-  try {
-    await navigator.clipboard.writeText(value)
-    Snackbar.success(`${label} copied to clipboard`)
-  } catch {
-    Snackbar.error(`Failed to copy ${label.toLowerCase()}`)
-  }
+function formatLocationValue(value?: string | number | null) {
+  if (value === null || value === undefined || value === '') return '-'
+  return value.toString()
 }
 
 async function onDeleteMonitoringSite() {
@@ -567,8 +463,7 @@ onMounted(async () => {
   monitoringSite.value = monitoringSiteResponse ?? undefined
   try {
     workspace.value =
-      (await hs.workspaces.getItem(monitoringSite.value!.workspaceId)) ??
-      undefined
+      (await hs.workspaces.getItem(monitoringSite.value!.workspaceId)) ?? undefined
   } catch (error) {
     console.error('Error fetching workspace', error)
   }
@@ -576,134 +471,3 @@ onMounted(async () => {
   loaded.value = true
 })
 </script>
-
-<style scoped>
-.site-rating-curve-link {
-  min-height: 0;
-  height: auto;
-  padding: 0;
-  font-size: inherit;
-  line-height: inherit;
-  text-transform: none;
-}
-
-.site-description {
-  max-width: 54rem;
-  margin: 0;
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-medium);
-  line-height: 1.5;
-}
-
-.site-details-main,
-.site-details-sidebar {
-  display: flex;
-  flex-direction: column;
-}
-
-.site-metadata-list {
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(var(--site-metadata-row-count), auto);
-  column-gap: var(--hs-space-32);
-  margin: 0;
-}
-
-.site-metadata-item {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--hs-space-8);
-  padding: var(--hs-space-6) 0;
-  border-bottom: 1px solid var(--hs-border);
-  font-size: var(--hs-font-sm);
-  line-height: 1.35;
-}
-
-.site-metadata-item dt {
-  color: var(--hs-text-secondary);
-  font-weight: var(--hs-font-weight-medium);
-  overflow-wrap: anywhere;
-}
-
-.site-metadata-item dd {
-  min-width: 0;
-  margin: 0;
-  color: var(--hs-text-primary);
-  font-weight: var(--hs-font-weight-medium);
-  overflow-wrap: anywhere;
-  text-align: right;
-}
-
-.site-metadata-toggle {
-  min-width: 0;
-  padding-inline: 0;
-  text-transform: none;
-}
-
-.site-photos-section {
-  margin-top: auto;
-  padding-top: var(--hs-space-16);
-}
-
-.site-location-card {
-  flex: 1;
-  padding: var(--hs-space-16);
-  border-radius: var(--hs-radius-lg);
-}
-
-.site-location-map {
-  height: 13rem;
-  overflow: hidden;
-  border-radius: var(--hs-radius-md);
-}
-
-.site-location-summary {
-  margin-top: var(--hs-space-12);
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-semibold);
-}
-
-.site-identity-list dd {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: var(--hs-space-4);
-}
-
-.site-identity-list dd > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.site-identity-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--hs-space-12);
-  margin-top: var(--hs-space-12);
-  margin-bottom: 0;
-}
-
-.site-identity-list dt {
-  color: var(--hs-text-secondary);
-  font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-medium);
-}
-
-.site-identity-list dd {
-  margin: var(--hs-space-2) 0 0;
-  font-size: var(--hs-font-sm);
-}
-
-@media (max-width: 599px) {
-  .site-metadata-list {
-    grid-auto-flow: row;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-  }
-}
-</style>
