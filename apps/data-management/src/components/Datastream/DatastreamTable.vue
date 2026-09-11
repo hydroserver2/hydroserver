@@ -34,6 +34,14 @@
           >
             Visualize
           </v-btn>
+          <v-btn
+            size="small"
+            variant="text"
+            :aria-pressed="showDatastreamIds"
+            @click="showDatastreamIds = !showDatastreamIds"
+          >
+            {{ showDatastreamIds ? 'Display less' : 'Display more' }}
+          </v-btn>
           <v-btn-page-action
             v-if="
               hasPermission(
@@ -211,8 +219,37 @@
             "
           >
             <td class="site-datastreams__name-cell" data-label="Datastream">
-              <div class="site-datastreams__name" :title="datastreamName(item)">
-                {{ datastreamName(item) }}
+              <div class="site-datastreams__name-row">
+                <div
+                  class="site-datastreams__name"
+                  :title="datastreamName(item)"
+                >
+                  {{ datastreamName(item) }}
+                </div>
+                <div class="site-datastreams__id">
+                  <span
+                    v-if="showDatastreamIds"
+                    class="hs-font-data"
+                    :title="item.id"
+                  >
+                    {{ item.id }}
+                  </span>
+                  <v-tooltip text="Copy ID">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        v-bind="tooltipProps"
+                        icon
+                        size="small"
+                        variant="text"
+                        :aria-label="`Copy ID for ${datastreamName(item)}`"
+                        :data-testid="`copy-datastream-id-${item.id}`"
+                        @click.stop="copyDatastreamId(item.id)"
+                      >
+                        <v-icon :icon="mdiContentCopy" size="small" />
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                </div>
               </div>
               <div class="site-datastreams__observation-line">
                 <div
@@ -701,6 +738,7 @@ import {
   mdiCheck,
   mdiChevronDown,
   mdiChevronRight,
+  mdiContentCopy,
   mdiTrashCanOutline,
   mdiDotsVertical,
   mdiDownload,
@@ -759,6 +797,7 @@ type FilterDefinition = {
 
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const openCreate = ref(false)
+const showDatastreamIds = ref(false)
 const workspaceRef = toRef(props, 'workspace')
 const monitoringSiteIdRef = computed(() => monitoringSite.value!.id)
 const downloading = reactive<Record<string, boolean>>({})
@@ -1181,6 +1220,14 @@ function setSortOrder(order: DatastreamSortOrder) {
 }
 function datastreamName(datastream: Datastream) {
   return datastream.name?.trim() || 'Unnamed datastream'
+}
+async function copyDatastreamId(id: string) {
+  try {
+    await navigator.clipboard.writeText(id)
+    Snackbar.success('Datastream UUID copied to clipboard')
+  } catch {
+    Snackbar.error('Failed to copy datastream UUID')
+  }
 }
 function formatObservationCount(value: number | string | null | undefined) {
   const count = Number(value)
@@ -2500,11 +2547,34 @@ const loadDatastreams = async () => {
 .site-datastreams__name-cell {
   min-width: 28rem;
 }
+.site-datastreams__name-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--hs-space-8);
+}
 .site-datastreams__name {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--hs-text-primary);
   font-size: var(--hs-font-md);
   font-weight: var(--hs-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-datastreams__id {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--hs-space-4);
+  align-items: center;
+  min-width: 0;
+  color: var(--hs-text-muted);
+  font-size: var(--hs-font-2xs);
+}
+.site-datastreams__id span {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2620,19 +2690,24 @@ const loadDatastreams = async () => {
   visibility: hidden;
 }
 @media (min-width: 60.0625rem) {
+  .site-datastreams__table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
   .site-datastreams__name-cell {
     display: block;
-    width: 100%;
-  }
-  .site-datastreams__name {
-    padding-right: calc(9 * var(--hs-space-32));
+    width: auto;
+    min-width: 0;
   }
   .site-datastreams__actions-cell {
-    position: absolute;
-    top: var(--hs-space-12);
-    right: 0;
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
     width: max-content;
-    padding: 0;
+  }
+  .site-datastreams__task-cell {
+    grid-column: 1 / -1;
   }
 }
 @media (max-width: 60rem) {
