@@ -1,8 +1,5 @@
 <template>
-  <v-card class="hs-table-card site-details-card" flat>
-    <v-card-title tag="h5" class="hs-text-md">Site information</v-card-title>
-    <v-divider />
-
+  <v-card v-if="!dialogOnly" class="hs-table-card site-details-card" flat>
     <div v-if="isMobile" class="site-details-mobile">
       <div
         v-for="item in monitoringSiteProperties"
@@ -10,7 +7,6 @@
         class="site-details-mobile__item"
       >
         <div class="site-details-mobile__header">
-          <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
           <span class="site-detail-label font-weight-semibold">{{ item.label }}</span>
         </div>
         <div class="site-details-mobile__value">
@@ -39,7 +35,6 @@
               rounded="true"
               :color="materialColors[index % materialColors.length]"
               :key="key"
-              class="mr-2 my-1"
             >
               {{ key }}:
               <span v-if="isUrl(value)">
@@ -47,16 +42,6 @@
               </span>
               <span v-else>{{ value }}</span>
             </v-chip>
-          </div>
-          <div v-else-if="item.label === 'Rating Curves'">
-            <v-btn
-              variant="text"
-              color="teal-darken-1"
-              class="text-none px-0 rating-curve-view-btn"
-              @click="openRatingCurveDialog"
-            >
-              View rating curves ({{ props.ratingCurveCount }})
-            </v-btn>
           </div>
           <p v-else class="site-detail-text">{{ item.value }}</p>
         </div>
@@ -71,10 +56,6 @@
       density="compact"
       class="site-details-table"
     >
-      <template v-slot:item.icon="{ item }">
-        <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
-      </template>
-
       <template v-slot:item.label="{ item }">
         <span class="site-detail-label font-weight-semibold">{{ item.label }}</span>
       </template>
@@ -97,13 +78,15 @@
             </template>
           </v-tooltip>
         </div>
-        <div v-else-if="item.label === 'Additional metadata'">
+        <div
+          v-else-if="item.label === 'Additional metadata'"
+          class="metadata-chip-list"
+        >
           <v-chip
             v-for="([key, value], index) in Object.entries(tagProperty.value)"
             rounded="true"
             :color="materialColors[index % materialColors.length]"
             :key="key"
-            class="mr-2 my-1"
           >
             {{ key }}:
             <span v-if="isUrl(value)">
@@ -111,16 +94,6 @@
             </span>
             <span v-else>{{ value }}</span>
           </v-chip>
-        </div>
-        <div v-else-if="item.label === 'Rating Curves'">
-          <v-btn
-            variant="text"
-            color="teal-darken-1"
-            class="text-none px-0 rating-curve-view-btn"
-            @click="openRatingCurveDialog"
-          >
-            View rating curves ({{ props.ratingCurveCount }})
-          </v-btn>
         </div>
         <p v-else>{{ item.value }}</p>
       </template>
@@ -163,22 +136,11 @@ import { Snackbar } from '@/utils/notifications'
 import type { Tags } from '@hydroserver/client'
 import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
-import {
-  mdiCardAccountDetails,
-  mdiChartLine,
-  mdiContentCopy,
-  mdiFileDocumentOutline,
-  mdiTagMultipleOutline,
-} from '@mdi/js'
+import { mdiContentCopy } from '@mdi/js'
 
-const props = withDefaults(
-  defineProps<{
-    ratingCurveCount?: number
-  }>(),
-  {
-    ratingCurveCount: 0,
-  }
-)
+const { dialogOnly = false } = defineProps<{
+  dialogOnly?: boolean
+}>()
 
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { smAndDown } = useDisplay()
@@ -209,49 +171,37 @@ const openRatingCurveDialog = () => {
   isRatingCurveDialogOpen.value = true
 }
 
+defineExpose({ openRatingCurveDialog })
+
 const monitoringSiteProperties = computed(() => {
   if (!monitoringSite.value) return []
 
   const properties: MonitoringSitePropertyRow[] = [
     {
-      icon: mdiCardAccountDetails,
       label: 'ID',
       value: monitoringSite.value.id,
     },
     {
-      icon: mdiFileDocumentOutline,
       label: 'Description',
       value: monitoringSite.value.description,
     },
     {
-      icon: mdiTagMultipleOutline,
       label: 'Additional metadata',
       value: monitoringSite.value.tags || {},
     },
   ]
-
-  if (props.ratingCurveCount > 0) {
-    properties.push({
-      icon: mdiChartLine,
-      label: 'Rating Curves',
-      value: props.ratingCurveCount,
-    })
-  }
 
   return properties
 })
 
 const tagProperty = computed(() => {
   return {
-    icon: mdiTagMultipleOutline,
     label: 'Additional metadata',
     value: monitoringSite.value?.tags || {},
   }
 })
 
 type MonitoringSitePropertyRow = {
-  icon: string
-  iconColor?: string
   label: string
   value: string | number | Tags
 }
@@ -286,12 +236,11 @@ type MonitoringSitePropertyRow = {
 .site-details-mobile__header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .site-details-mobile__value {
   margin-top: 0;
-  padding-left: 1.75rem;
+  padding-left: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -304,12 +253,25 @@ type MonitoringSitePropertyRow = {
 .metadata-chip-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 0.5rem;
+  align-content: flex-start;
+  gap: var(--hs-space-6);
+  max-height: 102px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-.rating-curve-view-btn {
-  min-height: 0;
-  height: auto;
+.metadata-chip-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.metadata-chip-list::-webkit-scrollbar-track {
+  border-radius: 3px;
+  background: var(--hs-surface-muted);
+}
+
+.metadata-chip-list::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: var(--hs-text-muted);
 }
 
 @media (max-width: 700px) {
