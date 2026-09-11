@@ -139,7 +139,7 @@
       </v-col>
     </v-row>
 
-    <v-row v-if="monitoringSite" class="site-details-layout mb-0">
+    <v-row v-if="monitoringSite" class="site-details-layout align-stretch mb-0">
       <v-col cols="12" md="8" class="site-details-main">
         <p v-if="monitoringSite.description" class="site-description">
           {{ monitoringSite.description }}
@@ -148,16 +148,19 @@
         <v-divider v-if="monitoringSite.description" class="my-4" />
 
         <template v-if="metadataEntries.length">
-          <div class="site-metadata-list">
-            <v-chip
+          <h5 class="hs-text-md mb-1">Additional metadata</h5>
+          <dl
+            id="site-additional-metadata"
+            class="site-metadata-list"
+            :style="{ '--site-metadata-row-count': metadataRowCount }"
+          >
+            <div
               v-for="[key, value] in visibleMetadataEntries"
               :key="key"
-              rounded="true"
-              color="primary"
-              variant="tonal"
+              class="site-metadata-item"
             >
-              <span class="site-metadata-key">{{ key }}:</span>
-              <span class="ms-1">
+              <dt>{{ key }}</dt>
+              <dd>
                 <a
                   v-if="isUrl(value)"
                   :href="value"
@@ -167,27 +170,33 @@
                   {{ value }}
                 </a>
                 <span v-else>{{ value }}</span>
-              </span>
-            </v-chip>
-          </div>
-          <v-pagination
-            v-if="metadataPageCount > 1"
-            v-model="metadataPage"
-            class="site-metadata-pagination"
-            :length="metadataPageCount"
-            :total-visible="5"
-            density="compact"
-            size="small"
-          />
+              </dd>
+            </div>
+          </dl>
+          <v-btn
+            v-if="metadataEntries.length > metadataSummarySize"
+            class="site-metadata-toggle"
+            variant="text"
+            color="primary"
+            :append-icon="showAllMetadata ? mdiChevronUp : mdiChevronDown"
+            :aria-expanded="showAllMetadata"
+            aria-controls="site-additional-metadata"
+            @click="showAllMetadata = !showAllMetadata"
+          >
+            {{
+              showAllMetadata
+                ? 'Show fewer'
+                : `View all ${metadataEntries.length}`
+            }}
+          </v-btn>
         </template>
 
-        <div class="d-flex align-center justify-space-between mt-6 mb-2">
+        <div
+          class="site-photos-section d-flex align-center justify-space-between mb-2"
+        >
           <h5 class="hs-text-md mb-0">Site photos</h5>
-          <span v-if="hasPhotos" class="hs-text-2xs text-medium-emphasis">
-            {{ photos?.length }} photos
-          </span>
         </div>
-        <div class="mb-2">
+        <div class="site-photos-content">
           <div v-if="hasPhotos" class="flex w-full gap-2 overflow-x-auto">
             <button
               v-for="(photo, index) in visiblePhotos"
@@ -219,33 +228,57 @@
       </v-col>
 
       <v-col cols="12" md="4" class="site-details-sidebar">
-        <div class="h-52 w-full">
-          <OpenLayersMap
-            :monitoringSites="[monitoringSite]"
-            startInSatellite
-            class="h-full w-full"
-          />
-        </div>
-
-        <div class="site-location-summary mt-4">{{ locationLine }}</div>
-
-        <dl class="site-identity-list mt-4">
-          <div>
-            <dt>Site ID</dt>
-            <dd>
-              <span class="hs-font-data" :title="monitoringSite.id">
-                {{ monitoringSite.id }}
-              </span>
-              <v-btn-icon
-                size="small"
-                density="comfortable"
-                :icon="mdiContentCopy"
-                aria-label="Copy site ID"
-                @click="copyValue(monitoringSite.id, 'Site ID')"
-              />
-            </dd>
+        <v-card
+          class="site-location-card"
+          color="surface"
+          variant="flat"
+          border
+        >
+          <div class="site-location-map">
+            <OpenLayersMap
+              :monitoringSites="[monitoringSite]"
+              startInSatellite
+              class="h-full w-full"
+            />
           </div>
-        </dl>
+
+          <div v-if="placeLine" class="site-location-summary">
+            {{ placeLine }}
+          </div>
+
+          <dl class="site-identity-list">
+            <div>
+              <dt>Coordinates</dt>
+              <dd>
+                <span class="hs-font-data" :title="coordinateLine">
+                  {{ coordinateLine }}
+                </span>
+                <v-btn-icon
+                  size="small"
+                  density="comfortable"
+                  :icon="mdiContentCopy"
+                  aria-label="Copy coordinates"
+                  @click="copyValue(coordinateLine, 'Coordinates')"
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Site ID</dt>
+              <dd>
+                <span class="hs-font-data" :title="monitoringSite.id">
+                  {{ monitoringSite.id }}
+                </span>
+                <v-btn-icon
+                  size="small"
+                  density="comfortable"
+                  :icon="mdiContentCopy"
+                  aria-label="Copy site ID"
+                  @click="copyValue(monitoringSite.id, 'Site ID')"
+                />
+              </dd>
+            </div>
+          </dl>
+        </v-card>
 
         <SiteDetailsTable ref="siteDetailsTable" dialog-only />
       </v-col>
@@ -304,7 +337,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePhotosStore } from '@/store/photos'
 import { useMonitoringSiteStore } from '@/store/monitoringSite'
@@ -329,13 +362,13 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useHydroShare } from '@/composables/useHydroShare'
 import { useHydroShareStore } from '@/store/hydroShare'
 import HydroShareArchivalButton from '@/components/HydroShare/HydroShareArchivalButton.vue'
-import { useDisplay } from 'vuetify/lib/framework.mjs'
 import {
   mdiChevronLeft,
   mdiChevronRight,
   mdiDownloadBoxOutline,
   mdiCloudUploadOutline,
   mdiChevronDown,
+  mdiChevronUp,
   mdiCogSyncOutline,
   mdiContentCopy,
   mdiLanguagePython,
@@ -372,7 +405,6 @@ const loaded = ref(false)
 const authorized = ref(true)
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags } = storeToRefs(useTagStore())
-const { width } = useDisplay()
 const canEditMonitoringSite = computed(() =>
   hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit)
 )
@@ -388,39 +420,29 @@ const metadataEntries = computed(() =>
     firstKey.localeCompare(secondKey)
   )
 )
-const metadataPage = ref(1)
-const metadataColumns = computed(() => {
-  if (width.value >= 1600) return 4
-  if (width.value >= 960) return 3
-  if (width.value >= 600) return 2
-  return 1
-})
-const metadataPageSize = computed(() => metadataColumns.value * 4)
-const metadataPageCount = computed(() =>
-  Math.ceil(metadataEntries.value.length / metadataPageSize.value)
+const metadataSummarySize = 8
+const showAllMetadata = ref(false)
+const visibleMetadataEntries = computed(() =>
+  showAllMetadata.value
+    ? metadataEntries.value
+    : metadataEntries.value.slice(0, metadataSummarySize)
 )
-const visibleMetadataEntries = computed(() => {
-  const first = (metadataPage.value - 1) * metadataPageSize.value
-  return metadataEntries.value.slice(first, first + metadataPageSize.value)
-})
-watch(metadataPageCount, (pageCount) => {
-  metadataPage.value = Math.min(metadataPage.value, Math.max(pageCount, 1))
-})
-const locationLine = computed(() => {
+const metadataRowCount = computed(() =>
+  Math.ceil(visibleMetadataEntries.value.length / 2)
+)
+const placeLine = computed(() => {
   const site = monitoringSite.value
   if (!site) return ''
 
-  const place = [site.adminArea2, site.adminArea1, site.country]
+  return [site.adminArea2, site.adminArea1, site.country]
     .filter((value): value is string => Boolean(value))
     .join(', ')
+})
+const coordinateLine = computed(() => {
+  const site = monitoringSite.value
+  if (!site) return ''
 
-  return [
-    `Lat: ${formatCoordinate(site.latitude)}`,
-    `Lon: ${formatCoordinate(site.longitude)}`,
-    place,
-  ]
-    .filter(Boolean)
-    .join(' • ')
+  return `${formatCoordinate(site.latitude)}, ${formatCoordinate(site.longitude)}`
 })
 
 const hasPhotos = computed(() => !loading.value && photos.value?.length > 0)
@@ -573,25 +595,73 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
-.site-metadata-list {
+.site-details-main,
+.site-details-sidebar {
   display: flex;
-  height: calc(var(--hs-space-32) * 4);
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: var(--hs-space-6);
+  flex-direction: column;
+}
+
+.site-metadata-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(var(--site-metadata-row-count), auto);
+  column-gap: var(--hs-space-32);
+  margin: 0;
+}
+
+.site-metadata-item {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--hs-space-8);
+  padding: var(--hs-space-6) 0;
+  border-bottom: 1px solid var(--hs-border);
+  font-size: var(--hs-font-sm);
+  line-height: 1.35;
+}
+
+.site-metadata-item dt {
+  color: var(--hs-text-secondary);
+  font-weight: var(--hs-font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.site-metadata-item dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--hs-text-primary);
+  font-weight: var(--hs-font-weight-medium);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.site-metadata-toggle {
+  min-width: 0;
+  padding-inline: 0;
+  text-transform: none;
+}
+
+.site-photos-section {
+  margin-top: auto;
+  padding-top: var(--hs-space-16);
+}
+
+.site-location-card {
+  flex: 1;
+  padding: var(--hs-space-16);
+  border-radius: var(--hs-radius-lg);
+}
+
+.site-location-map {
+  height: 13rem;
   overflow: hidden;
-}
-
-.site-metadata-key {
-  font-weight: var(--hs-font-weight-semibold);
-}
-
-.site-metadata-pagination {
-  justify-content: flex-start;
-  margin-top: var(--hs-space-2);
+  border-radius: var(--hs-radius-md);
 }
 
 .site-location-summary {
+  margin-top: var(--hs-space-12);
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-semibold);
 }
@@ -614,6 +684,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--hs-space-12);
+  margin-top: var(--hs-space-12);
   margin-bottom: 0;
 }
 
@@ -628,10 +699,11 @@ onMounted(async () => {
   font-size: var(--hs-font-sm);
 }
 
-@media (min-width: 960px) {
-  .site-details-sidebar {
-    border-left: 1px solid var(--hs-border);
-    padding-left: var(--hs-space-32);
+@media (max-width: 599px) {
+  .site-metadata-list {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
   }
 }
 </style>
