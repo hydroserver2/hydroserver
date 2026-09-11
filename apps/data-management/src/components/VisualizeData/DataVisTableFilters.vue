@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiChevronDown, mdiMagnify } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -126,78 +126,7 @@ const filterSearches = reactive<Record<FilterKey, string>>({
   'processing-level': '',
 })
 
-const initialFilters: DatastreamQueryFilters = {
-  workspace: selectedWorkspaces.value.map((item) => item.name),
-  site: selectedMonitoringSites.value.map((item) => item.name),
-  'observed-property': [...selectedObservedPropertyNames.value],
-  unit: [...selectedUnitNames.value],
-  method: [...selectedMethodNames.value],
-  'processing-level': [...selectedProcessingLevelNames.value],
-}
-if (!tableSearch.value.trim()) {
-  tableSearch.value = serializeDatastreamQuery(initialFilters, '')
-}
-
 const parsedQuery = computed(() => parseDatastreamQuery(tableSearch.value))
-
-const canonicalValues = (candidates: string[], requested: string[]) => {
-  const requestedSet = new Set(
-    requested.map((value) => value.toLocaleLowerCase())
-  )
-  return candidates.filter((value, index) => {
-    const normalized = value.toLocaleLowerCase()
-    return (
-      requestedSet.has(normalized) &&
-      candidates.findIndex(
-        (candidate) => candidate.toLocaleLowerCase() === normalized
-      ) === index
-    )
-  })
-}
-
-watch(
-  tableSearch,
-  () => {
-    const { filters } = parsedQuery.value
-    selectedWorkspaces.value = workspaces.value.filter((item) =>
-      filters.workspace.some(
-        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
-      )
-    )
-    selectedMonitoringSites.value = monitoringSites.value.filter((item) =>
-      filters.site.some(
-        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
-      )
-    )
-    selectedObservedPropertyNames.value = canonicalValues(
-      observedProperties.value
-        .map((item) => item.name)
-        .filter((value): value is string => Boolean(value)),
-      filters['observed-property']
-    )
-    selectedUnitNames.value = canonicalValues(
-      datastreams.value
-        .map((item) => (item as typeof item & { unitName?: string }).unitName)
-        .filter((value): value is string => Boolean(value)),
-      filters.unit
-    )
-    selectedMethodNames.value = canonicalValues(
-      datastreams.value
-        .map(
-          (item) => (item as typeof item & { methodName?: string }).methodName
-        )
-        .filter((value): value is string => Boolean(value)),
-      filters.method
-    )
-    selectedProcessingLevelNames.value = canonicalValues(
-      processingLevels.value
-        .map((item) => item.name)
-        .filter((value): value is string => Boolean(value)),
-      filters['processing-level']
-    )
-  },
-  { immediate: true }
-)
 
 const sortedWorkspaces = computed(() => {
   const workspaceIds = new Set<string>()

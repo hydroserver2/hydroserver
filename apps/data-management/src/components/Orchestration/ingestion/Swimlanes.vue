@@ -56,6 +56,7 @@
                 :datastream="targetDatastream(m)"
                 :datastream-id="targetDatastreamId(m)"
                 :fallback-monitoring-site-id="resolveMonitoringSiteId(m)"
+                show-menu
               />
             </div>
           </div>

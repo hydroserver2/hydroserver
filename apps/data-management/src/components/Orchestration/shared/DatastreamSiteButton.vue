@@ -1,6 +1,37 @@
 <template>
   <div class="task-datastream-site-button">
+    <v-menu v-if="showMenu" location="bottom end" attach="body">
+      <template #activator="{ props: menuProps }">
+        <v-btn-icon
+          v-bind="menuProps"
+          :icon="mdiDotsVertical"
+          size="small"
+          class="task-datastream-site-button__button"
+          :disabled="!monitoringSiteId"
+          :aria-label="menuAriaLabel"
+          :data-testid="menuTestId"
+        />
+      </template>
+
+      <v-list>
+        <v-list-item
+          :prepend-icon="mdiMapMarkerOutline"
+          title="View on site details page"
+          :to="siteRoute"
+          :data-testid="testId"
+        />
+        <v-list-item
+          :prepend-icon="mdiChartLine"
+          title="View on visualize data page"
+          :to="visualizeRoute"
+          :disabled="!visualizeRoute"
+          :data-testid="visualizeLinkTestId"
+        />
+      </v-list>
+    </v-menu>
+
     <v-tooltip
+      v-else
       :text="tooltipText"
       location="top"
       :open-delay="0"
@@ -35,7 +66,12 @@
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { Datastream } from '@hydroserver/client'
-import { mdiOpenInNew } from '@mdi/js'
+import {
+  mdiChartLine,
+  mdiDotsVertical,
+  mdiMapMarkerOutline,
+  mdiOpenInNew,
+} from '@mdi/js'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 const props = withDefaults(
@@ -43,11 +79,13 @@ const props = withDefaults(
     datastream?: (Partial<Datastream> & Record<string, any>) | null
     datastreamId?: string | null
     fallbackMonitoringSiteId?: string | null
+    showMenu?: boolean
   }>(),
   {
     datastream: null,
     datastreamId: null,
     fallbackMonitoringSiteId: null,
+    showMenu: false,
   }
 )
 
@@ -75,8 +113,22 @@ const siteRoute = computed<RouteLocationRaw | undefined>(() =>
     : undefined
 )
 
+const visualizeRoute = computed<RouteLocationRaw | undefined>(() =>
+  monitoringSiteId.value && datastreamId.value
+    ? {
+        name: 'VisualizeData',
+        query: {
+          sites: monitoringSiteId.value,
+          datastreams: datastreamId.value,
+        },
+      }
+    : undefined
+)
+
 const tooltipText = computed(() =>
-  monitoringSiteId.value ? 'Go to site details page' : 'Site details unavailable'
+  monitoringSiteId.value
+    ? 'Go to site details page'
+    : 'Site details unavailable'
 )
 
 const ariaLabel = computed(() =>
@@ -89,6 +141,20 @@ const testId = computed(() =>
   datastreamId.value
     ? `view-site-for-datastream-${datastreamId.value}`
     : undefined
+)
+
+const menuAriaLabel = computed(() =>
+  datastreamId.value
+    ? `Actions for datastream ${datastreamId.value}`
+    : 'Datastream actions'
+)
+
+const menuTestId = computed(() =>
+  datastreamId.value ? `datastream-links-${datastreamId.value}` : undefined
+)
+
+const visualizeLinkTestId = computed(() =>
+  datastreamId.value ? `visualize-datastream-${datastreamId.value}` : undefined
 )
 </script>
 

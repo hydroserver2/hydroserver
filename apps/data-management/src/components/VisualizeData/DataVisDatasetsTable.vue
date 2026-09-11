@@ -208,18 +208,45 @@
             </td>
 
             <td class="datastream-actions-cell">
-              <v-btn
-                variant="text"
-                size="small"
-                color="primary"
-                :append-icon="mdiChevronRight"
-                class="datastream-details-button"
-                :aria-label="`View details for ${item.name || 'datastream'}`"
-                :data-testid="`datavis-metadata-${item.id}`"
-                @click.stop="openMetadata(item)"
-              >
-                <span class="datastream-details-button__label">Details</span>
-              </v-btn>
+              <div class="datastream-row-actions">
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  :append-icon="mdiChevronRight"
+                  class="datastream-details-button"
+                  :aria-label="`View details for ${item.name || 'datastream'}`"
+                  :data-testid="`datavis-metadata-${item.id}`"
+                  @click.stop="openMetadata(item)"
+                >
+                  <span class="datastream-details-button__label">Details</span>
+                </v-btn>
+
+                <v-menu location="bottom end" attach="body">
+                  <template #activator="{ props: menuProps }">
+                    <v-btn-icon
+                      v-bind="menuProps"
+                      :icon="mdiDotsVertical"
+                      size="small"
+                      :aria-label="`Actions for ${datastreamName(item)}`"
+                      :data-testid="`datavis-actions-${item.id}`"
+                    />
+                  </template>
+
+                  <v-list>
+                    <v-list-item
+                      :prepend-icon="mdiMapMarkerOutline"
+                      title="View on site details page"
+                      :data-testid="`datavis-view-site-${item.id}`"
+                      :to="{
+                        name: 'SiteDetails',
+                        params: { id: item.monitoringSiteId },
+                        query: { datastream: item.id },
+                      }"
+                    />
+                  </v-list>
+                </v-menu>
+              </div>
             </td>
           </tr>
 
@@ -247,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
 import {
@@ -257,6 +284,8 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiDownload,
+  mdiDotsVertical,
+  mdiMapMarkerOutline,
   mdiSort,
 } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -266,6 +295,7 @@ import { formatTime } from '@/utils/time'
 import {
   parseDatastreamQuery,
   serializeDatastreamQuery,
+  type DatastreamQueryFilters,
   type DatastreamSort,
   type DatastreamSortKey,
   type DatastreamSortOrder,
@@ -299,6 +329,18 @@ const {
   processingLevels,
 } = storeToRefs(dataVisStore)
 const { workspaces } = storeToRefs(useWorkspaceStore())
+
+const initialFilters: DatastreamQueryFilters = {
+  workspace: selectedWorkspaces.value.map((item) => item.name),
+  site: selectedMonitoringSites.value.map((item) => item.name),
+  'observed-property': [...selectedObservedPropertyNames.value],
+  unit: [...selectedUnitNames.value],
+  method: [...selectedMethodNames.value],
+  'processing-level': [...selectedProcessingLevelNames.value],
+}
+if (!search.value.trim()) {
+  search.value = serializeDatastreamQuery(initialFilters, '')
+}
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -364,6 +406,65 @@ const searchQualifiers = computed(() => [
 ])
 const parsedSearch = computed(() => parseDatastreamQuery(search.value))
 const plainSearch = computed(() => parsedSearch.value.text)
+
+const canonicalValues = (candidates: string[], requested: string[]) => {
+  const requestedSet = new Set(
+    requested.map((value) => value.toLocaleLowerCase())
+  )
+  return candidates.filter((value, index) => {
+    const normalized = value.toLocaleLowerCase()
+    return (
+      requestedSet.has(normalized) &&
+      candidates.findIndex(
+        (candidate) => candidate.toLocaleLowerCase() === normalized
+      ) === index
+    )
+  })
+}
+
+// The filter controls are replaced by the selection summary while a
+// datastream is plotted, so keep query hydration in this always-mounted table.
+watch(
+  search,
+  () => {
+    const { filters } = parsedSearch.value
+    selectedWorkspaces.value = workspaces.value.filter((item) =>
+      filters.workspace.some(
+        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
+      )
+    )
+    selectedMonitoringSites.value = monitoringSites.value.filter((item) =>
+      filters.site.some(
+        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
+      )
+    )
+    selectedObservedPropertyNames.value = canonicalValues(
+      observedProperties.value
+        .map((item) => item.name)
+        .filter((value): value is string => Boolean(value)),
+      filters['observed-property']
+    )
+    selectedUnitNames.value = canonicalValues(
+      dataVisStore.datastreams
+        .map((item) => (item as DatastreamTableItem).unitName)
+        .filter((value): value is string => Boolean(value)),
+      filters.unit
+    )
+    selectedMethodNames.value = canonicalValues(
+      dataVisStore.datastreams
+        .map((item) => (item as DatastreamTableItem).methodName)
+        .filter((value): value is string => Boolean(value)),
+      filters.method
+    )
+    selectedProcessingLevelNames.value = canonicalValues(
+      processingLevels.value
+        .map((item) => item.name)
+        .filter((value): value is string => Boolean(value)),
+      filters['processing-level']
+    )
+  },
+  { immediate: true }
+)
 
 const defaultSort: DatastreamSort = { key: 'name', order: 'asc' }
 const activeSort = computed(() => parsedSearch.value.sort ?? defaultSort)
@@ -826,6 +927,13 @@ function updatePlottedDatastreams(
   vertical-align: top;
   text-align: right;
   white-space: nowrap;
+}
+
+.datastream-row-actions {
+  display: flex;
+  gap: var(--hs-space-4);
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .plot-checkbox {
