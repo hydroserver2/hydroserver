@@ -77,7 +77,8 @@ body {
 }
 
 .hs-label {
-  font-size: var(--hs-font-2xs);
+  /* 10px bold uppercase text drops strokes during browser rasterization. */
+  font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-bold);
   line-height: 1.2;
 }

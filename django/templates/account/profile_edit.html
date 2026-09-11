@@ -1,8 +1,9 @@
 {% extends "allauth/layouts/manage.html" %}
 {% load i18n %}
 {% block head_title %}{% trans "Edit profile" %}{% endblock %}
+{% block card_header %}{% endblock %}
 {% block content %}
-<h1 class="hs-heading">{% trans "Edit profile" %}</h1>
+<h1 class="hs-heading auth-page-heading">{% trans "Edit profile" %}</h1>
 
 <form method="post" class="hs-form">
     {% csrf_token %}
@@ -73,8 +74,8 @@
     </section>
 
     <div class="hs-actions hs-actions--end">
-        <a href="{% url 'account_profile' %}" class="hs-button hs-button--outline">{% trans "Cancel" %}</a>
-        <button type="submit" class="hs-button">{% trans "Save changes" %}</button>
+        <a href="{% url 'account_profile' %}" class="hs-button hs-button--cancel">{% trans "Cancel" %}</a>
+        <button type="submit" class="hs-button hs-button--dialog-action">{% trans "Save changes" %}</button>
     </div>
 </form>
 {% endblock %}

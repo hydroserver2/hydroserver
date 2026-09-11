@@ -1,183 +1,185 @@
 <template>
-  <v-card>
-    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>{{
-        isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
-      }}</v-card-title>
-      <v-btn
-        :icon="mdiInformationOutline"
-        variant="text"
-        aria-label="Toggle task info"
-        @click="showInfo = !showInfo"
-      />
-    </v-toolbar>
-    <v-divider />
+  <v-card class="d-flex flex-column" style="max-height: 90vh">
+    <div class="shrink-0">
+      <v-toolbar color="primary" flat>
+        <div class="d-flex align-center px-4">
+          <v-card-title class="hs-subheading pa-0">{{
+            isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
+          }}</v-card-title>
+          <v-btn
+            icon
+            class="ml-n1"
+            variant="text"
+            aria-label="Toggle task info"
+            @click="showInfo = !showInfo"
+          >
+            <v-icon :icon="mdiInformationOutline" size="17" />
+          </v-btn>
+        </div>
+      </v-toolbar>
+      <v-divider />
 
-    <v-progress-linear
-      v-if="loadingExisting"
-      indeterminate
-      :color="DATA_PRODUCT_ACCENT"
-    />
+      <v-progress-linear v-if="loadingExisting" indeterminate color="primary" />
+    </div>
 
     <v-form
       ref="formRef"
       v-model="valid"
       validate-on="input"
+      class="d-flex flex-column grow overflow-hidden"
       @submit.prevent="onSubmit"
     >
-      <v-card-text>
-        <v-alert
-          v-if="showInfo"
-          :color="DATA_PRODUCT_ACCENT"
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-5"
-        >
-          Aggregate observations from an input datastream into fixed-length time
-          buckets and write the results to an output datastream.
-        </v-alert>
+      <v-card-text class="overflow-y-auto grow">
+        <TaskFormLayout>
+          <v-alert
+            v-if="showInfo"
+            color="primary"
+            type="info"
+            variant="tonal"
+            density="compact"
+          >
+            Aggregate observations from an input datastream into fixed-length
+            time buckets and write the results to an output datastream.
+          </v-alert>
 
-        <v-text-field
-          v-model="taskName"
-          label="Task name *"
-          :rules="rules.requiredAndMaxLength255"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+          <TaskFormSection>
+            <v-text-field
+              v-model="taskName"
+              label="Task name"
+              class="required-label"
+              :rules="rules.requiredAndMaxLength255"
+              :disabled="loadingExisting"
+            />
+          </TaskFormSection>
 
-        <ScheduleFields
-          v-model="schedule"
-          :disabled="loadingExisting"
-          :color="DATA_PRODUCT_ACCENT"
-        />
+          <v-divider />
 
-        <v-divider class="mb-4" />
+          <ScheduleFields v-model="schedule" :disabled="loadingExisting" />
 
-        <DatastreamCardSelector
-          v-model="inputDatastreamId"
-          :datastreams="siteDatastreams"
-          label="Input datastream *"
-          :loading="loadingDatastreams"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :rules="rules.required"
-          class="mb-2"
-        />
+          <v-divider />
 
-        <DatastreamCardSelector
-          v-model="outputDatastreamId"
-          :datastreams="siteDatastreams"
-          label="Output datastream *"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :loading="loadingDatastreams"
-          :rules="rules.required"
-          class="mb-2"
-        />
+          <TaskFormSection>
+            <DatastreamCardSelector
+              v-model="inputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              label="Input datastream"
+              :hint="inputScopeNote"
+              :scope-note="inputScopeNote"
+              :loading="loadingDatastreams"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :rules="rules.required"
+            />
 
-        <v-divider class="mb-4" />
+            <DatastreamCardSelector
+              v-model="outputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              :monitoring-site-id="selectedMonitoringSiteId"
+              label="Output datastream"
+              :hint="outputScopeNote"
+              :scope-note="outputScopeNote"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :loading="loadingDatastreams"
+              :rules="rules.required"
+              enforce-unique-selections
+            />
+          </TaskFormSection>
 
-        <div
-          class="hs-text-2xs text-medium-emphasis mb-3 font-weight-bold text-uppercase"
-        >
-          Aggregation settings
-        </div>
+          <v-divider />
 
-        <v-select
-          v-model="aggregationMethod"
-          :items="aggregationMethodOptions"
-          item-title="title"
-          item-value="value"
-          label="Aggregation method *"
-          :rules="rules.required"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+          <TaskFormSection title="Aggregation settings">
+            <v-select
+              v-model="aggregationMethod"
+              :items="aggregationMethodOptions"
+              item-title="title"
+              item-value="value"
+              label="Aggregation method"
+              class="required-label"
+              :rules="rules.required"
+              :disabled="loadingExisting"
+            />
 
-        <div class="d-flex gap-3 mb-2">
-          <v-text-field
-            v-model.number="outputInterval"
-            label="Output interval *"
-            type="number"
-            min="1"
-            :rules="[...rules.required, positiveInteger]"
-            :disabled="loadingExisting"
-            class="shrink"
-            style="max-width: 160px"
-          />
-          <v-select
-            v-model="outputIntervalUnits"
-            :items="intervalUnitOptions"
-            item-title="title"
-            item-value="value"
-            label="Unit *"
-            :rules="rules.required"
-            :disabled="loadingExisting"
-            class="grow"
-          />
-        </div>
+            <div class="interval-fields">
+              <v-text-field
+                v-model.number="outputInterval"
+                label="Output interval"
+                class="required-label"
+                type="number"
+                min="1"
+                :rules="[...rules.required, positiveInteger]"
+                :disabled="loadingExisting"
+              />
+              <v-select
+                v-model="outputIntervalUnits"
+                :items="intervalUnitOptions"
+                item-title="title"
+                item-value="value"
+                label="Unit"
+                class="required-label"
+                :rules="rules.required"
+                :disabled="loadingExisting"
+              />
+            </div>
 
-        <v-text-field
-          v-model.number="minValues"
-          label="Minimum values per bucket"
-          type="number"
-          min="1"
-          hint="Buckets with fewer than this many values will be skipped."
-          persistent-hint
-          :rules="
-            minValues !== null && minValues !== undefined
-              ? [positiveInteger]
-              : []
-          "
-          :disabled="loadingExisting"
-          clearable
-          class="mb-2"
-          @click:clear="minValues = null"
-        />
+            <v-text-field
+              v-model.number="minValues"
+              label="Minimum values per bucket"
+              type="number"
+              min="1"
+              hint="Buckets with fewer than this many values will be skipped."
+              persistent-hint
+              :rules="
+                minValues !== null && minValues !== undefined
+                  ? [positiveInteger]
+                  : []
+              "
+              :disabled="loadingExisting"
+              clearable
+              @click:clear="minValues = null"
+            />
+          </TaskFormSection>
 
-        <v-divider class="mb-4 mt-2" />
+          <v-divider />
 
-        <div
-          class="hs-text-2xs text-medium-emphasis mb-3 font-weight-bold text-uppercase"
-        >
-          Timezone
-        </div>
+          <TaskFormSection title="Timezone">
+            <v-select
+              v-model="timezoneMode"
+              :items="timezoneOptions"
+              item-title="title"
+              item-value="value"
+              label="Timezone type"
+              :disabled="loadingExisting"
+            />
 
-        <v-select
-          v-model="timezoneMode"
-          :items="timezoneOptions"
-          item-title="title"
-          item-value="value"
-          label="Timezone type"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+            <v-autocomplete
+              v-if="timezoneMode === 'fixedOffset'"
+              v-model="timezone"
+              label="Fixed UTC offset"
+              class="required-label"
+              hint="Select the fixed UTC offset for this data."
+              :items="FIXED_OFFSET_TIMEZONES"
+              :rules="rules.required"
+              :disabled="loadingExisting"
+            />
 
-        <v-autocomplete
-          v-if="timezoneMode === 'fixedOffset'"
-          v-model="timezone"
-          label="Fixed UTC offset *"
-          hint="Select the fixed UTC offset for this data."
-          :items="FIXED_OFFSET_TIMEZONES"
-          :rules="rules.required"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
-
-        <v-autocomplete
-          v-if="timezoneMode === 'iana'"
-          v-model="timezone"
-          label="IANA timezone *"
-          hint="Select an IANA timezone for this data."
-          :items="DST_AWARE_TIMEZONES"
-          :rules="rules.required"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
+            <v-autocomplete
+              v-if="timezoneMode === 'iana'"
+              v-model="timezone"
+              label="IANA timezone"
+              class="required-label"
+              hint="Select an IANA timezone for this data."
+              :items="DST_AWARE_TIMEZONES"
+              :rules="rules.required"
+              :disabled="loadingExisting"
+            />
+          </TaskFormSection>
+        </TaskFormLayout>
       </v-card-text>
 
       <v-divider />
 
-      <v-card-actions>
+      <v-card-actions class="shrink-0">
         <v-spacer />
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
@@ -185,7 +187,6 @@
 
         <v-btn-dialog-action
           type="submit"
-          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
@@ -213,14 +214,13 @@ import hs, {
 import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
-import {
-  DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_TOOLBAR_STYLE,
-} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
+import TaskFormLayout from '../shared/TaskFormLayout.vue'
+import TaskFormSection from '../shared/TaskFormSection.vue'
+import { useDatastreamScopeNotes } from '@/composables/orchestration/useDatastreamScopeNotes'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useOrchestrationStore } from '@/store/orchestration'
 
 const props = defineProps<{
   initialMonitoringSiteId?: string | null
@@ -237,6 +237,7 @@ const emit = defineEmits<{
 const isEditMode = computed(() => !!props.editTaskId)
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+const orchestrationStore = useOrchestrationStore()
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -261,7 +262,14 @@ const minValues = ref<number | null>(null)
 const timezoneType = ref<'offset' | 'iana' | null>(null)
 const timezone = ref<string | null>(null)
 
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
+
+const { inputScopeNote, outputScopeNote } = useDatastreamScopeNotes(
+  datastreams,
+  selectedMonitoringSiteId
+)
 
 const aggregationMethodOptions = [
   { title: 'Arithmetic Mean', value: 'mean' },
@@ -305,11 +313,6 @@ const timezoneMode = computed({
       timezone.value = 'America/Denver'
     }
   },
-})
-
-const siteDatastreams = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 type Rule = (v: any) => true | string
@@ -551,7 +554,27 @@ watch(
 )
 
 onMounted(async () => {
-  await loadDatastreams()
+  await Promise.all([
+    loadDatastreams(),
+    // Names the site in the scope notes even when it has no datastreams yet.
+    orchestrationStore.ensureWorkspaceMonitoringSites(
+      selectedWorkspaceId.value
+    ),
+  ])
   if (isEditMode.value) await loadExistingTask()
 })
 </script>
+
+<style scoped>
+.interval-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) minmax(160px, 0.6fr);
+  gap: var(--hs-space-12);
+}
+
+@media (max-width: 700px) {
+  .interval-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

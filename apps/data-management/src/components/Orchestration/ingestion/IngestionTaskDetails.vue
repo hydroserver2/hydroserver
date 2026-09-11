@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="task"
-    class="flex flex-col flex-1 min-h-0 h-full bg-white overflow-hidden"
+    class="task-detail flex flex-col flex-1 min-h-0 h-full overflow-hidden"
   >
-    <header class="pt-[14px] border-b border-[#e8e8e8] bg-white shrink-0">
+    <header class="pt-[14px] border-b border-[#e8e8e8] shrink-0">
       <button
         class="task-details-back hs-text-sm font-weight-medium"
         type="button"
@@ -87,7 +87,7 @@
 
           <button
             type="button"
-            class="header-btn header-btn--run hs-text-sm font-weight-semibold"
+            class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
             :disabled="!!runNowDisabledReason"
             @click="runNow"
           >
@@ -107,7 +107,7 @@
       </v-tabs>
     </div>
 
-    <section class="task-details-body">
+    <section class="task-details-body hs-workbench-canvas">
       <div class="task-details-panel">
         <TaskRunHistory
           v-if="tab === 'runs'"
@@ -193,6 +193,10 @@ function onTaskUpdated() {
 header {
   padding-left: 22px;
   padding-right: 22px;
+  background: var(--hs-surface);
+}
+.task-detail {
+  background: var(--hs-surface);
 }
 .task-details-back {
   display: inline-flex;
@@ -216,7 +220,7 @@ h2.task-details-title {
   overflow-wrap: anywhere;
 }
 .schedule-pill {
-  background: #f5f7fa;
+  background: var(--hs-surface-muted);
   border-radius: 4px;
   padding: 2px 7px;
   color: #49454f;
@@ -228,10 +232,10 @@ h2.task-details-title {
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
-  background: #ffffff;
-  border: 1px solid #cac4d0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-input-border);
   border-radius: 8px;
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
   cursor: pointer;
   font-family: inherit;
   line-height: 1.1;
@@ -255,13 +259,6 @@ h2.task-details-title {
   border-color: #cac4d0;
   color: #1c1b1f;
 }
-.header-btn--run {
-  border-color: #2e7d32;
-  color: #2e7d32;
-}
-.header-btn--run:hover:not(:disabled) {
-  background: rgba(46, 125, 50, 0.08);
-}
 .header-btn--danger {
   border-color: #b3261e;
   color: #b3261e;
@@ -280,7 +277,6 @@ h2.task-details-title {
   flex: 1;
   overflow-y: auto;
   padding: 16px 22px;
-  background: #f5f7fa;
   min-height: 0;
 }
 .task-details-panel {
@@ -290,7 +286,7 @@ h2.task-details-title {
 }
 .task-details-panel :deep(.etl-source-display),
 .task-details-panel :deep(.etl-target-display) {
-  background: #ffffff;
+  background: var(--hs-surface);
 }
 .empty,
 .loading {

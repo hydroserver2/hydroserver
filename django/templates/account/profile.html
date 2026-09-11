@@ -1,6 +1,7 @@
 {% extends "allauth/layouts/manage.html" %}
 {% load i18n %}
 {% block head_title %}{% trans "Profile" %}{% endblock %}
+{% block card_header %}{% endblock %}
 {% block content %}
 <div class="auth-page-header">
     <h1 class="hs-heading">{% trans "Profile" %}</h1>
@@ -62,8 +63,6 @@
         <h2 class="hs-subheading">{% trans "Account management" %}</h2>
         <div class="hs-inline-actions">
             <a href="{% url 'account_change_password' %}" class="hs-link">{% trans "Change password" %}</a>
-            <a href="{% url 'account_email' %}" class="hs-link">{% trans "Manage email" %}</a>
-            <a href="{% url 'socialaccount_connections' %}" class="hs-link">{% trans "Connected accounts" %}</a>
             <a href="{% url 'account_delete' %}" class="hs-link hs-link--danger">{% trans "Delete account" %}</a>
         </div>
     </section>

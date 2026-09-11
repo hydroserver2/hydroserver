@@ -1,5 +1,8 @@
 <template>
-  <HsDetailPanel>
+  <HsDetailPanel
+    toolbar-class="hs-workbench-canvas"
+    body-class="hs-workbench-canvas"
+  >
     <template #header>
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-2">
@@ -44,14 +47,13 @@
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="flat"
+                <VBtnPageAction
                   :disabled="!canCreate"
                   data-testid="add-ingestion-task"
                   @click="emit('add-task')"
                 >
                   Add task
-                </v-btn>
+                </VBtnPageAction>
               </span>
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -61,14 +63,13 @@
             <v-tooltip location="top" :disabled="canCreate">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="flat"
+                  <VBtnPageAction
                     :disabled="!canCreate"
                     data-testid="add-aggregation-task"
                     @click="emit('add-aggregation')"
                   >
                     Add aggregation
-                  </v-btn>
+                  </VBtnPageAction>
                 </span>
               </template>
               <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -76,14 +77,13 @@
             <v-tooltip location="top" :disabled="canCreate">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="flat"
+                  <VBtnPageAction
                     :disabled="!canCreate"
                     data-testid="add-derivation-task"
                     @click="emit('add-derivation')"
                   >
                     Add derivation
-                  </v-btn>
+                  </VBtnPageAction>
                 </span>
               </template>
               <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -91,14 +91,13 @@
             <v-tooltip location="top" :disabled="canCreateRatingCurve">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="flat"
+                  <VBtnPageAction
                     :disabled="!canCreateRatingCurve"
                     data-testid="add-rating-curve-task"
                     @click="emit('add-rating-curve')"
                   >
                     Add rating curve
-                  </v-btn>
+                  </VBtnPageAction>
                 </span>
               </template>
               <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -112,14 +111,13 @@
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="flat"
+                <VBtnPageAction
                   :disabled="!canCreate"
                   data-testid="add-quality-task"
                   @click="emit('add-quality')"
                 >
                   Add quality task
-                </v-btn>
+                </VBtnPageAction>
               </span>
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>
@@ -360,7 +358,11 @@ const clearTaskTypeFilter = () => {
 
 .detail-filterbar {
   padding: 0 var(--hs-space-24);
-  margin: var(--hs-space-24) 0 var(--hs-space-10);
+  margin: var(--hs-space-24) 0 0;
+}
+
+:deep(.hs-detail-panel__body--after-toolbar) {
+  padding-top: var(--hs-space-10);
 }
 
 .detail-filterbar .hs-table-actions {

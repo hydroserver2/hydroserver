@@ -114,8 +114,8 @@ describe('DatastreamService', () => {
           jsonResponse({
             monitoringSites: [{ id: 'monitoringSite-1', workspaceId: 'ws-1', name: 'Site 1', code: 'SF-1' }],
             datastreams: [
-              { id: 'ds-1', name: 'DS 1', monitoringSiteId: 'monitoringSite-1', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
-              { id: 'ds-2', name: 'DS 2', monitoringSiteId: 'missing-monitoringSite', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
+              { id: 'ds-1', name: 'DS 1', monitoringSiteId: 'monitoringSite-1', methodId: 'method-1', methodName: 'Shielded sensor', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', unitName: 'Degrees Celsius', unitSymbol: 'degC', noDataValue: -9999 },
+              { id: 'ds-2', name: 'DS 2', monitoringSiteId: 'missing-monitoringSite', methodId: 'method-1', methodName: 'Shielded sensor', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', unitName: 'Degrees Celsius', unitSymbol: 'degC', noDataValue: -9999 },
             ],
             observedProperties: [{ id: 'op-1', name: 'Temperature', code: 'temp' }],
             processingLevels: [{ id: 'pl-1', name: 'Raw data' }],
@@ -136,6 +136,8 @@ describe('DatastreamService', () => {
       expect(res.data.processingLevels[0]).toBeInstanceOf(ProcessingLevel)
 
       expect(res.data.datastreams[0].workspaceId).toBe('ws-1')
+      expect(res.data.datastreams[0].methodName).toBe('Shielded sensor')
+      expect(res.data.datastreams[0].unitName).toBe('Degrees Celsius')
       expect(res.data.datastreams[1].workspaceId).toBe('')
     })
 

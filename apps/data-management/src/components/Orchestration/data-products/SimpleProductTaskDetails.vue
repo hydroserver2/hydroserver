@@ -99,7 +99,7 @@
         </v-dialog>
         <button
           type="button"
-          class="header-btn header-btn--run hs-text-sm font-weight-semibold"
+          class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
           :disabled="!!runNowDisabledReason"
           @click="runNow"
         >
@@ -117,7 +117,7 @@
         </v-tab>
       </v-tabs>
     </div>
-    <section class="body">
+    <section class="body hs-workbench-canvas">
       <div v-if="tab === 'runs'" class="run-history-list">
         <TaskRunHistory
           :rows="runRows"
@@ -240,7 +240,7 @@ function onFormUpdated() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--hs-surface);
 }
 .bar {
   display: grid;
@@ -280,7 +280,7 @@ h2 {
   margin: 0;
 }
 .pill {
-  background: #f5f7fa;
+  background: var(--hs-surface-muted);
   border-radius: 4px;
   padding: 2px 7px;
   text-transform: capitalize;
@@ -303,10 +303,10 @@ h2 {
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
-  background: #ffffff;
-  border: 1px solid #cac4d0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-input-border);
   border-radius: 8px;
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
   cursor: pointer;
   font-family: inherit;
   line-height: 1.1;
@@ -331,13 +331,6 @@ h2 {
   border-color: #cac4d0;
   color: #1c1b1f;
 }
-.header-btn--run {
-  border-color: #2e7d32;
-  color: #2e7d32;
-}
-.header-btn--run:hover:not(:disabled) {
-  background: rgba(46, 125, 50, 0.08);
-}
 .header-btn--danger {
   border-color: #b3261e;
   color: #b3261e;
@@ -357,7 +350,6 @@ h2 {
   min-height: 0;
   overflow: auto;
   padding: 16px 22px;
-  background: #f5f7fa;
 }
 .run-history-list {
   display: flex;

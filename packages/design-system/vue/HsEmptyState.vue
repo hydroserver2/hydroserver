@@ -48,6 +48,9 @@ withDefaults(
   min-width: 0;
   padding: var(--hs-space-32);
   overflow: auto;
+}
+
+.hs-empty-state:not(.hs-workbench-canvas) {
   background: var(--hs-background);
 }
 

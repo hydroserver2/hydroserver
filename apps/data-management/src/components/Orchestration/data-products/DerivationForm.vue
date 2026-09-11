@@ -1,23 +1,24 @@
 <template>
   <v-card class="d-flex flex-column" style="max-height: 90vh">
     <div class="shrink-0">
-      <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-        <v-card-title>{{
-          isEditMode ? 'Edit derivation task' : 'Create derivation task'
-        }}</v-card-title>
-        <v-btn
-          :icon="mdiInformationOutline"
-          variant="text"
-          aria-label="Toggle task info"
-          @click="showInfo = !showInfo"
-        />
+      <v-toolbar color="primary" flat>
+        <div class="d-flex align-center px-4">
+          <v-card-title class="hs-subheading pa-0">{{
+            isEditMode ? 'Edit derivation task' : 'Create derivation task'
+          }}</v-card-title>
+          <v-btn
+            icon
+            class="ml-n1"
+            variant="text"
+            aria-label="Toggle task info"
+            @click="showInfo = !showInfo"
+          >
+            <v-icon :icon="mdiInformationOutline" size="17" />
+          </v-btn>
+        </div>
       </v-toolbar>
       <v-divider />
-      <v-progress-linear
-        v-if="loadingExisting"
-        indeterminate
-        :color="DATA_PRODUCT_ACCENT"
-      />
+      <v-progress-linear v-if="loadingExisting" indeterminate color="primary" />
     </div>
 
     <v-form
@@ -28,215 +29,200 @@
       @submit.prevent="onSubmit"
     >
       <v-card-text class="overflow-y-auto grow">
-        <v-alert
-          v-if="showInfo"
-          :color="DATA_PRODUCT_ACCENT"
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-5"
-        >
-          Apply a mathematical formula to one or more input datastreams to
-          produce a new output datastream. With more than one input, they're
-          matched by exact timestamp; if inputs stop lining up, the run stops
-          there until they're back in sync.
-        </v-alert>
+        <TaskFormLayout>
+          <v-alert
+            v-if="showInfo"
+            color="primary"
+            type="info"
+            variant="tonal"
+            density="compact"
+          >
+            Apply a mathematical formula to one or more input datastreams to
+            produce a new output datastream. With more than one input, they're
+            matched by exact timestamp; if inputs stop lining up, the run stops
+            there until they're back in sync.
+          </v-alert>
 
-        <v-text-field
-          v-model="taskName"
-          label="Task name *"
-          :rules="rules.requiredAndMaxLength255"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
-
-        <ScheduleFields
-          v-model="schedule"
-          :disabled="loadingExisting"
-          :color="DATA_PRODUCT_ACCENT"
-        />
-
-        <v-divider class="mb-4" />
-
-        <DatastreamCardSelector
-          v-model="outputDatastreamId"
-          :datastreams="siteDatastreams"
-          label="Output datastream *"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :loading="loadingDatastreams"
-          :rules="rules.required"
-          class="mb-2"
-        />
-
-        <v-divider class="mb-4" />
-
-        <!-- Input datastreams -->
-        <div
-          class="hs-text-2xs text-medium-emphasis font-weight-bold text-uppercase mb-3"
-        >
-          Input datastreams
-        </div>
-
-        <div class="inputs-list mb-2">
-          <div v-for="(inp, i) in inputs" :key="inp.key" class="input-row mb-2">
-            <DatastreamCardSelector
-              v-model="inp.datastreamId"
-              :datastreams="datastreams"
-              :label="`Input datastream ${i + 1} *`"
-              :loading="loadingDatastreams"
-              :disabled="loadingExisting"
-              :rules="rules.required"
-              density="compact"
-              class="input-ds"
-            />
+          <TaskFormSection>
             <v-text-field
-              v-model="inp.variableName"
-              :label="`Variable *`"
+              v-model="taskName"
+              label="Task name"
+              class="required-label"
+              :rules="rules.requiredAndMaxLength255"
+              :disabled="loadingExisting"
+            />
+          </TaskFormSection>
+
+          <v-divider />
+
+          <ScheduleFields v-model="schedule" :disabled="loadingExisting" />
+
+          <v-divider />
+
+          <TaskFormSection>
+            <div v-for="(inp, i) in inputs" :key="inp.key" class="input-row">
+              <DatastreamCardSelector
+                v-model="inp.datastreamId"
+                :datastreams="datastreams"
+                :workspace-id="selectedWorkspaceId"
+                :label="`Input datastream ${i + 1}`"
+                :hint="i === 0 ? INPUT_SCOPE_NOTE : null"
+                :scope-note="INPUT_SCOPE_NOTE"
+                :loading="loadingDatastreams"
+                :disabled="loadingExisting"
+                :rules="rules.required"
+                density="compact"
+              />
+              <v-text-field
+                v-model="inp.variableName"
+                label="Variable"
+                class="required-label"
+                :rules="[
+                  ...rules.required,
+                  validIdentifier,
+                  noReservedName,
+                  uniqueVarName(i),
+                ]"
+                :disabled="loadingExisting"
+              />
+              <v-btn-icon
+                :icon="mdiClose"
+                size="small"
+                :aria-label="`Remove input datastream ${i + 1}`"
+                :disabled="inputs.length <= 1 || loadingExisting"
+                @click="removeInput(i)"
+              />
+            </div>
+
+            <div>
+              <v-btn
+                variant="outlined"
+                size="small"
+                :prepend-icon="mdiPlus"
+                :disabled="loadingExisting"
+                @click="addInput"
+              >
+                Add input
+              </v-btn>
+            </div>
+
+            <DatastreamCardSelector
+              v-model="outputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              :monitoring-site-id="selectedMonitoringSiteId"
+              label="Output datastream"
+              :hint="outputScopeNote"
+              :scope-note="outputScopeNote"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :loading="loadingDatastreams"
+              :rules="rules.required"
+              enforce-unique-selections
+            />
+          </TaskFormSection>
+
+          <v-divider />
+
+          <TaskFormSection title="Formula">
+            <div class="token-legend">
+              <div class="token-legend__row">
+                <span class="token-legend__label hs-text-sm">Variables:</span>
+                <v-chip
+                  v-for="inp in namedInputs"
+                  :key="inp.variableName"
+                  size="x-small"
+                  color="primary"
+                  variant="tonal"
+                  class="hs-font-data"
+                >
+                  {{ inp.variableName }}
+                </v-chip>
+                <span
+                  v-if="!namedInputs.length"
+                  class="token-legend__empty hs-text-sm"
+                >
+                  (define variable names above)
+                </span>
+              </div>
+              <div class="token-legend__row">
+                <span class="token-legend__label hs-text-sm">Functions:</span>
+                <v-chip
+                  v-for="fn in ALLOWED_FUNCTIONS"
+                  :key="fn"
+                  size="x-small"
+                  variant="outlined"
+                  color="default"
+                  class="hs-font-data"
+                >
+                  {{ fn }}
+                </v-chip>
+              </div>
+            </div>
+
+            <v-text-field
+              v-model="formula"
+              label="Output ="
+              class="required-label hs-font-data"
+              :placeholder="formulaPlaceholder"
               :rules="[
                 ...rules.required,
-                validIdentifier,
-                noReservedName,
-                uniqueVarName(i),
+                formulaUsesVariable,
+                formulaAllowedTokens,
+                formulaBalancedParens,
               ]"
               :disabled="loadingExisting"
-              density="compact"
-              class="input-var"
             />
-            <v-btn
-              icon
-              variant="text"
-              size="small"
-              color="error"
-              :disabled="inputs.length <= 1 || loadingExisting"
-              @click="removeInput(i)"
-            >
-              <v-icon>{{ mdiClose }}</v-icon>
-            </v-btn>
-          </div>
-        </div>
+          </TaskFormSection>
 
-        <v-btn
-          variant="outlined"
-          :color="DATA_PRODUCT_ACCENT"
-          size="small"
-          :prepend-icon="mdiPlus"
-          :disabled="loadingExisting"
-          class="mb-4 text-none"
-          @click="addInput"
-        >
-          Add input
-        </v-btn>
+          <v-divider />
 
-        <v-divider class="mb-4" />
+          <TaskFormSection title="Error handling">
+            <div class="toggle-row">
+              <v-checkbox
+                v-model="stopOnNoData"
+                color="primary"
+                hide-details
+                :disabled="loadingExisting"
+              >
+                <template #label>
+                  <span class="hs-text-sm">Stop on no-data value</span>
+                </template>
+              </v-checkbox>
+              <v-tooltip location="end" max-width="280">
+                <template #activator="{ props: tp }">
+                  <v-icon v-bind="tp" size="16" class="toggle-row__info">
+                    {{ mdiInformationOutline }}
+                  </v-icon>
+                </template>
+                If an input is set to a no-data value, stop the run there
+                instead of writing the output's no-data value and continuing.
+              </v-tooltip>
+            </div>
 
-        <!-- Formula -->
-        <div
-          class="hs-text-2xs text-medium-emphasis font-weight-bold text-uppercase mb-2"
-        >
-          Formula
-        </div>
-
-        <div class="mb-3">
-          <div class="d-flex flex-wrap align-center gap-1 mb-1">
-            <span class="hs-text-2xs text-medium-emphasis mr-1"
-              >Variables:</span
-            >
-            <v-chip
-              v-for="inp in namedInputs"
-              :key="inp.variableName"
-              size="x-small"
-              :color="DATA_PRODUCT_ACCENT"
-              variant="tonal"
-              class="hs-font-data"
-            >
-              {{ inp.variableName }}
-            </v-chip>
-            <span v-if="!namedInputs.length" class="hs-text-2xs text-disabled">
-              (define variable names above)
-            </span>
-          </div>
-          <div class="d-flex flex-wrap align-center gap-1">
-            <span class="hs-text-2xs text-medium-emphasis mr-1"
-              >Functions:</span
-            >
-            <v-chip
-              v-for="fn in ALLOWED_FUNCTIONS"
-              :key="fn"
-              size="x-small"
-              variant="outlined"
-              color="grey-darken-1"
-              class="hs-font-data"
-            >
-              {{ fn }}
-            </v-chip>
-          </div>
-        </div>
-
-        <v-text-field
-          v-model="formula"
-          label="Output = *"
-          :placeholder="formulaPlaceholder"
-          :rules="[
-            ...rules.required,
-            formulaUsesVariable,
-            formulaAllowedTokens,
-            formulaBalancedParens,
-          ]"
-          :disabled="loadingExisting"
-          class="mb-2 formula-field hs-font-data"
-        />
-
-        <v-divider class="mb-4" />
-
-        <!-- Error handling -->
-        <div
-          class="hs-text-2xs text-medium-emphasis font-weight-bold text-uppercase mb-1"
-        >
-          Error handling
-        </div>
-
-        <div class="d-flex align-center mb-1">
-          <div class="hs-text-sm">Stop on no-data value</div>
-          <v-tooltip location="end" max-width="280">
-            <template #activator="{ props: tp }">
-              <v-icon v-bind="tp" size="16" color="grey-darken-1" class="ml-1">
-                {{ mdiInformationOutline }}
-              </v-icon>
-            </template>
-            If an input is set to a no-data value, stop the run there
-            instead of writing the output's no-data value and continuing.
-          </v-tooltip>
-          <v-spacer />
-          <v-switch
-            v-model="stopOnNoData"
-            :color="DATA_PRODUCT_ACCENT"
-            density="compact"
-            hide-details
-            :disabled="loadingExisting"
-          />
-        </div>
-
-        <div class="d-flex align-center">
-          <div class="hs-text-sm">Stop on calculation error</div>
-          <v-tooltip location="end" max-width="280">
-            <template #activator="{ props: tp }">
-              <v-icon v-bind="tp" size="16" color="grey-darken-1" class="ml-1">
-                {{ mdiInformationOutline }}
-              </v-icon>
-            </template>
-            If the formula produces a non-finite result (e.g. divide by
-            zero), stop the run there instead of writing the output's
-            no-data value and continuing.
-          </v-tooltip>
-          <v-spacer />
-          <v-switch
-            v-model="stopOnError"
-            :color="DATA_PRODUCT_ACCENT"
-            density="compact"
-            hide-details
-            :disabled="loadingExisting"
-          />
-        </div>
+            <div class="toggle-row">
+              <v-checkbox
+                v-model="stopOnError"
+                color="primary"
+                hide-details
+                :disabled="loadingExisting"
+              >
+                <template #label>
+                  <span class="hs-text-sm">Stop on calculation error</span>
+                </template>
+              </v-checkbox>
+              <v-tooltip location="end" max-width="280">
+                <template #activator="{ props: tp }">
+                  <v-icon v-bind="tp" size="16" class="toggle-row__info">
+                    {{ mdiInformationOutline }}
+                  </v-icon>
+                </template>
+                If the formula produces a non-finite result (e.g. divide by
+                zero), stop the run there instead of writing the output's
+                no-data value and continuing.
+              </v-tooltip>
+            </div>
+          </TaskFormSection>
+        </TaskFormLayout>
       </v-card-text>
 
       <v-divider />
@@ -248,7 +234,6 @@
         >
         <v-btn-dialog-action
           type="submit"
-          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
@@ -272,14 +257,16 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
-import {
-  DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_TOOLBAR_STYLE,
-} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
+import TaskFormLayout from '../shared/TaskFormLayout.vue'
+import TaskFormSection from '../shared/TaskFormSection.vue'
+import {
+  INPUT_SCOPE_NOTE,
+  useDatastreamScopeNotes,
+} from '@/composables/orchestration/useDatastreamScopeNotes'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useOrchestrationStore } from '@/store/orchestration'
 
 const ALLOWED_FUNCTIONS = [
   'abs',
@@ -352,7 +339,14 @@ const formula = ref('')
 const stopOnNoData = ref(true)
 const stopOnError = ref(true)
 
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
+
+const { outputScopeNote } = useDatastreamScopeNotes(
+  datastreams,
+  selectedMonitoringSiteId
+)
 
 const namedInputs = computed(() =>
   inputs.value.filter((inp) => inp.variableName.trim())
@@ -363,11 +357,6 @@ const formulaPlaceholder = computed(() => {
   if (vars.length >= 2) return `e.g. (${vars[0]} + ${vars[1]}) / 2`
   if (vars.length === 1) return `e.g. (${vars[0]} - 32) * 5/9`
   return 'e.g. (x - 32) * 5/9'
-})
-
-const siteDatastreams = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 function nextVarName(): string {
@@ -704,7 +693,13 @@ watch(
 )
 
 onMounted(async () => {
-  await loadDatastreams()
+  await Promise.all([
+    loadDatastreams(),
+    // Names the site in the scope notes even when it has no datastreams yet.
+    useOrchestrationStore().ensureWorkspaceMonitoringSites(
+      selectedWorkspaceId.value
+    ),
+  ])
   if (isEditMode.value) await loadExistingTask()
 })
 </script>
@@ -712,8 +707,49 @@ onMounted(async () => {
 <style scoped>
 .input-row {
   display: grid;
-  grid-template-columns: 1fr 140px 36px;
-  gap: 8px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) 140px auto;
+  gap: var(--hs-space-8);
+  /* The first row's selector carries a scope note above its button, so bottom
+     alignment is what keeps the three controls on one line. */
+  align-items: end;
+}
+
+.token-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-6);
+}
+
+.token-legend__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hs-space-4);
+  align-items: center;
+}
+
+.token-legend__label {
+  margin-right: var(--hs-space-4);
+  color: var(--hs-text-secondary);
+}
+
+.token-legend__empty {
+  color: var(--hs-text-muted);
+}
+
+.toggle-row {
+  display: flex;
+  gap: var(--hs-space-4);
+  align-items: center;
+}
+
+.toggle-row__info {
+  color: var(--hs-text-secondary);
+}
+
+@media (max-width: 700px) {
+  .input-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
 }
 </style>

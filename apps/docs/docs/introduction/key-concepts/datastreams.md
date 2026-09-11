@@ -13,6 +13,20 @@ For example, you could have a datastream of:
 
 A datastream acts as the hub for understanding what's being measured at a given location. For example, if you want to know what's being measured, you'll ask the API for `datastream.observed_property` which will return 'Water temperature' along with metadata describing exactly what 'Water temperature' means to your organization. If you want to know how the observations are produced, you'd ask for `datastream.method`, which may include instrument details when applicable. If you want the actual data, you'll call `datastream.observations`.
 
+## Naming Datastreams
+
+The `datastream.name` must be unique and unambiguous within its monitoring site. Use a short, data-focused name and do not append the monitoring site name. HydroServer applications provide the monitoring-site context when it is needed.
+
+Use this recommended convention:
+
+```
+<Observed Property> - <variant when needed>
+```
+
+The variant is optional and should include only the context needed to distinguish similar datastreams at the same site. Organizations can define variants according to their own policies. For example: `Discharge - Hourly RAW`, `Discharge - Daily QC`, `Discharge - Hourly Max (CFS)`, and `Discharge - Hourly Min (ac-ft)`.
+
+When datastreams are displayed across multiple monitoring sites, applications should present the site separately as `<datastream.name> @ <monitoringSite.name>`, such as `Discharge - Hourly RAW @ Kanarraville`.
+
 ## Metadata Types
 
 In HydroServer, we describe datastream metadata in two groups:

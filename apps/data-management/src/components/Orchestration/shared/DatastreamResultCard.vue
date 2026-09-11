@@ -1,134 +1,160 @@
 <template>
-  <div class="datastream-result-card">
-    <div class="datastream-result-card__title hs-text-md font-weight-bold">
-      {{ datastream.name }}
-    </div>
+  <div class="datastream-result-row">
+    <div class="datastream-result-row__content">
+      <div class="datastream-result-row__title">
+        <span class="datastream-result-row__name">
+          {{ datastream.name || 'Unnamed datastream' }}
+        </span>
+        <template v-if="showMonitoringSiteContext && monitoringSiteName">
+          <span class="datastream-result-row__separator" aria-hidden="true">
+            @
+          </span>
+          <span class="datastream-result-row__site">
+            {{ monitoringSiteName }}
+          </span>
+        </template>
+      </div>
 
-    <div class="datastream-result-card__grid">
       <div
-        v-for="detail in details"
-        :key="detail.label"
-        class="datastream-result-card__detail"
+        v-if="hasObservationInformation"
+        class="datastream-result-row__observation-range hs-text-sm"
       >
-        <div class="datastream-result-card__label hs-text-sm font-weight-bold">
-          {{ detail.label }}
-        </div>
-        <div class="datastream-result-card__value hs-text-sm font-weight-bold">
-          {{ detail.value }}
-        </div>
+        {{ observationRange }}
       </div>
     </div>
+
+    <v-btn
+      variant="text"
+      size="small"
+      color="primary"
+      :append-icon="mdiChevronRight"
+      :aria-label="`View details for ${datastream.name || 'datastream'}`"
+      class="datastream-result-row__details"
+      @mousedown.stop
+      @click.stop="$emit('details')"
+    >
+      Details
+    </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Datastream } from '@hydroserver/client'
+import { mdiChevronRight } from '@mdi/js'
+import { formatTime } from '@/utils/time'
 
 const props = defineProps<{
   datastream: Datastream
+  showMonitoringSiteContext?: boolean
 }>()
 
-const details = computed(() => [
-  { label: 'Site', value: relatedValue('monitoringSite', 'name') },
-  { label: 'Processing level', value: processingLevel() },
-  { label: 'Unit', value: unit() },
-  { label: 'Intended time spacing', value: spacing(props.datastream.intendedTimeSpacing, props.datastream.intendedTimeSpacingUnit) },
-  { label: 'Aggregation statistic & unit', value: aggregationStatisticAndUnit() },
-  { label: 'Method', value: methodSummary() },
-  { label: 'Sampled medium', value: props.datastream.sampledMedium || '-' },
-  { label: 'Value count', value: formatCount(props.datastream.valueCount) },
-])
+defineEmits<{
+  (e: 'details'): void
+}>()
 
-function relatedValue(relation: string, key: string): string {
-  const value = (props.datastream as Datastream & Record<string, any>)[relation]?.[key]
-  return value ? String(value) : '-'
-}
+const monitoringSiteName = computed(() => {
+  const datastream = props.datastream as Datastream & Record<string, any>
+  return datastream.monitoringSite?.name || ''
+})
 
-function processingLevel() {
-  const pl = (props.datastream as Datastream & Record<string, any>).processingLevel
-  if (!pl) return props.datastream.processingLevelId || '-'
-  return [pl.code, pl.name].filter(Boolean).join(' - ') || '-'
-}
+const hasObservationInformation = computed(
+  () =>
+    props.datastream.valueCount !== null ||
+    Boolean(props.datastream.phenomenonBeginTime) ||
+    Boolean(props.datastream.phenomenonEndTime)
+)
 
-function unit() {
-  const relatedUnit = (props.datastream as Datastream & Record<string, any>).unit
-  return relatedUnit?.symbol || relatedUnit?.name || props.datastream.unitId || '-'
-}
+const observationRange = computed(() => {
+  const count = Number(props.datastream.valueCount)
+  const observationLabel = count === 1 ? 'observation' : 'observations'
+  const formattedCount = Number.isFinite(count) ? count.toLocaleString() : '—'
 
-function aggregationStatisticAndUnit() {
-  const statistic = humanize(props.datastream.aggregationStatistic)
-  const interval = spacing(
-    props.datastream.timeAggregationInterval,
-    props.datastream.timeAggregationIntervalUnit
-  )
-  return [statistic, interval].filter(Boolean).join(', ') || '-'
-}
+  if (count === 0) return '0 observations'
 
-function methodSummary() {
-  const method = (props.datastream as Datastream & Record<string, any>).method
-  if (!method) return props.datastream.methodId || '-'
-  const methodLabel = method.code || method.type
-  if (method.name && methodLabel) return `${method.name} (${methodLabel})`
-  return method.name || methodLabel || '-'
-}
-
-function spacing(
-  interval: number | null | undefined,
-  unit: string | null | undefined
-) {
-  if (interval === null || interval === undefined || !unit) return '-'
-  return `${interval} ${unit}`
-}
-
-function formatCount(value: number | null | undefined) {
-  if (value === null || value === undefined) return '-'
-  return new Intl.NumberFormat().format(value)
-}
-
-function humanize(value: string | null | undefined) {
-  if (!value) return ''
-  return value
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
+  return [
+    `${formattedCount} ${observationLabel} between`,
+    formatTime(props.datastream.phenomenonBeginTime),
+    'and',
+    formatTime(props.datastream.phenomenonEndTime),
+  ].join(' ')
+})
 </script>
 
 <style scoped>
-.datastream-result-card {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  padding: 14px 18px;
+.datastream-result-row {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
   width: 100%;
-  background: rgb(var(--v-theme-surface));
+  padding: var(--hs-space-12) var(--hs-space-16);
+  background: var(--hs-surface);
+  border-bottom: 1px solid var(--hs-border);
 }
 
-.datastream-result-card__title {
-  color: rgba(var(--v-theme-on-surface), 0.94);
+.datastream-result-row__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.datastream-result-row__title {
+  display: flex;
+  gap: var(--hs-space-6);
+  align-items: baseline;
+  width: 100%;
+}
+
+.datastream-result-row__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
   line-height: 1.3;
-  margin-bottom: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.datastream-result-card__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px 20px;
+.datastream-result-row__separator,
+.datastream-result-row__site {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.datastream-result-card__label {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.2;
+.datastream-result-row__separator {
+  flex: 0 0 auto;
 }
 
-.datastream-result-card__value {
-  color: rgba(var(--v-theme-on-surface), 0.92);
-  line-height: 1.25;
-  overflow-wrap: anywhere;
+.datastream-result-row__observation-range {
+  margin-top: var(--hs-space-4);
+  color: var(--hs-text-secondary);
+  font-family: var(--hs-font-data);
+  line-height: 1.4;
+}
+
+.datastream-result-row__details {
+  flex: 0 0 auto;
+  min-height: var(--hs-space-24);
 }
 
 @media (max-width: 760px) {
-  .datastream-result-card__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .datastream-result-row {
+    align-items: flex-start;
+  }
+
+  .datastream-result-row__title {
+    align-items: flex-start;
+  }
+
+  .datastream-result-row__name,
+  .datastream-result-row__site {
+    white-space: normal;
   }
 }
 </style>

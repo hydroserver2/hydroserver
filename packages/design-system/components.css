@@ -7,7 +7,15 @@
  */
 
 /* Shared form affordances. */
-.required-label .v-label::after {
+
+/*
+ * `.required-label` goes on the field — Vuetify keeps the caption in a nested
+ * `.v-label` — or straight on a `<label>` that owns its own caption, such as a
+ * column header over a repeating row of inputs. Never write the asterisk by
+ * hand.
+ */
+.required-label .v-label::after,
+label.required-label::after {
   content: ' *';
   color: rgb(var(--v-theme-error));
 }
@@ -378,6 +386,32 @@
 .hs-sidebar-action:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* Barely tinted application canvas used behind contained foreground cards. */
+.hs-workbench-canvas {
+  background-color: var(--hs-background);
+  background-image:
+    radial-gradient(
+      1100px 760px at 12% -8%,
+      rgb(var(--v-theme-primary) / 0.045),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 680px at 102% 28%,
+      rgb(var(--v-theme-primary) / 0.038),
+      transparent 58%
+    ),
+    radial-gradient(
+      700px 900px at 50% 115%,
+      rgb(var(--v-theme-primary) / 0.028),
+      transparent 60%
+    );
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-position:
+    0 0,
+    0 0,
+    0 0;
 }
 
 /* Contained tables and their filter/action toolbar. */

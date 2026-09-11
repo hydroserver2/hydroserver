@@ -1,7 +1,10 @@
 <template>
-  <div class="orchestration-page">
+  <div class="orchestration-page hs-workbench-canvas">
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
-      <HsMasterDetailLayout :show-sidebar="!!selectedWorkspace">
+      <HsMasterDetailLayout
+        class="hs-workbench-canvas"
+        :show-sidebar="!!selectedWorkspace"
+      >
         <template #rail>
           <OrchestrationNavRail :tabs="tabs" @select-tab="setActiveTab" />
         </template>
@@ -30,6 +33,7 @@
 
         <HsEmptyState
           v-if="!selectedWorkspace"
+          class="hs-workbench-canvas"
           :icon="mdiBriefcaseOutline"
           eyebrow="No selected workspace"
           title="Select or create a workspace to manage jobs"
@@ -51,7 +55,7 @@
           <RouterView v-slot="{ Component }">
             <section
               v-if="hasTaskDetails && Component"
-              class="detail detail--task"
+              class="detail detail--task hs-workbench-canvas"
             >
               <component
                 :is="Component"
@@ -1041,7 +1045,6 @@ const goToTask = async (row: TaskRow) => {
 
 <style scoped>
 .orchestration-page {
-  background-color: var(--hs-background);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
@@ -1061,7 +1064,6 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--hs-background);
   min-width: 0;
 }
 

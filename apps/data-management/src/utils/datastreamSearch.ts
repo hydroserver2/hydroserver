@@ -2,6 +2,8 @@ export const DATASTREAM_QUALIFIER_KEYS = [
   'workspace',
   'site',
   'observed-property',
+  'unit',
+  'method',
   'processing-level',
 ] as const
 
@@ -18,7 +20,7 @@ export type DatastreamSort = {
 }
 
 const qualifierPattern = () =>
-  /(workspace|site|observed-property|processing-level|sort):(?:"([^"]*)"|(\S+))/gi
+  /(workspace|site|observed-property|unit|method|processing-level|sort):(?:"([^"]*)"|(\S+))/gi
 
 const parseDatastreamSort = (value: string): DatastreamSort | null => {
   const [key, order] = value.toLocaleLowerCase().split('-')
@@ -40,6 +42,8 @@ export function parseDatastreamQuery(raw: string) {
     workspace: [],
     site: [],
     'observed-property': [],
+    unit: [],
+    method: [],
     'processing-level': [],
   }
   const textParts: string[] = []

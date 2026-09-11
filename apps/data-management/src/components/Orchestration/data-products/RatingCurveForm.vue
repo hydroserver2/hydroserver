@@ -1,199 +1,216 @@
 <template>
-  <v-card>
-    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>{{
-        isEditMode ? 'Edit rating curve task' : 'Create rating curve task'
-      }}</v-card-title>
-      <v-btn
-        :icon="mdiInformationOutline"
-        variant="text"
-        aria-label="Toggle task info"
-        @click="showInfo = !showInfo"
-      />
-    </v-toolbar>
-    <v-divider />
+  <v-card class="d-flex flex-column" style="max-height: 90vh">
+    <div class="shrink-0">
+      <v-toolbar color="primary" flat>
+        <div class="d-flex align-center px-4">
+          <v-card-title class="hs-subheading pa-0">{{
+            isEditMode ? 'Edit rating curve task' : 'Create rating curve task'
+          }}</v-card-title>
+          <v-btn
+            icon
+            class="ml-n1"
+            variant="text"
+            aria-label="Toggle task info"
+            @click="showInfo = !showInfo"
+          >
+            <v-icon :icon="mdiInformationOutline" size="17" />
+          </v-btn>
+        </div>
+      </v-toolbar>
+      <v-divider />
+    </div>
 
     <v-form
       ref="formRef"
       v-model="valid"
       validate-on="input"
+      class="d-flex flex-column grow overflow-hidden"
       @submit.prevent="onSubmit"
     >
-      <v-card-text>
-        <v-alert
-          v-if="showInfo"
-          :color="DATA_PRODUCT_ACCENT"
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-5"
-        >
-          Select an existing rating curve or create one from a two-column CSV,
-          then write transformed values to an output datastream at the selected
-          site.
-        </v-alert>
-
-        <v-text-field
-          v-model="taskName"
-          label="Task name *"
-          :rules="rules.requiredAndMaxLength255"
-          :disabled="loadingExisting"
-          class="mb-2"
-        />
-
-        <ScheduleFields
-          v-model="schedule"
-          :disabled="loadingExisting"
-          :color="DATA_PRODUCT_ACCENT"
-        />
-
-        <v-divider class="mb-4" />
-
-        <DatastreamCardSelector
-          v-model="inputDatastreamId"
-          :datastreams="siteDatastreams"
-          label="Input datastream *"
-          :loading="loading"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :rules="rules.required"
-          class="mb-2"
-        />
-
-        <DatastreamCardSelector
-          v-model="outputDatastreamId"
-          :datastreams="siteDatastreams"
-          label="Output datastream *"
-          :disabled="!selectedMonitoringSiteId || loadingExisting"
-          :loading="loading"
-          :rules="rules.required"
-          class="mb-2"
-        />
-
-        <v-radio-group
-          v-model="ratingCurveInputMode"
-          inline
-          hide-details
-          class="mb-3"
-        >
-          <v-radio label="Select existing rating curve" value="existing" />
-          <v-radio label="Create new rating curve" value="create" />
-        </v-radio-group>
-
-        <template v-if="ratingCurveInputMode === 'existing'">
-          <v-select
-            v-model="selectedRatingCurveId"
-            :items="ratingCurveOptions"
-            item-title="title"
-            item-value="value"
-            label="Rating curve *"
-            clearable
-            :disabled="!selectedMonitoringSiteId"
-            :loading="ratingCurvesLoading || loadingExisting"
-            :rules="rules.required"
-            class="mb-2"
-          />
-          <div
-            v-if="
-              selectedMonitoringSiteId &&
-              !ratingCurvesLoading &&
-              !ratingCurveOptions.length
-            "
-            class="hs-text-2xs text-medium-emphasis mb-3"
-          >
-            No rating curves found for this site. Switch to "Create new rating
-            curve" to add one.
-          </div>
-
-          <RatingCurvePreview
-            v-if="selectedRatingCurve"
-            :rating-curve="selectedRatingCurve"
-            class="mb-4"
-          />
-        </template>
-
-        <template v-else>
-          <input
-            ref="createFileInput"
-            type="file"
-            accept=".csv,text/csv"
-            class="d-none"
-            @change="onCreateFileSelected"
-          />
-          <v-btn
-            variant="outlined"
-            :color="DATA_PRODUCT_ACCENT"
-            block
-            class="mb-2 text-none"
-            @click="openCreateFilePicker"
-          >
-            {{ selectedCreateFile ? 'Change CSV file' : 'Choose CSV file *' }}
-          </v-btn>
-          <div v-if="selectedCreateFile" class="d-flex align-center mb-3">
-            <span class="hs-text-2xs text-medium-emphasis">
-              Selected:
-              <strong>{{ selectedCreateFile.name }}</strong>
-              ({{ formatFileSize(selectedCreateFile.size) }})
-            </span>
-            <v-spacer />
-            <v-btn
-              variant="text"
-              size="small"
-              :disabled="saving"
-              @click="clearCreateFile"
-            >
-              Clear
-            </v-btn>
-          </div>
+      <v-card-text class="overflow-y-auto grow">
+        <TaskFormLayout>
           <v-alert
-            v-if="createFileValidationError"
-            type="error"
+            v-if="showInfo"
+            color="primary"
+            type="info"
             variant="tonal"
             density="compact"
-            class="mb-3"
           >
-            {{ createFileValidationError }}
+            Select an existing rating curve or create one from a two-column CSV,
+            then write transformed values to an output datastream at the
+            selected site.
           </v-alert>
-          <div
-            v-else-if="createFileValidationPending"
-            class="hs-text-2xs text-medium-emphasis mb-3"
-          >
-            Validating rating curve CSV...
-          </div>
 
-          <v-text-field
-            v-model="createCurveName"
-            label="Rating curve name *"
-            :rules="rules.requiredAndMaxLength255"
-            class="mb-2"
-          />
-          <v-textarea
-            v-model="createCurveDescription"
-            label="Description"
-            rows="2"
-            class="mb-2"
-          />
-          <v-select
-            v-model="createFittingMethod"
-            :items="fittingMethodOptions"
-            item-title="title"
-            item-value="value"
-            label="Fitting method *"
-            :rules="rules.required"
-          />
-        </template>
+          <TaskFormSection>
+            <v-text-field
+              v-model="taskName"
+              label="Task name"
+              class="required-label"
+              :rules="rules.requiredAndMaxLength255"
+              :disabled="loadingExisting"
+            />
+          </TaskFormSection>
+
+          <v-divider />
+
+          <ScheduleFields v-model="schedule" :disabled="loadingExisting" />
+
+          <v-divider />
+
+          <TaskFormSection>
+            <DatastreamCardSelector
+              v-model="inputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              :monitoring-site-id="selectedMonitoringSiteId"
+              label="Input datastream"
+              :hint="siteScopeNote"
+              :scope-note="siteScopeNote"
+              :loading="loading"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :rules="rules.required"
+            />
+
+            <DatastreamCardSelector
+              v-model="outputDatastreamId"
+              :datastreams="datastreams"
+              :workspace-id="selectedWorkspaceId"
+              :monitoring-site-id="selectedMonitoringSiteId"
+              label="Output datastream"
+              :hint="outputScopeNote"
+              :scope-note="outputScopeNote"
+              :disabled="!selectedMonitoringSiteId || loadingExisting"
+              :loading="loading"
+              :rules="rules.required"
+              enforce-unique-selections
+            />
+          </TaskFormSection>
+
+          <v-divider />
+
+          <TaskFormSection title="Rating curve">
+            <v-radio-group v-model="ratingCurveInputMode" inline hide-details>
+              <v-radio label="Select existing rating curve" value="existing" />
+              <v-radio label="Create new rating curve" value="create" />
+            </v-radio-group>
+
+            <template v-if="ratingCurveInputMode === 'existing'">
+              <v-select
+                v-model="selectedRatingCurveId"
+                :items="ratingCurveOptions"
+                item-title="title"
+                item-value="value"
+                label="Rating curve"
+                class="required-label"
+                clearable
+                :disabled="!selectedMonitoringSiteId"
+                :loading="ratingCurvesLoading || loadingExisting"
+                :rules="rules.required"
+              />
+
+              <p
+                v-if="
+                  selectedMonitoringSiteId &&
+                  !ratingCurvesLoading &&
+                  !ratingCurveOptions.length
+                "
+                class="form-note hs-text-sm"
+              >
+                No rating curves found for this site. Switch to "Create new
+                rating curve" to add one.
+              </p>
+
+              <RatingCurvePreview
+                v-if="selectedRatingCurve"
+                :rating-curve="selectedRatingCurve"
+              />
+            </template>
+
+            <template v-else>
+              <div class="csv-field">
+                <label class="csv-field__label hs-title required-label">
+                  Rating curve CSV
+                </label>
+                <input
+                  ref="createFileInput"
+                  type="file"
+                  accept=".csv,text/csv"
+                  class="d-none"
+                  @change="onCreateFileSelected"
+                />
+                <v-btn variant="outlined" block @click="openCreateFilePicker">
+                  {{
+                    selectedCreateFile ? 'Change CSV file' : 'Choose CSV file'
+                  }}
+                </v-btn>
+
+                <div v-if="selectedCreateFile" class="csv-field__selection">
+                  <span class="form-note hs-text-sm">
+                    Selected:
+                    <strong>{{ selectedCreateFile.name }}</strong>
+                    ({{ formatFileSize(selectedCreateFile.size) }})
+                  </span>
+                  <v-spacer />
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :disabled="saving"
+                    @click="clearCreateFile"
+                  >
+                    Clear
+                  </v-btn>
+                </div>
+
+                <v-alert
+                  v-if="createFileValidationError"
+                  type="error"
+                  variant="tonal"
+                  density="compact"
+                >
+                  {{ createFileValidationError }}
+                </v-alert>
+                <p
+                  v-else-if="createFileValidationPending"
+                  class="form-note hs-text-sm"
+                >
+                  Validating rating curve CSV…
+                </p>
+              </div>
+
+              <v-text-field
+                v-model="createCurveName"
+                label="Rating curve name"
+                class="required-label"
+                :rules="rules.requiredAndMaxLength255"
+              />
+              <v-textarea
+                v-model="createCurveDescription"
+                label="Description"
+                rows="2"
+              />
+              <v-select
+                v-model="createFittingMethod"
+                :items="fittingMethodOptions"
+                item-title="title"
+                item-value="value"
+                label="Fitting method"
+                class="required-label"
+                :rules="rules.required"
+              />
+            </template>
+          </TaskFormSection>
+        </TaskFormLayout>
       </v-card-text>
 
       <v-divider />
 
-      <v-card-actions>
+      <v-card-actions class="shrink-0">
         <v-spacer />
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
         >
         <v-btn-dialog-action
           type="submit"
-          class="text-none"
-          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
@@ -222,15 +239,14 @@ import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
-import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
-import {
-  DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_TOOLBAR_STYLE,
-} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 import RatingCurvePreview from './RatingCurvePreview.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
+import TaskFormLayout from '../shared/TaskFormLayout.vue'
+import TaskFormSection from '../shared/TaskFormSection.vue'
+import { useDatastreamScopeNotes } from '@/composables/orchestration/useDatastreamScopeNotes'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useOrchestrationStore } from '@/store/orchestration'
 
 const props = defineProps<{
   initialMonitoringSiteId?: string | null
@@ -281,12 +297,14 @@ const fittingMethodOptions = [
   { title: 'Linear', value: 'linear' },
   { title: 'Power law', value: 'power_law' },
 ]
-const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
+const selectedMonitoringSiteId = computed(
+  () => props.initialMonitoringSiteId ?? null
+)
 
-const siteDatastreams = computed(() => {
-  const monitoringSiteId = selectedMonitoringSiteId.value
-  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
-})
+const { outputScopeNote, siteScopeNote } = useDatastreamScopeNotes(
+  datastreams,
+  selectedMonitoringSiteId
+)
 
 const ratingCurveOptions = computed(() =>
   ratingCurves.value.map((curve) => ({
@@ -320,7 +338,8 @@ async function loadOptions() {
       expand_related: true,
     } as any)
     datastreams.value = datastreamItems as Datastream[]
-    if (selectedMonitoringSiteId.value) await loadRatingCurves(selectedMonitoringSiteId.value)
+    if (selectedMonitoringSiteId.value)
+      await loadRatingCurves(selectedMonitoringSiteId.value)
   } catch (error: any) {
     Snackbar.error(
       error?.message || 'Unable to load rating curve form options.'
@@ -366,9 +385,12 @@ async function loadExistingTask() {
 async function loadRatingCurves(monitoringSiteId: string) {
   ratingCurvesLoading.value = true
   try {
-    const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId, {
-      order_by: ['name'],
-    })
+    const items = await hs.ratingCurves.listItemsForMonitoringSite(
+      monitoringSiteId,
+      {
+        order_by: ['name'],
+      }
+    )
     ratingCurves.value = [...items].sort((a, b) => a.name.localeCompare(b.name))
   } catch (error: any) {
     ratingCurves.value = []
@@ -437,7 +459,11 @@ async function resolveRatingCurveId() {
     return selectedRatingCurveId.value
 
   const file = selectedCreateFile.value
-  if (!selectedMonitoringSiteId.value || !file || !createCurveName.value.trim()) {
+  if (
+    !selectedMonitoringSiteId.value ||
+    !file ||
+    !createCurveName.value.trim()
+  ) {
     Snackbar.error('Choose a CSV file and rating curve name.')
     return null
   }
@@ -608,7 +634,36 @@ watch(ratingCurveInputMode, () => {
 })
 
 onMounted(async () => {
-  await loadOptions()
+  await Promise.all([
+    loadOptions(),
+    // Names the site in the scope notes even when it has no datastreams yet.
+    useOrchestrationStore().ensureWorkspaceMonitoringSites(
+      selectedWorkspaceId.value
+    ),
+  ])
   if (isEditMode.value) await loadExistingTask()
 })
 </script>
+
+<style scoped>
+.form-note {
+  margin: 0;
+  color: var(--hs-text-secondary);
+}
+
+.csv-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-8);
+}
+
+.csv-field__label {
+  color: var(--hs-text-secondary);
+}
+
+.csv-field__selection {
+  display: flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+}
+</style>
