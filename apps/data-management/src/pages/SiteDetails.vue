@@ -5,7 +5,15 @@
         cols="12"
         class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
-        <h5 class="hs-text-md mt-2 mb-0">{{ monitoringSite.name }}</h5>
+        <div class="mt-2">
+          <h5 class="hs-text-md mb-0">{{ monitoringSite.name }}</h5>
+          <div
+            v-if="siteSummary.length"
+            class="hs-text-sm text-medium-emphasis mt-1"
+          >
+            {{ siteSummary.join(' • ') }}
+          </div>
+        </div>
 
         <div
           class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
@@ -103,65 +111,34 @@
       </v-col>
     </v-row>
 
-    <v-row v-if="monitoringSite">
-      <v-col>
+    <v-row v-if="monitoringSite" class="mb-0">
+      <v-col cols="12" md="4">
         <div class="w-full">
           <div class="h-88 w-full max-[960px]:h-72">
             <OpenLayersMap
               :monitoringSites="[monitoringSite]"
               startInSatellite
               class="h-full w-full"
-            >
-              <template #overlay>
-                <v-card
-                  v-if="!isMobile"
-                  class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
-                  elevation="4"
-                >
-                  <div class="hs-text-sm font-weight-medium mb-2">
-                    Location
-                  </div>
-                  <div class="grid gap-1">
-                    <div
-                      v-for="detail in locationDetails"
-                      :key="detail.label"
-                      class="flex flex-col"
-                    >
-                      <span class="hs-text-2xs text-medium-emphasis">
-                        {{ detail.label }}
-                      </span>
-                      <span class="hs-text-sm">{{ detail.value }}</span>
-                    </div>
-                  </div>
-                </v-card>
-              </template>
-            </OpenLayersMap>
+            />
           </div>
-          <v-card
-            v-if="isMobile"
-            class="mt-3 w-full bg-white/95 px-3 py-2"
-            elevation="4"
+          <div
+            class="hs-text-2xs text-medium-emphasis mt-2 overflow-x-auto whitespace-nowrap"
           >
-            <div class="hs-text-sm font-weight-medium mb-2">Location</div>
-            <div class="grid gap-1">
-              <div
-                v-for="detail in locationDetails"
-                :key="detail.label"
-                class="flex flex-col"
-              >
-                <span class="hs-text-2xs text-medium-emphasis">
-                  {{ detail.label }}
-                </span>
-                <span class="hs-text-sm">{{ detail.value }}</span>
-              </div>
-            </div>
-          </v-card>
+            <span
+              v-for="(detail, index) in locationDetails"
+              :key="`${detail.label}-${index}`"
+            >
+              <span v-if="index" class="mx-1" aria-hidden="true">•</span>
+              <span v-if="detail.label" class="font-weight-medium">
+                {{ detail.label }}:
+              </span>
+              {{ detail.value }}
+            </span>
+          </div>
         </div>
       </v-col>
-    </v-row>
 
-    <v-row class="mb-0">
-      <v-col cols="12" md="8">
+      <v-col cols="12" md="4">
         <SiteDetailsTable :rating-curve-count="ratingCurveCount" />
       </v-col>
 
@@ -291,7 +268,6 @@ import {
   mdiCogSyncOutline,
   mdiLanguagePython,
 } from '@mdi/js'
-import { useDisplay } from 'vuetify/lib/framework.mjs'
 
 const pythonClientGuideUrl =
   'https://hydroserver2.github.io/hydroserver/user-guides/how-to/using-the-python-client.html'
@@ -322,10 +298,15 @@ const loaded = ref(false)
 const authorized = ref(true)
 const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags } = storeToRefs(useTagStore())
-const { xs } = useDisplay()
-const isMobile = computed(() => xs.value)
 const canEditMonitoringSite = computed(() =>
   hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit)
+)
+const siteSummary = computed(() =>
+  [
+    monitoringSite.value?.code,
+    monitoringSite.value?.type,
+    monitoringSite.value?.isPrivate ? 'Private' : 'Public',
+  ].filter((value): value is string => Boolean(value))
 )
 
 const hasPhotos = computed(() => !loading.value && photos.value?.length > 0)
@@ -355,24 +336,20 @@ const locationDetails = computed(() => {
 
   return [
     {
-      label: 'Latitude',
+      label: 'Lat',
       value: formatCoordinate(location.latitude),
     },
     {
-      label: 'Longitude',
+      label: 'Lon',
       value: formatCoordinate(location.longitude),
     },
     {
-      label: 'State/Province',
-      value: formatLocationValue(location.adminArea1),
-    },
-    {
-      label: 'County/District',
-      value: formatLocationValue(location.adminArea2),
-    },
-    {
-      label: 'Country',
-      value: formatLocationValue(location.country),
+      label: '',
+      value: [
+        formatLocationValue(location.adminArea2),
+        formatLocationValue(location.adminArea1),
+        formatLocationValue(location.country),
+      ].join(', '),
     },
   ]
 })

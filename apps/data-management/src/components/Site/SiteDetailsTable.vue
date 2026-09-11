@@ -164,14 +164,10 @@ import type { Tags } from '@hydroserver/client'
 import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import {
-  mdiBarcode,
   mdiCardAccountDetails,
   mdiChartLine,
   mdiContentCopy,
   mdiFileDocumentOutline,
-  mdiLock,
-  mdiLockOpenVariant,
-  mdiPineTree,
   mdiTagMultipleOutline,
 } from '@mdi/js'
 
@@ -223,25 +219,9 @@ const monitoringSiteProperties = computed(() => {
       value: monitoringSite.value.id,
     },
     {
-      icon: mdiBarcode,
-      label: 'Site code',
-      value: monitoringSite.value.code,
-    },
-    {
       icon: mdiFileDocumentOutline,
       label: 'Description',
       value: monitoringSite.value.description,
-    },
-    {
-      icon: mdiPineTree,
-      label: 'Site type',
-      value: monitoringSite.value.type,
-    },
-    {
-      icon: monitoringSite.value.isPrivate ? mdiLock : mdiLockOpenVariant,
-      iconColor: monitoringSite.value.isPrivate ? 'red-darken-2' : 'green',
-      label: 'Privacy',
-      value: monitoringSite.value.isPrivate ? 'Private' : 'Public',
     },
     {
       icon: mdiTagMultipleOutline,
