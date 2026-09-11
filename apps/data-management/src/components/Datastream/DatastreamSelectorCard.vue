@@ -1,7 +1,9 @@
 <template>
   <v-card class="datastream-selector-card d-flex flex-column">
-    <v-toolbar class="shrink-0" color="primary-darken-2"
-      ><v-card-title>{{ cardTitle }}</v-card-title></v-toolbar
+    <v-toolbar class="shrink-0" color="primary" density="comfortable"
+      ><v-card-title class="hs-text-md">{{
+        cardTitle
+      }}</v-card-title></v-toolbar
     >
     <v-card-text class="datastream-selector-card__content grow overflow-y-auto">
       <div class="hs-table-tools datastream-selector-tools">
@@ -253,18 +255,17 @@
     >
   </v-card>
   <v-dialog v-if="selectedDatastream" v-model="detailsOpen" width="50rem"
-    ><v-card
-      ><v-toolbar flat color="surface-subtle"
-        ><v-card-title class="datastream-details-title">{{
+    ><v-card class="datastream-details-card d-flex flex-column"
+      ><v-toolbar flat color="primary" density="comfortable" class="shrink-0"
+        ><v-card-title class="datastream-details-title hs-text-md">{{
           datastreamDisplayName(selectedDatastream)
         }}</v-card-title
-        ><v-spacer /><v-btn-icon
-          :icon="mdiClose"
-          aria-label="Close datastream details"
-          @click="detailsOpen = false" /></v-toolbar
-      ><DatastreamInformationPanels
-        :datastream-id="selectedDatastream.id"
-      /><v-card-actions
+        ><v-spacer
+      /></v-toolbar>
+      <div class="datastream-details-content grow overflow-y-auto">
+        <DatastreamInformationPanels :datastream-id="selectedDatastream.id" />
+      </div>
+      <v-card-actions class="datastream-details-actions shrink-0"
         ><v-spacer /><v-btn-cancel @click="detailsOpen = false"
           >Close</v-btn-cancel
         ></v-card-actions
@@ -308,7 +309,6 @@ import {
   mdiCheck,
   mdiChevronDown,
   mdiChevronRight,
-  mdiClose,
   mdiInformationOutline,
   mdiMagnify,
   mdiSort,
@@ -961,9 +961,20 @@ onMounted(loadFallbackData)
 .datastream-details-title {
   min-width: 0;
   overflow: hidden;
-  color: var(--hs-text-primary);
+  color: rgb(var(--v-theme-on-primary));
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.datastream-details-card {
+  max-height: 90vh;
+  overflow: hidden;
+}
+.datastream-details-content {
+  min-height: 0;
+}
+.datastream-details-actions {
+  background: var(--hs-surface);
+  border-top: 1px solid var(--hs-border);
 }
 .datastream-filter-menu {
   min-width: 18rem;
