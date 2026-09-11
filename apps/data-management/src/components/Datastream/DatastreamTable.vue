@@ -237,18 +237,22 @@
                     class="site-datastreams__latest"
                     :class="latestStatusClass(item)"
                   >
-                    <span v-if="shouldShowLatestValue(item.id)">
+                    <span
+                      v-if="shouldShowLatestValue(item.id)"
+                      class="site-datastreams__latest-item"
+                    >
                       Latest <strong>{{ latestValueDisplay(item) }}</strong>
                     </span>
-                    <span v-if="Number(item.valueCount) > 0">
-                      <span aria-hidden="true">·</span>
+                    <span
+                      v-if="Number(item.valueCount) > 0"
+                      class="site-datastreams__latest-item"
+                    >
                       {{ item.endDate }}
                     </span>
                     <span
                       v-if="Number(item.valueCount) > 0"
-                      class="site-datastreams__observation-count"
+                      class="site-datastreams__latest-item site-datastreams__observation-count"
                     >
-                      <span aria-hidden="true">·</span>
                       {{ formatObservationCount(item.valueCount) }} obs
                     </span>
                   </div>
@@ -744,10 +748,7 @@ type LinkedMonitoringTask = LinkedDatastreamTask & {
 }
 
 type SiteDatastreamFilterKey =
-  | 'observed-property'
-  | 'unit'
-  | 'method'
-  | 'processing-level'
+  'observed-property' | 'unit' | 'method' | 'processing-level'
 type FilterOption = { value: string; label: string }
 type FilterDefinition = {
   key: SiteDatastreamFilterKey
@@ -2488,8 +2489,9 @@ const loadDatastreams = async () => {
   border: 1px solid var(--hs-border);
   border-radius: var(--hs-radius-md);
 }
-.site-datastreams__row--highlighted {
-  background: rgb(var(--v-theme-primary) / 0.08) !important;
+.site-datastreams__table tbody tr.site-datastreams__row--highlighted {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 var(--hs-space-2) rgb(var(--v-theme-primary) / 0.18);
 }
 .site-datastreams__table td {
   padding: var(--hs-space-12);
@@ -2524,6 +2526,18 @@ const loadDatastreams = async () => {
   min-width: 0;
   font-size: var(--hs-font-sm);
   white-space: nowrap;
+}
+.site-datastreams__latest-item {
+  display: inline-flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+}
+.site-datastreams__latest-item + .site-datastreams__latest-item::before {
+  width: var(--hs-space-4);
+  height: var(--hs-space-4);
+  content: '';
+  background: currentColor;
+  border-radius: 50%;
 }
 .site-datastreams__latest--stale {
   color: var(--hs-text-muted);
