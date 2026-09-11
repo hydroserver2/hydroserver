@@ -507,6 +507,7 @@ onMounted(async () => {
   }
 
   .site-details-header {
+    position: static;
     padding-block: var(--hs-space-12);
   }
 }
