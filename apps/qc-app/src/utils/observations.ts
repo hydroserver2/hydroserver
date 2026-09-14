@@ -26,7 +26,7 @@ export const fetchObservationsSync = async (
       return { datetimes: [], dataValues: [] }
     }
 
-    const cols = result.data as {
+    const cols = result.data as unknown as {
       result: number[]
       phenomenonTime: string[]
     }

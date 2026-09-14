@@ -18,7 +18,16 @@
 
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { datastreams, DATASTREAM_ID } from './support/fixtures'
+import {
+  datastreams,
+  DATASTREAM_ID,
+  workspaces,
+  monitoringSites,
+  methods,
+  observedProperties,
+  processingLevels,
+  units,
+} from './support/fixtures'
 import { setupEditView } from './support/app'
 
 type DatastreamRecord = (typeof datastreams)[number]
@@ -72,6 +81,14 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count',
   }
+  const included = {
+    workspaces,
+    monitoringSites,
+    methods,
+    observedProperties,
+    processingLevels,
+    units,
+  }
   if (/\/api\/data\/datastreams$/.test(path)) {
     const patched = datastreams.map(withoutIntendedSpacing)
     return route.fulfill({
@@ -81,6 +98,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
       body: JSON.stringify({
         data: patched,
         meta: { limit: patched.length || 1, offset: 0, totalCount: patched.length },
+        included,
       }),
     })
   }
@@ -92,7 +110,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
       status: 200,
       contentType: 'application/json',
       headers,
-      body: JSON.stringify(withoutIntendedSpacing(ds)),
+      body: JSON.stringify({ data: withoutIntendedSpacing(ds), included }),
     })
   }
   return route.fallback()

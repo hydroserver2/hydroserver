@@ -178,7 +178,9 @@ export async function installMocks(
     }
 
     // --- Bulk observation create (submit) ---
-    const bulkCreate = path.match(/\/api\/data\/datastreams\/([^/]+)\/observations\/bulk-create/)
+    // Observations moved to a top-level resource: POST /observations/bulk-create
+    // with datastreamId in the body, not the path.
+    const bulkCreate = path === '/api/data/observations/bulk-create'
     if (bulkCreate && method === 'POST') {
       const params = new URL(url).searchParams
       const body = await safeJson(request)
@@ -187,10 +189,12 @@ export async function installMocks(
     }
 
     // --- Observations list (columnar) ---
-    const obsList = path.match(/\/api\/data\/datastreams\/([^/]+)\/observations$/)
+    // Same restructuring: GET /observations?datastream_id={id}, not nested
+    // under /datastreams/{id}/observations.
+    const obsList = path === '/api/data/observations'
     if (obsList && method === 'GET') {
-      const dsId = obsList[1]
       const params = new URL(url).searchParams
+      const dsId = params.get('datastream_id') ?? ''
       const series = observationsById[dsId] ?? observations
       // Honour the `phenomenon_time_min` / `phenomenon_time_max`
       // params the client always sends. Without this, the app's
@@ -232,7 +236,18 @@ export async function installMocks(
       return json(route, { data: monitoringSites, meta: listMeta(monitoringSites.length) })
     }
     if (path.endsWith('/api/data/datastreams') && method === 'GET') {
-      return json(route, { data: datastreams, meta: listMeta(datastreams.length) })
+      return json(route, {
+        data: datastreams,
+        meta: listMeta(datastreams.length),
+        included: {
+          workspaces,
+          monitoringSites,
+          methods,
+          observedProperties,
+          processingLevels,
+          units,
+        },
+      })
     }
     if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
       return json(route, { data: processingLevels, meta: listMeta(processingLevels.length) })
@@ -252,7 +267,17 @@ export async function installMocks(
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
       const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]
-      return json(route, ds)
+      return json(route, {
+        data: ds,
+        included: {
+          workspaces,
+          monitoringSites,
+          methods,
+          observedProperties,
+          processingLevels,
+          units,
+        },
+      })
     }
 
     // --- Attachments / other sub-resources the app may touch
