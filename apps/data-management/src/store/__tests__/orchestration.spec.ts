@@ -30,7 +30,7 @@ describe('orchestration store', () => {
     listAllItemsMock.mockReset()
   })
 
-  it('derives linked datastream ids from task mappings', async () => {
+  it('leaves linked datastream ids empty so all datastreams are shown unfiltered', async () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.selectedWorkspace = {
       id: 'workspace-1',
@@ -40,37 +40,8 @@ describe('orchestration store', () => {
 
     const orchestrationStore = useOrchestrationStore()
     orchestrationStore.workspaceTasks = [
-      {
-        id: 'task-1',
-        mappings: [
-          {
-            sourceIdentifier: 'source-1',
-            targetDatastream: { id: 'ds-1' },
-          },
-          {
-            sourceIdentifier: 'source-2',
-            targetDatastream: { id: 'ds-2' },
-          },
-        ],
-      },
-      {
-        id: 'task-2',
-        mappings: [
-          {
-            sourceIdentifier: 'source-3',
-            targetDatastream: { id: 'ds-3' },
-          },
-        ],
-      },
-      {
-        id: 'task-3',
-        mappings: [
-          {
-            sourceIdentifier: 'source-4',
-            targetDatastream: { id: 'ds-1' },
-          },
-        ],
-      },
+      { id: 'task-1', dataConnectionId: 'connection-1', mappingCount: 2 },
+      { id: 'task-2', dataConnectionId: 'connection-1', mappingCount: 1 },
     ] as any
     orchestrationStore.workspaceDatastreams = [
       { id: 'ds-1', name: 'Datastream 1' },
@@ -81,16 +52,8 @@ describe('orchestration store', () => {
 
     await nextTick()
 
-    expect([...orchestrationStore.linkedDatastreamIds]).toEqual([
-      'ds-1',
-      'ds-2',
-      'ds-3',
-    ])
-    expect(orchestrationStore.linkedDatastreams.map((d) => d.id)).toEqual([
-      'ds-1',
-      'ds-2',
-      'ds-3',
-    ])
+    expect([...orchestrationStore.linkedDatastreamIds]).toEqual([])
+    expect(orchestrationStore.linkedDatastreams.map((d) => d.id)).toEqual([])
   })
 
   it('ignores stale datastream responses after switching workspaces', async () => {

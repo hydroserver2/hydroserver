@@ -133,6 +133,8 @@ export let fixtures = {
     systemName: 'Test Streaming Data Loader',
     dataConnectionName: 'Test ETL Data Connection',
     taskName: 'Test ETL Task',
+    aggregationTaskName: 'Test Aggregation Task',
+    monitoringTaskName: 'Test Quality Task',
   },
 }
 

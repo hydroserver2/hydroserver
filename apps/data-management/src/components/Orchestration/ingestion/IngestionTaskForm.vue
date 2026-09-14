@@ -276,7 +276,7 @@ import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
   DatastreamExtended,
-  EtlMappingPostBody,
+  type EtlMapping,
   PlaceholderVariable,
   Task,
   TaskExpanded,
@@ -298,11 +298,16 @@ import {
   mdiTrashCanOutline,
 } from '@mdi/js'
 
-type FormMapping = { sourceIdentifier: string; targetDatastreamId: string }
+type FormMapping = {
+  id?: string
+  sourceIdentifier: string
+  targetDatastreamId: string
+}
 
 const props = defineProps<{
   oldTask?: TaskExpanded
   dataConnection: DataConnection
+  mappings?: EtlMapping[]
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
@@ -349,15 +354,11 @@ function cloneSchedule(schedule: TaskSchedule | null): TaskSchedule | null {
   return schedule ? { ...schedule } : null
 }
 
-function editableMappingFrom(mapping: any): FormMapping {
-  const id = mapping.targetDatastreamId
-    ? String(mapping.targetDatastreamId)
-    : mapping.targetDatastream?.id
-    ? String(mapping.targetDatastream.id)
-    : ''
+function editableMappingFrom(mapping: EtlMapping): FormMapping {
   return {
-    sourceIdentifier: String(mapping.sourceIdentifier ?? ''),
-    targetDatastreamId: id,
+    id: mapping.id,
+    sourceIdentifier: mapping.sourceIdentifier,
+    targetDatastreamId: mapping.targetDatastreamId,
   }
 }
 
@@ -369,13 +370,11 @@ function hydrateTask(source?: TaskExpanded): Task {
         description: source.description ?? null,
         taskVariables: { ...source.taskVariables },
         dataConnectionId: source.dataConnection.id ?? props.dataConnection.id,
-        mappings: source.mappings.map(editableMappingFrom) as any,
         schedule: cloneSchedule(source.schedule),
       })
     : new Task({
         dataConnectionId: props.dataConnection.id,
         schedule: defaultSchedule(),
-        mappings: [],
       })
 
   ;(['startTime', 'nextRunAt'] as const).forEach((k) => {
@@ -399,16 +398,13 @@ function initializeTaskVariables(base: Task) {
 
 const task = ref<Task>(hydrateTask(props.oldTask))
 initializeTaskVariables(task.value)
-if (task.value.mappings.length === 0) {
-  task.value.mappings.push({
-    sourceIdentifier: '',
-    targetDatastreamId: '',
-  } as any)
-}
 
-const formMappings = computed(
-  () => task.value.mappings as unknown as FormMapping[]
+const formMappings = ref<FormMapping[]>(
+  (props.mappings ?? []).map(editableMappingFrom)
 )
+if (formMappings.value.length === 0) {
+  formMappings.value.push({ sourceIdentifier: '', targetDatastreamId: '' })
+}
 
 function templateVariablePlaceholder(name: string) {
   return `e.g. ${name.toUpperCase()}`
@@ -470,15 +466,12 @@ function onTargetSelected(event: DatastreamExtended) {
 }
 
 function removeMapping(mi: number) {
-  task.value.mappings.splice(mi, 1)
+  formMappings.value.splice(mi, 1)
   syncDraftDatastreams()
 }
 
 function addMapping() {
-  task.value.mappings.push({
-    sourceIdentifier: '',
-    targetDatastreamId: '',
-  } as any)
+  formMappings.value.push({ sourceIdentifier: '', targetDatastreamId: '' })
   noMappingsError.value = false
 }
 
@@ -506,13 +499,37 @@ function taskToPayload(): Task {
     taskVariables: task.value.taskVariables,
     dataConnectionId: props.dataConnection.id,
     schedule: task.value.schedule,
-    mappings: formMappings.value.map(
-      (m): EtlMappingPostBody => ({
+  })
+}
+
+async function saveMappings(taskId: string) {
+  const originalById = new Map((props.mappings ?? []).map((m) => [m.id, m]))
+  const currentIds = new Set(
+    formMappings.value.filter((m): m is FormMapping & { id: string } => !!m.id).map((m) => m.id)
+  )
+  const deletedIds = [...originalById.keys()].filter(
+    (id) => !currentIds.has(id)
+  )
+
+  const results = await Promise.all([
+    ...deletedIds.map((id) => hs.tasks.deleteMapping(taskId, id)),
+    ...formMappings.value.map((m) => {
+      const payload = {
         sourceIdentifier: m.sourceIdentifier,
         targetDatastreamId: m.targetDatastreamId,
-      })
-    ),
-  })
+      }
+      if (!m.id) return hs.tasks.createMapping(taskId, payload)
+      const original = originalById.get(m.id)
+      const unchanged =
+        original?.sourceIdentifier === m.sourceIdentifier &&
+        original?.targetDatastreamId === m.targetDatastreamId
+      return unchanged
+        ? Promise.resolve({ ok: true as const })
+        : hs.tasks.updateMapping(taskId, m.id, payload)
+    }),
+  ])
+
+  return results.find((r) => !r.ok) ?? null
 }
 
 async function onSubmit() {
@@ -528,6 +545,12 @@ async function onSubmit() {
     if (!res.ok) {
       Snackbar.error(res.message)
       console.error(res)
+      return
+    }
+    const mappingFailure = await saveMappings(res.data.id)
+    if (mappingFailure) {
+      Snackbar.error(mappingFailure.message || 'Unable to save mappings.')
+      console.error(mappingFailure)
       return
     }
     emit(isEdit ? 'updated' : 'created', res.data)

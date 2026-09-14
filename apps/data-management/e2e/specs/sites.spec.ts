@@ -632,7 +632,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`
         )
         const monitoringSite = await response.json()
-        return monitoringSite.isPrivate
+        return monitoringSite.data.isPrivate
       })
       .toBe(true)
     await page.getByRole('button', { name: 'Close' }).click()
@@ -653,7 +653,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`
         )
         const monitoringSite = await response.json()
-        return monitoringSite.isPrivate
+        return monitoringSite.data.isPrivate
       })
       .toBe(false)
     await page.getByRole('button', { name: 'Close' }).click()
@@ -668,7 +668,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.isPrivate
+        return datastream.data.isPrivate
       })
       .toBe(true)
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
@@ -682,7 +682,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.isPrivate
+        return datastream.data.isPrivate
       })
       .toBe(false)
     await expect
@@ -691,7 +691,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.isVisible
+        return datastream.data.isVisible
       })
       .toBe(true)
 
@@ -702,7 +702,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.isVisible
+        return datastream.data.isVisible
       })
       .toBe(false)
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
@@ -718,7 +718,7 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.isVisible
+        return datastream.data.isVisible
       })
       .toBe(true)
 

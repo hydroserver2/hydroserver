@@ -80,6 +80,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiArrowRight } from '@mdi/js'
+import type { DataProductTransformation } from '@hydroserver/client'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
@@ -103,7 +104,7 @@ type MappingRow = {
 }
 
 const props = defineProps<{
-  task: any
+  transformations: DataProductTransformation[]
   taskLabel: ProductTaskLabel
   monitoringSiteId?: string | null
 }>()
@@ -122,42 +123,37 @@ const allKnownDatastreams = computed(() => [
 ])
 
 const mappingRows = computed<MappingRow[]>(() => {
-  if (props.taskLabel === 'aggregation') {
-    return (props.task?.aggregationTransformations ?? []).map(
-      (transformation: any, index: number) => {
-        const sourceDatastream = resolveDatastream(
-          transformation.inputDatastream,
-          transformation.inputDatastreamId
-        )
-        const targetDatastream = resolveDatastream(
-          transformation.outputDatastream,
-          transformation.outputDatastreamId
-        )
+  const transformations = props.transformations ?? []
 
-        return {
-          key: `${transformation.id ?? index}`,
-          sourceDatastream,
-          sourceDatastreamId: datastreamId(
-            sourceDatastream,
-            transformation.inputDatastreamId
-          ),
-          sourceDetail: '',
+  if (props.taskLabel === 'aggregation') {
+    return transformations.map((transformation: any, index: number) => {
+      const inputId = transformation.inputDatastreams?.[0]?.datastreamId
+      const sourceDatastream = resolveDatastream(null, inputId)
+      const targetDatastream = resolveDatastream(
+        null,
+        transformation.outputDatastreamId
+      )
+
+      return {
+        key: `${transformation.id ?? index}`,
+        sourceDatastream,
+        sourceDatastreamId: datastreamId(sourceDatastream, inputId),
+        sourceDetail: '',
+        targetDatastream,
+        targetDatastreamId: datastreamId(
           targetDatastream,
-          targetDatastreamId: datastreamId(
-            targetDatastream,
-            transformation.outputDatastreamId
-          ),
-        }
+          transformation.outputDatastreamId
+        ),
       }
-    )
+    })
   }
 
   // The derivation transformation type always carries a list of inputs
   // (one or more).
-  return (props.task?.derivationTransformations ?? []).flatMap(
+  return transformations.flatMap(
     (transformation: any, transformationIndex: number) => {
       const targetDatastream = resolveDatastream(
-        transformation.outputDatastream,
+        null,
         transformation.outputDatastreamId
       )
       const targetDatastreamId = datastreamId(
@@ -167,20 +163,14 @@ const mappingRows = computed<MappingRow[]>(() => {
 
       return (transformation.inputDatastreams ?? []).map(
         (input: any, inputIndex: number) => {
-          const sourceDatastream = resolveDatastream(
-            input.datastream ?? input.inputDatastream,
-            input.datastreamId ?? input.inputDatastreamId
-          )
+          const sourceDatastream = resolveDatastream(null, input.datastreamId)
 
           return {
             key: `${transformation.id ?? transformationIndex}-${
               input.datastreamId ?? inputIndex
             }`,
             sourceDatastream,
-            sourceDatastreamId: datastreamId(
-              sourceDatastream,
-              input.datastreamId ?? input.inputDatastreamId
-            ),
+            sourceDatastreamId: datastreamId(sourceDatastream, input.datastreamId),
             sourceDetail: input.variableName
               ? `Variable ${input.variableName}`
               : '',

@@ -56,7 +56,7 @@
           </template>
           <AggregationForm
             v-if="taskLabel === 'aggregation'"
-            :initial-monitoring-site-id="task.monitoringSite.id"
+            :initial-monitoring-site-id="task.monitoringSiteId"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -64,7 +64,7 @@
           />
           <DerivationForm
             v-else-if="taskLabel === 'derivation'"
-            :initial-monitoring-site-id="task.monitoringSite.id"
+            :initial-monitoring-site-id="task.monitoringSiteId"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -72,7 +72,7 @@
           />
           <RatingCurveForm
             v-else
-            :initial-monitoring-site-id="task.monitoringSite.id"
+            :initial-monitoring-site-id="task.monitoringSiteId"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -131,14 +131,14 @@
       </div>
       <RatingCurveSwimlanes
         v-else-if="taskLabel === 'rating curve'"
-        :transformations="task.ratingCurveTransformations ?? []"
-        :monitoring-site-id="task.monitoringSite?.id"
+        :transformations="transformations"
+        :monitoring-site-id="task.monitoringSiteId"
       />
       <ProductTaskSwimlanes
         v-else
-        :task="task"
+        :transformations="transformations"
         :task-label="taskLabel"
-        :monitoring-site-id="task.monitoringSite?.id"
+        :monitoring-site-id="task.monitoringSiteId"
       />
     </section>
   </div>
@@ -146,7 +146,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import hs, { type DataProductTransformation } from '@hydroserver/client'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
@@ -210,6 +211,31 @@ const {
   togglePaused,
 } = useSimpleTaskDetails('dataProduct', props, emit)
 
+const transformations = ref<DataProductTransformation[]>([])
+
+function transformationTypeFor(
+  label: typeof props.taskLabel
+): DataProductTransformation['transformationType'] {
+  return label === 'rating curve' ? 'rating_curve' : label
+}
+
+async function loadTransformations() {
+  if (!task.value?.id) {
+    transformations.value = []
+    return
+  }
+  const res = await hs.dataProductTasks.listTransformations(task.value.id, {
+    transformation_type: [transformationTypeFor(props.taskLabel)],
+  } as any)
+  transformations.value = res.ok ? res.data : []
+}
+
+watch(
+  () => task.value?.id,
+  () => void loadTransformations(),
+  { immediate: true }
+)
+
 function toDataProductTaskType(
   label: typeof props.taskLabel
 ): DataProductTaskType {
@@ -232,6 +258,7 @@ function closeEditDialog() {
 function onFormUpdated() {
   closeEditDialog()
   onUpdated()
+  void loadTransformations()
 }
 </script>
 

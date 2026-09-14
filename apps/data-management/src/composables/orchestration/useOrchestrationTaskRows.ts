@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import type { TaskMapping, TaskRun, TaskSchedule } from '@hydroserver/client'
+import type { TaskRun, TaskSchedule } from '@hydroserver/client'
 import type {
   AnyTask,
   DataProductTask,
@@ -24,9 +24,6 @@ import type {
   TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
-const targetDatastream = (mapping: TaskMapping) =>
-  'targetDatastream' in mapping ? mapping.targetDatastream : null
-
 const ETL_NO_WORK_WARNING: TaskNoWorkWarning = {
   label: 'No mappings',
   message:
@@ -50,7 +47,6 @@ type Inputs = {
   workspaceTasks: Ref<Task[]>
   dataProductTasks: Ref<DataProductTask[]>
   monitoringTasks: Ref<MonitoringTask[]>
-  datastreamMonitoringSiteByDatastreamId: Ref<Record<string, string>>
   runNowTriggeredByTaskId: Record<string, boolean>
 }
 
@@ -85,40 +81,37 @@ const buildRowBase = (
   }
 }
 
+const dataConnectionIdOf = (t: Task): string | null =>
+  'dataConnectionId' in t ? t.dataConnectionId : t.dataConnection?.id ?? null
+
+const mappingCountOf = (t: Task): number =>
+  'mappingCount' in t ? t.mappingCount : 0
+
+const monitoringSiteIdOf = (t: DataProductTask | MonitoringTask): string | null =>
+  'monitoringSiteId' in t ? t.monitoringSiteId : t.monitoringSite?.id ?? null
+
 const resolveDataProductTaskType = (
   t: DataProductTask
 ): DataProductTaskType => {
-  if (t.aggregationTransformations?.length) return 'Aggregation'
-  if (t.derivationTransformations?.length) return 'Derivation'
-  if (t.ratingCurveTransformations?.length) return 'Rating curve'
+  const types = new Set(t.transformationTypes ?? [])
+  if (types.has('aggregation')) return 'Aggregation'
+  if (types.has('derivation')) return 'Derivation'
+  if (types.has('rating_curve')) return 'Rating curve'
   return null
 }
 
-const hasEtlMapping = (mapping: TaskMapping) => {
-  const anyMapping = mapping as any
-  return !!(anyMapping.targetDatastream?.id || anyMapping.targetDatastreamId)
-}
-
-const getEtlNoWorkWarning = (task: Task): TaskNoWorkWarning => {
-  if (!Array.isArray(task.mappings)) return null
-  return task.mappings.some(hasEtlMapping) ? null : ETL_NO_WORK_WARNING
-}
+const getEtlNoWorkWarning = (task: Task): TaskNoWorkWarning =>
+  mappingCountOf(task) > 0 ? null : ETL_NO_WORK_WARNING
 
 const getDataProductNoWorkWarning = (
   task: DataProductTask
 ): TaskNoWorkWarning =>
-  [
-    task.aggregationTransformations,
-    task.derivationTransformations,
-    task.ratingCurveTransformations,
-  ].some((transformations) => (transformations ?? []).length > 0)
+  (task.transformationTypes ?? []).length > 0
     ? null
     : DATA_PRODUCT_NO_WORK_WARNING
 
 const getMonitoringNoWorkWarning = (task: MonitoringTask): TaskNoWorkWarning =>
-  (task.monitoredDatastreams ?? []).some(
-    (monitored) => (monitored.rules ?? []).length > 0
-  )
+  Object.values(task.ruleTypeCounts ?? {}).some((count) => (count ?? 0) > 0)
     ? null
     : MONITORING_NO_WORK_WARNING
 
@@ -126,21 +119,17 @@ const humanizeRuleType = (value: string) =>
   value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
 
 const resolveMonitoringRules = (task: MonitoringTask) => {
-  const ruleCounts = new Map<string, number>()
-  for (const monitored of task.monitoredDatastreams ?? []) {
-    for (const rule of monitored.rules ?? []) {
-      const type = `${(rule as any).ruleType ?? ''}`
-      if (!type) continue
-      ruleCounts.set(type, (ruleCounts.get(type) ?? 0) + 1)
-    }
-  }
-
-  const total = [...ruleCounts.values()].reduce((sum, count) => sum + count, 0)
-  const breakdown = [...ruleCounts.entries()]
+  const counts = task.ruleTypeCounts ?? {}
+  const total = Object.values(counts).reduce(
+    (sum, count) => sum + (count ?? 0),
+    0
+  )
+  const breakdown = Object.entries(counts)
+    .filter(([, count]) => (count ?? 0) > 0)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([type, count]) => ({
       label: humanizeRuleType(type),
-      count,
+      count: count ?? 0,
     }))
 
   if (total === 0) {
@@ -156,22 +145,6 @@ const resolveMonitoringRules = (task: MonitoringTask) => {
     .join(', ')
 
   return { total, breakdown, summary }
-}
-
-// ETL tasks don't carry their site on the task itself; infer it from the first mapping's
-// target datastream, cross-referencing the workspace datastream list for monitoringSiteId.
-const resolveTaskMonitoringSiteId = (
-  task: Task,
-  datastreamMonitoringSiteMap: Record<string, string>
-): string | null => {
-  for (const mapping of task.mappings ?? []) {
-    const ds = targetDatastream(mapping)
-    const dsMonitoringSiteId = ds?.monitoringSiteId ?? ds?.monitoring_site_id
-    if (dsMonitoringSiteId) return dsMonitoringSiteId
-    const fromMap = ds?.id ? datastreamMonitoringSiteMap[ds.id] : null
-    if (fromMap) return fromMap
-  }
-  return null
 }
 
 const compareText = (a: unknown, b: unknown) =>
@@ -195,16 +168,14 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
     workspaceTasks,
     dataProductTasks,
     monitoringTasks,
-    datastreamMonitoringSiteByDatastreamId,
     runNowTriggeredByTaskId,
   } = inputs
 
   const etlTaskRows = computed<TaskRow[]>(() =>
     workspaceTasks.value.map((t) => ({
       ...buildRowBase(t, 'etl', runNowTriggeredByTaskId),
-      dataConnectionId:
-        (t as any).dataConnection?.id ?? (t as any).dataConnectionId ?? null,
-      monitoringSiteId: resolveTaskMonitoringSiteId(t, datastreamMonitoringSiteByDatastreamId.value),
+      dataConnectionId: dataConnectionIdOf(t),
+      monitoringSiteId: null,
       noWorkWarning: getEtlNoWorkWarning(t),
     }))
   )
@@ -213,7 +184,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
     dataProductTasks.value.map((t) => ({
       ...buildRowBase(t, 'dataProduct', runNowTriggeredByTaskId),
       dataConnectionId: null,
-      monitoringSiteId: (t as any).monitoringSite?.id ?? (t as any).monitoringSiteId ?? null,
+      monitoringSiteId: monitoringSiteIdOf(t),
       taskType: resolveDataProductTaskType(t),
       noWorkWarning: getDataProductNoWorkWarning(t),
     }))
@@ -225,7 +196,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       return {
         ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
         dataConnectionId: null,
-        monitoringSiteId: (t as any).monitoringSite?.id ?? (t as any).monitoringSiteId ?? null,
+        monitoringSiteId: monitoringSiteIdOf(t),
         noWorkWarning: getMonitoringNoWorkWarning(t),
         qualityRuleSummary: rules.summary,
         qualityRuleCount: rules.total,

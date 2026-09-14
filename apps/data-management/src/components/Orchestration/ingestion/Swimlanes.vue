@@ -14,7 +14,7 @@
         Target datastream
       </div>
 
-      <template v-for="(m, mi) in task.mappings" :key="mi">
+      <template v-for="(m, mi) in mappings" :key="mi">
         <div class="contents">
           <div class="min-w-0 flex items-center">
             <div
@@ -67,14 +67,14 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import type { TaskExpanded, TaskMapping } from '@hydroserver/client'
+import type { EtlMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 const props = defineProps<{
-  task: TaskExpanded
+  mappings: EtlMapping[]
 }>()
 
 const {
@@ -84,46 +84,32 @@ const {
   workspaceMonitoringSites,
 } = storeToRefs(useOrchestrationStore())
 
-function targetDatastream(mapping: TaskMapping) {
-  return 'targetDatastream' in mapping ? mapping.targetDatastream : null
-}
-
-function targetDatastreamId(mapping: TaskMapping) {
-  const datastream = targetDatastream(mapping)
-  return datastream?.id || (mapping as any).targetDatastreamId || ''
-}
-
-function resolveTargetName(mapping: TaskMapping) {
-  const datastream = targetDatastream(mapping)
-  if (datastream?.name) return datastream.name
-  const id = targetDatastreamId(mapping)
-  if (!id) return ''
-  const key = String(id)
+function targetDatastream(mapping: EtlMapping) {
+  const key = mapping.targetDatastreamId
   return (
-    workspaceDatastreams.value.find((d) => d.id === key)?.name ||
-    linkedDatastreams.value.find((d) => d.id === key)?.name ||
-    draftDatastreams.value.find((d) => String(d.id) === key)?.name ||
-    ''
+    workspaceDatastreams.value.find((d) => d.id === key) ||
+    linkedDatastreams.value.find((d) => d.id === key) ||
+    draftDatastreams.value.find((d) => String(d.id) === key) ||
+    null
   )
 }
 
-function resolveMonitoringSiteName(mapping: TaskMapping) {
+function targetDatastreamId(mapping: EtlMapping) {
+  return mapping.targetDatastreamId || ''
+}
+
+function resolveTargetName(mapping: EtlMapping) {
+  return targetDatastream(mapping)?.name || ''
+}
+
+function resolveMonitoringSiteName(mapping: EtlMapping) {
   const monitoringSiteId = resolveMonitoringSiteId(mapping)
   if (!monitoringSiteId) return ''
   return workspaceMonitoringSites.value.find((t) => t.id === String(monitoringSiteId))?.name || ''
 }
 
-function resolveMonitoringSiteId(mapping: TaskMapping) {
+function resolveMonitoringSiteId(mapping: EtlMapping) {
   const ds = targetDatastream(mapping)
-  const dsId = targetDatastreamId(mapping)
-  const monitoringSiteId = ds ? datastreamMonitoringSiteId(ds as any) : ''
-  if (monitoringSiteId) return monitoringSiteId
-  if (!dsId) return ''
-  const key = String(dsId)
-  const relatedDatastream =
-    workspaceDatastreams.value.find((d) => d.id === key) ||
-    linkedDatastreams.value.find((d) => d.id === key) ||
-    draftDatastreams.value.find((d) => String(d.id) === key)
-  return relatedDatastream ? datastreamMonitoringSiteId(relatedDatastream as any) : ''
+  return ds ? datastreamMonitoringSiteId(ds as any) : ''
 }
 </script>

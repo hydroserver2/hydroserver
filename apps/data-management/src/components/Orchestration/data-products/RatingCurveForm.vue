@@ -213,7 +213,6 @@ import hs, {
   type Datastream,
   type RatingCurve,
   type DataProductTask,
-  type DataProductTaskExpanded,
   type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
@@ -333,9 +332,12 @@ async function loadOptions() {
 async function loadExistingTask() {
   if (!props.editTaskId) return
   loadingExisting.value = true
-  const taskRes = await hs.dataProductTasks.get(props.editTaskId, {
-    expand_related: true,
-  })
+  const [taskRes, transformationsRes] = await Promise.all([
+    hs.dataProductTasks.get(props.editTaskId),
+    hs.dataProductTasks.listTransformations(props.editTaskId, {
+      transformation_type: ['rating_curve'],
+    } as any),
+  ])
   if (!taskRes.ok) {
     Snackbar.error(
       taskRes.message || 'Unable to load existing rating curve task.'
@@ -344,19 +346,19 @@ async function loadExistingTask() {
     return
   }
 
-  const task = taskRes.data as unknown as DataProductTaskExpanded
+  const task = taskRes.data
 
   if (task?.name) {
     taskName.value = task.name
     schedule.value = task.schedule ?? null
   }
 
-  if (task?.ratingCurveTransformations?.length) {
-    const t = task.ratingCurveTransformations[0]
+  const t = transformationsRes.ok ? transformationsRes.data[0] : undefined
+  if (t) {
     existingTransformationId.value = t.id
-    inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
-    outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
-    selectedRatingCurveId.value = (t.ratingCurve as any)?.id ?? null
+    inputDatastreamId.value = t.inputDatastreams?.[0]?.datastreamId ?? null
+    outputDatastreamId.value = t.outputDatastreamId ?? null
+    selectedRatingCurveId.value = t.ratingCurveId ?? null
     ratingCurveInputMode.value = 'existing'
   }
 
@@ -503,6 +505,7 @@ async function onCreate() {
     monitoringSiteId: selectedMonitoringSiteId.value!,
     description: null,
     schedule: schedule.value,
+    transformationTypes: [],
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -510,12 +513,17 @@ async function onCreate() {
     return
   }
 
-  const transformRes =
-    await hs.dataProductTasks.createRatingCurveTransformation(taskRes.data.id, {
-      inputDatastreamId: inputDatastreamId.value!,
+  const transformRes = await hs.dataProductTasks.createTransformation(
+    taskRes.data.id,
+    {
+      transformationType: 'rating_curve',
       outputDatastreamId: outputDatastreamId.value!,
+      inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
       ratingCurveId,
-    })
+      stopOnNoData: true,
+      stopOnError: true,
+    }
+  )
 
   if (!transformRes.ok) {
     Snackbar.error(
@@ -545,16 +553,15 @@ async function onUpdate() {
   }
 
   if (existingTransformationId.value) {
-    const transformRes =
-      await hs.dataProductTasks.updateRatingCurveTransformation(
-        taskId,
-        existingTransformationId.value,
-        {
-          inputDatastreamId: inputDatastreamId.value!,
-          outputDatastreamId: outputDatastreamId.value!,
-          ratingCurveId,
-        }
-      )
+    const transformRes = await hs.dataProductTasks.updateTransformation(
+      taskId,
+      existingTransformationId.value,
+      {
+        outputDatastreamId: outputDatastreamId.value!,
+        inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
+        ratingCurveId,
+      }
+    )
 
     if (!transformRes.ok) {
       Snackbar.error(

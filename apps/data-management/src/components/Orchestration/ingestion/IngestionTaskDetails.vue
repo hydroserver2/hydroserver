@@ -61,6 +61,7 @@
             <IngestionTaskForm
               :old-task="task"
               :data-connection="task.dataConnection"
+              :mappings="mappings"
               @close="closeEditTaskDialog"
               @updated="onTaskUpdated"
             />
@@ -120,7 +121,7 @@
           @copy="copy"
         />
         <template v-else>
-          <Swimlanes v-if="task.mappings?.length" :task="task" />
+          <Swimlanes v-if="mappings.length" :mappings="mappings" />
           <p v-else class="empty">No mappings configured for this task.</p>
         </template>
       </div>
@@ -130,7 +131,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import hs, { type EtlMapping } from '@hydroserver/client'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
@@ -183,9 +185,23 @@ function closeEditTaskDialog() {
   editTaskDialogOpen.value = false
 }
 
+const mappings = ref<EtlMapping[]>([])
+
+async function loadMappings() {
+  if (!task.value?.id) {
+    mappings.value = []
+    return
+  }
+  const res = await hs.tasks.listMappings(task.value.id)
+  mappings.value = res.ok ? res.data : []
+}
+
+watch(() => task.value?.id, () => void loadMappings(), { immediate: true })
+
 function onTaskUpdated() {
   closeEditTaskDialog()
   onUpdated()
+  void loadMappings()
 }
 </script>
 

@@ -267,7 +267,6 @@ import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type DataProductTask,
-  type DataProductTaskExpanded,
   type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
@@ -525,34 +524,37 @@ async function loadDatastreams() {
 async function loadExistingTask() {
   if (!props.editTaskId) return
   loadingExisting.value = true
-  const taskRes = await hs.dataProductTasks.get(props.editTaskId, {
-    expand_related: true,
-  })
+  const [taskRes, transformationsRes] = await Promise.all([
+    hs.dataProductTasks.get(props.editTaskId),
+    hs.dataProductTasks.listTransformations(props.editTaskId, {
+      transformation_type: ['derivation'],
+    } as any),
+  ])
   if (!taskRes.ok) {
     Snackbar.error(taskRes.message || 'Unable to load existing task.')
     loadingExisting.value = false
     return
   }
 
-  const task = taskRes.data as unknown as DataProductTaskExpanded
+  const task = taskRes.data
 
   if (task?.name) {
     taskName.value = task.name
     schedule.value = task.schedule ?? null
   }
 
-  if (task?.derivationTransformations?.length) {
-    const t = task.derivationTransformations[0]
+  const t = transformationsRes.ok ? transformationsRes.data[0] : undefined
+  if (t) {
     existingTransformationId.value = t.id
-    outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
-    formula.value = t.formula
+    outputDatastreamId.value = t.outputDatastreamId ?? null
+    formula.value = t.formula ?? ''
     stopOnNoData.value = t.stopOnNoData ?? true
     stopOnError.value = t.stopOnError ?? true
 
     if (t.inputDatastreams?.length) {
       inputs.value = t.inputDatastreams.map((inp: any) => ({
         key: ++_keyCounter,
-        datastreamId: inp.datastream?.id ?? null,
+        datastreamId: inp.datastreamId ?? null,
         variableName: inp.variableName ?? '',
       }))
     }
@@ -603,6 +605,7 @@ async function onCreate(
     monitoringSiteId,
     description: null,
     schedule: schedule.value,
+    transformationTypes: [],
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -610,9 +613,10 @@ async function onCreate(
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createDerivationTransformation(
+  const transformRes = await hs.dataProductTasks.createTransformation(
     taskRes.data.id,
     {
+      transformationType: 'derivation',
       outputDatastreamId: outputDatastreamId.value!,
       inputDatastreams,
       formula: formula.value.trim(),
@@ -649,18 +653,17 @@ async function onUpdate(
   }
 
   if (existingTransformationId.value) {
-    const transformRes =
-      await hs.dataProductTasks.updateDerivationTransformation(
-        taskId,
-        existingTransformationId.value,
-        {
-          outputDatastreamId: outputDatastreamId.value!,
-          inputDatastreams,
-          formula: formula.value.trim(),
-          stopOnNoData: stopOnNoData.value,
-          stopOnError: stopOnError.value,
-        }
-      )
+    const transformRes = await hs.dataProductTasks.updateTransformation(
+      taskId,
+      existingTransformationId.value,
+      {
+        outputDatastreamId: outputDatastreamId.value!,
+        inputDatastreams,
+        formula: formula.value.trim(),
+        stopOnNoData: stopOnNoData.value,
+        stopOnError: stopOnError.value,
+      }
+    )
 
     if (!transformRes.ok) {
       Snackbar.error(

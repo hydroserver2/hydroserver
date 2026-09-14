@@ -45,21 +45,8 @@ export function useSimpleTaskDetails(
 ) {
   const route = useRoute()
   const service = serviceForKind(kind)
-  const isDetailedTask = (candidate: any) => {
-    if (!candidate) return false
-    if (kind === 'etl') {
-      return !!candidate.dataConnection && Array.isArray(candidate.mappings)
-    }
-    if (kind === 'dataProduct') {
-      return (
-        !!candidate.monitoringSite && Array.isArray(candidate.ratingCurveTransformations)
-      )
-    }
-    return !!candidate.monitoringSite && Array.isArray(candidate.monitoredDatastreams)
-  }
-  const task = ref<any>(
-    isDetailedTask(props.initialTask) ? props.initialTask : null
-  )
+  const includeForKind = kind === 'etl' ? 'dataConnection' : 'monitoringSite'
+  const task = ref<any>(null)
   const runs = ref<TaskRun[]>([])
   const loading = ref(false)
   const loadingRuns = ref(false)
@@ -243,7 +230,9 @@ export function useSimpleTaskDetails(
     if (!taskId.value) return
     loading.value = true
     try {
-      const response = await service.get(taskId.value, { expand_related: true })
+      const response = await service.get(taskId.value, {
+        include: [includeForKind],
+      } as any)
       if (!response.ok)
         throw new Error(response.message || 'Unable to load task.')
       task.value = response.data

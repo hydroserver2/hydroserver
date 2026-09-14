@@ -54,7 +54,6 @@ describe('useOrchestrationData', () => {
     expect(data.dataProductTasks.value).toEqual([])
     expect(data.monitoringTasks.value).toEqual([])
     expect(data.monitoringSites.value.map((item) => item.id)).toEqual(['monitoringSite-1'])
-    expect(data.datastreamMonitoringSiteByDatastreamId.value).toEqual({})
     expect(dataConnectionsListMock).toHaveBeenCalledWith({
       workspace_id: 'workspace-1',
       order_by: 'name',

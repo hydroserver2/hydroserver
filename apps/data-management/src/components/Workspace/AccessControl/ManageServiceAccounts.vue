@@ -514,7 +514,7 @@ const {
       const roleByEmail = new Map<string, CollaboratorRole>()
       if (collaboratorsRes.ok) {
         for (const collaborator of collaboratorsRes.data) {
-          if (collaborator.serviceAccount)
+          if (collaborator.serviceAccount && collaborator.role)
             roleByEmail.set(
               collaborator.serviceAccount.email,
               collaborator.role
@@ -859,7 +859,7 @@ const onRegenerate = async () => {
   try {
     const res = await hs.workspaces.regenerateServiceAccountKey(
       workspaceId.value,
-      item.value.id
+      item.value
     )
     if (!res.ok) {
       Snackbar.error('Failed to refresh service account API key')

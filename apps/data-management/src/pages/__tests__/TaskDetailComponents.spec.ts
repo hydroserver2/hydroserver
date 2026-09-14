@@ -35,6 +35,7 @@ vi.mock('@hydroserver/client', () => ({
       runTask: vi.fn(),
       update: dataProductUpdateMock,
       delete: vi.fn(),
+      listTransformations: vi.fn().mockResolvedValue({ ok: true, data: [] }),
     },
     monitoringTasks: {
       get: monitoringGetMock,
@@ -44,6 +45,7 @@ vi.mock('@hydroserver/client', () => ({
       runTask: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      listRules: vi.fn().mockResolvedValue({ ok: true, data: [] }),
     },
     tasks: {
       get: taskGetMock,
@@ -53,6 +55,10 @@ vi.mock('@hydroserver/client', () => ({
       runTask: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      listMappings: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+      createMapping: vi.fn(),
+      updateMapping: vi.fn(),
+      deleteMapping: vi.fn(),
     },
   },
   PermissionAction: { Edit: 'edit' },
@@ -110,9 +116,7 @@ const makeDataProductTask = () => ({
   name: 'Rating curve task',
   description: null,
   monitoringSite: { id: 'monitoringSite-1', name: 'Site 1', workspaceId: 'workspace-1' },
-  aggregationTransformations: [],
-  derivationTransformations: [],
-  ratingCurveTransformations: [{ id: 'rating-transform-1' }],
+  transformationTypes: ['rating_curve'],
   latestRun: null,
   schedule: {
     enabled: true,
@@ -133,7 +137,7 @@ const makeEtlTask = () => ({
     name: 'Connection 1',
     workspace: { id: 'workspace-1', name: 'Workspace 1' },
   },
-  mappings: [],
+  mappingCount: 0,
   taskVariables: {},
   latestRun: null,
   schedule: {
@@ -151,7 +155,7 @@ const makeMonitoringTask = () => ({
   name: 'Quality task',
   description: null,
   monitoringSite: { id: 'monitoringSite-1', name: 'Site 1', workspaceId: 'workspace-1' },
-  monitoredDatastreams: [],
+  ruleTypeCounts: {},
   latestRun: null,
   schedule: null,
 })
@@ -178,7 +182,7 @@ const globalStubs = {
     template: '<div class="delete-task-card-stub" />',
   },
   IngestionTaskForm: {
-    props: ['oldTask', 'dataConnection', 'workspaceId'],
+    props: ['oldTask', 'dataConnection', 'mappings', 'workspaceId'],
     template: '<div class="task-form-stub" />',
   },
   QualityManagementForm: {
@@ -244,7 +248,7 @@ describe('Task detail components', () => {
     await flushPromises()
 
     expect(dataProductGetMock).toHaveBeenCalledWith('product-task-1', {
-      expand_related: true,
+      include: ['monitoringSite'],
     })
     expect(taskGetMock).not.toHaveBeenCalled()
     expect(monitoringGetMock).not.toHaveBeenCalled()
@@ -294,7 +298,7 @@ describe('Task detail components', () => {
     await flushPromises()
 
     expect(taskGetMock).toHaveBeenCalledWith('etl-task-1', {
-      expand_related: true,
+      include: ['dataConnection'],
     })
     expect(wrapper.text()).toContain('Ingestion task')
   })

@@ -223,7 +223,6 @@ const loadAssociatedWorkspaces = async () => {
   try {
     const associatedWorkspaces = await hs.workspaces.listAllItems({
       is_associated: true,
-      expand_related: true,
     })
     setWorkspaces(associatedWorkspaces)
   } catch (error) {

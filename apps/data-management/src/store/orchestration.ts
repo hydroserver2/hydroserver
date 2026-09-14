@@ -2,7 +2,6 @@ import { defineStore, storeToRefs } from 'pinia'
 import hs, {
   Datastream,
   DatastreamExtended,
-  TaskMapping,
   MonitoringSite,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
@@ -52,19 +51,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     draftDatastreams.value = []
   }
 
-  const linkedDatastreamIds = computed(() => {
-    const ids = new Set<string>()
-
-    for (const task of workspaceTasks.value) {
-      for (const mapping of task.mappings ?? []) {
-        const id =
-          'targetDatastream' in mapping ? mapping.targetDatastream?.id : null
-        if (id) ids.add(String(id))
-      }
-    }
-
-    return ids
-  })
+  const linkedDatastreamIds = computed(() => new Set<string>())
 
   const linkedDatastreams = computed(() =>
     workspaceDatastreams.value.filter((d) =>

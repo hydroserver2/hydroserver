@@ -478,7 +478,7 @@ async function loadDatastreams() {
 function ruleToRow(rule: MonitoringRule): RuleRow {
   return makeRuleRow({
     id: rule.id,
-    datastreamId: (rule.datastream as any)?.id ?? null,
+    datastreamId: rule.datastreamId ?? null,
     ruleType: rule.ruleType,
     minValue: rule.minValue ?? null,
     maxValue: rule.maxValue ?? null,
@@ -657,6 +657,7 @@ async function onCreate() {
     description: description.value.trim() || null,
     recipients: recipients.value,
     schedule: schedule.value,
+    ruleTypeCounts: {},
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {

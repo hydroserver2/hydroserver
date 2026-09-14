@@ -1068,7 +1068,13 @@ import {
 import DatastreamTableInfoCard from './DatastreamTableInfoCard.vue'
 import ObservationsDeleteCard from '../Observation/ObservationsDeleteCard.vue'
 import VisibilityTooltipCard from '@/components/Datastream/VisibilityTooltipCard.vue'
-import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
+import hs, {
+  PermissionAction,
+  PermissionResource,
+  type EtlMapping,
+  type DataProductTransformation,
+  type MonitoringRule,
+} from '@hydroserver/client'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import {
   mdiAlertOctagon,
@@ -1101,7 +1107,6 @@ const props = defineProps({
 type LinkedDatastreamTask = {
   id: string
   name: string
-  dataConnectionName: string | null
   displayName: string
   label: string
   icon: string
@@ -1213,6 +1218,9 @@ const latestValues = reactive<
 const rawEtlTasks = ref<any[]>([])
 const rawDataProductTasks = ref<any[]>([])
 const rawMonitoringTasks = ref<any[]>([])
+const etlMappingsByTaskId = ref<Record<string, EtlMapping[]>>({})
+const transformationsByTaskId = ref<Record<string, DataProductTransformation[]>>({})
+const rulesByTaskId = ref<Record<string, MonitoringRule[]>>({})
 const linkedTasksLoaded = ref(false)
 const linkedTasksErrored = ref(false)
 let linkedTasksRequestId = 0
@@ -1591,8 +1599,8 @@ const routeForIngestionTask = (task: any) => {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
   }
-  const dataConnectionId = task.dataConnection?.id ?? task.dataConnectionId
-  if (dataConnectionId) query.data_connection_id = String(dataConnectionId)
+  if (task.dataConnectionId)
+    query.data_connection_id = String(task.dataConnectionId)
 
   return {
     name: 'OrchestrationIngestionDetails',
@@ -1602,15 +1610,14 @@ const routeForIngestionTask = (task: any) => {
 }
 
 const dataProductRouteName = (task: any) => {
-  if (task.aggregationTransformations?.length) {
-    return 'OrchestrationAggregationDetails'
-  }
-  if (task.derivationTransformations?.length) {
-    return 'OrchestrationDerivationDetails'
-  }
-  if (task.ratingCurveTransformations?.length) {
-    return 'OrchestrationRatingCurveDetails'
-  }
+  const types = new Set(
+    (transformationsByTaskId.value[task.id] ?? []).map(
+      (t) => t.transformationType
+    )
+  )
+  if (types.has('aggregation')) return 'OrchestrationAggregationDetails'
+  if (types.has('derivation')) return 'OrchestrationDerivationDetails'
+  if (types.has('rating_curve')) return 'OrchestrationRatingCurveDetails'
   return 'OrchestrationAggregationDetails'
 }
 
@@ -1619,8 +1626,7 @@ const siteScopedRoute = (task: any, name: string, view: string) => {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
   }
-  const siteId =
-    task.monitoringSite?.id ?? task.monitoringSiteId ?? monitoringSite.value?.id
+  const siteId = task.monitoringSiteId ?? monitoringSite.value?.id
   if (siteId) query.site_id = String(siteId)
 
   return { name, params: { view }, query }
@@ -1631,17 +1637,6 @@ const routeForDataProductTask = (task: any) =>
 
 const routeForMonitoringTask = (task: any) =>
   siteScopedRoute(task, 'OrchestrationQualityDetails', 'quality')
-
-const outputDatastreamId = (transformation: any) =>
-  transformation?.outputDatastream?.id ?? transformation?.outputDatastreamId
-
-const targetDatastreamId = (mapping: any) =>
-  mapping?.targetDatastream?.id ?? mapping?.targetDatastreamId
-
-const monitoredDatastreamId = (monitoredDatastream: any) =>
-  monitoredDatastream?.datastream?.id ??
-  monitoredDatastream?.datastreamId ??
-  monitoredDatastream?.id
 
 const monitoringViolationCount = (
   task: any,
@@ -1681,15 +1676,8 @@ const truncateTaskInfoPart = (value: unknown, maxLength = 250) => {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
 }
 
-const dataConnectionNameForTask = (task: any) =>
-  task.dataConnection?.name ?? task.dataConnectionName ?? null
-
-const linkedTaskDisplayName = (task: any) => {
-  const taskName = truncateTaskInfoPart(task.name || task.id)
-  const dataConnectionName = dataConnectionNameForTask(task)
-  if (!dataConnectionName) return taskName
-  return `${truncateTaskInfoPart(dataConnectionName)} · ${taskName}`
-}
+const linkedTaskDisplayName = (task: any) =>
+  truncateTaskInfoPart(task.name || task.id)
 
 const addLinkedTask = (
   grouped: Record<string, LinkedDatastreamTask[]>,
@@ -1706,7 +1694,6 @@ const addLinkedTask = (
   grouped[datastreamId].push({
     id: String(task.id),
     name: task.name,
-    dataConnectionName: dataConnectionNameForTask(task),
     displayName: linkedTaskDisplayName(task),
     label: config.label,
     icon: config.icon,
@@ -1727,6 +1714,9 @@ const loadLinkedTasks = async () => {
     rawEtlTasks.value = []
     rawDataProductTasks.value = []
     rawMonitoringTasks.value = []
+    etlMappingsByTaskId.value = {}
+    transformationsByTaskId.value = {}
+    rulesByTaskId.value = {}
     return
   }
 
@@ -1735,24 +1725,53 @@ const loadLinkedTasks = async () => {
       hs.tasks.listAllItems({
         monitoring_site_id: [site.id],
         order_by: ['name'],
-        expand_related: true,
       }),
       hs.dataProductTasks.listAllItems({
         monitoring_site_id: [site.id],
         order_by: ['name'],
-        expand_related: true,
       }),
       hs.monitoringTasks.listAllItems({
         monitoring_site_id: [site.id],
         order_by: ['name'],
-        expand_related: true,
       }),
     ])
+    if (requestId !== linkedTasksRequestId) return
+
+    const [mappingsResults, transformationsResults, rulesResults] =
+      await Promise.all([
+        Promise.all(etlTasks.map((t: any) => hs.tasks.listMappings(t.id))),
+        Promise.all(
+          dataProductTasks.map((t: any) =>
+            hs.dataProductTasks.listTransformations(t.id)
+          )
+        ),
+        Promise.all(
+          monitoringTasks.map((t: any) => hs.monitoringTasks.listRules(t.id))
+        ),
+      ])
     if (requestId !== linkedTasksRequestId) return
 
     rawEtlTasks.value = etlTasks ?? []
     rawDataProductTasks.value = dataProductTasks ?? []
     rawMonitoringTasks.value = monitoringTasks ?? []
+    etlMappingsByTaskId.value = Object.fromEntries(
+      etlTasks.map((t: any, i: number) => [
+        t.id,
+        mappingsResults[i].ok ? mappingsResults[i].data : [],
+      ])
+    )
+    transformationsByTaskId.value = Object.fromEntries(
+      dataProductTasks.map((t: any, i: number) => [
+        t.id,
+        transformationsResults[i].ok ? transformationsResults[i].data : [],
+      ])
+    )
+    rulesByTaskId.value = Object.fromEntries(
+      monitoringTasks.map((t: any, i: number) => [
+        t.id,
+        rulesResults[i].ok ? rulesResults[i].data : [],
+      ])
+    )
     linkedTasksLoaded.value = true
   } catch (error) {
     if (requestId !== linkedTasksRequestId) return
@@ -1761,6 +1780,9 @@ const loadLinkedTasks = async () => {
     rawEtlTasks.value = []
     rawDataProductTasks.value = []
     rawMonitoringTasks.value = []
+    etlMappingsByTaskId.value = {}
+    transformationsByTaskId.value = {}
+    rulesByTaskId.value = {}
   }
 }
 
@@ -1773,8 +1795,8 @@ const linkedTasksByDatastreamId = computed<
   const seen = new Set<string>()
 
   for (const task of rawEtlTasks.value) {
-    for (const mapping of (task as any).mappings ?? []) {
-      const datastreamId = targetDatastreamId(mapping)
+    for (const mapping of etlMappingsByTaskId.value[task.id] ?? []) {
+      const datastreamId = mapping.targetDatastreamId
       if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
       addLinkedTask(grouped, seen, String(datastreamId), task, {
         label: 'Fed by',
@@ -1786,29 +1808,32 @@ const linkedTasksByDatastreamId = computed<
   }
 
   for (const task of rawDataProductTasks.value) {
+    const taskTransformations = transformationsByTaskId.value[task.id] ?? []
+    const transformationsOfType = (type: string) =>
+      taskTransformations.filter((t) => t.transformationType === type)
     const transformationGroups = [
       {
         label: 'Aggregated by',
         icon: mdiCallMerge,
         iconClass: 'datastream-task-link__icon--aggregation',
-        transformations: (task as any).aggregationTransformations ?? [],
+        transformations: transformationsOfType('aggregation'),
       },
       {
         label: 'Derived by',
         icon: mdiSigma,
         iconClass: 'datastream-task-link__icon--derived',
-        transformations: (task as any).derivationTransformations ?? [],
+        transformations: transformationsOfType('derivation'),
       },
       {
         label: 'Rating curve',
         icon: mdiChartBellCurve,
         iconClass: 'datastream-task-link__icon--rating-curve',
-        transformations: (task as any).ratingCurveTransformations ?? [],
+        transformations: transformationsOfType('rating_curve'),
       },
     ]
     for (const group of transformationGroups) {
       for (const transformation of group.transformations) {
-        const datastreamId = outputDatastreamId(transformation)
+        const datastreamId = transformation.outputDatastreamId
         if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
         addLinkedTask(grouped, seen, String(datastreamId), task, {
           label: group.label,
@@ -1832,10 +1857,17 @@ const monitoringTasksByDatastreamId = computed<
   const seenMonitoring = new Set<string>()
 
   for (const task of rawMonitoringTasks.value) {
-    const monitoredDatastreams = (task as any).monitoredDatastreams ?? []
-    for (const monitoredDatastream of monitoredDatastreams) {
-      const datastreamId = monitoredDatastreamId(monitoredDatastream)
-      if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
+    const rules = rulesByTaskId.value[task.id] ?? []
+    const rulesByDatastreamId = new Map<string, MonitoringRule[]>()
+    for (const rule of rules) {
+      if (!rule.datastreamId) continue
+      const bucket = rulesByDatastreamId.get(rule.datastreamId) ?? []
+      bucket.push(rule)
+      rulesByDatastreamId.set(rule.datastreamId, bucket)
+    }
+
+    for (const [datastreamId, datastreamRules] of rulesByDatastreamId) {
+      if (!datastreamIds.has(String(datastreamId))) continue
 
       const key = `${datastreamId}:${(task as any).id}`
       if (seenMonitoring.has(key)) continue
@@ -1844,7 +1876,6 @@ const monitoringTasksByDatastreamId = computed<
       groupedMonitoring[String(datastreamId)].push({
         id: String((task as any).id),
         name: (task as any).name,
-        dataConnectionName: null,
         displayName: truncateTaskInfoPart(
           (task as any).name || (task as any).id
         ),
@@ -1858,11 +1889,11 @@ const monitoringTasksByDatastreamId = computed<
           (task as any).latestRun?.finishedAt ??
           null,
         route: routeForMonitoringTask(task),
-        ruleCount: ((monitoredDatastream as any).rules ?? []).length,
+        ruleCount: datastreamRules.length,
         violationCount: monitoringViolationCount(
           task,
           String(datastreamId),
-          monitoredDatastreams.length
+          rulesByDatastreamId.size
         ),
         latestRunStatus: (task as any).latestRun?.status ?? null,
         lastRunStatus: getTaskRunStatusText((task as any).latestRun),

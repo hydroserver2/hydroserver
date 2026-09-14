@@ -251,7 +251,6 @@ const {
   workspaceTasks,
   dataConnections,
   monitoringSites,
-  datastreamMonitoringSiteByDatastreamId,
   dataProductTasks,
   monitoringTasks,
   loadedTaskGroup,
@@ -356,7 +355,6 @@ const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =
     workspaceTasks,
     dataProductTasks,
     monitoringTasks,
-    datastreamMonitoringSiteByDatastreamId,
     runNowTriggeredByTaskId,
   })
 
@@ -715,12 +713,10 @@ const selectSidebarFromTaskDetails = () => {
   const task = selectedTask.value as any
   if (!hasTaskDetails.value || !task) return false
   if (selectedTaskKind.value === 'etl') {
-    selectedConnectionId.value =
-      task.dataConnection?.id ?? task.dataConnectionId ?? null
+    selectedConnectionId.value = task.dataConnectionId ?? null
     return !!selectedConnectionId.value
   }
-  selectedMonitoringSiteId.value =
-    task.monitoringSite?.id ?? task.monitoringSiteId ?? null
+  selectedMonitoringSiteId.value = task.monitoringSiteId ?? null
   return !!selectedMonitoringSiteId.value
 }
 

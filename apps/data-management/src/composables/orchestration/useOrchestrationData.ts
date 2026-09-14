@@ -27,7 +27,6 @@ export function useOrchestrationData() {
   const taskLoading = ref(false)
   const dataConnections = ref<DataConnection[]>([])
   const monitoringSites = ref<MonitoringSiteTaskSummary[]>([])
-  const datastreamMonitoringSiteByDatastreamId = ref<Record<string, string>>({})
   const dataProductTasks = ref<DataProductTask[]>([])
   const monitoringTasks = ref<MonitoringTask[]>([])
   const loadedTaskGroup = ref<LoadedTaskGroup>(null)
@@ -45,7 +44,6 @@ export function useOrchestrationData() {
     workspaceTasks.value = []
     dataProductTasks.value = []
     monitoringTasks.value = []
-    datastreamMonitoringSiteByDatastreamId.value = {}
     loadedTaskGroup.value = null
   }
 
@@ -178,7 +176,6 @@ export function useOrchestrationData() {
     workspaceTasks,
     dataConnections,
     monitoringSites,
-    datastreamMonitoringSiteByDatastreamId,
     dataProductTasks,
     monitoringTasks,
     loadedTaskGroup,
