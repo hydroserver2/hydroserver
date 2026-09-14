@@ -275,8 +275,15 @@ await installMocks(page, {
   observations: { phenomenonTime: [...], result: [...] },
   submissions: collectedSubmissions,   // accumulates bulk POSTs for assertion
   authenticated: false,                 // simulate signed-out
+  qcHistories: true,                    // give DATASTREAM_ID a managed datastream
 })
 ```
+
+`qcHistories` is off by default. When on, the catalog gains
+`managedDatastream` and the QC history linking it to `DATASTREAM_ID`, so
+that source row shows the managed-count badge and its plot check box opens
+`PlotSourceDialog`. Leaving it off keeps a catalog where every row plots
+straight from its check box, which is what the other specs assume.
 
 ### Fixtures: "now"-anchored timestamps
 

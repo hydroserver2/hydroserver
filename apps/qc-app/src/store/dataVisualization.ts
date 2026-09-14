@@ -245,6 +245,59 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
   }
 
+  /** The source datastream plus every managed datastream derived from it. */
+  function sourceGroupIds(sourceId: string): string[] {
+    const ids = [sourceId]
+    for (const h of historiesBySource.value.get(sourceId) ?? []) {
+      const id = historyManagedId(h)
+      if (id) ids.push(id)
+    }
+    return ids
+  }
+
+  /**
+   * Apply a whole "what to plot for this source" choice at once: `ids` is
+   * the complete set wanted from that source's group. Group members absent
+   * from `ids` are unplotted; additions are appended in `ids` order, so the
+   * first-plotted-wins QC rule sees the caller's ordering.
+   *
+   * Batched rather than looping plot/unplot so the QC target is promoted
+   * once against the final set instead of drifting through each
+   * intermediate state.
+   */
+  async function plotSourceSelection(sourceId: string, ids: string[]) {
+    const group = new Set(sourceGroupIds(sourceId))
+    const wanted = ids.filter((id) => group.has(id))
+    const wantedSet = new Set(wanted)
+
+    const kept = plottedDatastreams.value.filter(
+      (d) => !group.has(d.id) || wantedSet.has(d.id)
+    )
+    const present = new Set(kept.map((d) => d.id))
+    const added = wanted
+      .filter((id) => !present.has(id))
+      .map((id) => datastreams.value.find((d) => d.id === id))
+      .filter((d): d is Datastream & DatastreamExtended => !!d)
+
+    const next = [...kept, ...added]
+    const unchanged =
+      next.length === plottedDatastreams.value.length &&
+      next.every((d, i) => d.id === plottedDatastreams.value[i]?.id)
+    if (unchanged) return
+
+    const previousIndex = plottedDatastreams.value.findIndex(
+      (d) => d.id === qcDatastreamId.value
+    )
+    plottedDatastreams.value = next
+    if (!next.some((d) => d.id === qcDatastreamId.value)) {
+      // Same promotion rule as `unplotDatastream`: the entry before the one
+      // that left, clamped into the surviving set.
+      const idx = Math.max(Math.min(previousIndex - 1, next.length - 1), 0)
+      qcDatastreamId.value = next[idx]?.id ?? null
+    }
+    await rebuildPlot()
+  }
+
   /** Clear every plotted datastream at once. */
   async function clearPlottedDatastreams() {
     if (!plottedDatastreams.value.length) return
@@ -335,7 +388,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
     const idx = plottedDatastreams.value.findIndex((d) => d.id === managedId)
     if (idx < 0) return
-    plottedDatastreams.value.splice(idx, 1, source)
+    // The source can already be plotted alongside its managed datastream
+    // (both picked in the plot chooser); replacing would duplicate it.
+    if (plottedDatastreams.value.some((d) => d.id === source.id)) {
+      plottedDatastreams.value.splice(idx, 1)
+    } else {
+      plottedDatastreams.value.splice(idx, 1, source)
+    }
     qcDatastreamId.value = source.id
 
     // The working copy holds uncommitted edits; `rebuildPlot` refetches.
@@ -761,6 +820,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     toggleDatastream,
     plotDatastream,
     unplotDatastream,
+    sourceGroupIds,
+    plotSourceSelection,
     clearPlottedDatastreams,
     addSnapshotSeries,
     removeSnapshotSeries,

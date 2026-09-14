@@ -577,6 +577,7 @@ const {
   plottedDatastreams,
   qcDatastream,
   datastreams,
+  managedDatastreamIds,
   processingLevels,
   things,
   beginDate,
@@ -1139,6 +1140,13 @@ onUnmounted(() => {
 async function openEditChooser() {
   const source = qcDatastream.value
   if (!source) return
+  // A managed datastream plotted directly is already the thing to edit, so
+  // there is nothing left to choose. It carries its own observations, so no
+  // `adoptManagedDatastream` working copy is needed either.
+  if (managedDatastreamIds.value.has(source.id)) {
+    await enterEdit()
+    return
+  }
   chooserSource.value = source
   chooserOptions.value = []
   chooserLoading.value = true

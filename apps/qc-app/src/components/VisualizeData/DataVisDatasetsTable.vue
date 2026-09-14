@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="datasets-table d-flex flex-column">
     <v-toolbar flat density="compact" class="datasets-table__toolbar px-2">
       <div class="d-flex align-center ga-2" style="min-width: 0">
@@ -10,7 +10,7 @@
           :variant="plottedDatastreams.length ? 'tonal' : 'outlined'"
           label
         >
-          {{ plottedDatastreams.length }}/5 plotted
+          {{ plottedDatastreams.length }}/{{ PLOT_CAP }} plotted
         </v-chip>
       </div>
 
@@ -143,7 +143,7 @@
             :text="
               isQc(item)
                 ? 'QC target: first plotted datastream'
-                : 'Maximum of 5 datastreams plotted; remove one to add another'
+                : `Maximum of ${PLOT_CAP} datastreams plotted; remove one to add another`
             "
           >
             <template #activator="{ props: tooltipProps }">
@@ -161,13 +161,15 @@
                   :aria-label="
                     isChecked(item) ? 'Remove from plot' : 'Add to plot'
                   "
-                  @click.stop="!isAtCap(item) && toggleDatastream(item)"
+                  @click.stop="!isAtCap(item) && onPlotClick(item)"
                 >
                   <v-icon
                     :icon="
-                      isChecked(item)
-                        ? 'mdi-checkbox-marked'
-                        : 'mdi-checkbox-blank-outline'
+                      isPartial(item)
+                        ? 'mdi-checkbox-intermediate'
+                        : isChecked(item)
+                          ? 'mdi-checkbox-marked'
+                          : 'mdi-checkbox-blank-outline'
                     "
                     size="20"
                   />
@@ -244,6 +246,23 @@
         @close="openInfoCard = false"
       />
     </v-dialog>
+
+    <!-- Width in px, not rem/vw: Vuetify coerces these dimension props
+         through `convertToUnit`, which turns "34rem" into 34px and collapses
+         the dialog to a one-character column. Vuetify's own
+         `max-width: calc(100% - 48px)` keeps it on screen when narrow. -->
+    <v-dialog v-model="plotDialogOpen" width="560">
+      <PlotSourceDialog
+        v-if="plotDialogSource"
+        :source="plotDialogSource"
+        :options="plotDialogOptions"
+        :plotted-ids="plotDialogSelected"
+        :loading="plotDialogLoading"
+        :slots-left="plotDialogSlots"
+        @apply="onPlotApply"
+        @cancel="plotDialogSource = null"
+      />
+    </v-dialog>
   </div>
 </template>
 
@@ -252,13 +271,28 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
+import PlotSourceDialog from './PlotSourceDialog.vue'
 import { Datastream } from '@hydroserver/client'
 import type { DatastreamExtended } from '@hydroserver/client'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
+import {
+  useManagedDatastreams,
+  type ManagedDatastreamOption,
+} from '@/composables/useManagedDatastreams'
+import { Snackbar } from '@uwrl/qc-utils'
+
+/** Maximum series the plot holds at once. */
+const PLOT_CAP = 5
 
 const { filteredDatastreams, plottedDatastreams, qcDatastream, historiesBySource } =
   storeToRefs(useDataVisStore())
-const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
+const {
+  toggleDatastream,
+  clearPlottedDatastreams,
+  sourceGroupIds,
+  plotSourceSelection,
+} = useDataVisStore()
+const { loadForSource } = useManagedDatastreams()
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -346,8 +380,19 @@ const clearSelected = () => {
   void clearPlottedDatastreams()
 }
 
+const plottedIds = computed(
+  () => new Set(plottedDatastreams.value.map((d) => d.id))
+)
+
+// A source row reads as checked when the raw datastream or any managed
+// datastream derived from it is plotted.
 const isChecked = (item: Datastream) =>
-  plottedDatastreams.value.some((sds) => sds.id === item.id)
+  sourceGroupIds(item.id).some((id) => plottedIds.value.has(id))
+
+// Only managed series from this source are plotted, not the raw one — the
+// row shouldn't claim the raw line is on the plot.
+const isPartial = (item: Datastream) =>
+  !plottedIds.value.has(item.id) && isChecked(item)
 
 const isQc = (item: Datastream) => qcDatastream.value?.id === item.id
 
@@ -356,7 +401,63 @@ const managedCount = (item: Datastream) =>
   historiesBySource.value.get(item.id)?.length ?? 0
 
 const isAtCap = (item: Datastream) =>
-  plottedDatastreams.value.length >= 5 && !isChecked(item)
+  plottedDatastreams.value.length >= PLOT_CAP && !isChecked(item)
+
+// --- Plot selection ---------------------------------------------------------
+// Sources with managed datastreams can't be a single toggle: the click opens
+// a chooser instead, both to plot the first time and to change the selection.
+const plotDialogSource = ref<(Datastream & DatastreamExtended) | null>(null)
+const plotDialogOptions = ref<ManagedDatastreamOption[]>([])
+const plotDialogLoading = ref(false)
+
+const plotDialogOpen = computed({
+  get: () => !!plotDialogSource.value,
+  set: (open: boolean) => {
+    if (!open) plotDialogSource.value = null
+  },
+})
+
+const plotDialogSelected = computed(() => {
+  const source = plotDialogSource.value
+  if (!source) return []
+  return sourceGroupIds(source.id).filter((id) => plottedIds.value.has(id))
+})
+
+// Slots this source's group may occupy: the cap minus what other sources
+// already hold, so the dialog can swap freely within its own group.
+const plotDialogSlots = computed(() => {
+  const source = plotDialogSource.value
+  if (!source) return 0
+  const group = new Set(sourceGroupIds(source.id))
+  const others = plottedDatastreams.value.filter((d) => !group.has(d.id)).length
+  return Math.max(PLOT_CAP - others, 0)
+})
+
+async function onPlotClick(item: Datastream & DatastreamExtended) {
+  if (!managedCount(item)) {
+    await toggleDatastream(item)
+    return
+  }
+  plotDialogSource.value = item
+  plotDialogOptions.value = []
+  plotDialogLoading.value = true
+  try {
+    plotDialogOptions.value = await loadForSource(item.id)
+  } catch (e) {
+    // The raw option stays selectable, so the click isn't a dead end.
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not load QC datastreams.'
+    )
+  } finally {
+    plotDialogLoading.value = false
+  }
+}
+
+async function onPlotApply(ids: string[]) {
+  const source = plotDialogSource.value
+  plotDialogSource.value = null
+  if (source) await plotSourceSelection(source.id, ids)
+}
 
 const getRowProps = ({ item }: { item: Datastream }) => ({
   class: {

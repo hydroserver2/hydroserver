@@ -175,6 +175,34 @@ What differs is upstream, not here: the data never refetches (see
 `refreshGraphSeriesArray`'s `isSnapshotId` guard), and `PlottedDatastreams`
 renders the row's provenance instead of a point count.
 
+## Source groups and batched selection
+
+A source datastream and every managed (QC) datastream derived from it form a
+**source group**. Managed datastreams are filtered out of
+`filteredDatastreams`, so the group has exactly one row in the datastreams
+table, and its check box opens `PlotSourceDialog` rather than toggling.
+
+`useDataVisStore.sourceGroupIds(sourceId)` resolves the group from
+`historiesBySource`. `plotSourceSelection(sourceId, ids)` then applies the
+dialog's answer as a whole: `ids` is the complete set wanted from that group,
+so members absent from it are unplotted in the same pass.
+
+Doing it in one pass matters. Looping `plotDatastream` / `unplotDatastream`
+would promote the QC target once per change, letting it land on a datastream
+the user is in the middle of deselecting; the batched action promotes once
+against the final set, using the same "entry before the one that left" rule as
+`unplotDatastream`. It also means one `rebuildPlot`, so the coalescing lock
+never has to absorb a burst.
+
+Additions are appended in `ids` order, which the dialog builds in display
+order (raw first, then managed). That is what keeps the first-plotted-wins QC
+rule predictable: picking raw alongside a managed version from an empty plot
+leaves the raw datastream as QC target.
+
+`releaseManagedDatastream` has to account for this too: the source can already
+be plotted next to its managed datastream, so it drops the managed entry
+rather than replacing it, which would otherwise duplicate the source.
+
 ## Why `internal.ts` isn't re-exported
 
 `plotly.ts` is a barrel for everything the rest of the app needs.

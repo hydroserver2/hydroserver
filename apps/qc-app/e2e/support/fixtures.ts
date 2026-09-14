@@ -21,6 +21,12 @@ export const SENSOR_ID = 'sensor-adv'
 // Y-axis lights up with its own scale instead of overlaying the
 // primary axis 1:1.
 export const DATASTREAM_ID_B = 'ds-qc-e2e-b'
+// Managed (QC) datastream derived from DATASTREAM_ID, plus the history that
+// links the two. Only served when `installMocks` is given `qcHistories: true`,
+// so specs that don't care keep a catalog with no managed datastreams.
+export const MANAGED_DATASTREAM_ID = 'ds-qc-e2e-managed'
+export const QC_HISTORY_ID = 'qch-e2e'
+export const QC_PROC_LEVEL_ID = 'pl-qc'
 export const UNIT_ID_B = 'unit-celsius'
 export const OBSERVED_PROP_ID_B = 'op-water-temp'
 export const SENSOR_ID_B = 'sensor-temp'
@@ -235,6 +241,93 @@ export const datastreams = [
       definition: 'SI unit of temperature',
       type: 'Temperature',
     },
+  },
+]
+
+/**
+ * Only served when `installMocks` is given `qcHistories: true`. Kept out of
+ * `datastreams` so specs that don't opt in keep a catalog of plain rows.
+ */
+export const managedDatastream = {
+    id: MANAGED_DATASTREAM_ID,
+    workspaceId: WORKSPACE_ID,
+    name: 'Streamflow Datastream (QC)',
+    description: 'Quality-controlled version of the streamflow datastream',
+    observationType: 'OM_Measurement',
+    aggregationStatistic: 'Continuous',
+    timeAggregationInterval: 15,
+    timeAggregationIntervalUnit: 'minutes',
+    intendedTimeSpacing: 15,
+    intendedTimeSpacingUnit: 'minutes',
+    sampledMedium: 'Surface water',
+    resultType: 'Time Series',
+    status: 'ongoing',
+    valueCount: 118,
+    noDataValue: -9999,
+    isPrivate: false,
+    isVisible: true,
+    unitId: UNIT_ID,
+    thingId: THING_ID,
+    processingLevelId: QC_PROC_LEVEL_ID,
+    observedPropertyId: OBSERVED_PROP_ID,
+    sensorId: SENSOR_ID,
+    phenomenonBeginTime: FIXTURE_OBS_START_ISO,
+    phenomenonEndTime: FIXTURE_OBS_END_ISO,
+    resultBeginTime: FIXTURE_OBS_START_ISO,
+    resultEndTime: FIXTURE_OBS_END_ISO,
+    thing: {
+      id: THING_ID,
+      name: 'Test Stream Site',
+      samplingFeatureCode: 'STRM-E2E',
+      samplingFeatureType: 'Site',
+      siteType: 'Stream',
+    },
+    observedProperty: {
+      id: OBSERVED_PROP_ID,
+      name: 'Streamflow',
+      code: 'Q',
+      definition: 'Stream discharge',
+      type: 'Hydrology',
+    },
+    processingLevel: {
+      id: QC_PROC_LEVEL_ID,
+      code: 'QC',
+      definition: 'Quality controlled',
+      explanation: 'Reviewed readings',
+    },
+    unit: {
+      id: UNIT_ID,
+      name: 'cubic meters per second',
+      symbol: 'm³/s',
+      definition: 'SI unit of volumetric flow rate',
+      type: 'Flow',
+    },
+  }
+
+export const qcHistories = [
+  {
+    id: QC_HISTORY_ID,
+    workspaceId: WORKSPACE_ID,
+    sourceDatastreamId: DATASTREAM_ID,
+    managedDatastreamId: MANAGED_DATASTREAM_ID,
+    sourceDatastream: { id: DATASTREAM_ID, name: 'Streamflow Datastream' },
+    managedDatastream: {
+      id: MANAGED_DATASTREAM_ID,
+      name: 'Streamflow Datastream (QC)',
+    },
+  },
+]
+
+export const qcSessions = [
+  {
+    id: 'qcs-e2e-1',
+    historyId: QC_HISTORY_ID,
+    status: 'committed',
+    description: 'First pass',
+    phenomenonTimeStart: FIXTURE_OBS_START_ISO,
+    phenomenonTimeEnd: FIXTURE_OBS_END_ISO,
+    createdAt: FIXTURE_OBS_START_ISO,
+    dependencyIds: [],
   },
 ]
 

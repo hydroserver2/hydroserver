@@ -352,6 +352,7 @@ import type { Datastream, QualityControlSession } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'
 import { formatDateRange } from '@/utils/time'
 import { collectDeletionChain } from '@/utils/sessionGraph'
+import { datastreamSummary } from '@/utils/datastreamSummary'
 
 defineProps<{
   source: Datastream
@@ -431,27 +432,8 @@ function onDeleteSession() {
   if (opt && sessionId) emit('deleteSession', opt, sessionId)
 }
 
-const NUMBER = new Intl.NumberFormat()
-
-// One-line recap so multiple managed datastreams are distinguishable:
-// processing level, observation count, and session summary.
-function summary(opt: ManagedDatastreamOption): string {
-  const parts: string[] = []
-  const level =
-    opt.managed.processingLevel?.definition ||
-    opt.managed.processingLevel?.code ||
-    null
-  if (level) parts.push(`Level: ${level}`)
-  parts.push(`${NUMBER.format(opt.managed.valueCount ?? 0)} obs`)
-  const inProgress = opt.sessions.filter(
-    (s) => s.status === 'in_progress'
-  ).length
-  const sessionText = `${opt.sessions.length} session${
-    opt.sessions.length === 1 ? '' : 's'
-  }${inProgress ? `, ${inProgress} in progress` : ''}`
-  parts.push(sessionText)
-  return parts.join(' · ')
-}
+const summary = (opt: ManagedDatastreamOption) =>
+  datastreamSummary(opt.managed, opt.sessions)
 
 const hasInProgress = (opt: ManagedDatastreamOption) =>
   opt.sessions.some((s) => s.status === 'in_progress')

@@ -98,6 +98,29 @@ The main area to the right of the window is split top/bottom:
 
 Clicking a datastream row shows the full metadata for a datastream. Clicking the plot toggle (check box) in the row plots the datastream. The first datastream selected for plotting becomes the **QC target**. You can change the QC target via the radio button column in the Plotted Datastreams list.
 
+### Datastreams with quality-controlled versions
+
+A row with a number badge next to its check box has that many **managed
+datastreams**: quality-controlled versions derived from it. Managed
+datastreams never get their own row in the table, so the check box on the
+source row opens a chooser instead of plotting straight away.
+
+The chooser lists **Raw data** first, then every managed datastream, each with
+its processing level, observation count, and session count. Tick any
+combination and press **Apply** to plot them together, which is how you compare
+a raw series against the quality-controlled version derived from it.
+
+Clicking the check box again reopens the chooser with the current selection, so
+that is also where you change or clear it. Unticking everything and applying
+unplots every series from that source. The five-series plot cap still applies:
+once it is reached, unticked rows are disabled.
+
+The row's check box reflects the whole group. It is filled when the raw
+datastream is plotted, and shows a partial mark when only managed versions are.
+
+When a managed datastream is the QC target, **Start editing** goes straight
+into its session rather than asking again which version you meant.
+
 ### Edit view
 
 The Edit View opens when you click the pencil icon in the left hand navigation rail, or when you click the **Start

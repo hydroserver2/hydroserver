@@ -308,6 +308,8 @@ on boot.
 | `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
 | `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove; promotes the previous plotted entry to QC if removing the QC target. |
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
+| `sourceGroupIds`                    | action   | `(sourceId: string) => string[]`                  | The source datastream plus every managed (QC) datastream derived from it. |
+| `plotSourceSelection`               | action   | `(sourceId: string, ids: string[]) => Promise<void>` | Apply a whole "what to plot for this source" choice at once: `ids` is the complete set wanted from that source's group. Group members absent from `ids` are unplotted, additions are appended in `ids` order, and the QC target is promoted once against the final set. One rebuild for the whole selection. |
 | `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never promotes to QC target; `refreshGraphSeriesArray` skips its fetch. |
 | `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the QC target alone. |
 | `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |

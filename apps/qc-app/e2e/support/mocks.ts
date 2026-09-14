@@ -24,7 +24,10 @@ import {
   buildObservations,
   datastreams,
   observedProperties,
+  managedDatastream,
   processingLevels,
+  qcHistories,
+  qcSessions,
   resultQualifiers,
   sensors,
   session,
@@ -57,6 +60,12 @@ export interface MockOptions {
    * payload contents without installing a second route handler.
    */
   submissions?: Array<{ mode: string | null; body: any }>
+  /**
+   * Serve the QC history fixture, so `DATASTREAM_ID` has a managed
+   * datastream derived from it. Off by default: most specs want a catalog
+   * where every row plots straight from its check box.
+   */
+  qcHistories?: boolean
   /** Set to false to mark the session as unauthenticated. */
   authenticated?: boolean
 }
@@ -105,6 +114,11 @@ export async function installMocks(
   const observations = options.observations ?? buildObservations()
   const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
+  const withQcHistories = options.qcHistories ?? false
+  // The managed datastream only exists for specs that opted into histories.
+  const catalog = withQcHistories
+    ? [...datastreams, managedDatastream]
+    : datastreams
 
   // Match only real HydroServer API calls by pathname. A bare `**/api/**`
   // glob also catches the dev server's own source modules — the QC app
@@ -194,12 +208,34 @@ export async function installMocks(
       return json(route, { data: workspaces })
     }
 
+    // --- Quality-control histories / sessions ---
+    // Served ahead of the datastream routes: the history paths sit under
+    // the same `/api/data` prefix and would otherwise fall to the
+    // empty-list catch-all.
+    const qcSessionList = path.match(
+      /\/api\/data\/quality-control\/histories\/([^/]+)\/sessions$/
+    )
+    if (qcSessionList && method === 'GET') {
+      const historyId = qcSessionList[1]
+      return json(route, {
+        data: withQcHistories
+          ? qcSessions.filter((s) => s.historyId === historyId)
+          : [],
+      })
+    }
+    if (
+      path.endsWith('/api/data/quality-control/histories') &&
+      method === 'GET'
+    ) {
+      return json(route, { data: withQcHistories ? qcHistories : [] })
+    }
+
     // --- Things / datastreams / processing levels / observed properties ---
     if (path.endsWith('/api/data/things') && method === 'GET') {
       return json(route, { data: things })
     }
     if (path.endsWith('/api/data/datastreams') && method === 'GET') {
-      return json(route, { data: datastreams })
+      return json(route, { data: catalog })
     }
     if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
       return json(route, { data: processingLevels })
@@ -218,7 +254,7 @@ export async function installMocks(
     const dsGet = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
-      const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]
+      const ds = catalog.find((d) => d.id === id) ?? catalog[0]
       return json(route, { data: ds })
     }
 

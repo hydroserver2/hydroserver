@@ -792,3 +792,184 @@ describe('useDataVisStore snapshot series', () => {
     ).toBe(false)
   })
 })
+
+describe('useDataVisStore.sourceGroupIds', () => {
+  it('returns the source plus every managed datastream derived from it', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.qcHistories = [
+      { id: 'h-1', managedDatastreamId: 'mgd-1', sourceDatastreamId: 'src' },
+      { id: 'h-2', managedDatastreamId: 'mgd-2', sourceDatastreamId: 'src' },
+      { id: 'h-3', managedDatastreamId: 'mgd-3', sourceDatastreamId: 'other' },
+    ] as any
+
+    expect(store.sourceGroupIds('src')).toEqual(['src', 'mgd-1', 'mgd-2'])
+    expect(store.sourceGroupIds('lonely')).toEqual(['lonely'])
+  })
+})
+
+describe('useDataVisStore.plotSourceSelection', () => {
+  const withGroup = (store: any) => {
+    store.qcHistories = [
+      { id: 'h-1', managedDatastreamId: 'mgd-1', sourceDatastreamId: 'src' },
+      { id: 'h-2', managedDatastreamId: 'mgd-2', sourceDatastreamId: 'src' },
+    ] as any
+    store.datastreams = [
+      makeDs({ id: 'src', name: 'Raw' }),
+      makeDs({ id: 'mgd-1', name: 'Raw (QC)' }),
+      makeDs({ id: 'mgd-2', name: 'Raw (QC2)' }),
+      makeDs({ id: 'other', name: 'Other' }),
+    ] as any
+  }
+
+  it('plots the chosen series and promotes the first as QC target', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+
+    await store.plotSourceSelection('src', ['src', 'mgd-1'])
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual([
+      'src',
+      'mgd-1',
+    ])
+    expect(store.qcDatastreamId).toBe('src')
+  })
+
+  it('makes a managed datastream the QC target when the raw one is not picked', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+
+    await store.plotSourceSelection('src', ['mgd-2'])
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd-2'])
+    expect(store.qcDatastreamId).toBe('mgd-2')
+  })
+
+  it('adds and removes within the group in a single call', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+    store.plottedDatastreams = [
+      makeDs({ id: 'src', name: 'Raw' }),
+      makeDs({ id: 'mgd-1', name: 'Raw (QC)' }),
+    ] as any
+    store.qcDatastreamId = 'src'
+
+    await store.plotSourceSelection('src', ['mgd-1', 'mgd-2'])
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual([
+      'mgd-1',
+      'mgd-2',
+    ])
+  })
+
+  it('leaves datastreams from other sources untouched', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+    store.plottedDatastreams = [makeDs({ id: 'other', name: 'Other' })] as any
+    store.qcDatastreamId = 'other'
+
+    await store.plotSourceSelection('src', ['mgd-1'])
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual([
+      'other',
+      'mgd-1',
+    ])
+    expect(store.qcDatastreamId).toBe('other')
+  })
+
+  it('promotes a new QC target when the current one is deselected', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+    store.plottedDatastreams = [
+      makeDs({ id: 'other', name: 'Other' }),
+      makeDs({ id: 'src', name: 'Raw' }),
+    ] as any
+    store.qcDatastreamId = 'src'
+
+    await store.plotSourceSelection('src', ['mgd-1'])
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual([
+      'other',
+      'mgd-1',
+    ])
+    expect(store.qcDatastreamId).toBe('other')
+  })
+
+  it('clears the QC target when nothing is left plotted', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+    store.plottedDatastreams = [makeDs({ id: 'mgd-1', name: 'Raw (QC)' })] as any
+    store.qcDatastreamId = 'mgd-1'
+
+    await store.plotSourceSelection('src', [])
+
+    expect(store.plottedDatastreams).toEqual([])
+    expect(store.qcDatastreamId).toBeNull()
+  })
+
+  it('ignores ids that do not belong to the source group', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+
+    await store.plotSourceSelection('src', ['other', 'mgd-1'])
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd-1'])
+  })
+
+  // Looping plot/unplot would rebuild once per change; the batched action
+  // settles the whole selection against one rebuild.
+  it('rebuilds the plot once for the whole selection', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+
+    await store.plotSourceSelection('src', ['src', 'mgd-1', 'mgd-2'])
+
+    expect(mockUpdateOptions).toHaveBeenCalledTimes(1)
+  })
+
+  it('does nothing when the selection already matches', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withGroup(store)
+    store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
+    store.qcDatastreamId = 'src'
+
+    await store.plotSourceSelection('src', ['src'])
+
+    expect(mockUpdateOptions).not.toHaveBeenCalled()
+  })
+})
+
+// Both the source and a managed datastream can be plotted at once now, so
+// leaving the editor must not re-add a source that is already there.
+describe('useDataVisStore.releaseManagedDatastream with the source plotted', () => {
+  it('drops the managed datastream instead of duplicating the source', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.qcHistories = [
+      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' },
+    ] as any
+    store.datastreams = [
+      makeDs({ id: 'src', name: 'Raw' }),
+      makeDs({ id: 'mgd', name: 'Raw (QC)' }),
+    ] as any
+    store.plottedDatastreams = [
+      makeDs({ id: 'src', name: 'Raw' }),
+      makeDs({ id: 'mgd', name: 'Raw (QC)' }),
+    ] as any
+    store.qcDatastreamId = 'mgd'
+
+    await store.releaseManagedDatastream()
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
+    expect(store.qcDatastreamId).toBe('src')
+  })
+})
