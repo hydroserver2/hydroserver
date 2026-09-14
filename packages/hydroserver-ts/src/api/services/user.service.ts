@@ -4,11 +4,11 @@ import type * as Data from '../../generated/data.types'
 import { User, Workspace } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 
-type Permission = Data.components['schemas']['PermissionDetailResponse']
+type Permission = Data.components['schemas']['PermissionResponse']
 type PermissionAction =
-  Data.components['schemas']['PermissionDetailResponse']['action']
+  Data.components['schemas']['PermissionResponse']['action']
 type PermissionResource =
-  Data.components['schemas']['PermissionDetailResponse']['resource']
+  Data.components['schemas']['PermissionResponse']['resource']
 
 /**
  * The real Django origin to use when fetching the server-rendered shell
