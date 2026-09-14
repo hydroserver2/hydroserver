@@ -15,7 +15,7 @@
 
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { serializeHistory, applyHistory } from '@uwrl/qc-utils'
+import { serializeHistory, applyHistory, Snackbar } from '@uwrl/qc-utils'
 import type { Datastream, DatastreamExtended, QualityControlSessionContract } from '@hydroserver/client'
 import type { ObservationRecord, HistoryItem } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -322,13 +322,27 @@ export function useEditSession() {
         })
       },
     })
-    // The push moved the managed datastream's phenomenon times.
-    const refreshed = await hs.value.datastreams.getItem(managed.id, {
-      expand_related: true,
-    })
-    if (refreshed) replaceDatastream(refreshed as Datastream & DatastreamExtended)
     await sessionStore.loadSessions(historyId)
     snapshotSavedEdits()
+    // The push moved the managed datastream's phenomenon times. Refresh last so
+    // a network failure does not abort the commit (session is already locked).
+    try {
+      const refreshed = await hs.value.datastreams.getItem(managed.id, {
+        expand_related: true,
+      })
+      if (!refreshed) {
+        Snackbar.warn(
+          'Session committed, but the datastream details could not be refreshed. Reload to see its updated time range.'
+        )
+      } else {
+        replaceDatastream(refreshed as Datastream & DatastreamExtended)
+      }
+    } catch (error) {
+      console.error('Failed to refresh managed datastream after commit:', error)
+      Snackbar.warn(
+        'Session committed, but the datastream details could not be refreshed. Reload to see its updated time range.'
+      )
+    }
   }
 
   return {

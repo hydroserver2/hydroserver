@@ -29,7 +29,8 @@ vi.mock('@/store/observations', () => ({
 }))
 
 // qc-utils is only used at runtime by the composable (the service layer
-// imports types only), so stub serializeHistory/applyHistory here.
+// imports types only), so stub serializeHistory/applyHistory/Snackbar here.
+const snackbarWarn = vi.fn()
 vi.mock('@uwrl/qc-utils', () => ({
   serializeHistory: vi.fn((record: any, window: any) => ({
     version: '1',
@@ -41,6 +42,7 @@ vi.mock('@uwrl/qc-utils', () => ({
     })),
   })),
   applyHistory: vi.fn(async () => ({ applied: 0, failed: [] })),
+  Snackbar: { warn: snackbarWarn },
 }))
 
 import { useQcSessionStore } from '@/store/qcSession'
@@ -233,6 +235,48 @@ describe('useEditSession', () => {
 
     expect(getItem).toHaveBeenCalledWith('m-1', { expand_related: true })
     expect(replaceDatastream).toHaveBeenCalledWith(refreshed)
+  })
+
+  it('commit keeps the session locked even when the datastream refresh throws', async () => {
+    await seedHistory()
+    getItem.mockImplementation(async (id: string) => {
+      if (id === 'm-1') throw new Error('Network error')
+      return { id: 's-1', name: 'Source' }
+    })
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    await session.commit()
+
+    const store = useQcSessionStore()
+    expect(store.committedSessions.length).toBe(1)
+    expect(store.inProgressSession).toBeNull()
+    expect(replaceDatastream).not.toHaveBeenCalled()
+    expect(snackbarWarn).toHaveBeenCalledWith(
+      'Session committed, but the datastream details could not be refreshed. Reload to see its updated time range.'
+    )
+  })
+
+  it('commit keeps the session locked when the datastream refresh returns null', async () => {
+    await seedHistory()
+    getItem.mockImplementation(async (id: string) => {
+      if (id === 'm-1') return null
+      return { id: 's-1', name: 'Source' }
+    })
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    await session.commit()
+
+    const store = useQcSessionStore()
+    expect(store.committedSessions.length).toBe(1)
+    expect(store.inProgressSession).toBeNull()
+    expect(replaceDatastream).not.toHaveBeenCalled()
+    expect(snackbarWarn).toHaveBeenCalledWith(
+      'Session committed, but the datastream details could not be refreshed. Reload to see its updated time range.'
+    )
   })
 
   it('tracks unsaved edits against the last saved snapshot', async () => {
