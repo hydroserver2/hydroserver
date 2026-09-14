@@ -114,7 +114,9 @@ def test_create_monitoring_site_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "New Monitoring Site"
+    assert set(response.json().keys()) == {"id"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["name"] == "New Monitoring Site"
 
 
 def test_create_monitoring_site_succeeds_with_non_terminating_binary_coordinates(client):
@@ -131,9 +133,10 @@ def test_create_monitoring_site_succeeds_with_non_terminating_binary_coordinates
     )
 
     assert response.status_code == 201
-    assert response.json()["latitude"] == 41.7501
-    assert response.json()["longitude"] == -111.8102
-    assert response.json()["elevation_m"] == 1380.45
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["latitude"] == 41.7501
+    assert detail.json()["data"]["longitude"] == -111.8102
+    assert detail.json()["data"]["elevation_m"] == 1380.45
 
 
 def test_create_monitoring_site_returns_401_when_unauthenticated(client):
@@ -203,7 +206,7 @@ def test_get_monitoring_site_returns_public_monitoring_site_for_anonymous(client
     response = client.get(_detail_url(monitoring_site.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(monitoring_site.id)
+    assert response.json()["data"]["id"] == str(monitoring_site.id)
 
 
 def test_get_monitoring_site_preserves_elevation_m_wire_name(client):
@@ -216,8 +219,8 @@ def test_get_monitoring_site_preserves_elevation_m_wire_name(client):
     response = client.get(_detail_url(monitoring_site.id))
 
     assert response.status_code == 200
-    assert response.json()["elevation_m"] == 1380
-    assert "elevationM" not in response.json()
+    assert response.json()["data"]["elevation_m"] == 1380
+    assert "elevationM" not in response.json()["data"]
 
 
 def test_get_monitoring_site_returns_404_for_private_monitoring_site_when_outsider(client):
@@ -263,8 +266,10 @@ def test_update_monitoring_site_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(monitoring_site.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_monitoring_site_succeeds_with_non_terminating_binary_coordinates(client):
@@ -279,9 +284,11 @@ def test_update_monitoring_site_succeeds_with_non_terminating_binary_coordinates
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["latitude"] == 41.7501
-    assert response.json()["longitude"] == -111.8102
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(monitoring_site.id))
+    assert detail.json()["data"]["latitude"] == 41.7501
+    assert detail.json()["data"]["longitude"] == -111.8102
 
 
 def test_update_monitoring_site_returns_403_for_viewer_collaborator(client):
@@ -342,8 +349,10 @@ def test_update_monitoring_site_tags_adds_new_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"season": "summer", "site": "upstream"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(monitoring_site.id))
+    assert detail.json()["data"]["tags"] == {"season": "summer", "site": "upstream"}
 
 
 def test_update_monitoring_site_tags_overwrites_existing_key(client):
@@ -360,8 +369,10 @@ def test_update_monitoring_site_tags_overwrites_existing_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"season": "winter"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(monitoring_site.id))
+    assert detail.json()["data"]["tags"] == {"season": "winter"}
 
 
 def test_update_monitoring_site_tags_removes_key_when_value_is_null(client):
@@ -378,8 +389,10 @@ def test_update_monitoring_site_tags_removes_key_when_value_is_null(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"site": "upstream"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(monitoring_site.id))
+    assert detail.json()["data"]["tags"] == {"site": "upstream"}
 
 
 def test_update_monitoring_site_tags_ignores_null_for_missing_key(client):
@@ -396,12 +409,14 @@ def test_update_monitoring_site_tags_ignores_null_for_missing_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"season": "summer"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(monitoring_site.id))
+    assert detail.json()["data"]["tags"] == {"season": "summer"}
 
 
 @pytest.mark.parametrize("value", [{"nested": "value"}, ["summer"], 3, True])
-def test_update_monitoring_site_tags_returns_422_for_non_string_value(client, value):
+def test_update_monitoring_site_tags_returns_400_for_non_string_value(client, value):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -413,10 +428,10 @@ def test_update_monitoring_site_tags_returns_422_for_non_string_value(client, va
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_update_monitoring_site_tags_returns_422_for_empty_key(client):
+def test_update_monitoring_site_tags_returns_400_for_empty_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -428,10 +443,10 @@ def test_update_monitoring_site_tags_returns_422_for_empty_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_update_monitoring_site_tags_returns_422_for_empty_value(client):
+def test_update_monitoring_site_tags_returns_400_for_empty_value(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -443,7 +458,7 @@ def test_update_monitoring_site_tags_returns_422_for_empty_value(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 def test_update_monitoring_site_tags_locks_row_for_update(client):
@@ -507,10 +522,11 @@ def test_create_monitoring_site_with_tags_succeeds(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["tags"] == {"season": "summer"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["tags"] == {"season": "summer"}
 
 
-def test_create_monitoring_site_returns_422_for_null_tag_value(client):
+def test_create_monitoring_site_returns_400_for_null_tag_value(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -521,10 +537,10 @@ def test_create_monitoring_site_returns_422_for_null_tag_value(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_monitoring_site_returns_422_for_empty_tag_key(client):
+def test_create_monitoring_site_returns_400_for_empty_tag_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -535,10 +551,10 @@ def test_create_monitoring_site_returns_422_for_empty_tag_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_monitoring_site_returns_422_for_empty_tag_value(client):
+def test_create_monitoring_site_returns_400_for_empty_tag_value(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -549,7 +565,7 @@ def test_create_monitoring_site_returns_422_for_empty_tag_value(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- removed tag sub-resource endpoints ---------------------------------------------
@@ -651,10 +667,12 @@ def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "Site Report"
+    assert set(response.json().keys()) == {"id"}
+    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()
+    assert linked_resources[0]["name"] == "Site Report"
 
 
-def test_add_monitoring_site_linked_resource_returns_422_for_duplicate_name(client):
+def test_add_monitoring_site_linked_resource_returns_400_for_duplicate_name(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -669,10 +687,10 @@ def test_add_monitoring_site_linked_resource_returns_422_for_duplicate_name(clie
         data={"name": "Site Report", "type": "Report", "link": "https://example.com/b.pdf"},
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_add_monitoring_site_linked_resource_returns_422_without_file_or_link(client):
+def test_add_monitoring_site_linked_resource_returns_400_without_file_or_link(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -683,7 +701,7 @@ def test_add_monitoring_site_linked_resource_returns_422_without_file_or_link(cl
         data={"name": "Site Report", "type": "Report"},
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 def test_update_monitoring_site_linked_resource_succeeds_for_name(client):
@@ -703,11 +721,13 @@ def test_update_monitoring_site_linked_resource_succeeds_for_name(client):
         content_type=MULTIPART_CONTENT,
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Report"
+    assert response.status_code == 204
+    assert not response.content
+    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()
+    assert linked_resources[0]["name"] == "Updated Report"
 
 
-def test_update_monitoring_site_linked_resource_returns_422_for_mode_switch(client):
+def test_update_monitoring_site_linked_resource_returns_400_for_mode_switch(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -726,7 +746,7 @@ def test_update_monitoring_site_linked_resource_returns_422_for_mode_switch(clie
         content_type=MULTIPART_CONTENT,
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 def test_remove_monitoring_site_linked_resource_succeeds_for_workspace_owner(client):
@@ -756,3 +776,64 @@ def test_remove_monitoring_site_linked_resource_returns_404_for_missing_resource
     )
 
     assert response.status_code == 404
+
+
+# --- include / properties ---------------------------------------------------------
+
+
+def test_get_monitoring_site_include_sideloads_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(monitoring_site.id), {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["id"] == str(monitoring_site.id)
+    assert {row["id"] for row in body["included"]["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_monitoring_site_without_include_omits_included_bucket(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(monitoring_site.id))
+
+    assert response.status_code == 200
+    assert not response.json().get("included")
+
+
+def test_get_monitoring_sites_include_does_not_scale_queries_with_site_count(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    for _ in range(5):
+        MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(MONITORING_SITES_URL, {"include": "workspace"})
+
+    for _ in range(5):
+        MonitoringSiteFactory(workspace=workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(MONITORING_SITES_URL, {"include": "workspace"})
+
+    assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_get_monitoring_sites_properties_filters_response_fields(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(MONITORING_SITES_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    row = response.json()["data"][0]
+    assert set(row.keys()) == {"id", "name"}

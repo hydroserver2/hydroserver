@@ -1,15 +1,20 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
 
 
 class ProcessingLevelFields(Schema):
@@ -19,15 +24,51 @@ class ProcessingLevelFields(Schema):
     definition: Optional[str] = None
 
 
-_order_by_fields = ("code", "name")
+PROCESSING_LEVEL_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ProcessingLevelIncludeRelation = Literal[*PROCESSING_LEVEL_INCLUDE_RELATIONS.keys()]
 
+_order_by_fields = ("code", "name")
 ProcessingLevelOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
+_property_fields = (
+    "id", "workspaceId", *(to_camel(name) for name in ProcessingLevelFields.model_fields)
+)
+ProcessingLevelPropertyName = Literal[*_property_fields]
 
-class ProcessingLevelQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class ProcessingLevelFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ProcessingLevelPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ProcessingLevelPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ProcessingLevelIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ProcessingLevelIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ProcessingLevelItemQueryParameters(ProcessingLevelFilterFields, BaseQueryParameters):
+    pass
+
+
+class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters):
     order_by: Optional[list[ProcessingLevelOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -44,14 +85,9 @@ class ProcessingLevelQueryParameters(CollectionQueryParameters):
     )
 
 
-class ProcessingLevelSummaryResponse(BaseGetResponse, ProcessingLevelFields):
+class ProcessingLevelResponse(BaseGetResponse, ProcessingLevelFields):
     id: uuid.UUID
     workspace_id: Optional[uuid.UUID]
-
-
-class ProcessingLevelDetailResponse(BaseGetResponse, ProcessingLevelFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
 
 
 class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields):

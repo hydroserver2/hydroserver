@@ -1,40 +1,43 @@
 import uuid
+
 from typing import Optional, Literal, get_args
 from django.db.models.deletion import ProtectedError
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet
-from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
+
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ProcessingLevel
+from interfaces.api.service import APIService
+from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.schemas import (
-    ProcessingLevelSummaryResponse,
-    ProcessingLevelDetailResponse,
+    ProcessingLevelResponse,
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
 )
 from interfaces.api.schemas.sta.processing_level import (
     ProcessingLevelFields,
     ProcessingLevelOrderByFields,
+    PROCESSING_LEVEL_INCLUDE_RELATIONS,
 )
-from interfaces.api.service import APIService
 
 User = get_user_model()
 
 
 class ProcessingLevelAPIService(APIService):
+    INCLUDE_RELATIONS = PROCESSING_LEVEL_INCLUDE_RELATIONS
+
     def get_processing_level_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
     ):
         queryset = ProcessingLevel.objects.filter(pk=uid)
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
 
         queryset = principal.annotate_permissions(queryset)
 
@@ -55,10 +58,6 @@ class ProcessingLevelAPIService(APIService):
 
         return processing_level
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related("workspace")
-
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -66,8 +65,9 @@ class ProcessingLevelAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = ProcessingLevel.objects
 
         for field in [
@@ -87,46 +87,52 @@ class ProcessingLevelAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if requested_includes:
+            select_paths = [
+                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+            ]
+            queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        processing_levels = list(queryset.all())
 
         return {
             "data": [
-                (
-                    ProcessingLevelDetailResponse.model_validate(processing_level)
-                    if expand_related
-                    else ProcessingLevelSummaryResponse.model_validate(processing_level)
-                )
-                for processing_level in queryset.all()
+                ProcessingLevelResponse.model_validate(processing_level)
+                for processing_level in processing_levels
             ],
             "meta": meta,
+            "included": self.resolve_includes(
+                processing_levels, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths = [
+            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
         processing_level = self.get_processing_level_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal, uid=uid, action="view", select_related=select_paths
         )
 
-        return (
-            ProcessingLevelDetailResponse.model_validate(processing_level)
-            if expand_related
-            else ProcessingLevelSummaryResponse.model_validate(processing_level)
-        )
+        return {
+            "data": ProcessingLevelResponse.model_validate(processing_level),
+            "included": self.resolve_includes(
+                [processing_level], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: ProcessingLevelPostBody,
-        expand_related: Optional[bool] = None,
     ):
         workspace, _ = (
             self.get_workspace(principal=principal, workspace_id=data.workspace_id)
@@ -154,16 +160,13 @@ class ProcessingLevelAPIService(APIService):
         except IntegrityError:
             raise ConflictError("The operation could not be completed due to a resource conflict.")
 
-        return self.get(
-            principal=principal, uid=processing_level.id, expand_related=expand_related
-        )
+        return {"id": processing_level.pk}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: ProcessingLevelPatchBody,
-        expand_related: Optional[bool] = None,
     ):
         processing_level = self.get_processing_level_for_action(
             principal=principal, uid=uid, action="edit"
@@ -177,10 +180,6 @@ class ProcessingLevelAPIService(APIService):
 
         processing_level.full_clean()
         processing_level.save()
-
-        return self.get(
-            principal=principal, uid=processing_level.id, expand_related=expand_related
-        )
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         processing_level = self.get_processing_level_for_action(

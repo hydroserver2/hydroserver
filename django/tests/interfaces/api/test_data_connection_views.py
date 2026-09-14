@@ -98,6 +98,42 @@ def test_get_data_connections_returns_401_when_unauthenticated(client):
     assert response.status_code == 401
 
 
+def test_get_data_connections_include_workspace_sideloads_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = _make_data_connection(workspace)
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    row = next(d for d in body["data"] if d["id"] == str(data_connection.id))
+    assert row["workspaceId"] == str(workspace.id)
+    assert {w["id"] for w in body["included"]["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_data_connections_without_include_omits_included_bucket(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_data_connection(workspace)
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL)
+
+    assert response.status_code == 200
+    assert not response.json().get("included")
+
+
+def test_get_data_connections_include_rejects_unknown_relation(client):
+    owner = UserFactory()
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
 # --- create_data_connection ----------------------------------------------------------
 
 
@@ -113,7 +149,7 @@ def test_create_data_connection_succeeds_with_csv_payload_for_workspace_owner(cl
     )
 
     assert response.status_code == 201
-    assert response.json()["payload"]["type"] == "CSV"
+    assert "id" in response.json()
 
 
 def test_create_data_connection_succeeds_with_json_payload_for_workspace_owner(client):
@@ -128,7 +164,7 @@ def test_create_data_connection_succeeds_with_json_payload_for_workspace_owner(c
     )
 
     assert response.status_code == 201
-    assert response.json()["payload"]["type"] == "JSON"
+    assert "id" in response.json()
 
 
 def test_create_data_connection_returns_404_for_nonexistent_workspace(client):
@@ -170,7 +206,7 @@ def test_create_data_connection_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
-def test_create_data_connection_returns_422_when_csv_payload_missing_required_fields(
+def test_create_data_connection_returns_400_when_csv_payload_missing_required_fields(
     client,
 ):
     owner = UserFactory()
@@ -185,10 +221,10 @@ def test_create_data_connection_returns_422_when_csv_payload_missing_required_fi
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_data_connection_returns_422_when_json_payload_missing_jmespath(client):
+def test_create_data_connection_returns_400_when_json_payload_missing_jmespath(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -201,10 +237,10 @@ def test_create_data_connection_returns_422_when_json_payload_missing_jmespath(c
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_data_connection_returns_422_for_invalid_jmespath_expression(client):
+def test_create_data_connection_returns_400_for_invalid_jmespath_expression(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -217,10 +253,10 @@ def test_create_data_connection_returns_422_for_invalid_jmespath_expression(clie
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_data_connection_returns_422_for_unknown_iana_timezone(client):
+def test_create_data_connection_returns_400_for_unknown_iana_timezone(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -233,10 +269,10 @@ def test_create_data_connection_returns_422_for_unknown_iana_timezone(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_data_connection_returns_422_for_malformed_offset_timezone(client):
+def test_create_data_connection_returns_400_for_malformed_offset_timezone(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -249,7 +285,7 @@ def test_create_data_connection_returns_422_for_malformed_offset_timezone(client
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 def test_create_data_connection_with_placeholder_variables_succeeds(client):
@@ -267,12 +303,15 @@ def test_create_data_connection_with_placeholder_variables_succeeds(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["placeholderVariables"] == [
+    created_id = response.json()["id"]
+
+    detail_response = client.get(_detail_url(created_id))
+    assert detail_response.json()["data"]["placeholderVariables"] == [
         {"name": "site_code", "type": "per_task", "timestampFormat": None}
     ]
 
 
-def test_create_data_connection_returns_422_for_timestamp_format_on_disallowed_variable_type(
+def test_create_data_connection_returns_400_for_timestamp_format_on_disallowed_variable_type(
     client,
 ):
     owner = UserFactory()
@@ -294,7 +333,7 @@ def test_create_data_connection_returns_422_for_timestamp_format_on_disallowed_v
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- get_data_connection ----------------------------------------------------------------
@@ -309,7 +348,7 @@ def test_get_data_connection_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(data_connection.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(data_connection.id)
+    assert response.json()["data"]["id"] == str(data_connection.id)
 
 
 def test_get_data_connection_returns_404_for_outsider(client):
@@ -356,8 +395,10 @@ def test_update_data_connection_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(data_connection.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_data_connection_returns_403_for_viewer_collaborator(client):

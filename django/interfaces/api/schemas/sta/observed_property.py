@@ -1,15 +1,20 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
 
 
 class ObservedPropertyFields(Schema):
@@ -20,19 +25,55 @@ class ObservedPropertyFields(Schema):
     code: str = Field(..., max_length=500)
 
 
+OBSERVED_PROPERTY_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ObservedPropertyIncludeRelation = Literal[*OBSERVED_PROPERTY_INCLUDE_RELATIONS.keys()]
+
 _order_by_fields = (
     "name",
     "type",
     "code",
 )
-
 ObservedPropertyOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
+_property_fields = (
+    "id", "workspaceId", *(to_camel(name) for name in ObservedPropertyFields.model_fields)
+)
+ObservedPropertyPropertyName = Literal[*_property_fields]
 
-class ObservedPropertyQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class ObservedPropertyFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ObservedPropertyPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservedPropertyPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ObservedPropertyIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservedPropertyIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ObservedPropertyItemQueryParameters(ObservedPropertyFilterFields, BaseQueryParameters):
+    pass
+
+
+class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQueryParameters):
     order_by: Optional[list[ObservedPropertyOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -50,14 +91,9 @@ class ObservedPropertyQueryParameters(CollectionQueryParameters):
     type: list[str] = Query([], description="Filter observed properties by type")
 
 
-class ObservedPropertySummaryResponse(BaseGetResponse, ObservedPropertyFields):
+class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields):
     id: uuid.UUID
     workspace_id: Optional[uuid.UUID] = None
-
-
-class ObservedPropertyDetailResponse(BaseGetResponse, ObservedPropertyFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
 
 
 class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields):

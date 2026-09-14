@@ -276,6 +276,7 @@ def _load_to_datastream(
         observation_service.bulk_create(
             principal=principal,
             data=ObservationBulkPostBody(
+                datastream_id=output_ds.pk,
                 fields=["phenomenonTime", "result"],
                 data=chunk,
             ),

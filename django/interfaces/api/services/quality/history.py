@@ -1,150 +1,176 @@
 import uuid
-from typing import Literal
 
-from pydantic import Field, ConfigDict, validate_call
-from django.db import transaction
-from django.db.models.query import QuerySet
+from typing import Literal, Optional, get_args
+from django.db import transaction, IntegrityError
 from django.contrib.auth import get_user_model
 
-from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
-from interfaces.api.service import APIService
 from core.sta.models import Datastream
 from processing.quality.models import QCHistory
+from interfaces.api.http.errors import ConflictError, PermissionDeniedError, NotFoundError
+from interfaces.api.service import APIService
+from interfaces.api.schemas.quality.history import (
+    QualityControlHistoryOrderByFields,
+    QualityControlHistoryResponse,
+    QualityControlHistoryPostBody,
+    QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS,
+)
 
 
 User = get_user_model()
 
 
 class QCHistoryAPIService(APIService):
+    INCLUDE_RELATIONS = QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS
 
-    order_by_fields = {
-        "id",
-        "created_at",
-        "managed_datastream_id",
-        "source_datastream_id",
-        "phenomenon_time_start",
-        "phenomenon_time_end",
-    }
-
-    @staticmethod
-    def select_related_fields(queryset: QuerySet, expand_related: bool | None = None) -> QuerySet:
-        if expand_related:
-            return queryset.select_related(
+    def get_history_for_action(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID | QCHistory,
+        action: Literal["view", "edit", "delete"],
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
+    ) -> QCHistory:
+        if isinstance(uid, QCHistory):
+            history = uid
+        else:
+            queryset = QCHistory.objects.filter(pk=uid).select_related(
                 "managed_datastream__monitoring_site__workspace",
-                "managed_datastream__method",
-                "managed_datastream__observed_property",
-                "managed_datastream__unit",
-                "managed_datastream__processing_level",
                 "source_datastream__monitoring_site__workspace",
-                "source_datastream__method",
-                "source_datastream__observed_property",
-                "source_datastream__unit",
-                "source_datastream__processing_level",
-            ).prefetch_related(
-                "managed_datastream__datastream_linked_resources",
-                "source_datastream__datastream_linked_resources",
             )
+            if select_related:
+                queryset = queryset.select_related(*select_related)
+            if prefetch_related:
+                queryset = queryset.prefetch_related(*prefetch_related)
 
-        return queryset.select_related(
+            try:
+                history = queryset.get()
+            except QCHistory.DoesNotExist:
+                raise NotFoundError(f"QC history with ID {uid} does not exist.")
+
+        managed_datastream = principal.annotate_permissions(
+            Datastream.objects.filter(pk=history.managed_datastream_id)
+        ).get()
+
+        if not principal.can_view(managed_datastream):
+            raise NotFoundError(f"QC history with ID {uid} does not exist.")
+
+        if action != "view" and not getattr(principal, f"can_{action}")(managed_datastream):
+            raise PermissionDeniedError(f"You do not have permission to {action} this QC history.")
+
+        return history
+
+    @classmethod
+    def _include_query_hints(
+        cls, requested_includes: set[str]
+    ) -> tuple[list[str], list[str]]:
+        select_paths = [
+            cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
+        prefetch_paths = []
+
+        if "managedDatastream" in requested_includes:
+            prefetch_paths.append("managed_datastream__datastream_linked_resources")
+        if "sourceDatastream" in requested_includes:
+            prefetch_paths.append("source_datastream__datastream_linked_resources")
+
+        return select_paths, prefetch_paths
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        queryset = QCHistory.objects
+
+        for field in ["managed_datastream_id", "source_datastream_id"]:
+            if field in filtering:
+                queryset = self.apply_filters(queryset, field, filtering[field])
+
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset,
+                order_by,
+                list(get_args(QualityControlHistoryOrderByFields)),
+            )
+        else:
+            queryset = queryset.order_by("-id")
+
+        queryset = queryset.select_related(
             "managed_datastream__monitoring_site__workspace",
             "source_datastream__monitoring_site__workspace",
         )
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get(
-        self,
-        history: uuid.UUID | QCHistory,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
-        action: Literal["view", "edit", "delete"] = "view",
-        expand_related: bool | None = None,
-    ) -> QCHistory:
-        """Get a QC history."""
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
 
-        if isinstance(history, uuid.UUID):
-            try:
-                history = self.select_related_fields(
-                    QCHistory.objects, expand_related=expand_related
-                ).get(pk=history)
-            except QCHistory.DoesNotExist:
-                raise NotFoundError(f"QC history with ID {str(history)} does not exist.")
-
-        if principal is not Unset:
-            managed_datastream = principal.annotate_permissions(
-                Datastream.objects.filter(pk=history.managed_datastream_id)
-            ).get()
-
-            if not principal.can_view(managed_datastream):
-                raise NotFoundError(f"QC history with ID {str(history.id)} does not exist.")
-
-            if action != "view" and not getattr(principal, f"can_{action}")(managed_datastream):
-                raise PermissionDeniedError(f"You do not have permission to {action} this QC history.")
-
-        return history
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
-        self,
-        principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] = Field(default_factory=list),
-        expand_related: bool | None = None,
-        managed_datastream_id: list[uuid.UUID] | Unset = Unset,
-        source_datastream_id: list[uuid.UUID] | Unset = Unset,
-    ) -> tuple[int, QuerySet[QCHistory]]:
-        """Return a collection of QC histories."""
-
-        queryset = QCHistory.objects
-
-        if managed_datastream_id is not Unset:
-            queryset = queryset.filter(managed_datastream_id__in=managed_datastream_id)
-
-        if source_datastream_id is not Unset:
-            queryset = queryset.filter(source_datastream_id__in=source_datastream_id)
-
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
-
-        queryset = queryset.order_by(*order_by, "-id")
-        queryset = self.select_related_fields(queryset, expand_related=expand_related)
         queryset = queryset.filter(
             managed_datastream__in=principal.filter_by_permission(Datastream.objects, "can_view")
         ).distinct()
 
-        count = queryset.count()
-        queryset = queryset[offset:offset + limit]
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        histories = list(queryset.all())
 
-        return count, queryset
+        return {
+            "data": [QualityControlHistoryResponse.model_validate(h) for h in histories],
+            "meta": meta,
+            "included": self.resolve_includes(
+                histories, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def get(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+
+        history = self.get_history_for_action(
+            principal=principal,
+            uid=uid,
+            action="view",
+            select_related=select_paths,
+            prefetch_related=prefetch_paths,
+        )
+
+        return {
+            "data": QualityControlHistoryResponse.model_validate(history),
+            "included": self.resolve_includes(
+                [history], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
     @transaction.atomic
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        managed_datastream: uuid.UUID | Datastream,
-        source_datastream: uuid.UUID | Datastream,
-        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
-    ) -> QCHistory:
-        """Create a QC history linking a managed datastream to its source datastream."""
+        data: QualityControlHistoryPostBody,
+    ):
+        try:
+            managed_datastream = Datastream.objects.select_related(
+                "monitoring_site__workspace"
+            ).get(pk=data.managed_datastream_id)
+        except Datastream.DoesNotExist:
+            raise NotFoundError("Managed datastream does not exist.")
 
-        if isinstance(managed_datastream, uuid.UUID):
-            try:
-                managed_datastream = Datastream.objects.select_related(
-                    "monitoring_site__workspace", "processing_level"
-                ).get(pk=managed_datastream)
-            except Datastream.DoesNotExist:
-                raise NotFoundError("Managed datastream does not exist.")
-
-        if isinstance(source_datastream, uuid.UUID):
-            try:
-                source_datastream = Datastream.objects.select_related(
-                    "monitoring_site__workspace", "processing_level"
-                ).get(pk=source_datastream)
-            except Datastream.DoesNotExist:
-                raise NotFoundError("Source datastream does not exist.")
+        try:
+            source_datastream = Datastream.objects.select_related(
+                "monitoring_site__workspace"
+            ).get(pk=data.source_datastream_id)
+        except Datastream.DoesNotExist:
+            raise NotFoundError("Source datastream does not exist.")
 
         if not principal.can_edit(managed_datastream):
             raise PermissionDeniedError(
@@ -152,23 +178,23 @@ class QCHistoryAPIService(APIService):
             )
 
         history = QCHistory(
-            pk=uid,
             managed_datastream=managed_datastream,
             source_datastream=source_datastream,
         )
         history.full_clean()
-        history.save()
 
-        return self.get(history=history.pk, principal=principal, expand_related=True)
+        try:
+            history.save()
+        except IntegrityError:
+            raise ConflictError("The operation could not be completed due to a resource conflict.")
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+        return {"id": history.pk}
+
     @transaction.atomic
     def delete(
         self,
-        history: uuid.UUID | QCHistory,
         principal: User | ServiceAccount | AnonymousPrincipal,
-    ) -> None:
-        """Delete a QC history and all associated sessions."""
-
-        history = self.get(history=history, principal=principal, action="delete")
+        uid: uuid.UUID,
+    ):
+        history = self.get_history_for_action(principal=principal, uid=uid, action="delete")
         history.delete()

@@ -1,12 +1,12 @@
 from interfaces.api.schemas.products.rating_curve import (
-    RatingCurveSummaryResponse, RatingCurveResponse,
+    RatingCurveResponse,
     RatingCurvePostBody, RatingCurvePatchBody,
-    RatingCurveQueryParameters,
+    RatingCurveQueryParameters, RatingCurveItemQueryParameters,
 )
 from interfaces.api.schemas.products.task import (
-    DataProductTaskSummaryResponse,
-    DataProductTaskDetailResponse,
+    DataProductTaskResponse,
     DataProductTaskPostBody,
     DataProductTaskPatchBody,
     DataProductTaskQueryParameters,
+    DataProductTaskItemQueryParameters,
 )

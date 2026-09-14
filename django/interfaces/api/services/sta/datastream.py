@@ -1,13 +1,13 @@
 import uuid
+
 from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet, Min, Max, Count
+from django.db.models import Min, Max, Count
 from django.utils import timezone
 from django.http import StreamingHttpResponse
-from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
-from interfaces.api.service import APIService
+
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import (
@@ -19,6 +19,8 @@ from core.sta.models import (
     SampledMedium,
     LinkedResourceType,
 )
+from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
+from interfaces.api.service import APIService
 from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
@@ -26,9 +28,10 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.sta.datastream import (
     DatastreamOrderByFields,
-    DatastreamSummaryResponse,
-    DatastreamDetailResponse,
+    DatastreamResponse,
+    DATASTREAM_INCLUDE_RELATIONS,
 )
+
 from .monitoring_site import MonitoringSiteAPIService
 
 User = get_user_model()
@@ -37,20 +40,24 @@ monitoring_site_service = MonitoringSiteAPIService()
 
 
 class DatastreamAPIService(APIService):
+    INCLUDE_RELATIONS = DATASTREAM_INCLUDE_RELATIONS
+
     def get_datastream_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
     ):
-        queryset = Datastream.objects.filter(pk=uid)
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
-        else:
-            queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_linked_resources"
-            )
+        queryset = Datastream.objects.filter(pk=uid).select_related(
+            "monitoring_site"
+        ).prefetch_related("datastream_linked_resources")
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -68,16 +75,21 @@ class DatastreamAPIService(APIService):
 
         return datastream
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(
-            "monitoring_site__workspace",
-            "monitoring_site",
-            "method",
-            "observed_property",
-            "unit",
-            "processing_level",
-        ).prefetch_related("datastream_linked_resources")
+    @classmethod
+    def _include_query_hints(
+        cls, requested_includes: set[str]
+    ) -> tuple[list[str], list[str]]:
+        select_paths = [
+            cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
+        prefetch_paths = []
+
+        if "workspace" in requested_includes:
+            select_paths.append("monitoring_site__workspace__owner")
+        if "monitoringSite" in requested_includes:
+            prefetch_paths.append("monitoring_site__monitoring_site_linked_resources")
+
+        return select_paths, prefetch_paths
 
     @staticmethod
     def apply_tag_filter(queryset, tags: list[str]):
@@ -100,8 +112,9 @@ class DatastreamAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = Datastream.objects
 
         for field in [
@@ -155,27 +168,26 @@ class DatastreamAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
-        else:
-            queryset = queryset.select_related("monitoring_site").prefetch_related(
-                "datastream_linked_resources"
-            )
+        queryset = queryset.select_related("monitoring_site").prefetch_related(
+            "datastream_linked_resources"
+        )
+
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        datastreams = list(queryset.all())
 
         return {
-            "data": [
-                (
-                    DatastreamDetailResponse.model_validate(datastream)
-                    if expand_related
-                    else DatastreamSummaryResponse.model_validate(datastream)
-                )
-                for datastream in queryset.all()
-            ],
+            "data": [DatastreamResponse.model_validate(ds) for ds in datastreams],
             "meta": meta,
+            "included": self.resolve_includes(
+                datastreams, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def list_visualization_bootstrap(
@@ -293,26 +305,36 @@ class DatastreamAPIService(APIService):
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+
         datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal,
+            uid=uid,
+            action="view",
+            select_related=select_paths,
+            prefetch_related=prefetch_paths,
         )
 
-        return (
-            DatastreamDetailResponse.model_validate(datastream)
-            if expand_related
-            else DatastreamSummaryResponse.model_validate(datastream)
-        )
+        return {
+            "data": DatastreamResponse.model_validate(datastream),
+            "included": self.resolve_includes(
+                [datastream], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: DatastreamPostBody,
-        expand_related: Optional[bool] = None,
     ):
         monitoring_site = self.handle_http_404_error(
-            monitoring_site_service.get, principal=principal, uid=data.monitoring_site_id
+            monitoring_site_service.get_monitoring_site_for_action,
+            principal=principal,
+            uid=data.monitoring_site_id,
+            action="view",
         )
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=monitoring_site.workspace_id
@@ -332,16 +354,13 @@ class DatastreamAPIService(APIService):
         except IntegrityError:
             raise ConflictError("The operation could not be completed due to a resource conflict.")
 
-        return self.get(
-            principal=principal, uid=datastream.id, expand_related=expand_related
-        )
+        return {"id": datastream.id}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: DatastreamPatchBody,
-        expand_related: Optional[bool] = None,
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
@@ -352,7 +371,10 @@ class DatastreamAPIService(APIService):
 
         if data.monitoring_site_id:
             self.handle_http_404_error(
-                monitoring_site_service.get, principal=principal, uid=data.monitoring_site_id
+                monitoring_site_service.get_monitoring_site_for_action,
+                principal=principal,
+                uid=data.monitoring_site_id,
+                action="view",
             )
 
         if (tags_payload := datastream_data.pop("tags", None)) is not None:
@@ -366,13 +388,9 @@ class DatastreamAPIService(APIService):
         datastream.full_clean()
         datastream.save()
 
-        return self.get(
-            principal=principal, uid=datastream.id, expand_related=expand_related
-        )
-
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         datastream = self.get_datastream_for_action(
-            principal=principal, uid=uid, action="delete", expand_related=True
+            principal=principal, uid=uid, action="delete"
         )
         datastream.delete()
 

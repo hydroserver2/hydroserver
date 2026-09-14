@@ -1,17 +1,20 @@
 import uuid
-from typing import Optional, Literal
-from collections import defaultdict
 
-from ninja import Field, Query
+from typing import Optional, Literal, Annotated
+from pydantic import AliasPath, AliasChoices, BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
+from ninja import Query, Field, Schema
 
 from core.types import Unset
 from interfaces.api.schemas import (
-    OrderByField,
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
-    MonitoringSiteSummaryResponse,
+    MonitoringSiteResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -19,24 +22,77 @@ from interfaces.api.schemas.orchestration.schedule import (
     SchedulePatchBody,
     resolve_schedule,
 )
-from interfaces.api.schemas.orchestration.run import TaskRunResponse
-from interfaces.api.schemas.monitoring.rule import MonitoredDatastreamSummaryResponse, MonitoredDatastreamResponse
+from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
 
 
-class MonitoringTaskOrderBy(OrderByField):
-    id = ("id", "id")
-    name = ("name", "name")
-    monitoring_site_id = ("monitoringSiteId", "monitoring_site_id")
-    monitoring_site_name = ("monitoringSiteName", "monitoring_site__name")
-    workspace_id = ("workspaceId", "monitoring_site__workspace_id")
-    workspace_name = ("workspaceName", "monitoring_site__workspace__name")
-    latest_run_status = ("latestRunStatus", "latest_run_status")
-    latest_run_started_at = ("latestRunStartedAt", "latest_run_started_at")
-    latest_run_finished_at = ("latestRunFinishedAt", "latest_run_finished_at")
+class MonitoringTaskFields(Schema):
+    name: str
+    description: Optional[str] = None
 
 
-class MonitoringTaskQueryParameters(CollectionQueryParameters):
-    order_by: list[MonitoringTaskOrderBy] = Query(
+MONITORING_TASK_INCLUDE_RELATIONS = {
+    "monitoringSite": {
+        "path": "monitoring_site",
+        "bucket": "monitoringSites",
+        "response_schema": MonitoringSiteResponse,
+    },
+}
+MonitoringTaskIncludeRelation = Literal[*MONITORING_TASK_INCLUDE_RELATIONS.keys()]
+
+_order_by_fields = (
+    "id",
+    "name",
+    "monitoringSiteId",
+    "monitoringSiteName",
+    "workspaceId",
+    "workspaceName",
+    "latestRunStatus",
+    "latestRunStartedAt",
+    "latestRunFinishedAt",
+)
+MonitoringTaskOrderByFields = Literal[
+    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+]
+
+_property_fields = (
+    "id",
+    "workspaceId",
+    "monitoringSiteId",
+    "schedule",
+    "latestRun",
+    "ruleTypeCounts",
+    "recipients",
+    *(to_camel(name) for name in MonitoringTaskFields.model_fields),
+)
+MonitoringTaskPropertyName = Literal[*_property_fields]
+
+
+class MonitoringTaskFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[MonitoringTaskPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MonitoringTaskPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[MonitoringTaskIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MonitoringTaskIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class MonitoringTaskItemQueryParameters(MonitoringTaskFilterFields, BaseQueryParameters):
+    pass
+
+
+class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryParameters):
+    order_by: Optional[list[MonitoringTaskOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
     monitoring_site: list[uuid.UUID] = Query(
@@ -54,40 +110,18 @@ class MonitoringTaskQueryParameters(CollectionQueryParameters):
     rule_type: list[str] = Query(
         [], description="Filter monitoring tasks by rule type."
     )
-    expand_related: Optional[bool] = None
 
 
-def _resolve_latest_run(obj):
-    if not hasattr(obj, "latest_run_id"):
-        return getattr(obj, "latest_run", None)
-    if not getattr(obj, "latest_run_id", None):
-        return None
-    return {
-        "id": obj.latest_run_id,
-        "status": obj.latest_run_status,
-        "started_at": obj.latest_run_started_at,
-        "finished_at": obj.latest_run_finished_at,
-        "message": obj.latest_run_message,
-        "result": obj.latest_run_result,
-    }
-
-
-class MonitoringTaskSummaryResponse(BaseGetResponse):
+class MonitoringTaskResponse(BaseGetResponse, MonitoringTaskFields):
     id: uuid.UUID
-    name: str
-    description: Optional[str] = None
+    workspace_id: uuid.UUID = Field(
+        ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
+    )
     monitoring_site_id: uuid.UUID
-    workspace_id: uuid.UUID
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
-    monitored_datastreams: list[MonitoredDatastreamSummaryResponse]
-    recipients: list[str]
-
-    @staticmethod
-    def resolve_workspace_id(obj):
-        if not hasattr(obj, "monitoring_site") or not hasattr(obj.monitoring_site, "workspace_id"):
-            return getattr(obj, "workspace_id", None)
-        return obj.monitoring_site.workspace_id
+    rule_type_counts: dict[str, int] = {}
+    recipients: list[str] = []
 
     @staticmethod
     def resolve_schedule(obj):
@@ -95,19 +129,7 @@ class MonitoringTaskSummaryResponse(BaseGetResponse):
 
     @staticmethod
     def resolve_latest_run(obj):
-        return _resolve_latest_run(obj)
-
-    @staticmethod
-    def resolve_monitored_datastreams(obj):
-        if not hasattr(obj, "rules"):
-            return getattr(obj, "monitored_datastreams", [])
-        groups = defaultdict(list)
-        for rule in obj.rules.all():
-            groups[rule.datastream_id].append(rule)
-        return [
-            {"datastream_id": datastream_id, "rules": rules}
-            for datastream_id, rules in groups.items()
-        ]
+        return resolve_latest_run(obj)
 
     @staticmethod
     def resolve_recipients(obj):
@@ -116,54 +138,13 @@ class MonitoringTaskSummaryResponse(BaseGetResponse):
         return [r.email for r in obj.recipients.all()]
 
 
-class MonitoringTaskDetailResponse(BaseGetResponse):
-    id: uuid.UUID
-    name: str
-    description: Optional[str] = None
-    monitoring_site: MonitoringSiteSummaryResponse
-    schedule: ScheduleResponse | None = None
-    latest_run: TaskRunResponse | None = None
-    monitored_datastreams: list[MonitoredDatastreamResponse]
-    recipients: list[str]
-
-    @staticmethod
-    def resolve_schedule(obj):
-        return resolve_schedule(obj)
-
-    @staticmethod
-    def resolve_latest_run(obj):
-        return _resolve_latest_run(obj)
-
-    @staticmethod
-    def resolve_monitored_datastreams(obj):
-        if not hasattr(obj, "rules"):
-            return getattr(obj, "monitored_datastreams", [])
-        groups = defaultdict(list)
-        for rule in obj.rules.all():
-            groups[rule.datastream_id].append(rule)
-        return [
-            {"datastream": rules[0].datastream, "rules": rules}
-            for rules in groups.values()
-        ]
-
-    @staticmethod
-    def resolve_recipients(obj):
-        if not hasattr(obj.recipients, "all"):
-            return obj.recipients
-        return [r.email for r in obj.recipients.all()]
-
-
-class MonitoringTaskPostBody(BasePostBody):
+class MonitoringTaskPostBody(BasePostBody, MonitoringTaskFields):
     uid: uuid.UUID | Unset = Field(Unset, alias="id")
-    name: str
-    description: Optional[str] = None
     monitoring_site_id: uuid.UUID
     schedule: SchedulePostBody | None = None
     recipients: list[str] = []
 
 
-class MonitoringTaskPatchBody(BasePatchBody):
-    name: str
-    description: Optional[str] = None
+class MonitoringTaskPatchBody(BasePatchBody, MonitoringTaskFields):
     schedule: SchedulePatchBody | None = None
     recipients: list[str] = []

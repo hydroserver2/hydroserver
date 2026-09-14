@@ -1,16 +1,19 @@
 import uuid
+
 from ninja import Router, Path, Query
 from django.db import transaction
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.api.services.iam import CollaboratorAPIService
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
-    CollaboratorDetailResponse,
+    CollaboratorResponse,
     CollaboratorQueryParameters,
     CollaboratorPostBody,
     CollaboratorDeleteBody,
     PaginatedResponse,
+    CollaboratorCreatedResponse,
 )
-from interfaces.api.services.iam import CollaboratorAPIService
 
 collaborator_router = Router(tags=["Collaborators"])
 collaborator_service = CollaboratorAPIService()
@@ -20,7 +23,7 @@ collaborator_service = CollaboratorAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: PaginatedResponse[CollaboratorDetailResponse],
+        200: PaginatedResponse[CollaboratorResponse],
         401: str,
         403: str,
     },
@@ -41,6 +44,7 @@ def get_collaborators(
         offset=query.offset,
         limit=query.limit,
         filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
 
 
@@ -48,10 +52,10 @@ def get_collaborators(
     "",
     auth=[session_auth, oidc_auth, basic_auth],
     response={
-        201: CollaboratorDetailResponse,
+        201: CollaboratorCreatedResponse,
         401: str,
         403: str,
-        422: str,
+        400: str,
     },
     by_alias=True,
 )
@@ -76,10 +80,10 @@ def add_collaborator(
     "",
     auth=[session_auth, oidc_auth, basic_auth],
     response={
-        200: CollaboratorDetailResponse,
+        204: None,
         401: str,
         403: str,
-        422: str,
+        400: str,
     },
     by_alias=True,
 )
@@ -93,11 +97,13 @@ def edit_collaborator_role(
     Edit a collaborator's role in a workspace.
     """
 
-    return 200, collaborator_service.update(
+    collaborator_service.update(
         principal=request.principal,
         workspace_id=workspace_id,
         data=data,
     )
+
+    return 204, None
 
 
 @collaborator_router.delete(
@@ -107,7 +113,7 @@ def edit_collaborator_role(
         204: None,
         401: str,
         403: str,
-        422: str,
+        400: str,
     },
     by_alias=True,
 )

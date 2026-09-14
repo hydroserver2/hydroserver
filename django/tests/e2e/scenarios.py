@@ -37,6 +37,14 @@ from tests.processing.etl.factories import (
     EtlTaskFactory,
     PayloadFactory,
 )
+from tests.processing.products.factories import (
+    DataProductTaskFactory,
+    DataProductTransformationFactory,
+)
+from tests.processing.monitoring.factories import (
+    MonitoringTaskFactory,
+    MonitoringRuleFactory,
+)
 
 
 E2E_PASSWORD = "HydroServer123!"
@@ -447,6 +455,44 @@ def create_scenario(scenario_key):
         target_datastream=private_workspace_datastream,
     )
 
+    aggregation_output_datastream = _datastream(
+        private_monitoring_site,
+        marker,
+        name="Private Aggregation Output",
+        **private_metadata,
+    )
+    aggregation_task = DataProductTaskFactory(
+        monitoring_site=private_monitoring_site,
+        name=_name("Test Aggregation Task", marker),
+    )
+    DataProductTransformationFactory(
+        task=aggregation_task,
+        output_datastream=aggregation_output_datastream,
+        transformation_type="aggregation",
+        formula=None,
+        aggregation_method="mean",
+        output_interval_units="hours",
+        output_interval=1,
+    )
+
+    monitoring_rule_datastream = _datastream(
+        private_monitoring_site,
+        marker,
+        name="Private Monitoring Rule Datastream",
+        **private_metadata,
+    )
+    monitoring_task = MonitoringTaskFactory(
+        monitoring_site=private_monitoring_site,
+        name=_name("Test Quality Task", marker),
+    )
+    MonitoringRuleFactory(
+        task=monitoring_task,
+        datastream=monitoring_rule_datastream,
+        rule_type="missing_data",
+        window_interval=1,
+        window_interval_units="days",
+    )
+
     def user_data(user):
         return {"email": user.email, "password": E2E_PASSWORD}
 
@@ -545,6 +591,8 @@ def create_scenario(scenario_key):
                 "systemName": "Test Streaming Data Loader",
                 "dataConnectionName": data_connection.name,
                 "taskName": etl_task.name,
+                "aggregationTaskName": aggregation_task.name,
+                "monitoringTaskName": monitoring_task.name,
             },
         },
     }

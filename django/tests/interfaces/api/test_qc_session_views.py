@@ -106,7 +106,7 @@ def test_create_qc_session_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["status"] == "in_progress"
+    assert "id" in response.json()
 
 
 def test_create_qc_session_returns_401_when_unauthenticated(client):
@@ -137,7 +137,7 @@ def test_create_qc_session_returns_403_without_edit_permission(client):
     assert response.status_code == 403
 
 
-def test_create_qc_session_returns_422_when_end_before_start(client):
+def test_create_qc_session_returns_400_when_end_before_start(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -152,10 +152,10 @@ def test_create_qc_session_returns_422_when_end_before_start(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_qc_session_returns_422_when_in_progress_session_already_exists(client):
+def test_create_qc_session_returns_400_when_in_progress_session_already_exists(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -168,7 +168,7 @@ def test_create_qc_session_returns_422_when_in_progress_session_already_exists(c
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- get_qc_session --------------------------------------------------------------------
@@ -184,7 +184,7 @@ def test_get_qc_session_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(history.id, session.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(session.id)
+    assert response.json()["data"]["id"] == str(session.id)
 
 
 def test_get_qc_session_returns_404_for_outsider(client):
@@ -228,8 +228,9 @@ def test_update_qc_session_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["description"] == "Updated description"
+    assert response.status_code == 204
+    session.refresh_from_db()
+    assert session.description == "Updated description"
 
 
 def test_update_qc_session_returns_403_for_viewer_collaborator(client):
@@ -248,7 +249,7 @@ def test_update_qc_session_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-def test_update_qc_session_returns_422_for_committed_session(client):
+def test_update_qc_session_returns_400_for_committed_session(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -261,7 +262,7 @@ def test_update_qc_session_returns_422_for_committed_session(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- delete_qc_session --------------------------------------------------------------------
@@ -316,8 +317,10 @@ def test_commit_qc_session_succeeds_for_workspace_owner(client):
 
     response = client.post(f"{_detail_url(history.id, session.id)}/commit")
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "committed"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(history.id, session.id))
+    assert detail.json()["data"]["status"] == "committed"
 
 
 def test_commit_qc_session_returns_403_for_viewer_collaborator(client):
@@ -332,7 +335,7 @@ def test_commit_qc_session_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-def test_commit_qc_session_returns_422_when_already_committed(client):
+def test_commit_qc_session_returns_400_when_already_committed(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -341,4 +344,4 @@ def test_commit_qc_session_returns_422_when_already_committed(client):
 
     response = client.post(f"{_detail_url(history.id, session.id)}/commit")
 
-    assert response.status_code == 422
+    assert response.status_code == 400

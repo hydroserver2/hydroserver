@@ -1,20 +1,17 @@
 import uuid
-from typing import Optional
 
 from ninja import Router, Path, Query
 
-from core.types import Unset
-from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.etl.task import EtlTaskAPIService
 from processing.etl.tasks import run_etl_task
-from interfaces.api.schemas import PaginatedResponse
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.etl.task import (
     EtlTaskQueryParameters,
-    EtlTaskSummaryResponse,
-    EtlTaskDetailResponse,
+    EtlTaskItemQueryParameters,
+    EtlTaskResponse,
     EtlTaskPostBody,
     EtlTaskPatchBody,
 )
@@ -28,7 +25,7 @@ etl_task_service = EtlTaskAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: PaginatedResponse[EtlTaskSummaryResponse] | PaginatedResponse[EtlTaskDetailResponse],
+        200: PaginatedResponse[EtlTaskResponse],
         401: str,
     },
     by_alias=True,
@@ -41,49 +38,25 @@ def get_etl_tasks(
     Get ETL Tasks accessible to the authenticated user.
     """
 
-    count, etl_tasks = etl_task_service.get_collection(
+    return 200, etl_task_service.list(
         principal=request.principal,
-        order_by=[f.orm_field for f in query.order_by],
-        **query.model_dump(exclude_unset=True, exclude={
-            "order_by", "monitoring_site_id", "workspace_id", "data_connection_id",
-            "latest_run_started_at_min", "latest_run_started_at_max",
-            "latest_run_finished_at_min", "latest_run_finished_at_max",
-        }),
-        **({"monitoring_site": query.monitoring_site_id} if "monitoring_site_id" in query.model_fields_set else {}),
-        **({"workspace": query.workspace_id} if "workspace_id" in query.model_fields_set else {}),
-        **({"data_connection": query.data_connection_id}
-           if "data_connection_id" in query.model_fields_set else {}),
-        **({"latest_run_started_at_min": query.latest_run_started_at_min}
-           if query.latest_run_started_at_min is not None else {}),
-        **({"latest_run_started_at_max": query.latest_run_started_at_max}
-           if query.latest_run_started_at_max is not None else {}),
-        **({"latest_run_finished_at_min": query.latest_run_finished_at_min}
-           if query.latest_run_finished_at_min is not None else {}),
-        **({"latest_run_finished_at_max": query.latest_run_finished_at_max}
-           if query.latest_run_finished_at_max is not None else {}),
-    )
-
-    schema = EtlTaskDetailResponse if query.expand_related else EtlTaskSummaryResponse
-
-    meta = build_pagination_meta(
-        count=count,
         offset=query.offset,
         limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
-
-    return 200, {"data": [schema.model_validate(task) for task in etl_tasks], "meta": meta}
 
 
 @etl_task_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: EtlTaskSummaryResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         409: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -95,25 +68,14 @@ def create_etl_task(
     Create a new ETL Task.
     """
 
-    etl_task = etl_task_service.create(
-        principal=request.principal,
-        data_connection=data.data_connection_id,
-        mappings=[
-            {"source_identifier": m.source_identifier, "target_datastream": m.target_datastream_id}
-            for m in data.mappings
-        ],
-        **data.model_dump(exclude_unset=True, exclude={"data_connection_id", "schedule", "mappings"}),
-        **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
-    )
-
-    return 201, etl_task
+    return 201, etl_task_service.create(principal=request.principal, data=data)
 
 
 @etl_task_router.get(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: EtlTaskSummaryResponse | EtlTaskDetailResponse,
+        200: ItemResponse[EtlTaskResponse],
         401: str,
         403: str,
         404: str,
@@ -123,33 +85,26 @@ def create_etl_task(
 def get_etl_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[EtlTaskItemQueryParameters],
 ):
     """
     Get an ETL Task.
     """
 
-    etl_task = etl_task_service.get(
-        task=task_id,
-        principal=request.principal,
-        expand_related=expand_related,
+    return 200, etl_task_service.get_item(
+        principal=request.principal, uid=task_id, include=query.include
     )
-
-    schema = EtlTaskDetailResponse if expand_related else EtlTaskSummaryResponse
-    
-    return 200, schema.model_validate(etl_task)
 
 
 @etl_task_router.patch(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: EtlTaskSummaryResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -162,25 +117,9 @@ def update_etl_task(
     Update an ETL Task.
     """
 
-    etl_task = etl_task_service.update(
-        task=task_id,
-        principal=request.principal,
-        mappings=(
-            [{"source_identifier": m.source_identifier, "target_datastream": m.target_datastream_id}
-             for m in data.mappings]
-            if "mappings" in data.model_fields_set else Unset
-        ),
-        **data.model_dump(exclude_unset=True, exclude={"schedule", "mappings"}),
-        **(
-            data.schedule.model_dump(exclude_unset=True)
-            if "schedule" in data.model_fields_set and data.schedule
-            else {"crontab": None, "interval": None}
-            if "schedule" in data.model_fields_set
-            else {}
-        )
-    )
+    etl_task_service.update(principal=request.principal, uid=task_id, data=data)
 
-    return 200, etl_task
+    return 204, None
 
 
 @etl_task_router.delete(
@@ -229,10 +168,8 @@ def trigger_etl_task(
     Trigger an immediate run of an ETL Task on a Celery worker.
     """
 
-    etl_task = etl_task_service.get(
-        task=task_id,
-        principal=request.principal,
-        action="edit"
+    etl_task = etl_task_service.get_task_for_action(
+        principal=request.principal, uid=task_id, action="edit"
     )
 
     run = TaskRun.objects.create(task=etl_task, status="PENDING")
@@ -264,11 +201,11 @@ def get_etl_task_runs(
     count, runs = etl_task_service.get_run_collection(
         task=task_id,
         principal=request.principal,
-        order_by=[f.orm_field for f in query.order_by],
+        order_by=query.order_by,
         **query.model_dump(exclude_unset=True, exclude={"order_by"}),
     )
 
-    meta = build_pagination_meta(
+    meta = etl_task_service.build_pagination_meta(
         count=count,
         offset=query.offset,
         limit=query.limit,

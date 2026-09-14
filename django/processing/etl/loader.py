@@ -122,6 +122,7 @@ class HydroServerInternalLoader(Loader):
                     observation_service.bulk_delete(
                         principal=task.workspace.owner,
                         data=ObservationBulkDeleteBody(
+                            datastream_id=datastream.pk,
                             phenomenon_time_start=datastream_df["timestamp"].min(),
                             phenomenon_time_end=datastream_df["timestamp"].max(),
                         ),
@@ -148,6 +149,7 @@ class HydroServerInternalLoader(Loader):
                         observation_service.bulk_create(
                             principal=task.workspace.owner,
                             data=ObservationBulkPostBody(
+                                datastream_id=datastream.pk,
                                 fields=["phenomenonTime", "result"],
                                 data=chunk.values.tolist(),
                             ),

@@ -1,3 +1,3 @@
 from .rating_curve import RatingCurveAPIService
 from .task import DataProductTaskAPIService
-from .transformation import DataProductTransformationAPIService, TransformationInput
+from .transformation import DataProductTransformationAPIService

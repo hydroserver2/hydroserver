@@ -1,13 +1,15 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import ObservationAPIService
 from interfaces.api.schemas import (
-    ObservationSummaryResponse,
-    ObservationDetailResponse,
+    ObservationResponse,
+    ObservationItemQueryParameters,
     ObservationRowResponse,
     ObservationColumnarResponse,
     ObservationQueryParameters,
@@ -17,8 +19,9 @@ from interfaces.api.schemas import (
     ObservationBulkPostQueryParameters,
     ObservationBulkDeleteBody,
     PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from interfaces.api.services.sta import ObservationAPIService
 
 observation_router = Router(tags=["Observations"])
 observation_service = ObservationAPIService()
@@ -28,8 +31,7 @@ observation_service = ObservationAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: PaginatedResponse[ObservationSummaryResponse]
-        | PaginatedResponse[ObservationDetailResponse]
+        200: PaginatedResponse[ObservationResponse]
         | ObservationRowResponse
         | ObservationColumnarResponse,
         400: str,
@@ -55,7 +57,7 @@ def get_observations(
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         response_format=query.response_format,
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -63,11 +65,10 @@ def get_observations(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: ObservationSummaryResponse | ObservationDetailResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -75,7 +76,6 @@ def get_observations(
 def create_observation(
     request: HydroServerHttpRequest,
     data: ObservationPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new Observation.
@@ -85,7 +85,6 @@ def create_observation(
         principal=request.principal,
         datastream_id=data.datastream_id,
         data=data,
-        expand_related=expand_related,
     )
 
 
@@ -135,26 +134,25 @@ def delete_observations(
     "/{observation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: ObservationSummaryResponse | ObservationDetailResponse,
+        200: ItemResponse[ObservationResponse],
         401: str,
         403: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_observation(
     request: HydroServerHttpRequest,
     observation_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[ObservationItemQueryParameters],
 ):
     """
     Get an Observation.
     """
 
-    return 200, observation_service.get(
+    return 200, observation_service.get_item(
         principal=request.principal,
         uid=observation_id,
-        expand_related=expand_related,
+        include=query.include,
     )
 
 

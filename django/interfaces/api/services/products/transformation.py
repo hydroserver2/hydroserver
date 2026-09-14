@@ -1,277 +1,245 @@
 import uuid
-from typing import Union, Literal
 
-from pydantic import BaseModel, Field, ConfigDict, validate_call
-from django.db import transaction
-from django.db.models.query import QuerySet
+from typing import Literal, Optional, get_args
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
-from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
+from core.types import Unset
+from processing.products.models import DataProductTask, DataProductTransformation, DataProductTransformationInput
+from interfaces.api.http.errors import BadRequestError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
-from core.sta.models import Datastream
-from processing.products.models import (
-    DataProductTask, DataProductTransformation, DataProductTransformationInput, RatingCurve
+from interfaces.api.schemas.products.transformation import (
+    DataProductTransformationFields,
+    DataProductTransformationOrderByFields,
+    DataProductTransformationPatchBody,
+    DataProductTransformationPostBody,
+    DataProductTransformationResponse,
+    TransformationInputPostBody,
+    DATA_PRODUCT_TRANSFORMATION_INCLUDE_RELATIONS,
 )
-
 
 User = get_user_model()
 
-TransformationType = Literal["rating_curve", "derivation", "aggregation"]
-AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
-IntervalUnits = Literal["minutes", "hours", "days", "weeks", "months"]
-
-
-class TransformationInput(BaseModel):
-    datastream: Union[uuid.UUID, Datastream]
-    variable_name: str | None = None
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
 
 class DataProductTransformationAPIService(APIService):
+    INCLUDE_RELATIONS = DATA_PRODUCT_TRANSFORMATION_INCLUDE_RELATIONS
 
-    order_by_fields = {"id", "transformation_type", "output_datastream_id"}
+    @staticmethod
+    def get_task_for_action(
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        task_id: uuid.UUID,
+        action: Literal["view", "edit", "delete"],
+    ) -> DataProductTask:
+        try:
+            task = DataProductTask.objects.select_related(
+                "monitoring_site__workspace"
+            ).get(pk=task_id)
+        except DataProductTask.DoesNotExist:
+            raise NotFoundError(f"Task with ID {task_id} does not exist.")
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+        if not principal.can_view(task):
+            raise NotFoundError(f"Task with ID {task_id} does not exist.")
+
+        if action != "view" and not getattr(principal, f"can_{action}")(task):
+            raise PermissionDeniedError(
+                f"You do not have permission to {action} transformations on this task."
+            )
+
+        return task
+
+    @staticmethod
+    def _include_query_hints(requested_includes: set[str]) -> tuple[list[str], list[str]]:
+        select_paths = []
+        prefetch_paths = []
+
+        if "outputDatastream" in requested_includes:
+            select_paths += ["output_datastream", "output_datastream__monitoring_site"]
+            prefetch_paths.append("output_datastream__datastream_linked_resources")
+        if "ratingCurve" in requested_includes:
+            select_paths.append("rating_curve")
+            prefetch_paths.append("rating_curve__points")
+
+        return select_paths, prefetch_paths
+
+    def get_transformation_for_action(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        task_id: uuid.UUID,
+        uid: uuid.UUID,
+        action: Literal["view", "edit", "delete"],
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
+    ) -> DataProductTransformation:
+        task = self.get_task_for_action(principal, task_id, action)
+        queryset = DataProductTransformation.objects.filter(task=task, pk=uid)
+
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
+        try:
+            return queryset.get()
+        except DataProductTransformation.DoesNotExist:
+            raise NotFoundError(f"DataProductTransformation with ID {uid} does not exist.")
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        task_id: uuid.UUID,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        task = self.get_task_for_action(principal, task_id, "view")
+        queryset = DataProductTransformation.objects.filter(task=task)
+
+        for field in [
+            "transformation_type",
+            "output_datastream_id",
+            "input_datastreams__datastream_id",
+        ]:
+            if field in filtering:
+                queryset = self.apply_filters(queryset, field, filtering[field])
+
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset, order_by, list(get_args(DataProductTransformationOrderByFields))
+            )
+        else:
+            queryset = queryset.order_by("id")
+
+        queryset = queryset.prefetch_related("input_datastreams")
+
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
+
+        queryset = queryset.distinct()
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        transformations = list(queryset.all())
+
+        return {
+            "data": [
+                DataProductTransformationResponse.model_validate(t) for t in transformations
+            ],
+            "meta": meta,
+            "included": self.resolve_includes(
+                transformations, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
     def get(
         self,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
-        action: Literal["view", "edit", "delete"],
-        task: Union[uuid.UUID, DataProductTask],
-        transformation: Union[uuid.UUID, DataProductTransformation],
-    ) -> DataProductTransformation:
-        """Get a data product transformation."""
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        task_id: uuid.UUID,
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths, prefetch_paths = self._include_query_hints(requested_includes)
 
-        if isinstance(transformation, uuid.UUID):
-            try:
-                transformation = DataProductTransformation.objects.select_related(
-                    "task__monitoring_site__workspace",
-                    "output_datastream",
-                    "rating_curve",
-                ).prefetch_related(
-                    "input_datastreams__datastream",
-                    "rating_curve__points",
-                ).get(pk=transformation, task=task)
-            except DataProductTransformation.DoesNotExist:
-                raise NotFoundError(
-                    f"DataProductTransformation with ID {str(transformation)} does not exist."
-                )
-
-        if principal is not Unset:
-            task_obj = principal.annotate_permissions(
-                DataProductTask.objects.filter(pk=transformation.task_id)
-            ).get()
-
-            if not principal.can_view(task_obj):
-                raise NotFoundError(
-                    f"DataProductTransformation with ID {str(transformation.id)} does not exist."
-                )
-
-            if action != "view" and not getattr(principal, f"can_{action}")(task_obj):
-                raise PermissionDeniedError(
-                    f"You do not have permission to {action} this transformation."
-                )
-
-        return transformation
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
-        self,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
-        task: Union[uuid.UUID, DataProductTask],
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] = Field(default_factory=list),
-        transformation_type: list[str] | Unset = Unset,
-        input_datastream: list[uuid.UUID] | Unset = Unset,
-        output_datastream: list[uuid.UUID] | Unset = Unset,
-    ) -> tuple[int, QuerySet[DataProductTransformation]]:
-        """Return a collection of transformations of a task."""
-
-        if isinstance(task, uuid.UUID):
-            try:
-                task = DataProductTask.objects.select_related("monitoring_site__workspace").get(pk=task)
-            except DataProductTask.DoesNotExist:
-                raise NotFoundError(f"Task with ID {str(task)} does not exist.")
-
-        if principal is not Unset:
-            if not principal.can_view(task):
-                raise NotFoundError(f"Task with ID {str(task.id)} does not exist.")
-
-        queryset = DataProductTransformation.objects.filter(task=task).select_related(
-            "task__monitoring_site__workspace",
-            "output_datastream",
-            "rating_curve",
-        ).prefetch_related(
-            "input_datastreams__datastream",
-            "rating_curve__points",
+        transformation = self.get_transformation_for_action(
+            principal=principal,
+            task_id=task_id,
+            uid=uid,
+            action="view",
+            select_related=select_paths,
+            prefetch_related=["input_datastreams", *prefetch_paths],
         )
 
-        if transformation_type is not Unset:
-            queryset = queryset.filter(transformation_type__in=transformation_type)
+        return {
+            "data": DataProductTransformationResponse.model_validate(transformation),
+            "included": self.resolve_includes(
+                [transformation], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
-        if output_datastream is not Unset:
-            queryset = queryset.filter(output_datastream__in=output_datastream)
-
-        if input_datastream is not Unset:
-            queryset = queryset.filter(input_datastreams__datastream__in=input_datastream)
-
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
-
-        queryset = queryset.order_by(*order_by, "id")
-
-        count = queryset.count()
-        queryset = queryset[offset:offset + limit]
-
-        return count, queryset
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task: Union[uuid.UUID, DataProductTask],
-        transformation_type: TransformationType,
-        input_datastreams: list[TransformationInput],
-        output_datastream: Union[uuid.UUID, Datastream],
-        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
-        rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
-        formula: str | Unset = Unset,
-        aggregation_method: AggregationMethod | Unset = Unset,
-        output_interval_units: IntervalUnits | Unset = Unset,
-        output_interval: int | Unset = Unset,
-        timezone_type: str | None | Unset = Unset,
-        timezone: str | None | Unset = Unset,
-        min_values: int | None | Unset = Unset,
-        stop_on_no_data: bool | Unset = Unset,
-        stop_on_error: bool | Unset = Unset,
-    ) -> DataProductTransformation:
-        """Create a transformation for a task."""
+        task_id: uuid.UUID,
+        data: DataProductTransformationPostBody,
+    ):
+        if data.id is not None and data.id.version != 7:
+            raise BadRequestError(f"Invalid UUID version {data.id.version}. Expected 7.")
 
-        if uid.version != 7:
-            raise BadRequestError(f"Invalid UUID version {uid.version}. Expected 7.")
-
-        if isinstance(task, uuid.UUID):
-            try:
-                task = principal.annotate_permissions(
-                    DataProductTask.objects.select_related("monitoring_site__workspace").filter(pk=task)
-                ).get()
-            except DataProductTask.DoesNotExist:
-                raise NotFoundError(f"Task with ID {str(task)} does not exist.")
-
-        if not principal.can_view(task):
-            raise NotFoundError(f"Task with ID {str(task.id)} does not exist.")
-        if not principal.can_edit(task):
-            raise PermissionDeniedError("You do not have permission to edit this task.")
+        task = self.get_task_for_action(principal, task_id, "edit")
 
         transformation = DataProductTransformation(
-            pk=uid,
+            pk=data.id,
             task=task,
-            output_datastream_id=getattr(output_datastream, "pk", output_datastream),
-            transformation_type=transformation_type,
-            rating_curve_id=getattr(rating_curve, "pk", rating_curve) if rating_curve is not Unset else None,
-            formula=formula if formula is not Unset else None,
-            aggregation_method=aggregation_method if aggregation_method is not Unset else None,
-            output_interval_units=output_interval_units if output_interval_units is not Unset else None,
-            output_interval=output_interval if output_interval is not Unset else None,
-            timezone_type=timezone_type if timezone_type is not Unset else None,
-            timezone=timezone if timezone is not Unset else None,
-            min_values=min_values if min_values is not Unset else None,
-            stop_on_no_data=stop_on_no_data if stop_on_no_data is not Unset else True,
-            stop_on_error=stop_on_error if stop_on_error is not Unset else True,
+            transformation_type=data.transformation_type,
+            **data.dict(
+                include=set(DataProductTransformationFields.model_fields.keys())
+                - {"input_datastreams"}
+            ),
         )
         transformation.save()
 
-        self.apply_input_datastreams(transformation, input_datastreams)
+        self.apply_input_datastreams(transformation, data.input_datastreams)
 
         transformation.full_clean()
 
-        return self.get(principal=principal, action="view", transformation=transformation.pk, task=task)
+        return {"id": transformation.pk}
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def update(
         self,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
-        task: Union[uuid.UUID, DataProductTask],
-        transformation: Union[uuid.UUID, DataProductTransformation],
-        input_datastreams: list[TransformationInput] | Unset = Unset,
-        output_datastream: Union[uuid.UUID, Datastream] | Unset = Unset,
-        rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
-        formula: str | Unset = Unset,
-        aggregation_method: AggregationMethod | Unset = Unset,
-        output_interval_units: IntervalUnits | Unset = Unset,
-        output_interval: int | Unset = Unset,
-        timezone_type: str | None | Unset = Unset,
-        timezone: str | None | Unset = Unset,
-        min_values: int | None | Unset = Unset,
-        stop_on_no_data: bool | Unset = Unset,
-        stop_on_error: bool | Unset = Unset,
-    ) -> DataProductTransformation:
-        """Update a transformation's parameters and inputs."""
-
-        transformation = self.get(
-            transformation=transformation, task=task, action="edit", principal=principal
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        task_id: uuid.UUID,
+        uid: uuid.UUID,
+        data: DataProductTransformationPatchBody,
+    ):
+        transformation = self.get_transformation_for_action(
+            principal=principal, task_id=task_id, uid=uid, action="edit"
         )
 
-        editable_fields = {
-            "output_datastream_id": getattr(output_datastream, "pk", output_datastream) if output_datastream is not Unset else Unset,
-            "rating_curve_id": getattr(rating_curve, "pk", rating_curve) if rating_curve is not Unset else Unset,
-            "formula": formula,
-            "aggregation_method": aggregation_method,
-            "output_interval_units": output_interval_units,
-            "output_interval": output_interval,
-            "timezone_type": timezone_type,
-            "timezone": timezone,
-            "min_values": min_values,
-            "stop_on_no_data": stop_on_no_data,
-            "stop_on_error": stop_on_error,
-        }
-        for field, value in editable_fields.items():
-            if value is not Unset:
-                setattr(transformation, field, value)
+        update_fields = data.dict(
+            include=set(DataProductTransformationFields.model_fields.keys())
+            - {"input_datastreams"},
+            exclude_unset=True,
+        )
+        for field, value in update_fields.items():
+            setattr(transformation, field, value)
 
         transformation.save()
 
-        if input_datastreams is not Unset:
-            self.apply_input_datastreams(transformation, input_datastreams)
+        if data.input_datastreams is not Unset:
+            self.apply_input_datastreams(transformation, data.input_datastreams)
 
         transformation.full_clean()
 
-        return self.get(principal=principal, action="view", transformation=transformation.pk, task=task)
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    @transaction.atomic
     def delete(
         self,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
-        task: Union[uuid.UUID, DataProductTask],
-        transformation: Union[uuid.UUID, DataProductTransformation],
-    ) -> None:
-        """Delete a transformation."""
-
-        transformation = self.get(
-            transformation=transformation, task=task, action="delete", principal=principal
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        task_id: uuid.UUID,
+        uid: uuid.UUID,
+    ):
+        transformation = self.get_transformation_for_action(
+            principal=principal, task_id=task_id, uid=uid, action="delete"
         )
         transformation.delete()
 
     @staticmethod
     def apply_input_datastreams(
         transformation: DataProductTransformation,
-        input_datastreams: list[TransformationInput],
+        input_datastreams: list[TransformationInputPostBody],
     ) -> None:
-        """Associate input datastreams with a transformation."""
-
         transformation.input_datastreams.all().delete()
 
         for input_datastream in input_datastreams:
             new_input = DataProductTransformationInput(
                 transformation=transformation,
-                datastream_id=getattr(input_datastream.datastream, "pk", input_datastream.datastream),
+                datastream_id=input_datastream.datastream_id,
                 variable_name=input_datastream.variable_name,
             )
             new_input.full_clean()

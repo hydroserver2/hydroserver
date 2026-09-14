@@ -1,10 +1,20 @@
 import pytest
 
+from interfaces.api.schemas import WorkspaceResponse
 from interfaces.api.service import APIService
 from tests.core.iam.factories import WorkspaceFactory
+from tests.core.sta.factories import UnitFactory
 from core.iam.models import Workspace
 
 pytestmark = pytest.mark.django_db
+
+_UNIT_INCLUDABLE = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
 
 
 # --- estimate_count -------------------------------------------------------------------
@@ -46,6 +56,44 @@ def test_resolve_count_returns_estimate_when_threshold_is_forced_low():
     count = APIService.resolve_count(Workspace.objects.all(), threshold=-1)
 
     assert count == APIService.estimate_count(Workspace.objects.all())
+
+
+def test_resolve_include_set_normalizes_a_list_to_a_set():
+    assert APIService.resolve_include_set(["workspace"]) == {"workspace"}
+
+
+def test_resolve_include_set_accepts_missing_or_empty():
+    assert APIService.resolve_include_set(None) == set()
+    assert APIService.resolve_include_set([]) == set()
+
+
+def test_resolve_includes_deduplicates_by_pk():
+    workspace = WorkspaceFactory()
+    units = [
+        UnitFactory(workspace=workspace),
+        UnitFactory(workspace=workspace),
+    ]
+
+    included = APIService.resolve_includes(units, {"workspace"}, _UNIT_INCLUDABLE)
+
+    assert len(included["workspaces"]) == 1
+    assert included["workspaces"][0].id == workspace.id
+
+
+def test_resolve_includes_skips_objects_with_no_related_value():
+    unit = UnitFactory(global_=True)  # workspace is None
+
+    included = APIService.resolve_includes([unit], {"workspace"}, _UNIT_INCLUDABLE)
+
+    assert included == {}
+
+
+def test_resolve_includes_returns_empty_dict_when_nothing_requested():
+    unit = UnitFactory()
+
+    included = APIService.resolve_includes([unit], set(), _UNIT_INCLUDABLE)
+
+    assert included == {}
 
 
 def test_resolve_count_estimate_branch_does_not_execute_a_real_count(monkeypatch):

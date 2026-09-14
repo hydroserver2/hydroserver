@@ -1,19 +1,21 @@
 import uuid
-from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, validate_call
+from typing import Any, Literal, Optional, get_args
+from pydantic import BaseModel, ConfigDict
 from django.db import transaction
-from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from processing.quality.models import QCHistory, QCSession, QCOperation, OperationType, SessionStatus
 from interfaces.api.http.errors import BadRequestError, NotFoundError
 from interfaces.api.service import APIService
-from processing.quality.models import QCHistory, QCSession, QCOperation, OperationType, SessionStatus
 from interfaces.api.services.quality.session import QCSessionAPIService
-
+from interfaces.api.schemas.quality.operation import (
+    QualityControlOperationOrderByFields,
+    QualityControlOperationResponse,
+)
 
 User = get_user_model()
 
@@ -33,18 +35,15 @@ class QCOperationAPIService(APIService):
 
     order_by_fields = {"id", "order", "operation_type", "created_at"}
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get(
         self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         operation: uuid.UUID | QCOperation,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         action: Literal["view", "edit"] = "view",
     ) -> QCOperation:
-        """Get an operation belonging to a QC session."""
-
-        session = qc_session_service.get(history=history, session=session, principal=principal, action=action)
+        session = qc_session_service.get(principal=principal, history=history, session=session, action=action)
 
         if isinstance(operation, uuid.UUID):
             try:
@@ -56,31 +55,48 @@ class QCOperationAPIService(APIService):
 
         return operation
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
+    def get_item(
         self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
+        operation: uuid.UUID | QCOperation,
+    ):
+        operation = self.get(principal=principal, history=history, session=session, operation=operation, action="view")
+
+        return {
+            "data": QualityControlOperationResponse.model_validate(operation),
+            "included": {},
+        }
+
+    def list(
+        self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] = Field(default_factory=list),
-    ) -> tuple[int, QuerySet[QCOperation]]:
-        """Return all operations for a QC session in execution order."""
+        history: uuid.UUID | QCHistory,
+        session: uuid.UUID | QCSession,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+    ):
+        session = qc_session_service.get(principal=principal, history=history, session=session, action="view")
+        queryset = QCOperation.objects.filter(session=session)
 
-        session = qc_session_service.get(history=history, session=session, principal=principal, action="view")
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset, order_by, list(get_args(QualityControlOperationOrderByFields))
+            )
+        else:
+            queryset = queryset.order_by("order")
 
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        operations = list(queryset.all())
 
-        queryset = QCOperation.objects.filter(session=session).order_by(*order_by, "order")
+        return {
+            "data": [QualityControlOperationResponse.model_validate(o) for o in operations],
+            "meta": meta,
+            "included": {},
+        }
 
-        count = queryset.count()
-        queryset = queryset[offset:offset + limit]
-
-        return count, queryset
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def create(
         self,
@@ -88,12 +104,10 @@ class QCOperationAPIService(APIService):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         operations: list[OperationInput],
-    ) -> list[QCOperation]:
-        """Append one or more operations to an in-progress session."""
-
-        session = qc_session_service.get(history=history, session=session, principal=principal, action="edit")
-
+    ):
+        session = qc_session_service.get(principal=principal, history=history, session=session, action="edit")
         created = []
+
         for operation in operations:
             new_operation = QCOperation(
                 pk=uuid.uuid7(),
@@ -108,9 +122,8 @@ class QCOperationAPIService(APIService):
             new_operation.save()
             created.append(new_operation)
 
-        return created
+        return [{"id": operation.pk} for operation in created]
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def update(
         self,
@@ -121,12 +134,10 @@ class QCOperationAPIService(APIService):
         order: int | Unset = Unset,
         comment: str | None | Unset = Unset,
         arguments: dict[str, Any] | list[Any] | None | Unset = Unset,
-    ) -> QCOperation:
-        """Update an operation in an in-progress session."""
-
-        operation = self.get(history=history, session=session, operation=operation, principal=principal, action="edit")
-
+    ):
+        operation = self.get(principal=principal, history=history, session=session, operation=operation, action="edit")
         editable_fields = {"order": order, "comment": comment, "arguments": arguments}
+
         for field, value in editable_fields.items():
             if value is not Unset:
                 setattr(operation, field, value)
@@ -134,9 +145,6 @@ class QCOperationAPIService(APIService):
         operation.full_clean()
         operation.save()
 
-        return operation
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def delete(
         self,
@@ -145,9 +153,7 @@ class QCOperationAPIService(APIService):
         session: uuid.UUID | QCSession,
         operation: uuid.UUID | QCOperation,
     ) -> None:
-        """Delete an operation from an in-progress session."""
-
-        operation = self.get(history=history, session=session, operation=operation, principal=principal, action="edit")
+        operation = self.get(principal=principal, history=history, session=session, operation=operation, action="edit")
 
         if operation.session.status != SessionStatus.IN_PROGRESS:
             raise BadRequestError("Operations can only be deleted from an in-progress session.")

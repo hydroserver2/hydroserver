@@ -1,188 +1,223 @@
 import uuid
-from typing import Literal
 
-from pydantic import Field, ConfigDict, validate_call
-from django.db import IntegrityError, transaction
-from django.db.models.query import QuerySet
+from typing import Literal, Optional, get_args
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
+from django.db import IntegrityError, transaction
 
-from core.types import Unset
-from core.iam.models import ServiceAccount, Workspace
+from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
-from interfaces.api.service import APIService
 from core.sta.models import MonitoringSite
+from core.types import Unset
 from processing.products.models import RatingCurve, RatingCurvePoint
-
+from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
+from interfaces.api.service import APIService
+from interfaces.api.schemas.products.rating_curve import (
+    RatingCurveFields,
+    RatingCurveOrderByFields,
+    RatingCurvePatchBody,
+    RatingCurvePostBody,
+    RatingCurveResponse,
+    RATING_CURVE_INCLUDE_RELATIONS,
+)
 
 User = get_user_model()
 
+RATING_CURVE_ORDER_BY_ALIASES = {
+    "monitoringSiteName": "monitoring_site__name",
+    "workspaceId": "monitoring_site__workspace_id",
+    "workspaceName": "monitoring_site__workspace__name",
+}
+
 
 class RatingCurveAPIService(APIService):
+    INCLUDE_RELATIONS = RATING_CURVE_INCLUDE_RELATIONS
 
-    order_by_fields = {"id", "name", "monitoring_site_id", "monitoring_site__name", "monitoring_site__workspace_id", "monitoring_site__workspace__name"}
+    def get_rating_curve_for_action(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        action: Literal["view", "edit", "delete"],
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
+    ):
+        queryset = RatingCurve.objects.filter(pk=uid)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
 
-    @staticmethod
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get(
-        rating_curve: uuid.UUID | RatingCurve,
-        action: Literal["view", "edit", "delete"] = "view",
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
-    ) -> RatingCurve:
-        """Get a rating curve."""
+        queryset = principal.annotate_permissions(queryset)
 
-        if isinstance(rating_curve, uuid.UUID):
-            try:
-                queryset = RatingCurve.objects.select_related(
-                    "monitoring_site__workspace"
-                ).prefetch_related(
-                    "points",
-                    "monitoring_site__monitoring_site_linked_resources",
-                ).filter(pk=rating_curve)
-                if principal is not Unset:
-                    queryset = principal.annotate_permissions(queryset)
-                rating_curve = queryset.get()
-            except RatingCurve.DoesNotExist:
-                raise NotFoundError(f"Rating curve with ID {str(rating_curve)} does not exist.")
+        try:
+            rating_curve = queryset.get()
+        except RatingCurve.DoesNotExist:
+            raise NotFoundError(f"Rating curve with ID {uid} does not exist.")
 
-        if principal is not Unset:
-            if not principal.can_view(rating_curve):
-                raise NotFoundError(f"Rating curve with ID {str(rating_curve.id)} does not exist.")
+        if not principal.can_view(rating_curve):
+            raise NotFoundError(f"Rating curve with ID {uid} does not exist.")
 
-            if action != "view" and not getattr(principal, f"can_{action}")(rating_curve):
-                raise PermissionDeniedError(f"You do not have permission to {action} this rating curve.")
+        if action != "view" and not getattr(principal, f"can_{action}")(rating_curve):
+            raise PermissionDeniedError(
+                f"You do not have permission to {action} this rating curve."
+            )
 
         return rating_curve
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
+    def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] = Field(default_factory=list),
-        search_term: str | Unset = Unset,
-        monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
-        workspace: list[uuid.UUID | Workspace] | Unset = Unset,
-    ) -> tuple[int, QuerySet[RatingCurve]]:
-        """Return a collection of rating curves."""
-
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
         queryset = RatingCurve.objects
 
-        if search_term is not Unset:
-            search_vector = SearchVector("name", "description", "monitoring_site__name")
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
+        for field in ["monitoring_site_id", "monitoring_site__workspace_id"]:
+            if field in filtering:
+                queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if monitoring_site is not Unset:
-            queryset = queryset.filter(monitoring_site__in=[getattr(t, "pk", t) for t in monitoring_site])
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset,
+                order_by,
+                list(get_args(RatingCurveOrderByFields)),
+                field_aliases=RATING_CURVE_ORDER_BY_ALIASES,
+            )
+        else:
+            queryset = queryset.order_by("-id")
 
-        if workspace is not Unset:
-            queryset = queryset.filter(monitoring_site__workspace__in=[getattr(ws, "pk", ws) for ws in workspace])
+        queryset = queryset.prefetch_related("points")
 
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
+        if requested_includes:
+            select_paths = [
+                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+            ]
+            queryset = queryset.select_related(*select_paths)
+            if "monitoringSite" in requested_includes:
+                queryset = queryset.prefetch_related(
+                    "monitoring_site__monitoring_site_linked_resources"
+                )
 
-        queryset = queryset.order_by(*order_by, "-id")
-        queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
-            "points",
-            "monitoring_site__monitoring_site_linked_resources",
-        )
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        rating_curves = list(queryset.all())
 
-        count = queryset.count()
-        queryset = queryset[offset:offset + limit]
+        return {
+            "data": [
+                RatingCurveResponse.model_validate(rc) for rc in rating_curves
+            ],
+            "meta": meta,
+            "included": self.resolve_includes(
+                rating_curves, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
-        return count, queryset
+    def get(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths = [
+            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
+        prefetch_paths = ["points"]
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+        if "monitoringSite" in requested_includes:
+            prefetch_paths.append("monitoring_site__monitoring_site_linked_resources")
+
+        rating_curve = self.get_rating_curve_for_action(
+            principal=principal,
+            uid=uid,
+            action="view",
+            select_related=select_paths,
+            prefetch_related=prefetch_paths,
+        )
+
+        return {
+            "data": RatingCurveResponse.model_validate(rating_curve),
+            "included": self.resolve_includes(
+                [rating_curve], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
     @transaction.atomic
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        monitoring_site: uuid.UUID | MonitoringSite,
-        name: str,
-        fitting_method: Literal["linear", "power_law"],
-        points: list[tuple] = Field(default_factory=list),
-        description: str | None = None,
-        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
-    ) -> RatingCurve:
-        """Create a rating curve."""
-
-        if isinstance(monitoring_site, uuid.UUID):
-            try:
-                monitoring_site = MonitoringSite.objects.select_related("workspace").get(pk=monitoring_site)
-            except MonitoringSite.DoesNotExist:
-                raise NotFoundError("MonitoringSite does not exist.")
+        data: RatingCurvePostBody,
+    ):
+        try:
+            monitoring_site = MonitoringSite.objects.select_related("workspace").get(
+                pk=data.monitoring_site_id
+            )
+        except MonitoringSite.DoesNotExist:
+            raise NotFoundError("MonitoringSite does not exist.")
 
         if not principal.can_create("RatingCurve", workspace=monitoring_site.workspace):
-            raise PermissionDeniedError("You do not have permission to create this rating curve.")
+            raise PermissionDeniedError(
+                "You do not have permission to create this rating curve."
+            )
 
         rating_curve = RatingCurve(
-            pk=uid,
+            pk=data.id,
             monitoring_site=monitoring_site,
-            name=name,
-            description=description,
-            fitting_method=fitting_method,
+            **data.dict(include=set(RatingCurveFields.model_fields.keys()) - {"points"}),
         )
         rating_curve.full_clean()
-        rating_curve.save()
 
-        if points:
-            self.apply_points(rating_curve=rating_curve, points=points)
+        try:
+            rating_curve.save()
+        except IntegrityError:
+            raise ConflictError(
+                "The operation could not be completed due to a resource conflict."
+            )
 
-        return self.get(rating_curve.pk)
+        if data.points:
+            self.apply_points(rating_curve=rating_curve, points=data.points)
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+        return {"id": rating_curve.pk}
+
     @transaction.atomic
     def update(
         self,
-        rating_curve: uuid.UUID | RatingCurve,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        name: str | Unset = Unset,
-        description: str | None | Unset = Unset,
-        fitting_method: Literal["linear", "power_law"] | Unset = Unset,
-        points: list[tuple] | Unset = Unset,
-    ) -> RatingCurve:
-        """Update a rating curve."""
+        uid: uuid.UUID,
+        data: RatingCurvePatchBody,
+    ):
+        rating_curve = self.get_rating_curve_for_action(
+            principal=principal, uid=uid, action="edit"
+        )
 
-        rating_curve = self.get(rating_curve=rating_curve, action="edit", principal=principal)
-
-        editable_fields = {"name": name, "description": description, "fitting_method": fitting_method}
-        for field, value in editable_fields.items():
-            if value is not Unset:
-                setattr(rating_curve, field, value)
+        rating_curve_data = data.dict(
+            include=set(RatingCurveFields.model_fields.keys()) - {"points"},
+            exclude_unset=True,
+        )
+        for field, value in rating_curve_data.items():
+            setattr(rating_curve, field, value)
 
         rating_curve.full_clean()
         rating_curve.save()
 
-        if points is not Unset:
-            self.apply_points(rating_curve=rating_curve, points=points)
+        if data.points is not Unset:
+            self.apply_points(rating_curve=rating_curve, points=data.points)
 
-        return self.get(rating_curve.pk)
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    @transaction.atomic
     def delete(
         self,
-        rating_curve: uuid.UUID | RatingCurve,
         principal: User | ServiceAccount | AnonymousPrincipal,
-    ) -> None:
-        """Delete a rating curve."""
-
-        rating_curve = self.get(rating_curve=rating_curve, action="delete", principal=principal)
+        uid: uuid.UUID,
+    ):
+        rating_curve = self.get_rating_curve_for_action(
+            principal=principal, uid=uid, action="delete"
+        )
         rating_curve.delete()
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def apply_points(
-        self,
-        rating_curve: uuid.UUID | RatingCurve,
-        points: list[tuple],
-    ) -> None:
-        """Replace all points on a rating curve."""
-
-        rating_curve = self.get(rating_curve)
-
+    @staticmethod
+    def apply_points(rating_curve: RatingCurve, points: list[tuple]) -> None:
         rating_curve.points.all().delete()
 
         try:

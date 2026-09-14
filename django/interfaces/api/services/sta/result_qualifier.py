@@ -1,39 +1,42 @@
 import uuid
+
 from typing import Optional, Literal, get_args
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet
 from django.db.utils import IntegrityError
 from psycopg.errors import UniqueViolation
-from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
+
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ResultQualifier
+from interfaces.api.service import APIService
+from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.schemas import (
-    ResultQualifierSummaryResponse,
-    ResultQualifierDetailResponse,
+    ResultQualifierResponse,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )
 from interfaces.api.schemas.sta.result_qualifier import (
     ResultQualifierFields,
     ResultQualifierOrderByFields,
+    RESULT_QUALIFIER_INCLUDE_RELATIONS,
 )
-from interfaces.api.service import APIService
 
 User = get_user_model()
 
 
 class ResultQualifierAPIService(APIService):
+    INCLUDE_RELATIONS = RESULT_QUALIFIER_INCLUDE_RELATIONS
+
     def get_result_qualifier_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
     ):
         queryset = ResultQualifier.objects.filter(pk=uid)
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -53,10 +56,6 @@ class ResultQualifierAPIService(APIService):
 
         return result_qualifier
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related("workspace")
-
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -64,8 +63,9 @@ class ResultQualifierAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = ResultQualifier.objects
 
         for field in ["workspace_id"]:
@@ -89,46 +89,52 @@ class ResultQualifierAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if requested_includes:
+            select_paths = [
+                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+            ]
+            queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        result_qualifiers = list(queryset.all())
 
         return {
             "data": [
-                (
-                    ResultQualifierDetailResponse.model_validate(result_qualifier)
-                    if expand_related
-                    else ResultQualifierSummaryResponse.model_validate(result_qualifier)
-                )
-                for result_qualifier in queryset.all()
+                ResultQualifierResponse.model_validate(result_qualifier)
+                for result_qualifier in result_qualifiers
             ],
             "meta": meta,
+            "included": self.resolve_includes(
+                result_qualifiers, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths = [
+            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
         result_qualifier = self.get_result_qualifier_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal, uid=uid, action="view", select_related=select_paths
         )
 
-        return (
-            ResultQualifierDetailResponse.model_validate(result_qualifier)
-            if expand_related
-            else ResultQualifierSummaryResponse.model_validate(result_qualifier)
-        )
+        return {
+            "data": ResultQualifierResponse.model_validate(result_qualifier),
+            "included": self.resolve_includes(
+                [result_qualifier], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: ResultQualifierPostBody,
-        expand_related: Optional[bool] = None,
     ):
         workspace, _ = (
             self.get_workspace(principal=principal, workspace_id=data.workspace_id)
@@ -159,16 +165,13 @@ class ResultQualifierAPIService(APIService):
         ):
             raise ConflictError("A result qualifier with this ID or code already exists")
 
-        return self.get(
-            principal=principal, uid=result_qualifier.id, expand_related=expand_related
-        )
+        return {"id": result_qualifier.pk}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: ResultQualifierPatchBody,
-        expand_related: Optional[bool] = None,
     ):
         result_qualifier = self.get_result_qualifier_for_action(
             principal=principal, uid=uid, action="edit"
@@ -189,10 +192,6 @@ class ResultQualifierAPIService(APIService):
             UniqueViolation,
         ):
             raise ConflictError("A result qualifier with this code already exists")
-
-        return self.get(
-            principal=principal, uid=result_qualifier.id, expand_related=expand_related
-        )
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         result_qualifier = self.get_result_qualifier_for_action(

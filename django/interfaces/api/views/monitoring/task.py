@@ -1,21 +1,19 @@
 import uuid
-from typing import Optional
 
 from ninja import Router, Path, Query
 
-from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.monitoring.task import MonitoringTaskAPIService
 from processing.monitoring.tasks import run_monitoring_task
-from interfaces.api.schemas import PaginatedResponse
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.monitoring.task import (
-    MonitoringTaskSummaryResponse,
-    MonitoringTaskDetailResponse,
+    MonitoringTaskQueryParameters,
+    MonitoringTaskItemQueryParameters,
+    MonitoringTaskResponse,
     MonitoringTaskPostBody,
     MonitoringTaskPatchBody,
-    MonitoringTaskQueryParameters,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunQueryParameters, TaskRunResponse
 
@@ -27,8 +25,7 @@ monitoring_task_service = MonitoringTaskAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: PaginatedResponse[MonitoringTaskSummaryResponse]
-        | PaginatedResponse[MonitoringTaskDetailResponse],
+        200: PaginatedResponse[MonitoringTaskResponse],
         401: str,
     },
     by_alias=True,
@@ -41,39 +38,25 @@ def get_monitoring_tasks(
     Get monitoring tasks accessible to the authenticated user.
     """
 
-    count, tasks = monitoring_task_service.get_collection(
+    return 200, monitoring_task_service.list(
         principal=request.principal,
-        order_by=[f.orm_field for f in query.order_by],
-        **query.model_dump(exclude_unset=True, exclude={
-            "order_by", "monitoring_site", "workspace", "datastream", "rule_type",
-        }),
-        **({"monitoring_site": query.monitoring_site} if "monitoring_site" in query.model_fields_set else {}),
-        **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
-        **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
-        **({"rule_type": query.rule_type} if "rule_type" in query.model_fields_set else {}),
-    )
-
-    schema = MonitoringTaskDetailResponse if query.expand_related else MonitoringTaskSummaryResponse
-
-    meta = build_pagination_meta(
-        count=count,
         offset=query.offset,
         limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
-
-    return 200, {"data": [schema.model_validate(task) for task in tasks], "meta": meta}
 
 
 @monitoring_task_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: MonitoringTaskSummaryResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -85,21 +68,14 @@ def create_monitoring_task(
     Create a new monitoring task.
     """
 
-    task = monitoring_task_service.create(
-        principal=request.principal,
-        monitoring_site=data.monitoring_site_id,
-        **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id", "schedule"}),
-        **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
-    )
-
-    return 201, task
+    return 201, monitoring_task_service.create(principal=request.principal, data=data)
 
 
 @monitoring_task_router.get(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringTaskSummaryResponse | MonitoringTaskDetailResponse,
+        200: ItemResponse[MonitoringTaskResponse],
         401: str,
         403: str,
         404: str,
@@ -109,33 +85,26 @@ def create_monitoring_task(
 def get_monitoring_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[MonitoringTaskItemQueryParameters],
 ):
     """
     Get a monitoring task.
     """
 
-    task = monitoring_task_service.get(
-        task=task_id,
-        principal=request.principal,
-        expand_related=expand_related,
+    return 200, monitoring_task_service.get_item(
+        principal=request.principal, uid=task_id, include=query.include
     )
-
-    schema = MonitoringTaskDetailResponse if expand_related else MonitoringTaskSummaryResponse
-
-    return 200, schema.model_validate(task)
 
 
 @monitoring_task_router.patch(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringTaskSummaryResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -148,23 +117,9 @@ def update_monitoring_task(
     Update a monitoring task.
     """
 
-    extra = {}
+    monitoring_task_service.update(principal=request.principal, uid=task_id, data=data)
 
-    if "schedule" in data.model_fields_set:
-        extra.update(
-            data.schedule.model_dump(exclude_unset=True)
-            if data.schedule
-            else {"crontab": None, "interval": None}
-        )
-
-    task = monitoring_task_service.update(
-        task=task_id,
-        principal=request.principal,
-        **data.model_dump(exclude_unset=True, exclude={"schedule"}),
-        **extra,
-    )
-
-    return 200, task
+    return 204, None
 
 
 @monitoring_task_router.delete(
@@ -213,10 +168,8 @@ def trigger_monitoring_task(
     Trigger an immediate run of a monitoring task on a Celery worker.
     """
 
-    task = monitoring_task_service.get(
-        task=task_id,
-        principal=request.principal,
-        action="edit",
+    task = monitoring_task_service.get_task_for_action(
+        principal=request.principal, uid=task_id, action="edit"
     )
 
     run = TaskRun.objects.create(task=task, status="PENDING")
@@ -248,11 +201,11 @@ def get_monitoring_task_runs(
     count, runs = monitoring_task_service.get_run_collection(
         task=task_id,
         principal=request.principal,
-        order_by=[f.orm_field for f in query.order_by],
+        order_by=query.order_by,
         **query.model_dump(exclude_unset=True, exclude={"order_by"}),
     )
 
-    meta = build_pagination_meta(
+    meta = monitoring_task_service.build_pagination_meta(
         count=count,
         offset=query.offset,
         limit=query.limit,

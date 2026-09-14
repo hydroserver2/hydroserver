@@ -1,5 +1,6 @@
 import logging
 
+from ninja.errors import ValidationError as NinjaValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError, ObjectDoesNotExist
 from django.db import IntegrityError, DataError
 from django.db.models.deletion import ProtectedError
@@ -19,7 +20,15 @@ def validation_error_handler(request, exc, api):
     return api.create_response(
         request,
         {"message": "; ".join(exc.messages)},
-        status=422,
+        status=400,
+    )
+
+
+def ninja_validation_error_handler(request, exc, api):
+    return api.create_response(
+        request,
+        {"message": "; ".join(err["msg"] for err in exc.errors)},
+        status=400,
     )
 
 
@@ -62,10 +71,10 @@ def register(api):
         api.add_exception_handler(exc_class, partial(http_error_handler, api=api))
 
     api.add_exception_handler(DjangoValidationError, partial(validation_error_handler, api=api))
+    api.add_exception_handler(NinjaValidationError, partial(ninja_validation_error_handler, api=api))
 
     for exc_class in (IntegrityError, DataError, ProtectedError):
         api.add_exception_handler(exc_class, partial(conflict_error_handler, api=api))
 
     api.add_exception_handler(ObjectDoesNotExist, partial(not_found_error_handler, api=api))
-
     api.add_exception_handler(Exception, partial(unhandled_error_handler, api=api))

@@ -2,17 +2,16 @@ import uuid
 
 from ninja import Router, Path, Query
 
-from core.types import Unset
-from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.monitoring.rule import MonitoringRuleAPIService
-from interfaces.api.schemas import PaginatedResponse
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleResponse,
     MonitoringRulePostBody,
     MonitoringRulePatchBody,
     MonitoringRuleQueryParameters,
+    MonitoringRuleItemQueryParameters,
 )
 
 monitoring_rule_router = Router(tags=["Monitoring Rules"])
@@ -39,33 +38,26 @@ def get_monitoring_rules(
     Get rules for a monitoring task.
     """
 
-    count, rules = monitoring_rule_service.get_collection(
-        task=task_id,
+    return 200, monitoring_rule_service.list(
         principal=request.principal,
-        order_by=[f.orm_field for f in query.order_by],
-        **query.model_dump(exclude_unset=True, exclude={"order_by", "datastream"}),
-        **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
-    )
-
-    meta = build_pagination_meta(
-        count=count,
+        task_id=task_id,
         offset=query.offset,
         limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
-
-    return 200, {"data": rules, "meta": meta}
 
 
 @monitoring_rule_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: MonitoringRuleResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -78,21 +70,18 @@ def create_monitoring_rule(
     Create a monitoring rule on a datastream belonging to the given task.
     """
 
-    rule = monitoring_rule_service.create(
-        task=task_id,
+    return 201, monitoring_rule_service.create(
         principal=request.principal,
-        **data.model_dump(exclude_unset=True, exclude={"uid"}),
-        **({"uid": data.uid} if data.uid is not Unset else {}),
+        task_id=task_id,
+        data=data,
     )
-
-    return 201, rule
 
 
 @monitoring_rule_router.get(
     "/{rule_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringRuleResponse,
+        200: ItemResponse[MonitoringRuleResponse],
         401: str,
         403: str,
         404: str,
@@ -103,30 +92,29 @@ def get_monitoring_rule(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
+    query: Query[MonitoringRuleItemQueryParameters],
 ):
     """
     Get a monitoring rule.
     """
 
-    rule = monitoring_rule_service.get(
-        rule=rule_id,
-        task=task_id,
+    return 200, monitoring_rule_service.get(
         principal=request.principal,
+        task_id=task_id,
+        uid=rule_id,
+        include=query.include,
     )
-
-    return 200, rule
 
 
 @monitoring_rule_router.patch(
     "/{rule_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringRuleResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -140,14 +128,14 @@ def update_monitoring_rule(
     Update a monitoring rule's parameters.
     """
 
-    rule = monitoring_rule_service.update(
-        rule=rule_id,
-        task=task_id,
+    monitoring_rule_service.update(
         principal=request.principal,
-        **data.model_dump(exclude_unset=True),
+        task_id=task_id,
+        uid=rule_id,
+        data=data,
     )
 
-    return 200, rule
+    return 204, None
 
 
 @monitoring_rule_router.delete(
@@ -171,9 +159,9 @@ def delete_monitoring_rule(
     """
 
     monitoring_rule_service.delete(
-        rule=rule_id,
-        task=task_id,
         principal=request.principal,
+        task_id=task_id,
+        uid=rule_id,
     )
 
     return 204, None

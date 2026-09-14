@@ -1,15 +1,20 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
 
 
 class MethodFields(Schema):
@@ -23,6 +28,15 @@ class MethodFields(Schema):
     sensor_model_definition: Optional[str] = Field(None, max_length=500)
 
 
+METHOD_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+MethodIncludeRelation = Literal[*METHOD_INCLUDE_RELATIONS.keys()]
+
 _order_by_fields = (
     "name",
     "code",
@@ -30,12 +44,37 @@ _order_by_fields = (
     "sensorModel",
     "sensorModelManufacturer",
 )
-
 MethodOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
 
+_property_fields = ("id", "workspaceId", *(to_camel(name) for name in MethodFields.model_fields))
+MethodPropertyName = Literal[*_property_fields]
 
-class MethodQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class MethodFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[MethodPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MethodPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[MethodIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MethodIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class MethodItemQueryParameters(MethodFilterFields, BaseQueryParameters):
+    pass
+
+
+class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters):
     order_by: Optional[list[MethodOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -55,14 +94,9 @@ class MethodQueryParameters(CollectionQueryParameters):
     )
 
 
-class MethodSummaryResponse(BaseGetResponse, MethodFields):
+class MethodResponse(BaseGetResponse, MethodFields):
     id: uuid.UUID
     workspace_id: Optional[uuid.UUID]
-
-
-class MethodDetailResponse(BaseGetResponse, MethodFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
 
 
 class MethodPostBody(BasePostBody, MethodFields):

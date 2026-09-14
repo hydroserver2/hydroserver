@@ -11,7 +11,8 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
+from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
+from interfaces.api.service import APIService
 from processing.orchestration.models import Task, TaskRun
 from processing.orchestration.services.scheduling import SchedulingService
 
@@ -24,7 +25,8 @@ T = TypeVar("T", bound=Task)
 class TaskService(SchedulingService, Generic[T]):
 
     task_model: type[T]
-    task_run_order_by_fields = {"id", "started_at", "finished_at", "status"}
+    task_run_order_by_fields = ("id", "status", "startedAt", "finishedAt")
+    task_run_order_by_aliases = {"startedAt": "started_at", "finishedAt": "finished_at"}
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get(
@@ -160,10 +162,16 @@ class TaskService(SchedulingService, Generic[T]):
         if finished_at__lte is not Unset:
             queryset = queryset.filter(finished_at__lte=finished_at__lte)
 
-        if not all(term.lstrip("-") in self.task_run_order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
-
-        queryset = queryset.order_by(*order_by, "-started_at", "-id")
+        if order_by:
+            allowed_fields = [
+                *self.task_run_order_by_fields,
+                *[f"-{f}" for f in self.task_run_order_by_fields],
+            ]
+            queryset = APIService.apply_ordering(
+                queryset, order_by, allowed_fields, field_aliases=self.task_run_order_by_aliases
+            )
+        else:
+            queryset = queryset.order_by("-started_at", "-id")
 
         count = queryset.count()
 

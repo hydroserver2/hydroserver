@@ -1,4 +1,5 @@
 import uuid
+
 from collections import defaultdict
 from typing import Optional, Literal, get_args
 from django.contrib.auth import get_user_model
@@ -6,9 +7,10 @@ from django.db import IntegrityError
 from django.db.models import Count, QuerySet, Q, FloatField, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
-from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
+
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
 from core.sta.cache import (
     get_public_monitoring_site_markers_cache,
@@ -21,8 +23,7 @@ from core.sta.models import (
     LinkedResourceType,
 )
 from interfaces.api.schemas import (
-    MonitoringSiteSummaryResponse,
-    MonitoringSiteDetailResponse,
+    MonitoringSiteResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     LinkedResourcePostBody,
@@ -30,6 +31,7 @@ from interfaces.api.schemas import (
 from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSiteFields,
     MonitoringSiteOrderByFields,
+    MONITORING_SITE_INCLUDE_RELATIONS,
 )
 from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from processing.products.models import DataProductTask
@@ -44,18 +46,24 @@ class MonitoringSiteAPIService(APIService):
         "is_private": False,
     }
 
+    INCLUDE_RELATIONS = MONITORING_SITE_INCLUDE_RELATIONS
+
     def get_monitoring_site_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
     ):
-        queryset = MonitoringSite.objects.filter(pk=uid)
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
-        else:
-            queryset = queryset.prefetch_related("monitoring_site_linked_resources")
+        queryset = MonitoringSite.objects.filter(pk=uid).prefetch_related(
+            "monitoring_site_linked_resources"
+        )
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -71,12 +79,18 @@ class MonitoringSiteAPIService(APIService):
 
         return monitoring_site
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return (
-            queryset.select_related("workspace")
-            .prefetch_related("monitoring_site_linked_resources")
-        )
+    @classmethod
+    def _include_query_hints(
+        cls, requested_includes: set[str]
+    ) -> tuple[list[str], list[str]]:
+        select_paths = [
+            cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
+
+        if "workspace" in requested_includes:
+            select_paths.append("workspace__owner")
+
+        return select_paths, []
 
     @classmethod
     def apply_bbox_filter(cls, queryset, bbox: Optional[list[str]]):
@@ -309,6 +323,7 @@ class MonitoringSiteAPIService(APIService):
         private_markers = self.get_private_markers(principal=principal, filtering=filtering)
         markers = public_markers + private_markers
         markers.sort(key=lambda marker: marker["id"])
+
         return markers
 
     def list_site_summaries(
@@ -323,6 +338,7 @@ class MonitoringSiteAPIService(APIService):
                 site_queryset.order_by("id").distinct()
             )
         )
+
         return self.serialize_site_summary_rows(site_rows)
 
     @staticmethod
@@ -335,13 +351,15 @@ class MonitoringSiteAPIService(APIService):
         now = timezone.now()
 
         def task_count(task_model, attention_only=False):
-            """Correlated per-monitoring_site count subquery.
+            """
+            Correlated per-monitoring_site count subquery.
 
             Using a subquery (rather than joining the relation into the outer
             query and using Count(distinct=True)) avoids a cartesian product
             between the data_product_tasks and monitoring_tasks relations, which
             would otherwise make this query explode on monitoring_sites with many tasks.
             """
+
             tasks = task_model.objects.filter(monitoring_site_id=OuterRef("pk"))
             if attention_only:
                 tasks = (
@@ -349,6 +367,7 @@ class MonitoringSiteAPIService(APIService):
                     .annotate(latest_run_status=latest_run_status_subquery())
                     .filter(attention_filter(now))
                 )
+
             return Coalesce(
                 Subquery(
                     tasks
@@ -381,8 +400,9 @@ class MonitoringSiteAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = MonitoringSite.objects
 
         for field in [
@@ -421,48 +441,56 @@ class MonitoringSiteAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
-        else:
-            queryset = queryset.prefetch_related("monitoring_site_linked_resources")
+        queryset = queryset.prefetch_related("monitoring_site_linked_resources")
+
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        monitoring_sites = list(queryset.all())
 
         return {
             "data": [
-                (
-                    MonitoringSiteDetailResponse.model_validate(monitoring_site)
-                    if expand_related
-                    else MonitoringSiteSummaryResponse.model_validate(monitoring_site)
-                )
-                for monitoring_site in queryset.all()
+                MonitoringSiteResponse.model_validate(ms) for ms in monitoring_sites
             ],
             "meta": meta,
+            "included": self.resolve_includes(
+                monitoring_sites, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+
         monitoring_site = self.get_monitoring_site_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal,
+            uid=uid,
+            action="view",
+            select_related=select_paths,
+            prefetch_related=prefetch_paths,
         )
 
-        return (
-            MonitoringSiteDetailResponse.model_validate(monitoring_site)
-            if expand_related
-            else MonitoringSiteSummaryResponse.model_validate(monitoring_site)
-        )
+        return {
+            "data": MonitoringSiteResponse.model_validate(monitoring_site),
+            "included": self.resolve_includes(
+                [monitoring_site], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: MonitoringSitePostBody,
-        expand_related: Optional[bool] = None,
     ):
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=data.workspace_id
@@ -484,16 +512,13 @@ class MonitoringSiteAPIService(APIService):
         except IntegrityError:
             raise ConflictError("The operation could not be completed due to a resource conflict.")
 
-        return self.get(
-            principal=principal, uid=monitoring_site.id, expand_related=expand_related
-        )
+        return {"id": monitoring_site.id}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: MonitoringSitePatchBody,
-        expand_related: Optional[bool] = None,
     ):
         monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
         monitoring_site_data = data.dict(
@@ -511,13 +536,9 @@ class MonitoringSiteAPIService(APIService):
         monitoring_site.full_clean()
         monitoring_site.save()
 
-        return self.get(
-            principal=principal, uid=monitoring_site.id, expand_related=expand_related
-        )
-
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         monitoring_site = self.get_monitoring_site_for_action(
-            principal=principal, uid=uid, action="delete", expand_related=True
+            principal=principal, uid=uid, action="delete"
         )
         monitoring_site.delete()
 

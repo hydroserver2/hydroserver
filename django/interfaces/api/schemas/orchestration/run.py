@@ -1,22 +1,21 @@
 import uuid
-from typing import Literal
-from datetime import datetime
 
+from datetime import datetime
+from typing import Literal
 from ninja import Query
 
 from core.types import ISODatetime
-from interfaces.api.schemas import OrderByField, BaseGetResponse, CollectionQueryParameters
+from interfaces.api.schemas import BaseGetResponse, CollectionQueryParameters
 
 
-class TaskRunOrderBy(OrderByField):
-    id = ("id", "id")
-    status = ("status", "status")
-    started_at = ("startedAt", "started_at")
-    finished_at = ("finishedAt", "finished_at")
+_order_by_fields = ("id", "status", "startedAt", "finishedAt")
+TaskRunOrderByFields = Literal[
+    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+]
 
 
 class TaskRunQueryParameters(CollectionQueryParameters):
-    order_by: list[TaskRunOrderBy] = Query(
+    order_by: list[TaskRunOrderByFields] = Query(
         [], description="Select one or more fields to order the response by."
     )
     status: list[Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]] = Query(
@@ -47,3 +46,19 @@ class TaskRunResponse(BaseGetResponse):
     result: dict | None = None
     started_at: datetime
     finished_at: datetime | None = None
+
+
+def resolve_latest_run(obj):
+    if not hasattr(obj, "latest_run_id"):
+        return getattr(obj, "latest_run", None)
+    if not getattr(obj, "latest_run_id", None):
+        return None
+
+    return {
+        "id": obj.latest_run_id,
+        "status": obj.latest_run_status,
+        "started_at": obj.latest_run_started_at,
+        "finished_at": obj.latest_run_finished_at,
+        "message": obj.latest_run_message,
+        "result": obj.latest_run_result,
+    }

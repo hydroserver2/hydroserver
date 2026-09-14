@@ -3,24 +3,22 @@ import uuid
 from typing import Optional, Literal, get_args
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
 
-from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from core.iam.models import Collaborator, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
-    ServiceAccountSummaryResponse,
-    ServiceAccountDetailResponse,
+    ServiceAccountResponse,
     ServiceAccountPostBody,
     ServiceAccountPatchBody,
-    ServiceAccountSummaryPostResponse,
-    ServiceAccountDetailPostResponse,
 )
 from interfaces.api.schemas.iam.service_account import (
-    ServiceAccountFields,
+    ServiceAccountInputFields,
     ServiceAccountOrderByFields,
+    SERVICE_ACCOUNT_INCLUDE_RELATIONS,
 )
+
 from .role import RoleAPIService
 
 User = get_user_model()
@@ -28,21 +26,24 @@ role_service = RoleAPIService()
 
 
 class ServiceAccountAPIService(APIService):
+    INCLUDE_RELATIONS = SERVICE_ACCOUNT_INCLUDE_RELATIONS
+
     def get_service_account_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
     ):
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=workspace_id
         )
 
         queryset = ServiceAccount.objects.filter(workspace=workspace, pk=uid)
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -62,10 +63,6 @@ class ServiceAccountAPIService(APIService):
 
         return service_account
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related("workspace")
-
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -74,12 +71,12 @@ class ServiceAccountAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=workspace_id
         )
-
         queryset = ServiceAccount.objects.filter(workspace=workspace)
 
         if order_by:
@@ -89,23 +86,25 @@ class ServiceAccountAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if requested_includes:
+            select_paths = [
+                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+            ]
+            queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        service_accounts = list(queryset.all())
 
         return {
             "data": [
-                (
-                    ServiceAccountDetailResponse.model_validate(service_account)
-                    if expand_related
-                    else ServiceAccountSummaryResponse.model_validate(service_account)
-                )
-                for service_account in queryset.all()
+                ServiceAccountResponse.model_validate(service_account)
+                for service_account in service_accounts
             ],
             "meta": meta,
+            "included": self.resolve_includes(
+                service_accounts, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
@@ -113,21 +112,26 @@ class ServiceAccountAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths = [
+            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
         service_account = self.get_service_account_for_action(
             principal=principal,
             workspace_id=workspace_id,
             uid=uid,
             action="view",
-            expand_related=expand_related,
+            select_related=select_paths,
         )
 
-        return (
-            ServiceAccountDetailResponse.model_validate(service_account)
-            if expand_related
-            else ServiceAccountSummaryResponse.model_validate(service_account)
-        )
+        return {
+            "data": ServiceAccountResponse.model_validate(service_account),
+            "included": self.resolve_includes(
+                [service_account], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     @transaction.atomic
     def create(
@@ -135,7 +139,6 @@ class ServiceAccountAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         data: ServiceAccountPostBody,
-        expand_related: Optional[bool] = None,
     ):
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=workspace_id
@@ -157,13 +160,12 @@ class ServiceAccountAPIService(APIService):
                 principal=principal,
                 uid=data.role_id,
                 action="view",
-                expand_related=True,
             )
 
         service_account = ServiceAccount(
             pk=data.id,
             workspace=workspace,
-            **data.dict(include=set(ServiceAccountFields.model_fields.keys())),
+            **data.dict(include=set(ServiceAccountInputFields.model_fields.keys())),
         )
         raw_key = service_account.generate_key()
         service_account.full_clean(exclude=["email"])
@@ -184,21 +186,7 @@ class ServiceAccountAPIService(APIService):
             collaborator.full_clean()
             collaborator.save()
 
-        service_account = self.get_service_account_for_action(
-            principal=principal,
-            workspace_id=workspace_id,
-            uid=service_account.id,
-            action="view",
-            expand_related=expand_related,
-        )
-
-        service_account.key = raw_key
-
-        return (
-            ServiceAccountDetailPostResponse.model_validate(service_account)
-            if expand_related
-            else ServiceAccountSummaryPostResponse.model_validate(service_account)
-        )
+        return {"id": service_account.pk, "key": raw_key}
 
     def update(
         self,
@@ -206,7 +194,6 @@ class ServiceAccountAPIService(APIService):
         workspace_id: uuid.UUID,
         uid: uuid.UUID,
         data: ServiceAccountPatchBody,
-        expand_related: Optional[bool] = None,
     ):
         service_account = self.get_service_account_for_action(
             principal=principal,
@@ -215,7 +202,7 @@ class ServiceAccountAPIService(APIService):
             action="edit",
         )
         service_account_body = data.dict(
-            include=set(ServiceAccountFields.model_fields.keys()), exclude_unset=True
+            include=set(ServiceAccountInputFields.model_fields.keys()), exclude_unset=True
         )
 
         for field, value in service_account_body.items():
@@ -223,13 +210,6 @@ class ServiceAccountAPIService(APIService):
 
         service_account.full_clean()
         service_account.save()
-
-        return self.get(
-            principal=principal,
-            workspace_id=workspace_id,
-            uid=uid,
-            expand_related=expand_related,
-        )
 
     def delete(
         self,
@@ -242,7 +222,6 @@ class ServiceAccountAPIService(APIService):
             workspace_id=workspace_id,
             uid=uid,
             action="delete",
-            expand_related=True,
         )
 
         service_account.delete()
@@ -254,21 +233,14 @@ class ServiceAccountAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
     ):
         service_account = self.get_service_account_for_action(
             principal=principal,
             workspace_id=workspace_id,
             uid=uid,
             action="edit",
-            expand_related=expand_related,
         )
 
         raw_key = service_account.generate_key()
-        service_account.key = raw_key
 
-        return (
-            ServiceAccountDetailPostResponse.model_validate(service_account)
-            if expand_related
-            else ServiceAccountSummaryPostResponse.model_validate(service_account)
-        )
+        return {"key": raw_key}

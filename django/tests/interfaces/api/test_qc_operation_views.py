@@ -104,7 +104,7 @@ def test_create_qc_operations_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()[0]["operationType"] == "SELECTION"
+    assert "id" in response.json()[0]
 
 
 def test_create_qc_operations_returns_401_when_unauthenticated(client):
@@ -135,7 +135,7 @@ def test_create_qc_operations_returns_403_without_edit_permission(client):
     assert response.status_code == 403
 
 
-def test_create_qc_operations_returns_422_for_committed_session(client):
+def test_create_qc_operations_returns_400_for_committed_session(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     session = _make_session(workspace, committed=True)
@@ -147,7 +147,7 @@ def test_create_qc_operations_returns_422_for_committed_session(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- get_qc_operation --------------------------------------------------------------------
@@ -163,7 +163,7 @@ def test_get_qc_operation_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(session.history_id, session.id, operation.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(operation.id)
+    assert response.json()["data"]["id"] == str(operation.id)
 
 
 def test_get_qc_operation_returns_404_for_outsider(client):
@@ -207,8 +207,9 @@ def test_update_qc_operation_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["comment"] == "Updated comment"
+    assert response.status_code == 204
+    operation.refresh_from_db()
+    assert operation.comment == "Updated comment"
 
 
 def test_update_qc_operation_returns_403_for_viewer_collaborator(client):
@@ -227,7 +228,7 @@ def test_update_qc_operation_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-def test_update_qc_operation_returns_422_for_committed_session(client):
+def test_update_qc_operation_returns_400_for_committed_session(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     session = _make_session(workspace, committed=True)
@@ -240,7 +241,7 @@ def test_update_qc_operation_returns_422_for_committed_session(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- delete_qc_operation --------------------------------------------------------------------

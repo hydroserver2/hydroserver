@@ -1,17 +1,15 @@
 import uuid
-from typing import Optional
 
 from ninja import Router, Path, Query
 
-from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.session import QCSessionAPIService
-from interfaces.api.schemas import PaginatedResponse
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.quality.session import (
-    QualityControlSessionSummaryResponse,
-    QualityControlSessionDetailResponse,
+    QualityControlSessionResponse,
     QualityControlSessionQueryParameters,
+    QualityControlSessionItemQueryParameters,
     QualityControlSessionPostBody,
     QualityControlSessionPatchBody,
 )
@@ -24,8 +22,7 @@ qc_session_service = QCSessionAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: PaginatedResponse[QualityControlSessionSummaryResponse]
-        | PaginatedResponse[QualityControlSessionDetailResponse],
+        200: PaginatedResponse[QualityControlSessionResponse],
         401: str,
         403: str,
         404: str,
@@ -39,34 +36,20 @@ def get_qc_sessions(
 ):
     """Get sessions for a QC history. Supports range_start/range_end overlap filtering, ancestor_of, and include_ancestors."""
 
-    count, sessions = qc_session_service.get_collection(
-        history=history_id,
+    return 200, qc_session_service.list(
         principal=request.principal,
-        **query.model_dump(exclude_unset=True),
-    )
-
-    meta = build_pagination_meta(
-        count=count,
+        history=history_id,
         offset=query.offset,
         limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
     )
-
-    if query.expand_related:
-        return 200, {
-            "data": [QualityControlSessionDetailResponse.model_validate(session) for session in sessions],
-            "meta": meta,
-        }
-
-    return 200, {
-        "data": [QualityControlSessionSummaryResponse.model_validate(session) for session in sessions],
-        "meta": meta,
-    }
 
 
 @qc_session_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={201: QualityControlSessionDetailResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: CreatedResponse, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def create_qc_session(
@@ -76,20 +59,18 @@ def create_qc_session(
 ):
     """Create a new in-progress session for a QC history."""
 
-    session = qc_session_service.create(
+    return 201, qc_session_service.create(
         principal=request.principal,
         history=history_id,
-        **data.model_dump(exclude_unset=True),
+        **data.dict(exclude_unset=True),
     )
-
-    return 201, session
 
 
 @qc_session_router.get(
     "/{session_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: QualityControlSessionSummaryResponse | QualityControlSessionDetailResponse,
+        200: ItemResponse[QualityControlSessionResponse],
         401: str,
         403: str,
         404: str,
@@ -100,24 +81,19 @@ def get_qc_session(
     request: HydroServerHttpRequest,
     history_id: Path[uuid.UUID],
     session_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[QualityControlSessionItemQueryParameters],
 ):
-    """Get a QC session by ID. Includes dependencies and operations when expand_related=True."""
+    """Get a QC session by ID."""
 
-    session = qc_session_service.get(
-        history=history_id, session=session_id, principal=request.principal, expand_related=expand_related
+    return 200, qc_session_service.get_item(
+        principal=request.principal, history=history_id, session=session_id
     )
-
-    if expand_related:
-        return 200, QualityControlSessionDetailResponse.model_validate(session)
-
-    return 200, QualityControlSessionSummaryResponse.model_validate(session)
 
 
 @qc_session_router.patch(
     "/{session_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: QualityControlSessionDetailResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def update_qc_session(
@@ -128,14 +104,14 @@ def update_qc_session(
 ):
     """Update an in-progress session's description."""
 
-    session = qc_session_service.update(
+    qc_session_service.update(
         history=history_id,
         session=session_id,
         principal=request.principal,
-        **data.model_dump(exclude_unset=True),
+        **data.dict(exclude_unset=True),
     )
 
-    return 200, session
+    return 204, None
 
 
 @qc_session_router.delete(
@@ -161,7 +137,7 @@ def delete_qc_session(
 @qc_session_router.post(
     "/{session_id}/commit",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: QualityControlSessionDetailResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def commit_qc_session(
@@ -171,8 +147,8 @@ def commit_qc_session(
 ):
     """Commit an in-progress session after observations have been pushed to the managed datastream."""
 
-    session = qc_session_service.commit(
+    qc_session_service.commit(
         history=history_id, session=session_id, principal=request.principal
     )
 
-    return 200, session
+    return 204, None

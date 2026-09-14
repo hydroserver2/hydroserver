@@ -1,31 +1,34 @@
 import uuid
-from datetime import datetime
-from typing import Optional, Union, Literal
+from typing import Optional, Literal, get_args
 
-from pydantic import Field, ConfigDict, validate_call
 from django.db import transaction
+from django.db.models import Count
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
-from core.iam.models import ServiceAccount, Workspace
+from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
+from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
-from core.sta.models import MonitoringSite
-from interfaces.api.services.sta.datastream import DatastreamAPIService
 from processing.orchestration.services import TaskService
-from processing.etl.models import EtlTask, EtlMapping, DataConnection
+from processing.etl.models import EtlTask, DataConnection
+from interfaces.api.schemas.etl.task import (
+    EtlTaskOrderByFields,
+    EtlTaskResponse,
+    EtlTaskPostBody,
+    EtlTaskPatchBody,
+    ETL_TASK_INCLUDE_RELATIONS,
+)
 
 
 User = get_user_model()
-
-datastream_service = DatastreamAPIService()
 
 
 class EtlTaskAPIService(TaskService[EtlTask], APIService):
 
     task_model = EtlTask
+    INCLUDE_RELATIONS = ETL_TASK_INCLUDE_RELATIONS
 
     order_by_fields = {
         "id", "name", "data_connection_id", "data_connection__name", "data_connection__workspace_id",
@@ -33,142 +36,141 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         "latest_run_finished_at",
     }
 
+    def get_task_for_action(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        action: Literal["view", "edit", "delete"] = "view",
+    ) -> EtlTask:
+        return self.get(task=uid, action=action, principal=principal)
+
     def get(
         self,
-        task: Union[uuid.UUID, EtlTask],
+        task: uuid.UUID | EtlTask,
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ) -> EtlTask:
-        """Get an ETL task with related data and the latest run annotations."""
-
+        requested_includes = self.resolve_include_set(include)
         task = super().get(task=task, action=action, principal=principal)
 
         queryset = (
             self.annotate_latest_run(self.task_model.objects)
-            .select_related("data_connection", "periodic_task__crontab", "periodic_task__interval")
+            .annotate(mapping_count=Count("etl_mappings", distinct=True))
+            .select_related("periodic_task__crontab", "periodic_task__interval")
         )
+        task = queryset.get(pk=task.pk)
 
-        if expand_related:
-            queryset = queryset.select_related(
-                "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
-            ).prefetch_related(
-                "etl_mappings", "etl_mappings__target_datastream",
-                "etl_mappings__target_datastream__datastream_linked_resources"
-            )
+        if "dataConnection" in requested_includes:
+            self._attach_data_connections([task])
 
-        return queryset.get(pk=task.pk)
+        return task
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
+    def get_item(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] | Unset = Unset,
-        search_term: str | Unset = Unset,
-        monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
-        workspace: list[uuid.UUID | Workspace] | Unset = Unset,
-        data_connection: list[uuid.UUID | DataConnection] | Unset = Unset,
-        latest_run_status: list[str] | Unset = Unset,
-        latest_run_started_at_min: datetime | Unset = Unset,
-        latest_run_started_at_max: datetime | Unset = Unset,
-        latest_run_finished_at_min: datetime | Unset = Unset,
-        latest_run_finished_at_max: datetime | Unset = Unset,
-        expand_related: Optional[bool] = None,
-    ) -> tuple[int, list[EtlTask]]:
-        """
-        Return a collection of ETL tasks.
-        """
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        task = self.get(task=uid, action="view", principal=principal, include=include)
+
+        return {
+            "data": EtlTaskResponse.model_validate(task),
+            "included": self.resolve_includes(
+                [task], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        filtering = filtering or {}
 
         queryset = self.task_model.objects
 
-        if order_by is Unset:
-            order_by = []
+        order_by = order_by or []
 
-        latest_run_filtered = any(value is not Unset for value in [
-            latest_run_status, latest_run_started_at_min, latest_run_started_at_max,
-            latest_run_finished_at_min, latest_run_finished_at_max,
-        ])
-        if latest_run_filtered or any(
+        latest_run_fields = [
+            "latest_run_status", "latest_run_started_at_min", "latest_run_started_at_max",
+            "latest_run_finished_at_min", "latest_run_finished_at_max",
+        ]
+        if any(field in filtering for field in latest_run_fields) or any(
             term.lstrip("-") in self.latest_run_filter_fields for term in order_by
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
-        if search_term is not Unset:
+        if "search_term" in filtering:
             search_vector = SearchVector("name", "description", "data_connection__name")
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
+            queryset = queryset.annotate(search=search_vector).filter(
+                search=SearchQuery(filtering["search_term"])
+            )
 
-        if monitoring_site is not Unset:
-            queryset = queryset.filter(etl_mappings__target_datastream__monitoring_site__in=[
-                getattr(t, "pk", t) for t in monitoring_site
-            ])
+        if "monitoring_site_id" in filtering:
+            queryset = self.apply_filters(
+                queryset, "etl_mappings__target_datastream__monitoring_site_id", filtering["monitoring_site_id"]
+            )
 
-        if workspace is not Unset:
-            queryset = queryset.filter(data_connection__workspace__in=[
-                getattr(w, "pk", w) for w in workspace
-            ])
+        if "workspace_id" in filtering:
+            queryset = self.apply_filters(
+                queryset, "data_connection__workspace_id", filtering["workspace_id"]
+            )
 
-        if data_connection is not Unset:
-            queryset = queryset.filter(data_connection__in=[
-                getattr(dc, "pk", dc) for dc in data_connection
-            ])
+        if "data_connection_id" in filtering:
+            queryset = self.apply_filters(queryset, "data_connection_id", filtering["data_connection_id"])
 
-        if latest_run_status is not Unset:
-            queryset = queryset.filter(latest_run_status__in=latest_run_status)
+        if "latest_run_status" in filtering:
+            queryset = self.apply_filters(queryset, "latest_run_status", filtering["latest_run_status"])
 
-        if latest_run_started_at_min is not Unset:
-            queryset = queryset.filter(latest_run_started_at__gte=latest_run_started_at_min)
+        if "latest_run_started_at_min" in filtering:
+            queryset = queryset.filter(latest_run_started_at__gte=filtering["latest_run_started_at_min"])
 
-        if latest_run_started_at_max is not Unset:
-            queryset = queryset.filter(latest_run_started_at__lte=latest_run_started_at_max)
+        if "latest_run_started_at_max" in filtering:
+            queryset = queryset.filter(latest_run_started_at__lte=filtering["latest_run_started_at_max"])
 
-        if latest_run_finished_at_min is not Unset:
-            queryset = queryset.filter(latest_run_finished_at__gte=latest_run_finished_at_min)
+        if "latest_run_finished_at_min" in filtering:
+            queryset = queryset.filter(latest_run_finished_at__gte=filtering["latest_run_finished_at_min"])
 
-        if latest_run_finished_at_max is not Unset:
-            queryset = queryset.filter(latest_run_finished_at__lte=latest_run_finished_at_max)
+        if "latest_run_finished_at_max" in filtering:
+            queryset = queryset.filter(latest_run_finished_at__lte=filtering["latest_run_finished_at_max"])
 
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
-
-        queryset = queryset.order_by(*order_by, "-id")
-
-        if expand_related:
-            queryset = queryset.select_related(
-                "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
-            ).prefetch_related(
-                "etl_mappings", "etl_mappings__target_datastream",
-                "etl_mappings__target_datastream__datastream_linked_resources"
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset, order_by, list(get_args(EtlTaskOrderByFields))
             )
         else:
-            queryset = queryset.select_related(
-                "data_connection", "periodic_task__crontab", "periodic_task__interval"
-            )
+            queryset = queryset.order_by("-id")
+
+        queryset = queryset.select_related(
+            "periodic_task__crontab", "periodic_task__interval"
+        ).annotate(mapping_count=Count("etl_mappings", distinct=True))
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        count = queryset.count()
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        tasks = self.attach_latest_runs(list(queryset[offset:offset + limit]))
+        tasks = self.attach_latest_runs(list(queryset.all()))
 
-        if expand_related:
+        if "dataConnection" in requested_includes:
             self._attach_data_connections(tasks)
 
-        return count, tasks
+        return {
+            "data": [EtlTaskResponse.model_validate(task) for task in tasks],
+            "meta": meta,
+            "included": self.resolve_includes(
+                tasks, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     @staticmethod
     def _attach_data_connections(tasks: list[EtlTask]) -> list[EtlTask]:
-        """
-        Attach fully-resolved data connections to a page of tasks.
-
-        Every ``EtlTaskResponse`` embeds a ``DataConnectionResponse`` whose resolvers (task
-        counts, notification, schedule, recipients) would otherwise issue several queries *per
-        task*. Because a task list is typically scoped to one data connection, we load the few
-        distinct connections once -- with task counts annotated and notification data prefetched --
-        and share them across the tasks, turning ~4 queries per row into a small constant.
-        """
-
         from interfaces.api.services.etl.data_connection import DataConnectionAPIService
 
         connection_ids = {task.data_connection_id for task in tasks if task.data_connection_id}
@@ -179,7 +181,6 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
             DataConnection.objects
             .filter(pk__in=connection_ids)
             .select_related(
-                "workspace",
                 "notification__periodic_task__crontab",
                 "notification__periodic_task__interval",
             )
@@ -198,150 +199,69 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
 
         return tasks
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        name: str,
-        data_connection: Union[uuid.UUID, DataConnection],
-        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
-        description: str | None = None,
-        task_variables: dict | None = None,
-        crontab: str | None = None,
-        interval: int | None = None,
-        interval_period: Literal["minutes", "hours", "days"] | None = None,
-        start_time: datetime | None = None,
-        enabled: bool = True,
-        mappings: list[dict] | None = None,
-    ) -> EtlTask:
-        """
-        Create an ETL task.
-        """
-
-        if task_variables is None:
-            task_variables = {}
-
-        if mappings is None:
-            mappings = []
-
-        if isinstance(data_connection, uuid.UUID):
-            try:
-                data_connection = DataConnection.objects.get(pk=data_connection)
-            except DataConnection.DoesNotExist:
-                raise NotFoundError(f"Data connection with ID {str(data_connection)} does not exist.")
+        data: EtlTaskPostBody,
+    ):
+        try:
+            data_connection = DataConnection.objects.select_related("workspace").get(
+                pk=data.data_connection_id
+            )
+        except DataConnection.DoesNotExist:
+            raise NotFoundError(f"Data connection with ID {data.data_connection_id} does not exist.")
 
         if not principal.can_create("EtlTask", workspace=data_connection.workspace):
             raise PermissionDeniedError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
-            pk=uid,
-            name=name,
-            description=description,
+            pk=data.uid if data.uid is not Unset else uuid.uuid7(),
+            name=data.name,
+            description=data.description,
             data_connection=data_connection,
-            task_variables=task_variables,
+            task_variables=data.task_variables,
         )
 
+        schedule = data.schedule
         self.apply_schedule(
             task=task,
-            crontab=crontab,
-            interval=interval,
-            interval_period=interval_period,
-            start_time=start_time,
-            enabled=enabled,
+            crontab=schedule.crontab if schedule else None,
+            interval=schedule.interval if schedule else None,
+            interval_period=schedule.interval_period if schedule else None,
+            start_time=schedule.start_time if schedule else None,
+            enabled=schedule.enabled if schedule else True,
             celery_task_name="processing.etl.tasks.run_etl_task",
         )
 
-        self.apply_mappings(task=task, mappings=mappings, principal=principal)
+        return {"id": task.pk}
 
-        return self.get(task.pk)
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def update(
         self,
-        task: Union[uuid.UUID, EtlTask],
         principal: User | ServiceAccount | AnonymousPrincipal,
-        name: str | Unset = Unset,
-        description: str | None | Unset = Unset,
-        task_variables: dict | Unset = Unset,
-        crontab: str | None | Unset = Unset,
-        interval: int | None | Unset = Unset,
-        interval_period: Literal["minutes", "hours", "days"] | None | Unset = Unset,
-        start_time: datetime | None | Unset = Unset,
-        enabled: bool | Unset = Unset,
-        mappings: list[dict] | Unset = Unset,
-    ) -> EtlTask:
-        """
-        Update an ETL task.
-        """
+        uid: uuid.UUID,
+        data: EtlTaskPatchBody,
+    ):
+        task = self.get_task_for_action(principal=principal, uid=uid, action="edit")
 
-        task = self.get(task=task, action="edit", principal=principal)
-
-        editable_fields = {
-            "name": name,
-            "description": description,
-            "task_variables": task_variables
-        }
-
-        for field, value in editable_fields.items():
-            if value is not Unset:
-                setattr(task, field, value)
+        task_data = data.dict(
+            include=set(EtlTaskPatchBody.model_fields.keys()) - {"schedule"},
+            exclude_unset=True,
+        )
+        for field, value in task_data.items():
+            setattr(task, field, value)
 
         task.save()
 
-        if any(field is not Unset for field in [crontab, interval, interval_period, start_time, enabled]):
+        if data.schedule is not Unset:
+            schedule = data.schedule
             self.apply_schedule(
                 task=task,
-                crontab=crontab,
-                interval=interval,
-                interval_period=interval_period,
-                start_time=start_time,
-                enabled=enabled,
+                crontab=schedule.crontab if schedule else None,
+                interval=schedule.interval if schedule else None,
+                interval_period=schedule.interval_period if schedule else None,
+                start_time=schedule.start_time if schedule else None,
+                enabled=schedule.enabled if schedule else True,
                 celery_task_name="processing.etl.tasks.run_etl_task",
             )
-
-        if mappings is not Unset:
-            self.apply_mappings(task=task, mappings=mappings, principal=principal)
-
-        return self.get(task.pk)
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def apply_mappings(
-        self,
-        task: Union[uuid.UUID, EtlTask],
-        mappings: list[dict],
-        principal: User | ServiceAccount | AnonymousPrincipal,
-    ) -> None:
-        """
-        Replace the mappings on an ETL task, preserving existing ones that match.
-        """
-
-        task = self.get(task)
-
-        target_ids = [m["target_datastream"] for m in mappings]
-
-        for target_id in target_ids:
-            datastream_service.get_datastream_for_action(
-                principal=principal, uid=target_id, action="edit"
-            )
-
-        new_mappings = {(m["source_identifier"], m["target_datastream"]) for m in mappings}
-        current_mappings = {
-            (m.source_identifier, m.target_datastream_id): m
-            for m in task.etl_mappings.all()
-        }
-
-        task.etl_mappings.filter(
-            pk__in=[m.pk for key, m in current_mappings.items() if key not in new_mappings]
-        ).delete()
-
-        for source_identifier, target_datastream in new_mappings:
-            if (source_identifier, target_datastream) not in current_mappings:
-                new_mapping = EtlMapping(
-                    etl_task=task,
-                    source_identifier=source_identifier,
-                    target_datastream_id=target_datastream,
-                )
-                new_mapping.full_clean()
-                new_mapping.save()

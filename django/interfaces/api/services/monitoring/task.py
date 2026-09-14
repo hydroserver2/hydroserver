@@ -1,20 +1,26 @@
 import uuid
-from datetime import datetime
-from typing import Optional, Union, Literal
 
-from pydantic import Field, ConfigDict, validate_call
+from typing import Optional, Literal, get_args
 from django.db import transaction
+from django.db.models import Count
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
-from core.iam.models import ServiceAccount, Workspace
+from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
-from interfaces.api.service import APIService
 from core.sta.models import MonitoringSite
 from processing.orchestration.services import TaskService
-from processing.monitoring.models import MonitoringTask, MonitoringNotificationRecipient
+from processing.monitoring.models import MonitoringTask, MonitoringRule, MonitoringNotificationRecipient
+from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
+from interfaces.api.service import APIService
+from interfaces.api.schemas.monitoring.task import (
+    MonitoringTaskOrderByFields,
+    MonitoringTaskResponse,
+    MonitoringTaskPostBody,
+    MonitoringTaskPatchBody,
+    MONITORING_TASK_INCLUDE_RELATIONS,
+)
 
 
 User = get_user_model()
@@ -25,6 +31,7 @@ CELERY_TASK_NAME = "processing.monitoring.tasks.run_monitoring_task"
 class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
 
     task_model = MonitoringTask
+    INCLUDE_RELATIONS = MONITORING_TASK_INCLUDE_RELATIONS
 
     order_by_fields = {
         "id", "name", "monitoring_site_id", "monitoring_site__name",
@@ -32,207 +39,239 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         "latest_run_status", "latest_run_started_at", "latest_run_finished_at",
     }
 
+    @classmethod
+    def _include_query_hints(cls, requested_includes: set[str]) -> tuple[list[str], list[str]]:
+        select_paths = [
+            cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
+        prefetch_paths = []
+        if "monitoringSite" in requested_includes:
+            prefetch_paths.append("monitoring_site__monitoring_site_linked_resources")
+
+        return select_paths, prefetch_paths
+
+    def get_task_for_action(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        action: Literal["view", "edit", "delete"] = "view",
+    ) -> MonitoringTask:
+        return self.get(task=uid, action=action, principal=principal)
+
     def get(
         self,
-        task: Union[uuid.UUID, MonitoringTask],
+        task: uuid.UUID | MonitoringTask,
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ) -> MonitoringTask:
-        """
-        Get a monitoring task.
-        """
-
+        requested_includes = self.resolve_include_set(include)
         task = super().get(task=task, action=action, principal=principal)
 
         queryset = (
             self.annotate_latest_run(self.task_model.objects)
-            .select_related("monitoring_site", "periodic_task__crontab", "periodic_task__interval")
+            .select_related("periodic_task__crontab", "periodic_task__interval")
+            .prefetch_related("recipients")
         )
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
 
-        if expand_related:
-            queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
-                "rules__datastream",
-                "rules__datastream__datastream_linked_resources", "recipients"
-            )
-        else:
-            queryset = queryset.prefetch_related("rules", "recipients")
+        task = queryset.get(pk=task.pk)
+        self.attach_rule_type_counts([task])
 
-        return queryset.get(pk=task.pk)
+        return task
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
+    def get_item(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] = Field(default_factory=list),
-        search_term: str | Unset = Unset,
-        monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
-        workspace: list[uuid.UUID | Workspace] | Unset = Unset,
-        latest_run_status: list[str] | Unset = Unset,
-        datastream: list[uuid.UUID] | Unset = Unset,
-        rule_type: list[str] | Unset = Unset,
-        expand_related: Optional[bool] = None,
-    ) -> tuple[int, list[MonitoringTask]]:
-        """
-        Return a collection of monitoring tasks.
-        """
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        task = self.get(task=uid, action="view", principal=principal, include=include)
+
+        return {
+            "data": MonitoringTaskResponse.model_validate(task),
+            "included": self.resolve_includes(
+                [task], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    @staticmethod
+    def attach_rule_type_counts(tasks: list[MonitoringTask]) -> list[MonitoringTask]:
+        task_ids = [task.pk for task in tasks]
+        grouped: dict[uuid.UUID, dict[str, int]] = {}
+
+        if task_ids:
+            for row in (
+                MonitoringRule.objects
+                .filter(task_id__in=task_ids)
+                .values("task_id", "rule_type")
+                .annotate(count=Count("id"))
+            ):
+                grouped.setdefault(row["task_id"], {})[row["rule_type"]] = row["count"]
+
+        for task in tasks:
+            task.rule_type_counts = grouped.get(task.pk, {})
+
+        return tasks
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        filtering = filtering or {}
 
         queryset = self.task_model.objects
 
-        if latest_run_status is not Unset or any(
+        order_by = order_by or []
+
+        if "latest_run_status" in filtering or any(
             term.lstrip("-") in self.latest_run_filter_fields for term in order_by
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
-        if search_term is not Unset:
+        if "search_term" in filtering:
             search_vector = SearchVector("name", "description", "monitoring_site__name")
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
+            queryset = queryset.annotate(search=search_vector).filter(
+                search=SearchQuery(filtering["search_term"])
+            )
 
-        if monitoring_site is not Unset:
-            queryset = queryset.filter(monitoring_site__in=[getattr(t, "pk", t) for t in monitoring_site])
+        if "monitoring_site" in filtering:
+            queryset = self.apply_filters(queryset, "monitoring_site_id", filtering["monitoring_site"])
 
-        if workspace is not Unset:
-            queryset = queryset.filter(monitoring_site__workspace__in=[getattr(w, "pk", w) for w in workspace])
+        if "workspace" in filtering:
+            queryset = self.apply_filters(
+                queryset, "monitoring_site__workspace_id", filtering["workspace"]
+            )
 
-        if latest_run_status is not Unset:
-            queryset = queryset.filter(latest_run_status__in=latest_run_status)
+        if "latest_run_status" in filtering:
+            queryset = self.apply_filters(queryset, "latest_run_status", filtering["latest_run_status"])
 
-        if datastream is not Unset:
-            queryset = queryset.filter(rules__datastream__in=datastream)
+        if "datastream" in filtering:
+            queryset = self.apply_filters(queryset, "rules__datastream_id", filtering["datastream"])
 
-        if rule_type is not Unset:
-            queryset = queryset.filter(rules__rule_type__in=rule_type)
+        if "rule_type" in filtering:
+            queryset = self.apply_filters(queryset, "rules__rule_type", filtering["rule_type"])
 
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
-
-        queryset = queryset.order_by(*order_by, "-id")
-
-        if expand_related:
-            queryset = (queryset.select_related(
-                "monitoring_site", "monitoring_site__workspace", "periodic_task__crontab", "periodic_task__interval"
-            ).prefetch_related(
-                "rules__datastream",
-                "rules__datastream__datastream_linked_resources", "recipients"
-            ))
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset, order_by, list(get_args(MonitoringTaskOrderByFields))
+            )
         else:
-            queryset = queryset.select_related(
-                "monitoring_site", "periodic_task__crontab", "periodic_task__interval"
-            ).prefetch_related("rules", "recipients")
+            queryset = queryset.order_by("-id")
+
+        queryset = queryset.select_related(
+            "periodic_task__crontab", "periodic_task__interval"
+        ).prefetch_related("recipients")
+
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        count = queryset.count()
-        tasks = self.attach_latest_runs(list(queryset[offset:offset + limit]))
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        return count, tasks
+        tasks = self.attach_latest_runs(list(queryset.all()))
+        self.attach_rule_type_counts(tasks)
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+        return {
+            "data": [MonitoringTaskResponse.model_validate(task) for task in tasks],
+            "meta": meta,
+            "included": self.resolve_includes(
+                tasks, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
     @transaction.atomic
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        monitoring_site: uuid.UUID | MonitoringSite,
-        name: str,
-        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
-        description: str | None = None,
-        recipients: list[str] = Field(default_factory=list),
-        crontab: str | None = None,
-        interval: int | None = None,
-        interval_period: Literal["minutes", "hours", "days"] | None = None,
-        start_time: datetime | None = None,
-        enabled: bool = True,
-    ) -> MonitoringTask:
-        """
-        Create a monitoring task.
-        """
-
-        if isinstance(monitoring_site, uuid.UUID):
-            try:
-                monitoring_site = MonitoringSite.objects.select_related("workspace").get(pk=monitoring_site)
-            except MonitoringSite.DoesNotExist:
-                raise NotFoundError("MonitoringSite does not exist.")
+        data: MonitoringTaskPostBody,
+    ):
+        try:
+            monitoring_site = MonitoringSite.objects.select_related("workspace").get(
+                pk=data.monitoring_site_id
+            )
+        except MonitoringSite.DoesNotExist:
+            raise NotFoundError("MonitoringSite does not exist.")
 
         if not principal.can_create("MonitoringTask", workspace=monitoring_site.workspace):
             raise PermissionDeniedError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
-            pk=uid,
-            name=name,
-            description=description,
+            pk=data.uid if data.uid is not Unset else uuid.uuid7(),
+            name=data.name,
+            description=data.description,
             monitoring_site=monitoring_site,
         )
 
+        schedule = data.schedule
         self.apply_schedule(
             task=task,
-            crontab=crontab,
-            interval=interval,
-            interval_period=interval_period,
-            start_time=start_time,
-            enabled=enabled,
+            crontab=schedule.crontab if schedule else None,
+            interval=schedule.interval if schedule else None,
+            interval_period=schedule.interval_period if schedule else None,
+            start_time=schedule.start_time if schedule else None,
+            enabled=schedule.enabled if schedule else True,
             celery_task_name=CELERY_TASK_NAME,
         )
 
-        self.apply_recipients(task=task, emails=recipients)
+        self.apply_recipients(task=task, emails=data.recipients)
 
-        return self.get(task.pk)
+        return {"id": task.pk}
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def update(
         self,
-        task: Union[uuid.UUID, MonitoringTask],
         principal: User | ServiceAccount | AnonymousPrincipal,
-        name: str | Unset = Unset,
-        description: str | None | Unset = Unset,
-        recipients: list[str] | Unset = Unset,
-        crontab: str | None | Unset = Unset,
-        interval: int | None | Unset = Unset,
-        interval_period: Literal["minutes", "hours", "days"] | None | Unset = Unset,
-        start_time: datetime | None | Unset = Unset,
-        enabled: bool | Unset = Unset,
-    ) -> MonitoringTask:
-        """
-        Update a monitoring task.
-        """
+        uid: uuid.UUID,
+        data: MonitoringTaskPatchBody,
+    ):
+        task = self.get_task_for_action(principal=principal, uid=uid, action="edit")
 
-        task = self.get(task=task, action="edit", principal=principal)
-
-        editable_fields = {"name": name, "description": description}
-        for field, value in editable_fields.items():
-            if value is not Unset:
-                setattr(task, field, value)
+        task_data = data.dict(
+            include=set(MonitoringTaskPatchBody.model_fields.keys()) - {"schedule", "recipients"},
+            exclude_unset=True,
+        )
+        for field, value in task_data.items():
+            setattr(task, field, value)
 
         task.save()
 
-        if any(field is not Unset for field in [crontab, interval, interval_period, start_time, enabled]):
+        if data.schedule is not Unset:
+            schedule = data.schedule
             self.apply_schedule(
                 task=task,
-                crontab=crontab,
-                interval=interval,
-                interval_period=interval_period,
-                start_time=start_time,
-                enabled=enabled,
+                crontab=schedule.crontab if schedule else None,
+                interval=schedule.interval if schedule else None,
+                interval_period=schedule.interval_period if schedule else None,
+                start_time=schedule.start_time if schedule else None,
+                enabled=schedule.enabled if schedule else True,
                 celery_task_name=CELERY_TASK_NAME,
             )
 
-        if recipients is not Unset:
-            self.apply_recipients(task=task, emails=recipients)
+        if "recipients" in data.model_fields_set:
+            self.apply_recipients(task=task, emails=data.recipients)
 
-        return self.get(task.pk)
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def apply_recipients(
         self,
-        task: Union[uuid.UUID, MonitoringTask],
+        task: uuid.UUID | MonitoringTask,
         emails: list[str],
     ) -> None:
-        """Replace all notification recipients on a task."""
-
         task = super().get(task)
-
         task.recipients.all().delete()
 
         MonitoringNotificationRecipient.objects.bulk_create([

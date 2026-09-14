@@ -2,14 +2,14 @@ import uuid
 
 from ninja import Router, Path, Query
 
-from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.operation import QCOperationAPIService, OperationInput
-from interfaces.api.schemas import PaginatedResponse
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.quality.operation import (
     QualityControlOperationResponse,
     QualityControlOperationQueryParameters,
+    QualityControlOperationItemQueryParameters,
     QualityControlOperationPostBody,
     QualityControlOperationPatchBody,
 )
@@ -32,26 +32,20 @@ def get_qc_operations(
 ):
     """Get all operations for a QC session in execution order."""
 
-    count, operations = qc_operation_service.get_collection(
+    return 200, qc_operation_service.list(
+        principal=request.principal,
         history=history_id,
         session=session_id,
-        principal=request.principal,
-        **query.model_dump(exclude_unset=True),
-    )
-
-    meta = build_pagination_meta(
-        count=count,
         offset=query.offset,
         limit=query.limit,
+        order_by=query.order_by,
     )
-
-    return 200, {"data": operations, "meta": meta}
 
 
 @qc_operation_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={201: list[QualityControlOperationResponse], 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: list[CreatedResponse], 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def create_qc_operations(
@@ -62,20 +56,18 @@ def create_qc_operations(
 ):
     """Append one or more operations to an in-progress session."""
 
-    operations = qc_operation_service.create(
+    return 201, qc_operation_service.create(
         principal=request.principal,
         history=history_id,
         session=session_id,
         operations=[OperationInput(**item.model_dump()) for item in data],
     )
 
-    return 201, operations
-
 
 @qc_operation_router.get(
     "/{operation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: QualityControlOperationResponse, 401: str, 403: str, 404: str},
+    response={200: ItemResponse[QualityControlOperationResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_qc_operation(
@@ -83,23 +75,22 @@ def get_qc_operation(
     history_id: Path[uuid.UUID],
     session_id: Path[uuid.UUID],
     operation_id: Path[uuid.UUID],
+    query: Query[QualityControlOperationItemQueryParameters],
 ):
     """Get a single QC operation by ID."""
 
-    operation = qc_operation_service.get(
+    return 200, qc_operation_service.get_item(
+        principal=request.principal,
         history=history_id,
         session=session_id,
         operation=operation_id,
-        principal=request.principal,
     )
-
-    return 200, operation
 
 
 @qc_operation_router.patch(
     "/{operation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: QualityControlOperationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def update_qc_operation(
@@ -111,15 +102,15 @@ def update_qc_operation(
 ):
     """Update the comment or arguments of an operation in an in-progress session."""
 
-    operation = qc_operation_service.update(
+    qc_operation_service.update(
         history=history_id,
         session=session_id,
         operation=operation_id,
         principal=request.principal,
-        **data.model_dump(exclude_unset=True),
+        **data.dict(exclude_unset=True),
     )
 
-    return 200, operation
+    return 204, None
 
 
 @qc_operation_router.delete(

@@ -1,20 +1,22 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
 from django.db import transaction
-from interfaces.api.http.request import HydroServerHttpRequest
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.iam import ServiceAccountAPIService
 from interfaces.api.schemas import (
-    ServiceAccountSummaryResponse,
-    ServiceAccountDetailResponse,
+    ServiceAccountResponse,
     ServiceAccountQueryParameters,
+    ServiceAccountItemQueryParameters,
     ServiceAccountPostBody,
     ServiceAccountPatchBody,
-    ServiceAccountSummaryPostResponse,
-    ServiceAccountDetailPostResponse,
+    ServiceAccountCreatedResponse,
+    ServiceAccountKeyResponse,
     PaginatedResponse,
+    ItemResponse,
 )
-from interfaces.api.services.iam import ServiceAccountAPIService
 
 service_account_router = Router(tags=["Service Accounts"])
 service_account_service = ServiceAccountAPIService()
@@ -24,12 +26,10 @@ service_account_service = ServiceAccountAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: PaginatedResponse[ServiceAccountSummaryResponse]
-        | PaginatedResponse[ServiceAccountDetailResponse],
+        200: PaginatedResponse[ServiceAccountResponse],
         401: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_service_accounts(
     request: HydroServerHttpRequest,
@@ -47,7 +47,7 @@ def get_service_accounts(
         limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -55,19 +55,16 @@ def get_service_accounts(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: ServiceAccountSummaryPostResponse | ServiceAccountDetailPostResponse,
+        201: ServiceAccountCreatedResponse,
         401: str,
-        422: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 @transaction.atomic
 def create_service_account(
     request: HydroServerHttpRequest,
     workspace_id: Path[uuid.UUID],
     data: ServiceAccountPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new service account for the workspace.
@@ -77,7 +74,6 @@ def create_service_account(
         principal=request.principal,
         workspace_id=workspace_id,
         data=data,
-        expand_related=expand_related,
     )
 
 
@@ -85,18 +81,17 @@ def create_service_account(
     "/{service_account_id}",
     auth=[session_auth, oidc_auth],
     response={
-        200: ServiceAccountSummaryResponse | ServiceAccountDetailResponse,
+        200: ItemResponse[ServiceAccountResponse],
         401: str,
         403: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_service_account(
     request: HydroServerHttpRequest,
     workspace_id: Path[uuid.UUID],
     service_account_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[ServiceAccountItemQueryParameters],
 ):
     """
     Get service account details.
@@ -106,7 +101,7 @@ def get_service_account(
         principal=request.principal,
         workspace_id=workspace_id,
         uid=service_account_id,
-        expand_related=expand_related,
+        include=query.include,
     )
 
 
@@ -114,13 +109,11 @@ def get_service_account(
     "/{service_account_id}",
     auth=[session_auth, oidc_auth],
     response={
-        200: ServiceAccountSummaryResponse | ServiceAccountDetailResponse,
+        204: None,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 @transaction.atomic
 def update_service_account(
@@ -128,19 +121,19 @@ def update_service_account(
     workspace_id: Path[uuid.UUID],
     service_account_id: Path[uuid.UUID],
     data: ServiceAccountPatchBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Update a service account.
     """
 
-    return 200, service_account_service.update(
+    service_account_service.update(
         principal=request.principal,
         workspace_id=workspace_id,
         uid=service_account_id,
         data=data,
-        expand_related=expand_related,
     )
+
+    return 204, None
 
 
 @service_account_router.delete(
@@ -172,11 +165,10 @@ def delete_service_account(
     "/{service_account_id}/regenerate",
     auth=[session_auth, oidc_auth],
     response={
-        201: ServiceAccountSummaryPostResponse | ServiceAccountDetailPostResponse,
+        201: ServiceAccountKeyResponse,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -185,7 +177,6 @@ def regenerate_service_account_key(
     request: HydroServerHttpRequest,
     workspace_id: Path[uuid.UUID],
     service_account_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
 ):
     """
     Regenerate a service account's key using existing settings.
@@ -195,5 +186,4 @@ def regenerate_service_account_key(
         principal=request.principal,
         workspace_id=workspace_id,
         uid=service_account_id,
-        expand_related=expand_related,
     )

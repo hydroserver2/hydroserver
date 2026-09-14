@@ -1,55 +1,59 @@
 import uuid
 import math
 import hashlib
+
 from typing import Optional, Literal, get_args
 from datetime import datetime
 from pydantic.alias_generators import to_camel
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet, Q, Count, Max, Func, F, Sum
+from django.db.models import Q, Count, Max, Func, F, Sum
 from django.db.utils import IntegrityError
-from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
+
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream, Observation, ResultQualifier
+from interfaces.api.service import APIService
+from interfaces.api.services.sta.datastream import DatastreamAPIService
+from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
     ObservationOrderByFields,
-    ObservationSummaryResponse,
-    ObservationDetailResponse,
+    ObservationResponse,
     ObservationPostBody,
     ObservationBulkPostBody,
     ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
+    OBSERVATION_INCLUDE_RELATIONS,
 )
-from interfaces.api.services.sta.datastream import DatastreamAPIService
-from interfaces.api.service import APIService
 
 User = get_user_model()
 datastream_service = DatastreamAPIService()
 
 
 class ObservationAPIService(APIService):
+    INCLUDE_RELATIONS = OBSERVATION_INCLUDE_RELATIONS
+
     def get_observation_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         datastream_id: Optional[uuid.UUID] = None,
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
     ):
         queryset = Observation.objects.annotate(
             result_qualifier_codes=F("result_qualifiers")
-        )
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
-        else:
-            queryset = queryset.select_related("datastream__monitoring_site")
+        ).select_related("datastream__monitoring_site")
+
+        if select_related:
+            queryset = queryset.select_related(*select_related)
         if datastream_id:
             queryset = queryset.filter(id=uid, datastream__id=datastream_id)
         else:
             queryset = queryset.filter(id=uid)
+
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -67,11 +71,13 @@ class ObservationAPIService(APIService):
 
         return observation
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(
-            "datastream", "datastream__monitoring_site", "datastream__monitoring_site__workspace"
-        )
+    @classmethod
+    def _include_query_hints(cls, requested_includes: set[str]) -> list[str]:
+        select_paths = [cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes]
+        if "workspace" in requested_includes:
+            select_paths.append("datastream__monitoring_site__workspace__owner")
+
+        return select_paths
 
     def _resolve_datastream_and_workspace(
         self,
@@ -84,6 +90,7 @@ class ObservationAPIService(APIService):
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=datastream.monitoring_site.workspace_id
         )
+
         return datastream, workspace
 
     @staticmethod
@@ -138,8 +145,9 @@ class ObservationAPIService(APIService):
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         response_format: Optional[str] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = Observation.objects
 
         datastream_ids = filtering.get("datastream_id") or []
@@ -198,20 +206,21 @@ class ObservationAPIService(APIService):
             list(get_args(ObservationOrderByFields)),
         )
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
-        else:
-            queryset = queryset.select_related("datastream__monitoring_site")
+        select_paths = ["datastream__monitoring_site"]
+        if response_format in ("record", None) and requested_includes:
+            select_paths.extend(self._include_query_hints(requested_includes))
 
+        queryset = queryset.select_related(*select_paths)
         queryset, meta = self.apply_pagination(queryset, offset, limit, count=count)
-
         response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.total_count)
 
         if response_format == "row":
             fields = ["phenomenon_time", "result", "result_qualifier_codes"]
             return {
-                "fields": [to_camel(field) for field in fields],
-                "data": list(queryset.values_list(*fields)),
+                "data": {
+                    "fields": [to_camel(field) for field in fields],
+                    "rows": list(queryset.values_list(*fields)),
+                },
                 "meta": meta,
             }
         elif response_format == "column":
@@ -220,49 +229,56 @@ class ObservationAPIService(APIService):
             columns = (
                 dict(zip(fields, zip(*observations)))
                 if observations
-                else {to_camel(field): [] for field in fields}
+                else {field: [] for field in fields}
             )
-            return {**columns, "meta": meta}
+            return {"data": columns, "meta": meta}
         else:
+            observations = list(queryset.all())
             return {
                 "data": [
-                    (
-                        ObservationDetailResponse.model_validate(observation)
-                        if expand_related
-                        else ObservationSummaryResponse.model_validate(observation)
-                    )
-                    for observation in queryset.all()
+                    ObservationResponse.model_validate(observation)
+                    for observation in observations
                 ],
                 "meta": meta,
+                "included": self.resolve_includes(
+                    observations, requested_includes, self.INCLUDE_RELATIONS
+                ),
             }
 
-    def get(
+    def get_item(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         datastream_id: Optional[uuid.UUID] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_related = (
+            self._include_query_hints(requested_includes)
+            if requested_includes
+            else None
+        )
+
         observation = self.get_observation_for_action(
             principal=principal,
             uid=uid,
             action="view",
             datastream_id=datastream_id,
-            expand_related=expand_related,
+            select_related=select_related,
         )
 
-        return (
-            ObservationDetailResponse.model_validate(observation)
-            if expand_related
-            else ObservationSummaryResponse.model_validate(observation)
-        )
+        return {
+            "data": ObservationResponse.model_validate(observation),
+            "included": self.resolve_includes(
+                [observation], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: ObservationPostBody,
         datastream_id: uuid.UUID,
-        expand_related: Optional[bool] = None,
         update_datastream_statistics: bool = True,
     ):
         datastream, workspace = self._resolve_datastream_and_workspace(
@@ -302,12 +318,7 @@ class ObservationAPIService(APIService):
                 fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
             )
 
-        return self.get(
-            principal=principal,
-            uid=observation.id,
-            datastream_id=datastream_id,
-            expand_related=expand_related,
-        )
+        return {"id": observation.id}
 
     def delete(
         self,

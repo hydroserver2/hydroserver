@@ -111,6 +111,42 @@ class APIService:
         return queryset.order_by(*order_by_fields)
 
     @staticmethod
+    def resolve_include_set(include: Optional[list[str]]) -> set[str]:
+        """Resolve a list of include items into a set of unique items."""
+
+        return set(include) if include else set()
+
+    @staticmethod
+    def resolve_includes(objects: list, requested: set[str], registry: dict) -> dict:
+        """
+        Resolves and includes specified related objects based on a given configuration, ensuring that only the
+        requested data is retrieved and transformed through the provided registry definitions.
+        """
+
+        included = {}
+
+        for name in requested:
+            config = registry[name]
+            related_by_pk = {}
+
+            for obj in objects:
+                related = obj
+                for part in config["path"].split("__"):
+                    related = getattr(related, part, None)
+                    if related is None:
+                        break
+                if related is not None:
+                    related_by_pk[related.pk] = related
+
+            if related_by_pk:
+                included[config["bucket"]] = [
+                    config["response_schema"].model_validate(related)
+                    for related in related_by_pk.values()
+                ]
+
+        return included
+
+    @staticmethod
     def build_pagination_meta(
         count: int,
         offset: Optional[int] = None,
@@ -202,7 +238,7 @@ class APIService:
         linked_resource.full_clean()
         linked_resource.save()
 
-        return linked_resource
+        return {"id": linked_resource.id}
 
     @staticmethod
     def update_linked_resource_fields(
@@ -244,8 +280,6 @@ class APIService:
 
         if stored_file:
             stored_file.delete(save=False)
-
-        return linked_resource
 
     @staticmethod
     def delete_linked_resource(

@@ -21,10 +21,9 @@ from interfaces.api.views import (
     observation_router,
     data_connection_router,
     etl_task_router,
+    etl_mapping_router,
     rating_curve_router,
-    rating_curve_transformation_router,
-    derivation_transformation_router,
-    aggregation_transformation_router,
+    data_product_transformation_router,
     data_product_task_router,
     monitoring_task_router,
     monitoring_rule_router,
@@ -62,23 +61,16 @@ api.add_router("result-qualifiers", result_qualifier_router)
 
 api.add_router("etl/data-connections", data_connection_router)
 api.add_router("etl/tasks", etl_task_router)
+etl_task_router.add_router(
+    "/{task_id}/mappings", etl_mapping_router, tags=["ETL Mappings"]
+)
 
 api.add_router("products/rating-curves", rating_curve_router)
 api.add_router("products/tasks", data_product_task_router)
 data_product_task_router.add_router(
-    "/{task_id}/transformations/rating-curve",
-    rating_curve_transformation_router,
-    tags=["Rating Curve Transformations"],
-)
-data_product_task_router.add_router(
-    "/{task_id}/transformations/derivation",
-    derivation_transformation_router,
-    tags=["Derivation Transformations"],
-)
-data_product_task_router.add_router(
-    "/{task_id}/transformations/aggregation",
-    aggregation_transformation_router,
-    tags=["Aggregation Transformations"],
+    "/{task_id}/transformations",
+    data_product_transformation_router,
+    tags=["Transformations"],
 )
 
 monitoring_task_router.add_router(

@@ -1,12 +1,16 @@
 import uuid
+
 from typing import Optional
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+
 from core.iam.models import Collaborator, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, PermissionDeniedError
-from interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody
+from interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody, CollaboratorResponse
+from interfaces.api.schemas.iam.collaborator import COLLABORATOR_INCLUDE_RELATIONS
 from interfaces.api.service import APIService
+
 from .role import RoleAPIService
 
 User = get_user_model()
@@ -14,13 +18,7 @@ role_service = RoleAPIService()
 
 
 class CollaboratorAPIService(APIService):
-    @staticmethod
-    def serialize_collaborator(collaborator: Collaborator) -> dict:
-        return {
-            "user": collaborator.user,
-            "service_account": collaborator.service_account,
-            "role": role_service.serialize_role(collaborator.role, expand_related=False),
-        }
+    INCLUDE_RELATIONS = COLLABORATOR_INCLUDE_RELATIONS
 
     @staticmethod
     def resolve_principal_by_email(email: str):
@@ -55,14 +53,18 @@ class CollaboratorAPIService(APIService):
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=workspace_id
         )
-
         queryset = Collaborator.objects.filter(workspace=workspace).select_related(
-            "user", "service_account", "role"
-        ).prefetch_related("role__permissions")
+            "user", "service_account"
+        )
+
+        if "role" in requested_includes:
+            queryset = queryset.select_related("role").prefetch_related("role__permissions")
 
         for field in [
             "role_id",
@@ -80,11 +82,17 @@ class CollaboratorAPIService(APIService):
 
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
+        collaborators = list(queryset.all())
+
         return {
             "data": [
-                self.serialize_collaborator(collaborator) for collaborator in queryset
+                CollaboratorResponse.model_validate(collaborator)
+                for collaborator in collaborators
             ],
             "meta": meta,
+            "included": self.resolve_includes(
+                collaborators, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def create(
@@ -105,7 +113,7 @@ class CollaboratorAPIService(APIService):
         new_collaborator = self.resolve_principal_by_email(data.email)
 
         collaborator_role = role_service.get_role_for_action(
-            principal=principal, uid=data.role_id, action="view", expand_related=True
+            principal=principal, uid=data.role_id, action="view"
         )
 
         collaborator = Collaborator(
@@ -120,7 +128,7 @@ class CollaboratorAPIService(APIService):
         collaborator.full_clean()
         collaborator.save()
 
-        return self.serialize_collaborator(collaborator)
+        return {"id": collaborator.id}
 
     def update(
         self,
@@ -144,13 +152,10 @@ class CollaboratorAPIService(APIService):
                 principal=principal,
                 uid=data.role_id,
                 action="view",
-                expand_related=True,
             )
 
         collaborator.full_clean()
         collaborator.save()
-
-        return self.serialize_collaborator(collaborator)
 
     def delete(
         self,
@@ -172,5 +177,3 @@ class CollaboratorAPIService(APIService):
             )
 
         collaborator.delete()
-
-        return "Collaborator removed from workspace"

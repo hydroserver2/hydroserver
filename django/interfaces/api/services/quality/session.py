@@ -1,8 +1,7 @@
 import uuid
-from datetime import datetime
-from typing import Literal
 
-from pydantic import Field, ConfigDict, validate_call
+from datetime import datetime
+from typing import Literal, Optional, get_args
 from django.db import transaction
 from django.db.models.query import QuerySet
 from django.utils import timezone
@@ -11,11 +10,15 @@ from django.contrib.auth import get_user_model
 from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from processing.quality.models import QCHistory, QCSession, QCSessionDependency, SessionStatus
 from interfaces.api.http.errors import BadRequestError, NotFoundError
 from interfaces.api.service import APIService
 from interfaces.api.services.sta import ObservationAPIService
-from processing.quality.models import QCHistory, QCSession, QCSessionDependency, SessionStatus
 from interfaces.api.services.quality.history import QCHistoryAPIService
+from interfaces.api.schemas.quality.session import (
+    QualityControlSessionOrderByFields,
+    QualityControlSessionResponse,
+)
 
 
 User = get_user_model()
@@ -36,13 +39,8 @@ class QCSessionAPIService(APIService):
     }
 
     @staticmethod
-    def select_related_fields(queryset: QuerySet, expand_related: bool | None = None) -> QuerySet:
-        queryset = queryset.select_related("created_by")
-
-        if expand_related:
-            queryset = queryset.prefetch_related("dependencies", "operations")
-
-        return queryset
+    def select_related_fields(queryset: QuerySet) -> QuerySet:
+        return queryset.select_related("created_by").prefetch_related("dependencies")
 
     @staticmethod
     def _get_ancestor_ids(session_ids: set[uuid.UUID]) -> set[uuid.UUID]:
@@ -66,23 +64,19 @@ class QCSessionAPIService(APIService):
 
         return ancestor_ids
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get(
         self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
-        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         action: Literal["view", "edit"] = "view",
-        expand_related: bool | None = None,
     ) -> QCSession:
-        """Get a session belonging to a QC history."""
-
-        history = qc_history_service.get(history=history, principal=principal, action=action)
+        history = qc_history_service.get_history_for_action(principal=principal, uid=history, action=action)
 
         if isinstance(session, uuid.UUID):
             try:
                 session = self.select_related_fields(
-                    QCSession.objects.filter(history=history), expand_related=expand_related
+                    QCSession.objects.filter(history=history)
                 ).get(pk=session)
             except QCSession.DoesNotExist:
                 raise NotFoundError(f"QC session with ID {str(session)} does not exist.")
@@ -91,29 +85,33 @@ class QCSessionAPIService(APIService):
 
         return session
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
+    def get_item(
         self,
-        history: uuid.UUID | QCHistory,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] = Field(default_factory=list),
-        expand_related: bool | None = None,
-        status: Literal["in_progress", "committed"] | Unset = Unset,
-        range_start: datetime | Unset = Unset,
-        range_end: datetime | Unset = Unset,
-        ancestor_of: uuid.UUID | Unset = Unset,
-        include_ancestors: bool = False,
-    ) -> tuple[int, QuerySet[QCSession]]:
-        """Return a collection of sessions for a QC history."""
+        history: uuid.UUID | QCHistory,
+        session: uuid.UUID | QCSession,
+    ):
+        session = self.get(principal=principal, history=history, session=session, action="view")
 
-        history = qc_history_service.get(history=history, principal=principal, action="view")
+        return {
+            "data": QualityControlSessionResponse.model_validate(session),
+            "included": {},
+        }
 
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        history: uuid.UUID | QCHistory,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+    ):
+        filtering = filtering or {}
+        history = qc_history_service.get_history_for_action(principal=principal, uid=history, action="view")
+        ancestor_of = filtering.get("ancestor_of")
 
-        if ancestor_of is not Unset:
+        if ancestor_of:
             try:
                 target = QCSession.objects.get(pk=ancestor_of, history=history)
             except QCSession.DoesNotExist:
@@ -124,29 +122,38 @@ class QCSessionAPIService(APIService):
         else:
             queryset = QCSession.objects.filter(history=history)
 
-            if status is not Unset:
-                queryset = queryset.filter(status=status)
+            if filtering.get("status"):
+                queryset = queryset.filter(status=filtering["status"])
 
-            if range_start is not Unset:
-                queryset = queryset.filter(phenomenon_time_end__gt=range_start)
+            if filtering.get("range_start"):
+                queryset = queryset.filter(phenomenon_time_end__gt=filtering["range_start"])
 
-            if range_end is not Unset:
-                queryset = queryset.filter(phenomenon_time_start__lt=range_end)
+            if filtering.get("range_end"):
+                queryset = queryset.filter(phenomenon_time_start__lt=filtering["range_end"])
 
-            if include_ancestors:
+            if filtering.get("include_ancestors"):
                 session_ids = set(queryset.values_list("pk", flat=True))
                 session_ids |= self._get_ancestor_ids(session_ids)
                 queryset = QCSession.objects.filter(history=history, pk__in=session_ids)
 
-        queryset = queryset.order_by(*order_by, "phenomenon_time_start")
-        queryset = self.select_related_fields(queryset, expand_related=expand_related)
+        order_by = order_by or []
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset, order_by, list(get_args(QualityControlSessionOrderByFields))
+            )
+        else:
+            queryset = queryset.order_by("phenomenon_time_start")
 
-        count = queryset.count()
-        queryset = queryset[offset:offset + limit]
+        queryset = self.select_related_fields(queryset)
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        sessions = list(queryset.all())
 
-        return count, queryset
+        return {
+            "data": [QualityControlSessionResponse.model_validate(s) for s in sessions],
+            "meta": meta,
+            "included": {},
+        }
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def create(
         self,
@@ -155,12 +162,9 @@ class QCSessionAPIService(APIService):
         phenomenon_time_start: datetime,
         phenomenon_time_end: datetime,
         description: str | None = None,
-        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
-    ) -> QCSession:
-        """Create a new in-progress session for a QC history."""
-
-        history = qc_history_service.get(history=history, principal=principal, action="edit")
-
+        uid: uuid.UUID | Unset = Unset,
+    ):
+        history = qc_history_service.get_history_for_action(principal=principal, uid=history, action="edit")
         source_datastream = history.source_datastream
         if source_datastream is None:
             raise BadRequestError("This history has no source datastream.")
@@ -172,7 +176,7 @@ class QCSessionAPIService(APIService):
         )
 
         session = QCSession(
-            pk=uid,
+            pk=uid if uid is not Unset else uuid.uuid7(),
             history=history,
             created_by=principal if isinstance(principal, User) else None,
             phenomenon_time_start=phenomenon_time_start,
@@ -195,9 +199,8 @@ class QCSessionAPIService(APIService):
             for dependency_id in dependency_ids
         ])
 
-        return self.get(history=history, session=session.pk, principal=principal, expand_related=True)
+        return {"id": session.pk}
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def update(
         self,
@@ -205,10 +208,8 @@ class QCSessionAPIService(APIService):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         description: str | None | Unset = Unset,
-    ) -> QCSession:
-        """Update an in-progress session's description."""
-
-        session = self.get(history=history, session=session, principal=principal, action="edit")
+    ):
+        session = self.get(principal=principal, history=history, session=session, action="edit")
 
         if description is not Unset:
             session.description = description
@@ -216,9 +217,6 @@ class QCSessionAPIService(APIService):
         session.full_clean()
         session.save()
 
-        return self.get(history=session.history_id, session=session.pk, principal=principal, expand_related=True)
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def delete(
         self,
@@ -226,31 +224,22 @@ class QCSessionAPIService(APIService):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
     ) -> None:
-        """Delete an in-progress session."""
-
-        session = self.get(history=history, session=session, principal=principal, action="edit")
+        session = self.get(principal=principal, history=history, session=session, action="edit")
 
         if session.status != SessionStatus.IN_PROGRESS:
             raise BadRequestError("Only in-progress sessions can be deleted.")
 
         session.delete()
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def commit(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
-    ) -> QCSession:
-        """Commit an in-progress session.
-
-        Assumes the QC App has already pushed the session's edited observations to the
-        managed datastream and verified checksums on the client side per Section 7.4.
-        """
-
-        history = qc_history_service.get(history=history, principal=principal, action="edit")
-        session = self.get(history=history, session=session, principal=principal, action="edit")
+    ):
+        history = qc_history_service.get_history_for_action(principal=principal, uid=history, action="edit")
+        session = self.get(principal=principal, history=history, session=session, action="edit")
 
         managed_datastream = history.managed_datastream
         source_datastream = history.source_datastream
@@ -290,5 +279,3 @@ class QCSessionAPIService(APIService):
 
         history.full_clean()
         history.save()
-
-        return self.get(history=history, session=session.pk, principal=principal, expand_related=True)

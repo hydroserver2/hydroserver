@@ -1,7 +1,7 @@
 import uuid
 
 from datetime import datetime
-from typing import Optional, Literal, Union, Annotated
+from typing import Optional, Literal, Union, Annotated, get_args
 
 from pydantic import Field, ConfigDict, validate_call
 from django.db import IntegrityError, transaction
@@ -23,6 +23,11 @@ from processing.etl.models import (
     DataConnection, EtlTask, Payload, PlaceholderVariable,
     DataConnectionNotification, DataConnectionNotificationRecipient,
 )
+from interfaces.api.schemas.etl.data_connection import (
+    DATA_CONNECTION_INCLUDE_RELATIONS,
+    DataConnectionOrderByFields,
+    DataConnectionResponse,
+)
 
 
 User = get_user_model()
@@ -31,6 +36,12 @@ ETL_NOTIFICATION_CELERY_TASK = "processing.etl.tasks.send_etl_notification_email
 
 
 class DataConnectionAPIService(SchedulingService, APIService):
+
+    INCLUDE_RELATIONS = DATA_CONNECTION_INCLUDE_RELATIONS
+
+    @classmethod
+    def _include_query_hints(cls, requested_includes: set[str]) -> list[str]:
+        return [cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes]
 
     @staticmethod
     def annotate_task_counts(queryset: QuerySet) -> QuerySet:
@@ -68,8 +79,11 @@ class DataConnectionAPIService(SchedulingService, APIService):
             task_attention_count=attention_count_subquery,
         )
 
-    order_by_fields = {"id", "name", "payload__timestamp_key", "payload__timestamp_format", "timezone_type", "timezone",
-                       "workspace_id", "workspace__name"}
+    order_by_aliases = {
+        "timestampKey": "payload__timestamp_key",
+        "timestampFormat": "payload__timestamp_format",
+        "workspaceName": "workspace__name",
+    }
 
     @staticmethod
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
@@ -78,10 +92,6 @@ class DataConnectionAPIService(SchedulingService, APIService):
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> DataConnection:
-        """
-        Get a data connection.
-        """
-
         if isinstance(data_connection, uuid.UUID):
             try:
                 queryset = DataConnection.objects.select_related("payload").filter(pk=data_connection)
@@ -100,46 +110,67 @@ class DataConnectionAPIService(SchedulingService, APIService):
 
         return data_connection
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def get_collection(
+    def get_item(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
-        order_by: list[str] | Unset = Unset,
-        search_term: str | Unset = Unset,
-        workspace: list[uuid.UUID | Workspace] | Unset = Unset,
-        payload_type: list[str] | Unset = Unset,
-    ) -> tuple[int, QuerySet[DataConnection]]:
-        """
-        Return a collection of data connections.
-        """
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        data_connection = self.get(data_connection=uid, action="view", principal=principal)
+
+        queryset = self.annotate_task_counts(
+            DataConnection.objects.select_related("payload").prefetch_related("placeholder_variables")
+        )
+        if requested_includes:
+            queryset = queryset.select_related(*self._include_query_hints(requested_includes))
+        data_connection = queryset.get(pk=data_connection.pk)
+
+        return {
+            "data": DataConnectionResponse.model_validate(data_connection),
+            "included": self.resolve_includes(
+                [data_connection], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        filtering = filtering or {}
 
         queryset = DataConnection.objects
 
-        if order_by is Unset:
-            order_by = []
-
-        if search_term is not Unset:
+        if "search_term" in filtering:
             search_vector = SearchVector(
                 "name", "description", "workspace__name", "source_url",
                 "timezone_type", "timezone"
             )
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
+            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(filtering["search_term"]))
 
-        if workspace is not Unset:
-            queryset = queryset.filter(workspace__in=[
-                getattr(term, "pk", term) for term in workspace
-            ])
+        if "workspace" in filtering:
+            queryset = self.apply_filters(queryset, "workspace_id", filtering["workspace"])
 
-        if payload_type is not Unset:
-            queryset = queryset.filter(payload__payload_type__in=payload_type)
+        if "payload_type" in filtering:
+            queryset = self.apply_filters(queryset, "payload__payload_type", filtering["payload_type"])
 
-        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
-            raise BadRequestError(f"Invalid order_by field(s): {order_by}")
+        if order_by:
+            queryset = self.apply_ordering(
+                queryset, order_by, list(get_args(DataConnectionOrderByFields)), self.order_by_aliases
+            )
+        else:
+            queryset = queryset.order_by("-id")
 
-        queryset = queryset.order_by(*order_by, "-id")
-        queryset = queryset.select_related("workspace").prefetch_related("placeholder_variables", "payload")
+        queryset = queryset.prefetch_related("placeholder_variables", "payload")
+        if requested_includes:
+            queryset = queryset.select_related(*self._include_query_hints(requested_includes))
+
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         # Count before adding the task-count annotations so the COUNT(*) query does not have to
@@ -147,9 +178,17 @@ class DataConnectionAPIService(SchedulingService, APIService):
         count = queryset.count()
 
         queryset = self.annotate_task_counts(queryset)
-        queryset = queryset[offset:offset + limit]
+        queryset, meta = self.apply_pagination(queryset, offset, limit, count=count)
 
-        return count, queryset
+        connections = list(queryset.all())
+
+        return {
+            "data": [DataConnectionResponse.model_validate(c) for c in connections],
+            "meta": meta,
+            "included": self.resolve_includes(
+                connections, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
@@ -179,11 +218,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
         notification_interval_period: Union[Optional[Literal["minutes", "hours", "days"]], Unset] = Unset,
         notification_start_time: Union[Optional[datetime], Unset] = Unset,
         notification_enabled: Union[bool, Unset] = Unset,
-    ) -> DataConnection:
-        """
-        Create a new data connection.
-        """
-
+    ) -> dict:
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=getattr(workspace, "pk", workspace)
         )
@@ -237,7 +272,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
                 enabled=notification_enabled,
             )
 
-        return self.get(data_connection.pk)
+        return {"id": data_connection.pk}
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
@@ -266,11 +301,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
         notification_interval_period: Union[Optional[Literal["minutes", "hours", "days"]], Unset] = Unset,
         notification_start_time: Union[Optional[datetime], Unset] = Unset,
         notification_enabled: Union[bool, Unset] = Unset,
-    ) -> DataConnection:
-        """
-        Update a data connection.
-        """
-
+    ) -> None:
         data_connection = self.get(
             data_connection=data_connection,
             action="edit",
@@ -321,8 +352,6 @@ class DataConnectionAPIService(SchedulingService, APIService):
         data_connection.full_clean()
         data_connection.save()
 
-        return self.get(data_connection.pk)
-
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
     def delete(
@@ -330,10 +359,6 @@ class DataConnectionAPIService(SchedulingService, APIService):
         data_connection: uuid.UUID | DataConnection,
         principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
-        """
-        Delete a data connection.
-        """
-
         data_connection = self.get(
             data_connection=data_connection,
             action="delete",
@@ -354,10 +379,6 @@ class DataConnectionAPIService(SchedulingService, APIService):
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
         jmespath: str | Unset = Unset,
     ):
-        """
-        Create or update the payload settings attached to a data connection.
-        """
-
         data_connection = self.get(data_connection)
 
         try:
@@ -413,10 +434,6 @@ class DataConnectionAPIService(SchedulingService, APIService):
         data_connection: uuid.UUID | DataConnection,
         placeholder_variables: list[dict],
     ):
-        """
-        Replace placeholder variables on a data connection, preserving existing ones that match.
-        """
-
         data_connection = self.get(data_connection)
 
         new_placeholders = {(pv["name"], pv["variable_type"]): pv for pv in placeholder_variables}
@@ -457,10 +474,6 @@ class DataConnectionAPIService(SchedulingService, APIService):
         start_time: Union[Optional[datetime], Unset] = Unset,
         enabled: Union[bool, Unset] = Unset,
     ) -> DataConnectionNotification | None:
-        """
-        Create, update, or delete the notification for a data connection.
-        """
-
         data_connection = self.get(data_connection)
 
         try:

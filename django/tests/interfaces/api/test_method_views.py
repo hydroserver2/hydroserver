@@ -1,5 +1,8 @@
 import pytest
 
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
+
 from core.sta.models import MethodType
 from tests.core.iam.factories import (
     CollaboratorFactory,
@@ -75,6 +78,134 @@ def test_get_methods_includes_workspace_methods_for_workspace_owner(client):
     assert str(method.id) in [s["id"] for s in response.json()["data"]]
 
 
+def test_get_methods_properties_filters_every_item_in_the_list(client):
+    MethodFactory(global_=True, name="Sensor A")
+    MethodFactory(global_=True, name="Sensor B")
+
+    response = client.get(METHODS_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert len(items) == 2
+    for item in items:
+        assert set(item.keys()) == {"id", "name"}
+
+
+def test_get_methods_properties_accepts_repeated_key_style_too(client):
+    MethodFactory(global_=True, name="Sensor A")
+
+    response = client.get(METHODS_URL, {"properties": ["id", "name"]})
+
+    assert response.status_code == 200
+    item = response.json()["data"][0]
+    assert set(item.keys()) == {"id", "name"}
+
+
+def test_get_methods_properties_rejects_unknown_property(client):
+    response = client.get(METHODS_URL, {"properties": "id,bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_methods_without_properties_returns_every_field(client):
+    MethodFactory(global_=True, name="Sensor A", type="Instrument Deployment")
+
+    response = client.get(METHODS_URL)
+
+    assert response.status_code == 200
+    item = response.json()["data"][0]
+    assert set(item.keys()) == {
+        "id",
+        "name",
+        "code",
+        "type",
+        "description",
+        "definition",
+        "sensorModel",
+        "sensorModelManufacturer",
+        "sensorModelDefinition",
+        "workspaceId",
+    }
+
+
+def test_get_methods_has_no_included_key_without_include_param(client):
+    MethodFactory(global_=True)
+
+    response = client.get(METHODS_URL)
+
+    assert response.status_code == 200
+    assert "included" not in response.json()
+
+
+def test_get_methods_include_workspace_deduplicates_across_items(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    MethodFactory(workspace=workspace, name="Sensor A")
+    MethodFactory(workspace=workspace, name="Sensor B")
+    client.force_login(owner)
+
+    response = client.get(METHODS_URL, {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["data"]) == 2
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_methods_include_rejects_unknown_relation(client):
+    response = client.get(METHODS_URL, {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_methods_properties_does_not_filter_included_resources(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, name="Acme")
+    MethodFactory(workspace=workspace, code="METHOD-1")
+    client.force_login(owner)
+
+    response = client.get(METHODS_URL, {"properties": "code", "include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"][0] == {"code": "METHOD-1"}
+    included_workspace = body["included"]["workspaces"][0]
+    assert included_workspace["id"] == str(workspace.id)
+    assert included_workspace["name"] == "Acme"
+
+
+def test_get_methods_include_accepts_repeated_key_style_too(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    MethodFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(METHODS_URL, {"include": ["workspace"]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_methods_include_workspace_does_not_scale_queries_with_count(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    for _ in range(5):
+        MethodFactory(workspace=workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(METHODS_URL, {"include": "workspace"})
+
+    for _ in range(5):
+        MethodFactory(workspace=workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(METHODS_URL, {"include": "workspace"})
+
+    assert len(large.captured_queries) == len(small.captured_queries)
+
+
 # --- create_method ------------------------------------------------------------------
 
 
@@ -90,13 +221,7 @@ def test_create_method_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "New Method"
-    assert response.json()["code"] == "METHOD-1"
-    assert response.json()["type"] == "Instrument Deployment"
-    assert response.json()["definition"] == "https://example.com/methods/1"
-    assert response.json()["sensorModel"] == "Model A"
-    assert response.json()["sensorModelManufacturer"] == "Manufacturer A"
-    assert response.json()["sensorModelDefinition"] == "https://example.com/models/a"
+    assert set(response.json().keys()) == {"id"}
 
 
 def test_create_method_returns_401_when_unauthenticated(client):
@@ -144,7 +269,7 @@ def test_get_method_returns_global_method_for_anonymous(client):
     response = client.get(_detail_url(method.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(method.id)
+    assert response.json()["data"]["id"] == str(method.id)
 
 
 def test_get_method_returns_404_for_private_workspace_method_when_unrelated(client):
@@ -175,6 +300,60 @@ def test_get_method_returns_404_for_nonexistent_method(client):
     assert response.status_code == 404
 
 
+def test_get_method_included_is_present_but_empty_without_include_param(client):
+    method = MethodFactory(global_=True)
+
+    response = client.get(_detail_url(method.id))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "included" in body
+    assert body["included"] == {}
+
+
+def test_get_method_include_workspace_sideloads_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    method = MethodFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(method.id), {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["id"] == str(method.id)
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_method_include_rejects_unknown_relation(client):
+    method = MethodFactory(global_=True)
+
+    response = client.get(_detail_url(method.id), {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_method_include_accepts_repeated_key_style_too(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    method = MethodFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(method.id), {"include": ["workspace"]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_method_properties_rejects_unknown_property(client):
+    method = MethodFactory(global_=True)
+
+    response = client.get(_detail_url(method.id), {"properties": "bogus"})
+
+    assert response.status_code == 400
+
+
 # --- update_method ------------------------------------------------------------------
 
 
@@ -190,8 +369,11 @@ def test_update_method_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+
+    detail = client.get(_detail_url(method.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_method_returns_403_for_viewer_collaborator(client):

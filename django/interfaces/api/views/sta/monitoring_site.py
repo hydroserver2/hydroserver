@@ -1,10 +1,14 @@
 import uuid
+
 from typing import Optional
 from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
 from django.db import transaction
+
+from core.web.models import SiteTypeIcon
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import MonitoringSiteAPIService
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     MonitoringSiteMarkerResponse,
@@ -12,20 +16,20 @@ from interfaces.api.schemas import (
     SiteTypeIconResponse,
     MonitoringSiteMapSummaryResponse,
     MonitoringSiteMapSummaryQueryParameters,
-    MonitoringSiteSummaryResponse,
+    MonitoringSiteResponse,
     MonitoringSiteTaskSummaryResponse,
     MonitoringSiteTaskSummaryQueryParameters,
-    MonitoringSiteDetailResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
+    MonitoringSiteItemQueryParameters,
     LinkedResourceQueryParameters,
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
     PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from interfaces.api.services.sta import MonitoringSiteAPIService
-from core.web.models import SiteTypeIcon
 
 monitoring_site_router = Router(tags=["Monitoring Sites"])
 monitoring_site_service = MonitoringSiteAPIService()
@@ -35,8 +39,7 @@ monitoring_site_service = MonitoringSiteAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: PaginatedResponse[MonitoringSiteSummaryResponse]
-        | PaginatedResponse[MonitoringSiteDetailResponse],
+        200: PaginatedResponse[MonitoringSiteResponse],
         401: str,
     },
     by_alias=True,
@@ -55,7 +58,7 @@ def get_monitoring_sites(
         limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -133,10 +136,9 @@ def get_monitoring_site_task_summaries(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -144,15 +146,12 @@ def get_monitoring_site_task_summaries(
 def create_monitoring_site(
     request: HydroServerHttpRequest,
     data: MonitoringSitePostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new MonitoringSite.
     """
 
-    return 201, monitoring_site_service.create(
-        principal=request.principal, data=data, expand_related=expand_related
-    )
+    return 201, monitoring_site_service.create(principal=request.principal, data=data)
 
 
 @monitoring_site_router.get(
@@ -228,24 +227,23 @@ def get_monitoring_site_linked_resource_types(
     "/{monitoring_site_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
+        200: ItemResponse[MonitoringSiteResponse],
         401: str,
         403: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_monitoring_site(
     request: HydroServerHttpRequest,
     monitoring_site_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[MonitoringSiteItemQueryParameters],
 ):
     """
     Get a MonitoringSite.
     """
 
     return 200, monitoring_site_service.get(
-        principal=request.principal, uid=monitoring_site_id, expand_related=expand_related
+        principal=request.principal, uid=monitoring_site_id, include=query.include
     )
 
 
@@ -253,11 +251,10 @@ def get_monitoring_site(
     "/{monitoring_site_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -266,18 +263,18 @@ def update_monitoring_site(
     request: HydroServerHttpRequest,
     monitoring_site_id: Path[uuid.UUID],
     data: MonitoringSitePatchBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Update a MonitoringSite.
     """
 
-    return 200, monitoring_site_service.update(
+    monitoring_site_service.update(
         principal=request.principal,
         uid=monitoring_site_id,
         data=data,
-        expand_related=expand_related,
     )
+
+    return 204, None
 
 
 @monitoring_site_router.delete(
@@ -329,12 +326,11 @@ def get_monitoring_site_linked_resources(
     "/{monitoring_site_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: LinkedResourceGetResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         413: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -368,13 +364,12 @@ def add_monitoring_site_linked_resource(
     "/{monitoring_site_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: LinkedResourceGetResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
         413: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -393,7 +388,7 @@ def update_monitoring_site_linked_resource(
     external URL) cannot be changed in place — delete it and create a new one instead.
     """
 
-    return 200, monitoring_site_service.update_linked_resource(
+    monitoring_site_service.update_linked_resource(
         principal=request.principal,
         uid=monitoring_site_id,
         linked_resource_id=linked_resource_id,
@@ -403,6 +398,8 @@ def update_monitoring_site_linked_resource(
         file=file,
         link=link,
     )
+
+    return 204, None
 
 
 @monitoring_site_router.delete(

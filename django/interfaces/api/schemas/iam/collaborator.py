@@ -1,14 +1,20 @@
 import uuid
-from typing import Optional, TYPE_CHECKING
-from ninja import Query
-from interfaces.api.schemas import BaseGetResponse, BasePostBody, CollectionQueryParameters
 
-if TYPE_CHECKING:
-    from interfaces.api.schemas import (
-        RoleSummaryResponse,
-        AccountContactDetailResponse,
-        ServiceAccountContactResponse,
-    )
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema, ConfigDict
+from pydantic.alias_generators import to_camel
+from ninja import Schema, Query
+
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    BasePostBody,
+    CollectionQueryParameters,
+    RoleResponse,
+    split_comma_separated,
+    comma_array_schema,
+)
+from interfaces.api.schemas.iam.user import UserContactResponse
+from interfaces.api.schemas.iam.service_account import ServiceAccountContactResponse
 
 DELETED_USER_CONTACT = {
     "name": "Deleted User",
@@ -20,15 +26,71 @@ DELETED_USER_CONTACT = {
     "user_type": "Unknown",
 }
 
+COLLABORATOR_INCLUDE_RELATIONS = {
+    "role": {
+        "path": "role",
+        "bucket": "roles",
+        "response_schema": RoleResponse,
+    },
+    "user": {
+        "path": "user",
+        "bucket": "users",
+        "response_schema": UserContactResponse,
+    },
+    "serviceAccount": {
+        "path": "service_account",
+        "bucket": "serviceAccounts",
+        "response_schema": ServiceAccountContactResponse,
+    },
+}
+CollaboratorIncludeRelation = Literal[*COLLABORATOR_INCLUDE_RELATIONS.keys()]
 
-class CollaboratorQueryParameters(CollectionQueryParameters):
+_property_fields = ("roleId", "userEmail", "serviceAccountEmail")
+CollaboratorPropertyName = Literal[*_property_fields]
+
+
+class CollaboratorFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[CollaboratorPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(CollaboratorPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[CollaboratorIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(CollaboratorIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class CollaboratorQueryParameters(CollaboratorFilterFields, CollectionQueryParameters):
     role_id: list[uuid.UUID] = Query([], description="Filter collaborators by role ID.")
 
 
-class CollaboratorDetailResponse(BaseGetResponse):
-    user: Optional["AccountContactDetailResponse"] = None
-    service_account: Optional["ServiceAccountContactResponse"] = None
-    role: "RoleSummaryResponse"
+class CollaboratorResponse(BaseGetResponse):
+    role_id: uuid.UUID
+    user_email: Optional[str] = None
+    service_account_email: Optional[str] = None
+
+    @staticmethod
+    def resolve_user_email(obj):
+        if hasattr(obj, "user_email"):
+            return obj.user_email
+
+        return obj.user.email if obj.user else None
+
+    @staticmethod
+    def resolve_service_account_email(obj):
+        if hasattr(obj, "service_account_email"):
+            return obj.service_account_email
+
+        return obj.service_account.email if obj.service_account else None
 
 
 class CollaboratorPostBody(BasePostBody):
@@ -38,3 +100,9 @@ class CollaboratorPostBody(BasePostBody):
 
 class CollaboratorDeleteBody(BasePostBody):
     email: str
+
+
+class CollaboratorCreatedResponse(Schema):
+    id: int
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)

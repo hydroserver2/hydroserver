@@ -4,37 +4,37 @@ from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from interfaces.api.services.products.transformation import DataProductTransformationAPIService
+from interfaces.api.services.etl.mapping import EtlMappingAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.products.transformation import (
-    DataProductTransformationResponse,
-    DataProductTransformationPostBody,
-    DataProductTransformationPatchBody,
-    DataProductTransformationQueryParameters,
-    DataProductTransformationItemQueryParameters,
+from interfaces.api.schemas.etl.mapping import (
+    EtlMappingResponse,
+    EtlMappingPostBody,
+    EtlMappingPatchBody,
+    EtlMappingQueryParameters,
+    EtlMappingItemQueryParameters,
 )
 
-data_product_transformation_router = Router(tags=["Transformations"])
-_service = DataProductTransformationAPIService()
+etl_mapping_router = Router(tags=["ETL Mappings"])
+_service = EtlMappingAPIService()
 
 
-@data_product_transformation_router.get(
+@etl_mapping_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: PaginatedResponse[DataProductTransformationResponse],
+        200: PaginatedResponse[EtlMappingResponse],
         401: str,
         403: str,
         404: str,
     },
     by_alias=True,
 )
-def get_data_product_transformations(
+def get_etl_mappings(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    query: Query[DataProductTransformationQueryParameters],
+    query: Query[EtlMappingQueryParameters],
 ):
-    """Get transformations for a data product task."""
+    """Get mappings for an ETL task."""
 
     return 200, _service.list(
         principal=request.principal,
@@ -47,7 +47,7 @@ def get_data_product_transformations(
     )
 
 
-@data_product_transformation_router.post(
+@etl_mapping_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
@@ -59,12 +59,12 @@ def get_data_product_transformations(
     },
     by_alias=True,
 )
-def create_data_product_transformation(
+def create_etl_mapping(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    data: DataProductTransformationPostBody,
+    data: EtlMappingPostBody,
 ):
-    """Create a transformation on a data product task."""
+    """Create a mapping on an ETL task."""
 
     return 201, _service.create(
         principal=request.principal,
@@ -73,35 +73,35 @@ def create_data_product_transformation(
     )
 
 
-@data_product_transformation_router.get(
-    "/{transformation_id}",
+@etl_mapping_router.get(
+    "/{mapping_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: ItemResponse[DataProductTransformationResponse],
+        200: ItemResponse[EtlMappingResponse],
         401: str,
         403: str,
         404: str,
     },
     by_alias=True,
 )
-def get_data_product_transformation(
+def get_etl_mapping(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-    query: Query[DataProductTransformationItemQueryParameters],
+    mapping_id: Path[uuid.UUID],
+    query: Query[EtlMappingItemQueryParameters],
 ):
-    """Get a data product transformation."""
+    """Get an ETL mapping."""
 
     return 200, _service.get(
         principal=request.principal,
         task_id=task_id,
-        uid=transformation_id,
+        uid=mapping_id,
         include=query.include,
     )
 
 
-@data_product_transformation_router.patch(
-    "/{transformation_id}",
+@etl_mapping_router.patch(
+    "/{mapping_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -112,26 +112,26 @@ def get_data_product_transformation(
     },
     by_alias=True,
 )
-def update_data_product_transformation(
+def update_etl_mapping(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-    data: DataProductTransformationPatchBody,
+    mapping_id: Path[uuid.UUID],
+    data: EtlMappingPatchBody,
 ):
-    """Update a data product transformation."""
+    """Update an ETL mapping."""
 
     _service.update(
         principal=request.principal,
         task_id=task_id,
-        uid=transformation_id,
+        uid=mapping_id,
         data=data,
     )
 
     return 204, None
 
 
-@data_product_transformation_router.delete(
-    "/{transformation_id}",
+@etl_mapping_router.delete(
+    "/{mapping_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -141,17 +141,17 @@ def update_data_product_transformation(
     },
     by_alias=True,
 )
-def delete_data_product_transformation(
+def delete_etl_mapping(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
+    mapping_id: Path[uuid.UUID],
 ):
-    """Delete a data product transformation."""
+    """Delete an ETL mapping."""
 
     _service.delete(
         principal=request.principal,
         task_id=task_id,
-        uid=transformation_id,
+        uid=mapping_id,
     )
 
     return 204, None

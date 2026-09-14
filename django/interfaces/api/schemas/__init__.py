@@ -1,32 +1,34 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
-                   VocabularyQueryParameters, OrderByField, PaginationMeta, PaginatedResponse)
+                   VocabularyQueryParameters, PaginationMeta, PaginatedResponse,
+                   CreatedResponse, ItemResponse, split_comma_separated, comma_array_schema)
+from interfaces.api.schemas.iam.user import UserContactResponse
+from interfaces.api.schemas.iam.role import (RoleResponse, RoleQueryParameters,
+                                             RoleItemQueryParameters, RoleOrderByFields)
 from interfaces.api.schemas.iam.workspace import (
-    WorkspaceSummaryResponse,
-    WorkspaceDetailResponse,
+    WorkspaceResponse,
     WorkspaceQueryParameters,
+    WorkspaceItemQueryParameters,
     WorkspacePostBody,
     WorkspacePatchBody,
     WorkspaceTransferBody,
-    AccountContactDetailResponse
 )
 from interfaces.api.schemas.iam.collaborator import (
-    CollaboratorDetailResponse,
+    CollaboratorResponse,
     CollaboratorQueryParameters,
     CollaboratorPostBody,
     CollaboratorDeleteBody,
+    CollaboratorCreatedResponse,
 )
 from interfaces.api.schemas.iam.service_account import (
-    ServiceAccountSummaryResponse,
-    ServiceAccountDetailResponse,
+    ServiceAccountResponse,
+    ServiceAccountCreatedResponse,
+    ServiceAccountKeyResponse,
     ServiceAccountQueryParameters,
+    ServiceAccountItemQueryParameters,
     ServiceAccountPostBody,
     ServiceAccountPatchBody,
-    ServiceAccountSummaryPostResponse,
-    ServiceAccountDetailPostResponse,
     ServiceAccountContactResponse,
 )
-from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters,
-                                             RoleOrderByFields)
 
 from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSiteMarkerResponse,
@@ -34,64 +36,62 @@ from interfaces.api.schemas.sta.monitoring_site import (
     SiteTypeIconResponse,
     MonitoringSiteMapSummaryResponse,
     MonitoringSiteMapSummaryQueryParameters,
-    MonitoringSiteSummaryResponse,
     MonitoringSiteTaskSummaryResponse,
     MonitoringSiteTaskSummaryQueryParameters,
-    MonitoringSiteSummaryResponse,
-    MonitoringSiteDetailResponse,
+    MonitoringSiteResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
     MonitoringSiteQueryParameters,
-    LinkedResourceGetResponse,
+    MonitoringSiteItemQueryParameters,
 )
 from interfaces.api.schemas.sta.observed_property import (
-    ObservedPropertySummaryResponse,
-    ObservedPropertyDetailResponse,
+    ObservedPropertyResponse,
     ObservedPropertyQueryParameters,
+    ObservedPropertyItemQueryParameters,
     ObservedPropertyPostBody,
     ObservedPropertyPatchBody,
 )
 from interfaces.api.schemas.sta.processing_level import (
-    ProcessingLevelSummaryResponse,
-    ProcessingLevelDetailResponse,
+    ProcessingLevelResponse,
     ProcessingLevelQueryParameters,
+    ProcessingLevelItemQueryParameters,
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
 )
 from interfaces.api.schemas.sta.result_qualifier import (
-    ResultQualifierSummaryResponse,
-    ResultQualifierDetailResponse,
+    ResultQualifierResponse,
     ResultQualifierQueryParameters,
+    ResultQualifierItemQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )
 from interfaces.api.schemas.sta.method import (
-    MethodSummaryResponse,
-    MethodDetailResponse,
+    MethodResponse,
     MethodQueryParameters,
+    MethodItemQueryParameters,
     MethodPostBody,
     MethodPatchBody,
 )
 from interfaces.api.schemas.sta.unit import (
-    UnitSummaryResponse,
-    UnitDetailResponse,
+    UnitResponse,
     UnitQueryParameters,
+    UnitItemQueryParameters,
     UnitPostBody,
     UnitPatchBody,
 )
 from interfaces.api.schemas.sta.datastream import (
     DatastreamVisualizationBootstrapQueryParameters,
     DatastreamVisualizationBootstrapResponse,
-    DatastreamSummaryResponse,
-    DatastreamDetailResponse,
+    DatastreamResponse,
     DatastreamQueryParameters,
+    DatastreamItemQueryParameters,
     DatastreamPostBody,
     DatastreamPatchBody,
 )
 from interfaces.api.schemas.sta.observation import (
-    ObservationSummaryResponse,
-    ObservationDetailResponse,
+    ObservationResponse,
     ObservationQueryParameters,
+    ObservationItemQueryParameters,
     ObservationRowResponse,
     ObservationColumnarResponse,
     ObservationPostBody,
@@ -108,23 +108,7 @@ from interfaces.api.schemas.sta.linked_resource import (
 from interfaces.api.schemas.etl.data_connection import (
     DataConnectionResponse,
     DataConnectionQueryParameters,
+    DataConnectionItemQueryParameters,
     DataConnectionPostBody,
     DataConnectionPatchBody,
 )
-
-WorkspaceDetailResponse.model_rebuild()
-RoleDetailResponse.model_rebuild()
-
-ServiceAccountDetailResponse.model_rebuild()
-ServiceAccountDetailPostResponse.model_rebuild()
-
-CollaboratorDetailResponse.model_rebuild()
-
-MonitoringSiteDetailResponse.model_rebuild()
-ObservedPropertyDetailResponse.model_rebuild()
-ProcessingLevelDetailResponse.model_rebuild()
-ResultQualifierDetailResponse.model_rebuild()
-MethodDetailResponse.model_rebuild()
-UnitDetailResponse.model_rebuild()
-DatastreamDetailResponse.model_rebuild()
-ObservationDetailResponse.model_rebuild()

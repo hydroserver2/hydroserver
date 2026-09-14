@@ -1,18 +1,21 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
 from django.db import transaction
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import ResultQualifierAPIService
 from interfaces.api.schemas import (
-    ResultQualifierSummaryResponse,
-    ResultQualifierDetailResponse,
+    ResultQualifierResponse,
     ResultQualifierQueryParameters,
+    ResultQualifierItemQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
     PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from interfaces.api.services.sta import ResultQualifierAPIService
 
 result_qualifier_router = Router(tags=["Result Qualifiers"])
 result_qualifier_service = ResultQualifierAPIService()
@@ -22,8 +25,8 @@ result_qualifier_service = ResultQualifierAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: PaginatedResponse[ResultQualifierSummaryResponse]
-        | PaginatedResponse[ResultQualifierDetailResponse],
+        200: PaginatedResponse[ResultQualifierResponse],
+        400: str,
         401: str,
     },
     by_alias=True,
@@ -42,7 +45,7 @@ def get_result_qualifiers(
         limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -50,10 +53,9 @@ def get_result_qualifiers(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
+        201: CreatedResponse,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -61,7 +63,6 @@ def get_result_qualifiers(
 def create_result_qualifier(
     request: HydroServerHttpRequest,
     data: ResultQualifierPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new Result Qualifier.
@@ -70,7 +71,6 @@ def create_result_qualifier(
     return 201, result_qualifier_service.create(
         principal=request.principal,
         data=data,
-        expand_related=expand_related,
     )
 
 
@@ -78,7 +78,8 @@ def create_result_qualifier(
     "/{result_qualifier_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
+        200: ItemResponse[ResultQualifierResponse],
+        400: str,
         401: str,
         403: str,
     },
@@ -88,7 +89,7 @@ def create_result_qualifier(
 def get_result_qualifier(
     request: HydroServerHttpRequest,
     result_qualifier_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[ResultQualifierItemQueryParameters],
 ):
     """
     Get a Result Qualifier.
@@ -97,7 +98,7 @@ def get_result_qualifier(
     return 200, result_qualifier_service.get(
         principal=request.principal,
         uid=result_qualifier_id,
-        expand_related=expand_related,
+        include=query.include,
     )
 
 
@@ -105,10 +106,9 @@ def get_result_qualifier(
     "/{result_qualifier_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
+        204: None,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -117,18 +117,18 @@ def update_result_qualifier(
     request: HydroServerHttpRequest,
     result_qualifier_id: Path[uuid.UUID],
     data: ResultQualifierPatchBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Update a Result Qualifier.
     """
 
-    return 200, result_qualifier_service.update(
+    result_qualifier_service.update(
         principal=request.principal,
         uid=result_qualifier_id,
         data=data,
-        expand_related=expand_related,
     )
+
+    return 204, None
 
 
 @result_qualifier_router.delete(

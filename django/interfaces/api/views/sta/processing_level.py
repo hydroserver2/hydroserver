@@ -1,18 +1,21 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
 from django.db import transaction
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import ProcessingLevelAPIService
 from interfaces.api.schemas import (
-    ProcessingLevelSummaryResponse,
-    ProcessingLevelDetailResponse,
+    ProcessingLevelResponse,
     ProcessingLevelQueryParameters,
+    ProcessingLevelItemQueryParameters,
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
     PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from interfaces.api.services.sta import ProcessingLevelAPIService
 
 processing_level_router = Router(tags=["Processing Levels"])
 processing_level_service = ProcessingLevelAPIService()
@@ -22,8 +25,8 @@ processing_level_service = ProcessingLevelAPIService()
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: PaginatedResponse[ProcessingLevelSummaryResponse]
-        | PaginatedResponse[ProcessingLevelDetailResponse],
+        200: PaginatedResponse[ProcessingLevelResponse],
+        400: str,
         401: str,
     },
     by_alias=True,
@@ -42,7 +45,7 @@ def get_processing_levels(
         limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -50,11 +53,10 @@ def get_processing_levels(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: ProcessingLevelSummaryResponse | ProcessingLevelDetailResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -62,14 +64,13 @@ def get_processing_levels(
 def create_processing_level(
     request: HydroServerHttpRequest,
     data: ProcessingLevelPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new Processing Level.
     """
 
     return 201, processing_level_service.create(
-        principal=request.principal, data=data, expand_related=expand_related
+        principal=request.principal, data=data
     )
 
 
@@ -77,7 +78,8 @@ def create_processing_level(
     "/{processing_level_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: ProcessingLevelSummaryResponse | ProcessingLevelDetailResponse,
+        200: ItemResponse[ProcessingLevelResponse],
+        400: str,
         401: str,
         403: str,
     },
@@ -87,7 +89,7 @@ def create_processing_level(
 def get_processing_level(
     request: HydroServerHttpRequest,
     processing_level_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[ProcessingLevelItemQueryParameters],
 ):
     """
     Get a Processing Level.
@@ -96,7 +98,7 @@ def get_processing_level(
     return 200, processing_level_service.get(
         principal=request.principal,
         uid=processing_level_id,
-        expand_related=expand_related,
+        include=query.include,
     )
 
 
@@ -104,11 +106,10 @@ def get_processing_level(
     "/{processing_level_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: ProcessingLevelSummaryResponse | ProcessingLevelDetailResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -117,18 +118,18 @@ def update_processing_level(
     request: HydroServerHttpRequest,
     processing_level_id: Path[uuid.UUID],
     data: ProcessingLevelPatchBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Update a Processing Level.
     """
 
-    return 200, processing_level_service.update(
+    processing_level_service.update(
         principal=request.principal,
         uid=processing_level_id,
         data=data,
-        expand_related=expand_related,
     )
+
+    return 204, None
 
 
 @processing_level_router.delete(

@@ -1,205 +1,136 @@
 import uuid
-from typing import Optional, Literal
 
-from ninja import Field, Query
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
+from ninja import Schema, Query
 
-from core.types import Unset
 from interfaces.api.schemas import (
-    OrderByField,
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
-    DatastreamSummaryResponse,
+    DatastreamResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-from interfaces.api.schemas.products.rating_curve import RatingCurveSummaryResponse
+from interfaces.api.schemas.products.rating_curve import RatingCurveResponse
 
 
+TransformationType = Literal["rating_curve", "derivation", "aggregation"]
 AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
 Period = Literal["minutes", "hours", "days", "weeks", "months"]
 TimezoneType = Literal["offset", "iana"]
 
 
-class DataProductTransformationOrderBy(OrderByField):
-    id = ("id", "id")
-    output_datastream_id = ("outputDatastreamId", "output_datastream_id")
-
-
-class DataProductTransformationTypeQueryParameters(CollectionQueryParameters):
-    order_by: list[DataProductTransformationOrderBy] = Query(
-        [], description="Select one or more fields to order the response by."
-    )
-    output_datastream: list[uuid.UUID] = Query(
-        [], description="Filter by output datastream ID.", alias="output_datastream_id"
-    )
-    input_datastream: list[uuid.UUID] = Query(
-        [], description="Filter by input datastream ID.", alias="input_datastream_id"
-    )
-
-
-# --- Derivation input schemas ---
-
 class TransformationInputResponse(BaseGetResponse):
-    datastream: DatastreamSummaryResponse
+    datastream_id: uuid.UUID
     variable_name: Optional[str] = None
 
 
 class TransformationInputPostBody(BasePostBody):
-    datastream: uuid.UUID = Field(alias="datastreamId")
-    variable_name: str
+    datastream_id: uuid.UUID
+    variable_name: Optional[str] = None
 
 
-# --- Per-type summary response schemas (IDs only for datastreams) ---
-
-class RatingCurveTransformationSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
+class DataProductTransformationFields(Schema):
     output_datastream_id: uuid.UUID
-    input_datastream_id: uuid.UUID
-    rating_curve_id: uuid.UUID
-
-    @staticmethod
-    def resolve_input_datastream_id(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream_id", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.datastream_id if first else None
-
-
-class DerivationTransformationSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream_id: uuid.UUID
-    input_datastream_ids: list[uuid.UUID]
-    formula: str
-    stop_on_no_data: bool
-    stop_on_error: bool
-
-    @staticmethod
-    def resolve_input_datastream_ids(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream_ids", [])
-        return [i.datastream_id for i in obj.input_datastreams.all()]
-
-
-class AggregationTransformationSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream_id: uuid.UUID
-    input_datastream_id: uuid.UUID
-    aggregation_method: AggregationMethod
-    output_interval_units: Period
-    output_interval: int
+    input_datastreams: list[TransformationInputPostBody] = []
+    rating_curve_id: Optional[uuid.UUID] = None
+    formula: Optional[str] = None
+    aggregation_method: Optional[AggregationMethod] = None
+    output_interval_units: Optional[Period] = None
+    output_interval: Optional[int] = None
     timezone_type: Optional[TimezoneType] = None
     timezone: Optional[str] = None
     min_values: Optional[int] = None
-
-    @staticmethod
-    def resolve_input_datastream_id(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream_id", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.datastream_id if first else None
-
-
-# --- Per-type detail response schemas ---
-
-class RatingCurveTransformationResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream: DatastreamSummaryResponse
-    input_datastream: DatastreamSummaryResponse
-    rating_curve: RatingCurveSummaryResponse
-
-    @staticmethod
-    def resolve_input_datastream(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.datastream if first else None
-
-
-class DerivationTransformationResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream: DatastreamSummaryResponse
-    input_datastreams: list[TransformationInputResponse]
-    formula: str
-    stop_on_no_data: bool
-    stop_on_error: bool
-
-    @staticmethod
-    def resolve_input_datastreams(obj):
-        if not hasattr(obj.input_datastreams, "all"):
-            return obj.input_datastreams
-        return obj.input_datastreams.all()
-
-
-class AggregationTransformationResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream: DatastreamSummaryResponse
-    input_datastream: DatastreamSummaryResponse
-    aggregation_method: AggregationMethod
-    output_interval_units: Period
-    output_interval: int
-    timezone_type: Optional[TimezoneType] = None
-    timezone: Optional[str] = None
-    min_values: Optional[int] = None
-
-    @staticmethod
-    def resolve_input_datastream(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.datastream if first else None
-
-
-# --- Per-type post body schemas ---
-
-class _TransformationPostBodyBase(BasePostBody):
-    uid: uuid.UUID | Unset = Field(Unset, alias="id")
-    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
-
-
-class RatingCurveTransformationPostBody(_TransformationPostBodyBase):
-    input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    rating_curve: uuid.UUID = Field(alias="ratingCurveId")
-
-
-class DerivationTransformationPostBody(_TransformationPostBodyBase):
-    input_datastreams: list[TransformationInputPostBody]
-    formula: str
     stop_on_no_data: bool = True
     stop_on_error: bool = True
 
 
-class AggregationTransformationPostBody(_TransformationPostBodyBase):
-    input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    aggregation_method: AggregationMethod
-    output_interval_units: Period
-    output_interval: int
-    timezone_type: Optional[TimezoneType] = None
-    timezone: Optional[str] = None
-    min_values: Optional[int] = None
+DATA_PRODUCT_TRANSFORMATION_INCLUDE_RELATIONS = {
+    "outputDatastream": {
+        "path": "output_datastream",
+        "bucket": "outputDatastreams",
+        "response_schema": DatastreamResponse,
+    },
+    "ratingCurve": {
+        "path": "rating_curve",
+        "bucket": "ratingCurves",
+        "response_schema": RatingCurveResponse,
+    },
+}
+DataProductTransformationIncludeRelation = Literal[
+    *DATA_PRODUCT_TRANSFORMATION_INCLUDE_RELATIONS.keys()
+]
+
+_order_by_fields = ("id", "outputDatastreamId")
+DataProductTransformationOrderByFields = Literal[
+    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+]
+
+_property_fields = (
+    "id",
+    "transformationType",
+    *(to_camel(name) for name in DataProductTransformationFields.model_fields),
+)
+DataProductTransformationPropertyName = Literal[*_property_fields]
 
 
-# --- Per-type patch body schemas ---
+class DataProductTransformationFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[DataProductTransformationPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DataProductTransformationPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[DataProductTransformationIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DataProductTransformationIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
 
-class RatingCurveTransformationPatchBody(BasePatchBody):
-    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
-    input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    rating_curve: uuid.UUID = Field(alias="ratingCurveId")
+
+class DataProductTransformationItemQueryParameters(
+    DataProductTransformationFilterFields, BaseQueryParameters
+):
+    pass
 
 
-class DerivationTransformationPatchBody(BasePatchBody):
-    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
-    input_datastreams: list[TransformationInputPostBody]
-    formula: str
-    stop_on_no_data: bool
-    stop_on_error: bool
+class DataProductTransformationQueryParameters(
+    DataProductTransformationFilterFields, CollectionQueryParameters
+):
+    order_by: Optional[list[DataProductTransformationOrderByFields]] = Query(
+        [], description="Select one or more fields to order the response by."
+    )
+    transformation_type: list[str] = Query(
+        [], description="Filter transformations by type."
+    )
+    output_datastream_id: list[uuid.UUID] = Query(
+        [], description="Filter transformations by output datastream ID."
+    )
+    input_datastreams__datastream_id: list[uuid.UUID] = Query(
+        [], description="Filter transformations by input datastream ID.", alias="input_datastream_id"
+    )
 
 
-class AggregationTransformationPatchBody(BasePatchBody):
-    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
-    input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    aggregation_method: AggregationMethod
-    output_interval_units: Period
-    output_interval: int
-    timezone_type: Optional[TimezoneType] = None
-    timezone: Optional[str] = None
-    min_values: Optional[int] = None
+class DataProductTransformationResponse(BaseGetResponse, DataProductTransformationFields):
+    id: uuid.UUID
+    transformation_type: TransformationType
+    input_datastreams: list[TransformationInputResponse] = []
+
+
+class DataProductTransformationPostBody(BasePostBody, DataProductTransformationFields):
+    id: Optional[uuid.UUID] = None
+    transformation_type: TransformationType
+
+
+class DataProductTransformationPatchBody(BasePatchBody, DataProductTransformationFields):
+    pass

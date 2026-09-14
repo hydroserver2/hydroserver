@@ -1,23 +1,45 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from core.types import ISODatetime
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    CreatedResponse,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
 
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
 
-
-class ServiceAccountFields(Schema):
+class ServiceAccountInputFields(Schema):
     name: str = Field(..., max_length=255)
     description: Optional[str] = None
     is_active: bool
     key_expires_at: Optional[ISODatetime] = None
+
+
+class ServiceAccountFields(ServiceAccountInputFields):
+    email: str
+    created_at: ISODatetime
+    last_used_at: Optional[ISODatetime]
+
+
+SERVICE_ACCOUNT_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ServiceAccountIncludeRelation = Literal[*SERVICE_ACCOUNT_INCLUDE_RELATIONS.keys()]
 
 
 _order_by_fields = (
@@ -25,53 +47,68 @@ _order_by_fields = (
     "isActive",
     "keyExpiresAt",
 )
-
 ServiceAccountOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
 
-class ServiceAccountQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(to_camel(name) for name in ServiceAccountFields.model_fields),
+)
+ServiceAccountPropertyName = Literal[*_property_fields]
+
+
+class ServiceAccountFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ServiceAccountPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ServiceAccountPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ServiceAccountIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ServiceAccountIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ServiceAccountItemQueryParameters(ServiceAccountFilterFields, BaseQueryParameters):
+    pass
+
+
+class ServiceAccountQueryParameters(ServiceAccountFilterFields, CollectionQueryParameters):
     order_by: Optional[list[ServiceAccountOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
 
 
-class ServiceAccountGetFields(ServiceAccountFields):
-    email: str
-    created_at: ISODatetime
-    last_used_at: Optional[ISODatetime]
-
-
-class ServiceAccountSummaryResponse(BaseGetResponse, ServiceAccountGetFields):
+class ServiceAccountResponse(BaseGetResponse, ServiceAccountFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
 
 
-class ServiceAccountDetailResponse(BaseGetResponse, ServiceAccountGetFields):
-    id: uuid.UUID
-    workspace: "WorkspaceSummaryResponse"
-
-
-class ServiceAccountSummaryPostResponse(
-    ServiceAccountSummaryResponse, ServiceAccountGetFields
-):
+class ServiceAccountCreatedResponse(CreatedResponse):
     key: str = Field(..., max_length=255)
 
 
-class ServiceAccountDetailPostResponse(
-    ServiceAccountDetailResponse, ServiceAccountGetFields
-):
+class ServiceAccountKeyResponse(BaseGetResponse):
     key: str = Field(..., max_length=255)
 
 
-class ServiceAccountPostBody(BasePostBody, ServiceAccountFields):
+class ServiceAccountPostBody(BasePostBody, ServiceAccountInputFields):
     id: Optional[uuid.UUID] = None
     role_id: Optional[uuid.UUID] = None
 
 
-class ServiceAccountPatchBody(BasePatchBody, ServiceAccountFields):
+class ServiceAccountPatchBody(BasePatchBody, ServiceAccountInputFields):
     pass
 
 

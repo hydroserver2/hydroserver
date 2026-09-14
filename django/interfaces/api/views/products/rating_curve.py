@@ -2,16 +2,16 @@ import uuid
 
 from ninja import Router, Path, Query
 
-from interfaces.api.service import build_pagination_meta
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.services.products.rating_curve import RatingCurveAPIService
-from interfaces.api.schemas import PaginatedResponse
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.products.rating_curve import (
     RatingCurveResponse,
     RatingCurvePostBody,
     RatingCurvePatchBody,
     RatingCurveQueryParameters,
+    RatingCurveItemQueryParameters,
 )
 
 rating_curve_router = Router(tags=["Rating Curves"])
@@ -35,31 +35,25 @@ def get_rating_curves(
     Get rating curves accessible to the authenticated user.
     """
 
-    count, rating_curves = rating_curve_service.get_collection(
+    return 200, rating_curve_service.list(
         principal=request.principal,
-        order_by=[f.orm_field for f in query.order_by],
-        **query.model_dump(exclude_unset=True, exclude={"order_by"}),
-    )
-
-    meta = build_pagination_meta(
-        count=count,
         offset=query.offset,
         limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
-
-    return 200, {"data": rating_curves, "meta": meta}
 
 
 @rating_curve_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: RatingCurveResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -71,20 +65,17 @@ def create_rating_curve(
     Create a new rating curve.
     """
 
-    rating_curve = rating_curve_service.create(
+    return 201, rating_curve_service.create(
         principal=request.principal,
-        monitoring_site=data.monitoring_site_id,
-        **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id"}),
+        data=data,
     )
-
-    return 201, rating_curve
 
 
 @rating_curve_router.get(
     "/{rating_curve_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: RatingCurveResponse,
+        200: ItemResponse[RatingCurveResponse],
         401: str,
         403: str,
         404: str,
@@ -94,29 +85,28 @@ def create_rating_curve(
 def get_rating_curve(
     request: HydroServerHttpRequest,
     rating_curve_id: Path[uuid.UUID],
+    query: Query[RatingCurveItemQueryParameters],
 ):
     """
     Get a rating curve.
     """
 
-    rating_curve = rating_curve_service.get(
-        rating_curve=rating_curve_id,
+    return 200, rating_curve_service.get(
         principal=request.principal,
+        uid=rating_curve_id,
+        include=query.include,
     )
-
-    return 200, rating_curve
 
 
 @rating_curve_router.patch(
     "/{rating_curve_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: RatingCurveResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -129,13 +119,13 @@ def update_rating_curve(
     Update a rating curve.
     """
 
-    rating_curve = rating_curve_service.update(
-        rating_curve=rating_curve_id,
+    rating_curve_service.update(
         principal=request.principal,
-        **data.model_dump(exclude_unset=True),
+        uid=rating_curve_id,
+        data=data,
     )
 
-    return 200, rating_curve
+    return 204, None
 
 
 @rating_curve_router.delete(
@@ -158,8 +148,8 @@ def delete_rating_curve(
     """
 
     rating_curve_service.delete(
-        rating_curve=rating_curve_id,
         principal=request.principal,
+        uid=rating_curve_id,
     )
 
     return 204, None

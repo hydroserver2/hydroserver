@@ -1,26 +1,30 @@
 import uuid
+
 from typing import Optional, get_args
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.db.utils import IntegrityError
-from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError
+
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.service import APIService
+from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError
 from interfaces.api.schemas import (
-    WorkspaceSummaryResponse,
-    WorkspaceDetailResponse,
     WorkspacePostBody,
     WorkspacePatchBody,
     WorkspaceTransferBody,
 )
-from interfaces.api.schemas.iam.workspace import WorkspaceOrderByFields
-from interfaces.api.service import APIService
-from .role import RoleAPIService
+from interfaces.api.schemas.iam.workspace import (
+    WORKSPACE_INCLUDE_RELATIONS,
+    WorkspaceOrderByFields,
+)
 
 User = get_user_model()
 
 
 class WorkspaceAPIService(APIService):
+    INCLUDE_RELATIONS = WORKSPACE_INCLUDE_RELATIONS
+
     @staticmethod
     def attach_role_and_transfer_fields(
         workspace: Workspace, principal: User | ServiceAccount | AnonymousPrincipal
@@ -41,13 +45,7 @@ class WorkspaceAPIService(APIService):
             )
 
             if collaborator:
-                # Permission rows now store one resource with boolean action
-                # flags, while the public role contract exposes one
-                # resource/action pair per granted permission. Nested roles
-                # must use the same expansion as the roles endpoints.
-                workspace.collaborator_role = RoleAPIService().serialize_role(
-                    collaborator.role, expand_related=True
-                )
+                workspace.collaborator_role = collaborator.role
 
         return workspace
 
@@ -58,11 +56,12 @@ class WorkspaceAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = Workspace.objects
 
-        if isinstance(principal, User) and expand_related:
+        if isinstance(principal, User):
             principal.collaborator_roles = list(
                 principal.collaborations.select_related("role", "workspace")
                 .prefetch_related("role__permissions")
@@ -100,66 +99,64 @@ class WorkspaceAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = queryset.select_related(
-                "owner", "transfer_confirmation", "transfer_confirmation__new_owner"
-            )
+        queryset = queryset.select_related(
+            "owner", "transfer_confirmation", "transfer_confirmation__new_owner"
+        )
 
         permitted_queryset = principal.filter_by_permission(queryset, "can_view")
         if filtering.get("is_associated") is True and isinstance(principal, User):
-            # A transfer recipient must be able to discover the workspace in
-            # order to accept or reject it, even though they do not have the
+            # A transfer recipient must be able to discover the workspace 
+            # to accept or reject it, even though they do not have the
             # workspace's normal view permission yet.
             permitted_queryset = permitted_queryset | queryset.filter(
                 transfer_confirmation__new_owner=principal
             )
-        queryset = permitted_queryset.distinct()
 
+        queryset = permitted_queryset.distinct()
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        if expand_related:
-            queryset = [
-                self.attach_role_and_transfer_fields(workspace, principal)
-                for workspace in queryset
-            ]
+        workspaces = [
+            self.attach_role_and_transfer_fields(workspace, principal)
+            for workspace in queryset
+        ]
 
         return {
-            "data": [
-                (
-                    WorkspaceDetailResponse.model_validate(workspace)
-                    if expand_related
-                    else WorkspaceSummaryResponse.model_validate(workspace)
-                )
-                for workspace in queryset
-            ],
+            "data": workspaces,
             "meta": meta,
+            "included": self.resolve_includes(
+                workspaces, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         workspace, _ = self.get_workspace(principal=principal, workspace_id=uid)
 
-        if expand_related:
-            if isinstance(principal, User):
-                principal.collaborator_roles = list(principal.collaborations.all())
+        if isinstance(principal, User):
+            principal.collaborator_roles = list(
+                principal.collaborations.select_related("role", "workspace")
+                .prefetch_related("role__permissions")
+                .all()
+            )
 
-            workspace = self.attach_role_and_transfer_fields(workspace, principal)
+        workspace = self.attach_role_and_transfer_fields(workspace, principal)
 
-        return (
-            WorkspaceDetailResponse.model_validate(workspace)
-            if expand_related
-            else WorkspaceSummaryResponse.model_validate(workspace)
-        )
+        return {
+            "data": workspace,
+            "included": self.resolve_includes(
+                [workspace], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: WorkspacePostBody,
-        expand_related: Optional[bool] = None,
     ):
         if not isinstance(principal, User):
             raise PermissionDeniedError(
@@ -176,14 +173,13 @@ class WorkspaceAPIService(APIService):
                 "Workspace name or ID conflicts with an owned workspace"
             )
 
-        return self.get(principal, uid=workspace.id, expand_related=expand_related)
+        return {"id": workspace.pk}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: WorkspacePatchBody,
-        expand_related: Optional[bool] = None,
     ):
         workspace, _ = self.get_workspace(principal=principal, workspace_id=uid)
 
@@ -203,8 +199,6 @@ class WorkspaceAPIService(APIService):
             workspace.save()
         except IntegrityError:
             raise ConflictError("Workspace name conflicts with an owned workspace")
-
-        return self.get(principal, uid=workspace.id, expand_related=expand_related)
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         workspace, _ = self.get_workspace(principal=principal, workspace_id=uid)

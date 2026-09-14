@@ -1,10 +1,9 @@
 import uuid
 
-from typing import Literal, get_args
+from typing import Literal, Optional, get_args
 from django.db.models.deletion import ProtectedError
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet
 
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from core.iam.models import ServiceAccount
@@ -12,27 +11,33 @@ from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Unit, UnitType
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
-    UnitSummaryResponse,
-    UnitDetailResponse,
+    UnitResponse,
     UnitPostBody,
     UnitPatchBody,
 )
-from interfaces.api.schemas.sta.unit import UnitFields, UnitOrderByFields
+from interfaces.api.schemas.sta.unit import (
+    UnitFields,
+    UnitOrderByFields,
+    UNIT_INCLUDE_RELATIONS,
+)
 
 User = get_user_model()
 
 
 class UnitAPIService(APIService):
+    INCLUDE_RELATIONS = UNIT_INCLUDE_RELATIONS
+
     def get_unit_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: bool | None = None,
+        select_related: Optional[list[str]] = None,
     ):
         queryset = Unit.objects.filter(pk=uid)
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+
         queryset = principal.annotate_permissions(queryset)
 
         try:
@@ -48,10 +53,6 @@ class UnitAPIService(APIService):
 
         return unit
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related("workspace")
-
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -59,8 +60,9 @@ class UnitAPIService(APIService):
         limit: int | None = None,
         order_by: list[str] | None = None,
         filtering: dict | None = None,
-        expand_related: bool | None = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = Unit.objects
 
         for field in [
@@ -81,46 +83,49 @@ class UnitAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if requested_includes:
+            select_paths = [
+                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+            ]
+            queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        units = list(queryset.all())
 
         return {
-            "data": [
-                (
-                    UnitDetailResponse.model_validate(unit)
-                    if expand_related
-                    else UnitSummaryResponse.model_validate(unit)
-                )
-                for unit in queryset.all()
-            ],
+            "data": [UnitResponse.model_validate(unit) for unit in units],
             "meta": meta,
+            "included": self.resolve_includes(
+                units, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: bool | None = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths = [
+            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
         unit = self.get_unit_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal, uid=uid, action="view", select_related=select_paths
         )
 
-        return (
-            UnitDetailResponse.model_validate(unit)
-            if expand_related
-            else UnitSummaryResponse.model_validate(unit)
-        )
+        return {
+            "data": UnitResponse.model_validate(unit),
+            "included": self.resolve_includes(
+                [unit], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: UnitPostBody,
-        expand_related: bool | None = None,
     ):
         workspace, _ = (
             self.get_workspace(principal=principal, workspace_id=data.workspace_id)
@@ -146,14 +151,13 @@ class UnitAPIService(APIService):
         except IntegrityError:
             raise ConflictError("The operation could not be completed due to a resource conflict.")
 
-        return self.get(principal=principal, uid=unit.pk, expand_related=expand_related)
+        return {"id": unit.pk}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: UnitPatchBody,
-        expand_related: bool | None = None,
     ):
         unit = self.get_unit_for_action(principal=principal, uid=uid, action="edit")
         unit_data = data.dict(
@@ -165,8 +169,6 @@ class UnitAPIService(APIService):
 
         unit.full_clean()
         unit.save()
-
-        return self.get(principal=principal, uid=unit.id, expand_related=expand_related)
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         unit = self.get_unit_for_action(principal=principal, uid=uid, action="delete")

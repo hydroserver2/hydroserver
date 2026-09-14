@@ -10,8 +10,8 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MonitoringSiteFactory
-from tests.processing.monitoring.factories import MonitoringTaskFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
+from tests.processing.monitoring.factories import MonitoringRuleFactory, MonitoringTaskFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -89,7 +89,9 @@ def test_create_monitoring_task_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "New Monitoring Task"
+    assert set(response.json().keys()) == {"id"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["name"] == "New Monitoring Task"
 
 
 def test_create_monitoring_task_returns_401_when_unauthenticated(client):
@@ -132,7 +134,45 @@ def test_get_monitoring_task_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(task.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(task.id)
+    assert response.json()["data"]["id"] == str(task.id)
+
+
+def test_get_monitoring_task_reports_rule_type_counts_of_every_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_monitoring_task(workspace)
+    monitoring_site = task.monitoring_site
+
+    MonitoringRuleFactory(
+        task=task,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        rule_type="missing_data",
+    )
+    MonitoringRuleFactory(
+        task=task,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        rule_type="missing_data",
+    )
+    MonitoringRuleFactory(
+        task=task,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        rule_type="range",
+        window_interval=None,
+        window_interval_units=None,
+    )
+
+    client.force_login(owner)
+
+    list_response = client.get(MONITORING_TASKS_URL)
+    assert list_response.status_code == 200
+    listed_task = next(
+        t for t in list_response.json()["data"] if t["id"] == str(task.id)
+    )
+    assert listed_task["ruleTypeCounts"] == {"missing_data": 2, "range": 1}
+
+    detail_response = client.get(_detail_url(task.id))
+    assert detail_response.status_code == 200
+    assert detail_response.json()["data"]["ruleTypeCounts"] == {"missing_data": 2, "range": 1}
 
 
 def test_get_monitoring_task_returns_404_for_outsider(client):
@@ -179,8 +219,10 @@ def test_update_monitoring_task_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(task.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_monitoring_task_returns_403_for_viewer_collaborator(client):

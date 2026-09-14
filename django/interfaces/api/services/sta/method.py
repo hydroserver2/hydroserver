@@ -1,37 +1,43 @@
 import uuid
+
 from typing import Optional, Literal, get_args
 from django.db.models.deletion import ProtectedError
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet
-from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
+
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Method, MethodType
+from interfaces.api.service import APIService
+from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.schemas import (
-    MethodSummaryResponse,
-    MethodDetailResponse,
+    MethodResponse,
     MethodPostBody,
     MethodPatchBody,
 )
-from interfaces.api.schemas.sta.method import MethodFields, MethodOrderByFields
-from interfaces.api.service import APIService
+from interfaces.api.schemas.sta.method import (
+    MethodFields,
+    MethodOrderByFields,
+    METHOD_INCLUDE_RELATIONS,
+)
 
 User = get_user_model()
 
 
 class MethodAPIService(APIService):
+    INCLUDE_RELATIONS = METHOD_INCLUDE_RELATIONS
+
     def get_method_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        select_related: Optional[list[str]] = None,
     ):
         queryset = Method.objects.filter(pk=uid)
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
 
         queryset = principal.annotate_permissions(queryset)
 
@@ -48,10 +54,6 @@ class MethodAPIService(APIService):
 
         return method
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related("workspace")
-
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -59,8 +61,9 @@ class MethodAPIService(APIService):
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
         queryset = Method.objects
 
         for field in [
@@ -83,46 +86,49 @@ class MethodAPIService(APIService):
         else:
             queryset = queryset.order_by("id")
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if requested_includes:
+            select_paths = [
+                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+            ]
+            queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
-
         queryset, meta = self.apply_pagination(queryset, offset, limit)
+        methods = list(queryset.all())
 
         return {
-            "data": [
-                (
-                    MethodDetailResponse.model_validate(method)
-                    if expand_related
-                    else MethodSummaryResponse.model_validate(method)
-                )
-                for method in queryset.all()
-            ],
+            "data": [MethodResponse.model_validate(method) for method in methods],
             "meta": meta,
+            "included": self.resolve_includes(
+                methods, requested_includes, self.INCLUDE_RELATIONS
+            ),
         }
 
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        include: Optional[list[str]] = None,
     ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths = [
+            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
+        ]
         method = self.get_method_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal, uid=uid, action="view", select_related=select_paths
         )
 
-        return (
-            MethodDetailResponse.model_validate(method)
-            if expand_related
-            else MethodSummaryResponse.model_validate(method)
-        )
+        return {
+            "data": MethodResponse.model_validate(method),
+            "included": self.resolve_includes(
+                [method], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: MethodPostBody,
-        expand_related: Optional[bool] = None,
     ):
         workspace, _ = (
             self.get_workspace(principal=principal, workspace_id=data.workspace_id)
@@ -150,16 +156,13 @@ class MethodAPIService(APIService):
                 "The operation could not be completed due to a resource conflict."
             )
 
-        return self.get(
-            principal=principal, uid=method.id, expand_related=expand_related
-        )
+        return {"id": method.pk}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: MethodPatchBody,
-        expand_related: Optional[bool] = None,
     ):
         method = self.get_method_for_action(principal=principal, uid=uid, action="edit")
         method_data = data.dict(
@@ -171,10 +174,6 @@ class MethodAPIService(APIService):
 
         method.full_clean()
         method.save()
-
-        return self.get(
-            principal=principal, uid=method.id, expand_related=expand_related
-        )
 
     def delete(
         self,
