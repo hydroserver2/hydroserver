@@ -23,13 +23,13 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useHydroServer } from '@/store/hydroserver'
 import { useObservationStore } from '@/store/observations'
 import { useQcSessionStore } from '@/store/qcSession'
+import { useWorkingCopiesStore } from '@/store/workingCopies'
 import {
   findHistoryForDatastream,
   startOrResumeSession,
   loadLatestBase,
   persistSessionOperations,
   commitQcSession,
-  reconstructSession,
   reconstructCommittedSession,
   observationsBulkBody,
 } from '@/services/qualityControl'
@@ -76,6 +76,7 @@ export function useEditSession() {
   const { hs } = storeToRefs(useHydroServer())
   const { fetchObservationsInRange } = useObservationStore()
   const sessionStore = useQcSessionStore()
+  const workingCopies = useWorkingCopiesStore()
 
   // The saved-edits snapshot lives in the store so every caller (the editor
   // footer and the nav rail's exit guard) sees the same unsaved state.
@@ -138,23 +139,25 @@ export function useEditSession() {
     const inProgress = sessionStore.inProgressSession
     const record = selectedSeries.value?.data
     if (inProgress && sourceDatastream.value && record) {
-      // Resume: reconstruct the in-progress session's working state (source
-      // window + replayed draft operations) and wire it into the QC-target
-      // series so the editor shows the saved edits instead of the empty,
-      // uncommitted managed datastream.
-      const { record: reconstructed } = await reconstructSession(
-        {
-          qcSessions: hs.value.qualityControlSessions,
-          qcOperations: hs.value.qualityControlOperations,
-          fetchInRange: fetchObservationsInRange,
-          applyHistory,
-        },
+      // Resume: rebuild the same working copy the Select-view plot shows,
+      // from the server, so it holds exactly the saved draft operations.
+      const built = await workingCopies.rebuild(
         managed,
         sourceDatastream.value,
         history.id,
-        inProgress.id
+        inProgress
       )
-      if (selectedSeries.value) selectedSeries.value.data = reconstructed
+      if (!built) {
+        // The rebuild was superseded by an invalidate while in flight (the
+        // user already left Edit, or the session/datastream was deleted
+        // mid-resume): there is nothing to wire in. Leave `needsSession` true
+        // rather than fake a resume; `enterEdit` treats that as "start a
+        // session", and `startOrResumeSession` is idempotent, so it resumes
+        // this same in-progress session instead of creating a duplicate.
+        needsSession.value = true
+        return
+      }
+      if (selectedSeries.value) selectedSeries.value.data = built.record
       // Nothing watches for a swapped-in record; resume has no caller that
       // redraws, unlike the start-session path.
       await redraw()
@@ -240,6 +243,13 @@ export function useEditSession() {
       new Date(session.phenomenonTimeEnd)
     )
     if (selectedSeries.value) selectedSeries.value.data = base
+    workingCopies.set(
+      managed.id,
+      session.id,
+      base,
+      new Date(session.phenomenonTimeStart),
+      new Date(session.phenomenonTimeEnd)
+    )
     needsSession.value = false
     // Fresh session: the loaded working copy is the saved baseline.
     snapshotSavedEdits()
@@ -319,6 +329,7 @@ export function useEditSession() {
         })
       },
     })
+    workingCopies.invalidate(managed.id)
     await sessionStore.loadSessions(historyId)
     snapshotSavedEdits()
     // The push moved the managed datastream's phenomenon times. Refresh last so

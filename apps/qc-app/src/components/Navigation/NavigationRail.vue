@@ -190,11 +190,13 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSessionStore } from '@/store/qcSession'
 import { useEditSession } from '@/composables/useEditSession'
+import { useWorkingCopiesStore } from '@/store/workingCopies'
 
 const { onRailItemClicked } = useUIStore()
 const { selectedDrawer, isDrawerOpen, currentView } = storeToRefs(useUIStore())
 const { resetState } = useDataVisStore()
 const { qcDatastream, qcDatastreamId } = storeToRefs(useDataVisStore())
+const workingCopies = useWorkingCopiesStore()
 const { hs } = storeToRefs(useHydroServer())
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace } = storeToRefs(workspaceStore)
@@ -303,6 +305,10 @@ async function onSwitchWorkspace() {
   // filters to router.replace, racing our push and stranding the user.
   // `switch=1` prevents the Workspaces picker from auto-redirecting back.
   await router.push({ name: 'Workspaces', query: { switch: '1' } })
+  // Deselecting the datastream leaves the editor without releasing it via
+  // exitToSelect; drop its working copy here so a later preview of it (back
+  // in this workspace) rebuilds from what was actually saved.
+  if (qcDatastream.value) workingCopies.invalidate(qcDatastream.value.id)
   qcDatastreamId.value = null
   currentView.value = DrawerType.Select
   selectedDrawer.value = DrawerType.Select

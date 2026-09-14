@@ -277,10 +277,18 @@ Two contract notes worth keeping in mind:
 - **A reload resumes from the last save, not from memory.** Only
   `qcSession.resumeDatastreamId` is persisted; on load the editor replots that
   datastream and re-runs `beginEditing`, which rebuilds the working copy from
-  the server via `reconstructSession`. Edits made since the last save are not
-  recoverable, so `useUnsavedChangesWarning` raises the browser's native
+  the server via `workingCopies.rebuild`. Edits made since the last save are
+  not recoverable, so `useUnsavedChangesWarning` raises the browser's native
   confirmation while `hasUnsavedChanges` is true. A deliberate exit clears the
   pointer, so only an interrupted session reopens.
+- **The editor and the Select-view plot share one working copy per managed
+  datastream**, cached in `workingCopies` (`store/workingCopies.ts`). It is
+  built on a copy of the base (`reconstructSession`/`loadLatestBase`'s
+  `cloneRecord`), never the observation store's cached record, so the raw
+  datastream's cached observations are never edited. It is dropped
+  (`invalidate`) on commit, on leaving the editor, and when its session or
+  managed datastream is deleted, so the next preview or resume rebuilds it
+  from what was actually saved.
 - **Viewing a past session replays its ancestor chain from the source.**
   The managed datastream carries every commit, so it cannot be the base for a
   historical view: replaying an older session's operations on top of it would

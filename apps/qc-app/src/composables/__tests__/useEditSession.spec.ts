@@ -28,6 +28,17 @@ vi.mock('@/store/observations', () => ({
   useObservationStore: () => ({ fetchObservationsInRange }),
 }))
 
+const wcRebuild = vi.fn()
+const wcSet = vi.fn()
+const wcInvalidate = vi.fn()
+vi.mock('@/store/workingCopies', () => ({
+  useWorkingCopiesStore: () => ({
+    rebuild: wcRebuild,
+    set: wcSet,
+    invalidate: wcInvalidate,
+  }),
+}))
+
 // qc-utils is only used at runtime by the composable (the service layer
 // imports types only), so stub serializeHistory/applyHistory/Snackbar here.
 // `vi.hoisted` keeps these safe to reference from the hoisted `vi.mock`
@@ -117,6 +128,12 @@ beforeEach(() => {
   getItem.mockResolvedValue({ id: 's-1', name: 'Source' })
   createObservations.mockResolvedValue(undefined)
   fetchObservationsInRange.mockResolvedValue(makeRecord())
+  wcRebuild.mockResolvedValue({
+    sessionId: 'x',
+    record: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]),
+    begin: new Date(0),
+    end: new Date(1),
+  })
 })
 
 const seedHistory = async () => {
@@ -145,7 +162,43 @@ describe('useEditSession', () => {
     expect(needsSession.value).toBe(false)
   })
 
-  it('beginEditing resumes an in-progress session (replays via applyHistory)', async () => {
+  it('beginEditing resumes an in-progress session from the shared working copy', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const created = unwrap(await qc.sessions.create(h.id, WIN))
+    // The working copy resume should wire into the series, shared with the
+    // Select-view plot via the workingCopies store.
+    const sharedRecord = makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
+    wcRebuild.mockResolvedValue({
+      sessionId: created.id,
+      record: sharedRecord,
+      begin: new Date(0),
+      end: new Date(1),
+    })
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const { beginEditing, needsSession } = useEditSession()
+    await beginEditing()
+    expect(needsSession.value).toBe(false)
+    expect(wcRebuild).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'm-1' }),
+      expect.objectContaining({ id: 's-1' }),
+      h.id,
+      expect.objectContaining({ id: created.id })
+    )
+    // The QC-target series shows exactly the record the working copy store
+    // resolved, so the plot and the editor never diverge. `toRaw` unwraps
+    // the reactive proxy Vue puts on the assigned object.
+    expect(toRaw(selectedSeries.value.data)).toBe(sharedRecord)
+    // Nothing watches for a swapped-in record, so resume has to rebuild the
+    // plot itself or it keeps rendering the pre-reconstruction trace.
+    expect(redraw).toHaveBeenCalled()
+  })
+
+  it('beginEditing leaves the session unresumed when the working copy is invalidated mid-resume', async () => {
     const h = unwrap(
       await qc.histories.create({
         managedDatastreamId: 'm-1',
@@ -153,30 +206,19 @@ describe('useEditSession', () => {
       })
     )
     await qc.sessions.create(h.id, WIN)
-    // The reconstructed working copy that resume should wire into the series.
-    const reconstructed = makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
-    fetchObservationsInRange.mockResolvedValue(reconstructed)
+    // Superseded by an invalidate while resuming (e.g. the user already left
+    // Edit, or the session was deleted) leaves nothing cached to show.
+    wcRebuild.mockResolvedValueOnce(null)
+    const original = selectedSeries.value.data
     const { useEditSession } = await import('@/composables/useEditSession')
-    const qcUtils = await import('@uwrl/qc-utils')
     const { beginEditing, needsSession } = useEditSession()
     await beginEditing()
-    expect(needsSession.value).toBe(false)
-    // The QC-target series shows the reconstructed session's data, but on
-    // its own copy: resume never hands out the fetched record itself, so
-    // editing it can't mutate the store's cached one.
-    const seriesRecord = selectedSeries.value.data
-    expect(Array.from(seriesRecord.dataX)).toEqual(Array.from(reconstructed.dataX))
-    expect(toRaw(seriesRecord)).not.toBe(reconstructed)
-    // applyHistory replayed onto that same copy, not the fetched record.
-    // `toRaw` unwraps the reactive proxy Vue puts on the assigned object,
-    // since applyHistory was called with the pre-proxy instance.
-    const applyHistoryMock = qcUtils.applyHistory as unknown as {
-      mock: { calls: unknown[][] }
-    }
-    expect(applyHistoryMock.mock.calls[0]?.[0]).toBe(toRaw(seriesRecord))
-    // Nothing watches for a swapped-in record, so resume has to rebuild the
-    // plot itself or it keeps rendering the pre-reconstruction trace.
-    expect(redraw).toHaveBeenCalled()
+    // Falls back to "needs a session": entering the editor via `enterEdit`
+    // will auto-start one, and `startOrResumeSession` is idempotent, so it
+    // resumes the same in-progress session rather than creating a new one.
+    expect(needsSession.value).toBe(true)
+    expect(selectedSeries.value.data).toBe(original)
+    expect(redraw).not.toHaveBeenCalled()
   })
 
   it('startSession loads the managed datastream as the working base', async () => {
@@ -411,6 +453,34 @@ describe('useEditSession', () => {
 
     const store = useQcSessionStore()
     expect(store.committedSessions[0]?.description).toBe('Reviewed January spike')
+  })
+
+  it('startSession stores its base as the working copy', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+
+    const inProgress = useQcSessionStore().inProgressSession!
+    expect(wcSet).toHaveBeenCalledWith(
+      'm-1',
+      inProgress.id,
+      selectedSeries.value.data,
+      new Date(inProgress.phenomenonTimeStart),
+      new Date(inProgress.phenomenonTimeEnd)
+    )
+  })
+
+  it('commit drops the working copy once the session is committed', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    await session.commit()
+
+    expect(wcInvalidate).toHaveBeenCalledWith('m-1')
   })
 })
 

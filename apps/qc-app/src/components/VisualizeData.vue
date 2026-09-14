@@ -571,8 +571,10 @@ import { isSnapshotId, parseSnapshotId } from '@/utils/snapshotId'
 import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
+import { useWorkingCopiesStore } from '@/store/workingCopies'
 
 const { resetState } = useDataVisStore()
+const workingCopies = useWorkingCopiesStore()
 const { toggleSnapshot } = useHistorySnapshots()
 const {
   plottedDatastreams,
@@ -787,6 +789,9 @@ function exitToSelect() {
   isDrawerOpen.value = true
   // Leaving the editor deliberately, so a later reload shouldn't reopen it.
   resumeDatastreamId.value = null
+  // Unsaved edits live only on the working copy; the next preview rebuilds
+  // it from what was saved.
+  if (qcDatastream.value) workingCopies.invalidate(qcDatastream.value.id)
   // Put the source back in the plot so the catalog table shows the row the
   // user had selected; the managed datastream it was swapped for is hidden
   // from that table.
@@ -1190,6 +1195,7 @@ async function onChooserDelete(option: ManagedDatastreamOption) {
   try {
     await deleteManaged(option.historyId, option.managed.id)
     removeManagedDatastream(option.historyId, option.managed.id)
+    workingCopies.invalidate(option.managed.id)
     chooserOptions.value = chooserOptions.value.filter(
       (o) => o.historyId !== option.historyId
     )
@@ -1213,6 +1219,7 @@ async function onChooserDeleteSession(
       option.historyId,
       collectDeletionChain(option.sessions, sessionId)
     )
+    workingCopies.invalidate(option.managed.id)
     const gone = new Set(deleted)
     chooserOptions.value = chooserOptions.value.map((o) =>
       o.historyId === option.historyId
