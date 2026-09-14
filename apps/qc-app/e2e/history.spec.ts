@@ -55,7 +55,9 @@ test.describe('edit history toolbar', () => {
     page,
   }) => {
     const row = page.getByTestId('history-item-1')
-    await row.getByRole('button', { name: /expand arguments/i }).click()
+    await row
+      .getByRole('button', { name: 'Expand arguments', exact: true })
+      .click()
     await expect(row.getByText('Arguments')).toBeVisible()
   })
 

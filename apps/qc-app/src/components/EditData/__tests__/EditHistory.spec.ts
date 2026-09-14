@@ -658,7 +658,9 @@ describe('EditHistory.vue actions', () => {
 
       const baseline = w.find('[data-testid="history-reload-step-baseline"]')
       expect(baseline.classes()).not.toContain('edit-history__row--clickable')
-      expect(baseline.attributes('role')).toBeUndefined()
+      expect(
+        w.find('[data-testid="history-step-btn-baseline"]').attributes('disabled')
+      ).toBeDefined()
       await baseline.trigger('click')
       expect(reloadHistory).not.toHaveBeenCalled()
     })
@@ -792,6 +794,56 @@ describe('EditHistory.vue actions', () => {
       editHistory.value.splice(1)
       await flushPromises()
       expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(true)
+    })
+  })
+
+  // A button can't contain other controls, so the row stays a plain click
+  // target and the step name is the control keyboards and screen readers use.
+  describe('step button', () => {
+    it('keeps the row out of the button role', async () => {
+      editHistory.value = [makeEntry('SELECTION')]
+      const w = createWrapper()
+      await flushPromises()
+
+      const row = w.find('[data-testid="history-item-0"] .edit-history__row')
+      expect(row.attributes('role')).toBeUndefined()
+      expect(row.attributes('tabindex')).toBeUndefined()
+      const baseline = w.find('[data-testid="history-reload-step-baseline"]')
+      expect(baseline.attributes('role')).toBeUndefined()
+
+      const step = w.find('[data-testid="history-step-btn-0"]')
+      expect(step.element.tagName).toBe('BUTTON')
+      expect(step.find('button').exists()).toBe(false)
+      expect(step.text()).toBe('Selection')
+    })
+
+    it('replays to its step once', async () => {
+      const history = [makeEntry('SELECTION'), makeEntry('DELETE_POINTS')]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => [])
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const w = createWrapper()
+      await flushPromises()
+
+      await w.find('[data-testid="history-step-btn-0"]').trigger('click')
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      await flushPromises()
+      expect(reloadHistory).toHaveBeenCalledTimes(1)
+      expect(reloadHistory).toHaveBeenCalledWith(0)
+    })
+
+    it('is disabled while a dispatch is running', async () => {
+      editHistory.value = [makeEntry('SELECTION')]
+      isUpdating.value = true
+      const w = createWrapper()
+      await flushPromises()
+
+      expect(
+        w.find('[data-testid="history-step-btn-0"]').attributes('disabled')
+      ).toBeDefined()
+      expect(
+        w.find('[data-testid="history-step-btn-baseline"]').attributes('disabled')
+      ).toBeDefined()
     })
   })
 

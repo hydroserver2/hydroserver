@@ -125,16 +125,14 @@
       <SessionList @view="emit('view-session', $event)">
         <template #operations>
           <div class="rounded border bg-surface overflow-hidden">
+      <!-- Row clicks are a mouse shortcut. The step button is the real control,
+           so the row's other buttons are not nested inside a button. -->
       <div
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
         :class="{ 'edit-history__row--clickable': canStepTo }"
-        :role="canStepTo ? 'button' : undefined"
-        :tabindex="canStepTo ? 0 : undefined"
         data-testid="history-reload-step-baseline"
         :title="canStepTo ? `Reload the session's starting state` : undefined"
         @click="onRowReload(SNAPSHOT_BASELINE_INDEX)"
-        @keydown.enter.prevent="onRowReload(SNAPSHOT_BASELINE_INDEX)"
-        @keydown.space.prevent="onRowReload(SNAPSHOT_BASELINE_INDEX)"
       >
         <v-icon
           :icon="
@@ -146,9 +144,16 @@
           :color="selectedSeries?.data.isLoading ? 'grey' : 'success'"
           class="mr-2"
         />
-        <span class="text-body-small font-weight-medium flex-grow-1 text-truncate">
+        <button
+          type="button"
+          class="edit-history__step text-body-small font-weight-medium flex-grow-1 text-truncate"
+          data-testid="history-step-btn-baseline"
+          :disabled="!canStepTo"
+          :title="canStepTo ? `Reload the session's starting state` : undefined"
+          @click.stop="onRowReload(SNAPSHOT_BASELINE_INDEX)"
+        >
           {{ selectedSeries?.data.isLoading ? 'Loading data…' : 'Data loaded' }}
-        </span>
+        </button>
         <v-chip
           v-if="shownStepIndex === SNAPSHOT_BASELINE_INDEX"
           size="x-small"
@@ -263,16 +268,8 @@
               'edit-history__row--unapplied': !isApplied(index),
               'edit-history__row--clickable': canStepTo,
             }"
-            :role="canStepTo ? 'button' : undefined"
-            :tabindex="canStepTo ? 0 : undefined"
-            :title="
-              isApplied(index)
-                ? 'Reload from this step'
-                : 'Not applied in the step currently shown. Click to reload from here.'
-            "
+            :title="stepTitle(index)"
             @click="onRowReload(index)"
-            @keydown.enter.prevent="onRowReload(index)"
-            @keydown.space.prevent="onRowReload(index)"
           >
             <button
               type="button"
@@ -304,7 +301,14 @@
             />
 
             <!-- Grows as one unit so the badge sits against the title text. -->
-            <div class="edit-history__title flex-grow-1 d-flex align-center ga-1">
+            <button
+              type="button"
+              class="edit-history__step edit-history__title flex-grow-1 d-flex align-center ga-1"
+              :data-testid="`history-step-btn-${index}`"
+              :disabled="!canStepTo || entry.execution?.inFlight"
+              :title="stepTitle(index)"
+              @click.stop="onRowReload(index)"
+            >
               <span class="edit-history__method text-truncate font-weight-medium">
                 {{ formatMethod(entry.method) }}
               </span>
@@ -321,7 +325,7 @@
                   />
                 </template>
               </v-tooltip>
-            </div>
+            </button>
 
             <v-chip
               v-if="shownStepIndex === index"
@@ -646,6 +650,11 @@ function toggle(index: number) {
 const isApplied = (index: number) =>
   shownStepIndex.value === null || index <= shownStepIndex.value
 
+const stepTitle = (index: number) =>
+  isApplied(index)
+    ? 'Reload from this step'
+    : 'Not applied in the step currently shown. Click to reload from here.'
+
 function formatMethod(method: string) {
   if (!method) return ''
   return method
@@ -878,9 +887,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   cursor: pointer;
 }
 
-.edit-history__row--clickable:focus-visible {
+/* Size and weight come from the typography utility classes. */
+.edit-history__step {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: start;
+  cursor: inherit;
+}
+
+.edit-history__step:focus-visible {
   outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
 .edit-history__row--loaded {
@@ -921,6 +942,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .edit-history__title {
   min-width: 0;
+  line-height: inherit;
 }
 
 .edit-history__method {
