@@ -145,6 +145,13 @@ const emitCombined = (date: Date, time: string) => {
   const s = props.seconds ? (parts[2] || 0) : 0
   const result = new Date(date)
   result.setHours(h, m, s, 0)
+  // Unchanged at the field's resolution, even if the model is finer.
+  if (
+    formatDateStr(result) === formatDateStr(props.modelValue) &&
+    formatTimeStr(result) === formatTimeStr(props.modelValue)
+  ) {
+    return
+  }
   emit('update:modelValue', result)
 }
 
