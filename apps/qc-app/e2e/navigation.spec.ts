@@ -16,6 +16,7 @@ import {
   setupEditView,
 } from './support/app'
 import { selectAllPoints } from './support/ops'
+import { WORKSPACE_ID } from './support/fixtures'
 
 test.describe('navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -46,6 +47,22 @@ test.describe('navigation', () => {
     // + inner button actionability check (the row itself also carries
     // a @click handler, which sometimes confuses the stability poll).
     await pickButton.click({ force: true })
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
+  })
+
+  test('the current workspace offers Continue back to Home', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await page.getByTestId('nav-rail-workspaces').click()
+    await expect(page.getByTestId('workspace-current-hint')).toContainText(
+      'E2E Test Workspace'
+    )
+    const button = page.getByTestId(`workspace-pick-${WORKSPACE_ID}`)
+    await expect(button).toHaveText(/Continue/)
+    await button.click({ force: true })
     await expect(page.getByTestId('datastreams-table')).toBeVisible({
       timeout: 30_000,
     })

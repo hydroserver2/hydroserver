@@ -4,6 +4,7 @@ import {
   RouteLocationNormalized,
   RouteLocationRaw,
 } from 'vue-router'
+import { nextLocation } from './nextLocation'
 
 type RouteGuardResult = RouteLocationRaw | false | null | undefined | void
 
@@ -62,8 +63,7 @@ export const guards: RouteGuard[] = [
     if (to.query.switch === '1') return null
     const { hasSelection } = useWorkspaceStore()
     if (!hasSelection) return null
-    const next = typeof to.query.next === 'string' ? to.query.next : 'Home'
-    return next.startsWith('/') ? { path: next } : { name: next }
+    return nextLocation(to.query.next)
   },
 
   // hasWorkspaceGuard — every data-bearing route needs an active

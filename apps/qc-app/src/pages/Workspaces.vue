@@ -11,6 +11,18 @@
       </div>
     </div>
 
+    <v-alert
+      v-if="selectedWorkspace?.name"
+      data-testid="workspace-current-hint"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+    >
+      You're working in <strong>{{ selectedWorkspace.name }}</strong>.
+      Continue, or pick another workspace.
+    </v-alert>
+
     <v-card v-if="isLoading" class="pa-6 text-center">
       <v-progress-circular indeterminate color="primary" size="32" />
       <div class="text-body-small text-medium-emphasis mt-3">
@@ -33,8 +45,8 @@
       <template v-for="(ws, idx) in availableWorkspaces" :key="ws.id">
         <v-list-item
           :title="ws.name"
-          :active="selectedWorkspace?.id === ws.id"
-          :class="{ 'workspace-picker__item--current': selectedWorkspace?.id === ws.id }"
+          :active="isCurrent(ws)"
+          :class="{ 'workspace-picker__item--current': isCurrent(ws) }"
           @click="onPick(ws.id)"
         >
           <template #prepend>
@@ -42,7 +54,7 @@
               :icon="
                 ws.isPrivate ? 'mdi-lock-outline' : 'mdi-earth'
               "
-              :color="selectedWorkspace?.id === ws.id ? 'primary' : undefined"
+              :color="isCurrent(ws) ? 'primary' : undefined"
             />
           </template>
 
@@ -122,13 +134,14 @@
                 </template>
               </v-tooltip>
               <v-btn
+                :data-testid="`workspace-pick-${ws.id}`"
                 size="small"
                 variant="flat"
                 color="primary"
-                :disabled="selectedWorkspace?.id === ws.id"
+                :append-icon="isCurrent(ws) ? 'mdi-arrow-right' : undefined"
                 @click.stop="onPick(ws.id)"
               >
-                {{ selectedWorkspace?.id === ws.id ? 'Selected' : 'Select' }}
+                {{ isCurrent(ws) ? 'Continue' : 'Select' }}
               </v-btn>
             </div>
           </template>
@@ -143,10 +156,11 @@
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
-import { Datastream, ResultQualifier } from '@hydroserver/client'
+import { Datastream, ResultQualifier, type Workspace } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { nextLocation } from '@/router/nextLocation'
 
 const router = useRouter()
 const route = useRoute()
@@ -154,6 +168,8 @@ const store = useWorkspaceStore()
 const { availableWorkspaces, selectedWorkspace, isLoading } = storeToRefs(store)
 const { hs } = storeToRefs(useHydroServer())
 const { roleName, canEdit } = useWorkspacePermissions()
+
+const isCurrent = (ws: Workspace) => selectedWorkspace.value?.id === ws.id
 
 // One unscoped listing bucketed by workspaceId is cheaper than N
 // scoped listings: server RBAC already filters to visible datastreams.
@@ -237,10 +253,8 @@ onMounted(async () => {
 })
 
 function onPick(id: string) {
-  const picked = store.selectWorkspace(id)
-  if (!picked) return
-  const next = typeof route.query.next === 'string' ? route.query.next : 'Home'
-  router.push({ name: next })
+  if (!store.selectWorkspace(id)) return
+  router.push(nextLocation(route.query.next))
 }
 </script>
 

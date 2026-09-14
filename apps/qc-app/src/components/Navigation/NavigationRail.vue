@@ -81,6 +81,7 @@
           <button
             v-bind="tipProps"
             class="rail-btn rail-btn-secondary"
+            data-testid="nav-rail-workspaces"
             @click.prevent="guardExit(onSwitchWorkspace)"
           >
             <span class="rail-pill rail-pill-secondary">

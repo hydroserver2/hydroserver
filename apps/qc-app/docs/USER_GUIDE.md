@@ -44,7 +44,7 @@ Everything runs in your web browser. The backend never sees your edit history un
    expires, QC redirects back to the Data Management login page and returns
    you to the QC page after authentication.
 
-3. On the **Workspaces** page, pick the workspace you want to work in. The choice is remembered locally, so next time you sign in you'll land directly on Home.
+3. On the **Workspaces** page, click **Select** on the workspace you want to work in. The choice is remembered locally, so next time you sign in you'll land directly on Home. When you come back to this page later, the current workspace shows **Continue** to return to the app.
 
    ![Workspaces picker](./images/workspaces.png)
 
@@ -66,7 +66,7 @@ A thin, always-visible column of icons.
 | Cursor (Select) | Top left. Show the datastream Select drawer + plot. |
 | Pencil (Edit) | Top left. Open the Edit view. **Disabled** until you've picked a QC datastream for editing; the tooltip explains why. |
 | Stopwatch (Performance) | Bottom left. Open the Performance Calibration dialog. See "Performance" below. |
-| Grid (Workspace) | Bottom left. Switch workspace. |
+| Briefcase (Workspaces) | Bottom left. Switch workspace, or Continue in the current one. |
 | Logout | Bottom left. Sign out. |
 
 If you click any of these while you have unsaved edits in the Edit view, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. Discarded edits cannot be recovered.
@@ -603,7 +603,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 
 ### "I picked the wrong workspace."
 
-Click the grid icon in the nav rail → pick another. If you have unsaved edits, the app asks first.
+Click **Workspaces** in the nav rail and **Select** another, or **Continue** to stay in the current one. If you have unsaved edits, the app asks first.
 
 ## Troubleshooting
 
