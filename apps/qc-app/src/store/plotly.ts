@@ -33,7 +33,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
   const showTooltip = ref(false)
   const isUpdating = ref(false)
-  const isSubmitting = ref(false)
   // Persisted as a user preference — large plots are cheap on fast machines
   // and expensive on slow ones, so let the user pick. Bounded in the UI
   // but not hard-clamped here so power users can override via storage.
@@ -536,7 +535,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     plotlyRef,
     mainPlotEpoch,
     isUpdating,
-    isSubmitting,
     tooltipsMaxDataPoints,
     visiblePoints,
     tooltipsMode,

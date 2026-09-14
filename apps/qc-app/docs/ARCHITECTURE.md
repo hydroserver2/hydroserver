@@ -100,7 +100,6 @@ src/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.
 │  ├─ useQcHistory.ts            Save / load QC Historys (calls qc-utils' serializeHistory / applyHistory).
-│  ├─ useQcSubmission.ts        Submit the QC'd observations back to HydroServer (replace mode).
 │  ├─ useResizable.ts           Generic drag-to-resize hook used by drawers + the plot.
 │  └─ useBufferedNumber.ts      Debounced numeric input wrapper for filter panels.
 ├─ store/                       Pinia stores — see "State stores" below.
@@ -376,9 +375,12 @@ every navigation:
 - **`hasWorkspaceGuard`** — redirects users without a selected workspace
   to `/workspaces`.
 
-The nav rail's "Edit" entry is gated behind a selected QC datastream and
-runs the "unsaved edits" confirmation dialog before navigating away from
-an in-progress QC session (see `NavigationRail.vue` + `useQcSubmission.ts`).
+The nav rail's "Edit" entry is gated behind a selected QC datastream. Leaving
+the Edit view with edits not yet saved to the session runs the "Unsaved
+edits" dialog: Save & continue saves a draft to the in-progress session and
+Discard returns to the last save. The unsaved state comes from
+`useEditSession`, whose saved-edits baseline lives in the `qcSession` store so
+the rail and the editor footer agree (see `NavigationRail.vue`).
 
 Auth itself is delegated to HydroServer's Django AllAuth setup; the app
 keeps no credentials of its own. The browser holds a session cookie.

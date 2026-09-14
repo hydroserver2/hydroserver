@@ -4,19 +4,32 @@
  *   - picking a workspace navigates to Home
  *   - the nav-rail workspace-switch button offers to revisit the picker
  *   - the edit rail item is disabled until a datastream is plotted
- *   - unsaved-edits dialog appears when leaving Edit with history
+ *   - leaving Edit with edits not saved to the session asks first
  */
 
-import { expect, test } from '@playwright/test'
-import { installMocks } from './support/mocks'
+import { expect, test, type Page } from '@playwright/test'
+import { installMocks, type MockQcSession } from './support/mocks'
 import {
   gotoHome,
   openOp,
   plotFirstDatastream,
   setupEditView,
+  setupSessionEditView,
 } from './support/app'
-import { selectAllPoints } from './support/ops'
+import { expectHistoryContains, selectAllPoints } from './support/ops'
 import { WORKSPACE_ID } from './support/fixtures'
+
+async function applyChangeValues(page: Page) {
+  await selectAllPoints(page)
+  await openOp(page, 'changeValues')
+  await page.getByLabel('Value').fill('1')
+  await page.getByRole('button', { name: 'Apply' }).click()
+  await expectHistoryContains(page, 'Change Values')
+}
+
+function exitDialog(page: Page) {
+  return page.getByRole('dialog').filter({ hasText: 'Unsaved edits' })
+}
 
 test.describe('navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -78,20 +91,83 @@ test.describe('navigation', () => {
     await expect(editRail).toHaveAttribute('aria-disabled', 'false')
   })
 
-  test('unsaved-edits dialog warns before navigating away from Edit', async ({
+  test('without a session the exit dialog cannot save', async ({ page }) => {
+    await setupEditView(page)
+    await applyChangeValues(page)
+
+    await page.getByTestId('nav-rail-item-select').click()
+    const dialog = exitDialog(page)
+    await expect(dialog).toBeVisible()
+    await expect(
+      dialog.getByRole('button', { name: /save & continue/i })
+    ).toBeDisabled()
+    await expect(dialog.getByRole('button', { name: /discard/i })).toBeEnabled()
+  })
+})
+
+test.describe('navigation: leaving a QC session', () => {
+  let submissions: Array<{ mode: string | null; body: any }>
+  let sessions: MockQcSession[]
+
+  test.beforeEach(async ({ page }) => {
+    // Entering through Start editing and starting a session is slow enough to
+    // outrun the default budget when these run in parallel.
+    test.slow()
+    submissions = []
+    sessions = []
+    await installMocks(page, {
+      qcHistories: true,
+      submissions,
+      qcSessionState: sessions,
+    })
+    await setupSessionEditView(page)
+  })
+
+  test('Save & continue saves the draft without posting observations', async ({
     page,
   }) => {
-    await setupEditView(page)
-    await selectAllPoints(page)
-    await openOp(page, 'changeValues')
-    await page.getByLabel('Value').fill('1')
-    await page.getByRole('button', { name: 'Apply' }).click()
+    await applyChangeValues(page)
 
-    // Click back to the select view via the nav-rail Select item.
     await page.getByTestId('nav-rail-item-select').click()
-    await expect(page.getByText(/unsaved edits/i)).toBeVisible()
-    await expect(
-      page.getByRole('dialog').getByRole('button', { name: /discard/i })
-    ).toBeVisible()
+    const dialog = exitDialog(page)
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: /save & continue/i }).click()
+
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
+    const session = sessions.find((s) => s.status === 'in_progress')
+    expect(session!.operations.map((o) => o.operationType)).toContain(
+      'CHANGE_VALUES'
+    )
+    expect(submissions).toHaveLength(0)
+  })
+
+  test('Discard continues without saving', async ({ page }) => {
+    await applyChangeValues(page)
+
+    await page.getByTestId('nav-rail-item-select').click()
+    const dialog = exitDialog(page)
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: /discard/i }).click()
+
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
+    const session = sessions.find((s) => s.status === 'in_progress')
+    expect(session!.operations).toHaveLength(0)
+    expect(submissions).toHaveLength(0)
+  })
+
+  test('saved edits leave without asking', async ({ page }) => {
+    await applyChangeValues(page)
+    await page.getByTestId('exit-save-btn').click()
+    await expect(page.getByText('Draft saved.')).toBeVisible()
+
+    await page.getByTestId('nav-rail-item-select').click()
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(exitDialog(page)).toHaveCount(0)
   })
 })

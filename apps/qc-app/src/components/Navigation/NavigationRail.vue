@@ -126,14 +126,23 @@
         <div class="d-flex flex-column">
           <div class="text-title-large font-weight-bold">Unsaved edits</div>
           <div class="text-body-small text-medium-emphasis">
-            {{ editCount }} pending change{{ editCount === 1 ? '' : 's' }} in
-            the editor
+            <template v-if="unsavedEditCount > 0">
+              {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
+              not yet saved to the session
+            </template>
+            <template v-else>You have unsaved changes</template>
           </div>
         </div>
       </div>
       <v-card-text class="text-body-medium pt-2 pb-4 px-6">
-        Save your edits before leaving, or discard them to continue. Discarded
-        edits cannot be recovered.
+        <template v-if="canSave">
+          Save your edits to the session before leaving, or discard the edits
+          made since the last save. Discarded edits cannot be recovered.
+        </template>
+        <template v-else>
+          No session is open, so these edits cannot be saved. Discard them to
+          continue. Discarded edits cannot be recovered.
+        </template>
       </v-card-text>
       <v-divider />
       <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
@@ -155,7 +164,7 @@
           color="primary"
           variant="flat"
           prepend-icon="mdi-content-save-outline"
-          :disabled="isBusy"
+          :disabled="isBusy || !canSave"
           :loading="isBusy && exitAction === 'save'"
           @click="saveAndContinue"
         >
@@ -179,26 +188,26 @@ import router from '@/router/router'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { usePlotlyStore } from '@/store/plotly'
-import { useQcSubmission } from '@/composables/useQcSubmission'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useQcSessionStore } from '@/store/qcSession'
+import { useEditSession } from '@/composables/useEditSession'
 
 const { onRailItemClicked } = useUIStore()
 const { selectedDrawer, isDrawerOpen, currentView } = storeToRefs(useUIStore())
-const { resetState, refreshGraphSeriesArray } = useDataVisStore()
+const { resetState } = useDataVisStore()
 const { qcDatastream, qcDatastreamId } = storeToRefs(useDataVisStore())
 const { hs } = storeToRefs(useHydroServer())
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace } = storeToRefs(workspaceStore)
-const { editHistory, isUpdating, selectedSeries } =
-  storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { submitQcEdits } = useQcSubmission()
-const { clearSelected } = useDataSelection()
+const { inProgressSession } = storeToRefs(useQcSessionStore())
+const { hasUnsavedChanges, unsavedEditCount, saveDraft, discardUnsavedEdits } =
+  useEditSession()
 
-const editCount = computed(() => editHistory.value?.length ?? 0)
-const hasUnsavedEdits = computed(
-  () => currentView.value === DrawerType.Edit && editCount.value > 0
+const needsExitConfirm = computed(
+  () => currentView.value === DrawerType.Edit && hasUnsavedChanges.value
 )
+// Entering Edit through the rail opens no session, so there is nothing to save to.
+const canSave = computed(() => !!inProgressSession.value)
 
 const showExitConfirm = ref(false)
 const exitAction = ref<'save' | 'discard' | null>(null)
@@ -206,7 +215,7 @@ const isBusy = ref(false)
 let pendingAction: (() => void | Promise<void>) | null = null
 
 function guardExit(action: () => void | Promise<void>) {
-  if (hasUnsavedEdits.value) {
+  if (needsExitConfirm.value) {
     pendingAction = action
     showExitConfirm.value = true
   } else {
@@ -220,43 +229,47 @@ function cancelExit() {
   showExitConfirm.value = false
 }
 
+async function continueExit() {
+  const next = pendingAction
+  pendingAction = null
+  showExitConfirm.value = false
+  await next?.()
+}
+
 async function saveAndContinue() {
-  if (isBusy.value) return
+  if (isBusy.value || !canSave.value) return
   isBusy.value = true
   exitAction.value = 'save'
   try {
-    await submitQcEdits()
-    const next = pendingAction
-    pendingAction = null
-    showExitConfirm.value = false
-    await next?.()
+    await saveDraft()
+    Snackbar.success('Draft saved.')
+  } catch (e) {
+    Snackbar.error(e instanceof Error ? e.message : 'Could not save the draft.')
+    return
   } finally {
     isBusy.value = false
     exitAction.value = null
   }
+  await continueExit()
 }
 
 async function discardAndContinue() {
   if (isBusy.value) return
   isBusy.value = true
   exitAction.value = 'discard'
-  isUpdating.value = true
   try {
-    // In-place clear: reassigning `history = []` detaches the editHistory ref.
-    if (selectedSeries.value) selectedSeries.value.data.history.length = 0
-    await refreshGraphSeriesArray()
-    await selectedSeries.value?.data.reload()
-    await clearSelected({ recordHistory: false })
+    await discardUnsavedEdits()
     await redraw()
-    const next = pendingAction
-    pendingAction = null
-    showExitConfirm.value = false
-    await next?.()
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not discard the edits.'
+    )
+    return
   } finally {
-    isUpdating.value = false
     isBusy.value = false
     exitAction.value = null
   }
+  await continueExit()
 }
 
 function goHome() {

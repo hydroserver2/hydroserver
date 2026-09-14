@@ -18,8 +18,7 @@ than discovering.
   aid solutions; do things the right way" is the standing rule. Inline
   comments are concentrated on the few invariants that resist being
   read off the code (e.g. the `suppressedEchoSelection` sentinel in
-  `plotly.ts`, the `<` vs `<=` fix in `observations.ts`, the in-place
-  clear in `useQcSubmission.ts`).
+  `plotly.ts`, the `<` vs `<=` fix in `observations.ts`).
 - **Prettier** for formatting (`.prettierrc`) plus **ESLint** (`eslint.config.js`)
   for typescript-eslint + eslint-plugin-vue. `npm run lint` runs the
   configured ruleset across `src/` and `e2e/`; `npm run lint:fix`
@@ -79,12 +78,12 @@ entrypoint so QC and Data Management share the same session.
 These are real, named, worth flagging up front. Not exhaustive — but
 the items most likely to bite a new team in the first three months.
 
-### 1. Result-qualifier submit path is partial
+### 1. Result-qualifier commit path is partial
 
 `store/qualifiers.ts` and `components/EditData/QualifyingComments.vue`
 collect qualifier codes per selection, but
-`composables/useQcSubmission.ts:42` only serializes
-`['phenomenonTime', 'result']` on the bulk POST. The row format would
+`services/qualityControl/observationsBody.ts` only serializes
+`['phenomenonTime', 'result']` on the bulk POST a commit sends. The row format would
 carry qualifiers, but it times out on >35k-point fetches today (see
 `src/utils/observations.ts:24`). Resolution is blocked on the
 HydroServer API team either making the columnar response carry

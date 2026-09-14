@@ -77,18 +77,15 @@ export function useEditSession() {
   const { fetchObservationsInRange } = useObservationStore()
   const sessionStore = useQcSessionStore()
 
-  const { sourceDatastream } = storeToRefs(sessionStore)
+  // The saved-edits snapshot lives in the store so every caller (the editor
+  // footer and the nav rail's exit guard) sees the same unsaved state.
+  const { sourceDatastream, savedEdits, savedComments } =
+    storeToRefs(sessionStore)
   /** True when the managed datastream has no in-progress session to resume. */
   const needsSession = ref(false)
   /** True when the selected datastream has no QC history (not a managed datastream). */
   const needsHistory = ref(false)
 
-  // Snapshot (by item reference) of the operation history at the last
-  // load/save, so the editor knows whether there are unsaved edits.
-  const savedEdits = ref<HistoryItem[]>([])
-  // Comments are edited in place on the existing history entry, so the
-  // reference comparison below can't see them; snapshot their text too.
-  const savedComments = ref<string[]>([])
   const currentEdits = (): HistoryItem[] =>
     (selectedSeries.value?.data as ObservationRecord | undefined)?.history ?? []
   const commentOf = (item: HistoryItem) => item.comment?.trim() ?? ''

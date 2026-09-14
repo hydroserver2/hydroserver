@@ -18,7 +18,7 @@ The app is the operator's view of HydroServer's QC pipeline:
 2. **QC one stream at a time** — the first plotted stream is the QC target. The other plotted traces are read-only context.
 3. **Filter / edit / add** — every operation (Value Threshold, Find Gaps, Persistence, Interpolate, Drift Correction, Fill Gaps, Add Points, etc.) commits a `HistoryItem` to a replayable edit history backed by [`@uwrl/qc-utils`](https://www.npmjs.com/package/@uwrl/qc-utils).
 4. **Save / load a QC History** — export the history as a JSON document, replay it on the same datastream a week later, or templatize across stations.
-5. **Submit** — push the quality-controlled observations back to HydroServer in `replace` mode.
+5. **Save and commit** — save the edits to a QC session as a draft, then commit the session to push the quality-controlled observations to its managed datastream in `replace` mode.
 
 The heavy lifting (worker-parallelized typed-array kernels, calibration, history replay, save / load wire format) lives in `@uwrl/qc-utils`. This repo is the Vue / Vuetify / Pinia / Plotly UI plus the orchestration around it.
 
@@ -100,7 +100,7 @@ Specs live next to source under `src/**/__tests__/`. Plotly is mocked at the mod
 
 ### End-to-end tests (Playwright)
 
-End-to-end specs cover the QC golden path: load a datastream, apply a filter, apply an edit, submit. Browser matrix: **chromium** and **firefox**. WebKit is intentionally excluded — `SharedArrayBuffer` + COOP / COEP behaviour differs in Safari and needs separate validation.
+End-to-end specs cover the QC golden path: load a datastream, apply a filter, apply an edit, save and commit the session. Browser matrix: **chromium** and **firefox**. WebKit is intentionally excluded — `SharedArrayBuffer` + COOP / COEP behaviour differs in Safari and needs separate validation.
 
 One-time setup:
 

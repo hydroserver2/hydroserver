@@ -69,7 +69,7 @@ A thin, always-visible column of icons.
 | Briefcase (Workspaces) | Bottom left. Switch workspace, or Continue in the current one. |
 | Logout | Bottom left. Sign out. |
 
-If you click any of these while you have unsaved edits in the Edit view, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. Discarded edits cannot be recovered.
+If you click any of these while the Edit view has edits not yet saved to the session, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. **Save & continue** saves a draft to the session before leaving; it is unavailable when no session is open. **Discard** drops the edits made since the last save, and they cannot be recovered.
 
 ### Select view
 
@@ -552,7 +552,7 @@ When you're satisfied with the edits, hit one of the action buttons at the botto
 - **Commit**: materializes the session into the managed datastream and locks it into the history.
 - **Discard**: drops every edit made since the last save, returning the session to its last saved state. Edits already saved to the session stay. Disabled when there is nothing unsaved, and it asks for confirmation first.
 - **New session**: replaces Save and Commit once the session is committed. Opens a new session over the current time range, starting from the state the last commit left behind.
-- **Close**: leaves the editor. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
+- **Close**: leaves the editor. If you have unsaved edits, a "Save before closing?" dialog lets you save first or close without saving.
 
 Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.
 

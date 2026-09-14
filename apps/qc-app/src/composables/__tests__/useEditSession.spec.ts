@@ -338,6 +338,22 @@ describe('useEditSession', () => {
     expect(session.unsavedEditCount.value).toBe(0)
   })
 
+  it('shares the unsaved state across callers', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const editor = useEditSession()
+    const rail = useEditSession()
+    await editor.beginEditing()
+    await editor.startSession(WIN)
+
+    selectedSeries.value.data.history.push({ method: 'DELETE_POINTS', args: [] })
+    expect(rail.hasUnsavedChanges.value).toBe(true)
+    expect(rail.unsavedEditCount.value).toBe(1)
+
+    await rail.saveDraft()
+    expect(editor.hasUnsavedChanges.value).toBe(false)
+  })
+
   // A committed session cannot be edited, so nothing about it can be
   // unsaved. Stepping through its history replaces entries as it replays,
   // which an identity comparison would otherwise read as pending edits.

@@ -57,7 +57,7 @@ Read these files in order:
    landing experience.
 5. `src/store/dataVisualization.ts` and `src/store/plotly.ts` — the two
    stores that hold "what the user sees on the plot."
-6. `src/composables/useFilterDispatch.ts` and `useQcSubmission.ts` —
+6. `src/composables/useFilterDispatch.ts` and `useEditSession.ts` —
    the two end-to-end flows worth tracing.
 7. `packages/qc-utils/src/utils/plotting/observation-record.ts` — the QC engine's
    dispatch surface. You don't need to read the kernels; the dispatcher
@@ -113,11 +113,11 @@ you need to verify the published package artifacts.
 ## Documentation gaps
 
 1. **Result qualifiers are partial.** The `QualifyingComments` op panel
-   exists and writes to the in-memory history, but the submit path
-   (`useQcSubmission.ts`) currently serializes only `phenomenonTime` and
-   `result` — qualifier codes are deferred pending the HydroServer API
-   adding a workable columnar response. There's a TODO in
-   `useQcSubmission.ts:42` that points at this.
+   exists and writes to the in-memory history, but the commit path
+   (`services/qualityControl/observationsBody.ts`) currently serializes only
+   `phenomenonTime` and `result` — qualifier codes are deferred pending the
+   HydroServer API adding a workable columnar response. The note in
+   `observationsBody.ts` points at this.
 2. **No load-testing artifacts.** "How big a datastream can you QC in
    one session?" is answered empirically per browser via the calibration
    pass, but there is no published "this is the supported envelope"

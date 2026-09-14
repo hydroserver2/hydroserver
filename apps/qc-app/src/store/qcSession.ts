@@ -12,6 +12,7 @@ import { computed, ref } from 'vue'
 import { useHydroServer } from '@/store/hydroserver'
 import { unwrap } from '@/services/qualityControl'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
+import type { HistoryItem } from '@uwrl/qc-utils'
 
 export const useQcSessionStore = defineStore('qcSession', () => {
   const historyId = ref<string | null>(null)
@@ -27,6 +28,12 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   const viewedSessionId = ref<string | null>(null)
   const isLoading = ref(false)
   const isSwitchingSession = ref(false)
+  /** Edit history entries (by reference) at the last load or save, the
+   *  baseline `useEditSession` compares against for unsaved edits. Kept here
+   *  so the editor and the nav rail's exit guard agree. */
+  const savedEdits = ref<HistoryItem[]>([])
+  /** Comment text of `savedEdits`, since comments are edited in place. */
+  const savedComments = ref<string[]>([])
 
   /** Editing is allowed only while viewing the in-progress session. */
   // TODO(backend): ask for a way to keep editing the most recent session after
@@ -127,6 +134,8 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     currentSessionId.value = null
     viewedSessionId.value = null
     isLoading.value = false
+    savedEdits.value = []
+    savedComments.value = []
   }
 
   return {
@@ -138,6 +147,8 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     viewedSessionId,
     isLoading,
     isSwitchingSession,
+    savedEdits,
+    savedComments,
     isReadOnly,
     inProgressSession,
     committedSessions,

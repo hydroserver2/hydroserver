@@ -82,8 +82,8 @@ incremental submission is not implemented today.
 
 Listed via `fetchWorkspaceResultQualifiers`. The QC App tracks selected
 qualifiers in `store/qualifiers.ts`, but **does not yet serialize them on
-submit** (see [QUALITY.md](./QUALITY.md) tech-debt section and the TODO
-in `useQcSubmission.ts:42`).
+commit** (see [QUALITY.md](./QUALITY.md) tech-debt section and the note
+in `services/qualityControl/observationsBody.ts`).
 
 ## Internal: composables
 
@@ -156,26 +156,16 @@ const report = await importHistory(file)
 into the active datastream **before** replay (selection-coupled ops
 reference indices against this windowed dataset).
 
-### `useQcSubmission()`
-
-```ts
-const { submitQcEdits } = useQcSubmission()
-await submitQcEdits()    // POST observations with mode=replace, clear history
-```
-
-Single-shot: guards on (selectedSeries + qcDatastream + non-empty
-history), serializes `[phenomenonTime, result]` rows, POSTs with
-`mode: 'replace'`, surfaces a Snackbar, and clears the history in place
-on success.
-
 ### `useEditSession()`
 
 Orchestrates the server-backed QC session workflow against the
 `services/qualityControl/` glue:
 
 ```ts
-const { beginEditing, startSession, saveDraft, commit, needsSession, needsHistory } =
-  useEditSession()
+const {
+  beginEditing, startSession, saveDraft, discardUnsavedEdits, commit,
+  needsSession, needsHistory, hasUnsavedChanges, unsavedEditCount,
+} = useEditSession()
 ```
 
 - `beginEditing()` — resolves the QC history for the QC datastream, loads
@@ -184,8 +174,14 @@ const { beginEditing, startSession, saveDraft, commit, needsSession, needsHistor
 - `startSession(spec)` — creates a session and copies the source window in.
 - `saveDraft()` — persists the record's edit operations to the session
   (append-only reconcile).
+- `discardUnsavedEdits()` — drops edits made since the last save and restores
+  edited comments.
 - `commit()` — saves, verifies checksum C, pushes observations
   (`mode: 'replace'`), then locks the session.
+- `hasUnsavedChanges` / `unsavedEditCount` — the working copy compared with
+  the saved-edits baseline (`qcSession.savedEdits` / `savedComments`). The
+  baseline lives in the store, so every caller agrees: the editor footer and
+  the nav rail's exit guard both read it.
 
 ### `useCreateManagedDatastream()`
 
@@ -366,7 +362,6 @@ handles, live chart caches).
 | `editHistory`              | state    | `HistoryItem[]`                                   | Mirrors `selectedSeries.data.history` (mutated in place — never reassign). |
 | `suppressedEchoSelection`  | state    | `number[] \| null`                                | Sentinel armed by programmatic Plotly writes to suppress the echo SELECTION dispatch. |
 | `isUpdating`               | state    | `boolean`                                         | Surfaced in the nav rail while a redraw runs. |
-| `isSubmitting`             | state    | `boolean`                                         | True during a QC submit POST. |
 | `showLegend`               | state    | `boolean`                                         | Drives Plotly's legend visibility. |
 | `showTooltip`              | state    | `boolean`                                         | Legacy flag; tooltip control routes through the auto/manual mode below. |
 | `tooltipsMaxDataPoints`    | state    | `number`                                          | Auto-mode cutoff (default 10 000); user-tunable from the data-points menu. |
@@ -556,6 +551,8 @@ puts the editor in read-only mode.
 | `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
 | `isLoading`         | state    | `boolean`                               | True while `loadSessions` is in flight. |
 | `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
+| `savedEdits`        | state    | `HistoryItem[]`                         | Edit history entries (by reference) at the last load or save. `useEditSession` compares the working copy against it for `hasUnsavedChanges`; kept in the store so the editor footer and the nav rail's exit guard agree. |
+| `savedComments`     | state    | `string[]`                              | Comment text of `savedEdits`, since comments are edited in place. |
 | `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |
 | `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
 | `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
