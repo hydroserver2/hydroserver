@@ -270,7 +270,11 @@ Two contract notes worth keeping in mind:
   committed session. `startSession`/`reconstructSession` therefore load the
   managed datastream as the working base (via `loadLatestBase`, falling back to
   the source only when nothing has been committed yet) and replay just the
-  current session's own draft operations on top.
+  current session's own draft operations on top. `loadLatestBase` hands back a
+  standalone copy (`cloneRecord`), not the observation store's cached record,
+  so editing, resuming, and viewing a committed session never modify the
+  store's cached records. The raw line stays unedited regardless of what a
+  session does to its working copy.
 - **A reload resumes from the last save, not from memory.** Only
   `qcSession.resumeDatastreamId` is persisted; on load the editor replots that
   datastream and re-runs `beginEditing`, which rebuilds the working copy from

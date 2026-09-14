@@ -26,7 +26,7 @@ import type {
 } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
 import { loadLatestBase, type FetchObservationsInRange } from './session'
-import type { CloneRecord } from './cloneRecord'
+import { cloneRecord as defaultCloneRecord, type CloneRecord } from './cloneRecord'
 
 /** API operation -> qc-utils replayable operation (rename operationType/arguments). */
 const toSerialized = (op: QualityControlOperation): QcHistoryOperation => {
@@ -108,6 +108,8 @@ export async function reconstructSession(
  * Ordered by `committedAt`, since commit order is what a later session
  * built on. Loaded over the union of the chain's windows: operations replay
  * against array indices, so a narrower base misaligns a wider ancestor.
+ * Replays onto a copy of the fetched record, so viewing a committed session
+ * never mutates the source datastream's cached record.
  */
 export async function reconstructCommittedSession(
   deps: ReconstructSessionDeps,
@@ -116,7 +118,13 @@ export async function reconstructCommittedSession(
   sessionId: string,
   opLimit?: number
 ): Promise<ReconstructSessionResult> {
-  const { qcSessions, qcOperations, fetchInRange, applyHistory } = deps
+  const {
+    qcSessions,
+    qcOperations,
+    fetchInRange,
+    applyHistory,
+    cloneRecord = defaultCloneRecord,
+  } = deps
 
   const session = unwrap(await qcSessions.get(historyId, sessionId))
   const ancestors = unwrap(
@@ -138,7 +146,8 @@ export async function reconstructCommittedSession(
     ...chain.map((s) => new Date(s.phenomenonTimeEnd).getTime())
   )
 
-  const record = await fetchInRange(source, new Date(startMs), new Date(endMs))
+  const fetched = await fetchInRange(source, new Date(startMs), new Date(endMs))
+  const record = await cloneRecord(fetched)
 
   const perSession = await Promise.all(
     chain.map(async (s) =>

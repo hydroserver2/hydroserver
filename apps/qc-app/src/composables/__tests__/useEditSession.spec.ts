@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
 import { unwrap } from '@/services/qualityControl/unwrap'
@@ -65,7 +65,10 @@ vi.mock('@uwrl/qc-utils', () => ({
       args: h.args ?? [],
     })),
   })),
-  applyHistory: vi.fn(async () => ({ applied: 0, failed: [] })),
+  applyHistory: vi.fn(async (_record?: unknown, _history?: unknown) => ({
+    applied: 0,
+    failed: [],
+  })),
   Snackbar: { warn: snackbarWarn },
   ObservationRecord: ObservationRecordDouble,
 }))
@@ -158,10 +161,19 @@ describe('useEditSession', () => {
     const { beginEditing, needsSession } = useEditSession()
     await beginEditing()
     expect(needsSession.value).toBe(false)
-    expect(qcUtils.applyHistory).toHaveBeenCalled()
-    // The QC-target series now shows the reconstructed session, not the
-    // empty managed datastream.
-    expect(selectedSeries.value.data).toEqual(reconstructed)
+    // The QC-target series shows the reconstructed session's data, but on
+    // its own copy: resume never hands out the fetched record itself, so
+    // editing it can't mutate the store's cached one.
+    const seriesRecord = selectedSeries.value.data
+    expect(Array.from(seriesRecord.dataX)).toEqual(Array.from(reconstructed.dataX))
+    expect(seriesRecord).not.toBe(reconstructed)
+    // applyHistory replayed onto that same copy, not the fetched record.
+    // `toRaw` unwraps the reactive proxy Vue puts on the assigned object,
+    // since applyHistory was called with the pre-proxy instance.
+    const applyHistoryMock = qcUtils.applyHistory as unknown as {
+      mock: { calls: unknown[][] }
+    }
+    expect(applyHistoryMock.mock.calls[0]?.[0]).toBe(toRaw(seriesRecord))
     // Nothing watches for a swapped-in record, so resume has to rebuild the
     // plot itself or it keeps rendering the pre-reconstruction trace.
     expect(redraw).toHaveBeenCalled()
@@ -457,7 +469,11 @@ describe('useEditSession.viewSession', () => {
 
     await session.viewSession(committed.id)
 
-    expect(selectedSeries.value.data).toEqual(viewed)
+    // The panel shows the viewed session's data, but on its own copy: a
+    // read-only view must not replay onto the source's cached record.
+    const seriesRecord = selectedSeries.value.data
+    expect(Array.from(seriesRecord.dataX)).toEqual(Array.from(viewed.dataX))
+    expect(toRaw(seriesRecord)).not.toBe(viewed)
     expect(store.viewedSessionId).toBe(committed.id)
     expect(store.isReadOnly).toBe(true)
     expect(redraw).toHaveBeenCalled()

@@ -342,6 +342,37 @@ describe('reconstructCommittedSession', () => {
       'INTERPOLATE',
     ])
   })
+
+  it('replays onto a copy of the fetched record, not the record itself', async () => {
+    const qc = makeQcFake()
+    const { historyId, second } = await chainOf(qc)
+    const fetched = rec([Date.UTC(2025, 0, 1)])
+    const copy = rec([Date.UTC(2025, 0, 1)])
+    const fetchInRange = vi.fn().mockResolvedValue(fetched)
+    const applyHistory = vi.fn(async (_record: ObservationRecord, _history: QcHistory) => ({
+      applied: 0,
+      failed: [],
+    }))
+    const { reconstructCommittedSession } = await import('../reconstructSession')
+
+    const { record } = await reconstructCommittedSession(
+      {
+        qcSessions: qc.sessions,
+        qcOperations: qc.operations,
+        fetchInRange,
+        applyHistory,
+        cloneRecord: async () => copy,
+      },
+      source,
+      historyId,
+      second.id
+    )
+
+    expect(record).toBe(copy)
+    expect(applyHistory.mock.calls[0]?.[0]).toBe(copy)
+    expect(record).not.toBe(fetched)
+    expect(fetched.history).toHaveLength(0)
+  })
 })
 
 describe('reconstructCommittedSession — chain order', () => {
