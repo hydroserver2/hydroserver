@@ -621,6 +621,45 @@ describe('useEditSession.viewSession', () => {
     expect(store.isSwitchingSession).toBe(false)
   })
 
+  it('does not report editable over a committed snapshot when the return-to-current rebuild is invalidated', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.sessions.commit(h.id, committed.id)
+    const inProgress = unwrap(await qc.sessions.create(h.id, WIN))
+
+    const store = useQcSessionStore()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    expect(store.viewedSessionId).toBe(inProgress.id)
+    expect(store.isReadOnly).toBe(false)
+
+    // View the committed session read-only.
+    const viewed = makeRecord([])
+    fetchObservationsInRange.mockResolvedValue(viewed)
+    await session.viewSession(committed.id)
+    expect(store.viewedSessionId).toBe(committed.id)
+    expect(store.isReadOnly).toBe(true)
+    const plottedBeforeReturn = selectedSeries.value.data
+
+    // Returning to the in-progress session is superseded mid-flight (e.g.
+    // the working copy was invalidated), so its rebuild resolves null.
+    wcRebuild.mockResolvedValueOnce(null)
+    await session.viewSession(inProgress.id)
+
+    // Stays on the committed session: still read-only, still showing the
+    // committed snapshot, not silently editable over it.
+    expect(store.viewedSessionId).toBe(committed.id)
+    expect(store.isReadOnly).toBe(true)
+    expect(selectedSeries.value.data).toBe(plottedBeforeReturn)
+    expect(session.needsSession.value).toBe(false)
+  })
+
   it('rejects before a managed datastream is loaded', async () => {
     const { useEditSession } = await import('@/composables/useEditSession')
     await expect(useEditSession().viewSession('s-1')).rejects.toThrow(

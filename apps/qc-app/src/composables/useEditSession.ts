@@ -3,7 +3,9 @@
  * wiring the QC service layer to the app's stores:
  *   - beginEditing: resolve the managed datastream's history, load its
  *     sessions, and resume the in-progress one (or signal that a session
- *     must be started),
+ *     must be started); reports whether it actually resumed, so a caller
+ *     that changed view state beforehand (viewSession) can undo it on
+ *     failure,
  *   - startSession: create a session and copy the source window in,
  *   - saveDraft: persist the record's edit operations to the session
  *     (append-only, so each user's operations keep their creator),
@@ -117,9 +119,11 @@ export function useEditSession() {
       .length
   })
 
-  async function beginEditing(): Promise<void> {
+  /** Returns true when an in-progress session's working copy was wired into
+   *  the plot, i.e. the editor is now genuinely editable over it. */
+  async function beginEditing(): Promise<boolean> {
     const managed = qcDatastream.value
-    if (!managed) return
+    if (!managed) return false
     needsHistory.value = false
 
     const history = await findHistoryForDatastream(
@@ -130,7 +134,7 @@ export function useEditSession() {
       // Not a managed datastream: the caller should offer to create one
       // from it (with this datastream as the source).
       needsHistory.value = true
-      return
+      return false
     }
     sourceDatastream.value =
       (await hs.value.datastreams.getItem(history.sourceDatastream.id)) ?? null
@@ -154,8 +158,11 @@ export function useEditSession() {
         // rather than fake a resume; `enterEdit` treats that as "start a
         // session", and `startOrResumeSession` is idempotent, so it resumes
         // this same in-progress session instead of creating a duplicate.
+        // Report failure so a caller that already flipped view state (e.g.
+        // `viewSession`) knows to undo it instead of leaving the editor
+        // reporting editable over whatever was plotted before.
         needsSession.value = true
-        return
+        return false
       }
       if (selectedSeries.value) selectedSeries.value.data = built.record
       // Nothing watches for a swapped-in record; resume has no caller that
@@ -164,8 +171,10 @@ export function useEditSession() {
       // The replayed draft operations are the saved baseline.
       snapshotSavedEdits()
       needsSession.value = false
+      return true
     } else {
       needsSession.value = true
+      return false
     }
   }
 
@@ -181,10 +190,20 @@ export function useEditSession() {
       throw new Error('Load a managed datastream for editing first.')
     }
     if (sessionId === sessionStore.currentSessionId) {
+      // `returnToCurrent` flips `isReadOnly` to false immediately, before
+      // the in-progress working copy is actually (re)built. If that build
+      // fails (superseded by an invalidate), undo the flip and go back to
+      // what is still on the plot, instead of reporting editable over a
+      // committed session's snapshot.
+      const previousSessionId = sessionStore.viewedSessionId
       sessionStore.returnToCurrent()
       sessionStore.isSwitchingSession = true
       try {
-        await beginEditing()
+        const resumed = await beginEditing()
+        if (!resumed && previousSessionId) {
+          sessionStore.viewSession(previousSessionId)
+          needsSession.value = false
+        }
       } finally {
         sessionStore.isSwitchingSession = false
       }
