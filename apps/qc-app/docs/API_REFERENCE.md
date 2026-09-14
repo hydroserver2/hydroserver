@@ -294,7 +294,7 @@ on boot.
 | `selectedData`                      | state    | `number[] \| null`                                | Index list of the active selection (lasso, box, click). |
 | `hasSelectionShape`                 | state    | `boolean`                                         | True while a box/lasso shape exists, even when it captured zero points. |
 | `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. |
-| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it from the plotted datastreams' phenomenon times on every plot rebuild; a custom range stays fixed. |
+| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it from the plotted datastreams' phenomenon times on every plot rebuild; a custom range stays fixed. Presets do not re-resolve while the Edit view is active, so plotting/unplotting a datastream there leaves the window alone. |
 | `selectedDateBtnId`                 | state    | `number`                                          | Active preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
 | `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |

@@ -566,7 +566,7 @@ import {
   encodeShareState,
   type ShareState,
 } from '@/utils/share'
-import { CUSTOM_PRESET_ID } from '@/utils/timeRangePresets'
+import { CUSTOM_PRESET_ID, findPreset } from '@/utils/timeRangePresets'
 import { isSnapshotId, parseSnapshotId } from '@/utils/snapshotId'
 import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -966,8 +966,10 @@ const hydrateFromUrl = () => {
   const qcId = resolved[0]?.id ?? null
 
   // Set the window BEFORE loading datastreams so the first fetch uses it.
-  // A preset resolves against the plotted data during that load.
-  if (state.datePresetId != null && state.datePresetId >= 0) {
+  // A preset resolves against the plotted data during that load. An
+  // unknown id (a share link built by a newer version, or hand-edited)
+  // is not accepted as a preset.
+  if (state.datePresetId != null && findPreset(state.datePresetId)) {
     selectedDateBtnId.value = state.datePresetId
   } else if (state.beginMs != null || state.endMs != null) {
     selectedDateBtnId.value = CUSTOM_PRESET_ID

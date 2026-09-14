@@ -330,13 +330,8 @@ export function useEditSession() {
       const refreshed = await hs.value.datastreams.getItem(managed.id, {
         expand_related: true,
       })
-      if (!refreshed) {
-        Snackbar.warn(
-          'Session committed, but the datastream details could not be refreshed. Reload to see its updated time range.'
-        )
-      } else {
-        replaceDatastream(refreshed as Datastream & DatastreamExtended)
-      }
+      if (!refreshed) throw new Error('Datastream refresh returned no item')
+      replaceDatastream(refreshed as Datastream & DatastreamExtended)
     } catch (error) {
       console.error('Failed to refresh managed datastream after commit:', error)
       Snackbar.warn(

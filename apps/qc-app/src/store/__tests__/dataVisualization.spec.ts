@@ -36,6 +36,14 @@ vi.mock('@/store/observations', () => ({
   }),
 }))
 
+// Only `currentView` matters to the store under test; the real store also
+// wires up qcDatastream/operationParams watchers that don't belong here.
+const mockCurrentView = ref<'Edit' | 'Select'>('Select')
+vi.mock('@/store/userInterface', () => ({
+  useUIStore: () => ({ currentView: mockCurrentView.value }),
+  DrawerType: { Edit: 'Edit', Select: 'Select', None: '' },
+}))
+
 // handleNewPlot touches DOM / Plotly; stub everything the store imports.
 vi.mock('@/utils/plotting/plotly', () => ({
   handleNewPlot: vi.fn().mockResolvedValue(undefined),
@@ -63,6 +71,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockPlotlyRef.value = null
   mockGraphSeriesArray.value = []
+  mockCurrentView.value = 'Select'
 })
 
 afterEach(() => {
@@ -519,6 +528,58 @@ describe('useDataVisStore time range presets', () => {
   })
 })
 
+// Plotting/unplotting in the Edit view must not move the edit session's
+// loaded window (finding: preset re-anchoring was reachable from
+// DatastreamInformationCard / PlottedDatastreams in the Edit view too).
+describe('useDataVisStore time range freeze in the Edit view', () => {
+  const OLD_END = '2021-06-30T12:00:00Z'
+  const oldDs = (overrides: Record<string, any> = {}) =>
+    makeDs({
+      id: 'old',
+      phenomenonBeginTime: '2019-01-01T00:00:00Z',
+      phenomenonEndTime: OLD_END,
+      ...overrides,
+    })
+  const newerDs = () =>
+    makeDs({
+      id: 'newer',
+      phenomenonBeginTime: '2020-01-01T00:00:00Z',
+      phenomenonEndTime: '2022-03-01T00:00:00Z',
+    })
+
+  it('leaves beginDate/endDate unchanged when plotting a datastream', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    mockCurrentView.value = 'Edit'
+    const begin = store.beginDate.getTime()
+    const end = store.endDate.getTime()
+    await store.plotDatastream(oldDs() as any)
+    expect(store.beginDate.getTime()).toBe(begin)
+    expect(store.endDate.getTime()).toBe(end)
+  })
+
+  it('leaves beginDate/endDate unchanged when unplotting a datastream', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.plottedDatastreams = [oldDs(), newerDs()] as any
+    store.qcDatastreamId = 'old'
+    mockCurrentView.value = 'Edit'
+    const begin = store.beginDate.getTime()
+    const end = store.endDate.getTime()
+    await store.unplotDatastream('newer')
+    expect(store.beginDate.getTime()).toBe(begin)
+    expect(store.endDate.getTime()).toBe(end)
+  })
+
+  it('still re-anchors in the Select view (unaffected by the freeze)', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    mockCurrentView.value = 'Select'
+    await store.plotDatastream(oldDs() as any)
+    expect(store.endDate.toISOString()).toBe('2021-06-30T12:00:00.000Z')
+  })
+})
+
 // The persistence plugin only activates once the pinia is installed on an
 // app, so these go through `app.use(pinia)`.
 describe('useDataVisStore persisted preset', () => {
@@ -542,6 +603,26 @@ describe('useDataVisStore persisted preset', () => {
   })
 
   it('defaults to 1m when nothing is persisted', async () => {
+    installPinia()
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    expect(useDataVisStore().selectedDateBtnId).toBe(1)
+  })
+
+  it('restores a persisted Custom id (-1) as the default preset', async () => {
+    localStorage.setItem(
+      'dataVisualization',
+      JSON.stringify({ selectedDateBtnId: -1 })
+    )
+    installPinia()
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    expect(useDataVisStore().selectedDateBtnId).toBe(1)
+  })
+
+  it('restores an unknown persisted id as the default preset', async () => {
+    localStorage.setItem(
+      'dataVisualization',
+      JSON.stringify({ selectedDateBtnId: 9 })
+    )
     installPinia()
     const { useDataVisStore } = await import('@/store/dataVisualization')
     expect(useDataVisStore().selectedDateBtnId).toBe(1)

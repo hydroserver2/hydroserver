@@ -7,7 +7,6 @@ import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 
 export interface TimeRangePreset {
   id: number
-  icon: string
   label: '1w' | '1m' | '6m' | '1y' | 'YTD' | 'All'
   title: string
 }
@@ -23,12 +22,12 @@ interface PhenomenonTimes {
 }
 
 export const TIME_RANGE_PRESETS: readonly TimeRangePreset[] = [
-  { id: 0, icon: 'mdi-calendar-week', label: '1w', title: 'Last week of data' },
-  { id: 1, icon: 'mdi-calendar-month', label: '1m', title: 'Last month of data' },
-  { id: 2, icon: 'mdi-calendar-range', label: '6m', title: 'Last 6 months of data' },
-  { id: 4, icon: 'mdi-calendar', label: '1y', title: 'Last year of data' },
-  { id: 3, icon: 'mdi-calendar-today', label: 'YTD', title: 'Year to date' },
-  { id: 5, icon: 'mdi-infinity', label: 'All', title: 'All data' },
+  { id: 0, label: '1w', title: 'Last week of data' },
+  { id: 1, label: '1m', title: 'Last month of data' },
+  { id: 2, label: '6m', title: 'Last 6 months of data' },
+  { id: 4, label: '1y', title: 'Last year of data' },
+  { id: 3, label: 'YTD', title: 'Year of the last observation' },
+  { id: 5, label: 'All', title: 'All data' },
 ]
 
 export const DEFAULT_PRESET_ID = 1

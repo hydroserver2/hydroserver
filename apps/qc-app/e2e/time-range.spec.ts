@@ -15,6 +15,12 @@ import {
 
 const OLD_START_MS = Date.UTC(2021, 5, 1)
 const OLD_END_MS = OLD_START_MS + (FIXTURE_OBS_COUNT - 1) * FIXTURE_OBS_SPACING_MS
+// Off a whole-minute boundary: DatePickerField has no seconds field for
+// this control, so a blur reconstructs the date at minute resolution. On
+// a whole-minute end time that reconstruction already matches the raw
+// model value, so the untouched-field test below would pass even without
+// the field's own unchanged-value guard.
+const OLD_END_ISO = new Date(OLD_END_MS + 37_500).toISOString()
 
 test.describe('time range presets', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,7 +29,7 @@ test.describe('time range presets', () => {
       catalogOverrides: {
         [DATASTREAM_ID]: {
           phenomenonBeginTime: new Date(OLD_START_MS).toISOString(),
-          phenomenonEndTime: new Date(OLD_END_MS).toISOString(),
+          phenomenonEndTime: OLD_END_ISO,
         },
       },
     })

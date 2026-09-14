@@ -13,6 +13,7 @@ import {
   presetWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
+import { DrawerType, useUIStore } from '@/store/userInterface'
 import type { SnapshotMeta } from '@/types'
 import type { ObservationRecord } from '@uwrl/qc-utils'
 import {
@@ -472,11 +473,19 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
     const { clearZoomHistory } = usePlotlyStore()
     clearZoomHistory()
-    // The plotted set changed, and with it the data a preset anchors to.
-    const presetRange = resolvePresetWindow()
-    if (presetRange) {
-      beginDate.value = presetRange.begin
-      endDate.value = presetRange.end
+    // Presets re-anchor only in the Select view. In the Edit view the
+    // loaded window is the edit session's window; moving it here would
+    // refetch the working copy over a different range and corrupt what
+    // gets committed. `useUIStore()` is called lazily here, not at this
+    // store's setup top level, since userInterface.ts imports this store
+    // back and calling it during setup would recurse into a store that
+    // isn't finished constructing.
+    if (useUIStore().currentView !== DrawerType.Edit) {
+      const presetRange = resolvePresetWindow()
+      if (presetRange) {
+        beginDate.value = presetRange.begin
+        endDate.value = presetRange.end
+      }
     }
     await refreshGraphSeriesArray()
     updateOptions()
@@ -786,5 +795,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // filters refetch cleanly on every load; the window resolves from the data.
   persist: {
     pick: ['selectedDateBtnId'],
+    // A persisted Custom id (or a stale/unknown one) comes back with no
+    // window to resolve against, so the placeholder range would apply
+    // instead. Only a real preset survives hydration.
+    afterHydrate: (ctx) => {
+      const store = ctx.store as unknown as { selectedDateBtnId: number }
+      if (!findPreset(store.selectedDateBtnId)) {
+        store.selectedDateBtnId = DEFAULT_PRESET_ID
+      }
+    },
   },
 })
