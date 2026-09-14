@@ -54,7 +54,13 @@ describe('reconstructSession', () => {
     )
 
     const result = await reconstructSession(
-      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      {
+        qcSessions: qc.sessions,
+        qcOperations: qc.operations,
+        fetchInRange,
+        applyHistory,
+        cloneRecord: async (r: ObservationRecord) => r,
+      },
       managed,
       source,
       historyId,
@@ -99,7 +105,13 @@ describe('reconstructSession', () => {
     const applyHistory = vi.fn(async () => ({ applied: 0, failed: [] }))
 
     const result = await reconstructSession(
-      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      {
+        qcSessions: qc.sessions,
+        qcOperations: qc.operations,
+        fetchInRange,
+        applyHistory,
+        cloneRecord: async (r: ObservationRecord) => r,
+      },
       managed,
       source,
       historyId,
@@ -110,6 +122,37 @@ describe('reconstructSession', () => {
     expect(fetchInRange.mock.calls[0][0]).toBe(managed)
     expect(fetchInRange.mock.calls[1][0]).toBe(source)
     expect(result.record).toBe(sourceRec)
+  })
+
+  it('replays onto the cloned base, not the fetched record', async () => {
+    const qc = makeQcFake()
+    const historyId = await newHistory(qc)
+    const s = unwrap(
+      await qc.sessions.create(historyId, win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'))
+    )
+    const fetched = rec([Date.UTC(2025, 0, 1)])
+    const copy = rec([Date.UTC(2025, 0, 1)])
+    const applyHistory = vi.fn(async (_record: ObservationRecord, _history: QcHistory) => ({
+      applied: 0,
+      failed: [],
+    }))
+
+    const result = await reconstructSession(
+      {
+        qcSessions: qc.sessions,
+        qcOperations: qc.operations,
+        fetchInRange: vi.fn().mockResolvedValue(fetched),
+        applyHistory,
+        cloneRecord: async () => copy,
+      },
+      managed,
+      source,
+      historyId,
+      s.id
+    )
+
+    expect(result.record).toBe(copy)
+    expect(applyHistory.mock.calls[0]?.[0]).toBe(copy)
   })
 })
 

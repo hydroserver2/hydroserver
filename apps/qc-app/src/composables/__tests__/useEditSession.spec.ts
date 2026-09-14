@@ -30,7 +30,31 @@ vi.mock('@/store/observations', () => ({
 
 // qc-utils is only used at runtime by the composable (the service layer
 // imports types only), so stub serializeHistory/applyHistory/Snackbar here.
-const snackbarWarn = vi.fn()
+// `vi.hoisted` keeps these safe to reference from the hoisted `vi.mock`
+// factory below regardless of how it's shaped.
+const { snackbarWarn, ObservationRecordDouble } = vi.hoisted(() => {
+  // `loadLatestBase`'s default clone constructs a real `ObservationRecord`.
+  // This test double exposes just enough surface for the session layer.
+  class ObservationRecordDouble {
+    dataX: number[]
+    dataY: number[]
+    history: any[] = []
+    redoStack: any[] = []
+    reload = vi.fn(async () => {})
+    // `discardUnsavedEdits` calls this on the working copy; mirror the
+    // truncate-in-place semantics the other test double in this file uses.
+    reloadHistory = vi.fn(async function (this: ObservationRecordDouble, index: number) {
+      this.history.splice(index + 1)
+      return []
+    })
+    constructor({ datetimes, dataValues }: { datetimes: number[]; dataValues: number[] }) {
+      this.dataX = datetimes
+      this.dataY = dataValues
+    }
+  }
+  return { snackbarWarn: vi.fn(), ObservationRecordDouble }
+})
+
 vi.mock('@uwrl/qc-utils', () => ({
   serializeHistory: vi.fn((record: any, window: any) => ({
     version: '1',
@@ -43,6 +67,7 @@ vi.mock('@uwrl/qc-utils', () => ({
   })),
   applyHistory: vi.fn(async () => ({ applied: 0, failed: [] })),
   Snackbar: { warn: snackbarWarn },
+  ObservationRecord: ObservationRecordDouble,
 }))
 
 import { useQcSessionStore } from '@/store/qcSession'
@@ -154,7 +179,10 @@ describe('useEditSession', () => {
     expect(useQcSessionStore().inProgressSession?.description).toBe('Jan')
     // Working copy comes from the managed datastream (latest committed state).
     expect(fetchObservationsInRange.mock.calls[0]?.[0].id).toBe('m-1')
-    expect(selectedSeries.value.data).toEqual(managedBase)
+    expect(Array.from(selectedSeries.value.data.dataX)).toEqual(
+      Array.from(managedBase.dataX)
+    )
+    expect(selectedSeries.value.data).not.toBe(managedBase)
   })
 
   it('startSession clamps the window to the source datastream extent', async () => {

@@ -26,6 +26,7 @@ import type {
 } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
 import { loadLatestBase, type FetchObservationsInRange } from './session'
+import type { CloneRecord } from './cloneRecord'
 
 /** API operation -> qc-utils replayable operation (rename operationType/arguments). */
 const toSerialized = (op: QualityControlOperation): QcHistoryOperation => {
@@ -52,6 +53,7 @@ export interface ReconstructSessionDeps {
     record: ObservationRecord,
     history: QcHistory
   ) => Promise<ApplyHistoryReport>
+  cloneRecord?: CloneRecord
 }
 
 export interface ReconstructSessionResult {
@@ -66,13 +68,20 @@ export async function reconstructSession(
   historyId: string,
   sessionId: string
 ): Promise<ReconstructSessionResult> {
-  const { qcSessions, qcOperations, fetchInRange, applyHistory } = deps
+  const { qcSessions, qcOperations, fetchInRange, applyHistory, cloneRecord } = deps
 
   const session = unwrap(await qcSessions.get(historyId, sessionId))
   const start = new Date(session.phenomenonTimeStart)
   const end = new Date(session.phenomenonTimeEnd)
 
-  const record = await loadLatestBase(fetchInRange, managed, source, start, end)
+  const record = await loadLatestBase(
+    fetchInRange,
+    managed,
+    source,
+    start,
+    end,
+    cloneRecord
+  )
   const ops = unwrap(
     await qcOperations.list(historyId, sessionId, { fetch_all: true })
   )

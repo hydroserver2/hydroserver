@@ -61,7 +61,8 @@ export async function buildSnapshotRecord(
     managed,
     source,
     new Date(session.phenomenonTimeStart),
-    new Date(session.phenomenonTimeEnd)
+    new Date(session.phenomenonTimeEnd),
+    deps.cloneRecord
   )
 
   const operations =

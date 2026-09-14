@@ -60,6 +60,7 @@ function makeDeps(base = rec()) {
       captured = h
       return { applied: h.operations.length, failed: [] }
     }),
+    cloneRecord: async (r: ObservationRecord) => r,
   } as unknown as ReconstructSessionDeps
 
   return { base, captured: () => captured, deps, fetchInRange }

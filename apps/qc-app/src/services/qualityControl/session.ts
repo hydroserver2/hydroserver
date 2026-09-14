@@ -14,6 +14,7 @@ import type {
 } from '@hydroserver/client'
 import type { ObservationRecord } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
+import { cloneRecord, type CloneRecord } from './cloneRecord'
 
 type QcSessionDetail = QualityControlSessionContract.DetailResponse
 type QcSessionSummary = QualityControlSessionContract.SummaryResponse
@@ -73,35 +74,23 @@ export async function loadSourceWindow(
 }
 
 /**
- * The latest committed state for a window. Every commit replays its session
- * into the managed datastream (in-range replace), so the managed datastream's
- * observations already carry all previously-committed sessions. Falls back to
- * the raw source when nothing has been committed yet (the first session).
+ * The latest committed state for a window, as a standalone copy. Every commit
+ * replays its session into the managed datastream (in-range replace), so the
+ * managed datastream's observations already carry all previously-committed
+ * sessions. Falls back to the raw source when nothing has been committed yet
+ * (the first session). A copy, so editing it never touches the store's cached
+ * record for either datastream.
  */
 export async function loadLatestBase(
   fetchInRange: FetchObservationsInRange,
   managed: Datastream,
   source: Datastream,
   start: Date,
-  end: Date
+  end: Date,
+  clone: CloneRecord = cloneRecord
 ): Promise<ObservationRecord> {
   const base = await fetchInRange(managed, start, end)
   const record =
     (base.dataX?.length ?? 0) > 0 ? base : await fetchInRange(source, start, end)
-  return resetToStoredState(record)
-}
-
-/**
- * The observation store keeps one `ObservationRecord` per datastream and
- * hands back the same instance, so this may be the one a previous session
- * was editing. Truncated in place to keep bound references.
- */
-async function resetToStoredState(
-  record: ObservationRecord
-): Promise<ObservationRecord> {
-  if (!record.history.length && !record.redoStack.length) return record
-  record.history.length = 0
-  record.redoStack.length = 0
-  await record.reload()
-  return record
+  return clone(record)
 }
