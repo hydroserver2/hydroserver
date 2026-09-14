@@ -3,7 +3,7 @@
  *
  * Drives the mocked-backend e2e harness through every notable UI state
  * (workspaces, home/select, plot, edit view, each filter/edit/add
- * panel, edit history, submit dialog) and writes one PNG per state to
+ * panel, edit history, commit dialog) and writes one PNG per state to
  * `docs/images/`.
  *
  * Skipped by default so a normal `npx playwright test` run doesn't
@@ -27,6 +27,7 @@ import { installMocks } from './support/mocks'
 import {
   gotoHome,
   setupEditView,
+  setupSessionEditView,
   openOp,
   plotFirstDatastream,
   plotDatastreamById,
@@ -334,20 +335,23 @@ test.describe('docs screenshots', () => {
     await snapEl(history, 'edit-history.png')
   })
 
-  test('submit confirmation dialog', async ({ page }) => {
+  test('commit confirmation dialog', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
-    await installMocks(page)
-    await setupEditView(page)
+    await installMocks(page, { qcHistories: true })
+    await setupSessionEditView(page)
     await selectAllPoints(page)
     await openOp(page, 'changeValues')
     const opPanel = page.getByTestId('operation-panel-changeValues')
     await opPanel.getByLabel('Value').fill('1')
     await opPanel.getByRole('button', { name: /^apply$/i }).click()
-    await page.getByTestId('exit-save-btn').click()
+    await expect(
+      page.locator('[data-testid^="history-item-"]').first()
+    ).toBeVisible({ timeout: 10_000 })
+    await page.getByTestId('exit-commit-btn').click()
     const dialog = page
       .locator('.v-overlay__content')
-      .filter({ hasText: 'Submit QC observations?' })
+      .filter({ hasText: 'Commit session to datastream?' })
     await expect(dialog).toBeVisible({ timeout: 5_000 })
-    await snapEl(dialog, 'submit-dialog.png')
+    await snapEl(dialog, 'commit-dialog.png')
   })
 })

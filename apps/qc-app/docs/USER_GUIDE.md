@@ -556,12 +556,12 @@ When you're satisfied with the edits, hit one of the action buttons at the botto
 
 Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.
 
-![Submit confirmation dialog](./images/submit-dialog.png)
+![Commit confirmation dialog](./images/commit-dialog.png)
 
-Once you confirm:
+The dialog lets you add an optional session description. Once you confirm:
 
-1. The app POSTs the cleaned observations to HydroServer, which either overwrites the existing observations in the plotted window or saves the cleaned observations to a different datastream, depending on your data versioning scheme.
-2. On success, the Snackbar shows "Quality-controlled observations submitted" and the local history is cleared.
+1. The app saves the session's operations, then POSTs the cleaned observations to the managed datastream in `replace` mode, overwriting its observations over the session's time range.
+2. The session is committed and becomes read-only. The Snackbar shows "Session committed." and the footer swaps Save and Commit for **New session**.
 3. On failure, the Snackbar shows the backend's error message verbatim. Show that to your administrator if you need help.
 
 ## Performance and big datastreams

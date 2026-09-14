@@ -43,12 +43,15 @@ async function loginThroughDataManagementIfNeeded(page: Page) {
 //      selection, so the router's workspace guard redirects to /workspaces.
 //   2. Select "Test Workspace #2" from the picker.
 //   3. Wait for datastreams table (init-complete signal on Home).
-//   4. Select the first datastream and wait for data-loading-indicator to hide.
-//   5. Switch to Edit view via the navigation rail.
+//   4. Plot the first source with a managed datastream, load the All range.
+//   5. Start editing on its first managed datastream, which opens a session.
 //   6. Open "Value thresholds", add a filter, close dialog.
-//   7. Wait for selection to populate, open "Change values", commit edit.
+//   7. Wait for selection to populate, open "Change values", apply edit.
 //   8. Assert CHANGE_VALUES appears in EditHistory.
-//   9. Click Save Changes, confirm, assert success snackbar.
+//   9. Save the draft, then Commit the session through the dialog.
+//
+// Needs a workspace source datastream with a managed datastream and QC
+// history; without one there is no session to Save or Commit.
 //
 // Live smoke — talks to the backend configured behind Data Management's
 // /api proxy. Opt in with
@@ -61,7 +64,7 @@ test.describe('QC golden path (live same-origin)', () => {
     'Set E2E_LIVE=1 to run the live same-origin smoke.'
   )
 
-  test('qc golden path: filter, edit, submit', async ({ page }) => {
+  test('qc golden path: filter, edit, save and commit', async ({ page }) => {
     // First-run Vite + createHydroServer + qc-utils calibration + observation
     // fetch can exceed the default 30s test timeout. 180s gives the whole
     // flow room to breathe on a cold dev server.
@@ -92,26 +95,37 @@ test.describe('QC golden path (live same-origin)', () => {
       timeout: 60_000,
     })
 
-    // Step 4 — Select the first available datastream. The table is
-    // virtualized (`v-data-table-virtual`), so rows outside the
-    // initial viewport aren't in the DOM. We don't care which
-    // datastream we pick — the filter/edit/submit flow is the same
-    // for any — so target the first rendered `plot-checkbox-*` row
-    // instead of pinning to a specific id. After checking, wait
-    // for the data-loading-indicator to hide — observations have
-    // finished loading into Plotly.
-    const firstPlotButton = page
+    // Step 4: Plot the first rendered source that has a managed datastream
+    // (managed-count badge). The table is virtualized, so the workspace needs
+    // such a source near the top. Its check box opens the plot-source chooser;
+    // plot the raw source, then load the All range so the session window
+    // covers real observations.
+    const sourceCheckbox = page
+      .locator('tr')
+      .filter({ has: page.locator('.managed-count') })
       .locator('[data-testid^="plot-checkbox-"]')
       .first()
-    await expect(firstPlotButton).toBeVisible({ timeout: 30_000 })
-    await firstPlotButton.click()
-    await page
-      .getByTestId('data-loading-indicator')
-      .waitFor({ state: 'hidden', timeout: 90_000 })
+    await expect(sourceCheckbox).toBeVisible({ timeout: 30_000 })
+    const sourceId = (await sourceCheckbox.getAttribute('data-testid'))!.replace(
+      'plot-checkbox-',
+      ''
+    )
+    await sourceCheckbox.click()
+    await page.getByTestId(`plot-option-${sourceId}`).locator('input').check()
+    await page.getByTestId('plot-source-apply').click()
+    const loading = page.getByTestId('data-loading-indicator')
+    await loading.waitFor({ state: 'hidden', timeout: 90_000 })
+    await page.getByTestId('date-preset-All').click()
+    await loading.waitFor({ state: 'hidden', timeout: 90_000 })
 
-    // Step 5 — Switch to the Edit view. Edit rail item becomes enabled once
-    // qcDatastream is set (happens when a datastream is plotted).
-    await page.getByTestId('nav-rail-item-edit').click()
+    // Step 5: Start editing and pick the first managed datastream. This
+    // resumes its in-progress session or starts one, which is what renders
+    // Save and Commit in the history footer.
+    await page.getByRole('button', { name: 'Start editing' }).click()
+    await page.locator('[data-testid^="edit-managed-"]').first().click()
+    await expect(page.getByTestId('exit-save-btn')).toBeVisible({
+      timeout: 60_000,
+    })
     await expect(page.getByText('Filter Data')).toBeVisible()
 
     // Step 6 — Open "Value thresholds" operation panel, add a filter.
@@ -167,18 +181,23 @@ test.describe('QC golden path (live same-origin)', () => {
     await expect(modeChip).toBeVisible()
     await expect(modeChip).toHaveText(/inline|worker/)
 
-    // Step 9 — Save Changes → confirm → assert success snackbar.
+    // Step 9: Save the draft, then Commit through the confirmation dialog.
+    // Committing locks the session, so the footer swaps to New session.
     await page.getByTestId('exit-save-btn').click()
-    await expect(page.getByText('Submit QC observations?')).toBeVisible()
-    await page.getByRole('button', { name: 'Submit' }).click()
-    // ⚠ REQUIRES LIVE VALIDATION: success snackbar text — confirmed against
-    // Snackbar.success call sites but not yet observed in a live run.
-    await expect(
-      page.getByText('Quality-controlled observations submitted')
-    ).toBeVisible({ timeout: 60_000 })
-    // MH-17: after submit the store clears editHistory → history-item-0 must be gone.
-    await expect(page.getByTestId('history-item-0')).toHaveCount(0, {
-      timeout: 15_000,
+    await expect(page.getByText('Draft saved.')).toBeVisible({
+      timeout: 60_000,
     })
+    await page.getByTestId('exit-commit-btn').click()
+    const commitDialog = page
+      .locator('.v-overlay__content')
+      .filter({ hasText: 'Commit session to datastream?' })
+    await expect(commitDialog).toBeVisible()
+    await commitDialog
+      .getByRole('button', { name: 'Commit', exact: true })
+      .click()
+    await expect(page.getByText('Session committed.')).toBeVisible({
+      timeout: 60_000,
+    })
+    await expect(page.getByTestId('exit-new-session-btn')).toBeVisible()
   })
 })
