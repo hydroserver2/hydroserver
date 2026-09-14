@@ -13,6 +13,7 @@ WORKDIR /build/packages/qc-utils
 RUN npm ci --workspaces=false && npm run build
 
 WORKDIR /build
+COPY packages/design-system packages/design-system
 COPY apps/data-management apps/data-management
 WORKDIR /build/apps/data-management
 RUN npm ci && npm run django-build
@@ -39,8 +40,6 @@ RUN pip install --upgrade pip && \
     pip install ../packages/hydroserverpy
 
 COPY . /app
-
-RUN python manage.py tailwind build
 
 COPY --from=frontend-builder /build/apps/data-management/dist/index.html templates/index.html
 COPY --from=frontend-builder /build/apps/data-management/dist interfaces/web/static/web
