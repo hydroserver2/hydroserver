@@ -1,18 +1,12 @@
 import type { TaskRun, TaskSchedule } from './task.model'
-import type * as Data from '../../generated/data.types'
-
-type AggregationTransformationResponse =
-  Data.components['schemas']['AggregationTransformationResponse']
-type DerivationTransformationResponse =
-  Data.components['schemas']['DerivationTransformationResponse']
-type RatingCurveTransformationResponse =
-  Data.components['schemas']['RatingCurveTransformationResponse']
+import type { TransformationType } from '../services/data-product-transformation.types'
 
 export class DataProductTask {
   id = ''
   name = ''
   description: string | null = null
   monitoringSiteId = ''
+  transformationTypes: TransformationType[] = []
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<DataProductTask>) {
@@ -25,9 +19,7 @@ export interface DataProductTaskExpanded {
   name: string
   description?: string | null
   monitoringSite: { id: string; name: string; [key: string]: unknown }
-  aggregationTransformations: AggregationTransformationResponse[]
-  derivationTransformations: DerivationTransformationResponse[]
-  ratingCurveTransformations: RatingCurveTransformationResponse[]
+  transformationTypes: TransformationType[]
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }

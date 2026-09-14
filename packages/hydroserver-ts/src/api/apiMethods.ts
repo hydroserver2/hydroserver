@@ -109,6 +109,12 @@ export const apiMethods = {
     const concatInto = (target: Columnar, src: Columnar) => {
       for (const [k, v] of Object.entries(src)) {
         if (k === 'meta') continue
+        if (k === 'fields') {
+          // Row-format's column-name list is identical on every page;
+          // keep the first page's copy instead of concatenating duplicates.
+          if (target[k] === undefined) target[k] = v
+          continue
+        }
         if (Array.isArray(v)) {
           if (!Array.isArray(target[k])) target[k] = []
           ;(target[k] as unknown[]).push(...v)
@@ -124,6 +130,22 @@ export const apiMethods = {
     let allArray: T[] = []
     let allColumnar: Columnar | null = null
     let firstPageMeta = res.meta as Record<string, unknown> | undefined
+
+    type IncludedBuckets = Record<string, unknown[]>
+    const mergeIncluded = (
+      target: IncludedBuckets | undefined,
+      src: unknown
+    ): IncludedBuckets | undefined => {
+      if (!isColumnar(src)) return target
+      const merged = target ?? {}
+      for (const [key, val] of Object.entries(src)) {
+        if (!Array.isArray(val)) continue
+        if (!Array.isArray(merged[key])) merged[key] = []
+        merged[key].push(...val)
+      }
+      return merged
+    }
+    let mergedIncluded = mergeIncluded(undefined, res.included)
 
     if (Array.isArray(res.data)) {
       mode = 'array'
@@ -165,6 +187,7 @@ export const apiMethods = {
       // Never report a partial multi-page result as successful. Callers use
       // `ok` to decide whether a management table is complete and actionable.
       if (!page.ok) return page
+      mergedIncluded = mergeIncluded(mergedIncluded, page.included)
       if (mode === 'array') {
         if (Array.isArray(page.data)) {
           allArray.push(...(page.data as T[]))
@@ -211,6 +234,7 @@ export const apiMethods = {
         limit: mergedCount,
         totalCount: totalCount ?? mergedCount,
       },
+      included: mergedIncluded,
     }
   },
 }

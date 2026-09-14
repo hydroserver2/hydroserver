@@ -146,7 +146,6 @@
         "type": "object"
       },
       "CollaboratorCreatedResponse": {
-        "description": "Collaborators are identified by (workspace, principal) rather than a UUID like other\nresources, so this mirrors CreatedResponse but with the collaborator's integer id.",
         "properties": {
           "id": {
             "title": "Id",

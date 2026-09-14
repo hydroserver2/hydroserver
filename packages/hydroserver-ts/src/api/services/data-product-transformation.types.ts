@@ -1,18 +1,29 @@
 import type * as Data from '../../generated/data.types'
 
-export type AggregationTransformationPayload =
-  Data.components['schemas']['AggregationTransformationPostBody']
+export type DataProductTransformation =
+  Data.components['schemas']['DataProductTransformationResponse']
 
-export type AggregationTransformationPatchPayload =
-  Data.components['schemas']['AggregationTransformationPatchBody']
+export type DataProductTransformationPayload =
+  Data.components['schemas']['DataProductTransformationPostBody']
 
-export type AggregationTransformationResponse =
-  Data.components['schemas']['AggregationTransformationResponse']
+export type DataProductTransformationPatchPayload =
+  Data.components['schemas']['DataProductTransformationPatchBody']
 
-export type AggregationMethod =
-  AggregationTransformationPayload['aggregationMethod']
+export type TransformationInput =
+  Data.components['schemas']['TransformationInputResponse']
 
-export type IntervalUnit = AggregationTransformationPayload['outputIntervalUnits']
+export type TransformationInputPayload =
+  Data.components['schemas']['TransformationInputPostBody']
+
+export type TransformationType = DataProductTransformation['transformationType']
+
+export type AggregationMethod = NonNullable<
+  DataProductTransformation['aggregationMethod']
+>
+
+export type IntervalUnit = NonNullable<
+  DataProductTransformation['outputIntervalUnits']
+>
 
 export type AggregationTransformationValues = {
   inputDatastreamId: string | null
@@ -21,21 +32,6 @@ export type AggregationTransformationValues = {
   outputInterval: number | null
   outputIntervalUnits: IntervalUnit
   minValues: number | null
-  timezoneType?: AggregationTransformationPatchPayload['timezoneType']
-  timezone?: AggregationTransformationPatchPayload['timezone']
+  timezoneType?: DataProductTransformation['timezoneType']
+  timezone?: DataProductTransformation['timezone']
 }
-
-export type DerivationTransformationInput =
-  Data.components['schemas']['TransformationInputPostBody']
-
-export type DerivationTransformationPayload =
-  Data.components['schemas']['DerivationTransformationPostBody']
-
-export type DerivationTransformationPatchPayload =
-  Data.components['schemas']['DerivationTransformationPatchBody']
-
-export type DerivationTransformationResponse =
-  Data.components['schemas']['DerivationTransformationResponse']
-
-export type DerivationTransformationSummaryResponse =
-  Data.components['schemas']['DerivationTransformationSummaryResponse']

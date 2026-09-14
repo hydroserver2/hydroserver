@@ -1,6 +1,7 @@
 import { apiMethods } from '../apiMethods'
 import type { HydroServer } from '../HydroServer'
 import type { ApiResponse } from '../responseInterceptor'
+import type * as Data from '../../generated/data.types'
 import {
   QualityControlHistoryContract,
   QualityControlOperationContract,
@@ -8,13 +9,10 @@ import {
 } from '../../generated/contracts'
 
 type FetchAll = { fetch_all?: boolean }
+type CreatedResponse = Data.components['schemas']['CreatedResponse']
 
-export type QualityControlHistory =
-  | QualityControlHistoryContract.SummaryResponse
-  | QualityControlHistoryContract.DetailResponse
-export type QualityControlSession =
-  | QualityControlSessionContract.SummaryResponse
-  | QualityControlSessionContract.DetailResponse
+export type QualityControlHistory = QualityControlHistoryContract.SummaryResponse
+export type QualityControlSession = QualityControlSessionContract.SummaryResponse
 export type QualityControlOperation =
   QualityControlOperationContract.SummaryResponse
 
@@ -52,7 +50,7 @@ export class QualityControlHistoryService {
 
   get(
     historyId: string,
-    params?: Pick<QualityControlHistoryContract.QueryParameters, 'expand_related'>
+    params?: Pick<QualityControlHistoryContract.QueryParameters, 'include'>
   ): Promise<ApiResponse<QualityControlHistory>> {
     return apiMethods.fetch<QualityControlHistory>(
       this.withQuery(`${this._route}/${historyId}`, params)
@@ -61,7 +59,7 @@ export class QualityControlHistoryService {
 
   async getItem(
     historyId: string,
-    params?: Pick<QualityControlHistoryContract.QueryParameters, 'expand_related'>
+    params?: Pick<QualityControlHistoryContract.QueryParameters, 'include'>
   ): Promise<QualityControlHistory | null> {
     const res = await this.get(historyId, params)
     return res.ok ? res.data : null
@@ -69,16 +67,13 @@ export class QualityControlHistoryService {
 
   create(
     body: QualityControlHistoryContract.PostBody
-  ): Promise<ApiResponse<QualityControlHistoryContract.DetailResponse>> {
-    return apiMethods.post<QualityControlHistoryContract.DetailResponse>(
-      this._route,
-      body
-    )
+  ): Promise<ApiResponse<CreatedResponse>> {
+    return apiMethods.post<CreatedResponse>(this._route, body)
   }
 
   async createItem(
     body: QualityControlHistoryContract.PostBody
-  ): Promise<QualityControlHistoryContract.DetailResponse | null> {
+  ): Promise<CreatedResponse | null> {
     const res = await this.create(body)
     return res.ok ? res.data : null
   }
@@ -129,37 +124,32 @@ export class QualityControlSessionService {
 
   get(
     historyId: string,
-    sessionId: string,
-    params?: Pick<QualityControlSessionContract.QueryParameters, 'expand_related'>
+    sessionId: string
   ): Promise<ApiResponse<QualityControlSession>> {
     return apiMethods.fetch<QualityControlSession>(
-      this.withQuery(`${this.sessionsRoute(historyId)}/${sessionId}`, params)
+      `${this.sessionsRoute(historyId)}/${sessionId}`
     )
   }
 
   async getItem(
     historyId: string,
-    sessionId: string,
-    params?: Pick<QualityControlSessionContract.QueryParameters, 'expand_related'>
+    sessionId: string
   ): Promise<QualityControlSession | null> {
-    const res = await this.get(historyId, sessionId, params)
+    const res = await this.get(historyId, sessionId)
     return res.ok ? res.data : null
   }
 
   create(
     historyId: string,
     body: QualityControlSessionContract.PostBody
-  ): Promise<ApiResponse<QualityControlSessionContract.DetailResponse>> {
-    return apiMethods.post<QualityControlSessionContract.DetailResponse>(
-      this.sessionsRoute(historyId),
-      body
-    )
+  ): Promise<ApiResponse<CreatedResponse>> {
+    return apiMethods.post<CreatedResponse>(this.sessionsRoute(historyId), body)
   }
 
   async createItem(
     historyId: string,
     body: QualityControlSessionContract.PostBody
-  ): Promise<QualityControlSessionContract.DetailResponse | null> {
+  ): Promise<CreatedResponse | null> {
     const res = await this.create(historyId, body)
     return res.ok ? res.data : null
   }
@@ -168,20 +158,11 @@ export class QualityControlSessionService {
     historyId: string,
     sessionId: string,
     body: QualityControlSessionContract.PatchBody
-  ): Promise<ApiResponse<QualityControlSessionContract.DetailResponse>> {
-    return apiMethods.patch<QualityControlSessionContract.DetailResponse>(
+  ): Promise<ApiResponse<null>> {
+    return apiMethods.patch<null>(
       `${this.sessionsRoute(historyId)}/${sessionId}`,
       body
     )
-  }
-
-  async updateItem(
-    historyId: string,
-    sessionId: string,
-    body: QualityControlSessionContract.PatchBody
-  ): Promise<QualityControlSessionContract.DetailResponse | null> {
-    const res = await this.update(historyId, sessionId, body)
-    return res.ok ? res.data : null
   }
 
   delete(historyId: string, sessionId: string): Promise<ApiResponse<null>> {
@@ -190,13 +171,15 @@ export class QualityControlSessionService {
     )
   }
 
-  commit(
+  async commit(
     historyId: string,
     sessionId: string
-  ): Promise<ApiResponse<QualityControlSessionContract.DetailResponse>> {
-    return apiMethods.post<QualityControlSessionContract.DetailResponse>(
+  ): Promise<ApiResponse<QualityControlSession>> {
+    const res = await apiMethods.post<null>(
       `${this.sessionsRoute(historyId)}/${sessionId}/commit`
     )
+    if (!res.ok) return res
+    return this.get(historyId, sessionId)
   }
 
   private sessionsRoute(historyId: string): string {
@@ -269,8 +252,8 @@ export class QualityControlOperationService {
     historyId: string,
     sessionId: string,
     body: QualityControlOperationContract.PostBody
-  ): Promise<ApiResponse<QualityControlOperation[]>> {
-    return apiMethods.post<QualityControlOperation[]>(
+  ): Promise<ApiResponse<CreatedResponse[]>> {
+    return apiMethods.post<CreatedResponse[]>(
       this.operationsRoute(historyId, sessionId),
       body
     )
@@ -280,7 +263,7 @@ export class QualityControlOperationService {
     historyId: string,
     sessionId: string,
     body: QualityControlOperationContract.PostBody
-  ): Promise<QualityControlOperation[]> {
+  ): Promise<CreatedResponse[]> {
     const res = await this.create(historyId, sessionId, body)
     return res.ok ? res.data : []
   }
@@ -290,21 +273,11 @@ export class QualityControlOperationService {
     sessionId: string,
     operationId: string,
     body: QualityControlOperationContract.PatchBody
-  ): Promise<ApiResponse<QualityControlOperation>> {
-    return apiMethods.patch<QualityControlOperation>(
+  ): Promise<ApiResponse<null>> {
+    return apiMethods.patch<null>(
       `${this.operationsRoute(historyId, sessionId)}/${operationId}`,
       body
     )
-  }
-
-  async updateItem(
-    historyId: string,
-    sessionId: string,
-    operationId: string,
-    body: QualityControlOperationContract.PatchBody
-  ): Promise<QualityControlOperation | null> {
-    const res = await this.update(historyId, sessionId, operationId, body)
-    return res.ok ? res.data : null
   }
 
   delete(

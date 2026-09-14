@@ -6,7 +6,7 @@ export namespace RatingCurveContract {
   export const route = 'rating-curves' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_products_rating_curve_get_rating_curves']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_products_rating_curve_get_rating_curves']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['RatingCurveResponse']
-  export type DetailResponse  = Data.components['schemas']['RatingCurveResponse']
+  export type DetailResponse  = Data.components['schemas']['ItemResponse_RatingCurveResponse_']
   export type PostBody        = Data.components['schemas']['RatingCurvePostBody']
   export type PatchBody       = Data.components['schemas']['RatingCurvePatchBody']
   export type DeleteBody      = never

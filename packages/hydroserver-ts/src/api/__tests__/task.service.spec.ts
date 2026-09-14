@@ -100,7 +100,7 @@ describe('TaskService', () => {
         description: null,
         recipients: [],
         monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
-        monitoredDatastreams: [],
+        ruleTypeCounts: {},
         schedule: null,
       })
     )
@@ -113,6 +113,7 @@ describe('TaskService', () => {
       monitoringSiteId: 'monitoringSite-1',
       description: null,
       recipients: [],
+      ruleTypeCounts: {},
       schedule: null,
     })
 
@@ -125,6 +126,7 @@ describe('TaskService', () => {
       monitoringSiteId: 'monitoringSite-1',
       description: null,
       recipients: [],
+      ruleTypeCounts: {},
       schedule: null,
     })
   })

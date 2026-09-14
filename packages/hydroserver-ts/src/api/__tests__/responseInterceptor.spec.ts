@@ -34,6 +34,27 @@ describe('responseInterceptor', () => {
     })
   })
 
+  it('unwraps a "data" property accompanied by "included" even without "meta"', async () => {
+    const mockJsonResponse = {
+      data: { id: '1', name: 'Meter' },
+      included: { workspaces: [{ id: 'w1', name: 'Acme' }] },
+    }
+    const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const result = await responseInterceptor(mockResponse)
+    expect(result).toEqual({
+      data: { id: '1', name: 'Meter' },
+      status: 200,
+      message: 'OK',
+      meta: undefined,
+      included: { workspaces: [{ id: 'w1', name: 'Acme' }] },
+      ok: true,
+    })
+  })
+
   it('does not unwrap a "data" property without an accompanying "meta"', async () => {
     const mockJsonResponse = { data: 'Some data' }
     const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
