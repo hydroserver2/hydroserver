@@ -324,13 +324,20 @@ session: the Select-view plot and the editor share it so the preview
 shows exactly what editing opens. Not persisted, not reactive (records
 hold large typed arrays that must not be proxied).
 
+Concurrency: a per-managed-id generation counter, bumped by `invalidate`,
+`set`, and every new build, guards each build's cache write — a build
+whose generation is no longer current (superseded by a later
+`invalidate`/`set`/`rebuild` while it awaited) is discarded rather than
+resurrecting a stale copy. Concurrent `load()` calls for the same managed
+id share one in-flight build and resolve to the same record.
+
 | Name         | Kind   | Type / signature                                                                                     | Notes |
 |--------------|--------|-------------------------------------------------------------------------------------------------------|-------|
 | `get`        | action | `(managedId: string) => WorkingCopy \| undefined`                                                     | Current cached copy for a managed datastream, if any. |
-| `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. |
-| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; overwrites the cache. |
-| `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by the editor after a local edit). |
-| `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy. |
+| `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. Concurrent calls for the same managed id dedupe onto one build. If superseded mid-build by `invalidate`/`set`/`rebuild`, resolves to the now-current cache entry (or `null`) instead of the discarded build. |
+| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; supersedes any in-flight `load()` build for this managed id and overwrites the cache (unless itself superseded while awaiting, in which case the cache is left alone). |
+| `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by the editor after a local edit); supersedes any in-flight build for this managed id. |
+| `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy; supersedes any in-flight build for this managed id. |
 | `extents`    | action | `(managedIds: string[]) => { phenomenonBeginTime: string; phenomenonEndTime: string }[]`               | The cached copies' windows for the given managed ids, in ISO form; ids with no cached copy are omitted. |
 
 ### `usePlotlyStore()` — `src/store/plotly.ts`

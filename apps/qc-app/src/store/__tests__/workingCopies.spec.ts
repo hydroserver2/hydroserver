@@ -32,6 +32,31 @@ const managed = { id: 'm-1' } as any
 const source = { id: 's-1' } as any
 const rec = (xs: number[]) => ({ dataX: xs, dataY: xs.map(() => 1), history: [] })
 
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((res) => {
+    resolve = res
+  })
+  return { promise, resolve }
+}
+
+/**
+ * Gates every `fetchObservationsInRange` call behind `gate`, and resolves
+ * `started` the first time a call is made — so a test can wait for a
+ * build to have actually begun (past its generation bump) before racing
+ * another store call against it.
+ */
+function gateFetch() {
+  const gate = deferred<void>()
+  const started = deferred<void>()
+  fetchObservationsInRange.mockImplementation(async (ds: any) => {
+    started.resolve()
+    await gate.promise
+    return ds.id === 'm-1' ? rec([]) : rec([1, 2, 3])
+  })
+  return { gate, started }
+}
+
 let qc: ReturnType<typeof makeQcFake>
 let historyId: string
 
@@ -139,5 +164,59 @@ describe('useWorkingCopiesStore', () => {
     store.invalidate('m-1')
     expect(store.get('m-1')).toBeUndefined()
     expect(store.extents(['m-1'])).toEqual([])
+  })
+
+  it('dedupes concurrent load() calls into a single reconstruction', async () => {
+    await startSession()
+    const { gate } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const first = store.load(managed, source, historyId)
+    const second = store.load(managed, source, historyId)
+    gate.resolve()
+
+    const [a, b] = await Promise.all([first, second])
+    expect(a).toBe(b)
+    expect(applyHistory).toHaveBeenCalledTimes(1)
+    expect(store.get('m-1')).toBe(a)
+  })
+
+  it('invalidate() during an in-flight load() leaves no cached entry and the load does not resurrect it', async () => {
+    await startSession()
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const pending = store.load(managed, source, historyId)
+    await started.promise
+    store.invalidate('m-1')
+    gate.resolve()
+
+    expect(await pending).toBeNull()
+    expect(store.get('m-1')).toBeUndefined()
+  })
+
+  it('set() during an in-flight load() keeps the set record', async () => {
+    await startSession()
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+    const setRecord = rec([9]) as any
+    const setBegin = new Date('2024-03-01T00:00:00Z')
+    const setEnd = new Date('2024-04-01T00:00:00Z')
+
+    const pending = store.load(managed, source, historyId)
+    await started.promise
+    store.set('m-1', 's-9', setRecord, setBegin, setEnd)
+    gate.resolve()
+
+    expect(await pending).toEqual({
+      sessionId: 's-9',
+      record: setRecord,
+      begin: setBegin,
+      end: setEnd,
+    })
+    expect(store.get('m-1')?.record).toBe(setRecord)
   })
 })

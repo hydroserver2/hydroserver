@@ -33,6 +33,27 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
   // Not reactive: records hold large typed arrays that must not be proxied.
   const copies = new Map<string, WorkingCopy>()
 
+  // Per-managed-id generation, bumped by invalidate/set and by every new
+  // build (load's own build, and rebuild). A build only writes its result
+  // to `copies` if its generation is still the latest once its await
+  // resolves; otherwise a later invalidate/set/build has already
+  // superseded it and the late write is silently dropped. This is what
+  // keeps a stale in-flight reconstruction from resurrecting a copy after
+  // the session it belongs to was committed or deleted.
+  const generations = new Map<string, number>()
+
+  // One in-flight load() build per managed id, so concurrent load() calls
+  // for the same datastream share a single reconstruction and resolve to
+  // the same record instead of each producing their own (the editor
+  // mutates records in place, so two instances would diverge).
+  const inFlightLoads = new Map<string, Promise<WorkingCopy | null>>()
+
+  function bump(managedId: string): number {
+    const next = (generations.get(managedId) ?? 0) + 1
+    generations.set(managedId, next)
+    return next
+  }
+
   const get = (managedId: string) => copies.get(managedId)
 
   function set(
@@ -42,18 +63,21 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     begin: Date,
     end: Date
   ) {
+    bump(managedId)
     copies.set(managedId, { sessionId, record, begin, end })
   }
 
   function invalidate(managedId: string) {
+    bump(managedId)
     copies.delete(managedId)
   }
 
-  async function rebuild(
+  async function build(
     managed: Datastream,
     source: Datastream,
     historyId: string,
-    session: SessionWindow
+    session: SessionWindow,
+    generation: number
   ): Promise<WorkingCopy> {
     const { hs } = storeToRefs(useHydroServer())
     const { fetchObservationsInRange } = useObservationStore()
@@ -75,11 +99,26 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
       begin: new Date(session.phenomenonTimeStart),
       end: new Date(session.phenomenonTimeEnd),
     }
-    copies.set(managed.id, copy)
+    if (generations.get(managed.id) === generation) {
+      copies.set(managed.id, copy)
+    }
     return copy
   }
 
-  async function load(
+  async function rebuild(
+    managed: Datastream,
+    source: Datastream,
+    historyId: string,
+    session: SessionWindow
+  ): Promise<WorkingCopy> {
+    // A rebuild always forces a fresh reconstruction, and supersedes any
+    // load() build already in flight for this managed id.
+    const generation = bump(managed.id)
+    inFlightLoads.delete(managed.id)
+    return build(managed, source, historyId, session, generation)
+  }
+
+  async function performLoad(
     managed: Datastream,
     source: Datastream,
     historyId: string
@@ -90,12 +129,38 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
       historyId
     )
     if (!session) {
-      copies.delete(managed.id)
+      invalidate(managed.id)
       return null
     }
     const cached = copies.get(managed.id)
     if (cached?.sessionId === session.id) return cached
-    return rebuild(managed, source, historyId, session)
+
+    const generation = bump(managed.id)
+    const built = await build(managed, source, historyId, session, generation)
+    // Superseded while awaiting (invalidate/set/rebuild landed first):
+    // don't hand the caller a record that isn't (and won't become) the
+    // cached entry. Report whatever is current instead.
+    if (generations.get(managed.id) !== generation) {
+      return copies.get(managed.id) ?? null
+    }
+    return built
+  }
+
+  function load(
+    managed: Datastream,
+    source: Datastream,
+    historyId: string
+  ): Promise<WorkingCopy | null> {
+    const existing = inFlightLoads.get(managed.id)
+    if (existing) return existing
+
+    const promise = performLoad(managed, source, historyId).finally(() => {
+      if (inFlightLoads.get(managed.id) === promise) {
+        inFlightLoads.delete(managed.id)
+      }
+    })
+    inFlightLoads.set(managed.id, promise)
+    return promise
   }
 
   function extents(managedIds: string[]) {
