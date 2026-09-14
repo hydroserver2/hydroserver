@@ -55,6 +55,11 @@ export interface MockOptions {
     { phenomenonTime: string[]; result: number[] }
   >
   /**
+   * Field overrides for catalog datastreams, keyed by id. Lets a spec move a
+   * datastream's phenomenon times to match a custom observation series.
+   */
+  catalogOverrides?: Record<string, Record<string, unknown>>
+  /**
    * Accumulates every bulk-create submission the app makes while the
    * mocks are active. Consumers can assert on request ordering /
    * payload contents without installing a second route handler.
@@ -116,9 +121,10 @@ export async function installMocks(
   const submissions = options.submissions ?? []
   const withQcHistories = options.qcHistories ?? false
   // The managed datastream only exists for specs that opted into histories.
-  const catalog = withQcHistories
-    ? [...datastreams, managedDatastream]
-    : datastreams
+  const overrides = options.catalogOverrides ?? {}
+  const catalog = (
+    withQcHistories ? [...datastreams, managedDatastream] : datastreams
+  ).map((ds) => ({ ...ds, ...overrides[ds.id] }))
 
   // Match only real HydroServer API calls by pathname. A bare `**/api/**`
   // glob also catches the dev server's own source modules — the QC app

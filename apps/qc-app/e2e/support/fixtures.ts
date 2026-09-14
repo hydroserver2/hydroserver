@@ -34,7 +34,8 @@ export const SENSOR_ID_B = 'sensor-temp'
 /**
  * Synthetic-observation timing constants. The catalog's phenomenon times are
  * derived from these, and the app's presets anchor to them, so specs that
- * build custom series should derive timestamps from `FIXTURE_OBS_START_MS`.
+ * build custom series should derive timestamps from `FIXTURE_OBS_START_MS`
+ * or override the catalog times to match (`catalogOverrides`).
  */
 export const FIXTURE_OBS_SPACING_MS = 15 * 60 * 1000
 export const FIXTURE_OBS_COUNT = 120
