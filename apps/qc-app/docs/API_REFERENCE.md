@@ -329,13 +329,17 @@ Concurrency: a per-managed-id generation counter, bumped by `invalidate`,
 whose generation is no longer current (superseded by a later
 `invalidate`/`set`/`rebuild` while it awaited) is discarded rather than
 resurrecting a stale copy. Concurrent `load()` calls for the same managed
-id share one in-flight build and resolve to the same record.
+id share one in-flight build and resolve to the same record. A `rebuild()`
+superseded by a later `rebuild()` chains onto it and resolves to the same
+copy regardless of which finishes its fetch first; superseded by
+`invalidate`/`set` instead, it resolves to whatever is now cached (`null`
+after an `invalidate`) — never to the record it built but discarded.
 
 | Name         | Kind   | Type / signature                                                                                     | Notes |
 |--------------|--------|-------------------------------------------------------------------------------------------------------|-------|
 | `get`        | action | `(managedId: string) => WorkingCopy \| undefined`                                                     | Current cached copy for a managed datastream, if any. |
 | `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. Concurrent calls for the same managed id dedupe onto one build. If superseded mid-build by `invalidate`/`set`/`rebuild`, resolves to the now-current cache entry (or `null`) instead of the discarded build. |
-| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; supersedes any in-flight `load()` build for this managed id and overwrites the cache (unless itself superseded while awaiting, in which case the cache is left alone). |
+| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy \| null>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; supersedes any in-flight `load()` build or earlier `rebuild()` for this managed id and overwrites the cache. If superseded itself while awaiting, never returns the discarded build: resolves to the copy that superseded it (chaining onto a later in-flight `rebuild()`, or reading the cache after a synchronous `invalidate`/`set`), which is `null` when nothing ended up cached. |
 | `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by the editor after a local edit); supersedes any in-flight build for this managed id. |
 | `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy; supersedes any in-flight build for this managed id. |
 | `extents`    | action | `(managedIds: string[]) => { phenomenonBeginTime: string; phenomenonEndTime: string }[]`               | The cached copies' windows for the given managed ids, in ISO form; ids with no cached copy are omitted. |

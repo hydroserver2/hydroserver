@@ -57,6 +57,17 @@ function gateFetch() {
   return { gate, started }
 }
 
+/**
+ * Gates one `applyHistory` call (the last step of a rebuild's
+ * reconstruction) so a test can hold a specific rebuild() call in flight
+ * without gating the others sharing the same mocked fetch.
+ */
+function gateOneApplyHistory() {
+  const gate = deferred<{ applied: number; failed: never[] }>()
+  applyHistory.mockImplementationOnce(() => gate.promise)
+  return gate
+}
+
 let qc: ReturnType<typeof makeQcFake>
 let historyId: string
 
@@ -218,5 +229,66 @@ describe('useWorkingCopiesStore', () => {
       end: setEnd,
     })
     expect(store.get('m-1')?.record).toBe(setRecord)
+  })
+
+  it('invalidate() during an in-flight rebuild() resolves it to null and leaves nothing cached', async () => {
+    const session = unwrap(await startSession())
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const pending = store.rebuild(managed, source, historyId, session)
+    await started.promise
+    store.invalidate('m-1')
+    gate.resolve()
+
+    expect(await pending).toBeNull()
+    expect(store.get('m-1')).toBeUndefined()
+  })
+
+  it('set() during an in-flight rebuild() resolves it to the set record', async () => {
+    const session = unwrap(await startSession())
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+    const setRecord = rec([9]) as any
+    const setBegin = new Date('2024-03-01T00:00:00Z')
+    const setEnd = new Date('2024-04-01T00:00:00Z')
+
+    const pending = store.rebuild(managed, source, historyId, session)
+    await started.promise
+    store.set('m-1', 's-9', setRecord, setBegin, setEnd)
+    gate.resolve()
+
+    expect(await pending).toEqual({
+      sessionId: 's-9',
+      record: setRecord,
+      begin: setBegin,
+      end: setEnd,
+    })
+    expect(store.get('m-1')?.record).toBe(setRecord)
+  })
+
+  it('a second rebuild() supersedes the first, which resolves to the same cached copy regardless of which fetch finishes first', async () => {
+    const session = unwrap(await startSession())
+    const gate1 = gateOneApplyHistory()
+    const gate2 = gateOneApplyHistory()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const first = store.rebuild(managed, source, historyId, session)
+    const second = store.rebuild(managed, source, historyId, session)
+
+    // The first call's own fetch settles before the second's, even
+    // though the second call is the one that supersedes it: `first`
+    // must still chain onto `second`'s result rather than returning its
+    // own (discarded) build.
+    gate1.resolve({ applied: 0, failed: [] })
+    gate2.resolve({ applied: 0, failed: [] })
+
+    const [firstResult, secondResult] = await Promise.all([first, second])
+    expect(firstResult).toBe(secondResult)
+    expect(store.get('m-1')).toBe(secondResult)
+    expect(applyHistory).toHaveBeenCalledTimes(2)
   })
 })
