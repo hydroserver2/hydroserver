@@ -279,6 +279,7 @@ on boot.
 | `historiesBySource`                 | computed | `Map<string, QualityControlHistory[]>`            | `sourceDatastreamId` -> its QC histories; drives the Start-editing chooser. |
 | `addQcHistory`                      | action   | `(history: QualityControlHistory) => void`        | Register a newly-created history so its managed datastream hides from the catalog and shows in the chooser without a reload. |
 | `removeManagedDatastream`           | action   | `(historyId: string, managedId: string) => void`  | Drop a deleted managed datastream + its history from local state (chooser/catalog) after deleting it server-side. |
+| `replaceDatastream`                 | action   | `(ds: Datastream & DatastreamExtended) => void`   | Swap a fresh copy into the catalog and plotted set (used after a commit moves a managed datastream's phenomenon times). |
 | `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
 | `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
 | `selectedThings`                    | state    | `Thing[]`                                         | Site filter selection (sidebar). |

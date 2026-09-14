@@ -16,7 +16,7 @@
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { serializeHistory, applyHistory } from '@uwrl/qc-utils'
-import type { Datastream, QualityControlSessionContract } from '@hydroserver/client'
+import type { Datastream, DatastreamExtended, QualityControlSessionContract } from '@hydroserver/client'
 import type { ObservationRecord, HistoryItem } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { usePlotlyStore } from '@/store/plotly'
@@ -70,6 +70,7 @@ function clampSpecToSource(
 
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
+  const { replaceDatastream } = useDataVisStore()
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { redraw } = usePlotlyStore()
   const { hs } = storeToRefs(useHydroServer())
@@ -321,6 +322,11 @@ export function useEditSession() {
         })
       },
     })
+    // The push moved the managed datastream's phenomenon times.
+    const refreshed = await hs.value.datastreams.getItem(managed.id, {
+      expand_related: true,
+    })
+    if (refreshed) replaceDatastream(refreshed as Datastream & DatastreamExtended)
     await sessionStore.loadSessions(historyId)
     snapshotSavedEdits()
   }

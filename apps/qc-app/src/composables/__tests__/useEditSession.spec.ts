@@ -5,8 +5,9 @@ import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
 import { unwrap } from '@/services/qualityControl/unwrap'
 
 const qcDatastream = ref<any>(null)
+const replaceDatastream = vi.fn()
 vi.mock('@/store/dataVisualization', () => ({
-  useDataVisStore: () => ({ qcDatastream }),
+  useDataVisStore: () => ({ qcDatastream, replaceDatastream }),
 }))
 
 const selectedSeries = ref<any>(null)
@@ -216,6 +217,22 @@ describe('useEditSession', () => {
     const store = useQcSessionStore()
     expect(store.committedSessions.length).toBe(1)
     expect(store.inProgressSession).toBeNull()
+  })
+
+  it('commit refreshes the managed datastream so its new extent is known', async () => {
+    await seedHistory()
+    const refreshed = { id: 'm-1', phenomenonEndTime: '2025-02-01T00:00:00Z' }
+    getItem.mockImplementation(async (id: string) =>
+      id === 'm-1' ? refreshed : { id: 's-1', name: 'Source' }
+    )
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    await session.commit()
+
+    expect(getItem).toHaveBeenCalledWith('m-1', { expand_related: true })
+    expect(replaceDatastream).toHaveBeenCalledWith(refreshed)
   })
 
   it('tracks unsaved edits against the last saved snapshot', async () => {

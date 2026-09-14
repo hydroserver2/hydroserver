@@ -77,6 +77,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     datastreams.value = datastreams.value.filter((d) => d.id !== managedId)
   }
 
+  /** Swap in a fresh copy of a datastream wherever it is referenced. */
+  function replaceDatastream(ds: Datastream & DatastreamExtended) {
+    datastreams.value = datastreams.value.map((d) => (d.id === ds.id ? ds : d))
+    plottedDatastreams.value = plottedDatastreams.value.map((d) =>
+      d.id === ds.id ? ds : d
+    )
+  }
+
   /** sourceDatastreamId -> the histories linking its managed datastreams. */
   const historiesBySource = computed(() => {
     const map = new Map<string, QualityControlHistory[]>()
@@ -733,6 +741,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     historiesBySource,
     addQcHistory,
     removeManagedDatastream,
+    replaceDatastream,
     processingLevels,
     observedProperties,
     selectedThings,

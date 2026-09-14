@@ -964,3 +964,24 @@ describe('useDataVisStore.releaseManagedDatastream with the source plotted', () 
     expect(store.qcDatastreamId).toBe('src')
   })
 })
+
+describe('useDataVisStore.replaceDatastream', () => {
+  it('swaps the datastream in the catalog and the plotted set', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.datastreams = [
+      makeDs({ id: 'a' }),
+      makeDs({ id: 'm', phenomenonEndTime: null }),
+    ] as any
+    store.plottedDatastreams = [makeDs({ id: 'm', phenomenonEndTime: null })] as any
+    store.qcDatastreamId = 'm'
+
+    store.replaceDatastream(
+      makeDs({ id: 'm', phenomenonEndTime: '2021-06-30T12:00:00Z' }) as any
+    )
+
+    expect(store.datastreams.map((d) => d.id)).toEqual(['a', 'm'])
+    expect(store.datastreams[1]?.phenomenonEndTime).toBe('2021-06-30T12:00:00Z')
+    expect(store.qcDatastream?.phenomenonEndTime).toBe('2021-06-30T12:00:00Z')
+  })
+})
