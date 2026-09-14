@@ -317,6 +317,22 @@ on boot.
 | `releaseManagedDatastream`          | action   | `() => Promise<void>`                             | Inverse of `adoptManagedDatastream`, for leaving the editor: swap the managed datastream back to its source (resolved through `qcHistories`), drop the editor's working copy and rebuild, so the plot shows the source as stored rather than the session's uncommitted edits. Managed datastreams are hidden from the catalog table, so without this the Select view shows a plot with nothing selected. No-op when the QC target isn't managed or its source isn't in the catalog. |
 | `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
 
+### `useWorkingCopiesStore()` — `src/store/workingCopies.ts`
+
+One working copy per managed datastream, keyed by its in-progress
+session: the Select-view plot and the editor share it so the preview
+shows exactly what editing opens. Not persisted, not reactive (records
+hold large typed arrays that must not be proxied).
+
+| Name         | Kind   | Type / signature                                                                                     | Notes |
+|--------------|--------|-------------------------------------------------------------------------------------------------------|-------|
+| `get`        | action | `(managedId: string) => WorkingCopy \| undefined`                                                     | Current cached copy for a managed datastream, if any. |
+| `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. |
+| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; overwrites the cache. |
+| `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by the editor after a local edit). |
+| `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy. |
+| `extents`    | action | `(managedIds: string[]) => { phenomenonBeginTime: string; phenomenonEndTime: string }[]`               | The cached copies' windows for the given managed ids, in ISO form; ids with no cached copy are omitted. |
+
 ### `usePlotlyStore()` — `src/store/plotly.ts`
 
 Owns the Plotly DOM ref, the per-series array driving the chart,

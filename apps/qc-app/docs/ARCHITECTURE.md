@@ -134,6 +134,7 @@ goes one direction.
 | `userInterface.ts`    | Drawer state (Select/Edit), persisted prefs, current view.            |
 | `operationParams.ts`  | Per-operation form inputs, persisted so they survive panel re-opens.  |
 | `uiLayout.ts`         | Drawer widths, table heights — persisted UI geometry.                 |
+| `workingCopies.ts`    | Working copy per managed datastream, keyed by its in-progress session.|
 
 The persisted stores use `pinia-plugin-persistedstate` with explicit
 `storage: localStorage` and an explicit `paths` list. **Never** persist
