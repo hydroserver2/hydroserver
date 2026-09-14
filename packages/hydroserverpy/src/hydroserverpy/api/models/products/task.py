@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from functools import cached_property
 from typing import ClassVar, List, Optional, Union, TYPE_CHECKING
 from pydantic import Field, AliasPath
 from ..base import HydroServerBaseModel
@@ -28,9 +29,7 @@ class DataProductTask(HydroServerBaseModel):
     )
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
-    rating_curve_transformations: List[RatingCurveTransformation] = []
-    derivation_transformations: List[DerivationTransformation] = []
-    aggregation_transformations: List[AggregationTransformation] = []
+    transformation_types: List[str] = []
 
     _editable_fields: ClassVar[set[str]] = {"name", "description"}
 
@@ -40,6 +39,24 @@ class DataProductTask(HydroServerBaseModel):
     @classmethod
     def get_route(cls):
         return "products/tasks"
+
+    @cached_property
+    def rating_curve_transformations(self) -> List["RatingCurveTransformation"]:
+        """All rating curve transformations for this data product task."""
+
+        return self.client.dataproducttransformations.list_rating_curve(task_id=self.uid)
+
+    @cached_property
+    def derivation_transformations(self) -> List["DerivationTransformation"]:
+        """All derivation transformations for this data product task."""
+
+        return self.client.dataproducttransformations.list_derivation(task_id=self.uid)
+
+    @cached_property
+    def aggregation_transformations(self) -> List["AggregationTransformation"]:
+        """All aggregation transformations for this data product task."""
+
+        return self.client.dataproducttransformations.list_aggregation(task_id=self.uid)
 
     def trigger(self) -> TaskRun:
         """Trigger an immediate run of this data product task."""

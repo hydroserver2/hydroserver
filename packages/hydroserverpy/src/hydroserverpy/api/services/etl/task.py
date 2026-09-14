@@ -36,7 +36,6 @@ class TaskService(HydroServerBaseService):
             limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
-            expand_related=True,
             workspace_id=normalize_uuid(workspace),
             data_connection_id=normalize_uuid(data_connection),
             latest_run_status=latest_run_status,
@@ -46,23 +45,12 @@ class TaskService(HydroServerBaseService):
             latest_run_finished_at_max=latest_run_finished_at_max,
         )
 
-    def get(self, uid: Union[UUID, str]) -> EtlTask:
-        """Fetch a single ETL task."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        response = self.client.request("get", path, params={"expand_related": True}).json()
-
-        return self.model(
-            client=self.client, uid=UUID(str(response.pop("id"))), **response
-        )
-
     def create(
         self,
         name: str,
         data_connection: Union[UUID, str],
         description: Optional[str] = None,
         task_variables: Optional[Dict[str, Any]] = None,
-        mappings: Optional[List[dict]] = None,
         crontab: Optional[str] = None,
         interval: Optional[int] = None,
         interval_period: Optional[Literal["minutes", "hours", "days"]] = None,
@@ -77,11 +65,6 @@ class TaskService(HydroServerBaseService):
             "description": description,
             "dataConnectionId": normalize_uuid(data_connection),
             "taskVariables": task_variables or {},
-            "mappings": [
-                {"sourceIdentifier": m.get("source_identifier") or m.get("sourceIdentifier"),
-                 "targetDatastreamId": str(m.get("target_datastream_id") or m.get("targetDatastreamId"))}
-                for m in (mappings or [])
-            ],
         }
 
         if uid is not None:
@@ -102,7 +85,6 @@ class TaskService(HydroServerBaseService):
         self,
         uid: Union[UUID, str],
         name: str,
-        mappings: List[dict],
         description: Optional[str] = ...,
         task_variables: Optional[Dict[str, Any]] = None,
         crontab: Optional[str] = ...,
@@ -117,11 +99,6 @@ class TaskService(HydroServerBaseService):
             "name": name,
             "description": description,
             "taskVariables": task_variables or {},
-            "mappings": [
-                {"sourceIdentifier": m.get("source_identifier") or m.get("sourceIdentifier"),
-                 "targetDatastreamId": str(m.get("target_datastream_id") or m.get("targetDatastreamId"))}
-                for m in mappings
-            ],
         }
 
         if crontab is None and interval is None:

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from functools import cached_property
 from typing import Any, ClassVar, Dict, List, Literal, Optional, Union, TYPE_CHECKING
 from pydantic import AliasChoices, Field, AliasPath
 from ..base import HydroServerBaseModel
@@ -29,7 +30,7 @@ class EtlTask(HydroServerBaseModel):
     )
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
-    mappings: List[EtlMapping] = []
+    mapping_count: int = 0
 
     _editable_fields: ClassVar[set[str]] = set()
 
@@ -45,29 +46,29 @@ class EtlTask(HydroServerBaseModel):
         if not self.uid:
             raise AttributeError("Data cannot be saved: UID is not set.")
 
-        mappings = self.mappings
         saved_resource = self.service.update(
             self.uid,
             name=self.name,
             description=self.description,
             task_variables=self.task_variables,
-            mappings=[
-                {"source_identifier": m.source_identifier, "target_datastream_id": str(m.target_datastream_id)}
-                for m in mappings
-            ],
             crontab=self.crontab,
             interval=self.interval,
             interval_period=self.interval_period,
             start_time=self.start_time,
             enabled=self.enabled,
         )
-        saved_resource.mappings = mappings
         self._server_data = saved_resource.dict(by_alias=False).copy()
         self.__dict__.update(saved_resource.__dict__)
 
     @classmethod
     def get_route(cls):
         return "etl/tasks"
+
+    @cached_property
+    def mappings(self) -> List[EtlMapping]:
+        """All source-to-datastream mappings for this ETL task."""
+
+        return self.client.etlmappings.list(task_id=self.uid, fetch_all=True).items
 
     @property
     def data_connection(self) -> "DataConnection":

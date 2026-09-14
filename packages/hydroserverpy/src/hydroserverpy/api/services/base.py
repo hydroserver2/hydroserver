@@ -61,10 +61,11 @@ class HydroServerBaseService:
         uid: Union[uuid.UUID, str]
     ):
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        response = self.client.request("get", path).json()
+        payload = self.client.request("get", path).json()
+        data = payload.get("data", payload)
 
         return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
+            client=self.client, uid=uuid.UUID(str(data.pop("id"))), **data
         )
 
     def create(self, **kwargs):
@@ -74,9 +75,7 @@ class HydroServerBaseService:
             "post", path, headers=headers, data=json.dumps(kwargs, default=self.default_serializer)
         ).json()
 
-        return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
-        )
+        return self.get(response["id"])
 
     def update(
         self,
@@ -86,13 +85,11 @@ class HydroServerBaseService:
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
         headers = {"Content-type": "application/json"}
         body = self.prune_unset(kwargs) or {}
-        response = self.client.request(
+        self.client.request(
             "patch", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-        return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
         )
+
+        return self.get(uid)
 
     def delete(
         self,

@@ -3,13 +3,17 @@ from typing import TYPE_CHECKING, Optional, Union, List, Tuple
 from pydantic import EmailStr
 from uuid import UUID
 from datetime import datetime
-from hydroserverpy.api.models import Workspace, Role, Collaborator, APIKey
+from hydroserverpy.api.models import Workspace, Role, Collaborator, ServiceAccount
 from hydroserverpy.api.utils import normalize_uuid
 from ..base import HydroServerBaseService
 
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
+
+
+def _resolve_email(email: Union[EmailStr, "ServiceAccount"]) -> str:
+    return email.email if isinstance(email, ServiceAccount) else email
 
 
 class WorkspaceService(HydroServerBaseService):
@@ -75,151 +79,157 @@ class WorkspaceService(HydroServerBaseService):
         ]
 
     def add_collaborator(
-        self, uid: Union[UUID, str], email: EmailStr, role: Union["Role", UUID, str]
+        self, uid: Union[UUID, str], email: Union[EmailStr, "ServiceAccount"], role: Union["Role", UUID, str]
     ) -> "Collaborator":
-        """Add a collaborator to a workspace."""
+        """Add a collaborator (a user or a service account) to a workspace."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/collaborators"
         headers = {"Content-type": "application/json"}
+        resolved_email = _resolve_email(email)
         body = {
-            "email": email,
+            "email": resolved_email,
             "roleId": normalize_uuid(role)
         }
-        response = self.client.request(
+        self.client.request(
             "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
+        )
 
-        return Collaborator(
-            client=self.client, uid=None, workspace_id=uid, **response
+        return next(
+            (c for c in self.list_collaborators(uid) if c.email == resolved_email),
+            None,
         )
 
     def edit_collaborator_role(
-        self, uid: Union[UUID, str], email: EmailStr, role: Union["Role", UUID, str], role_id: UUID
+        self,
+        uid: Union[UUID, str],
+        email: Union[EmailStr, "ServiceAccount"],
+        role: Union["Role", UUID, str] = ...,
+        role_id: UUID = ...,
     ) -> "Collaborator":
         """Edit the role of a collaborator in a workspace."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/collaborators"
         headers = {"Content-type": "application/json"}
+        resolved_email = _resolve_email(email)
         body = {
-            "email": email,
+            "email": resolved_email,
             "roleId": normalize_uuid(role if role is not ... else role_id)
         }
 
-        response = self.client.request(
+        self.client.request(
             "put", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
         )
 
-        return Collaborator(
-            client=self.client, uid=None, workspace_id=uid, **response.json()
+        return next(
+            (c for c in self.list_collaborators(uid) if c.email == resolved_email),
+            None,
         )
 
-    def remove_collaborator(self, uid: Union[UUID, str], email: EmailStr) -> None:
+    def remove_collaborator(self, uid: Union[UUID, str], email: Union[EmailStr, "ServiceAccount"]) -> None:
         """Remove a collaborator from a workspace."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/collaborators"
-        self.client.request("delete", path, json={"email": email})
+        self.client.request("delete", path, json={"email": _resolve_email(email)})
 
-    def list_api_keys(self, uid: Union[UUID, str]) -> List["APIKey"]:
-        """Get all API keys associated with a workspace."""
+    def list_service_accounts(self, uid: Union[UUID, str]) -> List["ServiceAccount"]:
+        """Get all service accounts associated with a workspace."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/api-keys"
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/service-accounts"
         response = self.client.request("get", path)
 
         return [
-            APIKey(client=self.client, **obj)
-            for obj in response.json()
+            ServiceAccount(client=self.client, **obj)
+            for obj in response.json()["data"]
         ]
 
-    def get_api_key(self, uid: Union[UUID, str], api_key_id: Union[UUID, str]) -> "APIKey":
-        """Get an API key associated with a workspace."""
+    def get_service_account(
+        self, uid: Union[UUID, str], service_account_id: Union[UUID, str]
+    ) -> "ServiceAccount":
+        """Get a service account associated with a workspace."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/api-keys/{api_key_id}"
-        response = self.client.request("get", path)
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/service-accounts/{service_account_id}"
+        payload = self.client.request("get", path).json()
 
-        return APIKey(client=self.client, **response.json())
+        return ServiceAccount(client=self.client, **payload.get("data", payload))
 
-    def create_api_key(
+    def create_service_account(
         self,
         uid: Union[UUID, str],
         name: str,
-        role: Union["Role", UUID, str],
         description: Optional[str] = None,
         is_active: bool = True,
-        expires_at: Optional[datetime] = None
-    ) -> Tuple["APIKey", str]:
-        """Create an API key for a workspace."""
+        key_expires_at: Optional[datetime] = None,
+        role: Optional[Union["Role", UUID, str]] = None,
+    ) -> Tuple["ServiceAccount", str]:
+        """Create a service account for a workspace."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/api-keys"
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/service-accounts"
         headers = {"Content-type": "application/json"}
         body = {
-            "roleId": normalize_uuid(role),
             "name": name,
             "description": description,
             "isActive": is_active,
-            "expiresAt": expires_at
+            "keyExpiresAt": key_expires_at,
+            "roleId": normalize_uuid(role) if role is not None else None,
         }
 
         response = self.client.request(
             "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer),
         ).json()
 
-        return APIKey(
-            client=self.client, **response
-        ), response["key"]
+        return self.get_service_account(uid, response["id"]), response["key"]
 
-    def update_api_key(
+    def update_service_account(
         self,
         uid: Union[UUID, str],
-        api_key_id: Union[UUID, str],
-        role: Union["Role", UUID, str] = ...,
-        role_id: UUID = ...,
+        service_account_id: Union[UUID, str],
         name: str = ...,
         description: Optional[str] = ...,
         is_active: bool = ...,
-        expires_at: Optional[datetime] = ...
-    ) -> "APIKey":
-        """Update an existing API key."""
+        key_expires_at: Optional[datetime] = ...,
+    ) -> "ServiceAccount":
+        """Update an existing service account."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/api-keys/{api_key_id}"
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/service-accounts/{service_account_id}"
         headers = {"Content-type": "application/json"}
         body = {
-            "roleId": normalize_uuid(role if role is not ... else role_id),
             "name": name,
             "description": description,
             "isActive": is_active,
-            "expiresAt": expires_at
+            "keyExpiresAt": key_expires_at,
         }
         body = {k: v for k, v in body.items() if v is not ...}
 
-        response = self.client.request(
+        self.client.request(
             "patch", path, headers=headers, data=json.dumps(body, default=self.default_serializer),
-        ).json()
+        )
 
-        return APIKey(client=self.client, **response)
+        return self.get_service_account(uid, service_account_id)
 
-    def delete_api_key(
+    def delete_service_account(
         self,
         uid: Union[UUID, str],
-        api_key_id: Union[UUID, str]
+        service_account_id: Union[UUID, str]
     ):
-        """Delete an existing API key."""
+        """Delete an existing service account."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/api-keys/{api_key_id}"
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/service-accounts/{service_account_id}"
         self.client.request("delete", path)
 
-    def regenerate_api_key(
+    def regenerate_service_account_key(
         self,
         uid: Union[UUID, str],
-        api_key_id: Union[UUID, str]
-    ):
-        """Regenerate an existing API key."""
+        service_account_id: Union[UUID, str]
+    ) -> Tuple["ServiceAccount", str]:
+        """Regenerate an existing service account's key."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/api-keys/{api_key_id}/regenerate"
+        path = (
+            f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
+            f"/service-accounts/{service_account_id}/regenerate"
+        )
         response = self.client.request("put", path).json()
 
-        return APIKey(
-            client=self.client, **response
-        ), response["key"]
+        return self.get_service_account(uid, service_account_id), response["key"]
 
     def transfer_ownership(self, uid: Union[UUID, str], email: str) -> None:
         """Transfer ownership of a workspace to another HydroServer user."""

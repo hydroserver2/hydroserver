@@ -36,7 +36,9 @@ class ObservationCollection:
         elif response is not None:
             payload = response.json()
             payload_meta = payload.pop("meta", {})
-            self.dataframe = pd.DataFrame({to_snake(k): v for k, v in payload.items()})
+            payload.pop("included", None)
+            columnar = payload.pop("data", payload)
+            self.dataframe = pd.DataFrame({to_snake(k): v for k, v in columnar.items()})
             if "phenomenon_time" in self.dataframe.columns:
                 self.dataframe["phenomenon_time"] = pd.to_datetime(
                     self.dataframe["phenomenon_time"], utc=True, format="ISO8601"

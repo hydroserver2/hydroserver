@@ -9,6 +9,7 @@ from .sta.method import MethodService
 from .sta.datastream import DatastreamService
 from .etl.data_connection import DataConnectionService
 from .etl.task import TaskService
+from .etl.mapping import EtlMappingService
 from .monitoring.task import MonitoringTaskService
 from .monitoring.rule import MonitoringRuleService
 from .products.rating_curve import RatingCurveService

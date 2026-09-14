@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from hydroserverpy.api.models import (
         Role,
         Collaborator,
-        APIKey,
+        ServiceAccount,
         Account,
         MonitoringSite,
         ObservedProperty,
@@ -41,7 +41,7 @@ class Workspace(HydroServerBaseModel):
         self._roles = None
         self._collaborators = None
         self._collaborator_role = None
-        self._apikeys = None
+        self._serviceaccounts = None
         self._monitoring_sites = None
         self._observedproperties = None
         self._processinglevels = None
@@ -85,13 +85,13 @@ class Workspace(HydroServerBaseModel):
         return self._collaborator_role
 
     @property
-    def apikeys(self) -> List["APIKey"]:
-        """The API keys associated with this workspace."""
+    def serviceaccounts(self) -> List["ServiceAccount"]:
+        """The service accounts associated with this workspace."""
 
-        if self._apikeys is None:
-            self._apikeys = self.client.workspaces.list_api_keys(uid=self.uid)
+        if self._serviceaccounts is None:
+            self._serviceaccounts = self.client.workspaces.list_service_accounts(uid=self.uid)
 
-        return self._apikeys
+        return self._serviceaccounts
 
     @property
     def monitoring_sites(self) -> List["MonitoringSite"]:
@@ -183,75 +183,73 @@ class Workspace(HydroServerBaseModel):
 
         return self._tasks
 
-    def create_api_key(
+    def create_service_account(
         self,
-        role: Union["Role", UUID, str],
         name: str,
         description: Optional[str] = None,
         is_active: bool = True,
-        expires_at: Optional[datetime] = None
+        key_expires_at: Optional[datetime] = None,
+        role: Optional[Union["Role", UUID, str]] = None,
     ):
-        """Create an API key associated with this workspace."""
+        """Create a service account associated with this workspace."""
 
-        response, key = self.client.workspaces.create_api_key(
+        response, key = self.client.workspaces.create_service_account(
             uid=self.uid,
-            role=role,
             name=name,
             description=description,
             is_active=is_active,
-            expires_at=expires_at
+            key_expires_at=key_expires_at,
+            role=role,
         )
-        self._apikeys = None
+        self._serviceaccounts = None
 
         return response, key
 
-    def update_api_key(
+    def update_service_account(
         self,
-        api_key_id: Union[UUID, str],
-        role: Union["Role", UUID, str] = ...,
+        service_account_id: Union[UUID, str],
         name: str = ...,
         description: Optional[str] = ...,
         is_active: bool = ...,
-        expires_at: Optional[datetime] = ...
+        key_expires_at: Optional[datetime] = ...,
     ):
-        """Create an API key associated with this workspace."""
+        """Update a service account associated with this workspace."""
 
-        response = self.client.workspaces.update_api_key(
+        response = self.client.workspaces.update_service_account(
             uid=self.uid,
-            api_key_id=api_key_id,
-            role=role,
+            service_account_id=service_account_id,
             name=name,
             description=description,
             is_active=is_active,
-            expires_at=expires_at
+            key_expires_at=key_expires_at,
         )
-        self._apikeys = None
+        self._serviceaccounts = None
 
         return response
 
-    def delete_api_key(self, api_key_id: Union[UUID, str]):
-        """Delete an API key associated with this workspace."""
+    def delete_service_account(self, service_account_id: Union[UUID, str]):
+        """Delete a service account associated with this workspace."""
 
-        self.client.workspaces.delete_api_key(
+        self.client.workspaces.delete_service_account(
             uid=self.uid,
-            api_key_id=api_key_id
+            service_account_id=service_account_id
         )
-        self._apikeys = None
+        self._serviceaccounts = None
 
-    def regenerate_api_key(self, api_key_id: Union[UUID, str]):
-        """Regenerate an API key associated with this workspace."""
+    def regenerate_service_account_key(self, service_account_id: Union[UUID, str]):
+        """Regenerate a service account's key associated with this workspace."""
 
-        api_key, key = self.client.workspaces.regenerate_api_key(
+        service_account, key = self.client.workspaces.regenerate_service_account_key(
             uid=self.uid,
-            api_key_id=api_key_id
+            service_account_id=service_account_id
         )
 
-        return api_key, key
+        return service_account, key
 
     def add_collaborator(
-        self, email: EmailStr, role: Union["Role", UUID, str]
+        self, email: Union[EmailStr, "ServiceAccount"], role: Union["Role", UUID, str]
     ) -> "Collaborator":
-        """Add a new collaborator to the workspace."""
+        """Add a new collaborator (a user or a service account) to the workspace."""
 
         response = self.client.workspaces.add_collaborator(
             uid=self.uid, email=email, role=role
@@ -261,7 +259,7 @@ class Workspace(HydroServerBaseModel):
         return response
 
     def edit_collaborator_role(
-        self, email: EmailStr, role: Union["Role", UUID, str]
+        self, email: Union[EmailStr, "ServiceAccount"], role: Union["Role", UUID, str]
     ) -> "Collaborator":
         """Edit a collaborator's role in this workspace."""
 
@@ -272,7 +270,7 @@ class Workspace(HydroServerBaseModel):
 
         return response
 
-    def remove_collaborator(self, email: EmailStr) -> None:
+    def remove_collaborator(self, email: Union[EmailStr, "ServiceAccount"]) -> None:
         """Remove a collaborator from the workspace."""
 
         self.client.workspaces.remove_collaborator(uid=self.uid, email=email)

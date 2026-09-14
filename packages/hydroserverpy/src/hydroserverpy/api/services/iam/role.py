@@ -21,8 +21,6 @@ class RoleService(HydroServerBaseService):
         limit: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
-        is_user_role: bool = ...,
-        is_apikey_role: bool = ...,
         fetch_all: bool = False,
     ) -> List["Role"]:
         """Fetch a collection of HydroServer roles."""
@@ -33,6 +31,4 @@ class RoleService(HydroServerBaseService):
             order_by=order_by,
             fetch_all=fetch_all,
             workspace_id=normalize_uuid(workspace),
-            is_user_role=is_user_role,
-            is_apikey_role=is_apikey_role,
         )

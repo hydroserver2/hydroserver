@@ -1,6 +1,5 @@
-from typing import Union, ClassVar, TYPE_CHECKING
+from typing import Optional, Union, ClassVar, TYPE_CHECKING
 from uuid import UUID
-from pydantic import Field, AliasPath
 from hydroserverpy.api.models.iam.role import Role
 from hydroserverpy.api.utils import normalize_uuid
 from ..base import HydroServerBaseModel
@@ -8,13 +7,13 @@ from ..base import HydroServerBaseModel
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
     from hydroserverpy.api.models.iam.workspace import Workspace
-    from hydroserverpy.api.models.iam.account import Account
 
 
 class Collaborator(HydroServerBaseModel):
-    user: "Account"
-    role_id: Union[UUID, str] = Field(..., validation_alias=AliasPath("role", "id"))
+    role_id: Union[UUID, str]
     workspace_id: Union[UUID, str]
+    user_email: Optional[str] = None
+    service_account_email: Optional[str] = None
 
     _editable_fields: ClassVar[set[str]] = {"role_id"}
 
@@ -22,7 +21,19 @@ class Collaborator(HydroServerBaseModel):
         super().__init__(client=client, service=None, **data)
 
         self._workspace = None
-        self._role = Role(client=client, **data.get("role"))
+        self._role = None
+
+    @property
+    def email(self) -> str:
+        """The email identifying whichever principal (user or service account) this collaborator is."""
+
+        return self.user_email or self.service_account_email
+
+    @property
+    def is_service_account(self) -> bool:
+        """Whether this collaborator is a service account rather than a user."""
+
+        return self.service_account_email is not None
 
     @property
     def workspace(self) -> "Workspace":
@@ -54,17 +65,19 @@ class Collaborator(HydroServerBaseModel):
         """Saves changes to this resource to HydroServer."""
 
         if self.unsaved_changes:
-            self.client.workspaces.edit_collaborator_role(
-                uid=str(self.workspace_id), email=self.user.email, role=self.role
+            saved = self.client.workspaces.edit_collaborator_role(
+                uid=str(self.workspace_id), email=self.email, role=self.role_id
             )
             self._role = None
             self._server_data["role_id"] = self.role_id
             self.__dict__.update({"role_id": self.role_id})
+            if saved is not None:
+                self.__dict__.update(saved.__dict__)
 
     def delete(self):
         """Deletes this resource from HydroServer."""
 
         self.client.workspaces.remove_collaborator(
-            uid=str(self.workspace_id), email=self.user.email
+            uid=str(self.workspace_id), email=self.email
         )
         self.uid = None
