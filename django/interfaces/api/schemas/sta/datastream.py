@@ -194,9 +194,12 @@ class VisualizationDatastreamResponse(BaseGetResponse):
     id: uuid.UUID
     name: str = Field(..., max_length=255)
     monitoring_site_id: uuid.UUID
+    method_id: uuid.UUID
+    method_name: str = Field(..., max_length=255)
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
+    unit_name: str = Field(..., max_length=255)
     unit_symbol: str = Field(..., max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)

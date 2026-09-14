@@ -22,7 +22,7 @@
           <v-btn
             size="small"
             variant="text"
-            :disabled="detailLevel === 3"
+            :disabled="detailLevel === 2"
             data-testid="show-more-datastream-details"
             @click="detailLevel++"
           >
@@ -201,18 +201,6 @@
               </div>
               <div
                 v-if="detailLevel >= 2"
-                class="datastream-meta datastream-signature hs-text-sm"
-              >
-                <span
-                  v-for="value in datastreamSignature(item)"
-                  :key="`${item.id}-${value}`"
-                  class="datastream-signature__item"
-                >
-                  {{ value }}
-                </span>
-              </div>
-              <div
-                v-if="detailLevel === 3"
                 class="datastream-meta datastream-observation-range hs-text-sm"
               >
                 {{ observationRange(item) }}
@@ -220,18 +208,45 @@
             </td>
 
             <td class="datastream-actions-cell">
-              <v-btn
-                variant="text"
-                size="small"
-                color="primary"
-                :append-icon="mdiChevronRight"
-                class="datastream-details-button"
-                :aria-label="`View details for ${item.name || 'datastream'}`"
-                :data-testid="`datavis-metadata-${item.id}`"
-                @click.stop="openMetadata(item)"
-              >
-                <span class="datastream-details-button__label">Details</span>
-              </v-btn>
+              <div class="datastream-row-actions">
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  :append-icon="mdiChevronRight"
+                  class="datastream-details-button"
+                  :aria-label="`View details for ${item.name || 'datastream'}`"
+                  :data-testid="`datavis-metadata-${item.id}`"
+                  @click.stop="openMetadata(item)"
+                >
+                  <span class="datastream-details-button__label">Details</span>
+                </v-btn>
+
+                <v-menu location="bottom end" attach="body">
+                  <template #activator="{ props: menuProps }">
+                    <v-btn-icon
+                      v-bind="menuProps"
+                      :icon="mdiDotsVertical"
+                      size="small"
+                      :aria-label="`Actions for ${datastreamName(item)}`"
+                      :data-testid="`datavis-actions-${item.id}`"
+                    />
+                  </template>
+
+                  <v-list>
+                    <v-list-item
+                      :prepend-icon="mdiMapMarkerOutline"
+                      title="View on site details page"
+                      :data-testid="`datavis-view-site-${item.id}`"
+                      :to="{
+                        name: 'SiteDetails',
+                        params: { id: item.monitoringSiteId },
+                        query: { datastream: item.id },
+                      }"
+                    />
+                  </v-list>
+                </v-menu>
+              </div>
             </td>
           </tr>
 
@@ -259,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
 import {
@@ -269,6 +284,8 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiDownload,
+  mdiDotsVertical,
+  mdiMapMarkerOutline,
   mdiSort,
 } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -278,6 +295,7 @@ import { formatTime } from '@/utils/time'
 import {
   parseDatastreamQuery,
   serializeDatastreamQuery,
+  type DatastreamQueryFilters,
   type DatastreamSort,
   type DatastreamSortKey,
   type DatastreamSortOrder,
@@ -288,7 +306,9 @@ import DataVisTableFilters from './DataVisTableFilters.vue'
 
 type DatastreamTableItem = Datastream & {
   monitoringSiteName?: string
+  methodName?: string
   processingLevelName?: string
+  unitName?: string
   unitSymbol?: string
 }
 
@@ -302,11 +322,25 @@ const {
   selectedMonitoringSites,
   selectedWorkspaces,
   selectedObservedPropertyNames,
+  selectedUnitNames,
+  selectedMethodNames,
   selectedProcessingLevelNames,
   observedProperties,
   processingLevels,
 } = storeToRefs(dataVisStore)
 const { workspaces } = storeToRefs(useWorkspaceStore())
+
+const initialFilters: DatastreamQueryFilters = {
+  workspace: selectedWorkspaces.value.map((item) => item.name),
+  site: selectedMonitoringSites.value.map((item) => item.name),
+  'observed-property': [...selectedObservedPropertyNames.value],
+  unit: [...selectedUnitNames.value],
+  method: [...selectedMethodNames.value],
+  'processing-level': [...selectedProcessingLevelNames.value],
+}
+if (!search.value.trim()) {
+  search.value = serializeDatastreamQuery(initialFilters, '')
+}
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -335,6 +369,24 @@ const searchQualifiers = computed(() => [
     values: uniqueSorted(observedProperties.value.map((item) => item.name)),
   },
   {
+    key: 'unit',
+    label: 'Units',
+    values: uniqueSorted(
+      dataVisStore.datastreams.map(
+        (item) => (item as DatastreamTableItem).unitName
+      )
+    ),
+  },
+  {
+    key: 'method',
+    label: 'Methods',
+    values: uniqueSorted(
+      dataVisStore.datastreams.map(
+        (item) => (item as DatastreamTableItem).methodName
+      )
+    ),
+  },
+  {
     key: 'processing-level',
     label: 'Processing levels',
     values: uniqueSorted(processingLevels.value.map((item) => item.name)),
@@ -354,6 +406,65 @@ const searchQualifiers = computed(() => [
 ])
 const parsedSearch = computed(() => parseDatastreamQuery(search.value))
 const plainSearch = computed(() => parsedSearch.value.text)
+
+const canonicalValues = (candidates: string[], requested: string[]) => {
+  const requestedSet = new Set(
+    requested.map((value) => value.toLocaleLowerCase())
+  )
+  return candidates.filter((value, index) => {
+    const normalized = value.toLocaleLowerCase()
+    return (
+      requestedSet.has(normalized) &&
+      candidates.findIndex(
+        (candidate) => candidate.toLocaleLowerCase() === normalized
+      ) === index
+    )
+  })
+}
+
+// The filter controls are replaced by the selection summary while a
+// datastream is plotted, so keep query hydration in this always-mounted table.
+watch(
+  search,
+  () => {
+    const { filters } = parsedSearch.value
+    selectedWorkspaces.value = workspaces.value.filter((item) =>
+      filters.workspace.some(
+        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
+      )
+    )
+    selectedMonitoringSites.value = monitoringSites.value.filter((item) =>
+      filters.site.some(
+        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
+      )
+    )
+    selectedObservedPropertyNames.value = canonicalValues(
+      observedProperties.value
+        .map((item) => item.name)
+        .filter((value): value is string => Boolean(value)),
+      filters['observed-property']
+    )
+    selectedUnitNames.value = canonicalValues(
+      dataVisStore.datastreams
+        .map((item) => (item as DatastreamTableItem).unitName)
+        .filter((value): value is string => Boolean(value)),
+      filters.unit
+    )
+    selectedMethodNames.value = canonicalValues(
+      dataVisStore.datastreams
+        .map((item) => (item as DatastreamTableItem).methodName)
+        .filter((value): value is string => Boolean(value)),
+      filters.method
+    )
+    selectedProcessingLevelNames.value = canonicalValues(
+      processingLevels.value
+        .map((item) => item.name)
+        .filter((value): value is string => Boolean(value)),
+      filters['processing-level']
+    )
+  },
+  { immediate: true }
+)
 
 const defaultSort: DatastreamSort = { key: 'name', order: 'asc' }
 const activeSort = computed(() => parsedSearch.value.sort ?? defaultSort)
@@ -448,17 +559,9 @@ const visibleTableItems = computed(() => {
   return tableItems.value
     .filter((item) => {
       if (!query) return true
-      return [
-        item.name,
-        item.monitoringSiteName,
-        item.processingLevelName,
-        item.aggregationStatistic,
-        item.intendedTimeSpacing,
-        item.intendedTimeSpacingUnit,
-        item.unitSymbol,
-        item.valueCount,
-        item.phenomenonEndTime,
-      ].some((value) => `${value ?? ''}`.toLocaleLowerCase().includes(query))
+      return [item.name, item.monitoringSiteName].some((value) =>
+        `${value ?? ''}`.toLocaleLowerCase().includes(query)
+      )
     })
     .sort(compareTableItems)
 })
@@ -542,49 +645,6 @@ const datastreamDisplayName = (item: DatastreamTableItem) => {
     : name
 }
 
-type TimeSpacingUnit = NonNullable<Datastream['intendedTimeSpacingUnit']>
-
-const formatIntendedTimeSpacing = (
-  interval: number | string | null | undefined,
-  unit: Datastream['intendedTimeSpacingUnit']
-) => {
-  if (interval === null || interval === undefined || !unit) return ''
-
-  const numericInterval = Number(interval)
-  if (!Number.isFinite(numericInterval)) return ''
-
-  if (numericInterval === 1) {
-    const namedPeriods: Record<TimeSpacingUnit, string> = {
-      seconds: 'every second',
-      minutes: 'every minute',
-      hours: 'hourly',
-      days: 'daily',
-    }
-    return namedPeriods[unit]
-  }
-
-  const abbreviations: Record<TimeSpacingUnit, string> = {
-    seconds: 'sec',
-    minutes: 'min',
-    hours: 'hr',
-    days: 'day',
-  }
-  return `every ${numericInterval} ${abbreviations[unit]}`
-}
-
-const datastreamSignature = (item: DatastreamTableItem) =>
-  [
-    item.processingLevelName,
-    item.aggregationStatistic,
-    formatIntendedTimeSpacing(
-      item.intendedTimeSpacing,
-      item.intendedTimeSpacingUnit
-    ),
-    item.unitSymbol,
-  ]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value))
-
 const downloadSelected = async (datastreams: Datastream[]) => {
   downloading.value = true
   try {
@@ -613,6 +673,8 @@ const clearSearchAndSelection = () => {
   selectedWorkspaces.value = []
   selectedMonitoringSites.value = []
   selectedObservedPropertyNames.value = []
+  selectedUnitNames.value = []
+  selectedMethodNames.value = []
   selectedProcessingLevelNames.value = []
   clearSelected()
 }
@@ -639,6 +701,7 @@ const formatObservationCount = (value: number | string | null | undefined) => {
 const observationRange = (item: DatastreamTableItem) => {
   const count = Number(item.valueCount)
   const observationLabel = count === 1 ? 'observation' : 'observations'
+  if (count === 0) return '0 observations'
   return [
     `${formatObservationCount(item.valueCount)} ${observationLabel} between`,
     formatTime(item.phenomenonBeginTime),
@@ -866,11 +929,18 @@ function updatePlottedDatastreams(
   white-space: nowrap;
 }
 
+.datastream-row-actions {
+  display: flex;
+  gap: var(--hs-space-4);
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .plot-checkbox {
   display: block;
   width: 16px;
   height: 16px;
-  margin: 4px 0 0;
+  margin: var(--hs-space-6) 0 0;
   accent-color: rgb(var(--v-theme-primary));
   cursor: pointer;
 }
@@ -882,7 +952,8 @@ function updatePlottedDatastreams(
 .datastream-name {
   display: flex;
   gap: var(--hs-space-6);
-  align-items: baseline;
+  align-items: center;
+  min-height: 28px;
   max-width: 100%;
   padding: 0;
   overflow: hidden;
@@ -932,15 +1003,6 @@ function updatePlottedDatastreams(
   align-items: center;
   margin-top: var(--hs-space-4);
   color: var(--hs-text-secondary);
-}
-
-.datastream-signature {
-  gap: 0;
-}
-
-.datastream-signature__item:not(:first-child)::before {
-  margin: 0 var(--hs-space-8);
-  content: '·';
 }
 
 .datastream-observation-range {
@@ -997,11 +1059,6 @@ function updatePlottedDatastreams(
     flex-direction: column;
     gap: var(--hs-space-2);
     align-items: flex-start;
-  }
-
-  .datastream-meta.datastream-signature {
-    flex-direction: row;
-    gap: 0;
   }
 
   .datastream-name {

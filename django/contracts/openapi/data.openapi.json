@@ -10833,6 +10833,16 @@
             ],
             "title": "Intendedtimespacingunit"
           },
+          "methodId": {
+            "format": "uuid",
+            "title": "Methodid",
+            "type": "string"
+          },
+          "methodName": {
+            "maxLength": 255,
+            "title": "Methodname",
+            "type": "string"
+          },
           "monitoringSiteId": {
             "format": "uuid",
             "title": "Monitoringsiteid",
@@ -10900,6 +10910,11 @@
             "title": "Unitid",
             "type": "string"
           },
+          "unitName": {
+            "maxLength": 255,
+            "title": "Unitname",
+            "type": "string"
+          },
           "unitSymbol": {
             "maxLength": 255,
             "title": "Unitsymbol",
@@ -10922,9 +10937,12 @@
           "id",
           "name",
           "monitoringSiteId",
+          "methodId",
+          "methodName",
           "observedPropertyId",
           "processingLevelId",
           "unitId",
+          "unitName",
           "unitSymbol",
           "noDataValue",
           "aggregationStatistic",

@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiChevronDown, mdiMagnify } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -96,6 +96,8 @@ type FilterDefinition = {
 const dataVisStore = useDataVisStore()
 const {
   matchesSelectedObservedProperty,
+  matchesSelectedUnit,
+  matchesSelectedMethod,
   matchesSelectedProcessingLevel,
   matchesSelectedMonitoringSite,
   matchesSelectedWorkspace,
@@ -108,6 +110,8 @@ const {
   selectedMonitoringSites,
   selectedWorkspaces,
   selectedObservedPropertyNames,
+  selectedUnitNames,
+  selectedMethodNames,
   selectedProcessingLevelNames,
   tableSearch,
 } = storeToRefs(dataVisStore)
@@ -117,65 +121,12 @@ const filterSearches = reactive<Record<FilterKey, string>>({
   workspace: '',
   site: '',
   'observed-property': '',
+  unit: '',
+  method: '',
   'processing-level': '',
 })
 
-const initialFilters: DatastreamQueryFilters = {
-  workspace: selectedWorkspaces.value.map((item) => item.name),
-  site: selectedMonitoringSites.value.map((item) => item.name),
-  'observed-property': [...selectedObservedPropertyNames.value],
-  'processing-level': [...selectedProcessingLevelNames.value],
-}
-if (!tableSearch.value.trim()) {
-  tableSearch.value = serializeDatastreamQuery(initialFilters, '')
-}
-
 const parsedQuery = computed(() => parseDatastreamQuery(tableSearch.value))
-
-const canonicalValues = (candidates: string[], requested: string[]) => {
-  const requestedSet = new Set(
-    requested.map((value) => value.toLocaleLowerCase())
-  )
-  return candidates.filter((value, index) => {
-    const normalized = value.toLocaleLowerCase()
-    return (
-      requestedSet.has(normalized) &&
-      candidates.findIndex(
-        (candidate) => candidate.toLocaleLowerCase() === normalized
-      ) === index
-    )
-  })
-}
-
-watch(
-  tableSearch,
-  () => {
-    const { filters } = parsedQuery.value
-    selectedWorkspaces.value = workspaces.value.filter((item) =>
-      filters.workspace.some(
-        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
-      )
-    )
-    selectedMonitoringSites.value = monitoringSites.value.filter((item) =>
-      filters.site.some(
-        (value) => value.toLocaleLowerCase() === item.name.toLocaleLowerCase()
-      )
-    )
-    selectedObservedPropertyNames.value = canonicalValues(
-      observedProperties.value
-        .map((item) => item.name)
-        .filter((value): value is string => Boolean(value)),
-      filters['observed-property']
-    )
-    selectedProcessingLevelNames.value = canonicalValues(
-      processingLevels.value
-        .map((item) => item.name)
-        .filter((value): value is string => Boolean(value)),
-      filters['processing-level']
-    )
-  },
-  { immediate: true }
-)
 
 const sortedWorkspaces = computed(() => {
   const workspaceIds = new Set<string>()
@@ -183,6 +134,8 @@ const sortedWorkspaces = computed(() => {
     if (
       !matchesSelectedMonitoringSite(datastream) ||
       !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedProcessingLevel(datastream)
     )
       return
@@ -202,6 +155,8 @@ const sortedMonitoringSites = computed(() => {
   datastreams.value.forEach((datastream) => {
     if (
       !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedProcessingLevel(datastream) ||
       !matchesSelectedWorkspace(datastream)
     )
@@ -218,6 +173,8 @@ const sortedObservedPropertyNames = computed(() => {
   datastreams.value.forEach((datastream) => {
     if (
       !matchesSelectedMonitoringSite(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedProcessingLevel(datastream) ||
       !matchesSelectedWorkspace(datastream)
     )
@@ -236,12 +193,50 @@ const sortedProcessingLevelNames = computed(() => {
     if (
       !matchesSelectedMonitoringSite(datastream) ||
       !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedMethod(datastream) ||
       !matchesSelectedWorkspace(datastream)
     )
       return
     const name = dataVisStore.processingLevelById.get(
       datastream.processingLevelId
     )?.name
+    if (name) names.add(name)
+  })
+  return [...names].sort()
+})
+
+const sortedUnitNames = computed(() => {
+  const names = new Set<string>()
+  datastreams.value.forEach((datastream) => {
+    if (
+      !matchesSelectedMonitoringSite(datastream) ||
+      !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedMethod(datastream) ||
+      !matchesSelectedProcessingLevel(datastream) ||
+      !matchesSelectedWorkspace(datastream)
+    )
+      return
+    const name = (datastream as typeof datastream & { unitName?: string })
+      .unitName
+    if (name) names.add(name)
+  })
+  return [...names].sort()
+})
+
+const sortedMethodNames = computed(() => {
+  const names = new Set<string>()
+  datastreams.value.forEach((datastream) => {
+    if (
+      !matchesSelectedMonitoringSite(datastream) ||
+      !matchesSelectedObservedProperty(datastream) ||
+      !matchesSelectedUnit(datastream) ||
+      !matchesSelectedProcessingLevel(datastream) ||
+      !matchesSelectedWorkspace(datastream)
+    )
+      return
+    const name = (datastream as typeof datastream & { methodName?: string })
+      .methodName
     if (name) names.add(name)
   })
   return [...names].sort()
@@ -274,6 +269,24 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       label: item,
     })),
     selectedCount: selectedObservedPropertyNames.value.length,
+  },
+  {
+    key: 'unit',
+    label: 'Units',
+    options: sortedUnitNames.value.map((item) => ({
+      value: item,
+      label: item,
+    })),
+    selectedCount: selectedUnitNames.value.length,
+  },
+  {
+    key: 'method',
+    label: 'Methods',
+    options: sortedMethodNames.value.map((item) => ({
+      value: item,
+      label: item,
+    })),
+    selectedCount: selectedMethodNames.value.length,
   },
   {
     key: 'processing-level',

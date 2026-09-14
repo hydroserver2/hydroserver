@@ -596,9 +596,12 @@ def test_get_datastream_visualization_bootstrap_returns_public_datastream(client
     datastream = _make_datastream(
         workspace,
         aggregation_statistic="Mean",
+        method=MethodFactory(workspace=workspace, name="Shielded sensor"),
         time_aggregation_interval=1,
         time_aggregation_interval_unit="days",
-        unit=UnitFactory(workspace=workspace, symbol="cfs"),
+        unit=UnitFactory(
+            workspace=workspace, name="Cubic feet per second", symbol="cfs"
+        ),
     )
 
     response = client.get(f"{DATASTREAMS_URL}/visualization-bootstrap")
@@ -609,8 +612,10 @@ def test_get_datastream_visualization_bootstrap_returns_public_datastream(client
         d for d in body["datastreams"] if d["id"] == str(datastream.id)
     )
     assert returned_datastream["aggregationStatistic"] == "Mean"
+    assert returned_datastream["methodName"] == "Shielded sensor"
     assert returned_datastream["timeAggregationInterval"] == 1
     assert returned_datastream["timeAggregationIntervalUnit"] == "days"
+    assert returned_datastream["unitName"] == "Cubic feet per second"
     assert returned_datastream["unitSymbol"] == "cfs"
 
 

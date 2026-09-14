@@ -85,7 +85,7 @@
               <v-btn
                 v-if="canEdit && !task.userClickedRunNow"
                 variant="outlined"
-                color="green-darken-3"
+                color="primary"
                 :prepend-icon="mdiPlay"
                 class="task-action-button text-none"
                 rounded="lg"

@@ -32,7 +32,7 @@
         <TimezoneForm ref="timezoneRef" />
 
         <div class="ma-2">
-          <v-switch
+          <v-checkbox
             v-model="advancedFeaturesEnabled"
             color="primary"
             density="compact"

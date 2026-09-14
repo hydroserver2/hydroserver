@@ -8,13 +8,15 @@ describe('datastream query search', () => {
   it('parses qualifier tags separately from free text', () => {
     expect(
       parseDatastreamQuery(
-        'workspace:"Bear River" site:logan observed-property:"Water temperature" recent'
+        'workspace:"Bear River" site:logan observed-property:"Water temperature" unit:"Degrees Celsius" method:"Shielded sensor" recent'
       )
     ).toEqual({
       filters: {
         workspace: ['Bear River'],
         site: ['logan'],
         'observed-property': ['Water temperature'],
+        unit: ['Degrees Celsius'],
+        method: ['Shielded sensor'],
         'processing-level': [],
       },
       sort: null,
@@ -29,6 +31,8 @@ describe('datastream query search', () => {
           workspace: [],
           site: ['logan'],
           'observed-property': [],
+          unit: [],
+          method: [],
           'processing-level': [],
         },
         sort: { key: 'updated', order: 'desc' },
@@ -44,12 +48,14 @@ describe('datastream query search', () => {
           workspace: ['Bear River'],
           site: ['logan'],
           'observed-property': ['Water temperature'],
+          unit: ['Degrees Celsius'],
+          method: ['Shielded sensor'],
           'processing-level': ['Quality controlled'],
         },
         'recent'
       )
     ).toBe(
-      'workspace:"Bear River" site:logan observed-property:"Water temperature" processing-level:"Quality controlled" recent'
+      'workspace:"Bear River" site:logan observed-property:"Water temperature" unit:"Degrees Celsius" method:"Shielded sensor" processing-level:"Quality controlled" recent'
     )
   })
 
@@ -60,6 +66,8 @@ describe('datastream query search', () => {
           workspace: [],
           site: [],
           'observed-property': [],
+          unit: [],
+          method: [],
           'processing-level': [],
         },
         'recent',

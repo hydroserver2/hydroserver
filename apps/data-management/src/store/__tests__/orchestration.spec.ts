@@ -4,9 +4,12 @@ import { nextTick } from 'vue'
 import { useOrchestrationStore } from '../orchestration'
 import { useWorkspaceStore } from '../workspaces'
 
-const { listAllItemsMock } = vi.hoisted(() => ({
-  listAllItemsMock: vi.fn(),
-}))
+const { listAllItemsMock, taskListAllItemsMock, productTaskListAllItemsMock } =
+  vi.hoisted(() => ({
+    listAllItemsMock: vi.fn(),
+    taskListAllItemsMock: vi.fn(),
+    productTaskListAllItemsMock: vi.fn(),
+  }))
 
 vi.mock('@hydroserver/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hydroserver/client')>()
@@ -18,6 +21,12 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
       datastreams: {
         listAllItems: listAllItemsMock,
       },
+      tasks: {
+        listAllItems: taskListAllItemsMock,
+      },
+      dataProductTasks: {
+        listAllItems: productTaskListAllItemsMock,
+      },
     },
   }
 })
@@ -28,9 +37,11 @@ describe('orchestration store', () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     listAllItemsMock.mockReset()
+    taskListAllItemsMock.mockReset()
+    productTaskListAllItemsMock.mockReset()
   })
 
-  it('derives linked datastream ids from task mappings', async () => {
+  it('derives linked datastream ids from loaded task mappings', async () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.selectedWorkspace = {
       id: 'workspace-1',
@@ -93,6 +104,48 @@ describe('orchestration store', () => {
     ])
   })
 
+  it('loads linked destinations across ingestion and data product tasks', async () => {
+    taskListAllItemsMock.mockResolvedValue([
+      {
+        mappings: [
+          { targetDatastream: { id: 'etl-expanded' } },
+          { targetDatastreamId: 'etl-id-only' },
+        ],
+      },
+    ])
+    productTaskListAllItemsMock.mockResolvedValue([
+      {
+        aggregationTransformations: [
+          { outputDatastreamId: 'aggregation-output' },
+        ],
+        derivationTransformations: [
+          { outputDatastream: { id: 'derivation-output' } },
+        ],
+        ratingCurveTransformations: [
+          { outputDatastreamId: 'rating-curve-output' },
+        ],
+      },
+    ])
+
+    const orchestrationStore = useOrchestrationStore()
+    await orchestrationStore.ensureWorkspaceLinkedDatastreams('workspace-1')
+
+    expect([...orchestrationStore.linkedDatastreamIds]).toEqual([
+      'etl-expanded',
+      'etl-id-only',
+      'aggregation-output',
+      'derivation-output',
+      'rating-curve-output',
+    ])
+    expect(taskListAllItemsMock).toHaveBeenCalledWith({
+      workspace_id: ['workspace-1'],
+      expand_related: true,
+    })
+    expect(productTaskListAllItemsMock).toHaveBeenCalledWith({
+      workspace_id: ['workspace-1'],
+    })
+  })
+
   it('ignores stale datastream responses after switching workspaces', async () => {
     type Deferred<T> = {
       promise: Promise<T>
@@ -147,6 +200,10 @@ describe('orchestration store', () => {
     expect(orchestrationStore.workspaceDatastreams.map((d) => d.id)).toEqual([
       'ds-2',
     ])
+    expect(listAllItemsMock).toHaveBeenCalledWith({
+      workspace_id: ['workspace-2'],
+      expand_related: true,
+    })
 
     workspaceOneRequest.resolve([{ id: 'ds-1', name: 'Datastream 1' }])
     await workspaceOneLoad

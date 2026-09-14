@@ -216,7 +216,11 @@ class DatastreamService(ServiceUtils):
 
         datastream_rows = list(
             queryset.select_related(
-                "monitoring_site", "observed_property", "processing_level", "unit"
+                "monitoring_site",
+                "method",
+                "observed_property",
+                "processing_level",
+                "unit",
             )
             .order_by("id")
             .values(
@@ -226,12 +230,15 @@ class DatastreamService(ServiceUtils):
                 "monitoring_site__workspace_id",
                 "monitoring_site__name",
                 "monitoring_site__code",
+                "method_id",
+                "method__name",
                 "observed_property_id",
                 "observed_property__name",
                 "observed_property__code",
                 "processing_level_id",
                 "processing_level__name",
                 "unit_id",
+                "unit__name",
                 "unit__symbol",
                 "no_data_value",
                 "aggregation_statistic",
@@ -285,9 +292,12 @@ class DatastreamService(ServiceUtils):
                     "id": str(row["id"]),
                     "name": row["name"],
                     "monitoring_site_id": monitoring_site_id,
+                    "method_id": str(row["method_id"]),
+                    "method_name": row["method__name"],
                     "observed_property_id": observed_property_id,
                     "processing_level_id": processing_level_id,
                     "unit_id": str(row["unit_id"]),
+                    "unit_name": row["unit__name"],
                     "unit_symbol": row["unit__symbol"],
                     "no_data_value": row["no_data_value"],
                     "aggregation_statistic": row["aggregation_statistic"],
