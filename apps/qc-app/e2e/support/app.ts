@@ -8,7 +8,11 @@
  */
 
 import { expect, type Page } from '@playwright/test'
-import { DATASTREAM_ID, WORKSPACE_ID } from './fixtures'
+import {
+  DATASTREAM_ID,
+  MANAGED_DATASTREAM_ID,
+  WORKSPACE_ID,
+} from './fixtures'
 
 /** Wait for the datastreams table to become visible on Home. */
 export async function waitForHomeReady(page: Page): Promise<void> {
@@ -126,6 +130,31 @@ export async function setupEditView(page: Page): Promise<void> {
   await plotFirstDatastream(page)
   await page.getByTestId('nav-rail-item-edit').click()
   await expect(page.getByText('Filter Data')).toBeVisible()
+}
+
+/**
+ * Enter the editor through a QC session, which is what puts Save and Commit
+ * in the history footer: plot the raw source from its chooser, Start editing,
+ * and start a new session on the managed datastream. `setupEditView` only
+ * switches views and never opens a session. Needs
+ * `installMocks(page, { qcHistories: true })`.
+ */
+export async function setupSessionEditView(page: Page): Promise<void> {
+  await gotoHome(page)
+  await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
+  await page
+    .getByTestId(`plot-option-${DATASTREAM_ID}`)
+    .locator('input')
+    .check()
+  await page.getByTestId('plot-source-apply').click()
+  await page
+    .getByTestId('data-loading-indicator')
+    .waitFor({ state: 'hidden', timeout: 30_000 })
+  await page.getByRole('button', { name: 'Start editing' }).click()
+  await page.getByTestId(`edit-managed-${MANAGED_DATASTREAM_ID}`).click()
+  await expect(page.getByTestId('exit-save-btn')).toBeVisible({
+    timeout: 30_000,
+  })
 }
 
 /** Open an operation panel in the edit drawer by id (see operations.ts). */

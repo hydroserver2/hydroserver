@@ -228,7 +228,7 @@ The CI gate prints uncovered line numbers per file. Common causes:
 ```
 e2e/
 ├── support/
-│   ├── app.ts        — flow helpers (gotoHome, setupEditView, openOp, waitForSelection)
+│   ├── app.ts        — flow helpers (gotoHome, setupEditView, setupSessionEditView, openOp, waitForSelection)
 │   ├── fixtures.ts   — workspace / datastream / observation fixtures
 │   ├── mocks.ts      — page.route() handlers that stand in for HydroServer
 │   └── ops.ts        — op-specific preambles (selectAllPoints, expectHistoryContains)
@@ -276,6 +276,7 @@ await installMocks(page, {
   submissions: collectedSubmissions,   // accumulates bulk POSTs for assertion
   authenticated: false,                 // simulate signed-out
   qcHistories: true,                    // give DATASTREAM_ID a managed datastream
+  qcSessionState: sessions,             // live QC sessions, for assertions
 })
 ```
 
@@ -284,6 +285,16 @@ await installMocks(page, {
 that source row shows the managed-count badge and its plot check box opens
 `PlotSourceDialog`. Leaving it off keeps a catalog where every row plots
 straight from its check box, which is what the other specs assume.
+
+The QC session and operation routes are stateful. They start from the
+session fixtures and apply the app's creates, saves, commits and deletes, so
+a spec can pass a `qcSessionState` array and assert on what was persisted
+(see `submit.spec.ts`).
+
+Save and Commit only appear once a session is open. `setupEditView` switches
+to the Edit view through the rail, which opens no session, so those specs see
+New session in the history footer. Use `setupSessionEditView` (with
+`qcHistories: true`) to go through Start editing and start a session first.
 
 ### Fixtures: "now"-anchored timestamps
 

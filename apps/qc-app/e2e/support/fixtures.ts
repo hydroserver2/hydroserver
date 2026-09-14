@@ -313,16 +313,25 @@ export const qcHistories = [
   },
 ]
 
+export const QC_SESSION_AUTHOR = {
+  name: 'Test User',
+  email: 'test@example.com',
+}
+export const QC_SOURCE_CHECKSUM = 'e2e-source-checksum'
+
 export const qcSessions = [
   {
     id: 'qcs-e2e-1',
     historyId: QC_HISTORY_ID,
-    status: 'committed',
+    status: 'committed' as const,
     description: 'First pass',
     phenomenonTimeStart: FIXTURE_OBS_START_ISO,
     phenomenonTimeEnd: FIXTURE_OBS_END_ISO,
+    sourceChecksum: QC_SOURCE_CHECKSUM,
     createdAt: FIXTURE_OBS_START_ISO,
-    dependencyIds: [],
+    committedAt: FIXTURE_OBS_START_ISO,
+    createdBy: QC_SESSION_AUTHOR,
+    dependencyIds: [] as string[],
   },
 ]
 

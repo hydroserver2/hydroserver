@@ -26,6 +26,8 @@ import {
   observedProperties,
   managedDatastream,
   processingLevels,
+  QC_SESSION_AUTHOR,
+  QC_SOURCE_CHECKSUM,
   qcHistories,
   qcSessions,
   resultQualifiers,
@@ -71,8 +73,38 @@ export interface MockOptions {
    * where every row plots straight from its check box.
    */
   qcHistories?: boolean
+  /**
+   * Live QC session state, seeded from the session fixtures when
+   * `qcHistories` is on. The handlers create, save, and commit sessions in
+   * it, so pass an array to assert on what the app persisted.
+   */
+  qcSessionState?: MockQcSession[]
   /** Set to false to mark the session as unauthenticated. */
   authenticated?: boolean
+}
+
+export interface MockQcOperation {
+  id: string
+  operationType: string
+  arguments: unknown
+  comment?: string | null
+  order: number
+  createdAt: string
+}
+
+export interface MockQcSession {
+  id: string
+  historyId: string
+  status: 'in_progress' | 'committed'
+  description: string | null
+  phenomenonTimeStart: string
+  phenomenonTimeEnd: string
+  sourceChecksum: string
+  createdAt: string
+  committedAt: string | null
+  createdBy: { name: string; email: string }
+  dependencyIds: string[]
+  operations: MockQcOperation[]
 }
 
 function corsHeaders(route: Route): Record<string, string> {
@@ -120,6 +152,10 @@ export async function installMocks(
   const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
   const withQcHistories = options.qcHistories ?? false
+  const sessionState = options.qcSessionState ?? []
+  if (withQcHistories) {
+    sessionState.push(...qcSessions.map((s) => ({ ...s, operations: [] })))
+  }
   // The managed datastream only exists for specs that opted into histories.
   const overrides = options.catalogOverrides ?? {}
   const catalog = (
@@ -214,20 +250,15 @@ export async function installMocks(
       return json(route, { data: workspaces })
     }
 
-    // --- Quality-control histories / sessions ---
+    // --- Quality-control histories / sessions / operations ---
     // Served ahead of the datastream routes: the history paths sit under
     // the same `/api/data` prefix and would otherwise fall to the
     // empty-list catch-all.
-    const qcSessionList = path.match(
-      /\/api\/data\/quality-control\/histories\/([^/]+)\/sessions$/
+    const qcSessionRoute = path.match(
+      /\/api\/data\/quality-control\/histories\/([^/]+)\/sessions(?:\/([^/]+)(?:\/(commit|operations)(?:\/([^/]+))?)?)?$/
     )
-    if (qcSessionList && method === 'GET') {
-      const historyId = qcSessionList[1]
-      return json(route, {
-        data: withQcHistories
-          ? qcSessions.filter((s) => s.historyId === historyId)
-          : [],
-      })
+    if (qcSessionRoute) {
+      return handleQcSessions(route, sessionState, qcSessionRoute)
     }
     if (
       path.endsWith('/api/data/quality-control/histories') &&
@@ -275,6 +306,108 @@ export async function installMocks(
     // 404 and trigger console noise that masks real failures.
     return json(route, { data: [] })
   })
+}
+
+/**
+ * Stateful stand-in for the QC session and operation endpoints, covering
+ * what the editor calls to start, save, commit, and delete a session.
+ */
+async function handleQcSessions(
+  route: Route,
+  state: MockQcSession[],
+  [, historyId, sessionId, action, operationId]: RegExpMatchArray
+): Promise<void> {
+  const request = route.request()
+  const method = request.method()
+  const now = new Date().toISOString()
+  const noContent = () =>
+    route.fulfill({ status: 204, headers: corsHeaders(route) })
+
+  if (!sessionId) {
+    if (method === 'GET') {
+      const status = new URL(request.url()).searchParams.get('status')
+      return json(route, {
+        data: state.filter(
+          (s) => s.historyId === historyId && (!status || s.status === status)
+        ),
+      })
+    }
+    if (method === 'POST') {
+      const body = await safeJson(request)
+      const session: MockQcSession = {
+        id: `qcs-e2e-new-${state.length + 1}`,
+        historyId: historyId!,
+        status: 'in_progress',
+        description: body?.description ?? null,
+        phenomenonTimeStart: body?.phenomenonTimeStart,
+        phenomenonTimeEnd: body?.phenomenonTimeEnd,
+        sourceChecksum: QC_SOURCE_CHECKSUM,
+        createdAt: now,
+        committedAt: null,
+        createdBy: QC_SESSION_AUTHOR,
+        dependencyIds: [],
+        operations: [],
+      }
+      state.push(session)
+      return json(route, { data: session }, 201)
+    }
+  }
+
+  const session = state.find(
+    (s) => s.id === sessionId && s.historyId === historyId
+  )
+  if (!session) return json(route, { detail: 'Session not found.' }, 404)
+
+  if (action === 'commit' && method === 'POST') {
+    session.status = 'committed'
+    session.committedAt = now
+    return json(route, { data: session })
+  }
+
+  if (action === 'operations' && !operationId) {
+    if (method === 'GET') return json(route, { data: session.operations })
+    if (method === 'POST') {
+      const bodies = ((await safeJson(request)) ?? []) as Array<
+        Omit<MockQcOperation, 'id' | 'createdAt'>
+      >
+      const created = bodies.map((b) => ({
+        ...b,
+        id: `${session.id}-op-${b.order}`,
+        createdAt: now,
+      }))
+      session.operations.push(...created)
+      return json(route, { data: created }, 201)
+    }
+  }
+
+  if (action === 'operations' && operationId) {
+    const index = session.operations.findIndex((o) => o.id === operationId)
+    if (index < 0) return json(route, { detail: 'Operation not found.' }, 404)
+    if (method === 'PATCH') {
+      const body = await safeJson(request)
+      session.operations[index]!.comment = body?.comment ?? null
+      return json(route, { data: session.operations[index] })
+    }
+    if (method === 'DELETE') {
+      session.operations.splice(index, 1)
+      return noContent()
+    }
+  }
+
+  if (!action) {
+    if (method === 'GET') return json(route, { data: session })
+    if (method === 'PATCH') {
+      const body = await safeJson(request)
+      if (body && 'description' in body) session.description = body.description
+      return json(route, { data: session })
+    }
+    if (method === 'DELETE') {
+      state.splice(state.indexOf(session), 1)
+      return noContent()
+    }
+  }
+
+  return json(route, { detail: `Unmocked ${method} ${pathOf(request.url())}` }, 405)
 }
 
 async function safeJson(request: ReturnType<Page['request']> | any): Promise<any> {
