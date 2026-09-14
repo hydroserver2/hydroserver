@@ -215,6 +215,8 @@ The right-hand list (visible on both Select and Edit views) is the roster of cur
 
 If a plotted datastream has no observations in the current window (either because the dataset is empty there or because the chosen time range doesn't cover its data), the row title shows a small warning-tinted database icon. Hover it for the tooltip "No observations in the current time window". Widening the time range (or clicking **All** in the Time range section) usually clears it.
 
+A QC datastream whose edit session is in progress plots that session's working data instead — the same data the editor opens: committed data where it exists, otherwise the raw datastream, over the session's time window, with saved draft edits applied. Its line always covers the whole session window, and presets anchor to that window rather than the (empty) stored managed datastream. With no session in progress it shows its committed observations as usual.
+
 ![Plotted datastreams list with two rows](./images/plotted-datastreams-list.png)
 
 ### Plotting multiple datastreams

@@ -297,7 +297,7 @@ on boot.
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |
 | `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies its window over the plotted data's extent. With nothing plotted, only the selection changes. |
-| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). |
+| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. |
 | `resetState`                        | action   | `() => void`                                      | Clears filters + plotted set on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
 | `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
@@ -389,7 +389,8 @@ handles, live chart caches).
 | `updateOptions`            | action   | `() => void`                                      | Rebuild `plotlyOptions` from `graphSeriesArray`. |
 | `redraw`                   | action   | `(recomputeXaxisRange?: boolean, preserveZoom?: boolean) => Promise<void>` | Push typed-array updates + restyle; preserves the user's zoom by default. |
 | `clearChartState`          | action   | `() => void`                                      | Drop all series + zoom history (used on workspace swap). |
-| `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Build a fresh `GraphSeries` from observations; colour is filled later by `assignSeriesColors`. |
+| `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Fetch observations for `ds` over `[start, end]` and build a `GraphSeries` via `buildGraphSeries`. |
+| `buildGraphSeries`         | action   | `(ds: Datastream, data: ObservationRecord) => GraphSeries` | Build a `GraphSeries` from an already-loaded record, no fetch. Used directly for a managed datastream's working copy. |
 | `assignSeriesColors`       | action   | `(orderedIds: string[]) => void`                  | Stable per-id colour assignment over the legend order. |
 | `colorForDatastream`       | action   | `(id?: string) => string`                         | Resolve the line colour for a datastream (QC is always black). |
 | `labelColorForDatastream`  | action   | `(id?: string) => string`                         | Darker companion for legend text. |

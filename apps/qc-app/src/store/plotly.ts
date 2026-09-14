@@ -2,6 +2,7 @@ import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
+import type { ObservationRecord } from "@uwrl/qc-utils"
 import type { LayoutAxis, PlotData } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
 
@@ -362,19 +363,10 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     }
   }
 
-  const fetchGraphSeries = async (
+  const buildGraphSeries = (
     datastream: Datastream,
-    start: Date,
-    end: Date
-  ): Promise<GraphSeries> => {
-    const { fetchObservationsInRange } = useObservationStore()
-
-    const data = await fetchObservationsInRange(datastream, start, end)
-
-    if (!data.dataset.source.x) {
-      await data.reload()
-    }
-
+    data: ObservationRecord
+  ): GraphSeries => {
     // HydroServer returns full `observedProperty` / `unit` objects on
     // the wire even though the published `Datastream` type only carries
     // their ids. The catalog endpoint enriches the response, so we
@@ -408,6 +400,19 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       color: '',
       intendedSpacingMs: spacingMsFromDatastream(datastream),
     } as GraphSeries
+  }
+
+  const fetchGraphSeries = async (
+    datastream: Datastream,
+    start: Date,
+    end: Date
+  ): Promise<GraphSeries> => {
+    const { fetchObservationsInRange } = useObservationStore()
+    const data = await fetchObservationsInRange(datastream, start, end)
+    if (!data.dataset.source.x) {
+      await data.reload()
+    }
+    return buildGraphSeries(datastream, data)
   }
 
   /**
@@ -531,6 +536,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     labelColorForDatastream,
     assignSeriesColors,
     fetchGraphSeries,
+    buildGraphSeries,
     plotlyOptions,
     plotlyRef,
     mainPlotEpoch,

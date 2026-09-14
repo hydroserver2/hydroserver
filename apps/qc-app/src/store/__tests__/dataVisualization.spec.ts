@@ -1,16 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-import { createApp, ref } from 'vue'
+import { createApp, ref, shallowRef } from 'vue'
 import { subtractMonths } from '@/utils/dateMath'
 
 // Shared mutable stub state so each test can reset between runs.
 const mockPlotlyRef = ref<any>(null)
-const mockGraphSeriesArray = ref<any[]>([])
+// shallowRef: pushed objects keep their identity (not deep-reactive-wrapped),
+// so tests can assert `data` is the exact working-copy record reference.
+const mockGraphSeriesArray = shallowRef<any[]>([])
 const mockUpdateOptions = vi.fn()
 const mockClearChartState = vi.fn()
 const mockClearZoomHistory = vi.fn()
 const mockFetchGraphSeries = vi.fn().mockResolvedValue({ id: 'stub', data: {} })
+const mockBuildGraphSeries = vi.fn((ds: any, data: any) => ({ id: ds.id, name: ds.name, data }))
 const mockAssignSeriesColors = vi.fn()
 const mockRedraw = vi.fn()
 const mockFetchObservationsInRange = vi
@@ -25,6 +28,7 @@ vi.mock('@/store/plotly', () => ({
     clearChartState: mockClearChartState,
     clearZoomHistory: mockClearZoomHistory,
     fetchGraphSeries: mockFetchGraphSeries,
+    buildGraphSeries: mockBuildGraphSeries,
     assignSeriesColors: mockAssignSeriesColors,
     redraw: mockRedraw,
   }),
@@ -33,6 +37,22 @@ vi.mock('@/store/plotly', () => ({
 vi.mock('@/store/observations', () => ({
   useObservationStore: () => ({
     fetchObservationsInRange: mockFetchObservationsInRange,
+  }),
+}))
+
+const mockWorkingCopies = new Map<string, any>()
+const mockLoadWorkingCopy = vi.fn(async (managed: any) => mockWorkingCopies.get(managed.id) ?? null)
+vi.mock('@/store/workingCopies', () => ({
+  useWorkingCopiesStore: () => ({
+    get: (id: string) => mockWorkingCopies.get(id),
+    load: mockLoadWorkingCopy,
+    extents: (ids: string[]) =>
+      ids.flatMap((id) => {
+        const c = mockWorkingCopies.get(id)
+        return c
+          ? [{ phenomenonBeginTime: c.begin.toISOString(), phenomenonEndTime: c.end.toISOString() }]
+          : []
+      }),
   }),
 }))
 
@@ -72,6 +92,7 @@ beforeEach(() => {
   mockPlotlyRef.value = null
   mockGraphSeriesArray.value = []
   mockCurrentView.value = 'Select'
+  mockWorkingCopies.clear()
 })
 
 afterEach(() => {
@@ -1043,6 +1064,92 @@ describe('useDataVisStore.releaseManagedDatastream with the source plotted', () 
 
     expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
     expect(store.qcDatastreamId).toBe('src')
+  })
+})
+
+describe('useDataVisStore managed datastream working copy', () => {
+  const withManaged = (store: any) => {
+    store.qcHistories = [
+      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' },
+    ] as any
+    store.datastreams = [
+      makeDs({ id: 'src', name: 'Raw', phenomenonBeginTime: '2020-01-01T00:00:00Z', phenomenonEndTime: '2022-01-01T00:00:00Z' }),
+      makeDs({ id: 'mgd', name: 'Raw (QC)', phenomenonBeginTime: null, phenomenonEndTime: null }),
+    ] as any
+  }
+  const copy = { sessionId: 's-1', record: { dataX: [1], history: [] }, begin: new Date('2021-03-08T00:00:00Z'), end: new Date('2021-08-18T00:00:00Z') }
+
+  it('plots the working copy instead of fetching the empty managed datastream', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockWorkingCopies.set('mgd', copy)
+
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    expect(mockLoadWorkingCopy).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'mgd' }),
+      expect.objectContaining({ id: 'src' }),
+      'h-1'
+    )
+    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
+    expect(mockGraphSeriesArray.value.find((s: any) => s.id === 'mgd')?.data).toBe(copy.record)
+  })
+
+  it('anchors presets to the working copy session window', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockWorkingCopies.set('mgd', copy)
+
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    expect(store.endDate.toISOString()).toBe('2021-08-18T00:00:00.000Z')
+  })
+
+  it('fetches as before when there is no session in progress', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    expect(mockFetchGraphSeries).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'mgd' }),
+      expect.any(Date),
+      expect.any(Date)
+    )
+  })
+
+  it('keeps the working copy record on a refresh of an existing series', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockWorkingCopies.set('mgd', copy)
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    await store.setDateRange({
+      begin: new Date('2021-01-01T00:00:00Z'),
+      end: new Date('2021-02-01T00:00:00Z'),
+    })
+
+    expect(mockFetchObservationsInRange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'mgd' }),
+      expect.anything(),
+      expect.anything()
+    )
+    expect(mockGraphSeriesArray.value.find((s: any) => s.id === 'mgd')?.data).toBe(copy.record)
+  })
+
+  it('falls back to fetching when loading the working copy fails', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockLoadWorkingCopy.mockRejectedValueOnce(new Error('network'))
+
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    expect(mockFetchGraphSeries).toHaveBeenCalled()
   })
 })
 

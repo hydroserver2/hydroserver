@@ -14,6 +14,7 @@ import {
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
 import { DrawerType, useUIStore } from '@/store/userInterface'
+import { useWorkingCopiesStore } from '@/store/workingCopies'
 import type { SnapshotMeta } from '@/types'
 import type { ObservationRecord } from '@uwrl/qc-utils'
 import {
@@ -31,6 +32,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     updateOptions,
     clearChartState,
     fetchGraphSeries,
+    buildGraphSeries,
     assignSeriesColors,
   } = usePlotlyStore()
   const { fetchObservationsInRange } = useObservationStore()
@@ -49,6 +51,33 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     (h as any).managedDatastreamId ?? (h as any).managedDatastream?.id
   const historySourceId = (h: QualityControlHistory): string | undefined =>
     (h as any).sourceDatastreamId ?? (h as any).sourceDatastream?.id
+
+  /** History and catalog source for a managed datastream, if both are known. */
+  function managedContext(managedId: string) {
+    const history = qcHistories.value.find((h) => historyManagedId(h) === managedId)
+    const sourceId = history ? historySourceId(history) : undefined
+    const source = sourceId ? datastreams.value.find((d) => d.id === sourceId) : undefined
+    return history && source ? { historyId: (history as any).id as string, source } : null
+  }
+
+  /** Load or reuse the working copy of every plotted managed datastream. */
+  async function loadWorkingCopies() {
+    const workingCopies = useWorkingCopiesStore()
+    await Promise.all(
+      plottedDatastreams.value
+        .filter((ds) => managedDatastreamIds.value.has(ds.id))
+        .map(async (ds) => {
+          const context = managedContext(ds.id)
+          if (!context) return
+          try {
+            await workingCopies.load(ds, context.source, context.historyId)
+          } catch (error) {
+            // Plotting still works from the committed observations.
+            console.error(`Failed to load the working copy for ${ds.id}:`, error)
+          }
+        })
+    )
+  }
 
   /** Ids of every managed datastream; these are hidden from the catalog. */
   const managedDatastreamIds = computed(() => {
@@ -149,7 +178,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    *  range or when nothing plotted has observations. */
   function resolvePresetWindow() {
     if (selectedDateBtnId.value === CUSTOM_PRESET_ID) return null
-    const extent = dataExtent(plottedDatastreams.value)
+    const workingCopies = useWorkingCopiesStore()
+    const extent = dataExtent([
+      ...plottedDatastreams.value,
+      ...workingCopies.extents(plottedDatastreams.value.map((d) => d.id)),
+    ])
     return extent ? presetWindow(selectedDateBtnId.value, extent) : null
   }
 
@@ -473,6 +506,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
     const { clearZoomHistory } = usePlotlyStore()
     clearZoomHistory()
+    await loadWorkingCopies()
     // Presets re-anchor only in the Select view. In the Edit view the
     // loaded window is the edit session's window; moving it here would
     // refetch the working copy over a different range and corrupt what
@@ -605,6 +639,17 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     end: Date
   ) => {
     try {
+      // A managed datastream with a session in progress plots its working
+      // copy: it spans the session window and is never re-windowed, since a
+      // window change would reload it and drop the replayed edits.
+      const workingCopy = useWorkingCopiesStore().get(datastream.id)
+      if (workingCopy) {
+        const existing = graphSeriesArray.value.find((s) => s.id === datastream.id)
+        if (existing) existing.data = workingCopy.record
+        else graphSeriesArray.value.push(buildGraphSeries(datastream, workingCopy.record))
+        return
+      }
+
       const seriesIndex = graphSeriesArray.value.findIndex(
         (series) => series.id === datastream.id
       )
