@@ -293,15 +293,13 @@ on boot.
 | `selectedData`                      | state    | `number[] \| null`                                | Index list of the active selection (lasso, box, click). |
 | `hasSelectionShape`                 | state    | `boolean`                                         | True while a box/lasso shape exists, even when it captured zero points. |
 | `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. |
-| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded time-range window (the date pickers' source of truth). |
-| `dateOptions`                       | state    | `Array<{ id, icon, label, title, calculateBeginDate }>` | Preset definitions (1w, 1m, 6m, 1y, YTD, All). |
-| `selectedDateBtnId`                 | state    | `number`                                          | Active preset id; `-1` when the user picked dates manually. |
+| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it from the plotted datastreams' phenomenon times on every plot rebuild; a custom range stays fixed. |
+| `selectedDateBtnId`                 | state    | `number`                                          | Active preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
 | `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |
-| `onDateBtnClick`                    | action   | `(id: number) => void`                            | Anchors `endDate` to today, recomputes `beginDate`, applies the preset. |
-| `syncRangeToPreset`                 | action   | `() => void`                                      | Re-derives `beginDate`/`endDate` from `selectedDateBtnId`. Run on `afterHydrate` so the restored preset's window applies to the first load. |
+| `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies its window over the plotted data's extent. With nothing plotted, only the selection changes. |
 | `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). |
 | `resetState`                        | action   | `() => void`                                      | Clears filters + plotted set on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |

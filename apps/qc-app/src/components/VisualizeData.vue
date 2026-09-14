@@ -566,6 +566,7 @@ import {
   encodeShareState,
   type ShareState,
 } from '@/utils/share'
+import { CUSTOM_PRESET_ID } from '@/utils/timeRangePresets'
 import { isSnapshotId, parseSnapshotId } from '@/utils/snapshotId'
 import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -583,7 +584,6 @@ const {
   beginDate,
   endDate,
   selectedDateBtnId,
-  dateOptions,
   selectedThings,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
@@ -965,17 +965,12 @@ const hydrateFromUrl = () => {
   // QC target is the first id by convention.
   const qcId = resolved[0]?.id ?? null
 
-  // Apply the date window BEFORE loading datastreams so the first
-  // fetch uses the correct range.
+  // Set the window BEFORE loading datastreams so the first fetch uses it.
+  // A preset resolves against the plotted data during that load.
   if (state.datePresetId != null && state.datePresetId >= 0) {
     selectedDateBtnId.value = state.datePresetId
-    const option = dateOptions.value.find((o) => o.id === state.datePresetId)
-    if (option) {
-      endDate.value = new Date()
-      beginDate.value = option.calculateBeginDate()
-    }
   } else if (state.beginMs != null || state.endMs != null) {
-    selectedDateBtnId.value = -1
+    selectedDateBtnId.value = CUSTOM_PRESET_ID
     if (state.beginMs != null) beginDate.value = new Date(state.beginMs)
     if (state.endMs != null) endDate.value = new Date(state.endMs)
   }

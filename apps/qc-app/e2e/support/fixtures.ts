@@ -32,15 +32,9 @@ export const OBSERVED_PROP_ID_B = 'op-water-temp'
 export const SENSOR_ID_B = 'sensor-temp'
 
 /**
- * Synthetic-observation timing constants, anchored to "now" at module
- * load so the generated series always falls inside the QC app's default
- * `1w` time-range window. Hard-coding a literal anchor (e.g.
- * `2024-01-01`) was a footgun: as the calendar moved past the fixture,
- * the main plot — which slices by `[beginDate, endDate]` — silently
- * collapsed to an empty window even though the ContextPlot (which uses
- * all observations un-windowed) kept looking correct. Specs that build
- * custom observation series should import `FIXTURE_OBS_START_MS` and
- * derive their timestamps from it for the same reason.
+ * Synthetic-observation timing constants. The catalog's phenomenon times are
+ * derived from these, and the app's presets anchor to them, so specs that
+ * build custom series should derive timestamps from `FIXTURE_OBS_START_MS`.
  */
 export const FIXTURE_OBS_SPACING_MS = 15 * 60 * 1000
 export const FIXTURE_OBS_COUNT = 120
@@ -336,8 +330,7 @@ export const qcSessions = [
  * `count` samples at 15-minute spacing starting at `startMs`, with
  * values following `y = 10 + 5 * sin(i / 5)` so every filter op has
  * interesting but predictable points to select. The default anchor is
- * `FIXTURE_OBS_START_MS` (relative to "now") so the series always lies
- * inside the QC app's default `1w` time-range window.
+ * `FIXTURE_OBS_START_MS`, matching the catalog's phenomenon times.
  */
 export function buildObservations(
   count = FIXTURE_OBS_COUNT,

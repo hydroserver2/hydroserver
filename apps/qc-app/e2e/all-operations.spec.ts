@@ -30,7 +30,7 @@ import { FIXTURE_OBS_START_MS } from './support/fixtures'
  */
 function observationsWithGap() {
   // Anchor to FIXTURE_OBS_START_MS (relative to "now") so the series
-  // falls inside the QC app's default 1w window — a hard-coded literal
+  // falls inside the QC app's default time range — a hard-coded literal
   // would slide out of range as the calendar moves and leave the main
   // plot empty.
   const startMs = FIXTURE_OBS_START_MS

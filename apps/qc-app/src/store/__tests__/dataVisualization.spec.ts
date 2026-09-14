@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { createApp, ref } from 'vue'
+import { subtractMonths } from '@/utils/dateMath'
 
 // Shared mutable stub state so each test can reset between runs.
 const mockPlotlyRef = ref<any>(null)
@@ -380,56 +381,6 @@ describe('useDataVisStore.setDateRange', () => {
   })
 })
 
-describe('useDataVisStore.onDateBtnClick', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-01-15T12:00:00Z'))
-  })
-
-  it('updates selectedDateBtnId and sets a 1-week window for id=0', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.onDateBtnClick(0)
-    expect(store.selectedDateBtnId).toBe(0)
-    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
-    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
-  })
-
-  it('sets a ~1-month window for id=1', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.onDateBtnClick(1)
-    expect(store.selectedDateBtnId).toBe(1)
-    expect(store.beginDate.getUTCMonth()).toBe(11) // December
-    expect(store.beginDate.getUTCFullYear()).toBe(2025)
-  })
-
-  it('sets a YTD window for id=3 (Jan 1 local)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.onDateBtnClick(3)
-    expect(store.selectedDateBtnId).toBe(3)
-    expect(store.beginDate.getMonth()).toBe(0)
-    expect(store.beginDate.getDate()).toBe(1)
-  })
-
-  it('sets beginDate to epoch 0 for id=5 (All)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.onDateBtnClick(5)
-    expect(store.selectedDateBtnId).toBe(5)
-    expect(store.beginDate.getTime()).toBe(0)
-  })
-
-  it('is a no-op when the id does not match any option', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    const prev = store.selectedDateBtnId
-    store.onDateBtnClick(999)
-    expect(store.selectedDateBtnId).toBe(prev)
-  })
-})
-
 describe('useDataVisStore.resetState', () => {
   it('resets filter arrays, plotted state, and qc id', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
@@ -463,97 +414,137 @@ describe('useDataVisStore.resetState', () => {
     store.resetState()
     expect(store.selectedDateBtnId).toBe(2)
   })
+})
 
-  it('reapplies the persisted preset to beginDate', async () => {
+describe('useDataVisStore time range presets', () => {
+  const OLD_END = '2021-06-30T12:00:00Z'
+  const oldDs = (overrides: Record<string, any> = {}) =>
+    makeDs({
+      id: 'old',
+      phenomenonBeginTime: '2019-01-01T00:00:00Z',
+      phenomenonEndTime: OLD_END,
+      ...overrides,
+    })
+  const newerDs = () =>
+    makeDs({
+      id: 'newer',
+      phenomenonBeginTime: '2020-01-01T00:00:00Z',
+      phenomenonEndTime: '2022-03-01T00:00:00Z',
+    })
+
+  it('defaults to the 1m preset', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    expect(useDataVisStore().selectedDateBtnId).toBe(1)
+  })
+
+  it('anchors a preset click to the plotted data end, not now', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
-    store.selectedDateBtnId = 0 // "1w" preset
-    store.resetState()
-    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
-    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
+    store.plottedDatastreams = [oldDs()] as any
+    await store.onDateBtnClick(0)
+    expect(store.selectedDateBtnId).toBe(0)
+    expect(store.endDate.toISOString()).toBe('2021-06-30T12:00:00.000Z')
+    expect(store.endDate.getTime() - store.beginDate.getTime()).toBe(
+      7 * 24 * 60 * 60 * 1000
+    )
+  })
+
+  it('All spans every plotted datastream', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.plottedDatastreams = [oldDs(), newerDs()] as any
+    await store.onDateBtnClick(5)
+    expect(store.beginDate.toISOString()).toBe('2019-01-01T00:00:00.000Z')
+    expect(store.endDate.toISOString()).toBe('2022-03-01T00:00:00.000Z')
+  })
+
+  it('ignores datastreams without observations when anchoring', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.plottedDatastreams = [makeDs({ id: 'empty' }), oldDs()] as any
+    await store.onDateBtnClick(0)
+    expect(store.endDate.toISOString()).toBe('2021-06-30T12:00:00.000Z')
+  })
+
+  it('selects the preset without moving the window when nothing is plotted', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    const begin = store.beginDate.getTime()
+    await store.onDateBtnClick(5)
+    expect(store.selectedDateBtnId).toBe(5)
+    expect(store.beginDate.getTime()).toBe(begin)
+    expect(mockRedraw).not.toHaveBeenCalled()
+  })
+
+  it('is a no-op for an unknown preset id', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    await store.onDateBtnClick(999)
+    expect(store.selectedDateBtnId).toBe(1)
+  })
+
+  it('re-anchors the active preset when a datastream is plotted', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    await store.plotDatastream(oldDs() as any)
+    const end = new Date(OLD_END)
+    expect(store.endDate.getTime()).toBe(end.getTime())
+    expect(store.beginDate.getTime()).toBe(subtractMonths(end, 1).getTime())
+    expect(mockFetchGraphSeries).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'old' }),
+      store.beginDate,
+      store.endDate
+    )
+  })
+
+  it('re-anchors when the newest datastream is unplotted', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.plottedDatastreams = [oldDs(), newerDs()] as any
+    store.qcDatastreamId = 'old'
+    await store.unplotDatastream('newer')
+    expect(store.endDate.toISOString()).toBe('2021-06-30T12:00:00.000Z')
+  })
+
+  it('keeps a custom range when the plotted set changes', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    const begin = new Date('2025-01-01T00:00:00Z')
+    const end = new Date('2025-02-01T00:00:00Z')
+    await store.setDateRange({ begin, end })
+    await store.plotDatastream(oldDs() as any)
+    expect(store.selectedDateBtnId).toBe(-1)
+    expect(store.beginDate.getTime()).toBe(begin.getTime())
+    expect(store.endDate.getTime()).toBe(end.getTime())
   })
 })
 
-describe('useDataVisStore.syncRangeToPreset', () => {
-  it('derives the "All" window (epoch 0) from the persisted preset', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.selectedDateBtnId = 5 // "All"
-    store.syncRangeToPreset()
-    expect(store.beginDate.getTime()).toBe(0)
-  })
+// The persistence plugin only activates once the pinia is installed on an
+// app, so these go through `app.use(pinia)`.
+describe('useDataVisStore persisted preset', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
 
-  it('derives a relative window (1w) from the persisted preset', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.selectedDateBtnId = 0 // "1w"
-    store.syncRangeToPreset()
-    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
-    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
-  })
-
-  it('falls back to a 1-week window when the id matches no preset (custom)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.selectedDateBtnId = -1 // custom: no preset
-    store.syncRangeToPreset()
-    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
-    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
-  })
-})
-
-// Regression: the persisted preset must actually drive the loaded window
-// on first load. Only `selectedDateBtnId` is persisted, so without the
-// afterHydrate sync the highlighted preset (e.g. "All") wouldn't take
-// effect until the chip was clicked a second time. The persistence plugin
-// only activates once the pinia is installed on an app, so these tests go
-// through `app.use(pinia)` rather than a bare `createPinia()`.
-describe('useDataVisStore persisted-preset hydration', () => {
-  beforeEach(() => {
-    localStorage.clear()
-  })
-
-  afterEach(() => {
-    localStorage.clear()
-  })
-
-  function hydrateWith(persisted: Record<string, unknown>) {
-    localStorage.setItem('dataVisualization', JSON.stringify(persisted))
+  const installPinia = () => {
     const pinia = createPinia()
     pinia.use(piniaPluginPersistedstate)
-    // app.use(pinia) runs the plugin install that activates persistence
-    // and sets the active pinia.
     createApp({ render: () => null }).use(pinia)
   }
 
-  it('applies a persisted "All" preset to beginDate on hydration', async () => {
-    hydrateWith({ selectedDateBtnId: 5 })
+  it('restores the persisted preset id', async () => {
+    localStorage.setItem(
+      'dataVisualization',
+      JSON.stringify({ selectedDateBtnId: 5 })
+    )
+    installPinia()
     const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    expect(store.selectedDateBtnId).toBe(5)
-    // "All" → epoch 0, proving afterHydrate recomputed the window.
-    expect(store.beginDate.getTime()).toBe(0)
+    expect(useDataVisStore().selectedDateBtnId).toBe(5)
   })
 
-  it('applies a persisted relative preset (6m) to the loaded window', async () => {
-    hydrateWith({ selectedDateBtnId: 2 })
+  it('defaults to 1m when nothing is persisted', async () => {
+    installPinia()
     const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    expect(store.selectedDateBtnId).toBe(2)
-    // 6 months back is well beyond the default 1-week window.
-    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
-    expect(spanMs).toBeGreaterThan(7 * 24 * 60 * 60 * 1000)
-  })
-
-  it('leaves the default 1-week window when nothing is persisted', async () => {
-    const pinia = createPinia()
-    pinia.use(piniaPluginPersistedstate)
-    createApp({ render: () => null }).use(pinia)
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    expect(store.selectedDateBtnId).toBe(0)
-    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
-    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
+    expect(useDataVisStore().selectedDateBtnId).toBe(1)
   })
 })
 

@@ -4,7 +4,14 @@ import { usePlotlyStore } from './plotly'
 import { useObservationStore } from './observations'
 import { Snackbar } from '@uwrl/qc-utils'
 import { handleNewPlot } from '@/utils/plotting/plotly'
-import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
+import { subtractMonths } from '@/utils/dateMath'
+import {
+  CUSTOM_PRESET_ID,
+  DEFAULT_PRESET_ID,
+  dataExtent,
+  findPreset,
+  presetWindow,
+} from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
 import type { SnapshotMeta } from '@/types'
 import type { ObservationRecord } from '@uwrl/qc-utils'
@@ -123,25 +130,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    * Set to true when we get a response from the API. Keyed by datastream id. */
   const loadingStates = ref(new Map<string, boolean>())
 
-  // Time range
+  // Time range. Until something with observations is plotted there is no
+  // data to anchor a preset to, so the window is a placeholder.
   const endDate = ref<Date>(new Date())
-  const oneWeek = 7 * 24 * 60 * 60 * 1000
-  const beginDate = ref<Date>(new Date(endDate.value.getTime() - oneWeek))
-  const selectedDateBtnId = ref(0)
+  const beginDate = ref<Date>(subtractMonths(endDate.value, 1))
+  const selectedDateBtnId = ref(DEFAULT_PRESET_ID)
 
-  // Re-derive the loaded window [beginDate, endDate] from the active
-  // preset. Only `selectedDateBtnId` is persisted; beginDate/endDate keep
-  // their fixed 1-week defaults until this runs. Without it, a restored
-  // preset (e.g. "All") is highlighted but the first datastream load
-  // fetches the stale default window until the chip is clicked again.
-  function syncRangeToPreset() {
-    endDate.value = new Date()
-    const option = dateOptions.value.find(
-      (o) => o.id === selectedDateBtnId.value
-    )
-    beginDate.value = option
-      ? option.calculateBeginDate()
-      : new Date(endDate.value.getTime() - oneWeek)
+  /** The active preset's window over the plotted data; null for a custom
+   *  range or when nothing plotted has observations. */
+  function resolvePresetWindow() {
+    if (selectedDateBtnId.value === CUSTOM_PRESET_ID) return null
+    const extent = dataExtent(plottedDatastreams.value)
+    return extent ? presetWindow(selectedDateBtnId.value, extent) : null
   }
 
   function resetState() {
@@ -150,11 +150,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     qcDatastreamId.value = null
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
-    // Re-apply the persisted preset so the chosen time range survives
-    // workspace switches. selectedDateBtnId is intentionally NOT reset here —
-    // it's a user preference, not workspace-specific state, and resetting it
-    // would overwrite the persisted localStorage value.
-    syncRangeToPreset()
+    // selectedDateBtnId is a user preference, not workspace state.
     // Old watcher used to call clearChartState when plottedDatastreams
     // emptied; with the watcher gone, do it here explicitly.
     clearChartState()
@@ -468,6 +464,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
     const { clearZoomHistory } = usePlotlyStore()
     clearZoomHistory()
+    // The plotted set changed, and with it the data a preset anchors to.
+    const presetRange = resolvePresetWindow()
+    if (presetRange) {
+      beginDate.value = presetRange.begin
+      endDate.value = presetRange.end
+    }
     await refreshGraphSeriesArray()
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -522,61 +524,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     )
   })
 
-  // All relative presets (1w/1m/6m/1y) anchor to the working window's
-  // end so the range always lands on data. The subtractors clamp
-  // day-of-month correctly across month/year boundaries (see
-  // `src/utils/dateMath.ts`) — the old `new Date(y, m - N, d)`
-  // constructor silently overflowed on `Aug 31 - 6 months` and friends.
-  const dateOptions = ref([
-    {
-      id: 0,
-      icon: 'mdi-calendar-week',
-      label: '1w',
-      title: 'Last week',
-      calculateBeginDate: () => subtractDays(endDate.value, 7),
-    },
-    {
-      id: 1,
-      icon: 'mdi-calendar-month',
-      label: '1m',
-      title: 'Last month',
-      calculateBeginDate: () => subtractMonths(endDate.value, 1),
-    },
-    {
-      id: 2,
-      icon: 'mdi-calendar-range',
-      label: '6m',
-      title: 'Last 6 months',
-      calculateBeginDate: () => subtractMonths(endDate.value, 6),
-    },
-    {
-      id: 4,
-      icon: 'mdi-calendar',
-      label: '1y',
-      title: 'Last year',
-      calculateBeginDate: () => subtractYears(endDate.value, 1),
-    },
-    {
-      id: 3,
-      icon: 'mdi-calendar-today',
-      label: 'YTD',
-      title: 'Year to date',
-      // Jan 1 of the year containing the working window's end. The
-      // editor overrides this to real calendar year in
-      // `Plot.vue#onEditorDatePreset` since zoom-only semantics want
-      // "this calendar year so far" regardless of the loaded window.
-      calculateBeginDate: () =>
-        new Date(endDate.value.getFullYear(), 0, 1),
-    },
-    {
-      id: 5,
-      icon: 'mdi-infinity',
-      label: 'All',
-      title: 'Full history',
-      calculateBeginDate: () => new Date(0),
-    },
-  ])
-
   interface SetDateRangeParams {
     begin?: Date
     end?: Date
@@ -604,7 +551,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
     if (begin) beginDate.value = begin
     if (end) endDate.value = end
-    if (custom) selectedDateBtnId.value = -1
+    if (custom) selectedDateBtnId.value = CUSTOM_PRESET_ID
 
     if (
       update &&
@@ -626,17 +573,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
-  const onDateBtnClick = (selectedId: number) => {
-    const selectedOption = dateOptions.value.find(
-      (option) => option.id === selectedId
-    )
-    if (selectedOption) {
-      // Presets always anchor end to today so the window is relative to now.
-      // Set endDate first so calculateBeginDate closures read the new value.
-      endDate.value = new Date()
-      const newBeginDate = selectedOption.calculateBeginDate()
-      selectedDateBtnId.value = selectedId
-      setDateRange({ begin: newBeginDate, end: endDate.value, custom: false })
+  const onDateBtnClick = async (selectedId: number) => {
+    if (!findPreset(selectedId)) return
+    selectedDateBtnId.value = selectedId
+    const range = resolvePresetWindow()
+    if (range) {
+      await setDateRange({ begin: range.begin, end: range.end, custom: false })
     }
   }
 
@@ -800,7 +742,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     plottedDatastreams,
     beginDate,
     endDate,
-    dateOptions,
     loadingStates,
     selectedDateBtnId,
     qcDatastream,
@@ -814,7 +755,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     matchesSelectedThing,
     setDateRange,
     onDateBtnClick,
-    syncRangeToPreset,
     refreshGraphSeriesArray,
     resetState,
     toggleDatastream,
@@ -833,20 +773,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     // updateOrFetchGraphSeries,
   }
 }, {
-  // Persist only the user's time-range preset choice. Everything else
-  // in this store (server catalogs, in-flight loading maps, live
-  // filters) should refetch cleanly on every load — persisting them
-  // would surface stale data after catalog or role changes. `dateOptions`
-  // in particular can't be serialized because it carries closure
-  // functions (`calculateBeginDate`).
+  // Persist only the user's preset choice. Catalogs, loading maps and
+  // filters refetch cleanly on every load; the window resolves from the data.
   persist: {
     pick: ['selectedDateBtnId'],
-    // Only the preset id is persisted, so the loaded window must be
-    // recomputed from it after hydration — otherwise beginDate/endDate
-    // keep their fixed 1-week defaults and the first datastream load
-    // ignores the restored preset until the chip is clicked again.
-    afterHydrate: (ctx) => {
-      ;(ctx.store as unknown as { syncRangeToPreset: () => void }).syncRangeToPreset()
-    },
   },
 })

@@ -79,13 +79,7 @@ The select view is the default landing surface after picking a workspace. The le
 
 The filter drawer has two collapsible sections:
 
-- **Time range**: the loaded time window for the selected datastreams. The two date pickers (`From` / `To`) are the source of truth. They will respond when you make a selection in the row of preset chips below them:
-  **1w**, **1m**, **6m**, **1y**, **YTD**, **All**. Picking a preset re-fetches observations from the server. A `Custom` chip appears when the dates were edited manually in the `From` and `To` data pickers.
-
-  > **Tip:** when previewing a brand-new datastream whose observations
-  > might be years old, click **All** first. The default `1w` preset
-  > can show an empty window for old data and make the plot look
-  > broken.
+- **Time range**: the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams.
 
 - **Datastream filters**: These filters allow you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
 
@@ -200,7 +194,7 @@ The URL encodes everything needed to reproduce what the sender is looking at - q
 - **View** (Select vs Edit; `m=e` for Edit)
 - **Active center-column tab** (`tab=t` for Table)
 - **Plotted datastreams** (`ds`), in order. The first id is the QC target.
-- **Time window**: either a preset id (`r=0..5`) which the recipient re-anchors to *their* "now", or an explicit `from` / `to` pair as base36 second-epochs when the sender used a custom range.
+- **Time window**: either a preset id (`r=0..5`) which the recipient resolves against the plotted data, or an explicit `from` / `to` pair as base36 second-epochs when the sender used a custom range.
 - **Per-trace eye-toggle visibility** (`h`) and **per-axis visibility** (`ya`) as hex bitmasks over the `ds` order.
 - **Plot zoom**: X zoom (`z`) plus optional per-Y-axis zoom (`yz`) for axes that aren't at their default fit.
 - **Data points mode** (`dp`) and **threshold** (`th`) when they differ from the app defaults.
@@ -587,7 +581,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 
 1. Pick a workspace, then pick the datastream you want to QC.
 2. Plot it (it becomes the QC target).
-3. Click **All** in the Time range so you load the full series.
+3. Click **All** in the Time range to load the full series (plotting loads the last month of data).
 4. Click the pencil icon → expand **Value thresholds**, set `Greater than: 1000`, press Enter.
 5. Expand **Delete points**, click Delete.
 6. Click **Save** at the bottom of the Edit history panel, then **Commit** and confirm in the dialog.
@@ -616,7 +610,7 @@ Click the grid icon in the nav rail → pick another. If you have unsaved edits,
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
-| Plot stays empty after picking a datastream | Time range falls outside the datastream's observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click **All** in Time range. |
+| Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in Time range. |
 | Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream. The first becomes the QC target. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |

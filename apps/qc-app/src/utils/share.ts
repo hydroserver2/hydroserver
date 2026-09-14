@@ -49,8 +49,8 @@ export interface ShareState {
    *  QC-target-is-first rule and the `h` / `ya` bitmask indices still hold. */
   snapshots?: { sessionId: string; opIndex: number }[]
   /** Date range preset id (`0..5`). When set, `begin`/`end` are
-   *  omitted from the URL and the receiver recomputes the window
-   *  from "now". */
+   *  omitted from the URL and the receiver resolves the window
+   *  from the plotted data. */
   datePresetId?: number | null
   /** Custom-window begin (epoch ms). Only emitted when no preset is
    *  active. */
@@ -138,10 +138,8 @@ export function encodeShareState(state: ShareState): Record<string, string> {
     q.snap = state.snapshots.map((s) => `${s.sessionId}:${s.opIndex}`).join(',')
   }
 
-  // Preset wins over begin/end. If a preset is active, dropping the
-  // explicit dates lets the recipient pick up the same preset window
-  // anchored to *their* "now" — which is the sender's intent when
-  // they clicked the preset.
+  // Preset wins over begin/end: the recipient resolves the same preset
+  // against the plotted data, which is what the sender clicked.
   if (
     state.datePresetId != null &&
     Number.isFinite(state.datePresetId) &&

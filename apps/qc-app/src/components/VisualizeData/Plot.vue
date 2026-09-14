@@ -288,7 +288,7 @@
             color="surface"
             variant="flat"
             size="small"
-            :title="option.editorLabel"
+            :title="option.title"
             class="text-none text-body-small font-weight-medium border elevation-2"
             @click="selectRangePreset(option.id)"
           >
@@ -411,7 +411,11 @@ import {
   handleRelayout,
   zoomXaxisTo,
 } from '@/utils/plotting/plotly'
-import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
+import {
+  ALL_PRESET_ID,
+  TIME_RANGE_PRESETS,
+  presetWindow,
+} from '@/utils/timeRangePresets'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
@@ -443,12 +447,8 @@ const {
   plotlyRef,
   activeTab,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, hasSelectionShape, qcDatastream, dateOptions } =
+const { selectedData, hasSelectionShape, qcDatastream } =
   storeToRefs(useDataVisStore())
-
-const allPresetId = computed(
-  () => dateOptions.value.find((o) => o.label === 'All')?.id ?? null
-)
 
 const tooltipsAutoDisabled = computed(
   () =>
@@ -593,19 +593,7 @@ const latestDataX = computed<number | null>(() => {
   return Number.isFinite(max) ? max : null
 })
 
-const EDITOR_LABELS: Record<string, string> = {
-  '1w': 'Last week of data',
-  '1m': 'Last month of data',
-  '6m': 'Last 6 months of data',
-  '1y': 'Last year of data',
-  All: 'All data',
-}
-
-const editorDateOptions = computed(() =>
-  dateOptions.value
-    .filter((o) => o.label !== 'YTD')
-    .map((o) => ({ ...o, editorLabel: EDITOR_LABELS[o.label] ?? o.label }))
-)
+const editorDateOptions = TIME_RANGE_PRESETS.filter((o) => o.label !== 'YTD')
 
 const rangeDialOpen = ref(false)
 
@@ -614,53 +602,18 @@ function selectRangePreset(id: number) {
   rangeDialOpen.value = false
 }
 
-// Editor presets are a pure x-axis zoom (no refetch) so they don't
-// blow away the edit history. Relative presets (1w/1m/6m/1y) anchor
-// to the loaded data's end. "All" snaps to the data extent.
+// Editor presets are a pure x-axis zoom (no refetch) so they don't blow away
+// the edit history. They resolve against the loaded data.
 function onEditorDatePreset(id: number) {
-  const option = dateOptions.value.find((o) => o.id === id)
-  if (!option) return
-
-  const dataEndMs = latestDataX.value
-  const dataEnd = dataEndMs != null ? new Date(dataEndMs) : null
-
-  let begin: Date | null = null
-  let end: Date | null = null
-
-  switch (option.label) {
-    case '1w':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractDays(dataEnd, 7)
-      break
-    case '1m':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractMonths(dataEnd, 1)
-      break
-    case '6m':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractMonths(dataEnd, 6)
-      break
-    case '1y':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractYears(dataEnd, 1)
-      break
-    case 'All':
-      if (earliestDataX.value == null || dataEndMs == null) return
-      begin = new Date(earliestDataX.value)
-      end = new Date(dataEndMs)
-      break
-    default:
-      return
-  }
-
-  if (!begin || !end) return
-  zoomXaxisTo(plotlyRef.value, begin.getTime(), end.getTime())
+  if (earliestDataX.value == null || latestDataX.value == null) return
+  const range = presetWindow(id, {
+    begin: new Date(earliestDataX.value),
+    end: new Date(latestDataX.value),
+  })
+  if (!range) return
+  zoomXaxisTo(plotlyRef.value, range.begin.getTime(), range.end.getTime())
   // Keep the table in sync: scroll it so the range's first row is on top.
-  requestTableScroll(begin.getTime())
+  requestTableScroll(range.begin.getTime())
 }
 
 function toggleTooltips() {
@@ -747,9 +700,7 @@ onMounted(async () => {
   setTimeout(() => {
     updateOptions()
     handleNewPlot(plot.value)
-    if (!props.preview && allPresetId.value != null) {
-      onEditorDatePreset(allPresetId.value)
-    }
+    if (!props.preview) onEditorDatePreset(ALL_PRESET_ID)
 
     const target = plot.value
     if (target && typeof ResizeObserver !== 'undefined') {
