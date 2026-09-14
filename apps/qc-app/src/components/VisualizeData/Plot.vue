@@ -697,30 +697,34 @@ onMounted(async () => {
   updateOptions()
 
   // Wait for the view-switch animation to expand the container.
-  setTimeout(() => {
+  setTimeout(async () => {
     updateOptions()
-    handleNewPlot(plot.value)
+    const drawn = handleNewPlot(plot.value)
     if (!props.preview) onEditorDatePreset(ALL_PRESET_ID)
+    await drawn
 
+    // Unmounted while drawing.
     const target = plot.value
     if (target && typeof ResizeObserver !== 'undefined') {
-      // Skip the initial "observe started" notification so we don't
-      // resize on top of the freshly-built plot.
-      let initialFired = false
+      // The plot can be laid out before the container reaches its final
+      // size, so resize whenever the two differ, including on the first
+      // notification.
       plotResizeObserver = new ResizeObserver(() => {
-        if (!initialFired) {
-          initialFired = true
-          return
-        }
         if (pendingResizeFrame != null) return
         pendingResizeFrame = requestAnimationFrame(() => {
           pendingResizeFrame = null
-          const gd = plot.value
-          if (!gd) return
-          // Plotly.Plots.resize throws when gd has no _fullLayout
-          // (observer can fire before handleNewPlot finishes).
-          const anyGd = gd as unknown as { _fullLayout?: unknown }
-          if (!anyGd._fullLayout) return
+          const gd = plot.value as
+            | (HTMLElement & { _fullLayout?: { width: number; height: number } })
+            | null
+          const layout = gd?._fullLayout
+          // Plotly.Plots.resize rejects a hidden div (Table tab).
+          if (!gd || !layout || !gd.offsetWidth || !gd.offsetHeight) return
+          if (
+            Math.abs(layout.width - gd.offsetWidth) < 1 &&
+            Math.abs(layout.height - gd.offsetHeight) < 1
+          ) {
+            return
+          }
           void Plotly.Plots.resize(gd as unknown as Plotly.Root)
         })
       })
