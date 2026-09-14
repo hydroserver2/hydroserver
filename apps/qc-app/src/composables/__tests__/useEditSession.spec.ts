@@ -166,7 +166,7 @@ describe('useEditSession', () => {
     // editing it can't mutate the store's cached one.
     const seriesRecord = selectedSeries.value.data
     expect(Array.from(seriesRecord.dataX)).toEqual(Array.from(reconstructed.dataX))
-    expect(seriesRecord).not.toBe(reconstructed)
+    expect(toRaw(seriesRecord)).not.toBe(reconstructed)
     // applyHistory replayed onto that same copy, not the fetched record.
     // `toRaw` unwraps the reactive proxy Vue puts on the assigned object,
     // since applyHistory was called with the pre-proxy instance.
