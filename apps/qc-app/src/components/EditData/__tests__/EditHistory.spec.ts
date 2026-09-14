@@ -1,8 +1,12 @@
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { ref } from 'vue'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { createTestVuetify } from '@/utils/test/vuetify'
+
+// EditHistory listens for Ctrl+Z/Y on window. A wrapper left mounted keeps
+// handling shortcuts dispatched by later tests.
+enableAutoUnmount(afterEach)
 // The per-operation comment textarea (Vuetify auto-grow) observes resizes.
 ;(globalThis as any).ResizeObserver ||= class {
   observe() {}
@@ -602,6 +606,10 @@ describe('EditHistory.vue actions', () => {
         expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
       )
       expect(w.find('[data-testid="history-loaded-1"]').exists()).toBe(true)
+      // The marker clears before undo's deferred replay runs. Drain it here or
+      // it fires in the next test against a series with no `undo`.
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      expect(undo).toHaveBeenCalled()
     })
 
     // The baseline row is step -1: the state the session started from,

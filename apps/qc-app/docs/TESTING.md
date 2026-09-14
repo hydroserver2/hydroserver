@@ -146,6 +146,17 @@ undefined (reading 'value')` from inside a `setTimeout` (the
    via a `resetStoreState` helper. Drift across describe blocks is
    the most common cause of order-dependent failures.
 
+6. **Don't let a test outlive its own async work.** Components that
+   defer through `setTimeout` (EditHistory's undo, redo and reload)
+   read the shared mock refs when the timer fires. If a test ends
+   before that, the timer runs in the next test against its mocks and
+   surfaces as an unhandled rejection blamed on the wrong test. Wait
+   for the settle signal (`isUpdating` back to `false`) or drain with
+   `vi.runAllTimersAsync()` under fake timers. Specs for components
+   that listen on `window` should also call
+   `enableAutoUnmount(afterEach)`, or wrappers from earlier tests keep
+   handling the events later tests dispatch.
+
 ### Coverage thresholds
 
 Configured in [`vite.config.ts:130-140`](../vite.config.ts). The
@@ -258,7 +269,10 @@ test.describe('edit: delete points', () => {
 Everything except `qc-golden-path.spec.ts` happens against the mocked
 backend. The live golden-path spec is gated by `E2E_LIVE=1`, expects both
 frontends to be running, and enters QC through the Data Management
-same-origin entrypoint.
+same-origin entrypoint. It edits through a QC session, so the workspace
+needs a source datastream with a managed datastream and QC history: the
+spec plots the first source showing the managed-count badge, clicks Start
+editing, and ends by saving and committing the session.
 
 ### Mocks
 
