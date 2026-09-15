@@ -42,7 +42,7 @@ function deferred<T>() {
 
 /**
  * Gates every `fetchObservationsInRange` call behind `gate`, and resolves
- * `started` the first time a call is made — so a test can wait for a
+ * `started` the first time a call is made, so a test can wait for a
  * build to have actually begun (past its generation bump) before racing
  * another store call against it.
  */
@@ -290,5 +290,113 @@ describe('useWorkingCopiesStore', () => {
     expect(firstResult).toBe(secondResult)
     expect(store.get('m-1')).toBe(secondResult)
     expect(applyHistory).toHaveBeenCalledTimes(2)
+  })
+
+  it('load() during an in-flight rebuild() joins it, so both resolve to the same cached copy', async () => {
+    const session = unwrap(await startSession())
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const rebuilding = store.rebuild(managed, source, historyId, session)
+    await started.promise
+    const loading = store.load(managed, source, historyId)
+    gate.resolve()
+
+    const [rebuilt, loaded] = await Promise.all([rebuilding, loading])
+    expect(rebuilt).not.toBeNull()
+    expect(loaded).toBe(rebuilt)
+    expect(store.get('m-1')).toBe(rebuilt)
+    expect(applyHistory).toHaveBeenCalledTimes(1)
+  })
+
+  it('a load() still listing sessions when a rebuild() starts joins that rebuild', async () => {
+    const session = unwrap(await startSession())
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const loading = store.load(managed, source, historyId)
+    const rebuilding = store.rebuild(managed, source, historyId, session)
+
+    const [loaded, rebuilt] = await Promise.all([loading, rebuilding])
+    expect(rebuilt).not.toBeNull()
+    expect(loaded).toBe(rebuilt)
+    expect(applyHistory).toHaveBeenCalledTimes(1)
+  })
+
+  it('invalidate() drops an in-flight load(), so the next load() builds afresh', async () => {
+    await startSession()
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const stale = store.load(managed, source, historyId)
+    await started.promise
+    store.invalidate('m-1')
+    const fresh = store.load(managed, source, historyId)
+    gate.resolve()
+    await stale
+
+    const copy = await fresh
+    expect(copy).not.toBeNull()
+    expect(store.get('m-1')).toBe(copy)
+  })
+
+  it('clear() drops every cached copy', async () => {
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+    const begin = new Date('2024-03-01T00:00:00Z')
+    const end = new Date('2024-04-01T00:00:00Z')
+    store.set('m-1', 's-1', rec([1]) as any, begin, end)
+    store.set('m-2', 's-2', rec([2]) as any, begin, end)
+
+    store.clear()
+
+    expect(store.get('m-1')).toBeUndefined()
+    expect(store.get('m-2')).toBeUndefined()
+    expect(store.extents(['m-1', 'm-2'])).toEqual([])
+  })
+
+  it('clear() during an in-flight rebuild() resolves it to null and caches nothing', async () => {
+    const session = unwrap(await startSession())
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const pending = store.rebuild(managed, source, historyId, session)
+    await started.promise
+    store.clear()
+    gate.resolve()
+
+    expect(await pending).toBeNull()
+    expect(store.get('m-1')).toBeUndefined()
+  })
+
+  it('clear() during an in-flight load() build resolves it to null and caches nothing', async () => {
+    await startSession()
+    const { gate, started } = gateFetch()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const pending = store.load(managed, source, historyId)
+    await started.promise
+    store.clear()
+    gate.resolve()
+
+    expect(await pending).toBeNull()
+    expect(store.get('m-1')).toBeUndefined()
+  })
+
+  it('clear() while a load() is still listing sessions stops it from building', async () => {
+    await startSession()
+    const { useWorkingCopiesStore } = await import('@/store/workingCopies')
+    const store = useWorkingCopiesStore()
+
+    const pending = store.load(managed, source, historyId)
+    store.clear()
+
+    expect(await pending).toBeNull()
+    expect(store.get('m-1')).toBeUndefined()
+    expect(applyHistory).not.toHaveBeenCalled()
   })
 })

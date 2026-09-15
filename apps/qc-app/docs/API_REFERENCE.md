@@ -170,8 +170,14 @@ const {
 
 - `beginEditing()` — resolves the QC history for the QC datastream, loads
   its sessions, resumes the in-progress one (or sets `needsSession`); sets
-  `needsHistory` when the datastream isn't QC-managed yet.
+  `needsHistory` when the datastream isn't QC-managed yet. Resuming rebuilds
+  the shared working copy; if that rebuild is superseded it throws
+  `ResumeSupersededError`, leaves `needsSession` false, and `enterEdit`
+  returns to the Select view.
 - `startSession(spec)` — creates a session and copies the source window in.
+  When the history already has an in-progress session it resumes that one
+  through the same replay instead (throwing `ResumeSupersededError` the same
+  way), so saved draft operations are never dropped.
 - `saveDraft()` — persists the record's edit operations to the session
   (append-only reconcile).
 - `discardUnsavedEdits()` — drops edits made since the last save and restores
@@ -297,8 +303,8 @@ on boot.
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |
 | `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies its window over the plotted data's extent. With nothing plotted, only the selection changes. |
-| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. |
-| `resetState`                        | action   | `() => void`                                      | Clears filters + plotted set on a workspace swap; preserves the preset preference. |
+| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. Invalidates the working copy of any managed datastream no longer plotted, except the QC target. |
+| `resetState`                        | action   | `() => void`                                      | Clears filters, the plotted set, and every working copy on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
 | `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
 | `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove; promotes the previous plotted entry to QC if removing the QC target. |
@@ -313,7 +319,7 @@ on boot.
 | `releaseManagedDatastream`          | action   | `() => Promise<void>`                             | Inverse of `adoptManagedDatastream`, for leaving the editor: swap the managed datastream back to its source (resolved through `qcHistories`), drop the editor's working copy and rebuild, so the plot shows the source as stored rather than the session's uncommitted edits. Managed datastreams are hidden from the catalog table, so without this the Select view shows a plot with nothing selected. No-op when the QC target isn't managed or its source isn't in the catalog. |
 | `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
 
-### `useWorkingCopiesStore()` — `src/store/workingCopies.ts`
+### `useWorkingCopiesStore()` (`src/store/workingCopies.ts`)
 
 One working copy per managed datastream, keyed by its in-progress
 session: the Select-view plot and the editor share it so the preview
@@ -321,23 +327,26 @@ shows exactly what editing opens. Not persisted, not reactive (records
 hold large typed arrays that must not be proxied).
 
 Concurrency: a per-managed-id generation counter, bumped by `invalidate`,
-`set`, and every new build, guards each build's cache write — a build
-whose generation is no longer current (superseded by a later
-`invalidate`/`set`/`rebuild` while it awaited) is discarded rather than
+`set`, `clear`, and every new build, guards each build's cache write: a
+build whose generation is no longer current is discarded rather than
 resurrecting a stale copy. Concurrent `load()` calls for the same managed
-id share one in-flight build and resolve to the same record. A `rebuild()`
-superseded by a later `rebuild()` chains onto it and resolves to the same
-copy regardless of which finishes its fetch first; superseded by
-`invalidate`/`set` instead, it resolves to whatever is now cached (`null`
-after an `invalidate`) — never to the record it built but discarded.
+id share one in-flight build and resolve to the same record, and a `load()`
+that meets an in-flight `rebuild()` joins it instead of starting its own
+build. A superseded `rebuild()` or `load()` never returns the record it
+discarded: it resolves to the newer in-flight `rebuild()`'s result
+(whichever fetch finishes first), otherwise to whatever is now cached
+(`null` after `invalidate` or `clear`). `invalidate`, `set`, and `clear`
+also drop the in-flight load they supersede, so the next `load()` starts
+fresh.
 
 | Name         | Kind   | Type / signature                                                                                     | Notes |
 |--------------|--------|-------------------------------------------------------------------------------------------------------|-------|
 | `get`        | action | `(managedId: string) => WorkingCopy \| undefined`                                                     | Current cached copy for a managed datastream, if any. |
-| `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. Concurrent calls for the same managed id dedupe onto one build. If superseded mid-build by `invalidate`/`set`/`rebuild`, resolves to the now-current cache entry (or `null`) instead of the discarded build. |
-| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy \| null>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; supersedes any in-flight `load()` build or earlier `rebuild()` for this managed id and overwrites the cache. If superseded itself while awaiting, never returns the discarded build: resolves to the copy that superseded it (chaining onto a later in-flight `rebuild()`, or reading the cache after a synchronous `invalidate`/`set`), which is `null` when nothing ended up cached. |
-| `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by the editor after a local edit); supersedes any in-flight build for this managed id. |
-| `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy; supersedes any in-flight build for this managed id. |
+| `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. Concurrent calls for the same managed id dedupe onto one build, and a call made while a `rebuild()` is in flight joins it. If superseded mid-build, resolves to the superseding `rebuild()`'s result or the now-current cache entry (or `null`) instead of the discarded build. |
+| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy \| null>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; supersedes any in-flight `load()` build or earlier `rebuild()` for this managed id and overwrites the cache. If superseded itself while awaiting, never returns the discarded build: resolves to a later in-flight `rebuild()`'s result, or reads the cache after a synchronous `invalidate`/`set`/`clear`, which is `null` when nothing ended up cached. |
+| `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by `startSession` to store a new session's fresh base); supersedes any in-flight build or load for this managed id. |
+| `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy; supersedes any in-flight build or load for this managed id. |
+| `clear`      | action | `() => void`                                                                                           | Drop every cached copy and supersede every in-flight build and load; called by `useDataVisStore().resetState()` on a workspace reset. |
 | `extents`    | action | `(managedIds: string[]) => { phenomenonBeginTime: string; phenomenonEndTime: string }[]`               | The cached copies' windows for the given managed ids, in ISO form; ids with no cached copy are omitted. |
 
 ### `usePlotlyStore()` — `src/store/plotly.ts`

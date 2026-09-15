@@ -534,3 +534,52 @@ describe('reconstructCommittedSession — attribution', () => {
     ])
   })
 })
+
+describe('reconstructSession with a real ObservationRecord', () => {
+  // Pins the persisted shape of a delete (also seeded by
+  // e2e/managed-preview.spec.ts): the SELECTION it consumes, then DELETE_POINTS.
+  it('replays a saved SELECTION and DELETE_POINTS onto a copy of the base', async () => {
+    const { ObservationRecord: Record, applyHistory, serializeHistory } =
+      await import('@uwrl/qc-utils')
+    const { sessionOperationsFromSerialized } = await import('../persistOperations')
+    const qc = makeQcFake()
+    const historyId = await newHistory(qc)
+    const range = win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z')
+    const s = unwrap(await qc.sessions.create(historyId, range))
+    const persisted = [
+      { operationType: 'SELECTION', arguments: [[1, 2, 3]], order: 0 },
+      { operationType: 'DELETE_POINTS', arguments: [], order: 1 },
+    ]
+    await qc.operations.create(historyId, s.id, persisted as any)
+
+    const sourceRec = new Record({
+      datetimes: [1, 2, 3, 4, 5, 6],
+      dataValues: [10, 20, 30, 40, 50, 60],
+    })
+    await sourceRec.reload()
+    const fetchInRange = vi.fn(async (ds: Datastream) =>
+      ds.id === managed.id ? ({ dataX: [] } as unknown as ObservationRecord) : sourceRec
+    )
+
+    const { record, report } = await reconstructSession(
+      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      managed,
+      source,
+      historyId,
+      s.id
+    )
+
+    expect(report).toEqual({ applied: 2, failed: [] })
+    expect(Array.from(record.dataX)).toEqual([1, 5, 6])
+    expect(Array.from(record.dataY)).toEqual([10, 50, 60])
+    expect(Array.from(sourceRec.dataX)).toEqual([1, 2, 3, 4, 5, 6])
+    // Saving the replayed history yields the same operations back.
+    const resaved = sessionOperationsFromSerialized(
+      serializeHistory(record, {
+        startDate: range.phenomenonTimeStart,
+        endDate: range.phenomenonTimeEnd,
+      }).operations
+    )
+    expect(resaved).toEqual(persisted)
+  })
+})

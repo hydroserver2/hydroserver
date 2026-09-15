@@ -33,27 +33,14 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
   // Not reactive: records hold large typed arrays that must not be proxied.
   const copies = new Map<string, WorkingCopy>()
 
-  // Per-managed-id generation, bumped by invalidate/set and by every new
-  // build (load's own build, and rebuild). A build only writes its result
-  // to `copies` if its generation is still the latest once its await
-  // resolves; otherwise a later invalidate/set/build has already
-  // superseded it and the late write is silently dropped. This is what
-  // keeps a stale in-flight reconstruction from resurrecting a copy after
-  // the session it belongs to was committed or deleted.
+  // Bumped by every invalidate/set/clear and new build; a build caches its
+  // result only if its generation is still current.
   const generations = new Map<string, number>()
 
-  // One in-flight load() build per managed id, so concurrent load() calls
-  // for the same datastream share a single reconstruction and resolve to
-  // the same record instead of each producing their own (the editor
-  // mutates records in place, so two instances would diverge).
+  // Shared so concurrent loads resolve to one record (edits mutate in place).
   const inFlightLoads = new Map<string, Promise<WorkingCopy | null>>()
 
-  // The most recently started rebuild() for a managed id, if still in
-  // flight. A rebuild superseded by a later one chains onto this instead
-  // of guessing at the cache, so it resolves to the same result as the
-  // rebuild that actually wins the race, regardless of which finishes
-  // its fetch first. Cleared by bump() (any invalidate/set/new build
-  // supersedes it) and re-registered by rebuild() right after.
+  // The latest in-flight rebuild; loads and superseded rebuilds join it.
   const activeRebuild = new Map<string, Promise<WorkingCopy | null>>()
 
   function bump(managedId: string): number {
@@ -73,20 +60,27 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     end: Date
   ) {
     bump(managedId)
+    inFlightLoads.delete(managedId)
     copies.set(managedId, { sessionId, record, begin, end })
   }
 
   function invalidate(managedId: string) {
     bump(managedId)
+    inFlightLoads.delete(managedId)
     copies.delete(managedId)
   }
 
-  /**
-   * Reconstruct and, if still current, cache the result. Returns null
-   * (and leaves the cache untouched) when superseded while awaiting, so
-   * `load`/`rebuild` can tell the two cases apart and never hand a caller
-   * a record that isn't the cached one.
-   */
+  /** Drop every copy and supersede every in-flight build. */
+  function clear() {
+    // A load still listing sessions has no generation yet; bump it too.
+    const ids = new Set([...generations.keys(), ...inFlightLoads.keys()])
+    for (const managedId of ids) bump(managedId)
+    copies.clear()
+    inFlightLoads.clear()
+    activeRebuild.clear()
+  }
+
+  /** Reconstruct and cache the result; null when superseded while awaiting. */
   async function build(
     managed: Datastream,
     source: Datastream,
@@ -119,33 +113,42 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     return copy
   }
 
-  async function rebuild(
+  /** What a superseded build resolves to: a newer rebuild's result, else the cache. */
+  async function current(managedId: string): Promise<WorkingCopy | null> {
+    const rebuilding = activeRebuild.get(managedId)
+    if (rebuilding) return rebuilding
+    return copies.get(managedId) ?? null
+  }
+
+  /** Always reconstructs, superseding any in-flight load or earlier rebuild. */
+  function rebuild(
     managed: Datastream,
     source: Datastream,
     historyId: string,
     session: SessionWindow
   ): Promise<WorkingCopy | null> {
-    // Always forces a fresh reconstruction, superseding any load() build
-    // or earlier rebuild() in flight for this managed id.
     const generation = bump(managed.id)
     inFlightLoads.delete(managed.id)
-    const pending = build(managed, source, historyId, session, generation)
-    activeRebuild.set(managed.id, pending)
-    try {
-      const built = await pending
-      if (built) return built
-      // Superseded while awaiting. A later rebuild is now the
-      // authoritative one: chain onto it so both resolve together,
-      // whichever fetch actually finishes first. Otherwise (a
-      // synchronous invalidate/set) the cache already holds the answer.
-      const winner = activeRebuild.get(managed.id)
-      if (winner && winner !== pending) return await winner
-      return copies.get(managed.id) ?? null
-    } finally {
-      if (activeRebuild.get(managed.id) === pending) {
-        activeRebuild.delete(managed.id)
-      }
-    }
+    const promise: Promise<WorkingCopy | null> = build(
+      managed,
+      source,
+      historyId,
+      session,
+      generation
+    )
+      .then(async (built) => {
+        if (built) return built
+        const winner = activeRebuild.get(managed.id)
+        if (winner && winner !== promise) return winner
+        return copies.get(managed.id) ?? null
+      })
+      .finally(() => {
+        if (activeRebuild.get(managed.id) === promise) {
+          activeRebuild.delete(managed.id)
+        }
+      })
+    activeRebuild.set(managed.id, promise)
+    return promise
   }
 
   async function performLoad(
@@ -153,11 +156,16 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     source: Datastream,
     historyId: string
   ): Promise<WorkingCopy | null> {
+    const startGeneration = generations.get(managed.id)
     const { hs } = storeToRefs(useHydroServer())
     const session = await getInProgressSession(
       hs.value.qualityControlSessions,
       historyId
     )
+    // Superseded while listing sessions: never bump over what replaced us.
+    if (generations.get(managed.id) !== startGeneration) {
+      return current(managed.id)
+    }
     if (!session) {
       invalidate(managed.id)
       return null
@@ -167,10 +175,7 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
 
     const generation = bump(managed.id)
     const built = await build(managed, source, historyId, session, generation)
-    // Superseded while awaiting (invalidate/set/rebuild landed first):
-    // don't hand the caller a record that isn't (and won't become) the
-    // cached entry. Report whatever is current instead.
-    return built ?? copies.get(managed.id) ?? null
+    return built ?? current(managed.id)
   }
 
   function load(
@@ -178,6 +183,8 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     source: Datastream,
     historyId: string
   ): Promise<WorkingCopy | null> {
+    const rebuilding = activeRebuild.get(managed.id)
+    if (rebuilding) return rebuilding
     const existing = inFlightLoads.get(managed.id)
     if (existing) return existing
 
@@ -204,5 +211,5 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     })
   }
 
-  return { get, set, invalidate, load, rebuild, extents }
+  return { get, set, invalidate, clear, load, rebuild, extents }
 })

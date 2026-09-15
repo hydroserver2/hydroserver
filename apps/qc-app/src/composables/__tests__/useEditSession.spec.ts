@@ -198,7 +198,7 @@ describe('useEditSession', () => {
     expect(redraw).toHaveBeenCalled()
   })
 
-  it('beginEditing leaves the session unresumed when the working copy is invalidated mid-resume', async () => {
+  it('beginEditing rejects when the working copy is superseded mid-resume, without asking to start a session', async () => {
     const h = unwrap(
       await qc.histories.create({
         managedDatastreamId: 'm-1',
@@ -206,18 +206,22 @@ describe('useEditSession', () => {
       })
     )
     await qc.sessions.create(h.id, WIN)
-    // Superseded by an invalidate while resuming (e.g. the user already left
-    // Edit, or the session was deleted) leaves nothing cached to show.
+    // Superseded while resuming (e.g. the session was deleted, or the
+    // workspace was reset), so nothing replayed is cached.
     wcRebuild.mockResolvedValueOnce(null)
     const original = selectedSeries.value.data
-    const { useEditSession } = await import('@/composables/useEditSession')
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
     const { beginEditing, needsSession } = useEditSession()
-    await beginEditing()
-    // Falls back to "needs a session": entering the editor via `enterEdit`
-    // will auto-start one, and `startOrResumeSession` is idempotent, so it
-    // resumes the same in-progress session rather than creating a new one.
-    expect(needsSession.value).toBe(true)
+    needsSession.value = true
+
+    await expect(beginEditing()).rejects.toBeInstanceOf(ResumeSupersededError)
+
+    // Starting a session here would edit a bare base under the saved draft.
+    expect(needsSession.value).toBe(false)
     expect(selectedSeries.value.data).toBe(original)
+    expect(useQcSessionStore().savedEdits).toEqual([])
     expect(redraw).not.toHaveBeenCalled()
   })
 
@@ -472,6 +476,86 @@ describe('useEditSession', () => {
     )
   })
 
+  it('startSession over an existing in-progress session replays its saved operations as the saved baseline', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    expect(session.needsSession.value).toBe(true)
+
+    // Someone else starts the session and saves a draft first.
+    const existing = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.operations.create(h.id, existing.id, [
+      { operationType: 'SELECTION' as any, arguments: [[0]], order: 0 },
+      { operationType: 'DELETE_POINTS' as any, arguments: [], order: 1 },
+    ])
+    const replayed = makeRecord([
+      { method: 'SELECTION', args: [[0]] },
+      { method: 'DELETE_POINTS', args: [] },
+    ])
+    wcRebuild.mockResolvedValue({
+      sessionId: existing.id,
+      record: replayed,
+      begin: new Date(0),
+      end: new Date(1),
+    })
+    const savedIds = unwrap(await qc.operations.list(h.id, existing.id)).map((o) => o.id)
+
+    await session.startSession(WIN)
+
+    expect(wcRebuild).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'm-1' }),
+      expect.objectContaining({ id: 's-1' }),
+      h.id,
+      expect.objectContaining({ id: existing.id })
+    )
+    expect(wcSet).not.toHaveBeenCalled()
+    expect(toRaw(selectedSeries.value.data)).toBe(replayed)
+    expect(useQcSessionStore().savedEdits).toHaveLength(2)
+    expect(session.hasUnsavedChanges.value).toBe(false)
+    expect(session.needsSession.value).toBe(false)
+
+    // Saving keeps the server's operations instead of reconciling them away.
+    await session.saveDraft()
+    const afterSave = unwrap(await qc.operations.list(h.id, existing.id))
+    expect(afterSave.map((o) => o.id)).toEqual(savedIds)
+    expect(unwrap(await qc.sessions.list(h.id))).toHaveLength(1)
+  })
+
+  it('startSession rejects when resuming an existing session is superseded, without editing a bare base', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
+    const session = useEditSession()
+    await session.beginEditing()
+    const existing = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.operations.create(h.id, existing.id, [
+      { operationType: 'SELECTION' as any, arguments: [[0]], order: 0 },
+      { operationType: 'DELETE_POINTS' as any, arguments: [], order: 1 },
+    ])
+    wcRebuild.mockResolvedValueOnce(null)
+    const original = selectedSeries.value.data
+
+    await expect(session.startSession(WIN)).rejects.toBeInstanceOf(
+      ResumeSupersededError
+    )
+
+    expect(wcSet).not.toHaveBeenCalled()
+    expect(selectedSeries.value.data).toBe(original)
+    expect(unwrap(await qc.operations.list(h.id, existing.id))).toHaveLength(2)
+  })
+
   it('commit drops the working copy once the session is committed', async () => {
     await seedHistory()
     const { useEditSession } = await import('@/composables/useEditSession')
@@ -650,7 +734,9 @@ describe('useEditSession.viewSession', () => {
     // Returning to the in-progress session is superseded mid-flight (e.g.
     // the working copy was invalidated), so its rebuild resolves null.
     wcRebuild.mockResolvedValueOnce(null)
-    await session.viewSession(inProgress.id)
+    await expect(session.viewSession(inProgress.id)).rejects.toThrow(
+      /changed while it was opening/
+    )
 
     // Stays on the committed session: still read-only, still showing the
     // committed snapshot, not silently editable over it.

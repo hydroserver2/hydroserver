@@ -32,20 +32,21 @@ export async function getInProgressSession(
 /**
  * Resume the history's in-progress session if one exists, otherwise start
  * a new one with the given window/description. Returns the session detail
- * (with its operations) either way. On resume the spec is ignored — the
- * existing session keeps its own window.
+ * (with its operations) and whether it already existed. On resume the spec
+ * is ignored and the existing session keeps its own window.
  */
 export async function startOrResumeSession(
   qcSessions: QualityControlSessionService,
   historyId: string,
   spec: QcSessionPostBody
-): Promise<QcSessionDetail> {
+): Promise<{ session: QcSessionDetail; resumed: boolean }> {
   const existing = await getInProgressSession(qcSessions, historyId)
   if (existing) {
     // A single-resource GET returns the detail shape (with operations).
-    return unwrap(await qcSessions.get(historyId, existing.id)) as QcSessionDetail
+    const session = unwrap(await qcSessions.get(historyId, existing.id)) as QcSessionDetail
+    return { session, resumed: true }
   }
-  return unwrap(await qcSessions.create(historyId, spec))
+  return { session: unwrap(await qcSessions.create(historyId, spec)), resumed: false }
 }
 
 /** Fetch signature matching `useObservationStore.fetchObservationsInRange`. */

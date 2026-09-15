@@ -12,7 +12,7 @@ the operator's manual; QUALITY.md is the policy.
 
 | Layer      | Runner                          | Where                        | Count    |
 | ---------- | ------------------------------- | ---------------------------- | -------- |
-| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 58 files |
+| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 59 files |
 | End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 30 files |
 
 There is no separate "integration" tier — component tests live in the

@@ -42,10 +42,14 @@ vi.mock('@/store/observations', () => ({
 
 const mockWorkingCopies = new Map<string, any>()
 const mockLoadWorkingCopy = vi.fn(async (managed: any) => mockWorkingCopies.get(managed.id) ?? null)
+const mockInvalidateWorkingCopy = vi.fn((id: string) => mockWorkingCopies.delete(id))
+const mockClearWorkingCopies = vi.fn(() => mockWorkingCopies.clear())
 vi.mock('@/store/workingCopies', () => ({
   useWorkingCopiesStore: () => ({
     get: (id: string) => mockWorkingCopies.get(id),
     load: mockLoadWorkingCopy,
+    invalidate: mockInvalidateWorkingCopy,
+    clear: mockClearWorkingCopies,
     extents: (ids: string[]) =>
       ids.flatMap((id) => {
         const c = mockWorkingCopies.get(id)
@@ -435,6 +439,13 @@ describe('useDataVisStore.resetState', () => {
     const store = useDataVisStore()
     store.resetState()
     expect(mockClearChartState).toHaveBeenCalled()
+  })
+
+  it('clears every working copy, which belongs to the workspace being left', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.resetState()
+    expect(mockClearWorkingCopies).toHaveBeenCalled()
   })
 
   it('preserves selectedDateBtnId (user preference, not workspace state)', async () => {
@@ -1150,6 +1161,46 @@ describe('useDataVisStore managed datastream working copy', () => {
     await store.plotDatastream(store.datastreams[1] as any)
 
     expect(mockFetchGraphSeries).toHaveBeenCalled()
+  })
+
+  it('drops the working copy of a managed datastream that is unplotted', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockWorkingCopies.set('mgd', copy)
+    await store.plotDatastream(store.datastreams[0] as any)
+    await store.plotDatastream(store.datastreams[1] as any)
+    expect(mockInvalidateWorkingCopy).not.toHaveBeenCalled()
+
+    await store.unplotDatastream('mgd')
+
+    expect(mockInvalidateWorkingCopy).toHaveBeenCalledWith('mgd')
+  })
+
+  it('drops working copies when the whole plot is cleared', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockWorkingCopies.set('mgd', copy)
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    await store.clearPlottedDatastreams()
+
+    expect(mockInvalidateWorkingCopy).toHaveBeenCalledWith('mgd')
+  })
+
+  it('keeps the QC target working copy even when it is not plotted', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withManaged(store)
+    mockWorkingCopies.set('mgd', copy)
+    await store.plotDatastream(store.datastreams[1] as any)
+
+    store.plottedDatastreams = [store.datastreams[0] as any]
+    await store.refreshGraphSeriesArray()
+
+    expect(store.qcDatastreamId).toBe('mgd')
+    expect(mockInvalidateWorkingCopy).not.toHaveBeenCalled()
   })
 })
 

@@ -541,7 +541,10 @@ import { computed, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
-import { useEditSession } from '@/composables/useEditSession'
+import {
+  ResumeSupersededError,
+  useEditSession,
+} from '@/composables/useEditSession'
 import { useUnsavedChangesWarning } from '@/composables/useUnsavedChangesWarning'
 import { useResumeEditSession } from '@/composables/useResumeEditSession'
 import { useQcSessionStore } from '@/store/qcSession'
@@ -826,10 +829,18 @@ async function startSessionForWindow() {
     await redraw()
     Snackbar.success('Edit session started.')
   } catch (e) {
-    Snackbar.error(e instanceof Error ? e.message : 'Could not start the session.')
+    if (e instanceof ResumeSupersededError) abandonSupersededResume(e)
+    else Snackbar.error(e instanceof Error ? e.message : 'Could not start the session.')
   } finally {
     isStartingSession.value = false
   }
+}
+
+// Nothing replayed is wired in and the footer would still offer Save, so
+// leave for Select rather than let edits save over the saved draft.
+function abandonSupersededResume(e: ResumeSupersededError) {
+  exitToSelect()
+  Snackbar.error(e.message)
 }
 
 async function onCreateProcessingLevel(input: {
@@ -1245,7 +1256,13 @@ async function onChooserDeleteSession(
 // Enter the editor on the current QC-target managed datastream: resume its
 // in-progress session, or start a new one over the selected time range.
 async function enterEdit() {
-  await beginEditing()
+  try {
+    await beginEditing()
+  } catch (e) {
+    if (!(e instanceof ResumeSupersededError)) throw e
+    abandonSupersededResume(e)
+    return
+  }
   if (needsHistory.value) {
     Snackbar.error('This datastream is not set up for QC editing.')
     return

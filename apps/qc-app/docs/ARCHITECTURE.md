@@ -285,10 +285,21 @@ Two contract notes worth keeping in mind:
   datastream**, cached in `workingCopies` (`store/workingCopies.ts`). It is
   built on a copy of the base (`reconstructSession`/`loadLatestBase`'s
   `cloneRecord`), never the observation store's cached record, so the raw
-  datastream's cached observations are never edited. It is dropped
-  (`invalidate`) on commit, on leaving the editor, and when its session or
-  managed datastream is deleted, so the next preview or resume rebuilds it
-  from what was actually saved.
+  datastream's cached observations are never edited. It is invalidated when
+  the editor closes through `exitToSelect` (Close, Save and close, or close
+  without saving), on commit, when its session or managed datastream is
+  deleted, and when a managed datastream other than the QC target stops being
+  plotted; `resetState` clears every copy on a workspace reset. A nav rail
+  switch to Select keeps the copy, which then equals the saved state because
+  the exit guard saves or discards first. The next preview or resume rebuilds
+  it from what was actually saved.
+- **Editing never starts over saved draft operations without replaying
+  them.** The save reconciles operations by position, so a base without the
+  replayed draft would delete the server's operations on the next save.
+  `startSession` resumes an existing in-progress session through
+  `workingCopies.rebuild` like `beginEditing` does, and a resume whose rebuild
+  is superseded (`null`) throws `ResumeSupersededError` instead of falling
+  back to starting a session; the editor then returns to the Select view.
 - **Viewing a past session replays its ancestor chain from the source.**
   The managed datastream carries every commit, so it cannot be the base for a
   historical view: replaying an older session's operations on top of it would

@@ -45,10 +45,11 @@ describe('startOrResumeSession', () => {
   it('starts a new session when none is in progress', async () => {
     const qc = makeQcFake()
     const historyId = await historyWith(qc)
-    const session = await startOrResumeSession(qc.sessions, historyId, {
+    const { session, resumed } = await startOrResumeSession(qc.sessions, historyId, {
       ...WIN,
       description: 'Jan QC',
     })
+    expect(resumed).toBe(false)
     expect(session.status).toBe('in_progress')
     expect(session.description).toBe('Jan QC')
     expect(unwrap(await qc.sessions.list(historyId))).toHaveLength(1)
@@ -58,12 +59,13 @@ describe('startOrResumeSession', () => {
     const qc = makeQcFake()
     const historyId = await historyWith(qc)
     const first = unwrap(await qc.sessions.create(historyId, WIN))
-    const resumed = await startOrResumeSession(qc.sessions, historyId, {
+    const { session, resumed } = await startOrResumeSession(qc.sessions, historyId, {
       phenomenonTimeStart: '2030-01-01T00:00:00Z',
       phenomenonTimeEnd: '2030-02-01T00:00:00Z',
     })
-    expect(resumed.id).toBe(first.id)
-    expect(resumed.phenomenonTimeStart).toBe(WIN.phenomenonTimeStart)
+    expect(resumed).toBe(true)
+    expect(session.id).toBe(first.id)
+    expect(session.phenomenonTimeStart).toBe(WIN.phenomenonTimeStart)
     expect(unwrap(await qc.sessions.list(historyId))).toHaveLength(1)
   })
 })

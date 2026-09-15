@@ -3,10 +3,9 @@
  * wiring the QC service layer to the app's stores:
  *   - beginEditing: resolve the managed datastream's history, load its
  *     sessions, and resume the in-progress one (or signal that a session
- *     must be started); reports whether it actually resumed, so a caller
- *     that changed view state beforehand (viewSession) can undo it on
- *     failure,
- *   - startSession: create a session and copy the source window in,
+ *     must be started); reports whether it actually resumed,
+ *   - startSession: create a session and copy the source window in, or
+ *     resume the in-progress one if it already exists,
  *   - saveDraft: persist the record's edit operations to the session
  *     (append-only, so each user's operations keep their creator),
  *   - commit: push the final observations (replace) and lock the session.
@@ -25,7 +24,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useHydroServer } from '@/store/hydroserver'
 import { useObservationStore } from '@/store/observations'
 import { useQcSessionStore } from '@/store/qcSession'
-import { useWorkingCopiesStore } from '@/store/workingCopies'
+import { useWorkingCopiesStore, type SessionWindow } from '@/store/workingCopies'
 import {
   findHistoryForDatastream,
   startOrResumeSession,
@@ -67,6 +66,15 @@ function clampSpecToSource(
     ...spec,
     phenomenonTimeStart: new Date(start).toISOString(),
     phenomenonTimeEnd: new Date(end).toISOString(),
+  }
+}
+
+/** A resume whose working copy was superseded mid-build, so nothing replayed
+ *  could be wired in. Editing must not continue over it. */
+export class ResumeSupersededError extends Error {
+  constructor() {
+    super('The edit session changed while it was opening. Open it again to keep editing.')
+    this.name = 'ResumeSupersededError'
   }
 }
 
@@ -119,6 +127,22 @@ export function useEditSession() {
       .length
   })
 
+  /** Wire in the session's working copy with its saved operations replayed.
+   *  Throws if superseded: a bare base would save over those operations. */
+  async function resumeWorkingCopy(
+    managed: Datastream,
+    source: Datastream,
+    historyId: string,
+    session: SessionWindow
+  ): Promise<void> {
+    const built = await workingCopies.rebuild(managed, source, historyId, session)
+    if (!built) throw new ResumeSupersededError()
+    if (selectedSeries.value) selectedSeries.value.data = built.record
+    // The replayed draft operations are the saved baseline.
+    snapshotSavedEdits()
+    needsSession.value = false
+  }
+
   /** Returns true when an in-progress session's working copy was wired into
    *  the plot, i.e. the editor is now genuinely editable over it. */
   async function beginEditing(): Promise<boolean> {
@@ -143,34 +167,16 @@ export function useEditSession() {
     const inProgress = sessionStore.inProgressSession
     const record = selectedSeries.value?.data
     if (inProgress && sourceDatastream.value && record) {
-      // Resume: rebuild the same working copy the Select-view plot shows,
-      // from the server, so it holds exactly the saved draft operations.
-      const built = await workingCopies.rebuild(
+      // A session exists, so a failed resume must never ask to start one.
+      needsSession.value = false
+      await resumeWorkingCopy(
         managed,
         sourceDatastream.value,
         history.id,
         inProgress
       )
-      if (!built) {
-        // The rebuild was superseded by an invalidate while in flight (the
-        // user already left Edit, or the session/datastream was deleted
-        // mid-resume): there is nothing to wire in. Leave `needsSession` true
-        // rather than fake a resume; `enterEdit` treats that as "start a
-        // session", and `startOrResumeSession` is idempotent, so it resumes
-        // this same in-progress session instead of creating a duplicate.
-        // Report failure so a caller that already flipped view state (e.g.
-        // `viewSession`) knows to undo it instead of leaving the editor
-        // reporting editable over whatever was plotted before.
-        needsSession.value = true
-        return false
-      }
-      if (selectedSeries.value) selectedSeries.value.data = built.record
-      // Nothing watches for a swapped-in record; resume has no caller that
-      // redraws, unlike the start-session path.
+      // Nothing watches for a swapped-in record, and no caller redraws here.
       await redraw()
-      // The replayed draft operations are the saved baseline.
-      snapshotSavedEdits()
-      needsSession.value = false
       return true
     } else {
       needsSession.value = true
@@ -190,11 +196,8 @@ export function useEditSession() {
       throw new Error('Load a managed datastream for editing first.')
     }
     if (sessionId === sessionStore.currentSessionId) {
-      // `returnToCurrent` flips `isReadOnly` to false immediately, before
-      // the in-progress working copy is actually (re)built. If that build
-      // fails (superseded by an invalidate), undo the flip and go back to
-      // what is still on the plot, instead of reporting editable over a
-      // committed session's snapshot.
+      // `returnToCurrent` flips to editable before the rebuild; undo that
+      // unless the resume actually wires in the working copy.
       const previousSessionId = sessionStore.viewedSessionId
       sessionStore.returnToCurrent()
       sessionStore.isSwitchingSession = true
@@ -204,6 +207,9 @@ export function useEditSession() {
           sessionStore.viewSession(previousSessionId)
           needsSession.value = false
         }
+      } catch (e) {
+        if (previousSessionId) sessionStore.viewSession(previousSessionId)
+        throw e
       } finally {
         sessionStore.isSwitchingSession = false
       }
@@ -246,12 +252,17 @@ export function useEditSession() {
     if (!historyId || !source || !managed) {
       throw new Error('Load a managed datastream for editing first.')
     }
-    const session = await startOrResumeSession(
+    const { session, resumed } = await startOrResumeSession(
       hs.value.qualityControlSessions,
       historyId,
       clampSpecToSource(spec, source)
     )
     await sessionStore.loadSessions(historyId)
+    if (resumed) {
+      // It may already hold saved operations; edit their replay, not a bare base.
+      await resumeWorkingCopy(managed, source, historyId, session)
+      return
+    }
     // Start from the latest committed state (the managed datastream), or the
     // raw source when nothing has been committed yet.
     const base = await loadLatestBase(

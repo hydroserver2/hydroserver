@@ -79,6 +79,17 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     )
   }
 
+  /** Drop copies no longer plotted, which would hide drafts saved since;
+   *  the QC target keeps its copy for the editor. */
+  function invalidateUnplottedWorkingCopies() {
+    const workingCopies = useWorkingCopiesStore()
+    const plotted = new Set(plottedDatastreams.value.map((d) => d.id))
+    for (const { id } of graphSeriesArray.value) {
+      if (plotted.has(id) || id === qcDatastreamId.value) continue
+      if (managedDatastreamIds.value.has(id)) workingCopies.invalidate(id)
+    }
+  }
+
   /** Ids of every managed datastream; these are hidden from the catalog. */
   const managedDatastreamIds = computed(() => {
     const ids = new Set<string>()
@@ -192,6 +203,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     qcDatastreamId.value = null
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
+    // Working copies belong to the workspace being left.
+    useWorkingCopiesStore().clear()
     // selectedDateBtnId is a user preference, not workspace state.
     // Old watcher used to call clearChartState when plottedDatastreams
     // emptied; with the watcher gone, do it here explicitly.
@@ -501,6 +514,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   async function doRebuildPlot() {
     hasSelectionShape.value = false
     if (!plottedDatastreams.value.length) {
+      invalidateUnplottedWorkingCopies()
       clearChartState()
       return
     }
@@ -696,6 +710,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   /** Refreshes the graphSeriesArray based on the current selection of datastreams */
   const refreshGraphSeriesArray = async () => {
     // Remove graphSeries that are no longer selected
+    invalidateUnplottedWorkingCopies()
     const currentIds = new Set(plottedDatastreams.value.map((ds) => ds.id))
     graphSeriesArray.value = graphSeriesArray.value.filter((s) =>
       currentIds.has(s.id)
