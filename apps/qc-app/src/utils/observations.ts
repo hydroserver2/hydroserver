@@ -18,7 +18,7 @@ export const fetchObservationsSync = async (
       limit: 50_000,
       phenomenon_time_min: startTime?.toISOString() ?? phenomenonBeginTime,
       phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
-      order_by: ['phenomenonTime'],
+      sortby: ['phenomenonTime'],
       format: 'column',
     })
 

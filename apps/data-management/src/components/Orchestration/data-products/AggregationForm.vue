@@ -364,7 +364,7 @@ async function loadDatastreams() {
   try {
     const items = await hs.datastreams.listAllItems({
       workspace_id: [workspaceId],
-      order_by: ['name'],
+      sortby: ['name'],
       expand_related: true,
     } as any)
     datastreams.value = items as Datastream[]

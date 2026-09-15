@@ -857,7 +857,7 @@ from datetime import datetime, timezone
 task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # List recent runs
-runs = task.list_runs(order_by=['-started_at'], limit=10)
+runs = task.list_runs(sortby=['-started_at'], limit=10)
 
 # Filter runs by status
 failed_runs = task.list_runs(status='FAILURE')
@@ -1012,7 +1012,7 @@ print(task_run.status)  # 'PENDING'
 task = hs_api.data_product_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # List recent runs
-runs = task.list_runs(order_by=['-started_at'], limit=10)
+runs = task.list_runs(sortby=['-started_at'], limit=10)
 
 # Filter runs by status
 failed_runs = task.list_runs(status='FAILURE')
@@ -1213,7 +1213,7 @@ print(task_run.status)  # 'PENDING'
 task = hs_api.monitoring_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # List recent runs
-runs = task.list_runs(order_by=['-started_at'], limit=10)
+runs = task.list_runs(sortby=['-started_at'], limit=10)
 
 # Filter runs by status
 failed_runs = task.list_runs(status='FAILURE')

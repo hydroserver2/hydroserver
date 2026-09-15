@@ -14,7 +14,7 @@ from interfaces.api.service import APIService
 from processing.orchestration.services import TaskService
 from processing.etl.models import EtlTask, DataConnection
 from interfaces.api.schemas.etl.task import (
-    EtlTaskOrderByFields,
+    EtlTaskSortByFields,
     EtlTaskResponse,
     EtlTaskPostBody,
     EtlTaskPatchBody,
@@ -30,10 +30,10 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
     task_model = EtlTask
     INCLUDE_RELATIONS = ETL_TASK_INCLUDE_RELATIONS
 
-    order_by_fields = {
-        "id", "name", "data_connection_id", "data_connection__name", "data_connection__workspace_id",
-        "data_connection__workspace__name", "latest_run_status", "latest_run_started_at",
-        "latest_run_finished_at",
+    sortby_aliases = {
+        "dataConnectionName": "data_connection__name",
+        "workspaceId": "data_connection__workspace_id",
+        "workspaceName": "data_connection__workspace__name",
     }
 
     def get_task_for_action(
@@ -87,7 +87,7 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -96,14 +96,14 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
 
         queryset = self.task_model.objects
 
-        order_by = order_by or []
+        sortby = sortby or []
 
         latest_run_fields = [
             "latest_run_status", "latest_run_started_at_min", "latest_run_started_at_max",
             "latest_run_finished_at_min", "latest_run_finished_at_max",
         ]
         if any(field in filtering for field in latest_run_fields) or any(
-            term.lstrip("-") in self.latest_run_filter_fields for term in order_by
+            term.lstrip("-") in self.latest_run_filter_fields for term in sortby
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
@@ -141,12 +141,9 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         if "latest_run_finished_at_max" in filtering:
             queryset = queryset.filter(latest_run_finished_at__lte=filtering["latest_run_finished_at_max"])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(EtlTaskOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("-id")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(EtlTaskSortByFields)), self.sortby_aliases
+        )
 
         queryset = queryset.select_related(
             "periodic_task__crontab", "periodic_task__interval"

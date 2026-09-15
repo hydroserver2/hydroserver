@@ -4,7 +4,7 @@ from typing import List, Literal, Optional, Union, TYPE_CHECKING
 from uuid import UUID
 from hydroserverpy.api.models.monitoring.rule import MonitoringRule
 from hydroserverpy.api.models.base import HydroServerCollection
-from hydroserverpy.api.utils import normalize_uuid, order_by_to_camel
+from hydroserverpy.api.utils import normalize_uuid, sortby_to_camel
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
@@ -29,7 +29,7 @@ class MonitoringRuleService:
         task_id: Union[UUID, str],
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         datastream: Optional[Union[UUID, str]] = ...,
         rule_type: str = ...,
         fetch_all: bool = False,
@@ -39,7 +39,7 @@ class MonitoringRuleService:
         params = {
             "offset": offset,
             "limit": limit,
-            "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
+            "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "datastream_id": normalize_uuid(datastream),
             "rule_type": rule_type,
         }
@@ -57,7 +57,7 @@ class MonitoringRuleService:
             client=self.client,
             service=self,
             response=response,
-            order_by=params.get("order_by"),
+            sortby=params.get("sortby"),
             filters={"task_id": task_id},
             items=items,
         )

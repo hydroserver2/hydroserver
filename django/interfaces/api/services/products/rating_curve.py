@@ -13,7 +13,7 @@ from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionD
 from interfaces.api.service import APIService
 from interfaces.api.schemas.products.rating_curve import (
     RatingCurveFields,
-    RatingCurveOrderByFields,
+    RatingCurveSortByFields,
     RatingCurvePatchBody,
     RatingCurvePostBody,
     RatingCurveResponse,
@@ -22,7 +22,7 @@ from interfaces.api.schemas.products.rating_curve import (
 
 User = get_user_model()
 
-RATING_CURVE_ORDER_BY_ALIASES = {
+RATING_CURVE_SORTBY_ALIASES = {
     "monitoringSiteName": "monitoring_site__name",
     "workspaceId": "monitoring_site__workspace_id",
     "workspaceName": "monitoring_site__workspace__name",
@@ -68,7 +68,7 @@ class RatingCurveAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -79,15 +79,12 @@ class RatingCurveAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(RatingCurveOrderByFields)),
-                field_aliases=RATING_CURVE_ORDER_BY_ALIASES,
-            )
-        else:
-            queryset = queryset.order_by("-id")
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(RatingCurveSortByFields)),
+            field_aliases=RATING_CURVE_SORTBY_ALIASES,
+        )
 
         queryset = queryset.prefetch_related("points")
 

@@ -44,7 +44,7 @@ def get_units(
         principal=request.principal,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
@@ -87,7 +87,7 @@ def get_unit_types(
     return 200, unit_service.list_unit_types(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 

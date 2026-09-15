@@ -15,7 +15,7 @@ from processing.monitoring.models import MonitoringTask, MonitoringRule, Monitor
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
 from interfaces.api.schemas.monitoring.task import (
-    MonitoringTaskOrderByFields,
+    MonitoringTaskSortByFields,
     MonitoringTaskResponse,
     MonitoringTaskPostBody,
     MonitoringTaskPatchBody,
@@ -33,10 +33,10 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
     task_model = MonitoringTask
     INCLUDE_RELATIONS = MONITORING_TASK_INCLUDE_RELATIONS
 
-    order_by_fields = {
-        "id", "name", "monitoring_site_id", "monitoring_site__name",
-        "monitoring_site__workspace_id", "monitoring_site__workspace__name",
-        "latest_run_status", "latest_run_started_at", "latest_run_finished_at",
+    sortby_aliases = {
+        "monitoringSiteName": "monitoring_site__name",
+        "workspaceId": "monitoring_site__workspace_id",
+        "workspaceName": "monitoring_site__workspace__name",
     }
 
     @classmethod
@@ -124,7 +124,7 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -133,10 +133,10 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
 
         queryset = self.task_model.objects
 
-        order_by = order_by or []
+        sortby = sortby or []
 
         if "latest_run_status" in filtering or any(
-            term.lstrip("-") in self.latest_run_filter_fields for term in order_by
+            term.lstrip("-") in self.latest_run_filter_fields for term in sortby
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
@@ -163,12 +163,9 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         if "rule_type" in filtering:
             queryset = self.apply_filters(queryset, "rules__rule_type", filtering["rule_type"])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(MonitoringTaskOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("-id")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(MonitoringTaskSortByFields)), self.sortby_aliases
+        )
 
         queryset = queryset.select_related(
             "periodic_task__crontab", "periodic_task__interval"

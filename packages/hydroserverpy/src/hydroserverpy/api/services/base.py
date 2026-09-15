@@ -3,7 +3,7 @@ import uuid
 from typing import TYPE_CHECKING, Type, List, Union
 from datetime import datetime
 from hydroserverpy.api.models.base import HydroServerBaseModel, HydroServerCollection
-from hydroserverpy.api.utils import order_by_to_camel
+from hydroserverpy.api.utils import sortby_to_camel
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
@@ -19,7 +19,7 @@ class HydroServerBaseService:
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         fetch_all: bool = False,
         **kwargs
     ):
@@ -30,7 +30,7 @@ class HydroServerBaseService:
         params.update({
             "offset": offset,
             "limit": limit,
-            "order_by": [order_by_to_camel(order) for order in order_by] if order_by is not ... else order_by
+            "sortby": [sortby_to_camel(order) for order in sortby] if sortby is not ... else sortby
         })
         params = {
             k: ("null" if v is None else v)
@@ -45,7 +45,7 @@ class HydroServerBaseService:
             client=self.client,
             service=self,
             response=response,
-            order_by=params.get("order_by"),
+            sortby=params.get("sortby"),
             filters={
                 (k[:-3] if k.endswith("_id") else k): v
                 for k, v in kwargs.items()

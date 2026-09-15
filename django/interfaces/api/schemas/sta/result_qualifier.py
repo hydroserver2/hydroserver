@@ -31,9 +31,9 @@ RESULT_QUALIFIER_INCLUDE_RELATIONS = {
 }
 ResultQualifierIncludeRelation = Literal[*RESULT_QUALIFIER_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = ("code",)
-ResultQualifierOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("code",)
+ResultQualifierSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -67,8 +67,8 @@ class ResultQualifierItemQueryParameters(ResultQualifierFilterFields, BaseQueryP
 
 
 class ResultQualifierQueryParameters(ResultQualifierFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[ResultQualifierOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[ResultQualifierSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter result qualifiers by workspace ID."

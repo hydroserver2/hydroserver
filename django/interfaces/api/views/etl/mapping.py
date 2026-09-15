@@ -41,7 +41,7 @@ def get_etl_mappings(
         task_id=task_id,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )

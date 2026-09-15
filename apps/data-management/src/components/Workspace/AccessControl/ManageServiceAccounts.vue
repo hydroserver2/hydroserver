@@ -899,7 +899,7 @@ async function loadRoles() {
   try {
     const res = await hs.workspaces.getRoles({
       workspace_id: [workspaceId.value, 'null'],
-      order_by: ['name'],
+      sortby: ['name'],
     })
     if (!res.ok) {
       rolesLoadError.value = 'Unable to load service account roles.'

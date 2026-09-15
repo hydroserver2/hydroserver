@@ -125,7 +125,7 @@ class CollectionQueryParameters(BaseQueryParameters):
 
 
 class VocabularyQueryParameters(CollectionQueryParameters):
-    order_desc: Optional[bool] = Query(
+    sort_desc: Optional[bool] = Query(
         False,
         description="Sort terms by descending.",
     )

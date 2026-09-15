@@ -43,6 +43,7 @@ def get_collaborators(
         workspace_id=workspace_id,
         offset=query.offset,
         limit=query.limit,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )

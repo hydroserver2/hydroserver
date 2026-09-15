@@ -39,7 +39,7 @@ MONITORING_TASK_INCLUDE_RELATIONS = {
 }
 MonitoringTaskIncludeRelation = Literal[*MONITORING_TASK_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "id",
     "name",
     "monitoringSiteId",
@@ -50,8 +50,8 @@ _order_by_fields = (
     "latestRunStartedAt",
     "latestRunFinishedAt",
 )
-MonitoringTaskOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+MonitoringTaskSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -92,8 +92,8 @@ class MonitoringTaskItemQueryParameters(MonitoringTaskFilterFields, BaseQueryPar
 
 
 class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[MonitoringTaskOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[MonitoringTaskSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     monitoring_site: list[uuid.UUID] = Query(
         [], description="Filter monitoring tasks by monitoring_site ID.", alias="monitoring_site_id"

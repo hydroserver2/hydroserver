@@ -12,7 +12,7 @@ from interfaces.api.http.errors import BadRequestError, NotFoundError, Permissio
 from interfaces.api.service import APIService
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationFields,
-    DataProductTransformationOrderByFields,
+    DataProductTransformationSortByFields,
     DataProductTransformationPatchBody,
     DataProductTransformationPostBody,
     DataProductTransformationResponse,
@@ -91,7 +91,7 @@ class DataProductTransformationAPIService(APIService):
         task_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -107,12 +107,9 @@ class DataProductTransformationAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(DataProductTransformationOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(DataProductTransformationSortByFields))
+        )
 
         queryset = queryset.prefetch_related("input_datastreams")
 

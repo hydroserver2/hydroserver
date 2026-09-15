@@ -295,7 +295,7 @@ def test_get_transformations_include_does_not_scale_queries_with_transformation_
     assert len(large.captured_queries) == len(small.captured_queries)
 
 
-def test_get_transformations_orders_by_output_datastream_id(client):
+def test_get_transformations_sorts_by_output_datastream_id(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, monitoring_site = _make_task_with_monitoring_site(workspace)
@@ -303,20 +303,20 @@ def test_get_transformations_orders_by_output_datastream_id(client):
     t2 = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"order_by": "outputDatastreamId"})
+    response = client.get(_transformations_url(task.id), {"sortby": "outputDatastreamId"})
 
     expected = sorted([str(t1.output_datastream_id), str(t2.output_datastream_id)])
     assert response.status_code == 200
     assert [t["outputDatastreamId"] for t in response.json()["data"]] == expected
 
 
-def test_get_transformations_order_by_rejects_unknown_field(client):
+def test_get_transformations_sortby_rejects_unknown_field(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"order_by": "bogus"})
+    response = client.get(_transformations_url(task.id), {"sortby": "bogus"})
 
     assert response.status_code == 400
 

@@ -39,7 +39,7 @@ DATA_PRODUCT_TASK_INCLUDE_RELATIONS = {
 }
 DataProductTaskIncludeRelation = Literal[*DATA_PRODUCT_TASK_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "id",
     "name",
     "monitoringSiteId",
@@ -50,8 +50,8 @@ _order_by_fields = (
     "latestRunStartedAt",
     "latestRunFinishedAt",
 )
-DataProductTaskOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+DataProductTaskSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -91,8 +91,8 @@ class DataProductTaskItemQueryParameters(DataProductTaskFilterFields, BaseQueryP
 
 
 class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[DataProductTaskOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[DataProductTaskSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     monitoring_site: list[uuid.UUID] = Query(
         [], description="Filter data product tasks by monitoring_site ID.", alias="monitoring_site_id"

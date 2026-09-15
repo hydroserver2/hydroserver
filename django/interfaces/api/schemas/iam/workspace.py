@@ -42,12 +42,12 @@ WORKSPACE_INCLUDE_RELATIONS = {
 }
 WorkspaceIncludeRelation = Literal[*WORKSPACE_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "isPrivate",
 )
-WorkspaceOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+WorkspaceSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -85,8 +85,8 @@ class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
 
 
 class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[WorkspaceOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[WorkspaceSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     is_associated: Optional[bool] = Query(
         None,

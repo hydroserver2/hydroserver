@@ -11,7 +11,7 @@ from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundE
 from interfaces.api.service import APIService
 from interfaces.api.schemas.etl.mapping import (
     EtlMappingFields,
-    EtlMappingOrderByFields,
+    EtlMappingSortByFields,
     EtlMappingPatchBody,
     EtlMappingPostBody,
     EtlMappingResponse,
@@ -93,7 +93,7 @@ class EtlMappingAPIService(APIService):
         task_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -107,12 +107,9 @@ class EtlMappingAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(EtlMappingOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(EtlMappingSortByFields))
+        )
 
         if requested_includes:
             select_paths, prefetch_paths = self._include_query_hints(requested_includes)

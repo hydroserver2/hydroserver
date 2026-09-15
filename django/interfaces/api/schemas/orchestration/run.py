@@ -8,15 +8,15 @@ from core.types import ISODatetime
 from interfaces.api.schemas import BaseGetResponse, CollectionQueryParameters
 
 
-_order_by_fields = ("id", "status", "startedAt", "finishedAt")
-TaskRunOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("id", "status", "startedAt", "finishedAt")
+TaskRunSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 
 class TaskRunQueryParameters(CollectionQueryParameters):
-    order_by: list[TaskRunOrderByFields] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: list[TaskRunSortByFields] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     status: list[Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]] = Query(
         [], description="Filters task runs by their status."

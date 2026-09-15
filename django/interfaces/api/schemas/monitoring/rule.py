@@ -37,9 +37,9 @@ MONITORING_RULE_INCLUDE_RELATIONS = {
 }
 MonitoringRuleIncludeRelation = Literal[*MONITORING_RULE_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = ("id", "ruleType", "datastreamId")
-MonitoringRuleOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("id", "ruleType", "datastreamId", "lastCheckedAt")
+MonitoringRuleSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -77,8 +77,8 @@ class MonitoringRuleItemQueryParameters(MonitoringRuleFilterFields, BaseQueryPar
 
 
 class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[MonitoringRuleOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[MonitoringRuleSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     datastream_id: list[uuid.UUID] = Query(
         [], description="Filter rules by datastream ID."

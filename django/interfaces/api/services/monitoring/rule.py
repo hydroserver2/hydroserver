@@ -11,7 +11,7 @@ from interfaces.api.http.errors import NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleFields,
-    MonitoringRuleOrderByFields,
+    MonitoringRuleSortByFields,
     MonitoringRulePatchBody,
     MonitoringRulePostBody,
     MonitoringRuleResponse,
@@ -75,7 +75,7 @@ class MonitoringRuleAPIService(APIService):
         task_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -87,12 +87,9 @@ class MonitoringRuleAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(MonitoringRuleOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("datastream_id", "rule_type")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(MonitoringRuleSortByFields))
+        )
 
         if requested_includes:
             select_paths = [

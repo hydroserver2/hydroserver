@@ -260,6 +260,28 @@
             },
             "title": "Role Id",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "roleId",
+                    "-id",
+                    "-roleId"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "CollaboratorQueryParameters",
@@ -621,40 +643,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "timestampKey",
-                    "timestampFormat",
-                    "timezoneType",
-                    "timezone",
-                    "workspaceId",
-                    "workspaceName",
-                    "-id",
-                    "-name",
-                    "-timestampKey",
-                    "-timestampFormat",
-                    "-timezoneType",
-                    "-timezone",
-                    "-workspaceId",
-                    "-workspaceName"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "payload_type": {
             "default": [],
             "description": "Filter data connections by payload type.",
@@ -689,6 +677,40 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "name",
+                    "timestampKey",
+                    "timestampFormat",
+                    "timezoneType",
+                    "timezone",
+                    "workspaceId",
+                    "workspaceName",
+                    "-id",
+                    "-name",
+                    "-timestampKey",
+                    "-timestampFormat",
+                    "-timezoneType",
+                    "-timezone",
+                    "-workspaceId",
+                    "-workspaceName"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -1204,42 +1226,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "monitoringSiteId",
-                    "monitoringSiteName",
-                    "workspaceId",
-                    "workspaceName",
-                    "latestRunStatus",
-                    "latestRunStartedAt",
-                    "latestRunFinishedAt",
-                    "-id",
-                    "-name",
-                    "-monitoringSiteId",
-                    "-monitoringSiteName",
-                    "-workspaceId",
-                    "-workspaceName",
-                    "-latestRunStatus",
-                    "-latestRunStartedAt",
-                    "-latestRunFinishedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "output_datastream_id": {
             "default": [],
             "description": "Filter data product tasks by output datastream ID.",
@@ -1279,6 +1265,42 @@
             },
             "title": "Rating Curve Id",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "name",
+                    "monitoringSiteId",
+                    "monitoringSiteName",
+                    "workspaceId",
+                    "workspaceName",
+                    "latestRunStatus",
+                    "latestRunStartedAt",
+                    "latestRunFinishedAt",
+                    "-id",
+                    "-name",
+                    "-monitoringSiteId",
+                    "-monitoringSiteName",
+                    "-workspaceId",
+                    "-workspaceName",
+                    "-latestRunStatus",
+                    "-latestRunStartedAt",
+                    "-latestRunFinishedAt"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "transformation_type": {
             "default": [],
@@ -1772,28 +1794,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "outputDatastreamId",
-                    "-id",
-                    "-outputDatastreamId"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "output_datastream_id": {
             "default": [],
             "description": "Filter transformations by output datastream ID.",
@@ -1829,6 +1829,30 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "outputDatastreamId",
+                    "transformationType",
+                    "-id",
+                    "-outputDatastreamId",
+                    "-transformationType"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "transformation_type": {
             "default": [],
@@ -2612,46 +2636,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "observationType",
-                    "sampledMedium",
-                    "status",
-                    "resultType",
-                    "isPrivate",
-                    "valueCount",
-                    "phenomenonBeginTime",
-                    "phenomenonEndTime",
-                    "resultBeginTime",
-                    "resultEndTime",
-                    "-name",
-                    "-observationType",
-                    "-sampledMedium",
-                    "-status",
-                    "-resultType",
-                    "-isPrivate",
-                    "-valueCount",
-                    "-phenomenonBeginTime",
-                    "-phenomenonEndTime",
-                    "-resultBeginTime",
-                    "-resultEndTime"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "phenomenon_begin_time_max": {
             "anyOf": [
               {
@@ -2857,6 +2841,50 @@
             },
             "title": "Sampled Medium",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "observationType",
+                    "sampledMedium",
+                    "status",
+                    "resultType",
+                    "isPrivate",
+                    "isVisible",
+                    "aggregationStatistic",
+                    "valueCount",
+                    "phenomenonBeginTime",
+                    "phenomenonEndTime",
+                    "resultBeginTime",
+                    "resultEndTime",
+                    "-name",
+                    "-observationType",
+                    "-sampledMedium",
+                    "-status",
+                    "-resultType",
+                    "-isPrivate",
+                    "-isVisible",
+                    "-aggregationStatistic",
+                    "-valueCount",
+                    "-phenomenonBeginTime",
+                    "-phenomenonEndTime",
+                    "-resultBeginTime",
+                    "-resultEndTime"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "status": {
             "default": [],
@@ -3336,7 +3364,22 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "sourceIdentifier",
+                "targetDatastreamId"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -3357,23 +3400,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "sourceIdentifier",
-                "targetDatastreamId"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "source_identifier": {
             "default": [],
@@ -3696,7 +3724,28 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "dataConnectionId",
+                "schedule",
+                "latestRun",
+                "mappingCount",
+                "name",
+                "description",
+                "taskVariables"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -3729,29 +3778,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "dataConnectionId",
-                "schedule",
-                "latestRun",
-                "mappingCount",
-                "name",
-                "description",
-                "taskVariables"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -4948,34 +4976,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "code",
-                    "type",
-                    "sensorModel",
-                    "sensorModelManufacturer",
-                    "-name",
-                    "-code",
-                    "-type",
-                    "-sensorModel",
-                    "-sensorModelManufacturer"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -5015,6 +5015,38 @@
             },
             "title": "Sensor Model Manufacturer",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "code",
+                    "type",
+                    "sensorModel",
+                    "sensorModelManufacturer",
+                    "definition",
+                    "sensorModelDefinition",
+                    "-name",
+                    "-code",
+                    "-type",
+                    "-sensorModel",
+                    "-sensorModelManufacturer",
+                    "-definition",
+                    "-sensorModelDefinition"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "type": {
             "default": [],
@@ -5385,30 +5417,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "ruleType",
-                    "datastreamId",
-                    "-id",
-                    "-ruleType",
-                    "-datastreamId"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -5437,6 +5445,32 @@
             },
             "title": "Rule Type",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "ruleType",
+                    "datastreamId",
+                    "lastCheckedAt",
+                    "-id",
+                    "-ruleType",
+                    "-datastreamId",
+                    "-lastCheckedAt"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "MonitoringRuleQueryParameters",
@@ -6156,7 +6190,36 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "name",
+                "description",
+                "code",
+                "type",
+                "latitude",
+                "longitude",
+                "elevation_m",
+                "elevationDatum",
+                "adminArea1",
+                "adminArea2",
+                "country",
+                "dataDisclaimer",
+                "isPrivate",
+                "tags",
+                "linkedResources"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -6193,37 +6256,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "name",
-                "description",
-                "code",
-                "type",
-                "latitude",
-                "longitude",
-                "elevation_m",
-                "elevationDatum",
-                "adminArea1",
-                "adminArea2",
-                "country",
-                "dataDisclaimer",
-                "isPrivate",
-                "tags",
-                "linkedResources"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "tag": {
             "default": [],
@@ -6689,7 +6723,37 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "monitoringSiteId",
+                "schedule",
+                "latestRun",
+                "ruleTypeCounts",
+                "recipients",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "rule_type": {
+            "default": [],
+            "description": "Filter monitoring tasks by rule type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Rule Type",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -6722,38 +6786,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "monitoringSiteId",
-                "schedule",
-                "latestRun",
-                "ruleTypeCounts",
-                "recipients",
-                "name",
-                "description"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
-          },
-          "rule_type": {
-            "default": [],
-            "description": "Filter monitoring tasks by rule type.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Rule Type",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -7296,28 +7330,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "phenomenonTime",
-                    "datastreamId",
-                    "-phenomenonTime",
-                    "-datastreamId"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "phenomenon_time_max": {
             "anyOf": [
               {
@@ -7376,6 +7388,28 @@
             },
             "title": "Result Qualifier Code",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "phenomenonTime",
+                    "datastreamId",
+                    "-phenomenonTime",
+                    "-datastreamId"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "ObservationQueryParameters",
@@ -7708,7 +7742,26 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "name",
+                "definition",
+                "description",
+                "type",
+                "code"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -7729,27 +7782,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "name",
-                "definition",
-                "description",
-                "type",
-                "code"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "type": {
             "default": [],
@@ -9202,7 +9236,25 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "code",
+                "name",
+                "description",
+                "definition"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -9221,26 +9273,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "code",
-                "name",
-                "description",
-                "definition"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -9434,7 +9468,27 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "managedDatastreamId",
+                "sourceDatastreamId",
+                "createdAt",
+                "phenomenonTimeStart",
+                "phenomenonTimeEnd",
+                "sourceChecksum",
+                "managedChecksum"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -9457,28 +9511,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "managedDatastreamId",
-                "sourceDatastreamId",
-                "createdAt",
-                "phenomenonTimeStart",
-                "phenomenonTimeEnd",
-                "sourceChecksum",
-                "managedChecksum"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "source_datastream_id": {
             "default": [],
@@ -9740,7 +9774,26 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "createdBy",
+                "order",
+                "operationType",
+                "createdAt",
+                "comment",
+                "arguments"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -9763,27 +9816,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "createdBy",
-                "order",
-                "operationType",
-                "createdAt",
-                "comment",
-                "arguments"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "QualityControlOperationQueryParameters",
@@ -10022,36 +10056,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "createdAt",
-                    "phenomenonTimeStart",
-                    "phenomenonTimeEnd",
-                    "status",
-                    "committedAt",
-                    "-id",
-                    "-createdAt",
-                    "-phenomenonTimeStart",
-                    "-phenomenonTimeEnd",
-                    "-status",
-                    "-committedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -10107,6 +10111,36 @@
             ],
             "description": "Return sessions overlapping with this range start.",
             "title": "Range Start"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "createdAt",
+                    "phenomenonTimeStart",
+                    "phenomenonTimeEnd",
+                    "status",
+                    "committedAt",
+                    "-id",
+                    "-createdAt",
+                    "-phenomenonTimeStart",
+                    "-phenomenonTimeEnd",
+                    "-status",
+                    "-committedAt"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "status": {
             "anyOf": [
@@ -10434,36 +10468,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "monitoringSiteId",
-                    "monitoringSiteName",
-                    "workspaceId",
-                    "workspaceName",
-                    "-id",
-                    "-name",
-                    "-monitoringSiteId",
-                    "-monitoringSiteName",
-                    "-workspaceId",
-                    "-workspaceName"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -10481,6 +10485,38 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "id",
+                    "name",
+                    "monitoringSiteId",
+                    "monitoringSiteName",
+                    "workspaceId",
+                    "workspaceName",
+                    "fittingMethod",
+                    "-id",
+                    "-name",
+                    "-monitoringSiteId",
+                    "-monitoringSiteName",
+                    "-workspaceId",
+                    "-workspaceName",
+                    "-fittingMethod"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -10733,7 +10769,23 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "code",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -10750,24 +10802,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "code",
-                "description"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -10895,26 +10931,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "-name"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -10931,6 +10947,26 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "-name"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "workspace_id": {
             "default": [],
@@ -11432,30 +11468,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "isActive",
-                    "keyExpiresAt",
-                    "-name",
-                    "-isActive",
-                    "-keyExpiresAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -11476,6 +11488,34 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "isActive",
+                    "keyExpiresAt",
+                    "createdAt",
+                    "lastUsedAt",
+                    "-name",
+                    "-isActive",
+                    "-keyExpiresAt",
+                    "-createdAt",
+                    "-lastUsedAt"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "ServiceAccountQueryParameters",
@@ -11655,9 +11695,21 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "title": "Properties"
+          },
+          "sortby": {
             "default": [],
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "items": {
               "enum": [
                 "id",
@@ -11671,20 +11723,8 @@
               ],
               "type": "string"
             },
-            "title": "Order By",
+            "title": "Sortby",
             "type": "array"
-          },
-          "properties": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "title": "Properties"
           },
           "started_at_max": {
             "anyOf": [
@@ -12063,7 +12103,25 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "name",
+                "symbol",
+                "definition",
+                "type"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -12084,26 +12142,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "name",
-                "symbol",
-                "definition",
-                "type"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           },
           "type": {
             "default": [],
@@ -12527,19 +12567,6 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_desc": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": false,
-            "description": "Sort terms by descending.",
-            "title": "Order Desc"
-          },
           "properties": {
             "anyOf": [
               {
@@ -12551,6 +12578,19 @@
             ],
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "title": "Properties"
+          },
+          "sort_desc": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": false,
+            "description": "Sort terms by descending.",
+            "title": "Sort Desc"
           }
         },
         "title": "VocabularyQueryParameters",
@@ -12711,7 +12751,25 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "order_by": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "ownerEmail",
+                "pendingTransferToEmail",
+                "collaboratorRoleId",
+                "name",
+                "isPrivate"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "sortby": {
             "anyOf": [
               {
                 "items": {
@@ -12730,26 +12788,8 @@
               }
             ],
             "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "ownerEmail",
-                "pendingTransferToEmail",
-                "collaboratorRoleId",
-                "name",
-                "isPrivate"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "WorkspaceQueryParameters",
@@ -12967,9 +13007,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12982,6 +13022,8 @@
                       "status",
                       "resultType",
                       "isPrivate",
+                      "isVisible",
+                      "aggregationStatistic",
                       "valueCount",
                       "phenomenonBeginTime",
                       "phenomenonEndTime",
@@ -12993,6 +13035,8 @@
                       "-status",
                       "-resultType",
                       "-isPrivate",
+                      "-isVisible",
+                      "-aggregationStatistic",
                       "-valueCount",
                       "-phenomenonBeginTime",
                       "-phenomenonEndTime",
@@ -13008,8 +13052,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -13636,7 +13680,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -13649,7 +13693,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -13756,7 +13800,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -13769,7 +13813,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -13876,7 +13920,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -13889,7 +13933,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -13996,7 +14040,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -14009,7 +14053,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -15204,9 +15248,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -15239,8 +15283,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -15786,9 +15830,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -15823,8 +15867,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -16508,9 +16552,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -16533,8 +16577,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -17143,13 +17187,13 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Select one or more fields to order the response by.",
+              "description": "Select one or more fields to sort the response by.",
               "items": {
                 "enum": [
                   "id",
@@ -17163,7 +17207,7 @@
                 ],
                 "type": "string"
               },
-              "title": "Order By",
+              "title": "Sortby",
               "type": "array"
             }
           },
@@ -17608,9 +17652,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17622,11 +17666,15 @@
                       "type",
                       "sensorModel",
                       "sensorModelManufacturer",
+                      "definition",
+                      "sensorModelDefinition",
                       "-name",
                       "-code",
                       "-type",
                       "-sensorModel",
-                      "-sensorModelManufacturer"
+                      "-sensorModelManufacturer",
+                      "-definition",
+                      "-sensorModelDefinition"
                     ],
                     "type": "string"
                   },
@@ -17637,8 +17685,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -17976,7 +18024,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17989,7 +18037,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -18394,9 +18442,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18435,8 +18483,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -18759,7 +18807,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18772,7 +18820,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -19089,7 +19137,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -19102,7 +19150,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -20232,9 +20280,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20269,8 +20317,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -20886,9 +20934,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20898,9 +20946,11 @@
                       "id",
                       "ruleType",
                       "datastreamId",
+                      "lastCheckedAt",
                       "-id",
                       "-ruleType",
-                      "-datastreamId"
+                      "-datastreamId",
+                      "-lastCheckedAt"
                     ],
                     "type": "string"
                   },
@@ -20911,8 +20961,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -21526,13 +21576,13 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Select one or more fields to order the response by.",
+              "description": "Select one or more fields to sort the response by.",
               "items": {
                 "enum": [
                   "id",
@@ -21546,7 +21596,7 @@
                 ],
                 "type": "string"
               },
-              "title": "Order By",
+              "title": "Sortby",
               "type": "array"
             }
           },
@@ -22004,9 +22054,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22027,8 +22077,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -22713,9 +22763,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22738,8 +22788,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -23047,7 +23097,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23060,7 +23110,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -23451,9 +23501,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23474,8 +23524,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -24051,9 +24101,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24066,12 +24116,14 @@
                       "monitoringSiteName",
                       "workspaceId",
                       "workspaceName",
+                      "fittingMethod",
                       "-id",
                       "-name",
                       "-monitoringSiteId",
                       "-monitoringSiteName",
                       "-workspaceId",
-                      "-workspaceName"
+                      "-workspaceName",
+                      "-fittingMethod"
                     ],
                     "type": "string"
                   },
@@ -24082,8 +24134,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -24632,9 +24684,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24669,8 +24721,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -25308,13 +25360,13 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Select one or more fields to order the response by.",
+              "description": "Select one or more fields to sort the response by.",
               "items": {
                 "enum": [
                   "id",
@@ -25328,7 +25380,7 @@
                 ],
                 "type": "string"
               },
-              "title": "Order By",
+              "title": "Sortby",
               "type": "array"
             }
           },
@@ -25707,9 +25759,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -25718,8 +25770,10 @@
                     "enum": [
                       "id",
                       "outputDatastreamId",
+                      "transformationType",
                       "-id",
-                      "-outputDatastreamId"
+                      "-outputDatastreamId",
+                      "-transformationType"
                     ],
                     "type": "string"
                   },
@@ -25730,8 +25784,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -26449,9 +26503,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -26476,8 +26530,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -26960,9 +27014,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -26991,8 +27045,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -27767,9 +27821,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -27794,8 +27848,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           }
         ],
@@ -28401,9 +28455,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28422,8 +28476,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -28962,9 +29016,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28983,8 +29037,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -29238,9 +29292,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -29263,8 +29317,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -29561,7 +29615,7 @@
           {
             "description": "Sort terms by descending.",
             "in": "query",
-            "name": "order_desc",
+            "name": "sort_desc",
             "required": false,
             "schema": {
               "anyOf": [
@@ -29574,7 +29628,7 @@
               ],
               "default": false,
               "description": "Sort terms by descending.",
-              "title": "Order Desc"
+              "title": "Sort Desc"
             }
           }
         ],
@@ -29966,9 +30020,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -29989,8 +30043,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           },
           {
@@ -30606,6 +30660,34 @@
               "title": "Role Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "id",
+                      "roleId",
+                      "-id",
+                      "-roleId"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
           }
         ],
         "responses": {
@@ -30930,9 +31012,9 @@
             }
           },
           {
-            "description": "Select one or more fields to order the response by.",
+            "description": "Select one or more fields to sort the response by.",
             "in": "query",
-            "name": "order_by",
+            "name": "sortby",
             "required": false,
             "schema": {
               "anyOf": [
@@ -30942,9 +31024,13 @@
                       "name",
                       "isActive",
                       "keyExpiresAt",
+                      "createdAt",
+                      "lastUsedAt",
                       "-name",
                       "-isActive",
-                      "-keyExpiresAt"
+                      "-keyExpiresAt",
+                      "-createdAt",
+                      "-lastUsedAt"
                     ],
                     "type": "string"
                   },
@@ -30955,8 +31041,8 @@
                 }
               ],
               "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
             }
           }
         ],

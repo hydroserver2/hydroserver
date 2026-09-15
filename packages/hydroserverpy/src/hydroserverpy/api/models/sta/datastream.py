@@ -170,7 +170,7 @@ class Datastream(HydroServerBaseModel):
         self,
         offset: int = ...,
         limit: int = 100000,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
         result_qualifier_code: str = ...,
@@ -182,7 +182,7 @@ class Datastream(HydroServerBaseModel):
             uid=self.uid,
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             phenomenon_time_max=phenomenon_time_max,
             phenomenon_time_min=phenomenon_time_min,
             result_qualifier_code=result_qualifier_code,
@@ -226,7 +226,7 @@ class Datastream(HydroServerBaseModel):
             params={
                 "datastream_id": str(self.uid),
                 "limit": 1,
-                "order_by": "-phenomenonTime",
+                "sortby": "-phenomenonTime",
             },
         ).json()
 

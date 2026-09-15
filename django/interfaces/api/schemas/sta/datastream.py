@@ -91,21 +91,23 @@ DATASTREAM_INCLUDE_RELATIONS = {
 }
 DatastreamIncludeRelation = Literal[*DATASTREAM_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "observationType",
     "sampledMedium",
     "status",
     "resultType",
     "isPrivate",
+    "isVisible",
+    "aggregationStatistic",
     "valueCount",
     "phenomenonBeginTime",
     "phenomenonEndTime",
     "resultBeginTime",
     "resultEndTime",
 )
-DatastreamOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+DatastreamSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -144,8 +146,8 @@ class DatastreamItemQueryParameters(DatastreamFilterFields, BaseQueryParameters)
 
 
 class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[DatastreamOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[DatastreamSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
         [], description="Filter datastreams by workspace ID.", alias="workspace_id"

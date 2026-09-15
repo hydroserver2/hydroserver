@@ -181,7 +181,7 @@ describe('fetchRecentObservationsPage', () => {
     ])
     expect(getObservationsMock).toHaveBeenCalledWith('123', {
       offset: 0,
-      order_by: ['-phenomenonTime'],
+      sortby: ['-phenomenonTime'],
       limit: 200,
       format: 'column',
     })

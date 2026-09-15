@@ -37,7 +37,7 @@ export const fetchObservations = async (
   if (!phenomenonBeginTime || !phenomenonEndTime) return []
 
   const options: any = {
-    order_by: ['phenomenonTime'],
+    sortby: ['phenomenonTime'],
     limit: 50_000,
     format: 'column',
     phenomenon_time_min: startTime ?? phenomenonBeginTime,
@@ -57,7 +57,7 @@ export const fetchRecentObservationsPage = async (
 ) => {
   const res = await hs.datastreams.getObservations(datastream.id, {
     offset: 0,
-    order_by: ['-phenomenonTime'],
+    sortby: ['-phenomenonTime'],
     limit: pageSize,
     format: 'column',
   })

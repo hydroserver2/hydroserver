@@ -34,13 +34,13 @@ OBSERVED_PROPERTY_INCLUDE_RELATIONS = {
 }
 ObservedPropertyIncludeRelation = Literal[*OBSERVED_PROPERTY_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "type",
     "code",
 )
-ObservedPropertyOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+ObservedPropertySortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -74,8 +74,8 @@ class ObservedPropertyItemQueryParameters(ObservedPropertyFilterFields, BaseQuer
 
 
 class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[ObservedPropertyOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[ObservedPropertySortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter observed properties by workspace ID."

@@ -77,38 +77,37 @@ class APIService:
             return queryset.filter(**{field_name: values})
 
     @staticmethod
-    def apply_ordering(
+    def apply_sorting(
         queryset: QuerySet,
-        order_by: list[str],
+        sortby: list[str],
         allowed_fields: list[str],
         field_aliases: Optional[dict[str, str]] = None,
+        default_sortby: tuple[str, ...] = ("id",),
     ):
-        order_by_fields = []
         field_aliases = field_aliases or {}
 
-        stripped_fields = [field.lstrip("-") for field in order_by]
-        if len(stripped_fields) != len(set(stripped_fields)):
-            raise BadRequestError("Fields cannot be repeated in order_by arguments")
+        if not sortby:
+            sortby_fields = list(default_sortby)
+        else:
+            stripped_fields = [field.lstrip("-") for field in sortby]
+            if len(stripped_fields) != len(set(stripped_fields)):
+                raise BadRequestError("Fields cannot be repeated in sortby arguments")
 
-        for field in order_by:
-            if field not in allowed_fields:
-                raise BadRequestError(f"Response cannot be ordered by field '{field}'")
-            descending = field.startswith("-")
-            stripped_field = field.lstrip("-")
-            resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
-            order_by_fields.append(f"-{resolved_field}" if descending else resolved_field)
+            sortby_fields = []
+            for field in sortby:
+                if field not in allowed_fields:
+                    raise BadRequestError(f"Response cannot be sorted by field '{field}'")
+                descending = field.startswith("-")
+                stripped_field = field.lstrip("-")
+                resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
+                sortby_fields.append(f"-{resolved_field}" if descending else resolved_field)
 
-        # Requested fields (e.g. "name") are rarely unique, so rows that tie on
-        # them have no guaranteed relative order. Since results are fetched a
-        # page at a time via separate queries (see paginatedFetch on the
-        # client), an unstable tie order lets rows shift between pages and
-        # silently drop out of every page. Appending the primary key as a
-        # final tiebreaker makes the ordering - and therefore pagination -
-        # deterministic.
-        if "id" not in stripped_fields:
-            order_by_fields.append("id")
+        # Add ID as a sortby tiebreaker if not already present.
+        stripped_sortby_fields = [field.lstrip("-") for field in sortby_fields]
+        if "id" not in stripped_sortby_fields:
+            sortby_fields.append("id")
 
-        return queryset.order_by(*order_by_fields)
+        return queryset.order_by(*sortby_fields)
 
     @staticmethod
     def resolve_include_set(include: Optional[list[str]]) -> set[str]:
@@ -306,13 +305,13 @@ class VocabularyAPIService(APIService):
         vocabulary_model: Type[Model],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
         queryset = vocabulary_model.objects
 
-        queryset = self.apply_ordering(
+        queryset = self.apply_sorting(
             queryset,
-            ["-name"] if order_desc else ["name"],
+            ["-name"] if sort_desc else ["name"],
             [
                 "name",
             ],

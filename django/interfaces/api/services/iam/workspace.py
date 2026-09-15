@@ -16,7 +16,7 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.iam.workspace import (
     WORKSPACE_INCLUDE_RELATIONS,
-    WorkspaceOrderByFields,
+    WorkspaceSortByFields,
 )
 
 User = get_user_model()
@@ -54,7 +54,7 @@ class WorkspaceAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -90,14 +90,11 @@ class WorkspaceAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(WorkspaceOrderByFields)),
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(WorkspaceSortByFields)),
+        )
 
         queryset = queryset.select_related(
             "owner", "transfer_confirmation", "transfer_confirmation__new_owner"

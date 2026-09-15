@@ -296,7 +296,7 @@ def test_get_monitoring_rules_filters_by_rule_type(client):
     assert [r["id"] for r in response.json()["data"]] == [str(rule_a.id)]
 
 
-def test_get_monitoring_rules_orders_by_rule_type(client):
+def test_get_monitoring_rules_sorts_by_rule_type(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, datastream = _make_task_with_datastream(workspace)
@@ -304,7 +304,7 @@ def test_get_monitoring_rules_orders_by_rule_type(client):
     MonitoringRuleFactory(task=task, datastream=datastream, rule_type="missing_data")
     client.force_login(owner)
 
-    response = client.get(_rules_url(task.id), {"order_by": "ruleType"})
+    response = client.get(_rules_url(task.id), {"sortby": "ruleType"})
 
     assert response.status_code == 200
     assert [r["ruleType"] for r in response.json()["data"]] == [
@@ -313,7 +313,7 @@ def test_get_monitoring_rules_orders_by_rule_type(client):
     ]
 
 
-def test_get_monitoring_rules_orders_by_datastream_id(client):
+def test_get_monitoring_rules_sorts_by_datastream_id(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, datastream_a = _make_task_with_datastream(workspace)
@@ -322,7 +322,7 @@ def test_get_monitoring_rules_orders_by_datastream_id(client):
     MonitoringRuleFactory(task=task, datastream=datastream_b)
     client.force_login(owner)
 
-    response = client.get(_rules_url(task.id), {"order_by": "-datastreamId"})
+    response = client.get(_rules_url(task.id), {"sortby": "-datastreamId"})
 
     datastream_ids_desc = sorted(
         [str(datastream_a.id), str(datastream_b.id)], reverse=True
@@ -332,13 +332,13 @@ def test_get_monitoring_rules_orders_by_datastream_id(client):
     assert [r["datastreamId"] for r in response.json()["data"]] == datastream_ids_desc
 
 
-def test_get_monitoring_rules_order_by_rejects_unknown_field(client):
+def test_get_monitoring_rules_sortby_rejects_unknown_field(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task, _ = _make_task_with_datastream(workspace)
     client.force_login(owner)
 
-    response = client.get(_rules_url(task.id), {"order_by": "bogus"})
+    response = client.get(_rules_url(task.id), {"sortby": "bogus"})
 
     assert response.status_code == 400
 

@@ -13,7 +13,7 @@ from interfaces.api.http.errors import BadRequestError, NotFoundError
 from interfaces.api.service import APIService
 from interfaces.api.services.quality.session import QCSessionAPIService
 from interfaces.api.schemas.quality.operation import (
-    QualityControlOperationOrderByFields,
+    QualityControlOperationSortByFields,
     QualityControlOperationResponse,
 )
 
@@ -32,8 +32,6 @@ class OperationInput(BaseModel):
 
 
 class QCOperationAPIService(APIService):
-
-    order_by_fields = {"id", "order", "operation_type", "created_at"}
 
     def get(
         self,
@@ -76,17 +74,17 @@ class QCOperationAPIService(APIService):
         session: uuid.UUID | QCSession,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
     ):
         session = qc_session_service.get(principal=principal, history=history, session=session, action="view")
         queryset = QCOperation.objects.filter(session=session)
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(QualityControlOperationOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("order")
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(QualityControlOperationSortByFields)),
+            default_sortby=("order",),
+        )
 
         queryset, meta = self.apply_pagination(queryset, offset, limit)
         operations = list(queryset.all())

@@ -42,7 +42,7 @@ def get_data_product_tasks(
         principal=request.principal,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
@@ -203,8 +203,8 @@ def get_data_product_task_runs(
     count, runs = data_product_task_service.get_run_collection(
         task=task_id,
         principal=request.principal,
-        order_by=query.order_by,
-        **query.model_dump(exclude_unset=True, exclude={"order_by"}),
+        sortby=query.sortby,
+        **query.model_dump(exclude_unset=True, exclude={"sortby"}),
     )
 
     meta = data_product_task_service.build_pagination_meta(

@@ -254,7 +254,7 @@ export function useSimpleTaskDetails(
     loadingRuns.value = true
     try {
       const response = await service.getTaskRuns(task.value.id, {
-        order_by: ['-startedAt'],
+        sortby: ['-startedAt'],
         offset: 0,
         limit: 50,
       })

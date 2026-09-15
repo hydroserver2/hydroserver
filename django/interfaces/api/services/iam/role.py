@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from core.iam.models import ServiceAccount, Role
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import NotFoundError, PermissionDeniedError
-from interfaces.api.schemas import RoleOrderByFields, RoleResponse
+from interfaces.api.schemas import RoleSortByFields, RoleResponse
 from interfaces.api.service import APIService
 
 User = get_user_model()
@@ -42,7 +42,7 @@ class RoleAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
     ):
         queryset = Role.objects
@@ -53,14 +53,11 @@ class RoleAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(RoleOrderByFields)),
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(RoleSortByFields)),
+        )
 
         queryset = (
             principal.filter_by_permission(queryset, "can_view")

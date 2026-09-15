@@ -40,7 +40,7 @@ ETL_TASK_INCLUDE_RELATIONS = {
 }
 EtlTaskIncludeRelation = Literal[*ETL_TASK_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "id",
     "name",
     "dataConnectionId",
@@ -51,7 +51,7 @@ _order_by_fields = (
     "latestRunStartedAt",
     "latestRunFinishedAt",
 )
-EtlTaskOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
+EtlTaskSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
 
 _property_fields = (
     "id",
@@ -90,8 +90,8 @@ class EtlTaskItemQueryParameters(EtlTaskFilterFields, BaseQueryParameters):
 
 
 class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[EtlTaskOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[EtlTaskSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     monitoring_site_id: list[uuid.UUID] = Query(
         [], description="Filter ETL tasks by monitoring_site ID."

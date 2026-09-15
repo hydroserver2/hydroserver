@@ -16,7 +16,7 @@ from interfaces.api.service import APIService
 from interfaces.api.services.sta import ObservationAPIService
 from interfaces.api.services.quality.history import QCHistoryAPIService
 from interfaces.api.schemas.quality.session import (
-    QualityControlSessionOrderByFields,
+    QualityControlSessionSortByFields,
     QualityControlSessionResponse,
 )
 
@@ -28,15 +28,6 @@ qc_history_service = QCHistoryAPIService()
 
 
 class QCSessionAPIService(APIService):
-
-    order_by_fields = {
-        "id",
-        "created_at",
-        "phenomenon_time_start",
-        "phenomenon_time_end",
-        "status",
-        "committed_at",
-    }
 
     @staticmethod
     def select_related_fields(queryset: QuerySet) -> QuerySet:
@@ -104,7 +95,7 @@ class QCSessionAPIService(APIService):
         history: uuid.UUID | QCHistory,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
     ):
         filtering = filtering or {}
@@ -136,13 +127,9 @@ class QCSessionAPIService(APIService):
                 session_ids |= self._get_ancestor_ids(session_ids)
                 queryset = QCSession.objects.filter(history=history, pk__in=session_ids)
 
-        order_by = order_by or []
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(QualityControlSessionOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("phenomenon_time_start")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(QualityControlSessionSortByFields))
+        )
 
         queryset = self.select_related_fields(queryset)
         queryset, meta = self.apply_pagination(queryset, offset, limit)

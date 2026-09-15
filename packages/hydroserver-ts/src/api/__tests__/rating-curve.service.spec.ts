@@ -37,13 +37,13 @@ describe('RatingCurveService', () => {
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
     const response = await client.ratingCurves.listItemsForMonitoringSite('monitoringSite-1', {
-      order_by: ['name'],
+      sortby: ['name'],
     })
 
     expect(response).toHaveLength(1)
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves?order_by=name&monitoring_site_id=monitoringSite-1&offset=0&limit=200'
+      'https://hydro.example.com/api/data/products/rating-curves?sortby=name&monitoring_site_id=monitoringSite-1&offset=0&limit=200'
     )
   })
 

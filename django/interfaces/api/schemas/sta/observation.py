@@ -40,9 +40,9 @@ OBSERVATION_INCLUDE_RELATIONS = {
 }
 ObservationIncludeRelation = Literal[*OBSERVATION_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = ("phenomenonTime", "datastreamId")
-ObservationOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("phenomenonTime", "datastreamId")
+ObservationSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -83,8 +83,8 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
     datastream_id: list[uuid.UUID] = Query(
         [], description="Filter observations by datastream ID."
     )
-    order_by: Optional[list[ObservationOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[ObservationSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     response_format: Optional[Literal["record", "row", "column"]] = Query(
         None,

@@ -29,8 +29,8 @@ class PermissionResponse(BaseGetResponse):
     permission_type: PERMISSIONS = Field(..., alias="action")
 
 
-_order_by_fields = ("name",)
-RoleOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
+_sortby_fields = ("name",)
+RoleSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
 
 _property_fields = (
     "id",
@@ -58,8 +58,8 @@ class RoleItemQueryParameters(RoleFilterFields, BaseQueryParameters):
 
 
 class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[RoleOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[RoleSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter roles by workspace ID."

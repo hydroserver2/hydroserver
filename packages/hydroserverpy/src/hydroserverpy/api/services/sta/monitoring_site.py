@@ -19,7 +19,7 @@ class MonitoringSiteService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
         bbox: Tuple[float, float, float, float] = ...,
         admin_area_1: str = ...,
@@ -35,7 +35,7 @@ class MonitoringSiteService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
             bbox=",".join([str(i) for i in bbox]) if bbox is not ... else bbox,
             admin_area_1=admin_area_1,

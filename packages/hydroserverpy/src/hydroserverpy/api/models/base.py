@@ -97,7 +97,7 @@ class HydroServerBaseModel(BaseModel):
 class HydroServerCollection:
     items: List["HydroServerBaseModel"]
     filters: Optional[dict[str, Any]] = None
-    order_by: Optional[List[str]] = None
+    sortby: Optional[List[str]] = None
     offset: Optional[int] = None
     limit: Optional[int] = None
     total_count: Optional[int] = None
@@ -115,7 +115,7 @@ class HydroServerCollection:
         self._service = service
 
         self.filters = data.get("filters")
-        self.order_by = data.get("order_by")
+        self.sortby = data.get("sortby")
 
         payload = response.json() if response is not None else {}
         meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
@@ -164,7 +164,7 @@ class HydroServerCollection:
             **(self.filters or {}),
             offset=(self.offset or 0) + limit,
             limit=limit,
-            order_by=self.order_by or ...
+            sortby=self.sortby or ...
         )
 
     def previous_page(self):
@@ -182,7 +182,7 @@ class HydroServerCollection:
             **(self.filters or {}),
             offset=max(0, self.offset - limit),
             limit=limit,
-            order_by=self.order_by or ...
+            sortby=self.sortby or ...
         )
 
     def fetch_all(self) -> "HydroServerCollection":
@@ -201,7 +201,7 @@ class HydroServerCollection:
                 **(self.filters or {}),
                 offset=next_offset,
                 limit=limit,
-                order_by=self.order_by or ...
+                sortby=self.sortby or ...
             )
             if not page.items:
                 break
@@ -218,7 +218,7 @@ class HydroServerCollection:
             service=self._service,
             items=all_items,
             filters=self.filters,
-            order_by=self.order_by,
+            sortby=self.sortby,
             offset=0,
             limit=len(all_items),
             total_count=len(all_items) if total_count is None else total_count,

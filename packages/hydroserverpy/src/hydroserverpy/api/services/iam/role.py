@@ -19,7 +19,7 @@ class RoleService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         fetch_all: bool = False,
     ) -> List["Role"]:
@@ -28,7 +28,7 @@ class RoleService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             workspace_id=normalize_uuid(workspace),
         )

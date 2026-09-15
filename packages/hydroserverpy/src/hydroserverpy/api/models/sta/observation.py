@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class ObservationCollection:
     dataframe: pd.DataFrame
     filters: Optional[dict[str, Any]] = None
-    order_by: Optional[List[str]] = None
+    sortby: Optional[List[str]] = None
     offset: Optional[int] = None
     limit: Optional[int] = None
     total_count: Optional[int] = None
@@ -24,11 +24,11 @@ class ObservationCollection:
         **data
     ):
         self.filters = data.get("filters")
-        raw_order_by = data.get("order_by")
-        if isinstance(raw_order_by, str):
-            self.order_by = [item for item in raw_order_by.split(",") if item]
+        raw_sortby = data.get("sortby")
+        if isinstance(raw_sortby, str):
+            self.sortby = [item for item in raw_sortby.split(",") if item]
         else:
-            self.order_by = raw_order_by
+            self.sortby = raw_sortby
 
         if "dataframe" in data:
             payload_meta = {}
@@ -80,7 +80,7 @@ class ObservationCollection:
             **(self.filters or {}),
             offset=(self.offset or 0) + limit,
             limit=limit,
-            order_by=self.order_by or ...,
+            sortby=self.sortby or ...,
         )
 
     def previous_page(self):
@@ -95,7 +95,7 @@ class ObservationCollection:
             **(self.filters or {}),
             offset=max(0, self.offset - limit),
             limit=limit,
-            order_by=self.order_by or ...,
+            sortby=self.sortby or ...,
         )
 
     def fetch_all(self) -> "ObservationCollection":
@@ -111,7 +111,7 @@ class ObservationCollection:
                 **(self.filters or {}),
                 offset=next_offset,
                 limit=limit,
-                order_by=self.order_by or ...,
+                sortby=self.sortby or ...,
             )
             if observations.dataframe.empty:
                 break
@@ -131,7 +131,7 @@ class ObservationCollection:
             dataframe=merged_dataframe,
             datastream=self.datastream,
             filters=self.filters,
-            order_by=self.order_by or ...,
+            sortby=self.sortby or ...,
             offset=0,
             limit=len(merged_dataframe),
             total_count=len(merged_dataframe) if total_count is None else total_count,

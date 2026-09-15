@@ -52,7 +52,7 @@ describe('TaskService', () => {
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
     const response = await client.tasks.getTaskRuns('task-1', {
-      order_by: ['-startedAt'],
+      sortby: ['-startedAt'],
     })
 
     expect(response.ok).toBe(true)

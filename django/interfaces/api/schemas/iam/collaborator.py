@@ -48,6 +48,9 @@ CollaboratorIncludeRelation = Literal[*COLLABORATOR_INCLUDE_RELATIONS.keys()]
 _property_fields = ("roleId", "userEmail", "serviceAccountEmail")
 CollaboratorPropertyName = Literal[*_property_fields]
 
+_sortby_fields = ("id", "roleId")
+CollaboratorSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
+
 
 class CollaboratorFilterFields(Schema):
     properties: Annotated[
@@ -71,6 +74,9 @@ class CollaboratorFilterFields(Schema):
 
 class CollaboratorQueryParameters(CollaboratorFilterFields, CollectionQueryParameters):
     role_id: list[uuid.UUID] = Query([], description="Filter collaborators by role ID.")
+    sortby: Optional[list[CollaboratorSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
 
 
 class CollaboratorResponse(BaseGetResponse):

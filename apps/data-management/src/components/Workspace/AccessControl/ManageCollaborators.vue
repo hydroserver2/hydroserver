@@ -1007,7 +1007,7 @@ async function loadCollaboratorData() {
     const [cRes, rolesResponse] = await Promise.all([
       hs.workspaces.getCollaborators(props.workspace.id),
       hs.workspaces.getRoles({
-        order_by: ['name'],
+        sortby: ['name'],
       }),
     ])
 
