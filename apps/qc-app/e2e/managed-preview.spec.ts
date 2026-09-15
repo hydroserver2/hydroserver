@@ -3,7 +3,7 @@
  * the session's working copy, the same data the editor opens.
  */
 
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { installMocks, type MockQcSession } from './support/mocks'
 import { gotoHome } from './support/app'
 import {
@@ -13,7 +13,11 @@ import {
   FIXTURE_OBS_START_ISO,
   MANAGED_DATASTREAM_ID,
   QC_HISTORY_ID,
+  QC_SOURCE_CHECKSUM,
 } from './support/fixtures'
+
+const RAW_NAME = 'Streamflow Datastream'
+const MANAGED_NAME = 'Streamflow Datastream (QC)'
 
 /** A fresh in-progress session over the fixture window, no saved operations. */
 function inProgressSession(): MockQcSession {
@@ -24,7 +28,7 @@ function inProgressSession(): MockQcSession {
     description: 'Draft',
     phenomenonTimeStart: FIXTURE_OBS_START_ISO,
     phenomenonTimeEnd: FIXTURE_OBS_END_ISO,
-    sourceChecksum: 'e2e-draft-checksum',
+    sourceChecksum: QC_SOURCE_CHECKSUM,
     createdAt: FIXTURE_OBS_START_ISO,
     committedAt: null,
     createdBy: { name: 'Test User', email: 'test@example.com' },
@@ -52,7 +56,7 @@ test.describe('managed datastream preview', () => {
     await gotoHome(page)
   })
 
-  const plotOptions = async (page: any, ids: string[]) => {
+  const plotOptions = async (page: Page, ids: string[]) => {
     await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
     await expect(page.getByTestId('plot-source-dialog')).toBeVisible()
     for (const id of ids) {
@@ -61,6 +65,15 @@ test.describe('managed datastream preview', () => {
     await page.getByTestId('plot-source-apply').click()
     await expect(page.getByTestId('plot-source-dialog')).toBeHidden()
   }
+
+  // The raw name is a substring of the managed name ("Streamflow Datastream"
+  // vs "Streamflow Datastream (QC)"), so pin the row by its title text using
+  // exact matching rather than a loose text filter.
+  const subtitleForRow = (page: Page, name: string) =>
+    page
+      .locator('.plotted-item')
+      .filter({ has: page.getByText(name, { exact: true }) })
+      .locator('.plotted-item__subtitle')
 
   test('plots the session working copy instead of an empty line', async ({ page }) => {
     await plotOptions(page, [MANAGED_DATASTREAM_ID])
@@ -71,9 +84,12 @@ test.describe('managed datastream preview', () => {
 
   test('plots raw and working copy side by side', async ({ page }) => {
     await plotOptions(page, [DATASTREAM_ID, MANAGED_DATASTREAM_ID])
-    const subtitles = page.locator('.plotted-item__subtitle')
-    await expect(subtitles).toHaveCount(2)
-    await expect(subtitles.nth(0)).toHaveText(`${FIXTURE_OBS_COUNT} pts loaded`)
-    await expect(subtitles.nth(1)).toHaveText(`${FIXTURE_OBS_COUNT} pts loaded`)
+    await expect(page.locator('.plotted-item__subtitle')).toHaveCount(2)
+    await expect(subtitleForRow(page, RAW_NAME)).toHaveText(
+      `${FIXTURE_OBS_COUNT} pts loaded`
+    )
+    await expect(subtitleForRow(page, MANAGED_NAME)).toHaveText(
+      `${FIXTURE_OBS_COUNT} pts loaded`
+    )
   })
 })
