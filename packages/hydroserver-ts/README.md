@@ -66,4 +66,21 @@ regenerates the TypeScript types, and rebuilds the generated contract files.
 `npm run check:contract` is the CI guard that fails when the committed client
 artifacts drift from the latest backend API contract.
 
-Run `npm run build` and `npm test -- --run` before publishing client changes.
+The build bundles the public API declarations using `rollup-plugin-dts`.
+Schema types referenced by the public API are included inside the bundles; the
+raw generated OpenAPI declaration files are not published separately.
+The package exports select `index.d.ts` for ESM and `index.d.cts` for CommonJS,
+including TypeScript's `node16`, `nodenext`, and `bundler` resolution modes.
+Import public types from `@hydroserver/client`, for example:
+
+```ts
+import type { ThingContract } from '@hydroserver/client'
+
+type ThingResponse = ThingContract.DetailResponse
+```
+
+`npm pack` and `npm publish` automatically build the client through `prepack`.
+Run `npm test -- --run` and `npm run test:package` before publishing client
+changes. The package check builds and packs the client, extracts it into an
+isolated consumer directory, and type-checks its declarations with library
+checking enabled across supported module resolution modes.

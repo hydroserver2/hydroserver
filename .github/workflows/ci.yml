@@ -78,9 +78,9 @@ jobs:
         working-directory: packages/hydroserver-ts
         run: npm run coverage
 
-      - name: Build TypeScript client
+      - name: Verify packed TypeScript client
         working-directory: packages/hydroserver-ts
-        run: npm run build
+        run: npm run test:package
 
   data-management:
     name: Data Management App 80% Coverage
