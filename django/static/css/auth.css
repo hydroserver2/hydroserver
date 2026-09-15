@@ -18,7 +18,7 @@ body.auth-page {
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-regular);
   background-color: var(--hs-background);
-  background-image: url("../img/hydroserver-auth-topography.png");
+  background-image: url("../img/ColoradoSite.svg");
   background-position: center;
   background-attachment: fixed;
   background-size: cover;
@@ -114,6 +114,18 @@ body.auth-page {
   margin-top: var(--hs-space-16);
 }
 
+/* Entrance-card submissions are the page's primary action. Keep them aligned
+   with the form controls and use HydroServer's green page-action color. */
+.auth-layout--entrance .hs-actions .hs-button:not(.hs-button--link) {
+  width: 100%;
+}
+
+.auth-layout--entrance
+  .hs-actions
+  .hs-button:not(.hs-button--link):not(.hs-button--outline):not(.hs-button--secondary):not(.hs-button--danger) {
+  background: var(--hs-secondary);
+}
+
 .auth-card__brand {
   display: flex;
   justify-content: center;
@@ -150,7 +162,8 @@ body.auth-page {
   border-bottom: 1px solid var(--hs-border);
 }
 
-.auth-page-header .hs-heading {
+.auth-page-header .hs-heading,
+.auth-page-heading {
   margin: 0;
 }
 

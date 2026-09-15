@@ -28,6 +28,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const plottedDatastreams = ref<Datastream[]>([])
   const selectedWorkspaces = ref<Workspace[]>([])
   const selectedObservedPropertyNames = ref<string[]>([])
+  const selectedUnitNames = ref<string[]>([])
+  const selectedMethodNames = ref<string[]>([])
   const selectedProcessingLevelNames = ref<string[]>([])
 
   const showSummaryStatistics = ref(false)
@@ -108,6 +110,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const selectedObservedPropertyNameSet = computed(
     () => new Set(selectedObservedPropertyNames.value)
   )
+  const selectedUnitNameSet = computed(() => new Set(selectedUnitNames.value))
+  const selectedMethodNameSet = computed(
+    () => new Set(selectedMethodNames.value)
+  )
   const selectedProcessingLevelNameSet = computed(
     () => new Set(selectedProcessingLevelNames.value)
   )
@@ -117,6 +123,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     plottedDatastreams.value = []
     selectedWorkspaces.value = []
     selectedObservedPropertyNames.value = []
+    selectedUnitNames.value = []
+    selectedMethodNames.value = []
     selectedProcessingLevelNames.value = []
     showSummaryStatistics.value = false
     tableSearch.value = ''
@@ -158,6 +166,23 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     )
   }
 
+  function matchesSelectedUnit(datastream: Datastream) {
+    if (selectedUnitNameSet.value.size === 0) return true
+
+    const unitName = (datastream as Datastream & { unitName?: string }).unitName
+    return unitName !== undefined && selectedUnitNameSet.value.has(unitName)
+  }
+
+  function matchesSelectedMethod(datastream: Datastream) {
+    if (selectedMethodNameSet.value.size === 0) return true
+
+    const methodName = (datastream as Datastream & { methodName?: string })
+      .methodName
+    return (
+      methodName !== undefined && selectedMethodNameSet.value.has(methodName)
+    )
+  }
+
   function matchesSelectedMonitoringSite(datastream: Datastream) {
     return (
       selectedMonitoringSiteIds.value.size === 0 ||
@@ -183,6 +208,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
         matchesSelectedMonitoringSite(datastream) &&
         matchesSelectedWorkspace(datastream) &&
         matchesSelectedObservedProperty(datastream) &&
+        matchesSelectedUnit(datastream) &&
+        matchesSelectedMethod(datastream) &&
         matchesSelectedProcessingLevel(datastream)
     )
   })
@@ -508,6 +535,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     selectedMonitoringSites,
     selectedWorkspaces,
     selectedObservedPropertyNames,
+    selectedUnitNames,
+    selectedMethodNames,
     selectedProcessingLevelNames,
     filteredDatastreams,
     plottedDatastreams,
@@ -533,6 +562,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     datastreamDetailLevel,
     tableHeaders,
     matchesSelectedObservedProperty,
+    matchesSelectedUnit,
+    matchesSelectedMethod,
     matchesSelectedProcessingLevel,
     matchesSelectedMonitoringSite,
     matchesSelectedWorkspace,

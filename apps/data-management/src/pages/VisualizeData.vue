@@ -329,8 +329,8 @@ const parseUrlAndSetState = () => {
     ? detailLevelParam.find((item): item is string => typeof item === 'string')
     : detailLevelParam
   const detailLevel = Number(detailLevelRaw)
-  if (detailLevel >= 1 && detailLevel <= 3)
-    datastreamDetailLevel.value = detailLevel
+  if (detailLevel >= 1)
+    datastreamDetailLevel.value = detailLevel >= 2 ? 2 : 1
 
   const columnsParam = route.query.columns
   if (columnsParam) {

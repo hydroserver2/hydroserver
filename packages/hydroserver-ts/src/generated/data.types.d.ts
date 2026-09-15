@@ -6012,6 +6012,13 @@ export interface components {
             /** Intendedtimespacingunit */
             intendedTimeSpacingUnit?: ("seconds" | "minutes" | "hours" | "days") | null;
             /**
+             * Methodid
+             * Format: uuid
+             */
+            methodId: string;
+            /** Methodname */
+            methodName: string;
+            /**
              * Monitoringsiteid
              * Format: uuid
              */
@@ -6046,6 +6053,8 @@ export interface components {
              * Format: uuid
              */
             unitId: string;
+            /** Unitname */
+            unitName: string;
             /** Unitsymbol */
             unitSymbol: string;
             /** Valuecount */

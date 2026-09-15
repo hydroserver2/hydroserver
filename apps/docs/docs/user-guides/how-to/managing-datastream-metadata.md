@@ -25,6 +25,33 @@ Some attributes of a datastream are simple selections on the form and others are
 
 For the `Datastream name` and `Datastream description` attributes, you can use the 'Auto-Fill from Form' button to automatically generate a name and description, or you can enter your own text.
 
+### Naming Datastreams
+
+A datastream name must be unique and unambiguous within its monitoring site. Keep the name focused on the data itself: do not include the monitoring site name in the datastream name.
+
+We recommend this format:
+
+```
+<Observed Property> - <variant when needed>
+```
+
+The observed property identifies what the datastream measures. The optional variant adds only the specific context needed to distinguish similar datastreams at the same site. Each organization can define variants that fit its internal policies, while keeping names short and easy to scan.
+
+For example:
+
+- `Discharge - Hourly RAW`
+- `Discharge - Daily QC`
+- `Discharge - Hourly Max (CFS)`
+- `Discharge - Hourly Min (ac-ft)`
+
+Datastreams are usually shown in the context of their monitoring site, such as on a site details page or in an orchestration form. When an app presents datastreams from more than one site, the app should add the site context separately using this display format:
+
+```
+<datastream.name> @ <monitoringSite.name>
+```
+
+For example, `Discharge - Hourly RAW @ Kanarraville` and `Discharge - Hourly RAW @ USGS Coal Creek Near Cedar City` distinguish datastreams from different sites without repeating site information in the stored datastream name.
+
 With the minimum datastream metadata set, you can click the 'Create datastream' button to save the datastream.
 
 **NOTE**: Some of the metadata elements on the 'Create datastream' form (e.g., Medium, Status, and Aggregation Statistic) are controlled vocabulary lists. These controlled vocabularies can be modified by a HydroServer Administrator if needed.

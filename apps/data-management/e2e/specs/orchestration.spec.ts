@@ -98,8 +98,10 @@ test.describe('orchestration', () => {
 
     await page.getByRole('button', { name: 'Edit', exact: true }).click()
 
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Edit task' })
-    await expect(dialog.getByText('Edit task')).toBeVisible()
+    const dialog = page
+      .getByRole('dialog')
+      .filter({ hasText: 'Edit ingestion task' })
+    await expect(dialog.getByText('Edit ingestion task')).toBeVisible()
     await expect(dialog.locator('input[value="test_value"]')).toBeVisible()
     await expect(
       dialog.getByText(fixtures.datastreams.privateWorkspacePublic.name)
