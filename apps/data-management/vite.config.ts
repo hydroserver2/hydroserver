@@ -74,9 +74,15 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       preserveSymlinks: true,
-      // Shared source components must use this app's Vue/Vuetify installation,
-      // including in CI where packages/design-system has no node_modules.
-      dedupe: ['vue', 'vuetify'],
+      // Shared source must resolve its runtime and font dependencies from this
+      // app, including in CI where packages/design-system has no node_modules.
+      dedupe: [
+        'vue',
+        'vuetify',
+        '@mdi/js',
+        '@fontsource-variable/archivo',
+        '@fontsource/jetbrains-mono',
+      ],
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
         // Watch workspace source instead of caching the installed file: copy.
