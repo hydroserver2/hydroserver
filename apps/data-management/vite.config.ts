@@ -73,12 +73,14 @@ export default defineConfig(({ mode }) => {
       },
     },
     resolve: {
-      // Keep the design-system package rooted in this app's node_modules.
-      // Otherwise imports generated for its Vuetify components resolve from
-      // packages/design-system, which has no node_modules in CI.
       preserveSymlinks: true,
+      // Shared source components must use this app's Vue/Vuetify installation,
+      // including in CI where packages/design-system has no node_modules.
+      dedupe: ['vue', 'vuetify'],
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
+        // Watch workspace source instead of caching the installed file: copy.
+        '@hydroserver/design-system': designSystemRoot,
         'vuetify/styles': resolve(
           __dirname,
           'node_modules/vuetify/lib/styles/main.sass'

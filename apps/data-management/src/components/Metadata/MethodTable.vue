@@ -1,20 +1,13 @@
 <template>
-  <v-skeleton-loader
-    v-if="isLoading"
-    type="table"
-    class="metadata-table-loading-skeleton"
-  />
-  <v-data-table-virtual
-    v-else
-    :headers="headers"
-    :items="sortedItems"
+  <MetadataItemTable
+    :items="items"
+    :loading="isLoading"
     :search="search"
-    fixed-header
+    kind="method"
+    :default-scope="workspaceId ? 'workspace' : 'system'"
+    :show-scope="scope === 'all'"
   >
-    <template v-slot:item.scope="{ item }">
-      <MetadataScopeChip :scope="item._scope" />
-    </template>
-    <template v-slot:item.actions="{ item }">
+    <template #actions="{ item }">
       <PermissionTooltip
         :has-permission="
           canEdit && (item._scope !== 'system' || canManageSystem)
@@ -68,7 +61,7 @@
         </template>
       </PermissionTooltip>
     </template>
-  </v-data-table-virtual>
+  </MetadataItemTable>
 
   <v-dialog v-model="openEdit" width="60rem">
     <MethodFormCard
@@ -97,10 +90,10 @@
 <script setup lang="ts">
 import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
-import MetadataScopeChip from '@/components/Metadata/MetadataScopeChip.vue'
+import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { Method } from '@hydroserver/client'
 import { useTableLogic } from '@/composables/useTableLogic'
-import { computed, toRef } from 'vue'
+import { toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
 import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
 import {
@@ -152,25 +145,4 @@ const {
           (id: string) => hs.methods.delete(id),
           Method
         )
-
-const headers = computed(() => {
-  const base: {
-    title: string
-    key: string
-    sortable?: boolean
-    align?: 'end'
-  }[] = [
-    { title: 'Name', key: 'name' },
-    { title: 'Type', key: 'type' },
-    { title: 'Code', key: 'code' },
-  ]
-  if (props.scope === 'all')
-    base.push({ title: 'Scope', key: 'scope', sortable: false })
-  base.push({ title: 'Actions', key: 'actions', sortable: false, align: 'end' })
-  return base
-})
-
-const sortedItems = computed(() =>
-  items.value.sort((a, b) => a.name.localeCompare(b.name))
-)
 </script>
