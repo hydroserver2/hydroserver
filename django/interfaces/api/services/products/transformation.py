@@ -7,9 +7,10 @@ from django.db import transaction
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.types import Unset
-from processing.products.models import DataProductTask, DataProductTransformation, DataProductTransformationInput
+from processing.products.models import DataProductTransformation, DataProductTransformationInput
 from interfaces.api.http.errors import BadRequestError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
+from interfaces.api.services.products.task import DataProductTaskAPIService
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationFields,
     DataProductTransformationOrderByFields,
@@ -21,33 +22,11 @@ from interfaces.api.schemas.products.transformation import (
 )
 
 User = get_user_model()
+data_product_task_service = DataProductTaskAPIService()
 
 
 class DataProductTransformationAPIService(APIService):
     INCLUDE_RELATIONS = DATA_PRODUCT_TRANSFORMATION_INCLUDE_RELATIONS
-
-    @staticmethod
-    def get_task_for_action(
-        principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
-        action: Literal["view", "edit", "delete"],
-    ) -> DataProductTask:
-        try:
-            task = DataProductTask.objects.select_related(
-                "monitoring_site__workspace"
-            ).get(pk=task_id)
-        except DataProductTask.DoesNotExist:
-            raise NotFoundError(f"Task with ID {task_id} does not exist.")
-
-        if not principal.can_view(task):
-            raise NotFoundError(f"Task with ID {task_id} does not exist.")
-
-        if action != "view" and not getattr(principal, f"can_{action}")(task):
-            raise PermissionDeniedError(
-                f"You do not have permission to {action} transformations on this task."
-            )
-
-        return task
 
     @staticmethod
     def _include_query_hints(requested_includes: set[str]) -> tuple[list[str], list[str]]:
@@ -66,14 +45,12 @@ class DataProductTransformationAPIService(APIService):
     def get_transformation_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         select_related: Optional[list[str]] = None,
         prefetch_related: Optional[list[str]] = None,
     ) -> DataProductTransformation:
-        task = self.get_task_for_action(principal, task_id, action)
-        queryset = DataProductTransformation.objects.filter(task=task, pk=uid)
+        queryset = DataProductTransformation.objects.filter(pk=uid)
 
         if select_related:
             queryset = queryset.select_related(*select_related)
@@ -81,14 +58,23 @@ class DataProductTransformationAPIService(APIService):
             queryset = queryset.prefetch_related(*prefetch_related)
 
         try:
-            return queryset.get()
+            transformation = queryset.get()
         except DataProductTransformation.DoesNotExist:
             raise NotFoundError(f"DataProductTransformation with ID {uid} does not exist.")
+
+        if not principal.can_view(transformation):
+            raise NotFoundError(f"DataProductTransformation with ID {uid} does not exist.")
+
+        if action != "view" and not getattr(principal, f"can_{action}")(transformation):
+            raise PermissionDeniedError(
+                f"You do not have permission to {action} this transformation."
+            )
+
+        return transformation
 
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
@@ -96,16 +82,22 @@ class DataProductTransformationAPIService(APIService):
         include: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
-        task = self.get_task_for_action(principal, task_id, "view")
-        queryset = DataProductTransformation.objects.filter(task=task)
+        filtering = filtering or {}
+        queryset = DataProductTransformation.objects.all()
 
         for field in [
             "transformation_type",
             "output_datastream_id",
             "input_datastreams__datastream_id",
+            "task_id",
         ]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
+
+        if "workspace_id" in filtering:
+            queryset = self.apply_filters(
+                queryset, "task__monitoring_site__workspace_id", filtering["workspace_id"]
+            )
 
         if order_by:
             queryset = self.apply_ordering(
@@ -122,7 +114,7 @@ class DataProductTransformationAPIService(APIService):
             if prefetch_paths:
                 queryset = queryset.prefetch_related(*prefetch_paths)
 
-        queryset = queryset.distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
         queryset, meta = self.apply_pagination(queryset, offset, limit)
         transformations = list(queryset.all())
 
@@ -139,7 +131,6 @@ class DataProductTransformationAPIService(APIService):
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         include: Optional[list[str]] = None,
     ):
@@ -148,7 +139,6 @@ class DataProductTransformationAPIService(APIService):
 
         transformation = self.get_transformation_for_action(
             principal=principal,
-            task_id=task_id,
             uid=uid,
             action="view",
             select_related=select_paths,
@@ -166,13 +156,19 @@ class DataProductTransformationAPIService(APIService):
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         data: DataProductTransformationPostBody,
     ):
         if data.id is not None and data.id.version != 7:
             raise BadRequestError(f"Invalid UUID version {data.id.version}. Expected 7.")
 
-        task = self.get_task_for_action(principal, task_id, "edit")
+        task = data_product_task_service.get_task_for_action(
+            principal, data.task_id, action="view"
+        )
+
+        if not principal.can_create("DataProductTransformation", workspace=task.workspace):
+            raise PermissionDeniedError(
+                "You do not have permission to create transformations on this task."
+            )
 
         transformation = DataProductTransformation(
             pk=data.id,
@@ -195,12 +191,11 @@ class DataProductTransformationAPIService(APIService):
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         data: DataProductTransformationPatchBody,
     ):
         transformation = self.get_transformation_for_action(
-            principal=principal, task_id=task_id, uid=uid, action="edit"
+            principal=principal, uid=uid, action="edit"
         )
 
         update_fields = data.dict(
@@ -221,11 +216,10 @@ class DataProductTransformationAPIService(APIService):
     def delete(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
     ):
         transformation = self.get_transformation_for_action(
-            principal=principal, task_id=task_id, uid=uid, action="delete"
+            principal=principal, uid=uid, action="delete"
         )
         transformation.delete()
 

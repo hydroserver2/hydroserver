@@ -59,24 +59,16 @@ api.add_router("methods", method_router)
 api.add_router("processing-levels", processing_level_router)
 api.add_router("result-qualifiers", result_qualifier_router)
 
-api.add_router("etl/data-connections", data_connection_router)
-api.add_router("etl/tasks", etl_task_router)
-etl_task_router.add_router(
-    "/{task_id}/mappings", etl_mapping_router, tags=["ETL Mappings"]
-)
+api.add_router("etl-data-connections", data_connection_router)
+api.add_router("etl-tasks", etl_task_router)
+api.add_router("etl-mappings", etl_mapping_router)
 
-api.add_router("products/rating-curves", rating_curve_router)
-api.add_router("products/tasks", data_product_task_router)
-data_product_task_router.add_router(
-    "/{task_id}/transformations",
-    data_product_transformation_router,
-    tags=["Transformations"],
-)
+api.add_router("data-product-rating-curves", rating_curve_router)
+api.add_router("data-product-tasks", data_product_task_router)
+api.add_router("data-product-transformations", data_product_transformation_router)
 
-monitoring_task_router.add_router(
-    "/{task_id}/rules", monitoring_rule_router, tags=["Monitoring Rules"]
-)
-api.add_router("monitoring/tasks", monitoring_task_router)
+api.add_router("monitoring-tasks", monitoring_task_router)
+api.add_router("monitoring-rules", monitoring_rule_router)
 
 api.add_router("quality-control/histories", qc_history_router)
 qc_history_router.add_router(

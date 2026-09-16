@@ -20,7 +20,7 @@ from tests.processing.products.factories import (
 
 pytestmark = pytest.mark.django_db
 
-DATA_PRODUCT_TASKS_URL = "/api/data/products/tasks"
+DATA_PRODUCT_TASKS_URL = "/api/data/data-product-tasks"
 
 
 def _detail_url(task_id):

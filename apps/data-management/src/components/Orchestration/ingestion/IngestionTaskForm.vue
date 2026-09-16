@@ -351,20 +351,25 @@ async function saveMappings(taskId: string) {
   )
 
   const results = await Promise.all([
-    ...deletedIds.map((id) => hs.tasks.deleteMapping(taskId, id)),
+    ...deletedIds.map((id) => hs.etlMappings.delete(id)),
     ...formMappings.value.map((m) => {
       const payload = {
         sourceIdentifier: m.sourceIdentifier,
         targetDatastreamId: m.targetDatastreamId,
       }
-      if (!m.id) return hs.tasks.createMapping(taskId, payload)
+      if (!m.id)
+        return hs.etlMappings.create({
+          id: '',
+          etlTaskId: taskId,
+          ...payload,
+        } as any)
       const original = originalById.get(m.id)
       const unchanged =
         original?.sourceIdentifier === m.sourceIdentifier &&
         original?.targetDatastreamId === m.targetDatastreamId
       return unchanged
         ? Promise.resolve({ ok: true as const })
-        : hs.tasks.updateMapping(taskId, m.id, payload)
+        : hs.etlMappings.update({ id: m.id, ...payload })
     }),
   ])
 

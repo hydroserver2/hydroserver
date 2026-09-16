@@ -15,7 +15,7 @@ from tests.processing.monitoring.factories import MonitoringRuleFactory, Monitor
 
 pytestmark = pytest.mark.django_db
 
-MONITORING_TASKS_URL = "/api/data/monitoring/tasks"
+MONITORING_TASKS_URL = "/api/data/monitoring-tasks"
 
 
 def _detail_url(task_id):

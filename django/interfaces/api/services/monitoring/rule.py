@@ -6,9 +6,10 @@ from django.db import transaction
 
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from processing.monitoring.models import MonitoringTask, MonitoringRule
+from processing.monitoring.models import MonitoringRule
 from interfaces.api.http.errors import NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
+from interfaces.api.services.monitoring.task import MonitoringTaskAPIService
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleFields,
     MonitoringRuleOrderByFields,
@@ -19,45 +20,21 @@ from interfaces.api.schemas.monitoring.rule import (
 )
 
 User = get_user_model()
+monitoring_task_service = MonitoringTaskAPIService()
 
 
 class MonitoringRuleAPIService(APIService):
     INCLUDE_RELATIONS = MONITORING_RULE_INCLUDE_RELATIONS
 
-    @staticmethod
-    def get_task_for_action(
-        principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
-        action: Literal["view", "edit", "delete"],
-    ) -> MonitoringTask:
-        try:
-            task = MonitoringTask.objects.select_related(
-                "monitoring_site__workspace"
-            ).get(pk=task_id)
-        except MonitoringTask.DoesNotExist:
-            raise NotFoundError(f"Task with ID {task_id} does not exist.")
-
-        if not principal.can_view(task):
-            raise NotFoundError(f"Task with ID {task_id} does not exist.")
-
-        if action != "view" and not getattr(principal, f"can_{action}")(task):
-            raise PermissionDeniedError(
-                f"You do not have permission to {action} rules on this task."
-            )
-
-        return task
-
     def get_rule_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         select_related: Optional[list[str]] = None,
         prefetch_related: Optional[list[str]] = None,
     ) -> MonitoringRule:
-        task = self.get_task_for_action(principal, task_id, action)
-        queryset = MonitoringRule.objects.filter(task=task, pk=uid)
+        queryset = MonitoringRule.objects.filter(pk=uid)
 
         if select_related:
             queryset = queryset.select_related(*select_related)
@@ -65,14 +42,21 @@ class MonitoringRuleAPIService(APIService):
             queryset = queryset.prefetch_related(*prefetch_related)
 
         try:
-            return queryset.get()
+            rule = queryset.get()
         except MonitoringRule.DoesNotExist:
             raise NotFoundError(f"MonitoringRule with ID {uid} does not exist.")
+
+        if not principal.can_view(rule):
+            raise NotFoundError(f"MonitoringRule with ID {uid} does not exist.")
+
+        if action != "view" and not getattr(principal, f"can_{action}")(rule):
+            raise PermissionDeniedError(f"You do not have permission to {action} this rule.")
+
+        return rule
 
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         order_by: Optional[list[str]] = None,
@@ -80,12 +64,17 @@ class MonitoringRuleAPIService(APIService):
         include: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
-        task = self.get_task_for_action(principal, task_id, "view")
-        queryset = MonitoringRule.objects.filter(task=task)
+        filtering = filtering or {}
+        queryset = MonitoringRule.objects.all()
 
-        for field in ["datastream_id", "rule_type"]:
+        for field in ["datastream_id", "rule_type", "task_id"]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
+
+        if "workspace_id" in filtering:
+            queryset = self.apply_filters(
+                queryset, "task__monitoring_site__workspace_id", filtering["workspace_id"]
+            )
 
         if order_by:
             queryset = self.apply_ordering(
@@ -104,6 +93,8 @@ class MonitoringRuleAPIService(APIService):
                     "datastream__monitoring_site"
                 ).prefetch_related("datastream__datastream_linked_resources")
 
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
+
         queryset, meta = self.apply_pagination(queryset, offset, limit)
         rules = list(queryset.all())
 
@@ -118,7 +109,6 @@ class MonitoringRuleAPIService(APIService):
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         include: Optional[list[str]] = None,
     ):
@@ -134,7 +124,6 @@ class MonitoringRuleAPIService(APIService):
 
         rule = self.get_rule_for_action(
             principal=principal,
-            task_id=task_id,
             uid=uid,
             action="view",
             select_related=select_paths,
@@ -152,10 +141,16 @@ class MonitoringRuleAPIService(APIService):
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         data: MonitoringRulePostBody,
     ):
-        task = self.get_task_for_action(principal, task_id, "edit")
+        task = monitoring_task_service.get_task_for_action(
+            principal, data.task_id, action="view"
+        )
+
+        if not principal.can_create("MonitoringRule", workspace=task.workspace):
+            raise PermissionDeniedError(
+                "You do not have permission to create rules on this task."
+            )
 
         rule = MonitoringRule(
             pk=data.id,
@@ -172,13 +167,10 @@ class MonitoringRuleAPIService(APIService):
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         data: MonitoringRulePatchBody,
     ):
-        rule = self.get_rule_for_action(
-            principal=principal, task_id=task_id, uid=uid, action="edit"
-        )
+        rule = self.get_rule_for_action(principal=principal, uid=uid, action="edit")
 
         rule_data = data.dict(
             include=set(MonitoringRuleFields.model_fields.keys()), exclude_unset=True
@@ -192,10 +184,7 @@ class MonitoringRuleAPIService(APIService):
     def delete(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
     ):
-        rule = self.get_rule_for_action(
-            principal=principal, task_id=task_id, uid=uid, action="delete"
-        )
+        rule = self.get_rule_for_action(principal=principal, uid=uid, action="delete")
         rule.delete()

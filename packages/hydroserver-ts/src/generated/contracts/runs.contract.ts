@@ -4,7 +4,7 @@ import type * as Data from '../data.types'
 
 export namespace RunContract {
   export const route = 'runs' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_etl_task_get_etl_task_runs']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_etl_task_get_etl_task_runs']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_products_task_get_data_product_task_runs']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_products_task_get_data_product_task_runs']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['TaskRunResponse']
   export type DetailResponse  = Data.components['schemas']['TaskRunResponse']
   export type PostBody        = never

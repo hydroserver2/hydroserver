@@ -515,7 +515,8 @@ async function loadExistingTask() {
   loadingExisting.value = true
   const [taskRes, transformationsRes] = await Promise.all([
     hs.dataProductTasks.get(props.editTaskId),
-    hs.dataProductTasks.listTransformations(props.editTaskId, {
+    hs.dataProductTransformations.list({
+      task_id: props.editTaskId,
       transformation_type: ['derivation'],
     } as any),
   ])
@@ -602,17 +603,16 @@ async function onCreate(
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createTransformation(
-    taskRes.data.id,
-    {
-      transformationType: 'derivation',
-      outputDatastreamId: outputDatastreamId.value!,
-      inputDatastreams,
-      formula: formula.value.trim(),
-      stopOnNoData: stopOnNoData.value,
-      stopOnError: stopOnError.value,
-    }
-  )
+  const transformRes = await hs.dataProductTransformations.create({
+    id: '',
+    taskId: taskRes.data.id,
+    transformationType: 'derivation',
+    outputDatastreamId: outputDatastreamId.value!,
+    inputDatastreams,
+    formula: formula.value.trim(),
+    stopOnNoData: stopOnNoData.value,
+    stopOnError: stopOnError.value,
+  } as any)
 
   if (!transformRes.ok) {
     Snackbar.error(
@@ -642,17 +642,14 @@ async function onUpdate(
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await hs.dataProductTasks.updateTransformation(
-      taskId,
-      existingTransformationId.value,
-      {
-        outputDatastreamId: outputDatastreamId.value!,
-        inputDatastreams,
-        formula: formula.value.trim(),
-        stopOnNoData: stopOnNoData.value,
-        stopOnError: stopOnError.value,
-      }
-    )
+    const transformRes = await hs.dataProductTransformations.update({
+      id: existingTransformationId.value,
+      outputDatastreamId: outputDatastreamId.value!,
+      inputDatastreams,
+      formula: formula.value.trim(),
+      stopOnNoData: stopOnNoData.value,
+      stopOnError: stopOnError.value,
+    })
 
     if (!transformRes.ok) {
       Snackbar.error(

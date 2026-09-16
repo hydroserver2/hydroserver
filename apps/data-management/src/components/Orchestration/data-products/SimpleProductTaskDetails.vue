@@ -224,10 +224,10 @@ async function loadTransformations() {
     transformations.value = []
     return
   }
-  const res = await hs.dataProductTasks.listTransformations(task.value.id, {
+  transformations.value = await hs.dataProductTransformations.listAllItems({
+    task_id: task.value.id,
     transformation_type: [transformationTypeFor(props.taskLabel)],
   } as any)
-  transformations.value = res.ok ? res.data : []
 }
 
 watch(

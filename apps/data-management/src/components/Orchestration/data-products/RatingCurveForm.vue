@@ -353,7 +353,8 @@ async function loadExistingTask() {
   loadingExisting.value = true
   const [taskRes, transformationsRes] = await Promise.all([
     hs.dataProductTasks.get(props.editTaskId),
-    hs.dataProductTasks.listTransformations(props.editTaskId, {
+    hs.dataProductTransformations.list({
+      task_id: props.editTaskId,
       transformation_type: ['rating_curve'],
     } as any),
   ])
@@ -539,17 +540,16 @@ async function onCreate() {
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createTransformation(
-    taskRes.data.id,
-    {
-      transformationType: 'rating_curve',
-      outputDatastreamId: outputDatastreamId.value!,
-      inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
-      ratingCurveId,
-      stopOnNoData: true,
-      stopOnError: true,
-    }
-  )
+  const transformRes = await hs.dataProductTransformations.create({
+    id: '',
+    taskId: taskRes.data.id,
+    transformationType: 'rating_curve',
+    outputDatastreamId: outputDatastreamId.value!,
+    inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
+    ratingCurveId,
+    stopOnNoData: true,
+    stopOnError: true,
+  } as any)
 
   if (!transformRes.ok) {
     Snackbar.error(
@@ -579,15 +579,12 @@ async function onUpdate() {
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await hs.dataProductTasks.updateTransformation(
-      taskId,
-      existingTransformationId.value,
-      {
-        outputDatastreamId: outputDatastreamId.value!,
-        inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
-        ratingCurveId,
-      }
-    )
+    const transformRes = await hs.dataProductTransformations.update({
+      id: existingTransformationId.value,
+      outputDatastreamId: outputDatastreamId.value!,
+      inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
+      ratingCurveId,
+    })
 
     if (!transformRes.ok) {
       Snackbar.error(

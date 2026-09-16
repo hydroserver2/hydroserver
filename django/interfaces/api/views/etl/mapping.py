@@ -31,14 +31,12 @@ _service = EtlMappingAPIService()
 )
 def get_etl_mappings(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     query: Query[EtlMappingQueryParameters],
 ):
-    """Get mappings for an ETL task."""
+    """Get ETL mappings."""
 
     return 200, _service.list(
         principal=request.principal,
-        task_id=task_id,
         offset=query.offset,
         limit=query.limit,
         order_by=query.order_by,
@@ -61,14 +59,12 @@ def get_etl_mappings(
 )
 def create_etl_mapping(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     data: EtlMappingPostBody,
 ):
-    """Create a mapping on an ETL task."""
+    """Create an ETL mapping."""
 
     return 201, _service.create(
         principal=request.principal,
-        task_id=task_id,
         data=data,
     )
 
@@ -86,7 +82,6 @@ def create_etl_mapping(
 )
 def get_etl_mapping(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     mapping_id: Path[uuid.UUID],
     query: Query[EtlMappingItemQueryParameters],
 ):
@@ -94,7 +89,6 @@ def get_etl_mapping(
 
     return 200, _service.get(
         principal=request.principal,
-        task_id=task_id,
         uid=mapping_id,
         include=query.include,
     )
@@ -114,7 +108,6 @@ def get_etl_mapping(
 )
 def update_etl_mapping(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     mapping_id: Path[uuid.UUID],
     data: EtlMappingPatchBody,
 ):
@@ -122,7 +115,6 @@ def update_etl_mapping(
 
     _service.update(
         principal=request.principal,
-        task_id=task_id,
         uid=mapping_id,
         data=data,
     )
@@ -143,14 +135,12 @@ def update_etl_mapping(
 )
 def delete_etl_mapping(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     mapping_id: Path[uuid.UUID],
 ):
     """Delete an ETL mapping."""
 
     _service.delete(
         principal=request.principal,
-        task_id=task_id,
         uid=mapping_id,
     )
 

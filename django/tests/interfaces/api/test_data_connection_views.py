@@ -13,7 +13,7 @@ from tests.processing.etl.factories import DataConnectionFactory, PayloadFactory
 
 pytestmark = pytest.mark.django_db
 
-DATA_CONNECTIONS_URL = "/api/data/etl/data-connections"
+DATA_CONNECTIONS_URL = "/api/data/etl-data-connections"
 
 
 def _detail_url(data_connection_id):

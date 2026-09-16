@@ -15,7 +15,7 @@ from tests.processing.products.factories import RatingCurveFactory, RatingCurveP
 
 pytestmark = pytest.mark.django_db
 
-RATING_CURVES_URL = "/api/data/products/rating-curves"
+RATING_CURVES_URL = "/api/data/data-product-rating-curves"
 
 RATING_CURVE_FIELDS = {
     "id",

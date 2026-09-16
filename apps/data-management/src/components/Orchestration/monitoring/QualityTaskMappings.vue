@@ -70,8 +70,9 @@ async function loadRules() {
     rules.value = []
     return
   }
-  const res = await hs.monitoringTasks.listRules(props.taskId)
-  rules.value = res.ok ? res.data : []
+  rules.value = await hs.monitoringRules.listAllItems({
+    task_id: props.taskId,
+  } as any)
 }
 
 watch(() => props.taskId, () => void loadRules(), { immediate: true })

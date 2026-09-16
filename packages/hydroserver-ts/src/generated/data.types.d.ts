@@ -4,6 +4,222 @@
  */
 
 export interface paths {
+    "/api/data/data-product-rating-curves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curves
+         * @description Get rating curves accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_products_rating_curve_get_rating_curves"];
+        put?: never;
+        /**
+         * Create Rating Curve
+         * @description Create a new rating curve.
+         */
+        post: operations["interfaces_api_views_products_rating_curve_create_rating_curve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-rating-curves/{rating_curve_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curve
+         * @description Get a rating curve.
+         */
+        get: operations["interfaces_api_views_products_rating_curve_get_rating_curve"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Rating Curve
+         * @description Delete a rating curve.
+         */
+        delete: operations["interfaces_api_views_products_rating_curve_delete_rating_curve"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Rating Curve
+         * @description Update a rating curve.
+         */
+        patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
+        trace?: never;
+    };
+    "/api/data/data-product-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Tasks
+         * @description Get data product tasks accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_tasks"];
+        put?: never;
+        /**
+         * Create Data Product Task
+         * @description Create a new data product task.
+         */
+        post: operations["interfaces_api_views_products_task_create_data_product_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task
+         * @description Get a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Data Product Task
+         * @description Delete a data product task.
+         */
+        delete: operations["interfaces_api_views_products_task_delete_data_product_task"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Data Product Task
+         * @description Update a data product task.
+         */
+        patch: operations["interfaces_api_views_products_task_update_data_product_task"];
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task Runs
+         * @description Get runs for a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task Run
+         * @description Get a single run for a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task_run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger Data Product Task
+         * @description Trigger an immediate run of a data product task on a Celery worker.
+         */
+        post: operations["interfaces_api_views_products_task_trigger_data_product_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-transformations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Transformations
+         * @description Get data product transformations.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_data_product_transformations"];
+        put?: never;
+        /**
+         * Create Data Product Transformation
+         * @description Create a data product transformation.
+         */
+        post: operations["interfaces_api_views_products_transformation_create_data_product_transformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-transformations/{transformation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Transformation
+         * @description Get a data product transformation.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_data_product_transformation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Data Product Transformation
+         * @description Delete a data product transformation.
+         */
+        delete: operations["interfaces_api_views_products_transformation_delete_data_product_transformation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Data Product Transformation
+         * @description Update a data product transformation.
+         */
+        patch: operations["interfaces_api_views_products_transformation_update_data_product_transformation"];
+        trace?: never;
+    };
     "/api/data/datastreams": {
         parameters: {
             query?: never;
@@ -245,7 +461,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
     };
-    "/api/data/etl/data-connections": {
+    "/api/data/etl-data-connections": {
         parameters: {
             query?: never;
             header?: never;
@@ -269,7 +485,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/data-connections/{data_connection_id}": {
+    "/api/data/etl-data-connections/{data_connection_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -297,59 +513,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_data_connection_update_data_connection"];
         trace?: never;
     };
-    "/api/data/etl/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Etl Tasks
-         * @description Get ETL Tasks accessible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_etl_task_get_etl_tasks"];
-        put?: never;
-        /**
-         * Create Etl Task
-         * @description Create a new ETL Task.
-         */
-        post: operations["interfaces_api_views_etl_task_create_etl_task"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/etl/tasks/{task_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Etl Task
-         * @description Get an ETL Task.
-         */
-        get: operations["interfaces_api_views_etl_task_get_etl_task"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Etl Task
-         * @description Delete an ETL Task.
-         */
-        delete: operations["interfaces_api_views_etl_task_delete_etl_task"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Etl Task
-         * @description Update an ETL Task.
-         */
-        patch: operations["interfaces_api_views_etl_task_update_etl_task"];
-        trace?: never;
-    };
-    "/api/data/etl/tasks/{task_id}/mappings": {
+    "/api/data/etl-mappings": {
         parameters: {
             query?: never;
             header?: never;
@@ -358,13 +522,13 @@ export interface paths {
         };
         /**
          * Get Etl Mappings
-         * @description Get mappings for an ETL task.
+         * @description Get ETL mappings.
          */
         get: operations["interfaces_api_views_etl_mapping_get_etl_mappings"];
         put?: never;
         /**
          * Create Etl Mapping
-         * @description Create a mapping on an ETL task.
+         * @description Create an ETL mapping.
          */
         post: operations["interfaces_api_views_etl_mapping_create_etl_mapping"];
         delete?: never;
@@ -373,7 +537,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/mappings/{mapping_id}": {
+    "/api/data/etl-mappings/{mapping_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -401,7 +565,59 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_mapping_update_etl_mapping"];
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/runs": {
+    "/api/data/etl-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Etl Tasks
+         * @description Get ETL Tasks accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_etl_task_get_etl_tasks"];
+        put?: never;
+        /**
+         * Create Etl Task
+         * @description Create a new ETL Task.
+         */
+        post: operations["interfaces_api_views_etl_task_create_etl_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/etl-tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Etl Task
+         * @description Get an ETL Task.
+         */
+        get: operations["interfaces_api_views_etl_task_get_etl_task"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Etl Task
+         * @description Delete an ETL Task.
+         */
+        delete: operations["interfaces_api_views_etl_task_delete_etl_task"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Etl Task
+         * @description Update an ETL Task.
+         */
+        patch: operations["interfaces_api_views_etl_task_update_etl_task"];
+        trace?: never;
+    };
+    "/api/data/etl-tasks/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -421,7 +637,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/runs/{run_id}": {
+    "/api/data/etl-tasks/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -441,7 +657,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/trigger": {
+    "/api/data/etl-tasks/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -531,6 +747,58 @@ export interface paths {
          * @description Update a Method.
          */
         patch: operations["interfaces_api_views_sta_method_update_method"];
+        trace?: never;
+    };
+    "/api/data/monitoring-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Rules
+         * @description Get monitoring rules.
+         */
+        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rules"];
+        put?: never;
+        /**
+         * Create Monitoring Rule
+         * @description Create a monitoring rule on a datastream belonging to the given task.
+         */
+        post: operations["interfaces_api_views_monitoring_rule_create_monitoring_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Rule
+         * @description Get a monitoring rule.
+         */
+        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rule"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Monitoring Rule
+         * @description Delete a monitoring rule.
+         */
+        delete: operations["interfaces_api_views_monitoring_rule_delete_monitoring_rule"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Rule
+         * @description Update a monitoring rule's parameters.
+         */
+        patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
         trace?: never;
     };
     "/api/data/monitoring-sites": {
@@ -774,7 +1042,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource"];
         trace?: never;
     };
-    "/api/data/monitoring/tasks": {
+    "/api/data/monitoring-tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -798,7 +1066,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}": {
+    "/api/data/monitoring-tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -826,59 +1094,7 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_task_update_monitoring_task"];
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}/rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Rules
-         * @description Get rules for a monitoring task.
-         */
-        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rules"];
-        put?: never;
-        /**
-         * Create Monitoring Rule
-         * @description Create a monitoring rule on a datastream belonging to the given task.
-         */
-        post: operations["interfaces_api_views_monitoring_rule_create_monitoring_rule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring/tasks/{task_id}/rules/{rule_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Rule
-         * @description Get a monitoring rule.
-         */
-        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rule"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Monitoring Rule
-         * @description Delete a monitoring rule.
-         */
-        delete: operations["interfaces_api_views_monitoring_rule_delete_monitoring_rule"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Monitoring Rule
-         * @description Update a monitoring rule's parameters.
-         */
-        patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
-        trace?: never;
-    };
-    "/api/data/monitoring/tasks/{task_id}/runs": {
+    "/api/data/monitoring-tasks/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -898,7 +1114,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}/runs/{run_id}": {
+    "/api/data/monitoring-tasks/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -918,7 +1134,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}/trigger": {
+    "/api/data/monitoring-tasks/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -1148,222 +1364,6 @@ export interface paths {
          * @description Update a Processing Level.
          */
         patch: operations["interfaces_api_views_sta_processing_level_update_processing_level"];
-        trace?: never;
-    };
-    "/api/data/products/rating-curves": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Rating Curves
-         * @description Get rating curves accessible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_products_rating_curve_get_rating_curves"];
-        put?: never;
-        /**
-         * Create Rating Curve
-         * @description Create a new rating curve.
-         */
-        post: operations["interfaces_api_views_products_rating_curve_create_rating_curve"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/rating-curves/{rating_curve_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Rating Curve
-         * @description Get a rating curve.
-         */
-        get: operations["interfaces_api_views_products_rating_curve_get_rating_curve"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Rating Curve
-         * @description Delete a rating curve.
-         */
-        delete: operations["interfaces_api_views_products_rating_curve_delete_rating_curve"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Rating Curve
-         * @description Update a rating curve.
-         */
-        patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
-        trace?: never;
-    };
-    "/api/data/products/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Tasks
-         * @description Get data product tasks accessible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_tasks"];
-        put?: never;
-        /**
-         * Create Data Product Task
-         * @description Create a new data product task.
-         */
-        post: operations["interfaces_api_views_products_task_create_data_product_task"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Task
-         * @description Get a data product task.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_task"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Data Product Task
-         * @description Delete a data product task.
-         */
-        delete: operations["interfaces_api_views_products_task_delete_data_product_task"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Data Product Task
-         * @description Update a data product task.
-         */
-        patch: operations["interfaces_api_views_products_task_update_data_product_task"];
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Task Runs
-         * @description Get runs for a data product task.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_task_runs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/runs/{run_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Task Run
-         * @description Get a single run for a data product task.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_task_run"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Transformations
-         * @description Get transformations for a data product task.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_data_product_transformations"];
-        put?: never;
-        /**
-         * Create Data Product Transformation
-         * @description Create a transformation on a data product task.
-         */
-        post: operations["interfaces_api_views_products_transformation_create_data_product_transformation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/{transformation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Transformation
-         * @description Get a data product transformation.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_data_product_transformation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Data Product Transformation
-         * @description Delete a data product transformation.
-         */
-        delete: operations["interfaces_api_views_products_transformation_delete_data_product_transformation"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Data Product Transformation
-         * @description Update a data product transformation.
-         */
-        patch: operations["interfaces_api_views_products_transformation_update_data_product_transformation"];
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/trigger": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Trigger Data Product Task
-         * @description Trigger an immediate run of a data product task on a Celery worker.
-         */
-        post: operations["interfaces_api_views_products_task_trigger_data_product_task"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/data/quality-control/histories": {
@@ -2408,6 +2408,11 @@ export interface components {
              * @default true
              */
             stopOnNoData: boolean;
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
@@ -2461,11 +2466,23 @@ export interface components {
              */
             properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
             /**
+             * Task Id
+             * @description Filter transformations by data product task ID.
+             * @default []
+             */
+            task_id: string[];
+            /**
              * Transformation Type
              * @description Filter transformations by type.
              * @default []
              */
             transformation_type: string[];
+            /**
+             * Workspace Id
+             * @description Filter transformations by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
         };
         /** DataProductTransformationResponse */
         DataProductTransformationResponse: {
@@ -2506,6 +2523,11 @@ export interface components {
              * @default true
              */
             stopOnNoData: boolean;
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
@@ -2983,6 +3005,11 @@ export interface components {
         };
         /** EtlMappingPostBody */
         EtlMappingPostBody: {
+            /**
+             * Etltaskid
+             * Format: uuid
+             */
+            etlTaskId: string;
             /** Id */
             id?: string | null;
             /** Sourceidentifier */
@@ -2995,6 +3022,12 @@ export interface components {
         };
         /** EtlMappingQueryParameters */
         EtlMappingQueryParameters: {
+            /**
+             * Etl Task Id
+             * @description Filter mappings by ETL task ID.
+             * @default []
+             */
+            etl_task_id: string[];
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3035,9 +3068,20 @@ export interface components {
              * @default []
              */
             target_datastream_id: string[];
+            /**
+             * Workspace Id
+             * @description Filter mappings by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
         };
         /** EtlMappingResponse */
         EtlMappingResponse: {
+            /**
+             * Etltaskid
+             * Format: uuid
+             */
+            etlTaskId: string;
             /**
              * Id
              * Format: uuid
@@ -3656,6 +3700,11 @@ export interface components {
              * @enum {string}
              */
             ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
             /** Windowinterval */
             windowInterval?: number | null;
             /** Windowintervalunits */
@@ -3703,6 +3752,18 @@ export interface components {
              * @default []
              */
             rule_type: string[];
+            /**
+             * Task Id
+             * @description Filter rules by monitoring task ID.
+             * @default []
+             */
+            task_id: string[];
+            /**
+             * Workspace Id
+             * @description Filter rules by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
         };
         /** MonitoringRuleResponse */
         MonitoringRuleResponse: {
@@ -3727,6 +3788,11 @@ export interface components {
              * @enum {string}
              */
             ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
             /** Windowinterval */
             windowInterval?: number | null;
             /** Windowintervalunits */
@@ -4855,7 +4921,7 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Method" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Method" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
         };
         /** PlaceholderVariablePatchBody */
         PlaceholderVariablePatchBody: {
@@ -6235,6 +6301,1004 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    interfaces_api_views_products_rating_curve_get_rating_curves: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[] | null;
+                /** @description Filter rating curves by monitoring site ID. */
+                monitoring_site_id?: string[];
+                /** @description Filter rating curves by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_RatingCurveResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_create_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurvePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_get_rating_curve: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+            };
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_RatingCurveResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_delete_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_update_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurvePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_tasks: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Filter data product tasks by monitoring_site ID. */
+                monitoring_site_id?: string[];
+                /** @description Filter data product tasks by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter data product tasks by their most recent run status. */
+                latest_run_status?: (string | "null")[];
+                /** @description Filter data product tasks by transformation type. */
+                transformation_type?: string[];
+                /** @description Filter data product tasks by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter data product tasks by input datastream ID. */
+                input_datastream_id?: string[];
+                /** @description Filter data product tasks by rating curve ID. */
+                rating_curve_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DataProductTaskResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_create_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTaskPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_DataProductTaskResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_delete_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_update_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTaskPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task_runs: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Filters task runs by their status. */
+                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
+                /** @description Filters for task runs started on or before this date and time. */
+                started_at_max?: string | null;
+                /** @description Filters for task runs started on or after this date and time. */
+                started_at_min?: string | null;
+                /** @description Filters for task runs finished on or before this date and time. */
+                finished_at_max?: string | null;
+                /** @description Filters for task runs finished on or after this date and time. */
+                finished_at_min?: string | null;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_trigger_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_data_product_transformations: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("outputDatastream" | "ratingCurve")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[] | null;
+                /** @description Filter transformations by type. */
+                transformation_type?: string[];
+                /** @description Filter transformations by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter transformations by input datastream ID. */
+                input_datastream_id?: string[];
+                /** @description Filter transformations by data product task ID. */
+                task_id?: string[];
+                /** @description Filter transformations by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DataProductTransformationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_create_data_product_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTransformationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_data_product_transformation: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("outputDatastream" | "ratingCurve")[];
+            };
+            header?: never;
+            path: {
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_DataProductTransformationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_delete_data_product_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_update_data_product_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTransformationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
@@ -7243,6 +8307,293 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_etl_mapping_get_etl_mappings: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "targetDatastream"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+                /** @description Filter mappings by source identifier. */
+                source_identifier?: string[];
+                /** @description Filter mappings by target datastream ID. */
+                target_datastream_id?: string[];
+                /** @description Filter mappings by ETL task ID. */
+                etl_task_id?: string[];
+                /** @description Filter mappings by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_EtlMappingResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_create_etl_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtlMappingPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_get_etl_mapping: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "targetDatastream"[];
+            };
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_EtlMappingResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_delete_etl_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_update_etl_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtlMappingPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_etl_task_get_etl_tasks: {
         parameters: {
             query?: {
@@ -7472,296 +8823,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EtlTaskPatchBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_etl_mapping_get_etl_mappings: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "targetDatastream"[];
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
-                /** @description Filter mappings by source identifier. */
-                source_identifier?: string[];
-                /** @description Filter mappings by target datastream ID. */
-                target_datastream_id?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_EtlMappingResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_etl_mapping_create_etl_mapping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EtlMappingPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatedResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_etl_mapping_get_etl_mapping: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "targetDatastream"[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-                mapping_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ItemResponse_EtlMappingResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_etl_mapping_delete_etl_mapping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                mapping_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_etl_mapping_update_etl_mapping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                mapping_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EtlMappingPatchBody"];
             };
         };
         responses: {
@@ -8265,6 +9326,293 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_get_monitoring_rules: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "datastream"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[] | null;
+                /** @description Filter rules by datastream ID. */
+                datastream_id?: string[];
+                /** @description Filter rules by rule type. */
+                rule_type?: string[];
+                /** @description Filter rules by monitoring task ID. */
+                task_id?: string[];
+                /** @description Filter rules by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringRuleResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_create_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringRulePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_get_monitoring_rule: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "datastream"[];
+            };
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_MonitoringRuleResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_delete_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_update_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringRulePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9202,296 +10550,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MonitoringTaskPatchBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_get_monitoring_rules: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "datastream"[];
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[] | null;
-                /** @description Filter rules by datastream ID. */
-                datastream_id?: string[];
-                /** @description Filter rules by rule type. */
-                rule_type?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_MonitoringRuleResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_create_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MonitoringRulePostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatedResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_get_monitoring_rule: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "datastream"[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-                rule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ItemResponse_MonitoringRuleResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_delete_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                rule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_update_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                rule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MonitoringRulePatchBody"];
             };
         };
         responses: {
@@ -10552,1007 +11610,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_get_rating_curves: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "monitoringSite"[];
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[] | null;
-                /** @description Filter rating curves by monitoring site ID. */
-                monitoring_site_id?: string[];
-                /** @description Filter rating curves by workspace ID. */
-                workspace_id?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_RatingCurveResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_create_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingCurvePostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatedResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_get_rating_curve: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "monitoringSite"[];
-            };
-            header?: never;
-            path: {
-                rating_curve_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ItemResponse_RatingCurveResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_delete_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rating_curve_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_update_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rating_curve_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingCurvePatchBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_tasks: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "monitoringSite"[];
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
-                /** @description Filter data product tasks by monitoring_site ID. */
-                monitoring_site_id?: string[];
-                /** @description Filter data product tasks by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter data product tasks by their most recent run status. */
-                latest_run_status?: (string | "null")[];
-                /** @description Filter data product tasks by transformation type. */
-                transformation_type?: string[];
-                /** @description Filter data product tasks by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter data product tasks by input datastream ID. */
-                input_datastream_id?: string[];
-                /** @description Filter data product tasks by rating curve ID. */
-                rating_curve_id?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_DataProductTaskResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_create_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataProductTaskPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatedResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_task: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "monitoringSite"[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ItemResponse_DataProductTaskResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_delete_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_update_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataProductTaskPatchBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_task_runs: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
-                /** @description Filters task runs by their status. */
-                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
-                /** @description Filters for task runs started on or before this date and time. */
-                started_at_max?: string | null;
-                /** @description Filters for task runs started on or after this date and time. */
-                started_at_min?: string | null;
-                /** @description Filters for task runs finished on or before this date and time. */
-                finished_at_max?: string | null;
-                /** @description Filters for task runs finished on or after this date and time. */
-                finished_at_min?: string | null;
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_task_run: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_data_product_transformations: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: ("outputDatastream" | "ratingCurve")[];
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[] | null;
-                /** @description Filter transformations by type. */
-                transformation_type?: string[];
-                /** @description Filter transformations by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter transformations by input datastream ID. */
-                input_datastream_id?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_DataProductTransformationResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_create_data_product_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataProductTransformationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatedResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_data_product_transformation: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: ("outputDatastream" | "ratingCurve")[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ItemResponse_DataProductTransformationResponse_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_delete_data_product_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_update_data_product_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataProductTransformationPatchBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_trigger_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Accepted */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

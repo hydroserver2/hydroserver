@@ -272,7 +272,6 @@ import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type MonitoringRule,
-  type MonitoringRulePayload,
   type MonitoringRuleType,
   type MonitoringRuleWindowUnit,
   type MonitoringTask,
@@ -496,7 +495,8 @@ async function loadExistingTask() {
   try {
     const [taskRes, rulesRes] = await Promise.all([
       hs.monitoringTasks.get(props.editTaskId),
-      hs.monitoringTasks.listRules(props.editTaskId, {
+      hs.monitoringRules.list({
+        task_id: props.editTaskId,
         order_by: ['datastreamId', 'ruleType'],
       } as any),
     ])
@@ -560,8 +560,10 @@ function validateRuleRows() {
   return errors.length === 0
 }
 
-function rowPayload(row: RuleRow): MonitoringRulePayload {
-  const payload: MonitoringRulePayload = {
+type RulePayload = Omit<MonitoringRule, 'id' | 'taskId' | 'lastCheckedAt'>
+
+function rowPayload(row: RuleRow): RulePayload {
+  const payload: RulePayload = {
     datastreamId: row.datastreamId!,
     ruleType: row.ruleType,
     minValue: null,
@@ -588,7 +590,7 @@ async function syncRules(taskId: string) {
   )
   for (const id of Object.keys(originalRulesById.value)) {
     if (!currentExistingIds.has(id)) {
-      const res = await hs.monitoringTasks.deleteRule(taskId, id)
+      const res = await hs.monitoringRules.delete(id)
       if (!res.ok)
         throw new Error(res.message || 'Unable to delete quality rule.')
     }
@@ -604,21 +606,26 @@ async function syncRules(taskId: string) {
 
     if (!row.id || immutableChanged) {
       if (row.id) {
-        const deleteRes = await hs.monitoringTasks.deleteRule(taskId, row.id)
+        const deleteRes = await hs.monitoringRules.delete(row.id)
         if (!deleteRes.ok) {
           throw new Error(
             deleteRes.message || 'Unable to replace quality rule.'
           )
         }
       }
-      const createRes = await hs.monitoringTasks.createRule(taskId, payload)
+      const createRes = await hs.monitoringRules.create({
+        id: '',
+        taskId,
+        ...payload,
+      } as any)
       if (!createRes.ok) {
         throw new Error(createRes.message || 'Unable to create quality rule.')
       }
       continue
     }
 
-    const updateRes = await hs.monitoringTasks.updateRule(taskId, row.id, {
+    const updateRes = await hs.monitoringRules.update({
+      id: row.id,
       minValue: payload.minValue,
       maxValue: payload.maxValue,
       windowInterval: payload.windowInterval,

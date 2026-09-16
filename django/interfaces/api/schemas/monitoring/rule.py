@@ -86,10 +86,17 @@ class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryP
     rule_type: list[str] = Query(
         [], description="Filter rules by rule type."
     )
+    task_id: list[uuid.UUID] = Query(
+        [], description="Filter rules by monitoring task ID."
+    )
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter rules by workspace ID."
+    )
 
 
 class MonitoringRuleResponse(BaseGetResponse, MonitoringRuleFields):
     id: uuid.UUID
+    task_id: uuid.UUID
     datastream_id: uuid.UUID
     rule_type: RuleType
     last_checked_at: Optional[datetime] = None
@@ -97,6 +104,7 @@ class MonitoringRuleResponse(BaseGetResponse, MonitoringRuleFields):
 
 class MonitoringRulePostBody(BasePostBody, MonitoringRuleFields):
     id: Optional[uuid.UUID] = None
+    task_id: uuid.UUID
     datastream_id: uuid.UUID
     rule_type: RuleType
 

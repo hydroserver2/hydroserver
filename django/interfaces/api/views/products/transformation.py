@@ -14,7 +14,7 @@ from interfaces.api.schemas.products.transformation import (
     DataProductTransformationItemQueryParameters,
 )
 
-data_product_transformation_router = Router(tags=["Transformations"])
+data_product_transformation_router = Router(tags=["Data Product Transformations"])
 _service = DataProductTransformationAPIService()
 
 
@@ -31,14 +31,12 @@ _service = DataProductTransformationAPIService()
 )
 def get_data_product_transformations(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     query: Query[DataProductTransformationQueryParameters],
 ):
-    """Get transformations for a data product task."""
+    """Get data product transformations."""
 
     return 200, _service.list(
         principal=request.principal,
-        task_id=task_id,
         offset=query.offset,
         limit=query.limit,
         order_by=query.order_by,
@@ -61,14 +59,12 @@ def get_data_product_transformations(
 )
 def create_data_product_transformation(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     data: DataProductTransformationPostBody,
 ):
-    """Create a transformation on a data product task."""
+    """Create a data product transformation."""
 
     return 201, _service.create(
         principal=request.principal,
-        task_id=task_id,
         data=data,
     )
 
@@ -86,7 +82,6 @@ def create_data_product_transformation(
 )
 def get_data_product_transformation(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     transformation_id: Path[uuid.UUID],
     query: Query[DataProductTransformationItemQueryParameters],
 ):
@@ -94,7 +89,6 @@ def get_data_product_transformation(
 
     return 200, _service.get(
         principal=request.principal,
-        task_id=task_id,
         uid=transformation_id,
         include=query.include,
     )
@@ -114,7 +108,6 @@ def get_data_product_transformation(
 )
 def update_data_product_transformation(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     transformation_id: Path[uuid.UUID],
     data: DataProductTransformationPatchBody,
 ):
@@ -122,7 +115,6 @@ def update_data_product_transformation(
 
     _service.update(
         principal=request.principal,
-        task_id=task_id,
         uid=transformation_id,
         data=data,
     )
@@ -143,14 +135,12 @@ def update_data_product_transformation(
 )
 def delete_data_product_transformation(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     transformation_id: Path[uuid.UUID],
 ):
     """Delete a data product transformation."""
 
     _service.delete(
         principal=request.principal,
-        task_id=task_id,
         uid=transformation_id,
     )
 

@@ -63,13 +63,13 @@ class MonitoringTask(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "monitoring/tasks"
+        return "monitoring-tasks"
 
     @cached_property
     def rules(self):
         """All monitoring rules for this task."""
 
-        return self.client.monitoringrules.list(task_id=self.uid, fetch_all=True).items
+        return self.client.monitoringrules.list(task=self.uid, fetch_all=True).items
 
     def trigger(self) -> TaskRun:
         """Trigger an immediate run of this monitoring task."""

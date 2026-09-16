@@ -12,10 +12,6 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
   static writableKeys = C.writableKeys
   static Model = M
 
-  protected override getBaseUrl(): string {
-    return `${this._client.host}/api/data/products`
-  }
-
   override create = async (
     body: M | RatingCurveCreateBody
   ): Promise<ApiResponse<M>> => {

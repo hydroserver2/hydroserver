@@ -14,7 +14,7 @@ from interfaces.api.schemas.products.rating_curve import (
     RatingCurveItemQueryParameters,
 )
 
-rating_curve_router = Router(tags=["Rating Curves"])
+rating_curve_router = Router(tags=["Data Product Rating Curves"])
 rating_curve_service = RatingCurveAPIService()
 
 

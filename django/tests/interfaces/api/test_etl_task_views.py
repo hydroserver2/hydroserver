@@ -18,7 +18,7 @@ from tests.processing.etl.factories import DataConnectionFactory, EtlTaskFactory
 
 pytestmark = pytest.mark.django_db
 
-ETL_TASKS_URL = "/api/data/etl/tasks"
+ETL_TASKS_URL = "/api/data/etl-tasks"
 
 
 def _detail_url(task_id):

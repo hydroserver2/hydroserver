@@ -192,8 +192,9 @@ async function loadMappings() {
     mappings.value = []
     return
   }
-  const res = await hs.tasks.listMappings(task.value.id)
-  mappings.value = res.ok ? res.data : []
+  mappings.value = await hs.etlMappings.listAllItems({
+    etl_task_id: task.value.id,
+  } as any)
 }
 
 watch(() => task.value?.id, () => void loadMappings(), { immediate: true })

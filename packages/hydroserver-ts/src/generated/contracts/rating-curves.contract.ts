@@ -3,7 +3,7 @@
 import type * as Data from '../data.types'
 
 export namespace RatingCurveContract {
-  export const route = 'rating-curves' as const
+  export const route = 'data-product-rating-curves' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_products_rating_curve_get_rating_curves']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_products_rating_curve_get_rating_curves']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['RatingCurveResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_RatingCurveResponse_']

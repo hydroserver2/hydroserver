@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import ClassVar, Literal, Optional, TYPE_CHECKING
-from pydantic import Field, AliasPath
+from pydantic import AliasChoices, AliasPath, Field
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
@@ -9,9 +9,10 @@ if TYPE_CHECKING:
 
 
 class MonitoringRule(HydroServerBaseModel):
-    task_id: uuid.UUID
-    datastream_id: uuid.UUID = Field(..., validation_alias=AliasPath("datastream", "id"))
-    datastream_name: str = Field(..., validation_alias=AliasPath("datastream", "name"))
+    task_id: uuid.UUID = Field(validation_alias="taskId")
+    datastream_id: uuid.UUID = Field(
+        validation_alias=AliasChoices("datastreamId", AliasPath("datastream", "id"))
+    )
     rule_type: Literal["range", "rate_of_change", "persistence", "missing_data"]
     last_checked_at: Optional[datetime] = None
     min_value: Optional[float] = None
@@ -26,25 +27,9 @@ class MonitoringRule(HydroServerBaseModel):
         "window_interval_units",
     }
 
-    def __init__(self, client: "HydroServer", task_id: uuid.UUID, **data):
-        super().__init__(client=client, service=client.monitoringrules, task_id=task_id, **data)
+    def __init__(self, client: "HydroServer", **data):
+        super().__init__(client=client, service=client.monitoringrules, **data)
 
     @classmethod
     def get_route(cls):
-        return "monitoring/rules"
-
-    def save(self):
-        """Save changes to this rule to HydroServer."""
-
-        if self.unsaved_changes:
-            saved = self.client.monitoringrules.update(
-                task_id=self.task_id, uid=self.uid, **self.unsaved_changes
-            )
-            self._server_data = saved.dict(by_alias=False).copy()
-            self.__dict__.update(saved.__dict__)
-
-    def delete(self):
-        """Delete this rule from HydroServer."""
-
-        self.client.monitoringrules.delete(task_id=self.task_id, uid=self.uid)
-        self.uid = None
+        return "monitoring-rules"

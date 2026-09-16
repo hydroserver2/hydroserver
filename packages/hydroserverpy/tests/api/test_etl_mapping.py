@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest.mock import MagicMock
 
@@ -21,7 +22,7 @@ def make_client():
     return client
 
 
-def test_create_mapping_refetches_after_created_response():
+def test_create_mapping_posts_to_flat_route_with_etl_task_id_in_body():
     client = make_client()
     task_id = uuid.uuid4()
     mapping_id = str(uuid.uuid4())
@@ -33,6 +34,7 @@ def test_create_mapping_refetches_after_created_response():
             {
                 "data": {
                     "id": mapping_id,
+                    "etlTaskId": str(task_id),
                     "sourceIdentifier": "sensor_1",
                     "targetDatastreamId": datastream_id,
                 }
@@ -45,13 +47,22 @@ def test_create_mapping_refetches_after_created_response():
         task_id=task_id, source_identifier="sensor_1", target_datastream=datastream_id
     )
 
+    post_call = client.request.call_args_list[0]
+    assert post_call.args[0] == "post"
+    assert post_call.args[1] == "//api/data/etl-mappings"
+    sent_body = json.loads(post_call.kwargs["data"])
+    assert sent_body["etlTaskId"] == str(task_id)
+
+    get_call = client.request.call_args_list[1]
+    assert get_call.args[1] == f"//api/data/etl-mappings/{mapping_id}"
+
     assert str(mapping.uid) == mapping_id
     assert mapping.source_identifier == "sensor_1"
     assert str(mapping.target_datastream_id) == datastream_id
     assert mapping.task_id == task_id
 
 
-def test_update_mapping_refetches_after_204():
+def test_update_mapping_patches_flat_route_and_refetches_after_204():
     client = make_client()
     task_id = uuid.uuid4()
     mapping_id = str(uuid.uuid4())
@@ -63,6 +74,7 @@ def test_update_mapping_refetches_after_204():
             {
                 "data": {
                     "id": mapping_id,
+                    "etlTaskId": str(task_id),
                     "sourceIdentifier": "sensor_2",
                     "targetDatastreamId": datastream_id,
                 }
@@ -71,6 +83,12 @@ def test_update_mapping_refetches_after_204():
     ]
 
     service = EtlMappingService(client)
-    mapping = service.update(task_id=task_id, uid=mapping_id, source_identifier="sensor_2")
+    mapping = service.update(uid=mapping_id, source_identifier="sensor_2")
+
+    patch_call = client.request.call_args_list[0]
+    assert patch_call.args[0] == "patch"
+    assert patch_call.args[1] == f"//api/data/etl-mappings/{mapping_id}"
+    sent_body = json.loads(patch_call.kwargs["data"])
+    assert sent_body == {"sourceIdentifier": "sensor_2"}
 
     assert mapping.source_identifier == "sensor_2"
