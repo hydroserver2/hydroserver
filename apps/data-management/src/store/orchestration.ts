@@ -79,48 +79,25 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     }
 
     const requestId = ++linkedDatastreamRequestId
-    const [etlTasks, dataProductTasks] = await Promise.all([
-      hs.tasks.listAllItems({
+    const [mappings, transformations] = await Promise.all([
+      hs.etlMappings.listAllItems({
         workspace_id: [requestedWorkspaceId],
       } as any),
-      hs.dataProductTasks.listAllItems({
+      hs.dataProductTransformations.listAllItems({
         workspace_id: [requestedWorkspaceId],
       } as any),
-    ])
-    if (requestId !== linkedDatastreamRequestId) {
-      return linkedDatastreamIds.value
-    }
-    
-    const [mappingLists, transformationLists] = await Promise.all([
-      Promise.all(
-        (etlTasks ?? [])
-          .filter((task: any) => (task.mappingCount ?? 0) > 0)
-          .map((task: any) => hs.tasks.listMappings(task.id))
-      ),
-      Promise.all(
-        (dataProductTasks ?? [])
-          .filter((task: any) => (task.transformationTypes ?? []).length > 0)
-          .map((task: any) => hs.dataProductTasks.listTransformations(task.id))
-      ),
     ])
     if (requestId !== linkedDatastreamRequestId) {
       return linkedDatastreamIds.value
     }
 
     const ids = new Set<string>()
-    for (const res of mappingLists) {
-      if (!res.ok) continue
-      for (const mapping of res.data ?? []) {
-        if (mapping.targetDatastreamId) ids.add(String(mapping.targetDatastreamId))
-      }
+    for (const mapping of mappings ?? []) {
+      if (mapping.targetDatastreamId) ids.add(String(mapping.targetDatastreamId))
     }
-
-    for (const res of transformationLists) {
-      if (!res.ok) continue
-      for (const transformation of res.data ?? []) {
-        if (transformation.outputDatastreamId)
-          ids.add(String(transformation.outputDatastreamId))
-      }
+    for (const transformation of transformations ?? []) {
+      if (transformation.outputDatastreamId)
+        ids.add(String(transformation.outputDatastreamId))
     }
 
     persistedLinkedDatastreamIds.value = ids

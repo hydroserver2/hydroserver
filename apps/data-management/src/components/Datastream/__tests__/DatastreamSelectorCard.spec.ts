@@ -5,17 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrchestrationStore } from '@/store/orchestration'
 import DatastreamSelectorCard from '../DatastreamSelectorCard.vue'
 
-const {
-  taskListAllItemsMock,
-  listMappingsMock,
-  productTaskListAllItemsMock,
-  listTransformationsMock,
-} = vi.hoisted(() => ({
-  taskListAllItemsMock: vi.fn(),
-  listMappingsMock: vi.fn(),
-  productTaskListAllItemsMock: vi.fn(),
-  listTransformationsMock: vi.fn(),
-}))
+const { etlMappingsListAllItemsMock, dataProductTransformationsListAllItemsMock } =
+  vi.hoisted(() => ({
+    etlMappingsListAllItemsMock: vi.fn(),
+    dataProductTransformationsListAllItemsMock: vi.fn(),
+  }))
 
 vi.mock('@hydroserver/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hydroserver/client')>()
@@ -24,13 +18,11 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
     ...actual,
     default: {
       ...actual.default,
-      tasks: {
-        listAllItems: taskListAllItemsMock,
-        listMappings: listMappingsMock,
+      etlMappings: {
+        listAllItems: etlMappingsListAllItemsMock,
       },
-      dataProductTasks: {
-        listAllItems: productTaskListAllItemsMock,
-        listTransformations: listTransformationsMock,
+      dataProductTransformations: {
+        listAllItems: dataProductTransformationsListAllItemsMock,
       },
     },
   }
@@ -49,11 +41,9 @@ describe('DatastreamSelectorCard linked destinations', () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
-    taskListAllItemsMock.mockReset()
-    listMappingsMock.mockReset()
-    productTaskListAllItemsMock.mockReset()
-    listTransformationsMock.mockReset()
-    productTaskListAllItemsMock.mockResolvedValue([])
+    etlMappingsListAllItemsMock.mockReset()
+    dataProductTransformationsListAllItemsMock.mockReset()
+    dataProductTransformationsListAllItemsMock.mockResolvedValue([])
   })
 
   it('hides linked rows until requested, redlines them, and blocks selection', async () => {
@@ -63,13 +53,9 @@ describe('DatastreamSelectorCard linked destinations', () => {
       name: 'Available datastream',
     }
 
-    taskListAllItemsMock.mockResolvedValue([
-      { id: 'task-1', mappingCount: 1 },
+    etlMappingsListAllItemsMock.mockResolvedValue([
+      { targetDatastreamId: 'linked' },
     ])
-    listMappingsMock.mockResolvedValue({
-      ok: true,
-      data: [{ targetDatastreamId: 'linked' }],
-    })
 
     const orchestrationStore = useOrchestrationStore()
     await orchestrationStore.ensureWorkspaceLinkedDatastreams('workspace-1')
@@ -110,13 +96,9 @@ describe('DatastreamSelectorCard linked destinations', () => {
   it('keeps linked datastreams selectable when the field is an input', async () => {
     const linkedDatastream = { id: 'linked', name: 'Linked datastream' }
 
-    taskListAllItemsMock.mockResolvedValue([
-      { id: 'task-1', mappingCount: 1 },
+    etlMappingsListAllItemsMock.mockResolvedValue([
+      { targetDatastreamId: 'linked' },
     ])
-    listMappingsMock.mockResolvedValue({
-      ok: true,
-      data: [{ targetDatastreamId: 'linked' }],
-    })
 
     const orchestrationStore = useOrchestrationStore()
     await orchestrationStore.ensureWorkspaceLinkedDatastreams('workspace-1')
