@@ -11774,16 +11774,22 @@
             "type": "array"
           },
           "properties": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "title": "Properties"
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "status",
+                "message",
+                "result",
+                "startedAt",
+                "finishedAt"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
           },
           "started_at_max": {
             "anyOf": [
@@ -14242,16 +14248,22 @@
             "name": "properties",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "status",
+                  "message",
+                  "result",
+                  "startedAt",
+                  "finishedAt"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
             }
           },
           {
@@ -19545,16 +19557,22 @@
             "name": "properties",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "status",
+                  "message",
+                  "result",
+                  "startedAt",
+                  "finishedAt"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
             }
           },
           {
@@ -23909,16 +23927,22 @@
             "name": "properties",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "status",
+                  "message",
+                  "result",
+                  "startedAt",
+                  "finishedAt"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
             }
           },
           {

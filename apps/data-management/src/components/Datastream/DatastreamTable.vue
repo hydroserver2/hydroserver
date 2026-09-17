@@ -1656,41 +1656,42 @@ const loadLinkedTasks = async () => {
     ])
     if (requestId !== linkedTasksRequestId) return
 
-    const [mappingsResults, transformationsResults, rulesResults] =
-      await Promise.all([
-        Promise.all(etlTasks.map((t: any) => hs.tasks.listMappings(t.id))),
-        Promise.all(
-          dataProductTasks.map((t: any) =>
-            hs.dataProductTasks.listTransformations(t.id)
-          )
-        ),
-        Promise.all(
-          monitoringTasks.map((t: any) => hs.monitoringTasks.listRules(t.id))
-        ),
-      ])
+    const etlTaskIds = etlTasks.map((t: any) => t.id)
+    const dataProductTaskIds = dataProductTasks.map((t: any) => t.id)
+    const monitoringTaskIds = monitoringTasks.map((t: any) => t.id)
+
+    const [mappings, transformations, rules] = await Promise.all([
+      etlTaskIds.length
+        ? hs.etlMappings.listAllItems({ etl_task_id: etlTaskIds } as any)
+        : Promise.resolve([]),
+      dataProductTaskIds.length
+        ? hs.dataProductTransformations.listAllItems({
+            task_id: dataProductTaskIds,
+          } as any)
+        : Promise.resolve([]),
+      monitoringTaskIds.length
+        ? hs.monitoringRules.listAllItems({ task_id: monitoringTaskIds } as any)
+        : Promise.resolve([]),
+    ])
     if (requestId !== linkedTasksRequestId) return
+
+    const groupById = <T extends Record<string, any>>(
+      items: T[],
+      key: string
+    ): Record<string, T[]> => {
+      const grouped: Record<string, T[]> = {}
+      for (const item of items) {
+        ;(grouped[item[key]] ??= []).push(item)
+      }
+      return grouped
+    }
 
     rawEtlTasks.value = etlTasks ?? []
     rawDataProductTasks.value = dataProductTasks ?? []
     rawMonitoringTasks.value = monitoringTasks ?? []
-    etlMappingsByTaskId.value = Object.fromEntries(
-      etlTasks.map((t: any, i: number) => [
-        t.id,
-        mappingsResults[i].ok ? mappingsResults[i].data : [],
-      ])
-    )
-    transformationsByTaskId.value = Object.fromEntries(
-      dataProductTasks.map((t: any, i: number) => [
-        t.id,
-        transformationsResults[i].ok ? transformationsResults[i].data : [],
-      ])
-    )
-    rulesByTaskId.value = Object.fromEntries(
-      monitoringTasks.map((t: any, i: number) => [
-        t.id,
-        rulesResults[i].ok ? rulesResults[i].data : [],
-      ])
-    )
+    etlMappingsByTaskId.value = groupById(mappings ?? [], 'etlTaskId')
+    transformationsByTaskId.value = groupById(transformations ?? [], 'taskId')
+    rulesByTaskId.value = groupById(rules ?? [], 'taskId')
     linkedTasksLoaded.value = true
   } catch (error) {
     if (requestId !== linkedTasksRequestId) return

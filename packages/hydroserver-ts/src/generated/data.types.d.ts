@@ -5868,7 +5868,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: string | null;
+            properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
             /**
              * Started At Max
              * @description Filters for task runs started on or before this date and time.
@@ -6845,7 +6845,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
+                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
@@ -8875,7 +8875,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
+                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
@@ -10602,7 +10602,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
+                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
