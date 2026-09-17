@@ -125,6 +125,20 @@ export const apiMethods = {
       }
     }
 
+    const pageRowCount = (data: unknown): number => {
+      if (Array.isArray(data)) return data.length
+      if (isColumnar(data)) {
+        if (Array.isArray((data as Columnar).results)) {
+          return ((data as Columnar).results as unknown[]).length
+        }
+        for (const [k, v] of Object.entries(data as Columnar)) {
+          if (k === 'fields') continue
+          if (Array.isArray(v)) return v.length
+        }
+      }
+      return 0
+    }
+
     // Normalize first page
     let mode: 'array' | 'columnar'
     let allArray: T[] = []
@@ -161,6 +175,40 @@ export const apiMethods = {
       return res // unknown shape, don’t attempt to paginate
     }
 
+    const mergePageData = (page: ApiResponse<unknown>): boolean => {
+      if (mode === 'array') {
+        if (Array.isArray(page.data)) {
+          allArray.push(...(page.data as T[]))
+          return true
+        }
+        if (isColumnar(page.data) && Array.isArray(page.data.results)) {
+          // some endpoints expose { results: [] }
+          allArray.push(...(page.data.results as T[]))
+          return true
+        }
+        return false
+      }
+      if (isColumnar(page.data)) {
+        concatInto(allColumnar!, page.data as Columnar)
+        return true
+      }
+      if (Array.isArray(page.data)) {
+        // if a later page comes back as a plain array, tuck it under `results`
+        if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
+        ;(allColumnar!.results as unknown[]).push(...page.data)
+        return true
+      }
+      return false
+    }
+
+    const fetchPage = (offset: number) => {
+      const pageUrl = new URL(url)
+      pageUrl.searchParams.set('offset', String(offset))
+      return limit(() =>
+        interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
+      )
+    }
+
     const totalCount =
       typeof firstPageMeta?.totalCount === 'number'
         ? firstPageMeta.totalCount
@@ -173,42 +221,33 @@ export const apiMethods = {
       }
     }
 
-    const remainingPages = await Promise.all(
-      offsets.map((offset) => {
-        const pageUrl = new URL(url)
-        pageUrl.searchParams.set('offset', String(offset))
-        return limit(() =>
-          interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
-        )
-      })
-    )
+    const remainingPages = await Promise.all(offsets.map(fetchPage))
 
+    let lastRowCount = pageRowCount(res.data)
     for (const page of remainingPages) {
       // Never report a partial multi-page result as successful. Callers use
       // `ok` to decide whether a management table is complete and actionable.
       if (!page.ok) return page
       mergedIncluded = mergeIncluded(mergedIncluded, page.included)
-      if (mode === 'array') {
-        if (Array.isArray(page.data)) {
-          allArray.push(...(page.data as T[]))
-        } else if (isColumnar(page.data) && Array.isArray(page.data.results)) {
-          // some endpoints expose { results: [] }
-          allArray.push(...(page.data.results as T[]))
-        } else {
-          // mixed shapes across pages — stop merging to avoid corrupting data
-          break
-        }
-      } else {
-        if (isColumnar(page.data)) {
-          concatInto(allColumnar!, page.data as Columnar)
-        } else if (Array.isArray(page.data)) {
-          // if a later page comes back as a plain array, tuck it under `results`
-          if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
-          ;(allColumnar!.results as unknown[]).push(...page.data)
-        } else {
-          break
-        }
-      }
+      if (!mergePageData(page)) break
+      lastRowCount = pageRowCount(page.data)
+    }
+
+    let nextOffset = limitParam * (1 + offsets.length)
+    const MAX_EXTRA_PAGES = 1000
+    let extraPages = 0
+    while (
+      limitParam > 0 &&
+      lastRowCount === limitParam &&
+      extraPages < MAX_EXTRA_PAGES
+    ) {
+      const page = await fetchPage(nextOffset)
+      if (!page.ok) return page
+      mergedIncluded = mergeIncluded(mergedIncluded, page.included)
+      if (!mergePageData(page)) break
+      lastRowCount = pageRowCount(page.data)
+      nextOffset += limitParam
+      extraPages += 1
     }
 
     const merged =
@@ -216,12 +255,7 @@ export const apiMethods = {
         ? (allArray as unknown as T)
         : (allColumnar as unknown as T)
 
-    const mergedCount =
-      mode === 'array'
-        ? allArray.length
-        : ((Object.values(allColumnar!).find(Array.isArray) as
-            | unknown[]
-            | undefined)?.length ?? 0)
+    const mergedCount = pageRowCount(merged)
 
     return {
       ok: true,
@@ -232,7 +266,7 @@ export const apiMethods = {
         ...(firstPageMeta ?? {}),
         offset: 0,
         limit: mergedCount,
-        totalCount: totalCount ?? mergedCount,
+        totalCount: mergedCount,
       },
       included: mergedIncluded,
     }

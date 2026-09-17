@@ -13,7 +13,7 @@
         </div>
       </div>
       <div class="rating-curve-preview-chips">
-        <v-chip size="small" variant="tonal" color="teal-darken-1">
+        <v-chip size="small" variant="tonal" color="primary">
           {{ fittingMethodLabel }}
         </v-chip>
         <v-chip size="small" variant="tonal">
@@ -84,7 +84,7 @@
         v-if="hasMoreRows"
         variant="text"
         size="small"
-        color="teal-darken-1"
+        color="primary"
         class="text-none"
         @click="showMoreRows"
       >
@@ -267,7 +267,7 @@ watch(
 
 <style scoped>
 .rating-curve-preview-panel {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--hs-border);
   border-radius: 8px;
   padding: 0.75rem;
 }
@@ -291,7 +291,7 @@ watch(
 }
 
 .rating-curve-preview {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--hs-border);
   border-radius: 8px;
   height: 120px;
   width: 100%;
@@ -303,7 +303,7 @@ watch(
 }
 
 .rating-curve-line {
-  stroke: #00796b;
+  stroke: var(--hs-primary);
   stroke-width: 2;
 }
 

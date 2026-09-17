@@ -81,14 +81,22 @@ class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameter
     target_datastream_id: list[uuid.UUID] = Query(
         [], description="Filter mappings by target datastream ID."
     )
+    etl_task_id: list[uuid.UUID] = Query(
+        [], description="Filter mappings by ETL task ID."
+    )
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter mappings by workspace ID."
+    )
 
 
 class EtlMappingResponse(BaseGetResponse, EtlMappingFields):
     id: uuid.UUID
+    etl_task_id: uuid.UUID
 
 
 class EtlMappingPostBody(BasePostBody, EtlMappingFields):
     id: Optional[uuid.UUID] = None
+    etl_task_id: uuid.UUID
 
 
 class EtlMappingPatchBody(BasePatchBody, EtlMappingFields):

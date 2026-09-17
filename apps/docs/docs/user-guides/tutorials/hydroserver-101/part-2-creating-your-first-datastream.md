@@ -54,7 +54,7 @@ For the rest of the fields, we'll do the following:
 - Time Aggregation Interval: 1 day
 - Intended Time Spacing: 1 day
 
-After filling out all fields except the name and description, click the two 'auto-fill from form' buttons to generate a name and description from the other fields in the form. Then, click 'Create Datastream'.
+Enter `Air Temperature - Daily Max, RAW` as the datastream name. See [Naming Datastreams](/user-guides/how-to/managing-datastream-metadata#naming-datastreams) for more guidance. After filling out the other fields, click 'Auto-Fill from Form' below the description to generate a description. You can edit this text before clicking 'Create Datastream'.
 
 <img src="/hydroserver-101/new-datastream.png" alt="new datastream" class="img-white-bg">
 

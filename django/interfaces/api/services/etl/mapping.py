@@ -17,42 +17,17 @@ from interfaces.api.schemas.etl.mapping import (
     EtlMappingResponse,
     ETL_MAPPING_INCLUDE_RELATIONS,
 )
+from interfaces.api.services.etl.task import EtlTaskAPIService
 from interfaces.api.services.sta.datastream import DatastreamAPIService
-from processing.etl.models import EtlMapping, EtlTask
+from processing.etl.models import EtlMapping
 
 User = get_user_model()
 datastream_service = DatastreamAPIService()
+etl_task_service = EtlTaskAPIService()
 
 
 class EtlMappingAPIService(APIService):
     INCLUDE_RELATIONS = ETL_MAPPING_INCLUDE_RELATIONS
-
-    @staticmethod
-    def get_task_for_action(
-        principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
-        action: Literal["view", "edit", "delete"],
-    ) -> EtlTask:
-        """
-        `EtlMapping` isn't its own registered resource type -- like
-        `DataProductTransformation`/`MonitoringRule`, permissions are checked
-        entirely against the owning task, once per request.
-        """
-
-        try:
-            task = EtlTask.objects.select_related("data_connection__workspace").get(pk=task_id)
-        except EtlTask.DoesNotExist:
-            raise NotFoundError(f"Task with ID {task_id} does not exist.")
-
-        if not principal.can_view(task):
-            raise NotFoundError(f"Task with ID {task_id} does not exist.")
-
-        if action != "view" and not getattr(principal, f"can_{action}")(task):
-            raise PermissionDeniedError(
-                f"You do not have permission to {action} mappings on this task."
-            )
-
-        return task
 
     @classmethod
     def _include_query_hints(cls, requested_includes: set[str]) -> tuple[list[str], list[str]]:
@@ -68,29 +43,33 @@ class EtlMappingAPIService(APIService):
     def get_mapping_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         select_related: Optional[list[str]] = None,
         prefetch_related: Optional[list[str]] = None,
     ) -> EtlMapping:
-        task = self.get_task_for_action(principal, task_id, action)
-
-        queryset = EtlMapping.objects.filter(etl_task=task, pk=uid)
+        queryset = EtlMapping.objects.filter(pk=uid)
         if select_related:
             queryset = queryset.select_related(*select_related)
         if prefetch_related:
             queryset = queryset.prefetch_related(*prefetch_related)
 
         try:
-            return queryset.get()
+            mapping = queryset.get()
         except EtlMapping.DoesNotExist:
             raise NotFoundError(f"EtlMapping with ID {uid} does not exist.")
+
+        if not principal.can_view(mapping):
+            raise NotFoundError(f"EtlMapping with ID {uid} does not exist.")
+
+        if action != "view" and not getattr(principal, f"can_{action}")(mapping):
+            raise PermissionDeniedError(f"You do not have permission to {action} this mapping.")
+
+        return mapping
 
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         sortby: Optional[list[str]] = None,
@@ -98,18 +77,25 @@ class EtlMappingAPIService(APIService):
         include: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
+        filtering = filtering or {}
 
-        task = self.get_task_for_action(principal, task_id, "view")
+        queryset = EtlMapping.objects.all()
 
-        queryset = EtlMapping.objects.filter(etl_task=task)
-
-        for field in ["source_identifier", "target_datastream_id"]:
+        for field in ["source_identifier", "target_datastream_id", "etl_task_id"]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        queryset = self.apply_sorting(
-            queryset, sortby, list(get_args(EtlMappingSortByFields))
-        )
+        if "workspace_id" in filtering:
+            queryset = self.apply_filters(
+                queryset, "etl_task__data_connection__workspace_id", filtering["workspace_id"]
+            )
+
+        if sortby:
+            queryset = self.apply_sorting(
+                queryset, sortby, list(get_args(EtlMappingSortByFields))
+            )
+        else:
+            queryset = queryset.order_by("id")
 
         if requested_includes:
             select_paths, prefetch_paths = self._include_query_hints(requested_includes)
@@ -117,6 +103,7 @@ class EtlMappingAPIService(APIService):
             if prefetch_paths:
                 queryset = queryset.prefetch_related(*prefetch_paths)
 
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
         mappings = list(queryset.all())
@@ -132,7 +119,6 @@ class EtlMappingAPIService(APIService):
     def get(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         include: Optional[list[str]] = None,
     ):
@@ -141,7 +127,6 @@ class EtlMappingAPIService(APIService):
 
         mapping = self.get_mapping_for_action(
             principal=principal,
-            task_id=task_id,
             uid=uid,
             action="view",
             select_related=select_paths,
@@ -159,13 +144,17 @@ class EtlMappingAPIService(APIService):
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         data: EtlMappingPostBody,
     ):
         if data.id is not None and data.id.version != 7:
             raise BadRequestError(f"Invalid UUID version {data.id.version}. Expected 7.")
 
-        task = self.get_task_for_action(principal, task_id, "edit")
+        task = etl_task_service.get_task_for_action(principal, data.etl_task_id, action="view")
+
+        if not principal.can_create("EtlMapping", workspace=task.workspace):
+            raise PermissionDeniedError(
+                "You do not have permission to create mappings on this task."
+            )
 
         datastream_service.get_datastream_for_action(
             principal=principal, uid=data.target_datastream_id, action="edit"
@@ -188,13 +177,10 @@ class EtlMappingAPIService(APIService):
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
         data: EtlMappingPatchBody,
     ):
-        mapping = self.get_mapping_for_action(
-            principal=principal, task_id=task_id, uid=uid, action="edit"
-        )
+        mapping = self.get_mapping_for_action(principal=principal, uid=uid, action="edit")
 
         if data.target_datastream_id is not Unset:
             datastream_service.get_datastream_for_action(
@@ -213,10 +199,7 @@ class EtlMappingAPIService(APIService):
     def delete(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        task_id: uuid.UUID,
         uid: uuid.UUID,
     ):
-        mapping = self.get_mapping_for_action(
-            principal=principal, task_id=task_id, uid=uid, action="delete"
-        )
+        mapping = self.get_mapping_for_action(principal=principal, uid=uid, action="delete")
         mapping.delete()

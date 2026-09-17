@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest.mock import MagicMock
 
@@ -21,7 +22,7 @@ def make_client():
     return client
 
 
-def test_create_rating_curve_posts_to_unified_route_with_input_datastreams_list():
+def test_create_rating_curve_posts_to_flat_route_with_task_id_in_body():
     client = make_client()
     task_id = uuid.uuid4()
     transformation_id = str(uuid.uuid4())
@@ -35,6 +36,7 @@ def test_create_rating_curve_posts_to_unified_route_with_input_datastreams_list(
             {
                 "data": {
                     "id": transformation_id,
+                    "taskId": str(task_id),
                     "transformationType": "rating_curve",
                     "outputDatastreamId": output_id,
                     "inputDatastreams": [{"datastreamId": input_id, "variableName": None}],
@@ -54,14 +56,17 @@ def test_create_rating_curve_posts_to_unified_route_with_input_datastreams_list(
 
     post_call = client.request.call_args_list[0]
     assert post_call.args[0] == "post"
-    assert post_call.args[1] == f"//api/data/products/tasks/{task_id}/transformations"
+    assert post_call.args[1] == "//api/data/data-product-transformations"
+    sent_body = json.loads(post_call.kwargs["data"])
+    assert sent_body["taskId"] == str(task_id)
 
     assert str(transformation.id) == transformation_id
+    assert transformation.task_id == task_id
     assert str(transformation.input_datastream_id) == input_id
     assert str(transformation.rating_curve_id) == rating_curve_id
 
 
-def test_get_rating_curve_hits_the_unified_detail_route_not_a_type_slug():
+def test_get_rating_curve_hits_the_flat_detail_route_not_a_type_slug():
     client = make_client()
     task_id = uuid.uuid4()
     transformation_id = str(uuid.uuid4())
@@ -70,6 +75,7 @@ def test_get_rating_curve_hits_the_unified_detail_route_not_a_type_slug():
         {
             "data": {
                 "id": transformation_id,
+                "taskId": str(task_id),
                 "transformationType": "rating_curve",
                 "outputDatastreamId": str(uuid.uuid4()),
                 "inputDatastreams": [{"datastreamId": str(uuid.uuid4())}],
@@ -79,13 +85,13 @@ def test_get_rating_curve_hits_the_unified_detail_route_not_a_type_slug():
     )
 
     service = DataProductTransformationService(client)
-    service.get_rating_curve(task_id=task_id, uid=transformation_id)
+    service.get_rating_curve(uid=transformation_id)
 
     args, _ = client.request.call_args
-    assert args[1] == f"//api/data/products/tasks/{task_id}/transformations/{transformation_id}"
+    assert args[1] == f"//api/data/data-product-transformations/{transformation_id}"
 
 
-def test_list_derivation_filters_by_transformation_type_on_the_unified_route():
+def test_list_derivation_filters_by_task_and_type_on_the_flat_route():
     client = make_client()
     task_id = uuid.uuid4()
 
@@ -95,11 +101,12 @@ def test_list_derivation_filters_by_transformation_type_on_the_unified_route():
     service.list_derivation(task_id=task_id)
 
     args, kwargs = client.request.call_args
-    assert args[1] == f"//api/data/products/tasks/{task_id}/transformations"
+    assert args[1] == "//api/data/data-product-transformations"
     assert kwargs["params"]["transformation_type"] == "derivation"
+    assert kwargs["params"]["task_id"] == str(task_id)
 
 
-def test_update_aggregation_patches_then_refetches_by_id():
+def test_update_aggregation_patches_flat_route_then_refetches_by_id():
     client = make_client()
     task_id = uuid.uuid4()
     transformation_id = str(uuid.uuid4())
@@ -111,6 +118,7 @@ def test_update_aggregation_patches_then_refetches_by_id():
             {
                 "data": {
                     "id": transformation_id,
+                    "taskId": str(task_id),
                     "transformationType": "aggregation",
                     "outputDatastreamId": str(uuid.uuid4()),
                     "inputDatastreams": [{"datastreamId": input_id}],
@@ -124,7 +132,6 @@ def test_update_aggregation_patches_then_refetches_by_id():
 
     service = DataProductTransformationService(client)
     transformation = service.update_aggregation(
-        task_id=task_id,
         uid=transformation_id,
         input_datastream=input_id,
         aggregation_method="mean",
@@ -134,5 +141,5 @@ def test_update_aggregation_patches_then_refetches_by_id():
 
     patch_call = client.request.call_args_list[0]
     assert patch_call.args[0] == "patch"
-    assert patch_call.args[1] == f"//api/data/products/tasks/{task_id}/transformations/{transformation_id}"
+    assert patch_call.args[1] == f"//api/data/data-product-transformations/{transformation_id}"
     assert str(transformation.input_datastream_id) == input_id

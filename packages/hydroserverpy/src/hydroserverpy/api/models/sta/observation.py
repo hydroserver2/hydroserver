@@ -103,10 +103,10 @@ class ObservationCollection:
 
         all_dataframes = [self.dataframe]
         limit = self.limit or 100000
-        total_count = self.total_count
         next_offset = (self.offset or 0) + len(self.dataframe)
+        last_page_size = len(self.dataframe)
 
-        while total_count is None or next_offset < total_count:
+        while last_page_size == limit:
             observations = self.datastream.get_observations(
                 **(self.filters or {}),
                 offset=next_offset,
@@ -116,11 +116,8 @@ class ObservationCollection:
             if observations.dataframe.empty:
                 break
             all_dataframes.append(observations.dataframe)
-
-            if observations.total_count is not None:
-                total_count = observations.total_count
-
-            next_offset += len(observations.dataframe)
+            last_page_size = len(observations.dataframe)
+            next_offset += last_page_size
 
         if not all_dataframes:
             merged_dataframe = self.dataframe.iloc[0:0].copy()
@@ -134,5 +131,5 @@ class ObservationCollection:
             sortby=self.sortby or ...,
             offset=0,
             limit=len(merged_dataframe),
-            total_count=len(merged_dataframe) if total_count is None else total_count,
+            total_count=len(merged_dataframe),
         )

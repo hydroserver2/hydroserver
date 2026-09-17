@@ -10,6 +10,7 @@ export type MonitoringRuleWindowUnit = 'minutes' | 'hours' | 'days'
 
 export interface MonitoringRule {
   id: string
+  taskId: string
   datastreamId: string
   lastCheckedAt?: string | null
   maxValue?: number | null
@@ -18,20 +19,6 @@ export interface MonitoringRule {
   windowInterval?: number | null
   windowIntervalUnits?: MonitoringRuleWindowUnit | null
 }
-
-export interface MonitoringRulePayload {
-  datastreamId: string
-  ruleType: MonitoringRuleType
-  maxValue?: number | null
-  minValue?: number | null
-  windowInterval?: number | null
-  windowIntervalUnits?: MonitoringRuleWindowUnit | null
-}
-
-export type MonitoringRulePatchPayload = Omit<
-  Partial<MonitoringRulePayload>,
-  'datastreamId' | 'ruleType'
->
 
 export class MonitoringTask {
   id = ''

@@ -43,7 +43,7 @@ describe('RatingCurveService', () => {
     expect(response).toHaveLength(1)
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves?sortby=name&monitoring_site_id=monitoringSite-1&offset=0&limit=200'
+      'https://hydro.example.com/api/data/data-product-rating-curves?sortby=name&monitoring_site_id=monitoringSite-1&offset=0&limit=200'
     )
   })
 
@@ -77,7 +77,7 @@ describe('RatingCurveService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves'
+      'https://hydro.example.com/api/data/data-product-rating-curves'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -88,7 +88,7 @@ describe('RatingCurveService', () => {
       points: [[1, 2]],
     })
     expect(String(fetchMock.mock.calls[1][0])).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves/rating-curve-1'
+      'https://hydro.example.com/api/data/data-product-rating-curves/rating-curve-1'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -127,7 +127,7 @@ describe('RatingCurveService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves/rating-curve-1'
+      'https://hydro.example.com/api/data/data-product-rating-curves/rating-curve-1'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('PATCH')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -137,7 +137,7 @@ describe('RatingCurveService', () => {
       points: [[2, 3]],
     })
     expect(String(fetchMock.mock.calls[1][0])).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves/rating-curve-1'
+      'https://hydro.example.com/api/data/data-product-rating-curves/rating-curve-1'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -155,7 +155,7 @@ describe('RatingCurveService', () => {
     await client.ratingCurves.delete('rating-curve-1')
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves/rating-curve-1'
+      'https://hydro.example.com/api/data/data-product-rating-curves/rating-curve-1'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
   })

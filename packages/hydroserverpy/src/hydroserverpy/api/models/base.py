@@ -193,10 +193,10 @@ class HydroServerCollection:
 
         all_items = list(self.items)
         limit = self.limit or 100
-        total_count = self.total_count
         next_offset = (self.offset or 0) + len(self.items)
+        last_page_size = len(self.items)
 
-        while total_count is None or next_offset < total_count:
+        while last_page_size == limit:
             page = self._service.list(
                 **(self.filters or {}),
                 offset=next_offset,
@@ -206,11 +206,8 @@ class HydroServerCollection:
             if not page.items:
                 break
             all_items.extend(page.items)
-
-            if page.total_count is not None:
-                total_count = page.total_count
-
-            next_offset += len(page.items)
+            last_page_size = len(page.items)
+            next_offset += last_page_size
 
         return self.__class__(
             model=type(self.items[0]) if self.items else None,
@@ -221,5 +218,5 @@ class HydroServerCollection:
             sortby=self.sortby,
             offset=0,
             limit=len(all_items),
-            total_count=len(all_items) if total_count is None else total_count,
+            total_count=len(all_items),
         )

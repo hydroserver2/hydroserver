@@ -787,7 +787,9 @@ const task = await hs.monitoringTasks.createItem(
 
 if (!task) throw new Error("Unable to create monitoring task");
 
-await hs.monitoringTasks.createRule(task.id, {
+await hs.monitoringRules.create({
+  id: "",
+  taskId: task.id,
   datastreamId: "11111111-1111-1111-1111-111111111111",
   ruleType: "range",
   minValue: -40,
@@ -797,7 +799,7 @@ await hs.monitoringTasks.createRule(task.id, {
 await hs.monitoringTasks.runTask(task.id);
 ```
 
-Use `listRules`, `getRule`, `createRule`, `updateRule`, and `deleteRule` to manage a monitoring task's rules.
+Monitoring rules are a top-level resource: use `hs.monitoringRules`' `list` (filtered with `{ task_id: task.id }`), `get`, `create`, `update`, and `delete` methods to manage a monitoring task's rules.
 
 ## Data Product Tasks and Rating Curves
 

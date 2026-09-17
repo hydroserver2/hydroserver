@@ -7,6 +7,8 @@ import pytz
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 
+from core.iam.permissions.mixins import ResourcePermissionMixin
+from core.iam.permissions.registry import register_resource_type
 from core.sta.models import Datastream
 from processing.products.models.task import DataProductTask
 
@@ -171,7 +173,8 @@ class TimezoneType(models.TextChoices):
     IANA = "iana"
 
 
-class DataProductTransformation(models.Model):
+@register_resource_type(workspace_field="task__monitoring_site__workspace")
+class DataProductTransformation(models.Model, ResourcePermissionMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(
         DataProductTask,

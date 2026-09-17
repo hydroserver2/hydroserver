@@ -3,6 +3,8 @@ import uuid
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 
+from core.iam.permissions.mixins import ResourcePermissionMixin
+from core.iam.permissions.registry import register_resource_type
 from core.sta.models import Datastream
 from processing.monitoring.models.task import MonitoringTask
 
@@ -20,7 +22,8 @@ class WindowIntervalUnits(models.TextChoices):
     DAYS = "days"
 
 
-class MonitoringRule(models.Model):
+@register_resource_type(workspace_field="task__monitoring_site__workspace")
+class MonitoringRule(models.Model, ResourcePermissionMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(
         MonitoringTask,

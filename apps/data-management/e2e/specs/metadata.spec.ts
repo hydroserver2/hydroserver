@@ -15,6 +15,46 @@ async function selectMetadataScope(
 }
 
 test.describe('metadata management', () => {
+  test('viewers can search, copy, and inspect metadata UUIDs on desktop and mobile', async ({
+    page,
+  }) => {
+    const method = fixtures.metadata.privateAssignedMethod
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await authenticateSession(page, users.viewer.email, users.viewer.password)
+    await page.goto(
+      `/workspaces?workspace=${fixtures.workspaces.private.id}&section=metadata`
+    )
+    const table = page.getByTestId('all-metadata-table')
+    await page.getByRole('tab', { name: 'Methods', exact: true }).click()
+    await table
+      .getByRole('textbox', { name: 'Search metadata' })
+      .fill(method.id)
+
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 844 })
+      const row = table.locator('tr').filter({ hasText: method.name })
+      await expect(row).toBeVisible()
+      await expect(
+        row.getByLabel('Edit metadata item unavailable')
+      ).toBeDisabled()
+      await expect(
+        row.getByLabel('Delete metadata item unavailable')
+      ).toBeDisabled()
+      await row.getByTestId(`copy-metadata-id-${method.id}`).click()
+      await expect
+        .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+        .toBe(method.id)
+      await row.getByTestId(`view-metadata-${method.id}`).click()
+      const dialog = page.getByRole('dialog')
+      await expect(dialog).toBeVisible()
+      await expect(dialog.getByText(method.id, { exact: true })).toBeVisible()
+      await expect(dialog.getByText(method.name, { exact: true })).toBeVisible()
+      await expect(dialog.getByRole('textbox')).toHaveCount(0)
+      await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+      await expect(dialog).toBeHidden()
+    }
+  })
+
   test('the metadata route redirects to the workspaces page metadata tab', async ({
     page,
   }) => {
@@ -134,7 +174,9 @@ test.describe('metadata management', () => {
     const methodRow = page.locator('tr').filter({ hasText: methodName }).first()
     await expect(methodRow).toBeVisible()
 
-    await methodRow.locator('.v-icon').first().click()
+    await methodRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
     await page.getByLabel('Name').fill(renamedMethodName)
     await page.getByRole('button', { name: 'Update' }).click()
 
@@ -144,7 +186,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedMethodRow).toBeVisible()
 
-    await renamedMethodRow.locator('.v-icon').nth(1).click()
+    await renamedMethodRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(
       page.getByText("isn't being used by any datastreams")
     ).toBeVisible()
@@ -194,7 +238,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(methodRow).toBeVisible()
 
-    await methodRow.locator('.v-icon').nth(1).click()
+    await methodRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(
       page.locator('tr').filter({ hasText: derivedName })
@@ -233,7 +279,9 @@ test.describe('metadata management', () => {
     const propRow = page.locator('tr').filter({ hasText: propName }).first()
     await expect(propRow).toBeVisible()
 
-    await propRow.locator('.v-icon').first().click()
+    await propRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
     await page.getByLabel('Name').fill(renamedPropName)
     await page.getByRole('button', { name: 'Update' }).click()
 
@@ -243,7 +291,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedPropRow).toBeVisible()
 
-    await renamedPropRow.locator('.v-icon').nth(1).click()
+    await renamedPropRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
@@ -282,7 +332,9 @@ test.describe('metadata management', () => {
     const levelRow = page.locator('tr').filter({ hasText: levelCode }).first()
     await expect(levelRow).toBeVisible()
 
-    await levelRow.locator('.v-icon').first().click()
+    await levelRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
     await page.getByLabel('Code').fill(renamedCode)
     await page.getByRole('button', { name: 'Update' }).click()
 
@@ -292,7 +344,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedRow).toBeVisible()
 
-    await renamedRow.locator('.v-icon').nth(1).click()
+    await renamedRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
@@ -327,7 +381,9 @@ test.describe('metadata management', () => {
     const unitRow = page.locator('tr').filter({ hasText: unitName }).first()
     await expect(unitRow).toBeVisible()
 
-    await unitRow.locator('.v-icon').first().click()
+    await unitRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
     await page.getByLabel('Name').fill(renamedUnitName)
     await page.getByRole('button', { name: 'Update' }).click()
 
@@ -337,7 +393,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedUnitRow).toBeVisible()
 
-    await renamedUnitRow.locator('.v-icon').nth(1).click()
+    await renamedUnitRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
@@ -377,7 +435,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(qualifierRow).toBeVisible()
 
-    await qualifierRow.locator('.v-icon').first().click()
+    await qualifierRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
     await page.getByLabel('Code').fill(renamedCode)
     await page.getByRole('button', { name: 'Update' }).click()
 
@@ -387,7 +447,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedRow).toBeVisible()
 
-    await renamedRow.locator('.v-icon').nth(1).click()
+    await renamedRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
@@ -440,7 +502,9 @@ test.describe('metadata management', () => {
       .first()
     await expect(assignedMethodRow).toBeVisible()
 
-    await assignedMethodRow.locator('.v-icon').nth(1).click()
+    await assignedMethodRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(
       page.getByText("cannot be deleted because it's being referenced")
     ).toBeVisible()

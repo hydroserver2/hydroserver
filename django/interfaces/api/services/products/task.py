@@ -124,6 +124,7 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        properties: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         filtering = filtering or {}
@@ -192,9 +193,16 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
         queryset, meta = self.apply_pagination(queryset, offset, limit)
-        tasks = self.attach_latest_runs(list(queryset.all()))
+        tasks = list(queryset.all())
 
-        self.attach_transformation_types(tasks)
+        if properties is None or "latestRun" in properties:
+            tasks = self.attach_latest_runs(tasks)
+
+        if properties is None or "transformationTypes" in properties:
+            self.attach_transformation_types(tasks)
+        else:
+            for task in tasks:
+                task.transformation_types = []
 
         return {
             "data": [DataProductTaskResponse.model_validate(task) for task in tasks],

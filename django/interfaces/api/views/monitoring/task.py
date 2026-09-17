@@ -45,6 +45,7 @@ def get_monitoring_tasks(
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
+        properties=query.properties,
     )
 
 
@@ -198,11 +199,17 @@ def get_monitoring_task_runs(
     Get runs for a monitoring task.
     """
 
+    run_kwargs = query.model_dump(
+        exclude_unset=True,
+        include={
+            "offset", "limit", "sortby", "status",
+            "started_at__gte", "started_at__lte", "finished_at__gte", "finished_at__lte",
+        },
+    )
     count, runs = monitoring_task_service.get_run_collection(
         task=task_id,
         principal=request.principal,
-        sortby=query.sortby,
-        **query.model_dump(exclude_unset=True, exclude={"sortby"}),
+        **run_kwargs,
     )
 
     meta = monitoring_task_service.build_pagination_meta(

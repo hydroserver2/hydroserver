@@ -39,7 +39,7 @@ describe('DataConnectionService', () => {
     )
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/etl/data-connections'
+      'https://hydro.example.com/api/data/etl-data-connections'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
@@ -68,7 +68,7 @@ describe('DataConnectionService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/etl/data-connections/data-connection-1'
+      'https://hydro.example.com/api/data/etl-data-connections/data-connection-1'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('PATCH')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({

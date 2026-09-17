@@ -90,6 +90,7 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        properties: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         filtering = filtering or {}
@@ -145,15 +146,23 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
             queryset, sortby, list(get_args(EtlTaskSortByFields)), self.sortby_aliases
         )
 
-        queryset = queryset.select_related(
-            "periodic_task__crontab", "periodic_task__interval"
-        ).annotate(mapping_count=Count("etl_mappings", distinct=True))
+        queryset = queryset.select_related("periodic_task__crontab", "periodic_task__interval")
+
+        if properties is None or "mappingCount" in properties:
+            queryset = queryset.annotate(mapping_count=Count("etl_mappings", distinct=True))
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        tasks = self.attach_latest_runs(list(queryset.all()))
+        tasks = list(queryset.all())
+
+        if properties is None or "latestRun" in properties:
+            tasks = self.attach_latest_runs(tasks)
+
+        if properties is not None and "mappingCount" not in properties:
+            for task in tasks:
+                task.mapping_count = 0
 
         if "dataConnection" in requested_includes:
             self._attach_data_connections(tasks)

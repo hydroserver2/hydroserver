@@ -31,7 +31,8 @@ class EtlTask(Task, ResourcePermissionMixin):
         return self.data_connection.workspace
 
 
-class EtlMapping(models.Model):
+@register_resource_type(workspace_field="etl_task__data_connection__workspace")
+class EtlMapping(models.Model, ResourcePermissionMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     etl_task = models.ForeignKey(EtlTask, on_delete=models.CASCADE, related_name="etl_mappings")
     source_identifier = models.CharField(max_length=255)

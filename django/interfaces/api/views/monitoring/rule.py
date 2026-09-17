@@ -31,16 +31,14 @@ monitoring_rule_service = MonitoringRuleAPIService()
 )
 def get_monitoring_rules(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     query: Query[MonitoringRuleQueryParameters],
 ):
     """
-    Get rules for a monitoring task.
+    Get monitoring rules.
     """
 
     return 200, monitoring_rule_service.list(
         principal=request.principal,
-        task_id=task_id,
         offset=query.offset,
         limit=query.limit,
         sortby=query.sortby,
@@ -63,7 +61,6 @@ def get_monitoring_rules(
 )
 def create_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     data: MonitoringRulePostBody,
 ):
     """
@@ -72,7 +69,6 @@ def create_monitoring_rule(
 
     return 201, monitoring_rule_service.create(
         principal=request.principal,
-        task_id=task_id,
         data=data,
     )
 
@@ -90,7 +86,6 @@ def create_monitoring_rule(
 )
 def get_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
     query: Query[MonitoringRuleItemQueryParameters],
 ):
@@ -100,7 +95,6 @@ def get_monitoring_rule(
 
     return 200, monitoring_rule_service.get(
         principal=request.principal,
-        task_id=task_id,
         uid=rule_id,
         include=query.include,
     )
@@ -120,7 +114,6 @@ def get_monitoring_rule(
 )
 def update_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
     data: MonitoringRulePatchBody,
 ):
@@ -130,7 +123,6 @@ def update_monitoring_rule(
 
     monitoring_rule_service.update(
         principal=request.principal,
-        task_id=task_id,
         uid=rule_id,
         data=data,
     )
@@ -151,7 +143,6 @@ def update_monitoring_rule(
 )
 def delete_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
 ):
     """
@@ -160,7 +151,6 @@ def delete_monitoring_rule(
 
     monitoring_rule_service.delete(
         principal=request.principal,
-        task_id=task_id,
         uid=rule_id,
     )
 

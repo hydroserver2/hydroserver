@@ -16,6 +16,7 @@ class TransformationInput(BaseModel):
 
 class RatingCurveTransformation(BaseModel):
     id: uuid.UUID
+    task_id: uuid.UUID
     output_datastream_id: uuid.UUID
     input_datastreams: List[TransformationInput]
     rating_curve_id: uuid.UUID
@@ -32,6 +33,7 @@ class RatingCurveTransformation(BaseModel):
 
 class DerivationTransformation(BaseModel):
     id: uuid.UUID
+    task_id: uuid.UUID
     output_datastream_id: uuid.UUID
     input_datastreams: List[TransformationInput]
     formula: str
@@ -44,6 +46,7 @@ class DerivationTransformation(BaseModel):
 
 class AggregationTransformation(BaseModel):
     id: uuid.UUID
+    task_id: uuid.UUID
     output_datastream_id: uuid.UUID
     input_datastreams: List[TransformationInput]
     aggregation_method: AggregationMethod

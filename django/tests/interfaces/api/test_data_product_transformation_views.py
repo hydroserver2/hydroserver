@@ -20,10 +20,11 @@ from tests.processing.products.factories import (
 
 pytestmark = pytest.mark.django_db
 
-DATA_PRODUCT_TASKS_URL = "/api/data/products/tasks"
+TRANSFORMATIONS_URL = "/api/data/data-product-transformations"
 
 TRANSFORMATION_FIELDS = {
     "id",
+    "taskId",
     "transformationType",
     "outputDatastreamId",
     "inputDatastreams",
@@ -40,17 +41,20 @@ TRANSFORMATION_FIELDS = {
 }
 
 
-def _transformations_url(task_id):
-    return f"{DATA_PRODUCT_TASKS_URL}/{task_id}/transformations"
+def _detail_url(transformation_id):
+    return f"{TRANSFORMATIONS_URL}/{transformation_id}"
 
 
-def _detail_url(task_id, transformation_id):
-    return f"{_transformations_url(task_id)}/{transformation_id}"
-
-
-def _collaborator_with_permission(workspace, **permissions):
+def _collaborator_with_permission(workspace, resource_type="DataProductTask", **permissions):
     role = RoleFactory(workspace=workspace)
-    PermissionFactory(role=role, resource_type="DataProductTask", **permissions)
+    PermissionFactory(role=role, resource_type=resource_type, **permissions)
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def _collaborator_who_can_create_transformations(workspace):
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="DataProductTask", can_view=True)
+    PermissionFactory(role=role, resource_type="DataProductTransformation", can_create=True)
     return CollaboratorFactory(workspace=workspace, role=role)
 
 
@@ -75,8 +79,9 @@ def _make_rating_curve_transformation(task, monitoring_site):
     return transformation
 
 
-def _rating_curve_body(output_ds, input_ds, rating_curve, **overrides):
+def _rating_curve_body(task, output_ds, input_ds, rating_curve, **overrides):
     body = {
+        "taskId": str(task.id),
         "transformationType": "rating_curve",
         "outputDatastreamId": str(output_ds.id),
         "inputDatastreams": [{"datastreamId": str(input_ds.id)}],
@@ -86,8 +91,9 @@ def _rating_curve_body(output_ds, input_ds, rating_curve, **overrides):
     return body
 
 
-def _derivation_body(output_ds, input_ds, **overrides):
+def _derivation_body(task, output_ds, input_ds, **overrides):
     body = {
+        "taskId": str(task.id),
         "transformationType": "derivation",
         "outputDatastreamId": str(output_ds.id),
         "inputDatastreams": [{"datastreamId": str(input_ds.id), "variableName": "x"}],
@@ -97,8 +103,9 @@ def _derivation_body(output_ds, input_ds, **overrides):
     return body
 
 
-def _aggregation_body(output_ds, input_ds, **overrides):
+def _aggregation_body(task, output_ds, input_ds, **overrides):
     body = {
+        "taskId": str(task.id),
         "transformationType": "aggregation",
         "outputDatastreamId": str(output_ds.id),
         "inputDatastreams": [{"datastreamId": str(input_ds.id)}],
@@ -120,29 +127,43 @@ def test_get_transformations_includes_transformation_for_workspace_owner(client)
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id))
+    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id)})
 
     assert response.status_code == 200
     assert str(transformation.id) in [t["id"] for t in response.json()["data"]]
 
 
-def test_get_transformations_returns_404_for_outsider(client):
+def test_get_transformations_filters_by_workspace_id(client):
+    owner = UserFactory()
+    workspace_a = WorkspaceFactory(owner=owner)
+    workspace_b = WorkspaceFactory(owner=owner)
+    task_a, site_a = _make_task_with_monitoring_site(workspace_a)
+    task_b, site_b = _make_task_with_monitoring_site(workspace_b)
+    transformation_a = _make_rating_curve_transformation(task_a, site_a)
+    _make_rating_curve_transformation(task_b, site_b)
+    client.force_login(owner)
+
+    response = client.get(TRANSFORMATIONS_URL, {"workspace_id": str(workspace_a.id)})
+
+    assert response.status_code == 200
+    assert [t["id"] for t in response.json()["data"]] == [str(transformation_a.id)]
+
+
+def test_get_transformations_excludes_transformations_outside_outsiders_workspaces(client):
     workspace = WorkspaceFactory()
     task, monitoring_site = _make_task_with_monitoring_site(workspace)
     _make_rating_curve_transformation(task, monitoring_site)
     outsider = UserFactory()
     client.force_login(outsider)
 
-    response = client.get(_transformations_url(task.id))
+    response = client.get(TRANSFORMATIONS_URL, {"workspace_id": str(workspace.id)})
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert response.json()["data"] == []
 
 
 def test_get_transformations_returns_401_when_unauthenticated(client):
-    workspace = WorkspaceFactory()
-    task, monitoring_site = _make_task_with_monitoring_site(workspace)
-
-    response = client.get(_transformations_url(task.id))
+    response = client.get(TRANSFORMATIONS_URL)
 
     assert response.status_code == 401
 
@@ -160,7 +181,10 @@ def test_get_transformations_filters_by_transformation_type(client):
     )
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"transformation_type": "rating_curve"})
+    response = client.get(
+        TRANSFORMATIONS_URL,
+        {"task_id": str(task.id), "transformation_type": "rating_curve"},
+    )
 
     assert response.status_code == 200
     assert [t["id"] for t in response.json()["data"]] == [str(rating_curve_transformation.id)]
@@ -174,7 +198,8 @@ def test_get_transformations_properties_filters_every_item_in_the_list(client):
     client.force_login(owner)
 
     response = client.get(
-        _transformations_url(task.id), {"properties": "id,transformationType"}
+        TRANSFORMATIONS_URL,
+        {"task_id": str(task.id), "properties": "id,transformationType"},
     )
 
     assert response.status_code == 200
@@ -190,7 +215,9 @@ def test_get_transformations_properties_rejects_unknown_property(client):
     task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"properties": "id,bogus"})
+    response = client.get(
+        TRANSFORMATIONS_URL, {"task_id": str(task.id), "properties": "id,bogus"}
+    )
 
     assert response.status_code == 400
 
@@ -202,7 +229,7 @@ def test_get_transformations_without_properties_returns_every_field(client):
     _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id))
+    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id)})
 
     assert response.status_code == 200
     item = response.json()["data"][0]
@@ -216,7 +243,7 @@ def test_get_transformations_has_no_included_key_without_include_param(client):
     _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id))
+    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id)})
 
     assert response.status_code == 200
     assert "included" not in response.json()
@@ -230,7 +257,8 @@ def test_get_transformations_include_output_datastream_and_rating_curve(client):
     client.force_login(owner)
 
     response = client.get(
-        _transformations_url(task.id), {"include": "outputDatastream,ratingCurve"}
+        TRANSFORMATIONS_URL,
+        {"task_id": str(task.id), "include": "outputDatastream,ratingCurve"},
     )
 
     assert response.status_code == 200
@@ -249,7 +277,7 @@ def test_get_transformations_include_rejects_unknown_relation(client):
     task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"include": "bogus"})
+    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id), "include": "bogus"})
 
     assert response.status_code == 400
 
@@ -262,8 +290,12 @@ def test_get_transformations_properties_and_include_together(client):
     client.force_login(owner)
 
     response = client.get(
-        _transformations_url(task.id),
-        {"properties": "id,transformationType", "include": "outputDatastream"},
+        TRANSFORMATIONS_URL,
+        {
+            "task_id": str(task.id),
+            "properties": "id,transformationType",
+            "include": "outputDatastream",
+        },
     )
 
     assert response.status_code == 200
@@ -284,13 +316,19 @@ def test_get_transformations_include_does_not_scale_queries_with_transformation_
     client.force_login(owner)
 
     with CaptureQueriesContext(connection) as small:
-        client.get(_transformations_url(task.id), {"include": "outputDatastream,ratingCurve"})
+        client.get(
+            TRANSFORMATIONS_URL,
+            {"task_id": str(task.id), "include": "outputDatastream,ratingCurve"},
+        )
 
     for _ in range(5):
         _make_rating_curve_transformation(task, monitoring_site)
 
     with CaptureQueriesContext(connection) as large:
-        client.get(_transformations_url(task.id), {"include": "outputDatastream,ratingCurve"})
+        client.get(
+            TRANSFORMATIONS_URL,
+            {"task_id": str(task.id), "include": "outputDatastream,ratingCurve"},
+        )
 
     assert len(large.captured_queries) == len(small.captured_queries)
 
@@ -303,7 +341,9 @@ def test_get_transformations_sorts_by_output_datastream_id(client):
     t2 = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"sortby": "outputDatastreamId"})
+    response = client.get(
+        TRANSFORMATIONS_URL, {"task_id": str(task.id), "sortby": "outputDatastreamId"}
+    )
 
     expected = sorted([str(t1.output_datastream_id), str(t2.output_datastream_id)])
     assert response.status_code == 200
@@ -316,7 +356,7 @@ def test_get_transformations_sortby_rejects_unknown_field(client):
     task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
-    response = client.get(_transformations_url(task.id), {"sortby": "bogus"})
+    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id), "sortby": "bogus"})
 
     assert response.status_code == 400
 
@@ -334,16 +374,17 @@ def test_create_rating_curve_transformation_succeeds_for_workspace_owner(client)
     client.force_login(owner)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_rating_curve_body(output_ds, input_ds, rating_curve),
+        TRANSFORMATIONS_URL,
+        data=_rating_curve_body(task, output_ds, input_ds, rating_curve),
         content_type="application/json",
     )
 
     assert response.status_code == 201
     assert set(response.json().keys()) == {"id"}
 
-    detail = client.get(_detail_url(task.id, response.json()["id"]))
+    detail = client.get(_detail_url(response.json()["id"]))
     body = detail.json()["data"]
+    assert body["taskId"] == str(task.id)
     assert body["transformationType"] == "rating_curve"
     assert body["ratingCurveId"] == str(rating_curve.id)
     assert body["inputDatastreams"] == [
@@ -360,14 +401,14 @@ def test_create_derivation_transformation_succeeds_for_workspace_owner(client):
     client.force_login(owner)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_derivation_body(output_ds, input_ds),
+        TRANSFORMATIONS_URL,
+        data=_derivation_body(task, output_ds, input_ds),
         content_type="application/json",
     )
 
     assert response.status_code == 201
 
-    detail = client.get(_detail_url(task.id, response.json()["id"]))
+    detail = client.get(_detail_url(response.json()["id"]))
     body = detail.json()["data"]
     assert body["transformationType"] == "derivation"
     assert body["formula"] == "x"
@@ -385,14 +426,14 @@ def test_create_aggregation_transformation_succeeds_for_workspace_owner(client):
     client.force_login(owner)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_aggregation_body(output_ds, input_ds),
+        TRANSFORMATIONS_URL,
+        data=_aggregation_body(task, output_ds, input_ds),
         content_type="application/json",
     )
 
     assert response.status_code == 201
 
-    detail = client.get(_detail_url(task.id, response.json()["id"]))
+    detail = client.get(_detail_url(response.json()["id"]))
     body = detail.json()["data"]
     assert body["transformationType"] == "aggregation"
     assert body["aggregationMethod"] == "mean"
@@ -407,15 +448,15 @@ def test_create_transformation_returns_401_when_unauthenticated(client):
     rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_rating_curve_body(output_ds, input_ds, rating_curve),
+        TRANSFORMATIONS_URL,
+        data=_rating_curve_body(task, output_ds, input_ds, rating_curve),
         content_type="application/json",
     )
 
     assert response.status_code == 401
 
 
-def test_create_transformation_returns_403_without_edit_permission(client):
+def test_create_transformation_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
     task, monitoring_site = _make_task_with_monitoring_site(workspace)
     output_ds = DatastreamFactory(monitoring_site=monitoring_site)
@@ -425,12 +466,51 @@ def test_create_transformation_returns_403_without_edit_permission(client):
     client.force_login(collaborator.user)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_rating_curve_body(output_ds, input_ds, rating_curve),
+        TRANSFORMATIONS_URL,
+        data=_rating_curve_body(task, output_ds, input_ds, rating_curve),
         content_type="application/json",
     )
 
     assert response.status_code == 403
+
+
+def test_create_transformation_succeeds_for_collaborator_with_create_permission(client):
+    workspace = WorkspaceFactory()
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
+    collaborator = _collaborator_who_can_create_transformations(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        TRANSFORMATIONS_URL,
+        data=_rating_curve_body(task, output_ds, input_ds, rating_curve),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+
+
+def test_create_transformation_returns_404_for_nonexistent_task(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
+    client.force_login(owner)
+
+    body = _rating_curve_body(task, output_ds, input_ds, rating_curve)
+    body["taskId"] = "00000000-0000-0000-0000-000000000000"
+
+    response = client.post(
+        TRANSFORMATIONS_URL,
+        data=body,
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
 
 
 def test_create_derivation_transformation_returns_400_when_formula_missing(client):
@@ -442,8 +522,8 @@ def test_create_derivation_transformation_returns_400_when_formula_missing(clien
     client.force_login(owner)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_derivation_body(output_ds, input_ds, formula=None),
+        TRANSFORMATIONS_URL,
+        data=_derivation_body(task, output_ds, input_ds, formula=None),
         content_type="application/json",
     )
 
@@ -460,8 +540,8 @@ def test_create_aggregation_transformation_returns_400_when_rating_curve_set(cli
     client.force_login(owner)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_aggregation_body(output_ds, input_ds, ratingCurveId=str(rating_curve.id)),
+        TRANSFORMATIONS_URL,
+        data=_aggregation_body(task, output_ds, input_ds, ratingCurveId=str(rating_curve.id)),
         content_type="application/json",
     )
 
@@ -477,8 +557,8 @@ def test_create_aggregation_transformation_returns_400_when_timezone_missing_for
     client.force_login(owner)
 
     response = client.post(
-        _transformations_url(task.id),
-        data=_aggregation_body(output_ds, input_ds, timezoneType="iana"),
+        TRANSFORMATIONS_URL,
+        data=_aggregation_body(task, output_ds, input_ds, timezoneType="iana"),
         content_type="application/json",
     )
 
@@ -495,7 +575,7 @@ def test_get_transformation_returns_200_for_workspace_owner(client):
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_detail_url(task.id, transformation.id))
+    response = client.get(_detail_url(transformation.id))
 
     assert response.status_code == 200
     assert response.json()["data"]["id"] == str(transformation.id)
@@ -508,18 +588,17 @@ def test_get_transformation_returns_404_for_outsider(client):
     outsider = UserFactory()
     client.force_login(outsider)
 
-    response = client.get(_detail_url(task.id, transformation.id))
+    response = client.get(_detail_url(transformation.id))
 
     assert response.status_code == 404
 
 
 def test_get_transformation_returns_404_for_nonexistent_transformation(client):
     owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    task, _ = _make_task_with_monitoring_site(workspace)
+    WorkspaceFactory(owner=owner)
     client.force_login(owner)
 
-    response = client.get(_detail_url(task.id, "00000000-0000-0000-0000-000000000000"))
+    response = client.get(_detail_url("00000000-0000-0000-0000-000000000000"))
 
     assert response.status_code == 404
 
@@ -533,7 +612,7 @@ def test_get_transformation_properties_rejects_unknown_property(client):
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_detail_url(task.id, transformation.id), {"properties": "bogus"})
+    response = client.get(_detail_url(transformation.id), {"properties": "bogus"})
 
     assert response.status_code == 400
 
@@ -545,7 +624,7 @@ def test_get_transformation_included_is_present_but_empty_without_include_param(
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_detail_url(task.id, transformation.id))
+    response = client.get(_detail_url(transformation.id))
 
     assert response.status_code == 200
     body = response.json()
@@ -560,7 +639,7 @@ def test_get_transformation_include_rating_curve_sideloads_it(client):
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_detail_url(task.id, transformation.id), {"include": "ratingCurve"})
+    response = client.get(_detail_url(transformation.id), {"include": "ratingCurve"})
 
     assert response.status_code == 200
     body = response.json()
@@ -576,7 +655,7 @@ def test_get_transformation_include_rejects_unknown_relation(client):
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(_detail_url(task.id, transformation.id), {"include": "bogus"})
+    response = client.get(_detail_url(transformation.id), {"include": "bogus"})
 
     assert response.status_code == 400
 
@@ -593,7 +672,7 @@ def test_update_transformation_succeeds_for_workspace_owner(client):
     client.force_login(owner)
 
     response = client.patch(
-        _detail_url(task.id, transformation.id),
+        _detail_url(transformation.id),
         data={"ratingCurveId": str(new_rating_curve.id)},
         content_type="application/json",
     )
@@ -601,7 +680,7 @@ def test_update_transformation_succeeds_for_workspace_owner(client):
     assert response.status_code == 204
     assert not response.content
 
-    detail = client.get(_detail_url(task.id, transformation.id))
+    detail = client.get(_detail_url(transformation.id))
     assert detail.json()["data"]["ratingCurveId"] == str(new_rating_curve.id)
 
 
@@ -614,14 +693,14 @@ def test_update_transformation_replaces_input_datastreams(client):
     client.force_login(owner)
 
     response = client.patch(
-        _detail_url(task.id, transformation.id),
+        _detail_url(transformation.id),
         data={"inputDatastreams": [{"datastreamId": str(new_input.id)}]},
         content_type="application/json",
     )
 
     assert response.status_code == 204
 
-    detail = client.get(_detail_url(task.id, transformation.id))
+    detail = client.get(_detail_url(transformation.id))
     assert detail.json()["data"]["inputDatastreams"] == [
         {"datastreamId": str(new_input.id), "variableName": None}
     ]
@@ -639,7 +718,7 @@ def test_update_transformation_rolls_back_input_datastreams_when_one_is_invalid(
     client.force_login(owner)
 
     response = client.patch(
-        _detail_url(task.id, transformation.id),
+        _detail_url(transformation.id),
         data={
             "inputDatastreams": [
                 {"datastreamId": str(valid_input.id)},
@@ -651,7 +730,7 @@ def test_update_transformation_rolls_back_input_datastreams_when_one_is_invalid(
 
     assert response.status_code == 400
 
-    detail = client.get(_detail_url(task.id, transformation.id))
+    detail = client.get(_detail_url(transformation.id))
     assert detail.json()["data"]["inputDatastreams"] == [
         {"datastreamId": str(original_input.id), "variableName": None}
     ]
@@ -662,11 +741,13 @@ def test_update_transformation_returns_403_for_viewer_collaborator(client):
     task, monitoring_site = _make_task_with_monitoring_site(workspace)
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     new_rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    collaborator = _collaborator_with_permission(
+        workspace, resource_type="DataProductTransformation", can_view=True
+    )
     client.force_login(collaborator.user)
 
     response = client.patch(
-        _detail_url(task.id, transformation.id),
+        _detail_url(transformation.id),
         data={"ratingCurveId": str(new_rating_curve.id)},
         content_type="application/json",
     )
@@ -684,19 +765,21 @@ def test_delete_transformation_succeeds_for_workspace_owner(client):
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.delete(_detail_url(task.id, transformation.id))
+    response = client.delete(_detail_url(transformation.id))
 
     assert response.status_code == 204
-    assert client.get(_detail_url(task.id, transformation.id)).status_code == 404
+    assert client.get(_detail_url(transformation.id)).status_code == 404
 
 
 def test_delete_transformation_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     task, monitoring_site = _make_task_with_monitoring_site(workspace)
     transformation = _make_rating_curve_transformation(task, monitoring_site)
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    collaborator = _collaborator_with_permission(
+        workspace, resource_type="DataProductTransformation", can_view=True
+    )
     client.force_login(collaborator.user)
 
-    response = client.delete(_detail_url(task.id, transformation.id))
+    response = client.delete(_detail_url(transformation.id))
 
     assert response.status_code == 403

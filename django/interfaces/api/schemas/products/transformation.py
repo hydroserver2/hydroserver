@@ -119,16 +119,24 @@ class DataProductTransformationQueryParameters(
     input_datastreams__datastream_id: list[uuid.UUID] = Query(
         [], description="Filter transformations by input datastream ID.", alias="input_datastream_id"
     )
+    task_id: list[uuid.UUID] = Query(
+        [], description="Filter transformations by data product task ID."
+    )
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter transformations by workspace ID."
+    )
 
 
 class DataProductTransformationResponse(BaseGetResponse, DataProductTransformationFields):
     id: uuid.UUID
+    task_id: uuid.UUID
     transformation_type: TransformationType
     input_datastreams: list[TransformationInputResponse] = []
 
 
 class DataProductTransformationPostBody(BasePostBody, DataProductTransformationFields):
     id: Optional[uuid.UUID] = None
+    task_id: uuid.UUID
     transformation_type: TransformationType
 
 

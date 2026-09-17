@@ -62,13 +62,13 @@ class EtlTask(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "etl/tasks"
+        return "etl-tasks"
 
     @cached_property
     def mappings(self) -> List[EtlMapping]:
         """All source-to-datastream mappings for this ETL task."""
 
-        return self.client.etlmappings.list(task_id=self.uid, fetch_all=True).items
+        return self.client.etlmappings.list(etl_task=self.uid, fetch_all=True).items
 
     @property
     def data_connection(self) -> "DataConnection":

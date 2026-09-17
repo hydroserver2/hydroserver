@@ -1109,12 +1109,12 @@ pruneSelectionToAvailable(
 
 .chip-grid::-webkit-scrollbar-track {
   border-radius: 3px;
-  background: #dfe3e6;
+  background: var(--hs-surface-muted);
 }
 
 .chip-grid::-webkit-scrollbar-thumb {
   border-radius: 3px;
-  background: #9aa0a6;
+  background: var(--hs-text-muted);
 }
 
 .filter-pill {

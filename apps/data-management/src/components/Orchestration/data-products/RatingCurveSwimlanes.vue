@@ -42,7 +42,9 @@
               >
                 {{ outputMonitoringSiteName(t) }}
               </small>
-              <small class="target-id">{{ outputDatastreamId(t) || '—' }}</small>
+              <small class="target-id">{{
+                outputDatastreamId(t) || '—'
+              }}</small>
             </div>
             <DatastreamSiteButton
               :datastream="outputDatastream(t)"
@@ -149,7 +151,9 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
     props.monitoringSiteId
   if (!monitoringSiteId) return ''
   return (
-    workspaceMonitoringSites.value.find((th) => th.id === String(monitoringSiteId))?.name || ''
+    workspaceMonitoringSites.value.find(
+      (th) => th.id === String(monitoringSiteId)
+    )?.name || ''
   )
 }
 </script>
@@ -201,7 +205,7 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   border: 1px solid #d0c9d8;
   border-radius: 10px;
   padding: 6px 12px;
-  background: #fdfdff;
+  background: var(--hs-surface);
   color: #1c1b1f;
   display: flex;
   flex-direction: column;
@@ -215,7 +219,7 @@ function outputMonitoringSiteName(t: RatingCurveTransformation) {
   border: 1px solid #d0c9d8;
   border-radius: 10px;
   padding: 6px 12px;
-  background: #f6f9ff;
+  background: var(--hs-surface);
   color: #1c1b1f;
   display: flex;
   flex-direction: column;

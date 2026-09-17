@@ -8,8 +8,11 @@ import { DatastreamService } from './services/datastream.service'
 import { MethodService } from './services/method.service'
 import { DataConnectionService } from './services/data-connection.service'
 import { TaskService } from './services/task.service'
+import { EtlMappingService } from './services/etl-mapping.service'
 import { MonitoringTaskService } from './services/monitoring-task.service'
+import { MonitoringRuleService } from './services/monitoring-rule.service'
 import { DataProductTaskService } from './services/data-product-task.service'
+import { DataProductTransformationService } from './services/data-product-transformation.service'
 import { RatingCurveService } from './services/rating-curve.service'
 import { RatingCurvePreviewService } from './services/rating-curve-preview.service'
 import {
@@ -36,7 +39,6 @@ export class HydroServer {
   readonly host: string
   readonly resolvedHost: string
   readonly baseRoute: string
-  readonly etlDataBase: string
   readonly oidc?: Required<HydroServerOIDCOptions>
 
   private _workspaces?: WorkspaceService
@@ -52,8 +54,11 @@ export class HydroServer {
 
   private _dataConnections?: DataConnectionService
   private _tasks?: TaskService
+  private _etlMappings?: EtlMappingService
   private _monitoringTasks?: MonitoringTaskService
+  private _monitoringRules?: MonitoringRuleService
   private _dataProductTasks?: DataProductTaskService
+  private _dataProductTransformations?: DataProductTransformationService
   private _ratingCurves?: RatingCurveService
   private _ratingCurvePreview?: RatingCurvePreviewService
   private _qualityControlHistories?: QualityControlHistoryService
@@ -65,7 +70,6 @@ export class HydroServer {
     this.host = host.trim().replace(/\/+$/, '')
     this.resolvedHost = this.host || globalThis.location?.origin || ''
     this.baseRoute = `${this.host}/api/data`
-    this.etlDataBase = `${this.host}/api/data/etl`
     this.oidc = oidc
       ? {
           clientId: oidc.clientId,
@@ -135,11 +139,21 @@ export class HydroServer {
   get tasks(): TaskService {
     return (this._tasks ??= new TaskService(this))
   }
+  get etlMappings(): EtlMappingService {
+    return (this._etlMappings ??= new EtlMappingService(this))
+  }
   get monitoringTasks(): MonitoringTaskService {
     return (this._monitoringTasks ??= new MonitoringTaskService(this))
   }
+  get monitoringRules(): MonitoringRuleService {
+    return (this._monitoringRules ??= new MonitoringRuleService(this))
+  }
   get dataProductTasks(): DataProductTaskService {
     return (this._dataProductTasks ??= new DataProductTaskService(this))
+  }
+  get dataProductTransformations(): DataProductTransformationService {
+    return (this._dataProductTransformations ??=
+      new DataProductTransformationService(this))
   }
   get ratingCurves(): RatingCurveService {
     return (this._ratingCurves ??= new RatingCurveService(this))

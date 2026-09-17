@@ -10,9 +10,7 @@
       >
         <div class="datastream-display">
           <div class="datastream-display__content">
-            <span class="target-name hs-title">{{
-              row.name
-            }}</span>
+            <span class="target-name hs-title">{{ row.name }}</span>
             <small v-if="row.monitoringSiteName" class="target-monitoringSite">
               {{ row.monitoringSiteName }}
             </small>
@@ -72,8 +70,9 @@ async function loadRules() {
     rules.value = []
     return
   }
-  const res = await hs.monitoringTasks.listRules(props.taskId)
-  rules.value = res.ok ? res.data : []
+  rules.value = await hs.monitoringRules.listAllItems({
+    task_id: props.taskId,
+  } as any)
 }
 
 watch(() => props.taskId, () => void loadRules(), { immediate: true })
@@ -154,7 +153,7 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
   padding: 6px 12px;
   border: 1px solid #d0c9d8;
   border-radius: 8px;
-  background: #f6f9ff;
+  background: var(--hs-surface);
   color: #1c1b1f;
   text-align: left;
 }

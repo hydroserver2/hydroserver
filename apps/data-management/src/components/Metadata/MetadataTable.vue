@@ -43,7 +43,7 @@
           class="metadata-type-tabs"
           show-arrows
         >
-          <v-tab v-for="item in metaMap" :key="item.name">
+          <v-tab v-for="item in metaMap" :key="item.name" :rounded="0">
             {{ item.name }}
           </v-tab>
         </v-tabs>
@@ -338,6 +338,18 @@ const canManageSystemMetadata = computed(() => isAdmin())
 .metadata-type-tabs {
   flex: 1;
   min-width: 0;
+  align-self: stretch;
+  height: auto;
+}
+.metadata-type-tabs :deep(.v-tab) {
+  height: auto;
+  min-height: var(--v-tabs-height);
+}
+.metadata-type-tabs :deep(.v-tab__slider) {
+  right: var(--hs-space-12);
+  left: var(--hs-space-12);
+  width: auto;
+  height: 3px;
 }
 .metadata-table-frame {
   display: flex;

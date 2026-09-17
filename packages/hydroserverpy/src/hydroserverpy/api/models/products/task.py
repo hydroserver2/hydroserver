@@ -38,7 +38,7 @@ class DataProductTask(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "products/tasks"
+        return "data-product-tasks"
 
     @cached_property
     def rating_curve_transformations(self) -> List["RatingCurveTransformation"]:

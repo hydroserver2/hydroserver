@@ -1,11 +1,17 @@
 import uuid
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional, Annotated
 from ninja import Query
+from pydantic import BeforeValidator, WithJsonSchema
 
 from core.types import ISODatetime
-from interfaces.api.schemas import BaseGetResponse, CollectionQueryParameters
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    CollectionQueryParameters,
+    split_comma_separated,
+    comma_array_schema,
+)
 
 
 _sortby_fields = ("id", "status", "startedAt", "finishedAt")
@@ -13,8 +19,21 @@ TaskRunSortByFields = Literal[
     *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
+TaskRunPropertyName = Literal[
+    "id", "status", "message", "result", "startedAt", "finishedAt"
+]
+
 
 class TaskRunQueryParameters(CollectionQueryParameters):
+    properties: Annotated[
+        Optional[list[TaskRunPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(TaskRunPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
     sortby: list[TaskRunSortByFields] = Query(
         [], description="Select one or more fields to sort the response by."
     )

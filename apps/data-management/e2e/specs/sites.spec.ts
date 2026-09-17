@@ -54,11 +54,11 @@ test.describe('sites and workspaces', () => {
       page.getByRole('heading', { name: 'Site information' })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: 'Datastreams available at this site' })
+      page.getByRole('heading', { name: 'Datastreams', exact: true })
     ).toBeVisible()
     await expect(page.getByText(fixtures.datastreams.public.name)).toBeVisible()
     await expect(
-      page.getByRole('link', { name: 'View on Data Visualization Page' })
+      page.getByRole('link', { name: 'Visualize', exact: true })
     ).toBeVisible()
   })
 
@@ -785,11 +785,11 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
 
-    await page
-      .getByRole('link', { name: 'View on Data Visualization Page' })
-      .click()
+    await page.getByRole('link', { name: 'Visualize', exact: true }).click()
     await expect(page).toHaveURL(
-      new RegExp(`/visualize-data\\?sites=${fixtures.monitoringSites.public.id}`)
+      new RegExp(
+        `/visualize-data\\?sites=${fixtures.monitoringSites.public.id}`
+      )
     )
     await expect(
       page.getByText(fixtures.datastreams.public.name, { exact: true })

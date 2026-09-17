@@ -17,6 +17,7 @@ db.sqlite3
 !/static/img/archivo-latin-wght-normal.woff2
 !/static/img/favicon-16x16.png
 !/static/img/favicon-32x32.png
+!/static/img/ColoradoSite.svg
 /media/
 staticfiles/
 /web/static/web/*

@@ -186,8 +186,10 @@ test.describe('workspace management', () => {
           '.v-table__wrapper'
         ) as HTMLElement | null
 
-        if (!detailBody || !table || !wrapper)
-          throw new Error('Unable to measure the workspace table layout.')
+        // Changing metadata scope remounts the keyed table. Treat the brief
+        // interval before its Vuetify wrapper exists as "not settled" so the
+        // caller's poll retries instead of failing on the transition frame.
+        if (!detailBody || !table || !wrapper) return null
 
         const detailRect = detailBody.getBoundingClientRect()
         const tableRect = table.getBoundingClientRect()
@@ -211,6 +213,7 @@ test.describe('workspace management', () => {
         .poll(async () => {
           const layout = await readTableLayout(sectionTestId)
           return (
+            layout !== null &&
             layout.detailOverflowY === 'hidden' &&
             layout.detailScrollOverflow <= 1 &&
             layout.tableBottomGap >= -1 &&
@@ -220,6 +223,8 @@ test.describe('workspace management', () => {
         .toBe(true)
 
       const layout = await readTableLayout(sectionTestId)
+      if (!layout)
+        throw new Error('Unable to measure the workspace table layout.')
       expect(layout.detailOverflowY).toBe('hidden')
       expect(layout.detailScrollOverflow).toBeLessThanOrEqual(1)
       expect(layout.tableBottomGap).toBeGreaterThanOrEqual(-1)

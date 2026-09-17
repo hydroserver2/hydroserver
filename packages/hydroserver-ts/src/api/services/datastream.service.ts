@@ -65,9 +65,12 @@ interface VisualizationBootstrapPayload {
     id: string
     name: string
     monitoringSiteId: string
+    methodId: string
+    methodName: string
     observedPropertyId: string
     processingLevelId: string
     unitId: string
+    unitName: string
     unitSymbol: string
     noDataValue: number
     aggregationStatistic: string
@@ -85,7 +88,9 @@ interface VisualizationBootstrapPayload {
 
 export interface VisualizationBootstrap {
   monitoringSites: MonitoringSite[]
-  datastreams: M[]
+  datastreams: Array<
+    M & { methodName: string; unitName: string; unitSymbol: string }
+  >
   observedProperties: ObservedProperty[]
   processingLevels: ProcessingLevel[]
 }
