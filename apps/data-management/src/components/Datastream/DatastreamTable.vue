@@ -229,7 +229,7 @@
                 <div class="site-datastreams__id">
                   <span
                     v-if="showDatastreamIds"
-                    class="hs-font-data"
+                    class="hs-font-data hs-text-sm"
                     :title="item.id"
                   >
                     {{ item.id }}
@@ -2591,6 +2591,7 @@ const loadDatastreams = async () => {
   font-size: var(--hs-font-2xs);
 }
 .site-datastreams__id span {
+  color: var(--hs-text-primary);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
