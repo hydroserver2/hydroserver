@@ -126,7 +126,7 @@ class TaskService(SchedulingService, Generic[T]):
         task: Union[T, uuid.UUID],
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         offset: int = Field(ge=0, default=0),
-        limit: int = Field(gt=0, default=100),
+        limit: int = Field(ge=0, le=100000, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
         status: list[str] | Unset = Unset,

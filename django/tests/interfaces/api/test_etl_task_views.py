@@ -108,6 +108,28 @@ def test_get_etl_tasks_include_data_connection_does_not_scale_queries(client):
     assert len(large.captured_queries) == len(small.captured_queries)
 
 
+def test_get_etl_tasks_properties_filters_response_and_skips_expensive_queries(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_etl_task(workspace)
+    _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(ETL_TASKS_URL)
+    assert response.json()["data"][0]["mappingCount"] == 0
+
+    with CaptureQueriesContext(connection) as ctx:
+        response = client.get(ETL_TASKS_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body["data"][0].keys()) == {"id", "name"}
+
+    sqls = [q["sql"] for q in ctx.captured_queries]
+    assert not any("etl_mappings" in sql for sql in sqls), "mappingCount annotate should be skipped"
+    assert not any("DISTINCT ON" in sql for sql in sqls), "attach_latest_runs should be skipped"
+
+
 def test_get_etl_tasks_returns_401_when_unauthenticated(client):
     response = client.get(ETL_TASKS_URL)
 
@@ -386,3 +408,41 @@ def test_get_etl_task_runs_order_by_rejects_unknown_field(client):
     response = client.get(f"{_detail_url(task.id)}/runs", {"order_by": "bogus"})
 
     assert response.status_code == 400
+
+
+def test_get_etl_task_runs_accepts_properties_filter(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"properties": "id,status"})
+
+    assert response.status_code == 200
+    assert set(response.json()["data"][0].keys()) == {"id", "status"}
+
+
+def test_get_etl_task_runs_accepts_limit_zero(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"limit": "0"})
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["limit"] == 0
+
+
+def test_get_etl_task_runs_ignores_unsupported_include(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"include": "bogus"})
+
+    assert response.status_code == 200

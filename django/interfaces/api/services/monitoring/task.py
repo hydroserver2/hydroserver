@@ -127,6 +127,7 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        properties: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         filtering = filtering or {}
@@ -184,8 +185,16 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
 
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
-        tasks = self.attach_latest_runs(list(queryset.all()))
-        self.attach_rule_type_counts(tasks)
+        tasks = list(queryset.all())
+
+        if properties is None or "latestRun" in properties:
+            tasks = self.attach_latest_runs(tasks)
+
+        if properties is None or "ruleTypeCounts" in properties:
+            self.attach_rule_type_counts(tasks)
+        else:
+            for task in tasks:
+                task.rule_type_counts = {}
 
         return {
             "data": [MonitoringTaskResponse.model_validate(task) for task in tasks],
