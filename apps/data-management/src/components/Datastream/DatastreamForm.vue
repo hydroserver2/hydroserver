@@ -48,18 +48,18 @@
             class="text-medium-emphasis"
           >
             <small>
-              Select the appropriate metadata to describe the the datastream
-              you are adding to the monitoring site. If you want to modify the
-              values available in the drop down menus below, click the "+"
-              button or visit the
+              Select the appropriate metadata to describe the datastream you are
+              adding to the monitoring site. If you want to modify the values
+              available in the drop down menus below, click the "+" button or
+              visit the
               <router-link
                 :to="{ path: '/workspaces', query: { section: 'metadata' } }"
               >
                 Metadata tab of the Workspaces page.
               </router-link>
-              Options in the drop down menus come from both metadata
-              associated with the workspace as well as system level metadata
-              managed by the system admin.
+              Options in the drop down menus come from both metadata associated
+              with the workspace as well as system level metadata managed by the
+              system admin.
             </small>
           </v-card-text>
 
@@ -67,7 +67,8 @@
             <v-autocomplete
               :key="datastream.methodId"
               v-model="datastream.methodId"
-              label="Select method *"
+              class="required-label"
+              label="Select method"
               :items="methods"
               item-title="name"
               item-value="id"
@@ -150,7 +151,7 @@
 
             <v-autocomplete
               v-model="datastream.observedPropertyId"
-              label="Select observed property *"
+              label="Select observed property"
               :items="formattedObservedProperties"
               item-title="title"
               item-value="id"
@@ -159,7 +160,7 @@
               :prepend-inner-icon="mdiWaterThermometer"
               density="compact"
               rounded="lg"
-              class="mt-2"
+              class="required-label mt-2"
             >
               <template v-slot:item="{ props, item }">
                 <v-tooltip
@@ -229,7 +230,7 @@
 
             <v-autocomplete
               v-model="datastream.unitId"
-              label="Select unit *"
+              label="Select unit"
               :items="units"
               item-title="name"
               item-value="id"
@@ -238,7 +239,7 @@
               :prepend-inner-icon="mdiTapeMeasure"
               density="compact"
               rounded="lg"
-              class="mt-2"
+              class="required-label mt-2"
             >
               <template #item="{ props, item }">
                 <v-tooltip
@@ -300,7 +301,7 @@
 
             <v-autocomplete
               v-model="datastream.processingLevelId"
-              label="Select processing level *"
+              label="Select processing level"
               :items="formattedProcessingLevels"
               item-title="title"
               item-value="id"
@@ -309,7 +310,7 @@
               :prepend-inner-icon="mdiCheckCircle"
               density="compact"
               rounded="lg"
-              class="mt-2"
+              class="required-label mt-2"
             >
               <template #item="{ props, item }">
                 <v-tooltip
@@ -381,7 +382,8 @@
           <v-card-text>
             <v-text-field
               v-model="datastream.timeAggregationInterval"
-              label="Time aggregation interval *"
+              class="required-label"
+              label="Time aggregation interval"
               :rules="[
                 ...rules.requiredNumber,
                 () =>
@@ -402,7 +404,7 @@
             >
               <v-btn-toggle
                 v-model="datastream.timeAggregationIntervalUnit"
-                label="Time aggregation unit *"
+                aria-label="Time aggregation unit"
                 :items="timeUnits"
                 variant="outlined"
                 color="primary"
@@ -464,16 +466,17 @@
           <v-card-title>Datastream attributes</v-card-title>
           <v-card-text class="text-medium-emphasis">
             <small>
-            For the following items, select an option or type your own. Note:
-            the default selections won't be available if there is custom text in
-            the field.
+              For the following items, select an option or type your own. Note:
+              the default selections won't be available if there is custom text
+              in the field.
             </small>
           </v-card-text>
           <v-card-text class="pb-0">
             <v-combobox
               :items="vocabularyStore.sampledMediums"
               v-model="datastream.sampledMedium"
-              label="Medium *"
+              class="required-label"
+              label="Medium"
               :rules="rules.required"
               density="compact"
               rounded="xl"
@@ -492,7 +495,8 @@
             <v-combobox
               :items="vocabularyStore.datastreamAggregations"
               v-model="datastream.aggregationStatistic"
-              label="Aggregation statistic *"
+              class="required-label"
+              label="Aggregation statistic"
               :rules="rules.requiredAndMaxLength255"
               density="compact"
               rounded="xl"
@@ -502,14 +506,15 @@
 
           <v-card-text class="text-medium-emphasis pt-2">
             <small>
-            When observation data is missing a value, what should the default
-            be?
+              When observation data is missing a value, what should the default
+              be?
             </small>
           </v-card-text>
           <v-card-text>
             <v-text-field
               v-model="datastream.noDataValue"
-              label="No data value *"
+              class="required-label"
+              label="No data value"
               :rules="rules.required"
               type="number"
               density="compact"
@@ -520,52 +525,53 @@
         </v-col>
 
         <v-col cols="12" md="6">
-          <v-card-title>Name and description</v-card-title>
+          <v-card-title class="d-flex align-center">
+            Name and description
+            <v-btn-icon
+              :icon="mdiHelpCircleOutline"
+              size="small"
+              class="ml-2"
+              title="How to name a datastream"
+              aria-label="How to name a datastream"
+              :aria-expanded="showNamingHelp"
+              @click="showNamingHelp = !showNamingHelp"
+            />
+          </v-card-title>
           <v-card-text class="text-medium-emphasis">
             <small>
-            Enter a name and description for this datastream, or opt to
-            auto-fill with default text. If you choose the defaults, make sure
-            you've first filled out the rest of the form correctly as the
-            website will generate text based on the current form fields.
+              Enter a name and description for this datastream. You can
+              auto-fill the description after completing the rest of the form,
+              then edit the generated text.
             </small>
           </v-card-text>
 
           <v-card-text>
             <v-text-field
               v-model="datastream.name"
-              label="Datastream name *"
+              label="Datastream name"
+              class="required-label"
+              placeholder="Water Temp - 15 min, RAW"
+              persistent-placeholder
               :rules="rules.requiredAndMaxLength255"
               density="compact"
               rounded="lg"
             />
+            <p v-if="showNamingHelp" class="text-medium-emphasis">
+              The name is displayed throughout HydroServer wherever a list of
+              datastreams is presented. A good name is short and unique within
+              the site. The recommended format is &lt;observed property&gt; -
+              &lt;variant information if any&gt;, where the variant information
+              provides details that distinguish this datastream from others at
+              the same site, such as units, processing level, or time spacing.
+              Examples include "Water Temp - 15 min, RAW" and "Discharge - Daily
+              Mean". If you only have one Water Temp datastream or one Discharge
+              datastream at this site, then no variant information is needed.
+            </p>
 
-            <v-row justify="end">
-              <v-col cols="auto">
-                <v-spacer />
-                <v-btn
-                  variant="text"
-                  color="grey-darken-4"
-                  :disabled="datastream.name === originalName"
-                  @click="datastream.name = originalName"
-                >
-                  Revert
-                </v-btn>
-                <v-btn
-                  color="primary-darken-2"
-                  variant="outlined"
-                  rounded="xl"
-                  class="ml-2"
-                  @click="datastream.name = generateDefaultName()"
-                  >Auto-Fill from Form</v-btn
-                >
-              </v-col>
-            </v-row>
-          </v-card-text>
-
-          <v-card-text>
             <v-textarea
               v-model="datastream.description"
-              label="Datastream description *"
+              class="required-label mt-2"
+              label="Datastream description"
               :rules="rules.requiredDescription"
               rounded="lg"
             />
@@ -636,6 +642,7 @@ import {
   mdiClockTimeThree,
   mdiHelpCircleOutline,
   mdiImport,
+  mdiOpenInNew,
   mdiListStatus,
   mdiPlus,
   mdiSignalVariant,
@@ -667,6 +674,7 @@ const showMethodModal = ref(false)
 const showPLModal = ref(false)
 const showOPModal = ref(false)
 const showLinkedMetadataHelp = ref(false)
+const showNamingHelp = ref(false)
 
 const valid = ref(false)
 const myForm = ref<VForm>()
@@ -690,18 +698,7 @@ const handleMetadataUploaded = async (dsKey: string, newId: string) => {
   ;(datastream.value as any)[dsKey] = newId
 }
 
-const originalName = ref('')
 const originalDescription = ref('')
-
-const generateDefaultName = () => {
-  const OP = observedProperties.value.find(
-    (pl) => pl.id === datastream.value.observedPropertyId
-  )?.name
-  const PL = processingLevels.value.find(
-    (pl) => pl.id === datastream.value.processingLevelId
-  )?.code
-  return `${OP} at ${monitoringSite.value?.code} with processing level ${PL}`
-}
 
 const generateDefaultDescription = () => {
   const OP = observedProperties.value.find(
@@ -776,7 +773,6 @@ onMounted(async () => {
   try {
     if (isEdit.value) {
       datastream.value = props.datastream!
-      originalName.value = datastream.value.name
       originalDescription.value = datastream.value.description
     }
     monitoringSite.value = props.monitoringSite
