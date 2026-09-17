@@ -234,21 +234,15 @@
                   >
                     {{ item.id }}
                   </span>
-                  <v-tooltip text="Copy ID">
-                    <template #activator="{ props: tooltipProps }">
-                      <v-btn
-                        v-bind="tooltipProps"
-                        icon
-                        size="small"
-                        variant="text"
-                        :aria-label="`Copy ID for ${datastreamName(item)}`"
-                        :data-testid="`copy-datastream-id-${item.id}`"
-                        @click.stop="copyDatastreamId(item.id)"
-                      >
-                        <v-icon :icon="mdiContentCopy" size="small" />
-                      </v-btn>
-                    </template>
-                  </v-tooltip>
+                  <HsCopyButton
+                    :value="item.id"
+                    :label="datastreamName(item)"
+                    :data-testid="`copy-datastream-id-${item.id}`"
+                    @copied="
+                      Snackbar.success('Datastream UUID copied to clipboard')
+                    "
+                    @error="Snackbar.error('Failed to copy datastream UUID')"
+                  />
                 </div>
               </div>
               <div class="site-datastreams__observation-line">
@@ -705,6 +699,7 @@ import { Datastream, Workspace, type StatusType } from '@hydroserver/client'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { Snackbar } from '@/utils/notifications'
+import { HsCopyButton } from '@hydroserver/design-system/vue'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
 import { buildQcEditUrl } from '@/utils/qcLinks'
@@ -738,7 +733,6 @@ import {
   mdiCheck,
   mdiChevronDown,
   mdiChevronRight,
-  mdiContentCopy,
   mdiTrashCanOutline,
   mdiDotsVertical,
   mdiDownload,
@@ -1220,14 +1214,6 @@ function setSortOrder(order: DatastreamSortOrder) {
 }
 function datastreamName(datastream: Datastream) {
   return datastream.name?.trim() || 'Unnamed datastream'
-}
-async function copyDatastreamId(id: string) {
-  try {
-    await navigator.clipboard.writeText(id)
-    Snackbar.success('Datastream UUID copied to clipboard')
-  } catch {
-    Snackbar.error('Failed to copy datastream UUID')
-  }
 }
 function formatObservationCount(value: number | string | null | undefined) {
   const count = Number(value)
