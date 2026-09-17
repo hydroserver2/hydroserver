@@ -3,14 +3,14 @@
 import type * as Data from '../data.types'
 
 export namespace TaskContract {
-  export const route = 'tasks' as const
+  export const route = 'etl-tasks' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_etl_task_get_etl_tasks']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_etl_task_get_etl_tasks']['parameters']['query']>)
-  export type SummaryResponse = Data.components['schemas']['EtlTaskSummaryResponse']
-  export type DetailResponse  = Data.components['schemas']['EtlTaskDetailResponse']
+  export type SummaryResponse = Data.components['schemas']['EtlTaskResponse']
+  export type DetailResponse  = Data.components['schemas']['ItemResponse_EtlTaskResponse_']
   export type PostBody        = Data.components['schemas']['EtlTaskPostBody']
   export type PatchBody       = Data.components['schemas']['EtlTaskPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["description","mappings","name","schedule","taskVariables"] as const
+  export const writableKeys = ["description","name","schedule","taskVariables"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

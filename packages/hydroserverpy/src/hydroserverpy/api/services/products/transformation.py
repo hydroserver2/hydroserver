@@ -16,6 +16,12 @@ if TYPE_CHECKING:
 
 
 class DataProductTransformationService:
+    """
+    Rating curve, derivation, and aggregation transformations are all managed
+    through a single `/data-product-transformations` resource, discriminated
+    by a `transformationType` field rather than separate routes.
+    """
+
     def __init__(self, client: "HydroServer"):
         self.client = client
 
@@ -25,24 +31,65 @@ class DataProductTransformationService:
             return obj.isoformat()
         raise TypeError(f"Type {type(obj)} not serializable")
 
-    def _route(self, task_id: Union[UUID, str], type_slug: str) -> str:
-        return f"/{self.client.base_route}/products/tasks/{normalize_uuid(task_id)}/transformations/{type_slug}"
+    def _route(self) -> str:
+        return f"/{self.client.base_route}/data-product-transformations"
 
-    def _post(self, task_id, type_slug, body) -> dict:
-        return self.client.request(
+    def _list(
+        self,
+        transformation_type: str,
+        task_id: Optional[Union[UUID, str]] = None,
+        workspace_id: Optional[Union[UUID, str]] = None,
+        output_datastream: Optional[Union[UUID, str]] = None,
+        input_datastream: Optional[Union[UUID, str]] = None,
+    ) -> List[dict]:
+        params = {"transformation_type": transformation_type}
+        if task_id is not None:
+            params["task_id"] = normalize_uuid(task_id)
+        if workspace_id is not None:
+            params["workspace_id"] = normalize_uuid(workspace_id)
+        if output_datastream is not None:
+            params["output_datastream_id"] = normalize_uuid(output_datastream)
+        if input_datastream is not None:
+            params["input_datastream_id"] = normalize_uuid(input_datastream)
+
+        response = self.client.request("get", self._route(), params=params)
+
+        return response.json()["data"]
+
+    def _get(self, uid) -> dict:
+        payload = self.client.request(
+            "get", f"{self._route()}/{str(uid)}"
+        ).json()
+
+        return payload.get("data", payload)
+
+    def _post(self, task_id, body) -> dict:
+        body = {**body, "taskId": normalize_uuid(task_id)}
+        response = self.client.request(
             "post",
-            self._route(task_id, type_slug),
+            self._route(),
             headers={"Content-type": "application/json"},
             data=json.dumps(body, default=self.default_serializer),
         ).json()
 
-    def _patch(self, task_id, type_slug, uid, body) -> dict:
-        return self.client.request(
+        return self._get(response["id"])
+
+    def _patch(self, uid, body) -> dict:
+        self.client.request(
             "patch",
-            f"{self._route(task_id, type_slug)}/{str(uid)}",
+            f"{self._route()}/{str(uid)}",
             headers={"Content-type": "application/json"},
             data=json.dumps(body, default=self.default_serializer),
-        ).json()
+        )
+
+        return self._get(uid)
+
+    def _delete(self, uid) -> None:
+        self.client.request("delete", f"{self._route()}/{str(uid)}")
+
+    @staticmethod
+    def _single_input(datastream: Union[UUID, str]) -> List[dict]:
+        return [{"datastreamId": normalize_uuid(datastream)}]
 
     # ---------------------------------------------------------------------------
     # Rating Curve Transformations
@@ -50,32 +97,24 @@ class DataProductTransformationService:
 
     def list_rating_curve(
         self,
-        task_id: Union[UUID, str],
+        task_id: Optional[Union[UUID, str]] = None,
+        workspace_id: Optional[Union[UUID, str]] = None,
         output_datastream: Optional[Union[UUID, str]] = None,
         input_datastream: Optional[Union[UUID, str]] = None,
     ) -> List[RatingCurveTransformation]:
-        """List rating curve transformations for a data product task."""
+        """List rating curve transformations."""
 
-        params = {}
-        if output_datastream is not None:
-            params["output_datastream_id"] = normalize_uuid(output_datastream)
-        if input_datastream is not None:
-            params["input_datastream_id"] = normalize_uuid(input_datastream)
+        return [
+            RatingCurveTransformation(**t)
+            for t in self._list(
+                "rating_curve", task_id, workspace_id, output_datastream, input_datastream
+            )
+        ]
 
-        response = self.client.request("get", self._route(task_id, "rating-curve"), params=params)
-
-        return [RatingCurveTransformation(**t) for t in response.json()]
-
-    def get_rating_curve(
-        self, task_id: Union[UUID, str], uid: Union[UUID, str]
-    ) -> RatingCurveTransformation:
+    def get_rating_curve(self, uid: Union[UUID, str]) -> RatingCurveTransformation:
         """Get a rating curve transformation."""
 
-        response = self.client.request(
-            "get", f"{self._route(task_id, 'rating-curve')}/{str(uid)}"
-        ).json()
-
-        return RatingCurveTransformation(**response)
+        return RatingCurveTransformation(**self._get(uid))
 
     def create_rating_curve(
         self,
@@ -88,18 +127,18 @@ class DataProductTransformationService:
         """Create a rating curve transformation on a data product task."""
 
         body = {
+            "transformationType": "rating_curve",
             "outputDatastreamId": normalize_uuid(output_datastream),
-            "inputDatastreamId": normalize_uuid(input_datastream),
+            "inputDatastreams": self._single_input(input_datastream),
             "ratingCurveId": normalize_uuid(rating_curve),
         }
         if uid is not None:
             body["id"] = normalize_uuid(uid)
 
-        return RatingCurveTransformation(**self._post(task_id, "rating-curve", body))
+        return RatingCurveTransformation(**self._post(task_id, body))
 
     def update_rating_curve(
         self,
-        task_id: Union[UUID, str],
         uid: Union[UUID, str],
         input_datastream: Union[UUID, str],
         rating_curve: Union[UUID, str],
@@ -107,16 +146,16 @@ class DataProductTransformationService:
         """Update a rating curve transformation."""
 
         body = {
-            "inputDatastreamId": normalize_uuid(input_datastream),
+            "inputDatastreams": self._single_input(input_datastream),
             "ratingCurveId": normalize_uuid(rating_curve),
         }
 
-        return RatingCurveTransformation(**self._patch(task_id, "rating-curve", uid, body))
+        return RatingCurveTransformation(**self._patch(uid, body))
 
-    def delete_rating_curve(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
+    def delete_rating_curve(self, uid: Union[UUID, str]) -> None:
         """Delete a rating curve transformation."""
 
-        self.client.request("delete", f"{self._route(task_id, 'rating-curve')}/{str(uid)}")
+        self._delete(uid)
 
     # ---------------------------------------------------------------------------
     # Derivation Transformations
@@ -124,32 +163,24 @@ class DataProductTransformationService:
 
     def list_derivation(
         self,
-        task_id: Union[UUID, str],
+        task_id: Optional[Union[UUID, str]] = None,
+        workspace_id: Optional[Union[UUID, str]] = None,
         output_datastream: Optional[Union[UUID, str]] = None,
         input_datastream: Optional[Union[UUID, str]] = None,
     ) -> List[DerivationTransformation]:
-        """List derivation transformations for a data product task."""
+        """List derivation transformations."""
 
-        params = {}
-        if output_datastream is not None:
-            params["output_datastream_id"] = normalize_uuid(output_datastream)
-        if input_datastream is not None:
-            params["input_datastream_id"] = normalize_uuid(input_datastream)
+        return [
+            DerivationTransformation(**t)
+            for t in self._list(
+                "derivation", task_id, workspace_id, output_datastream, input_datastream
+            )
+        ]
 
-        response = self.client.request("get", self._route(task_id, "derivation"), params=params)
-
-        return [DerivationTransformation(**t) for t in response.json()]
-
-    def get_derivation(
-        self, task_id: Union[UUID, str], uid: Union[UUID, str]
-    ) -> DerivationTransformation:
+    def get_derivation(self, uid: Union[UUID, str]) -> DerivationTransformation:
         """Get a derivation transformation."""
 
-        response = self.client.request(
-            "get", f"{self._route(task_id, 'derivation')}/{str(uid)}"
-        ).json()
-
-        return DerivationTransformation(**response)
+        return DerivationTransformation(**self._get(uid))
 
     def create_derivation(
         self,
@@ -168,12 +199,11 @@ class DataProductTransformationService:
         """
 
         body = {
+            "transformationType": "derivation",
             "outputDatastreamId": normalize_uuid(output_datastream),
             "inputDatastreams": [
-                {
-                    "datastreamId": normalize_uuid(inp.get("datastream_id") or inp.get("datastreamId")),
-                    "variableName": inp.get("variable_name") or inp.get("variableName"),
-                }
+                {"datastreamId": normalize_uuid(inp.get("datastream_id") or inp.get("datastreamId")),
+                 "variableName": inp.get("variable_name") or inp.get("variableName")}
                 for inp in input_datastreams
             ],
             "formula": formula,
@@ -183,11 +213,10 @@ class DataProductTransformationService:
         if uid is not None:
             body["id"] = normalize_uuid(uid)
 
-        return DerivationTransformation(**self._post(task_id, "derivation", body))
+        return DerivationTransformation(**self._post(task_id, body))
 
     def update_derivation(
         self,
-        task_id: Union[UUID, str],
         uid: Union[UUID, str],
         input_datastreams: List[dict] = ...,
         formula: str = ...,
@@ -202,10 +231,8 @@ class DataProductTransformationService:
 
         body = {
             "inputDatastreams": [
-                {
-                    "datastreamId": normalize_uuid(inp.get("datastream_id") or inp.get("datastreamId")),
-                    "variableName": inp.get("variable_name") or inp.get("variableName"),
-                }
+                {"datastreamId": normalize_uuid(inp.get("datastream_id") or inp.get("datastreamId")),
+                 "variableName": inp.get("variable_name") or inp.get("variableName")}
                 for inp in input_datastreams
             ] if input_datastreams is not ... else ...,
             "formula": formula,
@@ -214,12 +241,12 @@ class DataProductTransformationService:
         }
         body = {k: v for k, v in body.items() if v is not ...}
 
-        return DerivationTransformation(**self._patch(task_id, "derivation", uid, body))
+        return DerivationTransformation(**self._patch(uid, body))
 
-    def delete_derivation(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
+    def delete_derivation(self, uid: Union[UUID, str]) -> None:
         """Delete a derivation transformation."""
 
-        self.client.request("delete", f"{self._route(task_id, 'derivation')}/{str(uid)}")
+        self._delete(uid)
 
     # ---------------------------------------------------------------------------
     # Aggregation Transformations
@@ -227,32 +254,24 @@ class DataProductTransformationService:
 
     def list_aggregation(
         self,
-        task_id: Union[UUID, str],
+        task_id: Optional[Union[UUID, str]] = None,
+        workspace_id: Optional[Union[UUID, str]] = None,
         output_datastream: Optional[Union[UUID, str]] = None,
         input_datastream: Optional[Union[UUID, str]] = None,
     ) -> List[AggregationTransformation]:
-        """List aggregation transformations for a data product task."""
+        """List aggregation transformations."""
 
-        params = {}
-        if output_datastream is not None:
-            params["output_datastream_id"] = normalize_uuid(output_datastream)
-        if input_datastream is not None:
-            params["input_datastream_id"] = normalize_uuid(input_datastream)
+        return [
+            AggregationTransformation(**t)
+            for t in self._list(
+                "aggregation", task_id, workspace_id, output_datastream, input_datastream
+            )
+        ]
 
-        response = self.client.request("get", self._route(task_id, "aggregation"), params=params)
-
-        return [AggregationTransformation(**t) for t in response.json()]
-
-    def get_aggregation(
-        self, task_id: Union[UUID, str], uid: Union[UUID, str]
-    ) -> AggregationTransformation:
+    def get_aggregation(self, uid: Union[UUID, str]) -> AggregationTransformation:
         """Get an aggregation transformation."""
 
-        response = self.client.request(
-            "get", f"{self._route(task_id, 'aggregation')}/{str(uid)}"
-        ).json()
-
-        return AggregationTransformation(**response)
+        return AggregationTransformation(**self._get(uid))
 
     def create_aggregation(
         self,
@@ -270,8 +289,9 @@ class DataProductTransformationService:
         """Create an aggregation transformation on a data product task."""
 
         body = {
+            "transformationType": "aggregation",
             "outputDatastreamId": normalize_uuid(output_datastream),
-            "inputDatastreamId": normalize_uuid(input_datastream),
+            "inputDatastreams": self._single_input(input_datastream),
             "aggregationMethod": aggregation_method,
             "outputInterval": output_interval,
             "outputIntervalUnits": output_interval_units,
@@ -282,11 +302,10 @@ class DataProductTransformationService:
         if uid is not None:
             body["id"] = normalize_uuid(uid)
 
-        return AggregationTransformation(**self._post(task_id, "aggregation", body))
+        return AggregationTransformation(**self._post(task_id, body))
 
     def update_aggregation(
         self,
-        task_id: Union[UUID, str],
         uid: Union[UUID, str],
         input_datastream: Union[UUID, str],
         aggregation_method: AggregationMethod,
@@ -299,7 +318,7 @@ class DataProductTransformationService:
         """Update an aggregation transformation."""
 
         body = {
-            "inputDatastreamId": normalize_uuid(input_datastream),
+            "inputDatastreams": self._single_input(input_datastream),
             "aggregationMethod": aggregation_method,
             "outputInterval": output_interval,
             "outputIntervalUnits": output_interval_units,
@@ -308,9 +327,9 @@ class DataProductTransformationService:
             "minValues": min_values,
         }
 
-        return AggregationTransformation(**self._patch(task_id, "aggregation", uid, body))
+        return AggregationTransformation(**self._patch(uid, body))
 
-    def delete_aggregation(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
+    def delete_aggregation(self, uid: Union[UUID, str]) -> None:
         """Delete an aggregation transformation."""
 
-        self.client.request("delete", f"{self._route(task_id, 'aggregation')}/{str(uid)}")
+        self._delete(uid)

@@ -18,24 +18,39 @@ const resources = [
   'observations',
 
   // ETL
-  'data-connections',
-  'tasks',
+  {
+    resource: 'data-connections',
+    pathSuffix: '/etl-data-connections',
+    route: 'etl-data-connections',
+  },
+  {
+    resource: 'tasks',
+    pathSuffix: '/etl-tasks',
+    route: 'etl-tasks',
+  },
   'runs',
+  'etl-mappings',
 
   // Monitoring
   {
     resource: 'monitoring-tasks',
-    pathSuffix: '/monitoring/tasks',
-    route: 'tasks',
+    pathSuffix: '/monitoring-tasks',
+    route: 'monitoring-tasks',
   },
+  'monitoring-rules',
 
   // Products
   {
     resource: 'data-product-tasks',
-    pathSuffix: '/products/tasks',
-    route: 'tasks',
+    pathSuffix: '/data-product-tasks',
+    route: 'data-product-tasks',
   },
-  'rating-curves',
+  {
+    resource: 'rating-curves',
+    pathSuffix: '/data-product-rating-curves',
+    route: 'data-product-rating-curves',
+  },
+  'data-product-transformations',
 
   // Quality control
   {

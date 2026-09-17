@@ -83,7 +83,7 @@ def test_initiate_transfer_raises_when_already_pending():
     workspace = WorkspaceFactory()
     workspace.initiate_transfer(UserFactory())
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         workspace.initiate_transfer(UserFactory())
 
 
@@ -91,7 +91,7 @@ def test_initiate_transfer_raises_when_new_owner_is_current_owner():
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         workspace.initiate_transfer(owner)
 
 

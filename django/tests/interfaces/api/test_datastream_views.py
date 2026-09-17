@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -81,7 +83,7 @@ def test_get_datastreams_includes_public_datastream_for_anonymous(client):
     response = client.get(DATASTREAMS_URL)
 
     assert response.status_code == 200
-    assert str(datastream.id) in [d["id"] for d in response.json()]
+    assert str(datastream.id) in [d["id"] for d in response.json()["data"]]
 
 
 def test_get_datastreams_excludes_private_datastream_for_outsider(client):
@@ -92,7 +94,7 @@ def test_get_datastreams_excludes_private_datastream_for_outsider(client):
 
     response = client.get(DATASTREAMS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_datastreams_includes_private_datastream_for_workspace_owner(client):
@@ -104,7 +106,13 @@ def test_get_datastreams_includes_private_datastream_for_workspace_owner(client)
     response = client.get(DATASTREAMS_URL)
 
     assert response.status_code == 200
-    assert str(datastream.id) in [d["id"] for d in response.json()]
+    assert str(datastream.id) in [d["id"] for d in response.json()["data"]]
+
+
+def test_get_datastreams_returns_400_for_malformed_tag(client):
+    response = client.get(DATASTREAMS_URL, {"tag": "no-colon-in-here"})
+
+    assert response.status_code == 400
 
 
 # --- create_datastream ---------------------------------------------------------------
@@ -127,7 +135,9 @@ def test_create_datastream_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "New Datastream"
+    assert set(response.json().keys()) == {"id"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["name"] == "New Datastream"
 
 
 def test_create_datastream_returns_401_when_unauthenticated(client):
@@ -166,6 +176,52 @@ def test_create_datastream_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
+def test_create_datastream_returns_400_for_nonexistent_observed_property(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site,
+            method,
+            observed_property,
+            processing_level,
+            unit,
+            observedPropertyId=str(uuid.uuid4()),
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_datastream_returns_400_for_observed_property_from_another_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=other_workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(monitoring_site, method, observed_property, processing_level, unit),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
 # --- vocabulary endpoints ------------------------------------------------------------
 
 
@@ -176,7 +232,7 @@ def test_get_datastream_aggregation_statistics_returns_registered_type_names(cli
     response = client.get(f"{DATASTREAMS_URL}/aggregation-statistics")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Average", "Maximum"}
+    assert set(response.json()["data"]) == {"Average", "Maximum"}
 
 
 def test_get_datastream_statuses_returns_registered_type_names(client):
@@ -186,7 +242,7 @@ def test_get_datastream_statuses_returns_registered_type_names(client):
     response = client.get(f"{DATASTREAMS_URL}/statuses")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Ongoing", "Completed"}
+    assert set(response.json()["data"]) == {"Ongoing", "Completed"}
 
 
 def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
@@ -196,7 +252,7 @@ def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
     response = client.get(f"{DATASTREAMS_URL}/sampled-mediums")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Water", "Air"}
+    assert set(response.json()["data"]) == {"Water", "Air"}
 
 
 def test_get_datastream_linked_resource_types_returns_registered_type_names(client):
@@ -206,7 +262,7 @@ def test_get_datastream_linked_resource_types_returns_registered_type_names(clie
     response = client.get(f"{DATASTREAMS_URL}/linked-resource-types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Photo", "Report"}
+    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 # --- get_datastream --------------------------------------------------------------------
@@ -219,7 +275,7 @@ def test_get_datastream_returns_public_datastream_for_anonymous(client):
     response = client.get(_detail_url(datastream.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(datastream.id)
+    assert response.json()["data"]["id"] == str(datastream.id)
 
 
 def test_get_datastream_returns_404_for_private_datastream_when_outsider(client):
@@ -265,8 +321,10 @@ def test_update_datastream_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(datastream.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_datastream_returns_403_for_viewer_collaborator(client):
@@ -282,6 +340,59 @@ def test_update_datastream_returns_403_for_viewer_collaborator(client):
     )
 
     assert response.status_code == 403
+
+
+def test_update_datastream_returns_400_for_unit_from_another_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    other_unit = UnitFactory(workspace=other_workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"unitId": str(other_unit.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_update_datastream_returns_400_for_monitoring_site_from_another_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    other_monitoring_site = MonitoringSiteFactory(workspace=other_workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"monitoringSiteId": str(other_monitoring_site.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_update_datastream_succeeds_with_monitoring_site_in_same_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    other_monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(datastream.id),
+        data={"monitoringSiteId": str(other_monitoring_site.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(datastream.id))
+    assert detail.json()["data"]["monitoringSiteId"] == str(other_monitoring_site.id)
 
 
 # --- delete_datastream -----------------------------------------------------------------
@@ -327,8 +438,10 @@ def test_update_datastream_tags_adds_new_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"season": "summer", "site": "upstream"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(datastream.id))
+    assert detail.json()["data"]["tags"] == {"season": "summer", "site": "upstream"}
 
 
 def test_update_datastream_tags_overwrites_existing_key(client):
@@ -345,8 +458,10 @@ def test_update_datastream_tags_overwrites_existing_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"season": "winter"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(datastream.id))
+    assert detail.json()["data"]["tags"] == {"season": "winter"}
 
 
 def test_update_datastream_tags_removes_key_when_value_is_null(client):
@@ -363,8 +478,10 @@ def test_update_datastream_tags_removes_key_when_value_is_null(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"site": "upstream"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(datastream.id))
+    assert detail.json()["data"]["tags"] == {"site": "upstream"}
 
 
 def test_update_datastream_tags_ignores_null_for_missing_key(client):
@@ -381,12 +498,14 @@ def test_update_datastream_tags_ignores_null_for_missing_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["tags"] == {"season": "summer"}
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(datastream.id))
+    assert detail.json()["data"]["tags"] == {"season": "summer"}
 
 
 @pytest.mark.parametrize("value", [["summer"], {"nested": "value"}, 3, True])
-def test_update_datastream_tags_returns_422_for_non_string_value(client, value):
+def test_update_datastream_tags_returns_400_for_non_string_value(client, value):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -398,10 +517,10 @@ def test_update_datastream_tags_returns_422_for_non_string_value(client, value):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_update_datastream_tags_returns_422_for_empty_key(client):
+def test_update_datastream_tags_returns_400_for_empty_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -413,10 +532,10 @@ def test_update_datastream_tags_returns_422_for_empty_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_update_datastream_tags_returns_422_for_empty_value(client):
+def test_update_datastream_tags_returns_400_for_empty_value(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -428,7 +547,7 @@ def test_update_datastream_tags_returns_422_for_empty_value(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 def test_update_datastream_tags_locks_row_for_update(client):
@@ -500,10 +619,11 @@ def test_create_datastream_with_tags_succeeds(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["tags"] == {"season": "summer"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["tags"] == {"season": "summer"}
 
 
-def test_create_datastream_returns_422_for_null_tag_value(client):
+def test_create_datastream_returns_400_for_null_tag_value(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -522,10 +642,10 @@ def test_create_datastream_returns_422_for_null_tag_value(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_datastream_returns_422_for_empty_tag_key(client):
+def test_create_datastream_returns_400_for_empty_tag_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -544,10 +664,10 @@ def test_create_datastream_returns_422_for_empty_tag_key(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
-def test_create_datastream_returns_422_for_empty_tag_value(client):
+def test_create_datastream_returns_400_for_empty_tag_value(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -566,7 +686,7 @@ def test_create_datastream_returns_422_for_empty_tag_value(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 # --- removed tag sub-resource endpoints ---------------------------------------------
@@ -648,3 +768,138 @@ def test_get_datastream_csv_returns_csv_with_observations(client):
     assert response["Content-Type"] == "text/csv"
     body = b"".join(response.streaming_content).decode()
     assert "12.5" in body
+
+
+# --- linked resources ----------------------------------------------------------------
+
+
+def _linked_resources_url(datastream_id):
+    return f"{_detail_url(datastream_id)}/linked-resources"
+
+
+def test_add_datastream_linked_resource_succeeds_with_link(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _linked_resources_url(datastream.id),
+        data={
+            "name": "Datastream Report",
+            "type": "Report",
+            "link": "https://example.com/report.pdf",
+        },
+    )
+
+    assert response.status_code == 201
+    assert set(response.json().keys()) == {"id"}
+    linked_resources = client.get(_linked_resources_url(datastream.id)).json()
+    assert linked_resources[0]["name"] == "Datastream Report"
+
+
+def test_add_datastream_linked_resource_returns_400_for_duplicate_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+    client.post(
+        _linked_resources_url(datastream.id),
+        data={"name": "Datastream Report", "type": "Report", "link": "https://example.com/a.pdf"},
+    )
+
+    response = client.post(
+        _linked_resources_url(datastream.id),
+        data={"name": "Datastream Report", "type": "Report", "link": "https://example.com/b.pdf"},
+    )
+
+    assert response.status_code == 400
+
+
+# --- include / properties ---------------------------------------------------------
+
+
+def test_get_datastream_include_sideloads_all_six_relations(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.get(
+        _detail_url(datastream.id),
+        {
+            "include": "workspace,monitoringSite,method,observedProperty,processingLevel,unit"
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["id"] == str(datastream.id)
+    included = body["included"]
+    assert {row["id"] for row in included["workspaces"]} == {str(workspace.id)}
+    assert {row["id"] for row in included["monitoringSites"]} == {
+        str(datastream.monitoring_site_id)
+    }
+    assert {row["id"] for row in included["methods"]} == {str(datastream.method_id)}
+    assert {row["id"] for row in included["observedProperties"]} == {
+        str(datastream.observed_property_id)
+    }
+    assert {row["id"] for row in included["processingLevels"]} == {
+        str(datastream.processing_level_id)
+    }
+    assert {row["id"] for row in included["units"]} == {str(datastream.unit_id)}
+
+
+def test_get_datastream_without_include_omits_included_bucket(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(datastream.id))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert not body.get("included")
+
+
+def test_get_datastreams_include_does_not_scale_queries_with_datastream_count(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    for _ in range(5):
+        _make_datastream(workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(
+            DATASTREAMS_URL,
+            {
+                "include": "workspace,monitoringSite,method,observedProperty,processingLevel,unit"
+            },
+        )
+
+    for _ in range(5):
+        _make_datastream(workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(
+            DATASTREAMS_URL,
+            {
+                "include": "workspace,monitoringSite,method,observedProperty,processingLevel,unit"
+            },
+        )
+
+    assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_get_datastreams_properties_filters_response_fields(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.get(DATASTREAMS_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    row = response.json()["data"][0]
+    assert set(row.keys()) == {"id", "name"}

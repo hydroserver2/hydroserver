@@ -7,6 +7,7 @@ from django.conf import settings
 from core.iam.models import Workspace
 from core.iam.permissions.registry import register_resource_type
 
+from .mixins import LinkedResourceMixin
 from .validators import validate_tags
 
 
@@ -64,7 +65,7 @@ def monitoring_site_file_attachment_storage_path(instance, filename):
     return f"monitoring-sites/{instance.monitoring_site.id}/{filename}"
 
 
-class MonitoringSiteLinkedResource(models.Model):
+class MonitoringSiteLinkedResource(LinkedResourceMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     monitoring_site = models.ForeignKey(
         MonitoringSite, related_name="monitoring_site_linked_resources", on_delete=models.CASCADE

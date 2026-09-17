@@ -1,30 +1,28 @@
 import uuid
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from core.types import Unset
-from interfaces.api.http.errors import raise_http_errors
-from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.monitoring.services.rule import MonitoringRuleService
+from interfaces.api.services.monitoring.rule import MonitoringRuleAPIService
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleResponse,
     MonitoringRulePostBody,
     MonitoringRulePatchBody,
     MonitoringRuleQueryParameters,
+    MonitoringRuleItemQueryParameters,
 )
 
 monitoring_rule_router = Router(tags=["Monitoring Rules"])
-monitoring_rule_service = MonitoringRuleService()
+monitoring_rule_service = MonitoringRuleAPIService()
 
 
 @monitoring_rule_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[MonitoringRuleResponse],
+        200: PaginatedResponse[MonitoringRuleResponse],
         401: str,
         403: str,
         404: str,
@@ -33,71 +31,53 @@ monitoring_rule_service = MonitoringRuleService()
 )
 def get_monitoring_rules(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
-    task_id: Path[uuid.UUID],
     query: Query[MonitoringRuleQueryParameters],
 ):
     """
-    Get rules for a monitoring task.
+    Get monitoring rules.
     """
 
-    with raise_http_errors():
-        count, rules = monitoring_rule_service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "datastream"}),
-            **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
-        )
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    return 200, monitoring_rule_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
-
-    return 200, rules
 
 
 @monitoring_rule_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: MonitoringRuleResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
 def create_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     data: MonitoringRulePostBody,
 ):
     """
     Create a monitoring rule on a datastream belonging to the given task.
     """
 
-    with raise_http_errors():
-        rule = monitoring_rule_service.create(
-            task=task_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"uid"}),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
-
-    return 201, rule
+    return 201, monitoring_rule_service.create(
+        principal=request.principal,
+        data=data,
+    )
 
 
 @monitoring_rule_router.get(
     "/{rule_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringRuleResponse,
+        200: ItemResponse[MonitoringRuleResponse],
         401: str,
         403: str,
         404: str,
@@ -106,39 +86,34 @@ def create_monitoring_rule(
 )
 def get_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
+    query: Query[MonitoringRuleItemQueryParameters],
 ):
     """
     Get a monitoring rule.
     """
 
-    with raise_http_errors():
-        rule = monitoring_rule_service.get(
-            rule=rule_id,
-            task=task_id,
-            principal=request.principal,
-        )
-
-    return 200, rule
+    return 200, monitoring_rule_service.get(
+        principal=request.principal,
+        uid=rule_id,
+        include=query.include,
+    )
 
 
 @monitoring_rule_router.patch(
     "/{rule_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringRuleResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
 def update_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
     data: MonitoringRulePatchBody,
 ):
@@ -146,15 +121,13 @@ def update_monitoring_rule(
     Update a monitoring rule's parameters.
     """
 
-    with raise_http_errors():
-        rule = monitoring_rule_service.update(
-            rule=rule_id,
-            task=task_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True),
-        )
+    monitoring_rule_service.update(
+        principal=request.principal,
+        uid=rule_id,
+        data=data,
+    )
 
-    return 200, rule
+    return 204, None
 
 
 @monitoring_rule_router.delete(
@@ -170,18 +143,15 @@ def update_monitoring_rule(
 )
 def delete_monitoring_rule(
     request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
     rule_id: Path[uuid.UUID],
 ):
     """
     Delete a monitoring rule.
     """
 
-    with raise_http_errors():
-        monitoring_rule_service.delete(
-            rule=rule_id,
-            task=task_id,
-            principal=request.principal,
-        )
+    monitoring_rule_service.delete(
+        principal=request.principal,
+        uid=rule_id,
+    )
 
     return 204, None

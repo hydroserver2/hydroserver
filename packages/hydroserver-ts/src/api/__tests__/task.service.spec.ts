@@ -35,8 +35,8 @@ describe('TaskService', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        jsonResponse(
-          [
+        jsonResponse({
+          data: [
             {
               id: 'run-1',
               status: 'SUCCESS',
@@ -45,8 +45,8 @@ describe('TaskService', () => {
               result: rawResult,
             },
           ],
-          { 'X-Total-Pages': '1' }
-        )
+          meta: { offset: 0, limit: 200, totalCount: 1 },
+        })
       )
     )
 
@@ -61,21 +61,29 @@ describe('TaskService', () => {
 
   it('merges paginated results in page order when fetched concurrently', async () => {
     const pageData: Record<string, Array<{ id: string }>> = {
-      '1': [{ id: 'a' }, { id: 'b' }],
+      '0': [{ id: 'a' }, { id: 'b' }],
       '2': [{ id: 'c' }, { id: 'd' }],
-      '3': [{ id: 'e' }, { id: 'f' }],
+      '4': [{ id: 'e' }, { id: 'f' }],
+      // A real server returns an empty page once past the true end of data -
+      // this is what proves completion when totalCount (6) happens to be an
+      // exact multiple of limit, since a full last page alone can't tell the
+      // client whether more data exists.
+      '6': [],
     }
 
     const fetchMock = vi.fn((input: any) => {
-      const page = new URL(String(input)).searchParams.get('page') ?? '1'
+      const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
       return Promise.resolve(
-        jsonResponse(pageData[page], { 'X-Total-Pages': '3' })
+        jsonResponse({
+          data: pageData[offset],
+          meta: { offset: Number(offset), limit: 2, totalCount: 6 },
+        })
       )
     })
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
-    const items = await client.tasks.listAllItems()
+    const items = await client.tasks.listAllItems({ limit: 2 })
 
     expect(items.map((item: any) => item.id)).toEqual([
       'a',
@@ -85,8 +93,9 @@ describe('TaskService', () => {
       'e',
       'f',
     ])
-    // first page + two remaining pages
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    // first page + two remaining pages implied by totalCount + one
+    // confirming fetch proving there's nothing past the (exact) total
+    expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 
   it('omits empty ids from create payloads', async () => {
@@ -97,7 +106,7 @@ describe('TaskService', () => {
         description: null,
         recipients: [],
         monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
-        monitoredDatastreams: [],
+        ruleTypeCounts: {},
         schedule: null,
       })
     )
@@ -110,11 +119,12 @@ describe('TaskService', () => {
       monitoringSiteId: 'monitoringSite-1',
       description: null,
       recipients: [],
+      ruleTypeCounts: {},
       schedule: null,
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/monitoring/tasks'
+      'https://hydro.example.com/api/data/monitoring-tasks'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -122,6 +132,7 @@ describe('TaskService', () => {
       monitoringSiteId: 'monitoringSite-1',
       description: null,
       recipients: [],
+      ruleTypeCounts: {},
       schedule: null,
     })
   })

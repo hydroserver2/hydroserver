@@ -1,36 +1,39 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
 from django.db import transaction
-from django.http import HttpResponse
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import UnitAPIService
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
-    UnitSummaryResponse,
-    UnitDetailResponse,
+    UnitResponse,
     UnitPostBody,
     UnitPatchBody,
     UnitQueryParameters,
+    UnitItemQueryParameters,
+    PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from core.sta.services import UnitService
 
 unit_router = Router(tags=["Units"])
-unit_service = UnitService()
+unit_service = UnitAPIService()
 
 
 @unit_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[UnitSummaryResponse] | list[UnitDetailResponse],
+        200: PaginatedResponse[UnitResponse],
+        400: str,
         401: str,
     },
     by_alias=True,
 )
 def get_units(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[UnitQueryParameters],
 ):
     """
@@ -39,12 +42,11 @@ def get_units(
 
     return 200, unit_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -52,10 +54,9 @@ def get_units(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: UnitSummaryResponse | UnitDetailResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -63,7 +64,6 @@ def get_units(
 def create_unit(
     request: HydroServerHttpRequest,
     data: UnitPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new Unit.
@@ -72,14 +72,12 @@ def create_unit(
     return 201, unit_service.create(
         principal=request.principal,
         data=data,
-        expand_related=expand_related,
     )
 
 
-@unit_router.get("/types", response={200: list[str]}, by_alias=True)
+@unit_router.get("/types", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_unit_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -87,9 +85,8 @@ def get_unit_types(
     """
 
     return 200, unit_service.list_unit_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
@@ -98,7 +95,8 @@ def get_unit_types(
     "/{unit_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: UnitSummaryResponse | UnitDetailResponse,
+        200: ItemResponse[UnitResponse],
+        400: str,
         401: str,
         403: str,
     },
@@ -108,14 +106,16 @@ def get_unit_types(
 def get_unit(
     request: HydroServerHttpRequest,
     unit_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[UnitItemQueryParameters],
 ):
     """
     Get a Unit.
     """
 
     return 200, unit_service.get(
-        principal=request.principal, uid=unit_id, expand_related=expand_related
+        principal=request.principal,
+        uid=unit_id,
+        include=query.include,
     )
 
 
@@ -123,11 +123,10 @@ def get_unit(
     "/{unit_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: UnitSummaryResponse | UnitDetailResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -136,18 +135,18 @@ def update_unit(
     request: HydroServerHttpRequest,
     unit_id: Path[uuid.UUID],
     data: UnitPatchBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Update a Unit.
     """
 
-    return 200, unit_service.update(
+    unit_service.update(
         principal=request.principal,
         uid=unit_id,
         data=data,
-        expand_related=expand_related,
     )
+
+    return 204, None
 
 
 @unit_router.delete(

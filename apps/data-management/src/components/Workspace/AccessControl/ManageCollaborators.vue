@@ -872,7 +872,7 @@ async function onSaveRole(item: any) {
       item.pendingRole.id
     )
     if (res.ok) {
-      item.role = res.data.role
+      item.role = item.pendingRole
       item.isBeingEdited = false
       Snackbar.success('Collaborator role updated.')
       emits('changed')
@@ -910,7 +910,7 @@ async function onAddCollaborator() {
       selectedRole.value.id
     )
     if (res.ok) {
-      if (res.data.user && !res.data.serviceAccount) {
+      if (res.data.user) {
         collaboratorList.value.push(collaboratorToFormData(res.data))
       }
       collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))

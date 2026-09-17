@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.db.models import Q
 
@@ -40,6 +41,36 @@ class QCSession(models.Model):
 
     def __str__(self):
         return f"{self.history_id} - {self.id} ({self.status})"
+
+    def clean(self):
+        if self.phenomenon_time_start and self.phenomenon_time_end:
+            if self.phenomenon_time_end <= self.phenomenon_time_start:
+                raise ValidationError("phenomenon_time_end must be after phenomenon_time_start.")
+
+        if not self._state.adding:
+            original = QCSession.objects.filter(pk=self.pk).only("status").first()
+            if original and original.status == SessionStatus.COMMITTED:
+                raise ValidationError("Committed sessions cannot be modified.")
+
+        if not self.history_id:
+            return
+
+        try:
+            source_datastream = self.history.source_datastream
+        except ObjectDoesNotExist:
+            return
+
+        if source_datastream is None:
+            raise ValidationError("This history has no source datastream.")
+
+        if (
+            source_datastream.phenomenon_end_time is not None
+            and self.phenomenon_time_end is not None
+            and self.phenomenon_time_end > source_datastream.phenomenon_end_time
+        ):
+            raise ValidationError(
+                "phenomenon_time_end cannot extend past the source datastream's current end time."
+            )
 
 
 class QCSessionDependency(models.Model):

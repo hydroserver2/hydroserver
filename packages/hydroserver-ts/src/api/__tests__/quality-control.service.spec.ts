@@ -17,8 +17,8 @@ describe('QualityControl services', () => {
 
   it('lists histories with generated query parameters', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse(
-        [
+      jsonResponse({
+        data: [
           {
             id: 'history-1',
             managedDatastreamId: 'managed-1',
@@ -26,8 +26,8 @@ describe('QualityControl services', () => {
             createdAt: '2026-06-18T12:00:00Z',
           },
         ],
-        { 'X-Total-Pages': '1' }
-      )
+        meta: { offset: 0, limit: 200, totalCount: 1 },
+      })
     )
     vi.stubGlobal('fetch', fetchMock)
 
@@ -39,7 +39,7 @@ describe('QualityControl services', () => {
 
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/quality-control/histories?managed_datastream_id=managed-1&page=1&page_size=200'
+      'https://hydro.example.com/api/data/quality-control/histories?managed_datastream_id=managed-1&offset=0&limit=200'
     )
   })
 
@@ -71,6 +71,42 @@ describe('QualityControl services', () => {
       phenomenonTimeEnd: '2026-06-18T01:00:00Z',
       description: null,
     })
+  })
+
+  it('commits a session by re-fetching it after the 204 commit response', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return new Response(null, {
+          status: 204,
+          headers: { 'Content-Length': '0' },
+        })
+      }
+      return jsonResponse({
+        data: {
+          id: 'session-1',
+          historyId: 'history-1',
+          phenomenonTimeStart: '2026-06-18T00:00:00Z',
+          phenomenonTimeEnd: '2026-06-18T01:00:00Z',
+          status: 'committed',
+        },
+        included: {},
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    const response = await client.qualityControlSessions.commit(
+      'history-1',
+      'session-1'
+    )
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://hydro.example.com/api/data/quality-control/histories/history-1/sessions/session-1/commit'
+    )
+    expect(response.ok).toBe(true)
+    if (!response.ok) return
+    expect(response.data.status).toBe('committed')
   })
 
   it('appends operation batches under a QC session', async () => {

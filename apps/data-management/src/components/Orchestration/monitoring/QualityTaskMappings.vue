@@ -30,8 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import hs, { type MonitoringRule } from '@hydroserver/client'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
@@ -45,7 +46,7 @@ type DatastreamLike = {
 } | null
 
 const props = defineProps<{
-  task: any
+  taskId: string
   monitoringSiteId?: string | null
 }>()
 
@@ -62,37 +63,50 @@ const allKnownDatastreams = computed(() => [
   ...draftDatastreams.value,
 ])
 
-const mappingRows = computed(() =>
-  (props.task?.monitoredDatastreams ?? []).map(
-    (monitoredDatastream: any, index: number) => {
-      const includedDatastream =
-        monitoredDatastream.datastream ?? monitoredDatastream
-      const id = String(
-        includedDatastream?.id ?? monitoredDatastream.datastreamId ?? ''
-      )
-      const datastream = resolveDatastream(includedDatastream, id)
-      const monitoringSiteId =
-        (datastream ? datastreamMonitoringSiteId(datastream as any) : '') ||
-        props.monitoringSiteId ||
-        ''
+const rules = ref<MonitoringRule[]>([])
 
-      return {
-        key: id || `mapping-${index}`,
-        id,
-        datastream,
-        name: datastream?.name || id || '—',
-        monitoringSiteId,
-        monitoringSiteName:
-          (datastream as DatastreamLike)?.monitoringSite?.name ||
-          workspaceMonitoringSites.value.find(
-            (monitoringSite) => monitoringSite.id === monitoringSiteId
-          )?.name ||
-          props.task?.monitoringSite?.name ||
-          '',
-      }
+async function loadRules() {
+  if (!props.taskId) {
+    rules.value = []
+    return
+  }
+  rules.value = await hs.monitoringRules.listAllItems({
+    task_id: props.taskId,
+  } as any)
+}
+
+watch(() => props.taskId, () => void loadRules(), { immediate: true })
+
+defineExpose({ reload: loadRules })
+
+const mappingRows = computed(() => {
+  const byDatastream = new Map<string, MonitoringRule[]>()
+  for (const rule of rules.value) {
+    const id = String(rule.datastreamId ?? '')
+    if (!byDatastream.has(id)) byDatastream.set(id, [])
+    byDatastream.get(id)!.push(rule)
+  }
+
+  return Array.from(byDatastream.keys()).map((id, index) => {
+    const datastream = resolveDatastream(null, id)
+    const monitoringSiteId =
+      (datastream ? datastreamMonitoringSiteId(datastream as any) : '') ||
+      props.monitoringSiteId ||
+      ''
+
+    return {
+      key: id || `mapping-${index}`,
+      id,
+      datastream,
+      name: datastream?.name || id || '—',
+      monitoringSiteId,
+      monitoringSiteName:
+        (datastream as DatastreamLike)?.monitoringSite?.name ||
+        workspaceMonitoringSites.value.find((monitoringSite) => monitoringSite.id === monitoringSiteId)?.name ||
+        '',
     }
-  )
-)
+  })
+})
 
 function resolveDatastream(datastream: DatastreamLike, id: string) {
   if (datastream?.name) return datastream

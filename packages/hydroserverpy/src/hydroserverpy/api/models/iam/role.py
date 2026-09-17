@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class Role(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
-    description: str
+    description: Optional[str] = None
     workspace_id: Optional[Union[UUID, str]] = None
 
     def __init__(self, client: "HydroServer", **data):

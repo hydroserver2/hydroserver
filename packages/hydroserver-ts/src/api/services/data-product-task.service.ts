@@ -1,31 +1,30 @@
-import { HydroServerBaseService } from './base'
+import { HydroServerBaseService, QueryParamsOf } from './base'
 import {
   DataProductTaskContract as C,
   RunContract,
 } from '../../generated/contracts'
-import { DataProductTask as M } from '../Models/data-product-task.model'
+import {
+  DataProductTask as M,
+  DataProductTaskExpanded,
+} from '../Models/data-product-task.model'
 import type { TaskRun } from '../Models/task.model'
+import { MonitoringSite } from '../../types'
 import { apiMethods } from '../apiMethods'
-import type * as Data from '../../generated/data.types'
-import type {
-  AggregationTransformationPatchPayload,
-  AggregationTransformationPayload,
-  DerivationTransformationPatchPayload,
-  DerivationTransformationPayload,
-} from './data-product-transformation.types'
+import type { ApiResponse } from '../responseInterceptor'
 
-type AggregationTransformationResponse =
-  Data.components['schemas']['AggregationTransformationResponse']
-type AggregationTransformationSummaryResponse =
-  Data.components['schemas']['AggregationTransformationSummaryResponse']
-type DerivationTransformationResponse =
-  Data.components['schemas']['DerivationTransformationResponse']
-type DerivationTransformationSummaryResponse =
-  Data.components['schemas']['DerivationTransformationSummaryResponse']
-type RatingCurveTransformationResponse =
-  Data.components['schemas']['RatingCurveTransformationResponse']
-type RatingCurveTransformationSummaryResponse =
-  Data.components['schemas']['RatingCurveTransformationSummaryResponse']
+type IncludedBuckets = {
+  monitoringSites?: MonitoringSite[]
+}
+
+function mergeIncluded(
+  row: M,
+  included?: IncludedBuckets
+): M | (M & DataProductTaskExpanded) {
+  const monitoringSite = included?.monitoringSites?.find(
+    (ms) => ms.id === row.monitoringSiteId
+  )
+  return monitoringSite ? Object.assign(row, { monitoringSite }) : row
+}
 
 export class DataProductTaskService extends HydroServerBaseService<
   typeof C,
@@ -35,8 +34,14 @@ export class DataProductTaskService extends HydroServerBaseService<
   static writableKeys = C.writableKeys
   static Model = M
 
-  protected override getBaseUrl(): string {
-    return `${this._client.host}/api/data/products`
+  get = async (
+    id: string,
+    params?: Pick<QueryParamsOf<typeof C>, 'include'>
+  ): Promise<ApiResponse<M>> => {
+    const url = this.withQuery(`${this._route}/${id}`, params)
+    const res = await apiMethods.fetch<M>(url)
+    if (!res.ok) return res
+    return { ...res, data: mergeIncluded(res.data, res.included as IncludedBuckets) }
   }
 
   runTask(taskId: string) {
@@ -51,118 +56,5 @@ export class DataProductTaskService extends HydroServerBaseService<
 
   getTaskRun(taskId: string, runId: string) {
     return apiMethods.fetch<TaskRun>(`${this._route}/${taskId}/runs/${runId}`)
-  }
-
-  /* -------------------- Derivation Transformations ------------------- */
-
-  createDerivationTransformation(
-    taskId: string,
-    payload: DerivationTransformationPayload
-  ) {
-    return apiMethods.post<DerivationTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/derivation`,
-      payload
-    )
-  }
-
-  listDerivationTransformations(taskId: string) {
-    return apiMethods.fetch<DerivationTransformationResponse[]>(
-      `${this._route}/${taskId}/transformations/derivation`
-    )
-  }
-
-  updateDerivationTransformation(
-    taskId: string,
-    transformationId: string,
-    payload: DerivationTransformationPatchPayload
-  ) {
-    return apiMethods.patch<DerivationTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/derivation/${transformationId}`,
-      payload
-    )
-  }
-
-  deleteDerivationTransformation(taskId: string, transformationId: string) {
-    return apiMethods.delete<null>(
-      `${this._route}/${taskId}/transformations/derivation/${transformationId}`
-    )
-  }
-
-  /* ------------------ Rating Curve Transformations ------------------- */
-
-  createRatingCurveTransformation(
-    taskId: string,
-    payload: {
-      outputDatastreamId: string
-      inputDatastreamId: string
-      ratingCurveId: string
-    }
-  ) {
-    return apiMethods.post<RatingCurveTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/rating-curve`,
-      payload
-    )
-  }
-
-  listRatingCurveTransformations(taskId: string) {
-    return apiMethods.fetch<RatingCurveTransformationResponse[]>(
-      `${this._route}/${taskId}/transformations/rating-curve`
-    )
-  }
-
-  updateRatingCurveTransformation(
-    taskId: string,
-    transformationId: string,
-    payload: Partial<{
-      outputDatastreamId: string
-      inputDatastreamId: string
-      ratingCurveId: string
-    }>
-  ) {
-    return apiMethods.patch<RatingCurveTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/rating-curve/${transformationId}`,
-      payload
-    )
-  }
-
-  deleteRatingCurveTransformation(taskId: string, transformationId: string) {
-    return apiMethods.delete<null>(
-      `${this._route}/${taskId}/transformations/rating-curve/${transformationId}`
-    )
-  }
-
-  /* ------------------- Aggregation Transformations ------------------- */
-
-  createAggregationTransformation(
-    taskId: string,
-    payload: AggregationTransformationPayload
-  ) {
-    return apiMethods.post<AggregationTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/aggregation`,
-      payload
-    )
-  }
-
-  listAggregationTransformations(taskId: string) {
-    return apiMethods.fetch<AggregationTransformationResponse[]>(
-      `${this._route}/${taskId}/transformations/aggregation`
-    )
-  }
-
-  updateAggregationTransformation(
-    taskId: string,
-    transformationId: string,
-    payload: AggregationTransformationPatchPayload
-  ) {
-    return apiMethods.patch<AggregationTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/aggregation/${transformationId}`,
-      payload
-    )
-  }
-
-  deleteAggregationTransformation(taskId: string, transformationId: string) {
-    return apiMethods.delete<null>(
-      `${this._route}/${taskId}/transformations/aggregation/${transformationId}`
-    )
   }
 }

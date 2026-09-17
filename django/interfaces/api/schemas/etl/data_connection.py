@@ -1,36 +1,100 @@
 import uuid
+
 from datetime import datetime
-from typing import Optional, Literal, Union
-from ninja import Field, Query
-from pydantic import EmailStr
+from typing import Optional, Literal, Union, Annotated
+from pydantic import EmailStr, BeforeValidator, WithJsonSchema
+from ninja import Field, Query, Schema
 from django.utils import timezone
 
 from core.types import Unset
 from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from interfaces.api.schemas import (
-    OrderByField,
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
-    WorkspaceSummaryResponse
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, SchedulePostBody, SchedulePatchBody
+from interfaces.api.schemas.orchestration.schedule import (
+    ScheduleResponse,
+    SchedulePostBody,
+    SchedulePatchBody,
+    resolve_schedule,
+)
 
 
-class DataConnectionOrderBy(OrderByField):
-    id = ("id", "id")
-    name = ("name", "name")
-    timestamp_key = ("timestampKey", "payload__timestamp_key")
-    timestamp_format = ("timestampFormat", "payload__timestamp_format")
-    timezone_type = ("timezoneType", "timezone_type")
-    timezone = ("timezone", "timezone")
-    workspace_id = ("workspaceId", "workspace_id")
-    workspace_name = ("workspaceName", "workspace__name")
+DATA_CONNECTION_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+DataConnectionIncludeRelation = Literal[*DATA_CONNECTION_INCLUDE_RELATIONS.keys()]
+
+_order_by_fields = (
+    "id",
+    "name",
+    "timestampKey",
+    "timestampFormat",
+    "timezoneType",
+    "timezone",
+    "workspaceId",
+    "workspaceName",
+)
+
+DataConnectionOrderByFields = Literal[
+    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+]
+
+_property_fields = (
+    "id",
+    "name",
+    "description",
+    "sourceUrl",
+    "authHeaderName",
+    "authHeaderValue",
+    "timezoneType",
+    "timezone",
+    "workspaceId",
+    "payload",
+    "placeholderVariables",
+    "notification",
+    "taskCount",
+    "taskAttentionCount",
+)
+DataConnectionPropertyName = Literal[*_property_fields]
 
 
-class DataConnectionQueryParameters(CollectionQueryParameters):
-    order_by: list[DataConnectionOrderBy] = Query(
+class DataConnectionFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[DataConnectionPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DataConnectionPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[DataConnectionIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DataConnectionIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class DataConnectionItemQueryParameters(DataConnectionFilterFields, BaseQueryParameters):
+    pass
+
+
+class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryParameters):
+    order_by: Optional[list[DataConnectionOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
     workspace: list[uuid.UUID] = Query(
@@ -71,6 +135,7 @@ class DataIngestionWindowPostBody(BasePostBody):
 
 def _resolve_data_ingestion_window(obj):
     start = end = None
+
     if obj.data_ingestion_window_start_anchor:
         start = {
             "anchor": obj.data_ingestion_window_start_anchor,
@@ -78,6 +143,7 @@ def _resolve_data_ingestion_window(obj):
             "lookback_units": obj.data_ingestion_window_start_lookback_unit,
             "timestamp": obj.data_ingestion_window_start_timestamp,
         }
+
     if obj.data_ingestion_window_end_anchor:
         end = {
             "anchor": obj.data_ingestion_window_end_anchor,
@@ -85,6 +151,7 @@ def _resolve_data_ingestion_window(obj):
             "lookback_units": obj.data_ingestion_window_end_lookback_unit,
             "timestamp": obj.data_ingestion_window_end_timestamp,
         }
+
     if start is None and end is None:
         return None
 
@@ -103,6 +170,9 @@ class CSVPayloadResponse(BaseGetResponse):
 
 
 class CSVPayloadPostBody(BasePostBody, CSVPayloadResponse):
+    header_row: int
+    data_start_row: int
+    delimiter: Literal[",", "|", "\t", ";", " "] = Field(max_length=1)
     data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
@@ -120,6 +190,7 @@ class JSONPayloadResponse(BaseGetResponse):
 
 
 class JSONPayloadPostBody(BasePostBody, JSONPayloadResponse):
+    jmespath: str
     data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
@@ -160,18 +231,7 @@ class NotificationResponse(BaseGetResponse):
 
     @staticmethod
     def resolve_schedule(obj):
-        pt = obj.periodic_task
-        if not pt:
-            return None
-        ct = pt.crontab
-        return {
-            "enabled": pt.enabled,
-            "start_time": pt.start_time,
-            "crontab": f"{ct.minute} {ct.hour} {ct.day_of_month} {ct.month_of_year} {ct.day_of_week}" if ct else None,
-            "interval": pt.interval.every if pt.interval else None,
-            "interval_period": pt.interval.period if pt.interval else None,
-            "next_run_at": None,
-        }
+        return resolve_schedule(obj)
 
     @staticmethod
     def resolve_recipient_emails(obj):
@@ -197,7 +257,7 @@ class DataConnectionResponse(BaseGetResponse):
     auth_header_value: Optional[str] = None
     timezone_type: Optional[Literal["offset", "iana"]] = None
     timezone: Optional[str] = None
-    workspace: WorkspaceSummaryResponse
+    workspace_id: uuid.UUID
     payload: Union[CSVPayloadResponse, JSONPayloadResponse]
     placeholder_variables: list[PlaceholderVariableResponse]
     notification: Optional[NotificationResponse] = None

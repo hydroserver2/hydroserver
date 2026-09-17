@@ -1,9 +1,32 @@
 import { nextTick } from 'vue'
 import { shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrchestrationStore } from '@/store/orchestration'
 import DatastreamSelectorCard from '../DatastreamSelectorCard.vue'
+
+const { etlMappingsListAllItemsMock, dataProductTransformationsListAllItemsMock } =
+  vi.hoisted(() => ({
+    etlMappingsListAllItemsMock: vi.fn(),
+    dataProductTransformationsListAllItemsMock: vi.fn(),
+  }))
+
+vi.mock('@hydroserver/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@hydroserver/client')>()
+
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      etlMappings: {
+        listAllItems: etlMappingsListAllItemsMock,
+      },
+      dataProductTransformations: {
+        listAllItems: dataProductTransformationsListAllItemsMock,
+      },
+    },
+  }
+})
 
 describe('DatastreamSelectorCard linked destinations', () => {
   const slotStub = { template: '<div><slot /></div>' }
@@ -18,6 +41,9 @@ describe('DatastreamSelectorCard linked destinations', () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
+    etlMappingsListAllItemsMock.mockReset()
+    dataProductTransformationsListAllItemsMock.mockReset()
+    dataProductTransformationsListAllItemsMock.mockResolvedValue([])
   })
 
   it('hides linked rows until requested, redlines them, and blocks selection', async () => {
@@ -26,18 +52,13 @@ describe('DatastreamSelectorCard linked destinations', () => {
       id: 'available',
       name: 'Available datastream',
     }
+
+    etlMappingsListAllItemsMock.mockResolvedValue([
+      { targetDatastreamId: 'linked' },
+    ])
+
     const orchestrationStore = useOrchestrationStore()
-    orchestrationStore.workspaceTasks = [
-      {
-        id: 'task-1',
-        mappings: [
-          {
-            sourceIdentifier: 'source',
-            targetDatastream: linkedDatastream,
-          },
-        ],
-      },
-    ] as any
+    await orchestrationStore.ensureWorkspaceLinkedDatastreams('workspace-1')
 
     const wrapper = shallowMount(DatastreamSelectorCard, {
       props: {
@@ -74,17 +95,13 @@ describe('DatastreamSelectorCard linked destinations', () => {
 
   it('keeps linked datastreams selectable when the field is an input', async () => {
     const linkedDatastream = { id: 'linked', name: 'Linked datastream' }
-    useOrchestrationStore().workspaceTasks = [
-      {
-        id: 'task-1',
-        mappings: [
-          {
-            sourceIdentifier: 'source',
-            targetDatastream: linkedDatastream,
-          },
-        ],
-      },
-    ] as any
+
+    etlMappingsListAllItemsMock.mockResolvedValue([
+      { targetDatastreamId: 'linked' },
+    ])
+
+    const orchestrationStore = useOrchestrationStore()
+    await orchestrationStore.ensureWorkspaceLinkedDatastreams('workspace-1')
 
     const wrapper = shallowMount(DatastreamSelectorCard, {
       props: {

@@ -180,9 +180,9 @@ describe('fetchRecentObservationsPage', () => {
       ['2023-01-01T02:00:00Z', 3],
     ])
     expect(getObservationsMock).toHaveBeenCalledWith('123', {
-      page: 1,
+      offset: 0,
       order_by: ['-phenomenonTime'],
-      page_size: 200,
+      limit: 200,
       format: 'column',
     })
   })
@@ -200,7 +200,7 @@ describe('fetchRecentObservationsPage', () => {
 
     expect(getObservationsMock).toHaveBeenCalledWith(
       '123',
-      expect.objectContaining({ page_size: 25 })
+      expect.objectContaining({ limit: 25 })
     )
   })
 })

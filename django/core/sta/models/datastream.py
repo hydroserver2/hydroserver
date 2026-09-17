@@ -3,9 +3,11 @@ import uuid
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from core.iam.permissions.registry import register_resource_type
 
+from .mixins import LinkedResourceMixin
 from .monitoring_site import MonitoringSite
 from .validators import validate_tags
 from .method import Method
@@ -80,6 +82,42 @@ class Datastream(models.Model):
     def __str__(self):
         return f"{self.name} — {self.id}"
 
+    def clean(self):
+        try:
+            workspace_id = self.monitoring_site.workspace_id
+        except ObjectDoesNotExist:
+            return
+
+        if not self._state.adding:
+            original = Datastream.objects.filter(pk=self.pk).first()
+            if (
+                original
+                and original.monitoring_site_id != self.monitoring_site_id
+                and original.monitoring_site.workspace_id != workspace_id
+            ):
+                raise ValidationError(
+                    "Cannot associate this datastream with a monitoring site in another workspace"
+                )
+
+        for field_name, label in (
+            ("observed_property", "observed property"),
+            ("processing_level", "processing level"),
+            ("method", "method"),
+            ("unit", "unit"),
+        ):
+            if not getattr(self, f"{field_name}_id"):
+                continue
+
+            try:
+                related = getattr(self, field_name)
+            except ObjectDoesNotExist:
+                continue
+
+            if related.workspace_id not in (workspace_id, None):
+                raise ValidationError(
+                    f"The provided {label} cannot be associated with this datastream"
+                )
+
     def delete(self, *args, **kwargs):
         return type(self).objects.filter(pk=self.pk).delete()
 
@@ -88,7 +126,7 @@ def datastream_file_attachment_storage_path(instance, filename):
     return f"datastreams/{instance.datastream.id}/{filename}"
 
 
-class DatastreamLinkedResource(models.Model):
+class DatastreamLinkedResource(LinkedResourceMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     datastream = models.ForeignKey(
         Datastream,

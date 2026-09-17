@@ -57,6 +57,11 @@ class Workspace(models.Model):
         return getattr(self, "transfer_confirmation", None)
 
     def clean(self):
+        if Workspace.objects.filter(name=self.name, owner=self.owner).exclude(
+            pk=self.pk
+        ).exists():
+            raise ValidationError("Workspace name conflicts with an owned workspace")
+
         if not self._state.adding:
             original_workspace = Workspace.objects.get(pk=self.pk)
             if original_workspace.owner == self.owner:
@@ -70,17 +75,9 @@ class Workspace(models.Model):
                 raise ValidationError("User has reached their owned workspace limit.")
 
     def initiate_transfer(self, new_owner: "User"):
-        if getattr(self, "transfer_confirmation", None):
-            raise ValueError("Workspace transfer is already pending")
-
-        if new_owner == self.owner:
-            raise ValueError(
-                "New workspace owner cannot be the same as the current owner"
-            )
-
-        WorkspaceTransferConfirmation.objects.create(
-            workspace=self, new_owner=new_owner
-        )
+        transfer = WorkspaceTransferConfirmation(workspace=self, new_owner=new_owner)
+        transfer.full_clean()
+        transfer.save()
 
     def accept_transfer(self):
         if not getattr(self, "transfer_confirmation", None):
@@ -106,3 +103,9 @@ class WorkspaceTransferConfirmation(models.Model):
 
     def __str__(self):
         return f"Transfer of {self.workspace} to {self.new_owner}"
+
+    def clean(self):
+        if self.new_owner_id == self.workspace.owner_id:
+            raise ValidationError(
+                "New workspace owner cannot be the same as the current owner"
+            )

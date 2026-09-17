@@ -11,15 +11,15 @@
           <div class="etl-source-display datastream-display">
             <div class="datastream-display__content">
               <span class="target-name hs-title">{{
-                t.inputDatastream?.name || '—'
+                inputDatastream(t)?.name || '—'
               }}</span>
-              <small v-if="t.ratingCurve?.name" class="target-monitoringSite">
-                via {{ t.ratingCurve.name }}
+              <small v-if="ratingCurveName(t)" class="target-monitoringSite">
+                via {{ ratingCurveName(t) }}
               </small>
               <small class="target-id">{{ inputDatastreamId(t) || '—' }}</small>
             </div>
             <DatastreamSiteButton
-              :datastream="t.inputDatastream"
+              :datastream="inputDatastream(t)"
               :datastream-id="inputDatastreamId(t)"
               :fallback-monitoring-site-id="props.monitoringSiteId"
             />
@@ -34,7 +34,7 @@
           <div class="etl-target-display datastream-display">
             <div class="datastream-display__content">
               <span class="target-name hs-title">{{
-                t.outputDatastream?.name || '—'
+                outputDatastream(t)?.name || '—'
               }}</span>
               <small
                 v-if="outputMonitoringSiteName(t)"
@@ -47,7 +47,7 @@
               }}</small>
             </div>
             <DatastreamSiteButton
-              :datastream="t.outputDatastream"
+              :datastream="outputDatastream(t)"
               :datastream-id="outputDatastreamId(t)"
               :fallback-monitoring-site-id="props.monitoringSiteId"
             />
@@ -59,31 +59,27 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiArrowRight } from '@mdi/js'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import hs, { type RatingCurve } from '@hydroserver/client'
+
+type DatastreamLike = {
+  id?: string
+  name?: string
+  monitoringSiteId?: string
+  monitoring_site_id?: string
+  monitoringSite?: { id?: string }
+} | null
 
 type RatingCurveTransformation = {
   id?: string
-  inputDatastreamId?: string
   outputDatastreamId?: string
-  inputDatastream?: {
-    id?: string
-    name?: string
-    monitoringSiteId?: string
-    monitoring_site_id?: string
-    monitoringSite?: { id?: string }
-  }
-  outputDatastream?: {
-    id?: string
-    name?: string
-    monitoringSiteId?: string
-    monitoring_site_id?: string
-    monitoringSite?: { id?: string }
-  }
-  ratingCurve?: { id?: string; name?: string }
+  ratingCurveId?: string | null
+  inputDatastreams?: { datastreamId?: string; variableName?: string | null }[]
 }
 
 const props = defineProps<{
@@ -91,21 +87,68 @@ const props = defineProps<{
   monitoringSiteId?: string | null
 }>()
 
-const { workspaceMonitoringSites } = storeToRefs(useOrchestrationStore())
+const {
+  workspaceMonitoringSites,
+  workspaceDatastreams,
+  linkedDatastreams,
+  draftDatastreams,
+} = storeToRefs(useOrchestrationStore())
+
+const allKnownDatastreams = computed(() => [
+  ...workspaceDatastreams.value,
+  ...linkedDatastreams.value,
+  ...draftDatastreams.value,
+])
+
+// `DataProductTransformationResponse` only carries flat ids -- unlike the
+// datastreams (already loaded workspace-wide by the orchestration store),
+// nothing else on this page loads rating curves, so this component fetches
+// the ones for its own monitoring site to resolve `ratingCurveId` to a name.
+const ratingCurves = ref<RatingCurve[]>([])
+
+async function loadRatingCurves() {
+  if (!props.monitoringSiteId) {
+    ratingCurves.value = []
+    return
+  }
+  ratingCurves.value = await hs.ratingCurves.listItemsForMonitoringSite(
+    props.monitoringSiteId
+  )
+}
+
+onMounted(loadRatingCurves)
+watch(() => props.monitoringSiteId, loadRatingCurves)
 
 function inputDatastreamId(t: RatingCurveTransformation) {
-  return t.inputDatastream?.id || t.inputDatastreamId || ''
+  return t.inputDatastreams?.[0]?.datastreamId ?? ''
+}
+
+function inputDatastream(t: RatingCurveTransformation): DatastreamLike {
+  const id = inputDatastreamId(t)
+  if (!id) return null
+  return allKnownDatastreams.value.find((d) => String(d.id) === String(id)) ?? null
 }
 
 function outputDatastreamId(t: RatingCurveTransformation) {
-  return t.outputDatastream?.id || t.outputDatastreamId || ''
+  return t.outputDatastreamId ?? ''
+}
+
+function outputDatastream(t: RatingCurveTransformation): DatastreamLike {
+  const id = outputDatastreamId(t)
+  if (!id) return null
+  return allKnownDatastreams.value.find((d) => String(d.id) === String(id)) ?? null
+}
+
+function ratingCurveName(t: RatingCurveTransformation) {
+  if (!t.ratingCurveId) return ''
+  return ratingCurves.value.find((rc) => rc.id === t.ratingCurveId)?.name ?? ''
 }
 
 function outputMonitoringSiteName(t: RatingCurveTransformation) {
+  const datastream = outputDatastream(t)
   const monitoringSiteId =
-    (t.outputDatastream
-      ? datastreamMonitoringSiteId(t.outputDatastream as any)
-      : '') || props.monitoringSiteId
+    (datastream ? datastreamMonitoringSiteId(datastream as any) : '') ||
+    props.monitoringSiteId
   if (!monitoringSiteId) return ''
   return (
     workspaceMonitoringSites.value.find(

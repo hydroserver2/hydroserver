@@ -59,22 +59,8 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const resetDraftDatastreams = () => {
     draftDatastreams.value = []
   }
-
-  const linkedDatastreamIds = computed(() => {
-    const ids = new Set(persistedLinkedDatastreamIds.value)
-
-    for (const task of workspaceTasks.value) {
-      for (const mapping of task.mappings ?? []) {
-        const id =
-          'targetDatastream' in mapping
-            ? mapping.targetDatastream?.id
-            : mapping.targetDatastreamId
-        if (id) ids.add(String(id))
-      }
-    }
-
-    return ids
-  })
+  
+  const linkedDatastreamIds = computed(() => persistedLinkedDatastreamIds.value)
 
   const ensureWorkspaceLinkedDatastreams = async (
     requestedWorkspaceId = workspaceId.value,
@@ -93,12 +79,11 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     }
 
     const requestId = ++linkedDatastreamRequestId
-    const [etlTasks, dataProductTasks] = await Promise.all([
-      hs.tasks.listAllItems({
+    const [mappings, transformations] = await Promise.all([
+      hs.etlMappings.listAllItems({
         workspace_id: [requestedWorkspaceId],
-        expand_related: true,
       } as any),
-      hs.dataProductTasks.listAllItems({
+      hs.dataProductTransformations.listAllItems({
         workspace_id: [requestedWorkspaceId],
       } as any),
     ])
@@ -107,27 +92,12 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     }
 
     const ids = new Set<string>()
-    for (const task of etlTasks ?? []) {
-      for (const mapping of (task as any).mappings ?? []) {
-        const id =
-          mapping.targetDatastream?.id ?? mapping.targetDatastreamId ?? null
-        if (id) ids.add(String(id))
-      }
+    for (const mapping of mappings ?? []) {
+      if (mapping.targetDatastreamId) ids.add(String(mapping.targetDatastreamId))
     }
-
-    for (const task of dataProductTasks ?? []) {
-      const transformations = [
-        ...((task as any).aggregationTransformations ?? []),
-        ...((task as any).derivationTransformations ?? []),
-        ...((task as any).ratingCurveTransformations ?? []),
-      ]
-      for (const transformation of transformations) {
-        const id =
-          transformation.outputDatastream?.id ??
-          transformation.outputDatastreamId ??
-          null
-        if (id) ids.add(String(id))
-      }
+    for (const transformation of transformations ?? []) {
+      if (transformation.outputDatastreamId)
+        ids.add(String(transformation.outputDatastreamId))
     }
 
     persistedLinkedDatastreamIds.value = ids

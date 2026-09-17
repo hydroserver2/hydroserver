@@ -12,7 +12,7 @@ import {
   MonitoringSiteTaskSummary,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
-import { normalizeLinkCollection, normalizeLinkRecord } from './link-normalization'
+import { normalizeLinkCollection } from './link-normalization'
 
 type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetResponse']
 
@@ -47,8 +47,7 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   updatePrivacy = (
     id: string,
     isPrivate: boolean
-  ): Promise<ApiResponse<MonitoringSite>> =>
-    apiMethods.patch<MonitoringSite>(`${this._route}/${id}`, { isPrivate })
+  ): Promise<ApiResponse<MonitoringSite>> => this.patchAndRefetch(id, { isPrivate })
 
   getSiteTypes = () => apiMethods.fetch<string[]>(`${this._route}/site-types`)
   getSiteTypeIcons = () =>
@@ -61,15 +60,20 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   }
 
   setTag(monitoringSiteId: string, key: string, value: string) {
-    return apiMethods.patch<MonitoringSite>(`${this._route}/${monitoringSiteId}`, {
-      tags: { [key]: value },
-    })
+    return this.patchAndRefetch(monitoringSiteId, { tags: { [key]: value } })
   }
 
   deleteTag(monitoringSiteId: string, key: string) {
-    return apiMethods.patch<MonitoringSite>(`${this._route}/${monitoringSiteId}`, {
-      tags: { [key]: null },
-    })
+    return this.patchAndRefetch(monitoringSiteId, { tags: { [key]: null } })
+  }
+
+  private async patchAndRefetch(
+    id: string,
+    body: Record<string, unknown>
+  ): Promise<ApiResponse<MonitoringSite>> {
+    const res = await apiMethods.patch<null>(`${this._route}/${id}`, body)
+    if (!res.ok) return res as ApiResponse<MonitoringSite>
+    return this.get(id)
   }
 
   /* ------------------ Sub-resources: Linked Resources ------------------ */
@@ -87,24 +91,42 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     } as ApiResponse<LinkedResourceResponse[]>
   }
 
-  async createLinkedResource(monitoringSiteId: string, data: FormData) {
+  async createLinkedResource(
+    monitoringSiteId: string,
+    data: FormData
+  ): Promise<ApiResponse<LinkedResourceResponse>> {
     const url = `${this._route}/${monitoringSiteId}/linked-resources`
-    const res = await apiMethods.post<LinkedResourceResponse>(url, data)
+    const res = await apiMethods.post<{ id: string }>(url, data)
     if (!res.ok) return res
-    return {
-      ...res,
-      data: normalizeLinkRecord(res.data, this._client.host),
-    } as ApiResponse<LinkedResourceResponse>
+    return this.findLinkedResource(monitoringSiteId, res.data.id)
   }
 
-  async updateLinkedResource(monitoringSiteId: string, linkedResourceId: string, data: FormData) {
+  async updateLinkedResource(
+    monitoringSiteId: string,
+    linkedResourceId: string,
+    data: FormData
+  ): Promise<ApiResponse<LinkedResourceResponse>> {
     const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
-    const res = await apiMethods.patch<LinkedResourceResponse>(url, data)
+    const res = await apiMethods.patch<null>(url, data)
     if (!res.ok) return res
-    return {
-      ...res,
-      data: normalizeLinkRecord(res.data, this._client.host),
-    } as ApiResponse<LinkedResourceResponse>
+    return this.findLinkedResource(monitoringSiteId, linkedResourceId)
+  }
+
+  private async findLinkedResource(
+    monitoringSiteId: string,
+    linkedResourceId: string
+  ): Promise<ApiResponse<LinkedResourceResponse>> {
+    const res = await this.getLinkedResources(monitoringSiteId)
+    if (!res.ok) return res
+    const found = res.data.find((r) => r.id === linkedResourceId)
+    if (!found) {
+      return {
+        ok: false,
+        status: 404,
+        message: 'Linked resource not found after save.',
+      }
+    }
+    return { ...res, data: found }
   }
 
   deleteLinkedResource(monitoringSiteId: string, linkedResourceId: string) {

@@ -37,6 +37,49 @@ def test_external_linked_resource_returns_url_directly():
     assert linked_resource.link == "https://example.com/report.pdf"
 
 
+# --- clean(): linked resource mode cannot be switched -----------------------------
+
+
+def test_full_clean_rejects_switching_hosted_file_to_external_link():
+    linked_resource = MonitoringSiteLinkedResource.objects.create(
+        monitoring_site=MonitoringSiteFactory(),
+        name="Site Report",
+        type="Report",
+        file=SimpleUploadedFile("photo.png", b"photo"),
+    )
+    linked_resource.file = ""
+    linked_resource.url = "https://example.com/report.pdf"
+
+    with pytest.raises(ValidationError):
+        linked_resource.full_clean()
+
+
+def test_full_clean_rejects_switching_external_link_to_hosted_file():
+    linked_resource = MonitoringSiteLinkedResource.objects.create(
+        monitoring_site=MonitoringSiteFactory(),
+        name="Site Report",
+        type="Report",
+        url="https://example.com/report.pdf",
+    )
+    linked_resource.url = ""
+    linked_resource.file = SimpleUploadedFile("photo.png", b"photo")
+
+    with pytest.raises(ValidationError):
+        linked_resource.full_clean()
+
+
+def test_full_clean_allows_replacing_file_with_a_new_file():
+    linked_resource = MonitoringSiteLinkedResource.objects.create(
+        monitoring_site=MonitoringSiteFactory(),
+        name="Site Report",
+        type="Report",
+        file=SimpleUploadedFile("photo.png", b"photo"),
+    )
+    linked_resource.file = SimpleUploadedFile("photo2.png", b"photo2")
+
+    linked_resource.full_clean()  # does not raise
+
+
 # --- tags validation ---------------------------------------------------------------
 
 

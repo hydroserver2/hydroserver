@@ -1,5 +1,8 @@
 import pytest
 
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
+
 from core.sta.models import VariableType
 from tests.core.iam.factories import (
     CollaboratorFactory,
@@ -46,7 +49,7 @@ def test_get_observed_properties_includes_global_properties_for_anonymous(client
     response = client.get(OBSERVED_PROPERTIES_URL)
 
     assert response.status_code == 200
-    assert str(observed_property.id) in [o["id"] for o in response.json()]
+    assert str(observed_property.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_observed_properties_excludes_private_workspace_properties_for_outsider(
@@ -59,7 +62,7 @@ def test_get_observed_properties_excludes_private_workspace_properties_for_outsi
 
     response = client.get(OBSERVED_PROPERTIES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_observed_properties_includes_workspace_properties_for_workspace_owner(
@@ -73,7 +76,7 @@ def test_get_observed_properties_includes_workspace_properties_for_workspace_own
     response = client.get(OBSERVED_PROPERTIES_URL)
 
     assert response.status_code == 200
-    assert str(observed_property.id) in [o["id"] for o in response.json()]
+    assert str(observed_property.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_observed_properties_filters_by_type(client):
@@ -83,7 +86,136 @@ def test_get_observed_properties_filters_by_type(client):
     response = client.get(OBSERVED_PROPERTIES_URL, {"type": "Hydrology"})
 
     assert response.status_code == 200
-    assert [item["id"] for item in response.json()] == [str(hydrology.id)]
+    assert [item["id"] for item in response.json()["data"]] == [str(hydrology.id)]
+
+
+def test_get_observed_properties_properties_filters_every_item_in_the_list(client):
+    ObservedPropertyFactory(global_=True, name="Temperature")
+    ObservedPropertyFactory(global_=True, name="Discharge")
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert len(items) == 2
+    for item in items:
+        assert set(item.keys()) == {"id", "name"}
+
+
+def test_get_observed_properties_properties_accepts_repeated_key_style_too(client):
+    ObservedPropertyFactory(global_=True, name="Temperature")
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"properties": ["id", "name"]})
+
+    assert response.status_code == 200
+    item = response.json()["data"][0]
+    assert set(item.keys()) == {"id", "name"}
+
+
+def test_get_observed_properties_properties_rejects_unknown_property(client):
+    response = client.get(OBSERVED_PROPERTIES_URL, {"properties": "id,bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_observed_properties_without_properties_returns_every_field(client):
+    ObservedPropertyFactory(global_=True, name="Temperature", type="Hydrology")
+
+    response = client.get(OBSERVED_PROPERTIES_URL)
+
+    assert response.status_code == 200
+    item = response.json()["data"][0]
+    assert set(item.keys()) == {
+        "id",
+        "name",
+        "definition",
+        "description",
+        "type",
+        "code",
+        "workspaceId",
+    }
+
+
+def test_get_observed_properties_has_no_included_key_without_include_param(client):
+    ObservedPropertyFactory(global_=True)
+
+    response = client.get(OBSERVED_PROPERTIES_URL)
+
+    assert response.status_code == 200
+    assert "included" not in response.json()
+
+
+def test_get_observed_properties_include_workspace_deduplicates_across_items(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    ObservedPropertyFactory(workspace=workspace, name="Temperature")
+    ObservedPropertyFactory(workspace=workspace, name="Discharge")
+    client.force_login(owner)
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["data"]) == 2
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_observed_properties_include_rejects_unknown_relation(client):
+    response = client.get(OBSERVED_PROPERTIES_URL, {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_observed_properties_properties_does_not_filter_included_resources(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, name="Acme")
+    ObservedPropertyFactory(workspace=workspace, code="OP-1")
+    client.force_login(owner)
+
+    response = client.get(
+        OBSERVED_PROPERTIES_URL, {"properties": "code", "include": "workspace"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"][0] == {"code": "OP-1"}
+    included_workspace = body["included"]["workspaces"][0]
+    assert included_workspace["id"] == str(workspace.id)
+    assert included_workspace["name"] == "Acme"
+
+
+def test_get_observed_properties_include_accepts_repeated_key_style_too(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    ObservedPropertyFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"include": ["workspace"]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_observed_properties_include_workspace_does_not_scale_queries_with_count(
+    client,
+):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    for _ in range(5):
+        ObservedPropertyFactory(workspace=workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(OBSERVED_PROPERTIES_URL, {"include": "workspace"})
+
+    for _ in range(5):
+        ObservedPropertyFactory(workspace=workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(OBSERVED_PROPERTIES_URL, {"include": "workspace"})
+
+    assert len(large.captured_queries) == len(small.captured_queries)
 
 
 # --- create_observed_property ---------------------------------------------------------
@@ -101,8 +233,7 @@ def test_create_observed_property_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "New Observed Property"
-    assert response.json()["type"] == "Hydrology"
+    assert set(response.json().keys()) == {"id"}
 
 
 def test_create_observed_property_allows_omitting_definition(client):
@@ -119,7 +250,10 @@ def test_create_observed_property_allows_omitting_definition(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["definition"] is None
+    observed_property_id = response.json()["id"]
+
+    detail = client.get(_detail_url(observed_property_id), {"properties": "definition"})
+    assert detail.json()["data"]["definition"] is None
 
 
 @pytest.mark.parametrize("field", ["type", "code"])
@@ -139,7 +273,10 @@ def test_create_observed_property_allows_500_character_type_and_code(client, fie
     )
 
     assert response.status_code == 201
-    assert response.json()[field] == value
+    observed_property_id = response.json()["id"]
+
+    detail = client.get(_detail_url(observed_property_id), {"properties": field})
+    assert detail.json()["data"][field] == value
 
 
 def test_create_observed_property_returns_401_when_unauthenticated(client):
@@ -178,7 +315,7 @@ def test_get_variable_types_returns_registered_type_names(client):
     response = client.get(f"{OBSERVED_PROPERTIES_URL}/variable-types")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"Hydrology", "Meteorology"}
+    assert set(response.json()["data"]) == {"Hydrology", "Meteorology"}
 
 
 # --- get_observed_property -------------------------------------------------------------
@@ -190,7 +327,7 @@ def test_get_observed_property_returns_global_property_for_anonymous(client):
     response = client.get(_detail_url(observed_property.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(observed_property.id)
+    assert response.json()["data"]["id"] == str(observed_property.id)
 
 
 def test_get_observed_property_returns_404_for_private_workspace_property_when_unrelated(
@@ -223,6 +360,62 @@ def test_get_observed_property_returns_404_for_nonexistent_property(client):
     assert response.status_code == 404
 
 
+def test_get_observed_property_included_is_present_but_empty_without_include_param(
+    client,
+):
+    observed_property = ObservedPropertyFactory(global_=True)
+
+    response = client.get(_detail_url(observed_property.id))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "included" in body
+    assert body["included"] == {}
+
+
+def test_get_observed_property_include_workspace_sideloads_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(observed_property.id), {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["id"] == str(observed_property.id)
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_observed_property_include_rejects_unknown_relation(client):
+    observed_property = ObservedPropertyFactory(global_=True)
+
+    response = client.get(_detail_url(observed_property.id), {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_observed_property_include_accepts_repeated_key_style_too(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(observed_property.id), {"include": ["workspace"]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_observed_property_properties_rejects_unknown_property(client):
+    observed_property = ObservedPropertyFactory(global_=True)
+
+    response = client.get(_detail_url(observed_property.id), {"properties": "bogus"})
+
+    assert response.status_code == 400
+
+
 # --- update_observed_property -----------------------------------------------------------
 
 
@@ -240,8 +433,11 @@ def test_update_observed_property_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+
+    detail = client.get(_detail_url(observed_property.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_observed_property_returns_403_for_viewer_collaborator(client):

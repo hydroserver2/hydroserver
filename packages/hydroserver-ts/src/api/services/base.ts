@@ -76,45 +76,47 @@ export abstract class HydroServerBaseService<
 
   get = async (
     id: string,
-    params?: {
-      expand_related: boolean
-    }
+    params?: Record<string, unknown>
   ): Promise<ApiResponse<M>> =>
     await apiMethods.fetch<M>(this.withQuery(`${this._route}/${id}`, params))
 
-  getItem = async (
-    id: string,
-    params?: {
-      expand_related: boolean
-    }
-  ) => {
+  getItem = async (id: string, params?: Record<string, unknown>) => {
     const res = await this.get(id, params)
     return res.ok ? res.data : null
   }
 
-  create = async (body: M): Promise<ApiResponse<M>> =>
-    apiMethods.post<M>(this._route, this.serialize(body))
+  create = async (body: M): Promise<ApiResponse<M>> => {
+    const res = await apiMethods.post<{ id: string }>(
+      this._route,
+      this.serialize(body)
+    )
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(res.data.id)
+  }
 
   createItem = async (body: M): Promise<M | null> => {
-    const res = await apiMethods.post<M>(this._route, this.serialize(body))
+    const res = await this.create(body)
     return res.ok ? res.data : null
   }
 
   update = async (
     body: Partial<M> & Pick<M, 'id'>,
     originalBody?: Partial<M> & Pick<M, 'id'>
-  ) =>
-    apiMethods.patch<M>(`${this._route}/${body.id}`, body, originalBody ?? null)
+  ): Promise<ApiResponse<M>> => {
+    const res = await apiMethods.patch<null>(
+      `${this._route}/${body.id}`,
+      body,
+      originalBody ?? null
+    )
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(body.id)
+  }
 
   updateItem = async (
     body: PatchBody<M>,
     originalBody?: PatchBody<M>
   ): Promise<M | null> => {
-    const res = await apiMethods.patch<M>(
-      `${this._route}/${body.id}`,
-      body,
-      originalBody ?? null
-    )
+    const res = await this.update(body, originalBody)
     return res.ok ? res.data : null
   }
 

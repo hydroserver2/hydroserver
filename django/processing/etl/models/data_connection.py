@@ -1,5 +1,12 @@
+import re
 import uuid
+import jmespath as jmespath_lib
+import pytz
 
+from datetime import datetime
+from jmespath.exceptions import JMESPathError
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -8,6 +15,34 @@ from django_celery_beat.models import PeriodicTask
 from core.iam.models import Workspace
 from core.iam.permissions.mixins import ResourcePermissionMixin
 from core.iam.permissions.registry import register_resource_type
+
+
+_UTC_OFFSET_RE = re.compile(r"^[+-](\d{4}|\d{2}:\d{2})$")
+
+
+def _validate_utc_offset(value: str) -> None:
+    """
+    Native port of hydroserverpy.etl.models.timestamp.Timezone._validate_utc_offset
+    - kept in sync manually since models must not import hydroserverpy.
+    """
+
+    if not _UTC_OFFSET_RE.match(value):
+        raise ValueError(
+            f"Invalid timestamp UTC offset '{value}'. "
+            "UTC offsets must be specified in ±HHMM or ±HH:MM format (e.g: '-0700' or '-07:00') "
+            "with hours between 00 and 14 and minutes between 00 and 59."
+        )
+
+    clean = value.replace(":", "")
+    hours = int(clean[1:3])
+    minutes = int(clean[3:5])
+
+    if hours > 14 or minutes >= 60 or (hours == 14 and minutes != 0):
+        raise ValueError(
+            f"Invalid timestamp UTC offset '{value}'. "
+            "UTC offsets must be specified in ±HHMM or ±HH:MM format (e.g: '-0700' or '-07:00') "
+            "with hours between 00 and 14 and minutes between 00 and 59."
+        )
 
 
 class TimezoneType(models.TextChoices):
@@ -51,6 +86,32 @@ class DataConnection(models.Model, ResourcePermissionMixin):
     def __str__(self):
         return f"{self.name} - {self.id}"
 
+    def clean(self):
+        if (self.auth_header_name is None) != (self.auth_header_value is None):
+            raise ValidationError(
+                "auth_header_name and auth_header_value must both be provided or both be omitted."
+            )
+
+        if self.timezone_type in (TimezoneType.OFFSET, TimezoneType.IANA) and not self.timezone:
+            raise ValidationError(
+                "timezone is required when timezone_type is 'offset' or 'iana'."
+            )
+        elif self.timezone_type == TimezoneType.OFFSET:
+            try:
+                _validate_utc_offset(self.timezone)
+            except ValueError as e:
+                raise ValidationError(str(e)) from e
+        elif self.timezone_type == TimezoneType.IANA:
+            if self.timezone not in pytz.all_timezones_set:
+                raise ValidationError(
+                    f"Unknown timezone '{self.timezone}'. "
+                    "Provide a valid IANA timezone name (e.g. 'America/Denver')."
+                )
+        elif not self.timezone_type and self.timezone:
+            raise ValidationError(
+                "timezone must not be set when timezone_type is not provided."
+            )
+
 
 class PlaceholderVariable(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
@@ -65,6 +126,32 @@ class PlaceholderVariable(models.Model):
 
     class Meta:
         app_label = "etl"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["data_connection", "name", "variable_type"],
+                name="unique_placeholder_variable_name_and_type_per_data_connection",
+                violation_error_message=(
+                    "A placeholder variable with this name and type already exists on this data connection."
+                ),
+            )
+        ]
+
+    def clean(self):
+        if self.timestamp_format:
+            if self.variable_type not in (
+                PlaceholderVariableType.RUN_TIME, PlaceholderVariableType.LATEST_OBSERVATION_TIMESTAMP
+            ):
+                raise ValidationError(
+                    "timestamp_format is only allowed on 'run_time' and 'latest_observation_timestamp' "
+                    "placeholder variables."
+                )
+            try:
+                datetime(2000, 1, 1).strftime(self.timestamp_format)
+            except Exception as e:
+                raise ValidationError(
+                    f"Invalid timestamp format string {self.timestamp_format!r}. "
+                    "Ensure the string uses valid strftime directives (e.g., '%Y-%m-%d %H:%M:%S')."
+                ) from e
 
 
 class PayloadType(models.TextChoices):
@@ -116,6 +203,34 @@ class Payload(models.Model):
     class Meta:
         app_label = "etl"
 
+    def clean(self):
+        if self.payload_type == PayloadType.CSV:
+            missing = [
+                field for field in ("header_row", "data_start_row", "delimiter")
+                if not getattr(self, field)
+            ]
+            if missing:
+                raise ValidationError(f"{', '.join(missing)} required for CSV payloads.")
+
+        elif self.payload_type == PayloadType.JSON:
+            if not self.jmespath:
+                raise ValidationError("jmespath is required for JSON payloads.")
+
+        if self.jmespath:
+            try:
+                jmespath_lib.compile(self.jmespath)
+            except JMESPathError as e:
+                raise ValidationError(f"Invalid JMESPath expression: {e}") from e
+
+        if self.timestamp_format:
+            try:
+                datetime(2000, 1, 1).strftime(self.timestamp_format)
+            except Exception as e:
+                raise ValidationError(
+                    f"Invalid timestamp format string {self.timestamp_format!r}. "
+                    "Ensure the string uses valid strftime directives (e.g., '%Y-%m-%d %H:%M:%S')."
+                ) from e
+
 
 class DataConnectionNotification(models.Model):
     data_connection = models.OneToOneField(
@@ -136,6 +251,13 @@ class DataConnectionNotification(models.Model):
 
     def __str__(self):
         return str(self.data_connection_id)
+
+    def clean(self):
+        if not self.periodic_task_id:
+            raise ValidationError("A schedule is required when recipient emails are provided.")
+
+        if not self.recipients.exists():
+            raise ValidationError("At least one recipient email is required.")
 
 
 class DataConnectionNotificationRecipient(models.Model):

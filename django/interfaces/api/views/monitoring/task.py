@@ -1,82 +1,63 @@
 import uuid
-from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.errors import raise_http_errors
-from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
-from processing.monitoring.services.task import MonitoringTaskService
+from interfaces.api.services.monitoring.task import MonitoringTaskAPIService
 from processing.monitoring.tasks import run_monitoring_task
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.monitoring.task import (
-    MonitoringTaskSummaryResponse,
-    MonitoringTaskDetailResponse,
+    MonitoringTaskQueryParameters,
+    MonitoringTaskItemQueryParameters,
+    MonitoringTaskResponse,
     MonitoringTaskPostBody,
     MonitoringTaskPatchBody,
-    MonitoringTaskQueryParameters,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunQueryParameters, TaskRunResponse
 
 monitoring_task_router = Router(tags=["Monitoring Tasks"])
-monitoring_task_service = MonitoringTaskService()
+monitoring_task_service = MonitoringTaskAPIService()
 
 
 @monitoring_task_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[MonitoringTaskSummaryResponse] | list[MonitoringTaskDetailResponse],
+        200: PaginatedResponse[MonitoringTaskResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_monitoring_tasks(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[MonitoringTaskQueryParameters],
 ):
     """
     Get monitoring tasks accessible to the authenticated user.
     """
 
-    with raise_http_errors():
-        count, tasks = monitoring_task_service.get_collection(
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "monitoring_site", "workspace", "datastream", "rule_type",
-            }),
-            **({"monitoring_site": query.monitoring_site} if "monitoring_site" in query.model_fields_set else {}),
-            **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
-            **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
-            **({"rule_type": query.rule_type} if "rule_type" in query.model_fields_set else {}),
-        )
-
-    schema = MonitoringTaskDetailResponse if query.expand_related else MonitoringTaskSummaryResponse
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    return 200, monitoring_task_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
+        properties=query.properties,
     )
-
-    return 200, [schema.model_validate(task) for task in tasks]
 
 
 @monitoring_task_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: MonitoringTaskSummaryResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -88,22 +69,14 @@ def create_monitoring_task(
     Create a new monitoring task.
     """
 
-    with raise_http_errors():
-        task = monitoring_task_service.create(
-            principal=request.principal,
-            monitoring_site=data.monitoring_site_id,
-            **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id", "schedule"}),
-            **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
-        )
-
-    return 201, task
+    return 201, monitoring_task_service.create(principal=request.principal, data=data)
 
 
 @monitoring_task_router.get(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringTaskSummaryResponse | MonitoringTaskDetailResponse,
+        200: ItemResponse[MonitoringTaskResponse],
         401: str,
         403: str,
         404: str,
@@ -113,34 +86,26 @@ def create_monitoring_task(
 def get_monitoring_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[MonitoringTaskItemQueryParameters],
 ):
     """
     Get a monitoring task.
     """
 
-    with raise_http_errors():
-        task = monitoring_task_service.get(
-            task=task_id,
-            principal=request.principal,
-            expand_related=expand_related,
-        )
-
-    schema = MonitoringTaskDetailResponse if expand_related else MonitoringTaskSummaryResponse
-
-    return 200, schema.model_validate(task)
+    return 200, monitoring_task_service.get_item(
+        principal=request.principal, uid=task_id, include=query.include
+    )
 
 
 @monitoring_task_router.patch(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: MonitoringTaskSummaryResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -153,24 +118,9 @@ def update_monitoring_task(
     Update a monitoring task.
     """
 
-    extra = {}
+    monitoring_task_service.update(principal=request.principal, uid=task_id, data=data)
 
-    if "schedule" in data.model_fields_set:
-        extra.update(
-            data.schedule.model_dump(exclude_unset=True)
-            if data.schedule
-            else {"crontab": None, "interval": None}
-        )
-
-    with raise_http_errors():
-        task = monitoring_task_service.update(
-            task=task_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"schedule"}),
-            **extra,
-        )
-
-    return 200, task
+    return 204, None
 
 
 @monitoring_task_router.delete(
@@ -192,11 +142,10 @@ def delete_monitoring_task(
     Delete a monitoring task.
     """
 
-    with raise_http_errors():
-        monitoring_task_service.delete(
-            task=task_id,
-            principal=request.principal,
-        )
+    monitoring_task_service.delete(
+        task=task_id,
+        principal=request.principal,
+    )
 
     return 204, None
 
@@ -220,15 +169,12 @@ def trigger_monitoring_task(
     Trigger an immediate run of a monitoring task on a Celery worker.
     """
 
-    with raise_http_errors():
-        task = monitoring_task_service.get(
-            task=task_id,
-            principal=request.principal,
-            action="edit",
-        )
+    task = monitoring_task_service.get_task_for_action(
+        principal=request.principal, uid=task_id, action="edit"
+    )
 
-        run = TaskRun.objects.create(task=task, status="PENDING")
-        run_monitoring_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
+    run = TaskRun.objects.create(task=task, status="PENDING")
+    run_monitoring_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
 
     return 202, run
 
@@ -237,7 +183,7 @@ def trigger_monitoring_task(
     "/{task_id}/runs",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[TaskRunResponse],
+        200: PaginatedResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -246,7 +192,6 @@ def trigger_monitoring_task(
 )
 def get_monitoring_task_runs(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[TaskRunQueryParameters],
 ):
@@ -254,22 +199,26 @@ def get_monitoring_task_runs(
     Get runs for a monitoring task.
     """
 
-    with raise_http_errors():
-        count, runs = monitoring_task_service.get_run_collection(
-            task=task_id,
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by"}),
-        )
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    run_kwargs = query.model_dump(
+        exclude_unset=True,
+        include={
+            "offset", "limit", "order_by", "status",
+            "started_at__gte", "started_at__lte", "finished_at__gte", "finished_at__lte",
+        },
+    )
+    count, runs = monitoring_task_service.get_run_collection(
+        task=task_id,
+        principal=request.principal,
+        **run_kwargs,
     )
 
-    return 200, runs
+    meta = monitoring_task_service.build_pagination_meta(
+        count=count,
+        offset=query.offset,
+        limit=query.limit,
+    )
+
+    return 200, {"data": runs, "meta": meta}
 
 
 @monitoring_task_router.get(
@@ -292,11 +241,10 @@ def get_monitoring_task_run(
     Get a single run for a monitoring task.
     """
 
-    with raise_http_errors():
-        run = monitoring_task_service.get_run(
-            task=task_id,
-            run=run_id,
-            principal=request.principal,
-        )
+    run = monitoring_task_service.get_run(
+        task=task_id,
+        run=run_id,
+        principal=request.principal,
+    )
 
     return 200, run

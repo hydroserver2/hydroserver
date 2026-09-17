@@ -1,0 +1,179 @@
+import uuid
+
+from typing import Optional
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+
+from core.iam.models import Collaborator, ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.http.errors import BadRequestError, PermissionDeniedError
+from interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody, CollaboratorResponse
+from interfaces.api.schemas.iam.collaborator import COLLABORATOR_INCLUDE_RELATIONS
+from interfaces.api.service import APIService
+
+from .role import RoleAPIService
+
+User = get_user_model()
+role_service = RoleAPIService()
+
+
+class CollaboratorAPIService(APIService):
+    INCLUDE_RELATIONS = COLLABORATOR_INCLUDE_RELATIONS
+
+    @staticmethod
+    def resolve_principal_by_email(email: str):
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            pass
+
+        try:
+            return ServiceAccount.objects.get(email=email)
+        except ServiceAccount.DoesNotExist:
+            pass
+
+        raise BadRequestError(f"No account with email '{email}' found")
+
+    @staticmethod
+    def _get_collaborator_by_email(workspace, email: str) -> Collaborator:
+        try:
+            return Collaborator.objects.select_related(
+                "workspace", "user", "service_account"
+            ).get(
+                Q(user__email=email) | Q(service_account__email=email),
+                workspace=workspace,
+            )
+        except Collaborator.DoesNotExist:
+            raise BadRequestError(f"No collaborator with email '{email}' found")
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        workspace_id: uuid.UUID,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=workspace_id
+        )
+        queryset = Collaborator.objects.filter(workspace=workspace).select_related(
+            "user", "service_account"
+        )
+
+        if "role" in requested_includes:
+            queryset = queryset.select_related("role").prefetch_related("role__permissions")
+
+        for field in [
+            "role_id",
+        ]:
+            if field in filtering:
+                queryset = self.apply_filters(queryset, field, filtering[field])
+
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
+
+        # The client fetches collaborators page by page.  Without an explicit
+        # ordering, PostgreSQL is free to return tied rows in a different
+        # order for each request, which can make a collaborator move between
+        # pages or disappear from the merged result.  Keep pagination stable.
+        queryset = queryset.order_by("id")
+
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+
+        collaborators = list(queryset.all())
+
+        return {
+            "data": [
+                CollaboratorResponse.model_validate(collaborator)
+                for collaborator in collaborators
+            ],
+            "meta": meta,
+            "included": self.resolve_includes(
+                collaborators, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    def create(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        workspace_id: uuid.UUID,
+        data: CollaboratorPostBody,
+    ):
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=workspace_id
+        )
+
+        if not principal.can_create("Collaborator", workspace=workspace):
+            raise PermissionDeniedError(
+                "You do not have permission to add this collaborator"
+            )
+
+        new_collaborator = self.resolve_principal_by_email(data.email)
+
+        collaborator_role = role_service.get_role_for_action(
+            principal=principal, uid=data.role_id, action="view"
+        )
+
+        collaborator = Collaborator(
+            workspace=workspace,
+            role=collaborator_role,
+            **(
+                {"user": new_collaborator}
+                if isinstance(new_collaborator, User)
+                else {"service_account": new_collaborator}
+            ),
+        )
+        collaborator.full_clean()
+        collaborator.save()
+
+        return {"id": collaborator.id}
+
+    def update(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        workspace_id: uuid.UUID,
+        data: CollaboratorPostBody,
+    ):
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=workspace_id
+        )
+
+        collaborator = self._get_collaborator_by_email(workspace, data.email)
+
+        if not principal.can_edit(collaborator):
+            raise PermissionDeniedError(
+                "You do not have permission to modify this collaborator's role"
+            )
+
+        if data.role_id:
+            collaborator.role = role_service.get_role_for_action(
+                principal=principal,
+                uid=data.role_id,
+                action="view",
+            )
+
+        collaborator.full_clean()
+        collaborator.save()
+
+    def delete(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        workspace_id: uuid.UUID,
+        data: CollaboratorDeleteBody,
+    ):
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=workspace_id
+        )
+
+        collaborator = self._get_collaborator_by_email(workspace, data.email)
+
+        if not principal.can_delete(collaborator) and getattr(
+            principal, "email", None
+        ) != getattr(collaborator.user, "email", None):
+            raise PermissionDeniedError(
+                "You do not have permission to remove this collaborator"
+            )
+
+        collaborator.delete()

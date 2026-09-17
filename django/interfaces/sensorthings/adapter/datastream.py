@@ -5,10 +5,10 @@ from sensorthings.types import Absent
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, DatastreamDTO
-from core.sta.services.datastream import DatastreamService
+from interfaces.api.services.sta.datastream import DatastreamAPIService
 from .utils import SensorThingsUtils
 
-datastream_service = DatastreamService()
+datastream_service = DatastreamAPIService()
 
 _GROUP_BY_PARTITION = {
     "thing": "monitoring_site_id",

@@ -6,7 +6,7 @@ export class Task {
   description: string | null = null
   taskVariables: Record<string, unknown> = {}
   dataConnectionId = ''
-  mappings: TaskMapping[] = []
+  mappingCount = 0
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<Task>) {
@@ -20,7 +20,7 @@ export interface TaskExpanded {
   description?: string | null
   taskVariables: Record<string, unknown>
   dataConnection: DataConnection
-  mappings: TaskMapping[]
+  mappingCount: number
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }
@@ -46,24 +46,6 @@ export type TaskSchedule = {
   interval: number | null
   intervalPeriod: IntervalPeriod | null
 }
-
-export interface EtlMapping {
-  sourceIdentifier: string
-  targetDatastream: {
-    id: string
-    name: string
-    monitoringSiteId?: string
-    monitoring_site_id?: string
-    [key: string]: unknown
-  }
-}
-
-export interface EtlMappingPostBody {
-  sourceIdentifier: string
-  targetDatastreamId: string
-}
-
-export type TaskMapping = EtlMapping | EtlMappingPostBody
 
 export const TASK_STATUS_OPTIONS = [
   { color: 'green', title: 'OK' },

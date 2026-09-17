@@ -1,9 +1,11 @@
 import uuid
-from typing import Literal, Optional, TYPE_CHECKING
 
+from decimal import Decimal
 from country_list import countries_for_language
+from typing import Literal, Optional, Annotated
 from ninja import Field, Query, Schema
-from pydantic import field_validator
+from pydantic import BeforeValidator, WithJsonSchema, field_validator
+from pydantic.alias_generators import to_camel
 
 from interfaces.api.schemas import (
     BaseGetResponse,
@@ -11,12 +13,12 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
 
 
 valid_country_codes = [code for code, _ in countries_for_language("en")]
@@ -49,6 +51,15 @@ class MonitoringSiteFields(Schema):
         return value
 
 
+MONITORING_SITE_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+MonitoringSiteIncludeRelation = Literal[*MONITORING_SITE_INCLUDE_RELATIONS.keys()]
+
 _order_by_fields = (
     "name",
     "code",
@@ -62,14 +73,48 @@ _order_by_fields = (
     "adminArea2",
     "country",
 )
-
 MonitoringSiteOrderByFields = Literal[
     *_order_by_fields, *[f"-{field}" for field in _order_by_fields]
 ]
 
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(
+        "elevation_m" if name == "elevation_m" else to_camel(name)
+        for name in MonitoringSiteFields.model_fields
+    ),
+    "tags",
+    "linkedResources",
+)
+MonitoringSitePropertyName = Literal[*_property_fields]
 
-class MonitoringSiteQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class MonitoringSiteFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[MonitoringSitePropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MonitoringSitePropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[MonitoringSiteIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MonitoringSiteIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class MonitoringSiteItemQueryParameters(MonitoringSiteFilterFields, BaseQueryParameters):
+    pass
+
+
+class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryParameters):
     order_by: Optional[list[MonitoringSiteOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -159,16 +204,9 @@ class MonitoringSiteMapSummaryResponse(BaseGetResponse):
     tags: dict[str, str]
 
 
-class MonitoringSiteSummaryResponse(BaseGetResponse, MonitoringSiteFields):
+class MonitoringSiteResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
-    tags: dict[str, str] = {}
-    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
-
-
-class MonitoringSiteDetailResponse(BaseGetResponse, MonitoringSiteFields):
-    id: uuid.UUID
-    workspace: "WorkspaceSummaryResponse"
     tags: dict[str, str] = {}
     monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
@@ -177,11 +215,17 @@ class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
     tags: dict[str, str] = {}
+    latitude: Decimal = Field(..., ge=-90, le=90)
+    longitude: Decimal = Field(..., ge=-180, le=180)
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999, alias="elevation_m")
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
 
 
 class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
     tags: dict[str, str | None] = {}
+    latitude: Decimal = Field(..., ge=-90, le=90)
+    longitude: Decimal = Field(..., ge=-180, le=180)
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999, alias="elevation_m")
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

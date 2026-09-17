@@ -4,12 +4,15 @@ import { nextTick } from 'vue'
 import { useOrchestrationStore } from '../orchestration'
 import { useWorkspaceStore } from '../workspaces'
 
-const { listAllItemsMock, taskListAllItemsMock, productTaskListAllItemsMock } =
-  vi.hoisted(() => ({
-    listAllItemsMock: vi.fn(),
-    taskListAllItemsMock: vi.fn(),
-    productTaskListAllItemsMock: vi.fn(),
-  }))
+const {
+  listAllItemsMock,
+  etlMappingsListAllItemsMock,
+  dataProductTransformationsListAllItemsMock,
+} = vi.hoisted(() => ({
+  listAllItemsMock: vi.fn(),
+  etlMappingsListAllItemsMock: vi.fn(),
+  dataProductTransformationsListAllItemsMock: vi.fn(),
+}))
 
 vi.mock('@hydroserver/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hydroserver/client')>()
@@ -21,11 +24,11 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
       datastreams: {
         listAllItems: listAllItemsMock,
       },
-      tasks: {
-        listAllItems: taskListAllItemsMock,
+      etlMappings: {
+        listAllItems: etlMappingsListAllItemsMock,
       },
-      dataProductTasks: {
-        listAllItems: productTaskListAllItemsMock,
+      dataProductTransformations: {
+        listAllItems: dataProductTransformationsListAllItemsMock,
       },
     },
   }
@@ -37,11 +40,11 @@ describe('orchestration store', () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     listAllItemsMock.mockReset()
-    taskListAllItemsMock.mockReset()
-    productTaskListAllItemsMock.mockReset()
+    etlMappingsListAllItemsMock.mockReset()
+    dataProductTransformationsListAllItemsMock.mockReset()
   })
 
-  it('derives linked datastream ids from loaded task mappings', async () => {
+  it('does not derive linked datastream ids from workspaceTasks, since task list responses only carry a mapping count, not the mappings themselves', async () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.selectedWorkspace = {
       id: 'workspace-1',
@@ -51,37 +54,8 @@ describe('orchestration store', () => {
 
     const orchestrationStore = useOrchestrationStore()
     orchestrationStore.workspaceTasks = [
-      {
-        id: 'task-1',
-        mappings: [
-          {
-            sourceIdentifier: 'source-1',
-            targetDatastream: { id: 'ds-1' },
-          },
-          {
-            sourceIdentifier: 'source-2',
-            targetDatastream: { id: 'ds-2' },
-          },
-        ],
-      },
-      {
-        id: 'task-2',
-        mappings: [
-          {
-            sourceIdentifier: 'source-3',
-            targetDatastream: { id: 'ds-3' },
-          },
-        ],
-      },
-      {
-        id: 'task-3',
-        mappings: [
-          {
-            sourceIdentifier: 'source-4',
-            targetDatastream: { id: 'ds-1' },
-          },
-        ],
-      },
+      { id: 'task-1', dataConnectionId: 'connection-1', mappingCount: 2 },
+      { id: 'task-2', dataConnectionId: 'connection-1', mappingCount: 1 },
     ] as any
     orchestrationStore.workspaceDatastreams = [
       { id: 'ds-1', name: 'Datastream 1' },
@@ -92,58 +66,37 @@ describe('orchestration store', () => {
 
     await nextTick()
 
-    expect([...orchestrationStore.linkedDatastreamIds]).toEqual([
-      'ds-1',
-      'ds-2',
-      'ds-3',
-    ])
-    expect(orchestrationStore.linkedDatastreams.map((d) => d.id)).toEqual([
-      'ds-1',
-      'ds-2',
-      'ds-3',
-    ])
+    expect([...orchestrationStore.linkedDatastreamIds]).toEqual([])
+    expect(orchestrationStore.linkedDatastreams.map((d) => d.id)).toEqual([])
   })
 
-  it('loads linked destinations across ingestion and data product tasks', async () => {
-    taskListAllItemsMock.mockResolvedValue([
-      {
-        mappings: [
-          { targetDatastream: { id: 'etl-expanded' } },
-          { targetDatastreamId: 'etl-id-only' },
-        ],
-      },
+  it('loads linked destinations across ingestion and data product tasks in one call each', async () => {
+    etlMappingsListAllItemsMock.mockResolvedValue([
+      { targetDatastreamId: 'etl-1' },
+      { targetDatastreamId: 'etl-2' },
     ])
-    productTaskListAllItemsMock.mockResolvedValue([
-      {
-        aggregationTransformations: [
-          { outputDatastreamId: 'aggregation-output' },
-        ],
-        derivationTransformations: [
-          { outputDatastream: { id: 'derivation-output' } },
-        ],
-        ratingCurveTransformations: [
-          { outputDatastreamId: 'rating-curve-output' },
-        ],
-      },
+    dataProductTransformationsListAllItemsMock.mockResolvedValue([
+      { outputDatastreamId: 'aggregation-output' },
+      { outputDatastreamId: 'rating-curve-output' },
     ])
 
     const orchestrationStore = useOrchestrationStore()
     await orchestrationStore.ensureWorkspaceLinkedDatastreams('workspace-1')
 
     expect([...orchestrationStore.linkedDatastreamIds]).toEqual([
-      'etl-expanded',
-      'etl-id-only',
+      'etl-1',
+      'etl-2',
       'aggregation-output',
-      'derivation-output',
       'rating-curve-output',
     ])
-    expect(taskListAllItemsMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
-      expand_related: true,
-    })
-    expect(productTaskListAllItemsMock).toHaveBeenCalledWith({
+    expect(etlMappingsListAllItemsMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
     })
+    expect(dataProductTransformationsListAllItemsMock).toHaveBeenCalledWith({
+      workspace_id: ['workspace-1'],
+    })
+    expect(etlMappingsListAllItemsMock).toHaveBeenCalledTimes(1)
+    expect(dataProductTransformationsListAllItemsMock).toHaveBeenCalledTimes(1)
   })
 
   it('ignores stale datastream responses after switching workspaces', async () => {

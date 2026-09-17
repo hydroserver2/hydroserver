@@ -64,7 +64,7 @@ def test_get_qc_operations_includes_operation_for_workspace_owner(client):
     response = client.get(_operations_url(session.history_id, session.id))
 
     assert response.status_code == 200
-    assert str(operation.id) in [o["id"] for o in response.json()]
+    assert str(operation.id) in [o["id"] for o in response.json()["data"]]
 
 
 def test_get_qc_operations_returns_404_for_outsider(client):
@@ -104,7 +104,7 @@ def test_create_qc_operations_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()[0]["operationType"] == "SELECTION"
+    assert "id" in response.json()[0]
 
 
 def test_create_qc_operations_returns_401_when_unauthenticated(client):
@@ -163,7 +163,7 @@ def test_get_qc_operation_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(session.history_id, session.id, operation.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(operation.id)
+    assert response.json()["data"]["id"] == str(operation.id)
 
 
 def test_get_qc_operation_returns_404_for_outsider(client):
@@ -207,8 +207,9 @@ def test_update_qc_operation_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["comment"] == "Updated comment"
+    assert response.status_code == 204
+    operation.refresh_from_db()
+    assert operation.comment == "Updated comment"
 
 
 def test_update_qc_operation_returns_403_for_viewer_collaborator(client):

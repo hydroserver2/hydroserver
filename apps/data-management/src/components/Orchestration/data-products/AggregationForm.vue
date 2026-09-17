@@ -205,7 +205,6 @@ import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type DataProductTask,
-  type DataProductTaskExpanded,
   type AggregationMethod,
   type AggregationTransformationValues,
   type IntervalUnit,
@@ -382,30 +381,34 @@ async function loadDatastreams() {
 async function loadExistingTask() {
   if (!props.editTaskId) return
   loadingExisting.value = true
-  const taskRes = await hs.dataProductTasks.get(props.editTaskId, {
-    expand_related: true,
-  })
+  const [taskRes, transformationsRes] = await Promise.all([
+    hs.dataProductTasks.get(props.editTaskId),
+    hs.dataProductTransformations.list({
+      task_id: props.editTaskId,
+      transformation_type: ['aggregation'],
+    } as any),
+  ])
   if (!taskRes.ok) {
     Snackbar.error(taskRes.message || 'Unable to load existing task.')
     loadingExisting.value = false
     return
   }
 
-  const task = taskRes.data as unknown as DataProductTaskExpanded
+  const task = taskRes.data
 
   if (task?.name) {
     taskName.value = task.name
     schedule.value = task.schedule ?? null
   }
 
-  if (task?.aggregationTransformations?.length) {
-    const t = task.aggregationTransformations[0]
+  const t = transformationsRes.ok ? transformationsRes.data[0] : undefined
+  if (t) {
     existingTransformationId.value = t.id
-    inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
-    outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
-    aggregationMethod.value = t.aggregationMethod
-    outputInterval.value = t.outputInterval
-    outputIntervalUnits.value = t.outputIntervalUnits
+    inputDatastreamId.value = t.inputDatastreams?.[0]?.datastreamId ?? null
+    outputDatastreamId.value = t.outputDatastreamId ?? null
+    aggregationMethod.value = t.aggregationMethod ?? 'time_weighted_mean'
+    outputInterval.value = t.outputInterval ?? null
+    outputIntervalUnits.value = t.outputIntervalUnits ?? 'hours'
     minValues.value = t.minValues ?? null
     timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
     timezone.value = t.timezone ?? null
@@ -448,6 +451,7 @@ async function onCreate() {
     monitoringSiteId,
     description: null,
     schedule: schedule.value,
+    transformationTypes: [],
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -455,17 +459,21 @@ async function onCreate() {
     return
   }
 
-  const transformRes =
-    await hs.dataProductTasks.createAggregationTransformation(taskRes.data.id, {
-      inputDatastreamId: inputDatastreamId.value!,
-      outputDatastreamId: outputDatastreamId.value!,
-      aggregationMethod: aggregationMethod.value,
-      outputInterval: outputInterval.value!,
-      outputIntervalUnits: outputIntervalUnits.value,
-      minValues: minValues.value ?? null,
-      timezoneType: timezoneType.value ?? null,
-      timezone: timezone.value ?? null,
-    })
+  const transformRes = await hs.dataProductTransformations.create({
+    id: '',
+    taskId: taskRes.data.id,
+    transformationType: 'aggregation',
+    outputDatastreamId: outputDatastreamId.value!,
+    inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
+    aggregationMethod: aggregationMethod.value,
+    outputInterval: outputInterval.value!,
+    outputIntervalUnits: outputIntervalUnits.value,
+    minValues: minValues.value ?? null,
+    timezoneType: timezoneType.value ?? null,
+    timezone: timezone.value ?? null,
+    stopOnNoData: true,
+    stopOnError: true,
+  } as any)
 
   if (!transformRes.ok) {
     Snackbar.error(
@@ -493,21 +501,17 @@ async function onUpdate() {
   }
 
   if (existingTransformationId.value && transformationHasChanges()) {
-    const transformRes =
-      await hs.dataProductTasks.updateAggregationTransformation(
-        taskId,
-        existingTransformationId.value,
-        {
-          inputDatastreamId: inputDatastreamId.value!,
-          outputDatastreamId: outputDatastreamId.value!,
-          aggregationMethod: aggregationMethod.value,
-          outputInterval: outputInterval.value!,
-          outputIntervalUnits: outputIntervalUnits.value,
-          minValues: minValues.value ?? null,
-          timezoneType: timezoneType.value ?? null,
-          timezone: timezone.value ?? null,
-        }
-      )
+    const transformRes = await hs.dataProductTransformations.update({
+      id: existingTransformationId.value,
+      outputDatastreamId: outputDatastreamId.value!,
+      inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
+      aggregationMethod: aggregationMethod.value,
+      outputInterval: outputInterval.value!,
+      outputIntervalUnits: outputIntervalUnits.value,
+      minValues: minValues.value ?? null,
+      timezoneType: timezoneType.value ?? null,
+      timezone: timezone.value ?? null,
+    })
 
     if (!transformRes.ok) {
       Snackbar.error(

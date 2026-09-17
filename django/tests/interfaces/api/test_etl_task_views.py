@@ -1,6 +1,10 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 
 from processing.orchestration.models import TaskRun
 from tests.core.iam.factories import (
@@ -10,11 +14,11 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.processing.etl.factories import DataConnectionFactory, EtlTaskFactory
+from tests.processing.etl.factories import DataConnectionFactory, EtlTaskFactory, PayloadFactory
 
 pytestmark = pytest.mark.django_db
 
-ETL_TASKS_URL = "/api/data/etl/tasks"
+ETL_TASKS_URL = "/api/data/etl-tasks"
 
 
 def _detail_url(task_id):
@@ -28,7 +32,9 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_etl_task(workspace, **kwargs):
-    return EtlTaskFactory(data_connection=DataConnectionFactory(workspace=workspace), **kwargs)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    PayloadFactory(data_connection=data_connection)
+    return EtlTaskFactory(data_connection=data_connection, **kwargs)
 
 
 def _etl_task_body(data_connection_id, **overrides):
@@ -52,7 +58,7 @@ def test_get_etl_tasks_includes_task_for_workspace_owner(client):
     response = client.get(ETL_TASKS_URL)
 
     assert response.status_code == 200
-    assert str(task.id) in [t["id"] for t in response.json()]
+    assert str(task.id) in [t["id"] for t in response.json()["data"]]
 
 
 def test_get_etl_tasks_excludes_task_for_outsider(client):
@@ -63,7 +69,65 @@ def test_get_etl_tasks_excludes_task_for_outsider(client):
 
     response = client.get(ETL_TASKS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
+
+
+def test_get_etl_tasks_include_data_connection_sideloads_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(ETL_TASKS_URL, {"include": "dataConnection"})
+
+    assert response.status_code == 200
+    body = response.json()
+    row = next(t for t in body["data"] if t["id"] == str(task.id))
+    assert row["dataConnectionId"] == str(task.data_connection_id)
+    assert {dc["id"] for dc in body["included"]["dataConnections"]} == {
+        str(task.data_connection_id)
+    }
+
+
+def test_get_etl_tasks_include_data_connection_does_not_scale_queries(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_etl_task(workspace)
+    _make_etl_task(workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(ETL_TASKS_URL, {"include": "dataConnection"})
+
+    for _ in range(10):
+        _make_etl_task(workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(ETL_TASKS_URL, {"include": "dataConnection"})
+
+    assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_get_etl_tasks_properties_filters_response_and_skips_expensive_queries(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_etl_task(workspace)
+    _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(ETL_TASKS_URL)
+    assert response.json()["data"][0]["mappingCount"] == 0
+
+    with CaptureQueriesContext(connection) as ctx:
+        response = client.get(ETL_TASKS_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body["data"][0].keys()) == {"id", "name"}
+
+    sqls = [q["sql"] for q in ctx.captured_queries]
+    assert not any("etl_mappings" in sql for sql in sqls), "mappingCount annotate should be skipped"
+    assert not any("DISTINCT ON" in sql for sql in sqls), "attach_latest_runs should be skipped"
 
 
 def test_get_etl_tasks_returns_401_when_unauthenticated(client):
@@ -88,7 +152,9 @@ def test_create_etl_task_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["name"] == "New ETL Task"
+    assert set(response.json().keys()) == {"id"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["name"] == "New ETL Task"
 
 
 def test_create_etl_task_returns_401_when_unauthenticated(client):
@@ -119,6 +185,38 @@ def test_create_etl_task_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
+def test_create_etl_task_returns_400_for_malformed_crontab(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        ETL_TASKS_URL,
+        data=_etl_task_body(data_connection.id, schedule={"crontab": "* * *"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_etl_task_with_valid_crontab_returns_schedule_in_response(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        ETL_TASKS_URL,
+        data=_etl_task_body(data_connection.id, schedule={"crontab": "0 5 * * *"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["schedule"]["crontab"] == "0 5 * * *"
+
+
 # --- get_etl_task ----------------------------------------------------------------------
 
 
@@ -131,7 +229,7 @@ def test_get_etl_task_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(task.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(task.id)
+    assert response.json()["data"]["id"] == str(task.id)
 
 
 def test_get_etl_task_returns_404_for_outsider(client):
@@ -178,8 +276,10 @@ def test_update_etl_task_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(task.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_etl_task_returns_403_for_viewer_collaborator(client):
@@ -267,7 +367,7 @@ def test_get_etl_task_runs_returns_runs_for_workspace_owner(client):
     response = client.get(f"{_detail_url(task.id)}/runs")
 
     assert response.status_code == 200
-    assert str(run.id) in [r["id"] for r in response.json()]
+    assert str(run.id) in [r["id"] for r in response.json()["data"]]
 
 
 def test_get_etl_task_run_returns_200_for_workspace_owner(client):
@@ -281,3 +381,68 @@ def test_get_etl_task_run_returns_200_for_workspace_owner(client):
 
     assert response.status_code == 200
     assert response.json()["id"] == str(run.id)
+
+
+def test_get_etl_task_runs_order_by_started_at_ascending(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    now = timezone.now()
+    older = TaskRun.objects.create(task=task, status="SUCCESS", started_at=now - timedelta(hours=1))
+    newer = TaskRun.objects.create(task=task, status="SUCCESS", started_at=now)
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"order_by": "startedAt"})
+
+    assert response.status_code == 200
+    ids = [r["id"] for r in response.json()["data"]]
+    assert ids == [str(older.id), str(newer.id)]
+
+
+def test_get_etl_task_runs_order_by_rejects_unknown_field(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"order_by": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_etl_task_runs_accepts_properties_filter(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"properties": "id,status"})
+
+    assert response.status_code == 200
+    assert set(response.json()["data"][0].keys()) == {"id", "status"}
+
+
+def test_get_etl_task_runs_accepts_limit_zero(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"limit": "0"})
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["limit"] == 0
+
+
+def test_get_etl_task_runs_ignores_unsupported_include(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"include": "bogus"})
+
+    assert response.status_code == 200

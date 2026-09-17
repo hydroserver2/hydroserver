@@ -27,8 +27,8 @@ class DatastreamService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
         monitoring_site: Union["MonitoringSite", UUID, str] = ...,
@@ -57,8 +57,8 @@ class DatastreamService(HydroServerBaseService):
         """Fetch a collection of HydroServer workspaces."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),
@@ -236,8 +236,8 @@ class DatastreamService(HydroServerBaseService):
     def get_observations(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = 100000,
+        offset: int = ...,
+        limit: int = 100000,
         order_by: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
@@ -247,8 +247,9 @@ class DatastreamService(HydroServerBaseService):
         """Retrieve observations of a datastream."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
+            "datastream_id": str(uid),
+            "offset": offset,
+            "limit": limit,
             "order_by": ",".join(order_by) if order_by is not ... else order_by,
             "phenomenon_time_max": phenomenon_time_max,
             "phenomenon_time_min": phenomenon_time_min,
@@ -261,14 +262,18 @@ class DatastreamService(HydroServerBaseService):
             if v is not ...
         }
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations"
+        path = f"/{self.client.base_route}/observations"
         response = self.client.request("get", path, params=params)
         datastream = self.get(uid=uid)
         collection = ObservationCollection(
             datastream=datastream,
             response=response,
             order_by=order_by if order_by is not ... else None,
-            filters={k: v for k, v in params.items() if k not in ["page", "page_size", "order_by", "format"]},
+            filters={
+                k: v
+                for k, v in params.items()
+                if k not in ["datastream_id", "offset", "limit", "order_by", "format"]
+            },
         )
         if fetch_all is True:
             collection = collection.fetch_all()
@@ -283,10 +288,11 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Load observations to a datastream."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations/bulk-create"
+        path = f"/{self.client.base_route}/observations/bulk-create"
         headers = {"Content-type": "application/json"}
         params = {"mode": mode}
         body = {
+            "datastreamId": str(uid),
             "fields": [to_camel(col) for col in observations.columns.tolist()],
             "data": observations.values.tolist()
         }
@@ -303,9 +309,9 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Delete observations from a datastream."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations/bulk-delete"
+        path = f"/{self.client.base_route}/observations/bulk-delete"
         headers = {"Content-type": "application/json"}
-        body = {}
+        body = {"datastreamId": str(uid)}
 
         if phenomenon_time_start is not None:
             body["phenomenonTimeStart"] = phenomenon_time_start
@@ -341,9 +347,54 @@ class DatastreamService(HydroServerBaseService):
         if url is not None:
             data["link"] = url
 
-        return self.client.request(
+        response = self.client.request(
             "post", path, data=data, files={"file": file} if file is not None else None
         ).json()
+
+        return next(
+            r for r in self.get_linked_resources(uid) if r["id"] == response["id"]
+        )
+
+    def get_linked_resources(self, uid: Union[UUID, str]) -> List[Dict[str, str]]:
+        """Get all linked resources associated with a HydroServer datastream."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+
+        return self.client.request("get", path).json()
+
+    def update_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        linked_resource_id: Union[UUID, str],
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Update a linked resource for a HydroServer datastream. A linked resource's mode
+        (hosted file vs. external URL) cannot be changed in place.
+        """
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if type is not None:
+            data["type"] = type
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
+
+        self.client.request(
+            "patch", path, data=data, files={"file": file} if file is not None else None
+        )
+
+        return next(
+            r for r in self.get_linked_resources(uid) if r["id"] == str(linked_resource_id)
+        )
 
     def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
         """Delete a linked resource from a HydroServer datastream."""

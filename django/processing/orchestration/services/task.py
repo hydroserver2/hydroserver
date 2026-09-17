@@ -11,6 +11,8 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from core.types import Unset
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
+from interfaces.api.service import APIService
 from processing.orchestration.models import Task, TaskRun
 from processing.orchestration.services.scheduling import SchedulingService
 
@@ -23,7 +25,8 @@ T = TypeVar("T", bound=Task)
 class TaskService(SchedulingService, Generic[T]):
 
     task_model: type[T]
-    task_run_order_by_fields = {"id", "started_at", "finished_at", "status"}
+    task_run_order_by_fields = ("id", "status", "startedAt", "finishedAt")
+    task_run_order_by_aliases = {"startedAt": "started_at", "finishedAt": "finished_at"}
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get(
@@ -41,14 +44,14 @@ class TaskService(SchedulingService, Generic[T]):
                     queryset = principal.annotate_permissions(queryset)
                 task = queryset.get()
             except self.task_model.DoesNotExist:
-                raise LookupError(f"Task with ID {str(task)} does not exist.")
+                raise NotFoundError(f"Task with ID {str(task)} does not exist.")
 
         if principal is not Unset:
             if not principal.can_view(task):
-                raise LookupError(f"Task with ID {str(task.id)} does not exist.")
+                raise NotFoundError(f"Task with ID {str(task.id)} does not exist.")
 
             if action != "view" and not getattr(principal, f"can_{action}")(task):
-                raise PermissionError(f"You do not have permission to {action} this task.")
+                raise PermissionDeniedError(f"You do not have permission to {action} this task.")
 
         return task
 
@@ -115,15 +118,15 @@ class TaskService(SchedulingService, Generic[T]):
         try:
             return TaskRun.objects.get(pk=run, task=task)
         except TaskRun.DoesNotExist:
-            raise LookupError(f"TaskRun with ID {run} does not exist.")
+            raise NotFoundError(f"TaskRun with ID {run} does not exist.")
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_run_collection(
         self,
         task: Union[T, uuid.UUID],
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
-        page: int = Field(gt=0, default=1),
-        page_size: int = Field(gt=0, default=100),
+        offset: int = Field(ge=0, default=0),
+        limit: int = Field(ge=0, le=100000, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
         status: list[str] | Unset = Unset,
@@ -159,15 +162,20 @@ class TaskService(SchedulingService, Generic[T]):
         if finished_at__lte is not Unset:
             queryset = queryset.filter(finished_at__lte=finished_at__lte)
 
-        if not all(term.lstrip("-") in self.task_run_order_by_fields for term in order_by):
-            raise ValueError(f"Invalid order_by field(s): {order_by}")
-
-        queryset = queryset.order_by(*order_by, "-started_at", "-id")
+        if order_by:
+            allowed_fields = [
+                *self.task_run_order_by_fields,
+                *[f"-{f}" for f in self.task_run_order_by_fields],
+            ]
+            queryset = APIService.apply_ordering(
+                queryset, order_by, allowed_fields, field_aliases=self.task_run_order_by_aliases
+            )
+        else:
+            queryset = queryset.order_by("-started_at", "-id")
 
         count = queryset.count()
-        offset = (page - 1) * page_size
 
-        queryset = queryset[offset:offset + page_size]
+        queryset = queryset[offset:offset + limit]
 
         return count, queryset
 
@@ -191,7 +199,7 @@ class TaskService(SchedulingService, Generic[T]):
         Annotate a task queryset with fields from the latest run.
 
         Each annotation is a correlated subquery evaluated per row, so callers that only need a
-        subset (e.g. for filtering or ordering) should pass ``fields`` to avoid computing the
+        subset (e.g., for filtering or ordering) should pass ``fields`` to avoid computing the
         rest. See ``attach_latest_runs`` for resolving full latest-run data on a page of results
         without the per-row subqueries.
         """

@@ -1,4 +1,6 @@
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from tests.core.iam.factories import (
     CollaboratorFactory,
@@ -44,7 +46,7 @@ def test_get_qc_histories_includes_history_for_workspace_owner(client):
     response = client.get(QC_HISTORIES_URL)
 
     assert response.status_code == 200
-    assert str(history.id) in [h["id"] for h in response.json()]
+    assert str(history.id) in [h["id"] for h in response.json()["data"]]
 
 
 def test_get_qc_histories_excludes_history_for_outsider(client):
@@ -55,7 +57,7 @@ def test_get_qc_histories_excludes_history_for_outsider(client):
 
     response = client.get(QC_HISTORIES_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_qc_histories_returns_401_when_unauthenticated(client):
@@ -85,7 +87,11 @@ def test_create_qc_history_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["managedDatastream"]["id"] == str(managed.id)
+    created_id = response.json()["id"]
+
+    detail = client.get(_detail_url(created_id))
+    assert detail.json()["data"]["managedDatastreamId"] == str(managed.id)
+    assert detail.json()["data"]["sourceDatastreamId"] == str(source.id)
 
 
 def test_create_qc_history_returns_401_when_unauthenticated(client):
@@ -177,7 +183,7 @@ def test_get_qc_history_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(history.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(history.id)
+    assert response.json()["data"]["id"] == str(history.id)
 
 
 def test_get_qc_history_returns_404_for_outsider(client):
@@ -233,3 +239,70 @@ def test_delete_qc_history_returns_403_for_viewer_collaborator(client):
     response = client.delete(_detail_url(history.id))
 
     assert response.status_code == 403
+
+
+# --- include / properties ---------------------------------------------------------
+
+
+def test_get_qc_history_include_sideloads_both_datastreams(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    history = _make_history(workspace)
+    client.force_login(owner)
+
+    response = client.get(
+        _detail_url(history.id), {"include": "managedDatastream,sourceDatastream"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {row["id"] for row in body["included"]["managedDatastreams"]} == {
+        str(history.managed_datastream_id)
+    }
+    assert {row["id"] for row in body["included"]["sourceDatastreams"]} == {
+        str(history.source_datastream_id)
+    }
+
+
+def test_get_qc_history_without_include_omits_included_bucket(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    history = _make_history(workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(history.id))
+
+    assert response.status_code == 200
+    assert not response.json().get("included")
+
+
+def test_get_qc_histories_include_does_not_scale_queries_with_history_count(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    for _ in range(5):
+        _make_history(workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(QC_HISTORIES_URL, {"include": "managedDatastream,sourceDatastream"})
+
+    for _ in range(5):
+        _make_history(workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(QC_HISTORIES_URL, {"include": "managedDatastream,sourceDatastream"})
+
+    assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_get_qc_histories_properties_filters_response_fields(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_history(workspace)
+    client.force_login(owner)
+
+    response = client.get(QC_HISTORIES_URL, {"properties": "id,createdAt"})
+
+    assert response.status_code == 200
+    row = response.json()["data"][0]
+    assert set(row.keys()) == {"id", "createdAt"}

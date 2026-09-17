@@ -1,15 +1,20 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
 
 
 class ResultQualifierFields(Schema):
@@ -17,15 +22,51 @@ class ResultQualifierFields(Schema):
     description: str
 
 
-_order_by_fields = ("code",)
+RESULT_QUALIFIER_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ResultQualifierIncludeRelation = Literal[*RESULT_QUALIFIER_INCLUDE_RELATIONS.keys()]
 
+_order_by_fields = ("code",)
 ResultQualifierOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
+_property_fields = (
+    "id", "workspaceId", *(to_camel(name) for name in ResultQualifierFields.model_fields)
+)
+ResultQualifierPropertyName = Literal[*_property_fields]
 
-class ResultQualifierQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class ResultQualifierFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ResultQualifierPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ResultQualifierPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ResultQualifierIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ResultQualifierIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ResultQualifierItemQueryParameters(ResultQualifierFilterFields, BaseQueryParameters):
+    pass
+
+
+class ResultQualifierQueryParameters(ResultQualifierFilterFields, CollectionQueryParameters):
     order_by: Optional[list[ResultQualifierOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -42,14 +83,9 @@ class ResultQualifierQueryParameters(CollectionQueryParameters):
     )
 
 
-class ResultQualifierSummaryResponse(BaseGetResponse, ResultQualifierFields):
+class ResultQualifierResponse(BaseGetResponse, ResultQualifierFields):
     id: uuid.UUID
     workspace_id: Optional[uuid.UUID]
-
-
-class ResultQualifierDetailResponse(BaseGetResponse, ResultQualifierFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
 
 
 class ResultQualifierPostBody(BasePostBody, ResultQualifierFields):

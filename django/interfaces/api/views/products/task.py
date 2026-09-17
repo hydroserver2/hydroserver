@@ -1,85 +1,63 @@
 import uuid
-from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from core.types import Unset
-from interfaces.api.http.errors import raise_http_errors
-from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
-from processing.products.services.task import DataProductTaskService
+from interfaces.api.services.products.task import DataProductTaskAPIService
 from processing.products.tasks import run_data_product_task
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.products.task import (
-    DataProductTaskSummaryResponse,
-    DataProductTaskDetailResponse,
+    DataProductTaskResponse,
     DataProductTaskPostBody,
     DataProductTaskPatchBody,
     DataProductTaskQueryParameters,
+    DataProductTaskItemQueryParameters,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunQueryParameters, TaskRunResponse
 
 data_product_task_router = Router(tags=["Data Product Tasks"])
-data_product_task_service = DataProductTaskService()
+data_product_task_service = DataProductTaskAPIService()
 
 
 @data_product_task_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[DataProductTaskSummaryResponse] | list[DataProductTaskDetailResponse],
+        200: PaginatedResponse[DataProductTaskResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_data_product_tasks(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[DataProductTaskQueryParameters],
 ):
     """
     Get data product tasks accessible to the authenticated user.
     """
 
-    with raise_http_errors():
-        count, tasks = data_product_task_service.get_collection(
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "monitoring_site", "workspace",
-                "output_datastream", "input_datastream", "rating_curve",
-            }),
-            **({"monitoring_site": query.monitoring_site} if "monitoring_site" in query.model_fields_set else {}),
-            **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
-            **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
-            **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
-            **({"rating_curve": query.rating_curve} if "rating_curve" in query.model_fields_set else {}),
-        )
-
-    schema = DataProductTaskDetailResponse if query.expand_related else DataProductTaskSummaryResponse
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    return 200, data_product_task_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
+        properties=query.properties,
     )
-
-    return 200, [schema.model_validate(task) for task in tasks]
 
 
 @data_product_task_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: DataProductTaskSummaryResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -91,23 +69,14 @@ def create_data_product_task(
     Create a new data product task.
     """
 
-    with raise_http_errors():
-        task = data_product_task_service.create(
-            principal=request.principal,
-            monitoring_site=data.monitoring_site_id,
-            **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id", "uid", "schedule"}),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-            **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
-        )
-
-    return 201, task
+    return 201, data_product_task_service.create(principal=request.principal, data=data)
 
 
 @data_product_task_router.get(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: DataProductTaskSummaryResponse | DataProductTaskDetailResponse,
+        200: ItemResponse[DataProductTaskResponse],
         401: str,
         403: str,
         404: str,
@@ -117,34 +86,26 @@ def create_data_product_task(
 def get_data_product_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[DataProductTaskItemQueryParameters],
 ):
     """
     Get a data product task.
     """
 
-    with raise_http_errors():
-        task = data_product_task_service.get(
-            task=task_id,
-            principal=request.principal,
-            expand_related=expand_related,
-        )
-
-    schema = DataProductTaskDetailResponse if expand_related else DataProductTaskSummaryResponse
-
-    return 200, schema.model_validate(task)
+    return 200, data_product_task_service.get_item(
+        principal=request.principal, uid=task_id, include=query.include
+    )
 
 
 @data_product_task_router.patch(
     "/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: DataProductTaskSummaryResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -157,21 +118,11 @@ def update_data_product_task(
     Update a data product task.
     """
 
-    with raise_http_errors():
-        task = data_product_task_service.update(
-            task=task_id,
-            principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"schedule"}),
-            **(
-                data.schedule.model_dump(exclude_unset=True)
-                if "schedule" in data.model_fields_set and data.schedule
-                else {"crontab": None, "interval": None}
-                if "schedule" in data.model_fields_set
-                else {}
-            ),
-        )
+    data_product_task_service.update(
+        principal=request.principal, uid=task_id, data=data
+    )
 
-    return 200, task
+    return 204, None
 
 
 @data_product_task_router.delete(
@@ -193,11 +144,10 @@ def delete_data_product_task(
     Delete a data product task.
     """
 
-    with raise_http_errors():
-        data_product_task_service.delete(
-            task=task_id,
-            principal=request.principal,
-        )
+    data_product_task_service.delete(
+        task=task_id,
+        principal=request.principal,
+    )
 
     return 204, None
 
@@ -221,15 +171,12 @@ def trigger_data_product_task(
     Trigger an immediate run of a data product task on a Celery worker.
     """
 
-    with raise_http_errors():
-        task = data_product_task_service.get(
-            task=task_id,
-            principal=request.principal,
-            action="edit",
-        )
+    task = data_product_task_service.get_task_for_action(
+        principal=request.principal, uid=task_id, action="edit"
+    )
 
-        run = TaskRun.objects.create(task=task, status="PENDING")
-        run_data_product_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
+    run = TaskRun.objects.create(task=task, status="PENDING")
+    run_data_product_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
 
     return 202, run
 
@@ -238,7 +185,7 @@ def trigger_data_product_task(
     "/{task_id}/runs",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[TaskRunResponse],
+        200: PaginatedResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -247,7 +194,6 @@ def trigger_data_product_task(
 )
 def get_data_product_task_runs(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[TaskRunQueryParameters],
 ):
@@ -255,22 +201,26 @@ def get_data_product_task_runs(
     Get runs for a data product task.
     """
 
-    with raise_http_errors():
-        count, runs = data_product_task_service.get_run_collection(
-            task=task_id,
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by"}),
-        )
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    run_kwargs = query.model_dump(
+        exclude_unset=True,
+        include={
+            "offset", "limit", "order_by", "status",
+            "started_at__gte", "started_at__lte", "finished_at__gte", "finished_at__lte",
+        },
+    )
+    count, runs = data_product_task_service.get_run_collection(
+        task=task_id,
+        principal=request.principal,
+        **run_kwargs,
     )
 
-    return 200, runs
+    meta = data_product_task_service.build_pagination_meta(
+        count=count,
+        offset=query.offset,
+        limit=query.limit,
+    )
+
+    return 200, {"data": runs, "meta": meta}
 
 
 @data_product_task_router.get(
@@ -293,11 +243,10 @@ def get_data_product_task_run(
     Get a single run for a data product task.
     """
 
-    with raise_http_errors():
-        run = data_product_task_service.get_run(
-            task=task_id,
-            run=run_id,
-            principal=request.principal,
-        )
+    run = data_product_task_service.get_run(
+        task=task_id,
+        run=run_id,
+        principal=request.principal,
+    )
 
     return 200, run

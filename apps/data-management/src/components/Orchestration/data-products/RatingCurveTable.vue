@@ -1144,40 +1144,17 @@ async function findTasksUsingRatingCurve(
     const tasks = (await hs.dataProductTasks.listAllItems({
       workspace_id: [workspaceId],
       rating_curve_id: [ratingCurveId],
-      expand_related: true,
     } as any)) as any[]
 
-    return tasks
-      .filter((task) => taskUsesRatingCurve(task, ratingCurveId))
-      .map((task) => ({
-        id: String(task.id),
-        name: `${task.name ?? ''}`.trim(),
-        workspaceId:
-          String(task.workspaceId ?? task.workspace?.id ?? workspaceId) ||
-          workspaceId,
-      }))
+    return tasks.map((task) => ({
+      id: String(task.id),
+      name: `${task.name ?? ''}`.trim(),
+      workspaceId: String(task.workspaceId ?? workspaceId) || workspaceId,
+    }))
   } catch (error: any) {
     Snackbar.error(error?.message || 'Unable to validate rating curve usage.')
     return null
   }
-}
-
-function taskUsesRatingCurve(task: any, ratingCurveId: string) {
-  const transformations = Array.isArray(task?.ratingCurveTransformations)
-    ? task.ratingCurveTransformations
-    : []
-  if (
-    transformations.some((transformation: any) => {
-      const curve = transformation?.ratingCurve
-      return (
-        String(curve?.id ?? transformation?.ratingCurveId ?? '') ===
-        String(ratingCurveId)
-      )
-    })
-  ) {
-    return true
-  }
-  return false
 }
 
 async function saveEditAttachment() {

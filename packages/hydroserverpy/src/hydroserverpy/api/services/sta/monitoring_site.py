@@ -17,8 +17,8 @@ class MonitoringSiteService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
         bbox: Tuple[float, float, float, float] = ...,
@@ -33,8 +33,8 @@ class MonitoringSiteService(HydroServerBaseService):
         """Fetch a collection of monitoring_sites."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
             bbox=",".join([str(i) for i in bbox]) if bbox is not ... else bbox,
@@ -163,9 +163,54 @@ class MonitoringSiteService(HydroServerBaseService):
         if url is not None:
             data["link"] = url
 
-        return self.client.request(
+        response = self.client.request(
             "post", path, data=data, files={"file": file} if file is not None else None
         ).json()
+
+        return next(
+            r for r in self.get_linked_resources(uid) if r["id"] == response["id"]
+        )
+
+    def get_linked_resources(self, uid: Union[UUID, str]) -> List[Dict[str, str]]:
+        """Get all linked resources associated with a HydroServer monitoring_site."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+
+        return self.client.request("get", path).json()
+
+    def update_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        linked_resource_id: Union[UUID, str],
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Update a linked resource for a HydroServer monitoring_site. A linked resource's mode
+        (hosted file vs. external URL) cannot be changed in place.
+        """
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if type is not None:
+            data["type"] = type
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
+
+        self.client.request(
+            "patch", path, data=data, files={"file": file} if file is not None else None
+        )
+
+        return next(
+            r for r in self.get_linked_resources(uid) if r["id"] == str(linked_resource_id)
+        )
 
     def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
         """Delete a linked resource from a HydroServer monitoring_site."""

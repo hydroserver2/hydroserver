@@ -1,7 +1,10 @@
 import uuid
-from pydantic import AliasPath, AliasChoices, field_validator
+
+from typing import Optional, Literal, Annotated
+from pydantic import AliasPath, AliasChoices, BeforeValidator, WithJsonSchema, field_validator
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
-from typing import Optional, Literal, TYPE_CHECKING
+
 from core.types import ISODatetime
 from interfaces.api.schemas import (
     BaseGetResponse,
@@ -9,19 +12,17 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    WorkspaceResponse,
+    MonitoringSiteResponse,
+    ObservedPropertyResponse,
+    UnitResponse,
+    MethodResponse,
+    ProcessingLevelResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
-    from interfaces.api.schemas import (
-        MonitoringSiteSummaryResponse,
-        ObservedPropertySummaryResponse,
-        UnitSummaryResponse,
-        MethodSummaryResponse,
-        ProcessingLevelSummaryResponse,
-    )
 
 
 class DatastreamFields(Schema):
@@ -56,6 +57,40 @@ class DatastreamRelatedFields(Schema):
     unit_id: uuid.UUID
 
 
+DATASTREAM_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "monitoring_site__workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "monitoringSite": {
+        "path": "monitoring_site",
+        "bucket": "monitoringSites",
+        "response_schema": MonitoringSiteResponse,
+    },
+    "method": {
+        "path": "method",
+        "bucket": "methods",
+        "response_schema": MethodResponse,
+    },
+    "observedProperty": {
+        "path": "observed_property",
+        "bucket": "observedProperties",
+        "response_schema": ObservedPropertyResponse,
+    },
+    "processingLevel": {
+        "path": "processing_level",
+        "bucket": "processingLevels",
+        "response_schema": ProcessingLevelResponse,
+    },
+    "unit": {
+        "path": "unit",
+        "bucket": "units",
+        "response_schema": UnitResponse,
+    },
+}
+DatastreamIncludeRelation = Literal[*DATASTREAM_INCLUDE_RELATIONS.keys()]
+
 _order_by_fields = (
     "name",
     "observationType",
@@ -69,14 +104,46 @@ _order_by_fields = (
     "resultBeginTime",
     "resultEndTime",
 )
-
 DatastreamOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(to_camel(name) for name in DatastreamFields.model_fields),
+    *(to_camel(name) for name in DatastreamRelatedFields.model_fields),
+    "tags",
+    "linkedResources",
+)
+DatastreamPropertyName = Literal[*_property_fields]
 
-class DatastreamQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class DatastreamFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[DatastreamPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DatastreamPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[DatastreamIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DatastreamIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class DatastreamItemQueryParameters(DatastreamFilterFields, BaseQueryParameters):
+    pass
+
+
+class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters):
     order_by: Optional[list[DatastreamOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -223,27 +290,13 @@ class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
     processing_levels: list[VisualizationProcessingLevelResponse]
 
 
-class DatastreamSummaryResponse(
+class DatastreamResponse(
     BaseGetResponse, DatastreamFields, DatastreamRelatedFields
 ):
     id: uuid.UUID
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
-    tags: dict[str, str] = {}
-    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
-
-
-class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
-    id: uuid.UUID
-    workspace: "WorkspaceSummaryResponse" = Field(
-        ..., validation_alias=AliasPath("monitoring_site", "workspace")
-    )
-    monitoring_site: "MonitoringSiteSummaryResponse"
-    method: "MethodSummaryResponse"
-    observed_property: "ObservedPropertySummaryResponse"
-    processing_level: "ProcessingLevelSummaryResponse"
-    unit: "UnitSummaryResponse"
     tags: dict[str, str] = {}
     datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 

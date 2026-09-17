@@ -87,21 +87,17 @@ export const apiMethods = {
 
   async paginatedFetch<T>(base: string): Promise<ApiResponse<T>> {
     const url = new URL(String(base), globalThis.location?.origin ?? undefined)
-    const urlAlreadyHasPage = url.searchParams.has('page')
-    if (!urlAlreadyHasPage) url.searchParams.set('page', '1')
+    const urlAlreadyHasOffset = url.searchParams.has('offset')
+    if (!urlAlreadyHasOffset) url.searchParams.set('offset', '0')
 
-    if (!url.searchParams.has('page_size'))
-      url.searchParams.set('page_size', String(DEFAULT_PAGE_SIZE))
+    if (!url.searchParams.has('limit'))
+      url.searchParams.set('limit', String(DEFAULT_PAGE_SIZE))
+    const limitParam = Number(url.searchParams.get('limit')) || DEFAULT_PAGE_SIZE
 
-    const opts = await requestInterceptor({ method: 'GET' })
+    const res = await interceptedFetch<T>(url.toString(), { method: 'GET' })
 
-    // fetch first page without response interceptor so we can read headers
-    const firstResponse = await limit(() => fetch(url, opts))
-    const totalPages = Number(firstResponse.headers.get('X-Total-Pages')) || 1
-    const res = await responseInterceptor<T>(firstResponse)
-
-    // If the caller explicitly asked for a single page, return it as-is
-    if (urlAlreadyHasPage) return res
+    // If the caller explicitly asked for a specific offset, return it as-is
+    if (urlAlreadyHasOffset) return res
 
     // Errors carry no `data` to merge; surface them to the caller unchanged.
     if (!res.ok) return res
@@ -112,6 +108,13 @@ export const apiMethods = {
 
     const concatInto = (target: Columnar, src: Columnar) => {
       for (const [k, v] of Object.entries(src)) {
+        if (k === 'meta') continue
+        if (k === 'fields') {
+          // Row-format's column-name list is identical on every page;
+          // keep the first page's copy instead of concatenating duplicates.
+          if (target[k] === undefined) target[k] = v
+          continue
+        }
         if (Array.isArray(v)) {
           if (!Array.isArray(target[k])) target[k] = []
           ;(target[k] as unknown[]).push(...v)
@@ -122,59 +125,129 @@ export const apiMethods = {
       }
     }
 
+    const pageRowCount = (data: unknown): number => {
+      if (Array.isArray(data)) return data.length
+      if (isColumnar(data)) {
+        if (Array.isArray((data as Columnar).results)) {
+          return ((data as Columnar).results as unknown[]).length
+        }
+        for (const [k, v] of Object.entries(data as Columnar)) {
+          if (k === 'fields') continue
+          if (Array.isArray(v)) return v.length
+        }
+      }
+      return 0
+    }
+
     // Normalize first page
     let mode: 'array' | 'columnar'
     let allArray: T[] = []
     let allColumnar: Columnar | null = null
+    let firstPageMeta = res.meta as Record<string, unknown> | undefined
+
+    type IncludedBuckets = Record<string, unknown[]>
+    const mergeIncluded = (
+      target: IncludedBuckets | undefined,
+      src: unknown
+    ): IncludedBuckets | undefined => {
+      if (!isColumnar(src)) return target
+      const merged = target ?? {}
+      for (const [key, val] of Object.entries(src)) {
+        if (!Array.isArray(val)) continue
+        if (!Array.isArray(merged[key])) merged[key] = []
+        merged[key].push(...val)
+      }
+      return merged
+    }
+    let mergedIncluded = mergeIncluded(undefined, res.included)
 
     if (Array.isArray(res.data)) {
       mode = 'array'
       allArray = [...(res.data as T[])]
     } else if (isColumnar(res.data)) {
       mode = 'columnar'
+      const raw = res.data as Columnar
+      if (!firstPageMeta && isColumnar(raw.meta))
+        firstPageMeta = raw.meta as Record<string, unknown>
       allColumnar = {}
-      concatInto(allColumnar, res.data as Columnar)
+      concatInto(allColumnar, raw)
     } else {
       return res // unknown shape, don’t attempt to paginate
     }
 
-    // Fetch remaining pages concurrently (bounded by the shared `limit`) and merge in page order.
-    // Each page gets its own URL so the requests don't share mutable searchParams state.
-    const remainingPages = await Promise.all(
-      Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) => {
-        const pageUrl = new URL(url)
-        pageUrl.searchParams.set('page', String(index + 2))
-        return limit(() =>
-          interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
-        )
-      })
-    )
+    const mergePageData = (page: ApiResponse<unknown>): boolean => {
+      if (mode === 'array') {
+        if (Array.isArray(page.data)) {
+          allArray.push(...(page.data as T[]))
+          return true
+        }
+        if (isColumnar(page.data) && Array.isArray(page.data.results)) {
+          // some endpoints expose { results: [] }
+          allArray.push(...(page.data.results as T[]))
+          return true
+        }
+        return false
+      }
+      if (isColumnar(page.data)) {
+        concatInto(allColumnar!, page.data as Columnar)
+        return true
+      }
+      if (Array.isArray(page.data)) {
+        // if a later page comes back as a plain array, tuck it under `results`
+        if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
+        ;(allColumnar!.results as unknown[]).push(...page.data)
+        return true
+      }
+      return false
+    }
 
+    const fetchPage = (offset: number) => {
+      const pageUrl = new URL(url)
+      pageUrl.searchParams.set('offset', String(offset))
+      return limit(() =>
+        interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
+      )
+    }
+
+    const totalCount =
+      typeof firstPageMeta?.totalCount === 'number'
+        ? firstPageMeta.totalCount
+        : undefined
+
+    const offsets: number[] = []
+    if (totalCount !== undefined) {
+      for (let offset = limitParam; offset < totalCount; offset += limitParam) {
+        offsets.push(offset)
+      }
+    }
+
+    const remainingPages = await Promise.all(offsets.map(fetchPage))
+
+    let lastRowCount = pageRowCount(res.data)
     for (const page of remainingPages) {
       // Never report a partial multi-page result as successful. Callers use
       // `ok` to decide whether a management table is complete and actionable.
       if (!page.ok) return page
-      if (mode === 'array') {
-        if (Array.isArray(page.data)) {
-          allArray.push(...(page.data as T[]))
-        } else if (isColumnar(page.data) && Array.isArray(page.data.results)) {
-          // some endpoints expose { results: [] }
-          allArray.push(...(page.data.results as T[]))
-        } else {
-          // mixed shapes across pages — stop merging to avoid corrupting data
-          break
-        }
-      } else {
-        if (isColumnar(page.data)) {
-          concatInto(allColumnar!, page.data as Columnar)
-        } else if (Array.isArray(page.data)) {
-          // if a later page comes back as a plain array, tuck it under `results`
-          if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
-          ;(allColumnar!.results as unknown[]).push(...page.data)
-        } else {
-          break
-        }
-      }
+      mergedIncluded = mergeIncluded(mergedIncluded, page.included)
+      if (!mergePageData(page)) break
+      lastRowCount = pageRowCount(page.data)
+    }
+
+    let nextOffset = limitParam * (1 + offsets.length)
+    const MAX_EXTRA_PAGES = 1000
+    let extraPages = 0
+    while (
+      limitParam > 0 &&
+      lastRowCount === limitParam &&
+      extraPages < MAX_EXTRA_PAGES
+    ) {
+      const page = await fetchPage(nextOffset)
+      if (!page.ok) return page
+      mergedIncluded = mergeIncluded(mergedIncluded, page.included)
+      if (!mergePageData(page)) break
+      lastRowCount = pageRowCount(page.data)
+      nextOffset += limitParam
+      extraPages += 1
     }
 
     const merged =
@@ -182,12 +255,20 @@ export const apiMethods = {
         ? (allArray as unknown as T)
         : (allColumnar as unknown as T)
 
+    const mergedCount = pageRowCount(merged)
+
     return {
       ok: true,
       data: merged,
       status: res.status,
       message: res.message,
-      meta: res.meta,
+      meta: {
+        ...(firstPageMeta ?? {}),
+        offset: 0,
+        limit: mergedCount,
+        totalCount: mergedCount,
+      },
+      included: mergedIncluded,
     }
   },
 }

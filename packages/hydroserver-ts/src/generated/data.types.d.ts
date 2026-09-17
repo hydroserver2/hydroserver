@@ -4,6 +4,222 @@
  */
 
 export interface paths {
+    "/api/data/data-product-rating-curves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curves
+         * @description Get rating curves accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_products_rating_curve_get_rating_curves"];
+        put?: never;
+        /**
+         * Create Rating Curve
+         * @description Create a new rating curve.
+         */
+        post: operations["interfaces_api_views_products_rating_curve_create_rating_curve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-rating-curves/{rating_curve_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curve
+         * @description Get a rating curve.
+         */
+        get: operations["interfaces_api_views_products_rating_curve_get_rating_curve"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Rating Curve
+         * @description Delete a rating curve.
+         */
+        delete: operations["interfaces_api_views_products_rating_curve_delete_rating_curve"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Rating Curve
+         * @description Update a rating curve.
+         */
+        patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
+        trace?: never;
+    };
+    "/api/data/data-product-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Tasks
+         * @description Get data product tasks accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_tasks"];
+        put?: never;
+        /**
+         * Create Data Product Task
+         * @description Create a new data product task.
+         */
+        post: operations["interfaces_api_views_products_task_create_data_product_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task
+         * @description Get a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Data Product Task
+         * @description Delete a data product task.
+         */
+        delete: operations["interfaces_api_views_products_task_delete_data_product_task"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Data Product Task
+         * @description Update a data product task.
+         */
+        patch: operations["interfaces_api_views_products_task_update_data_product_task"];
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task Runs
+         * @description Get runs for a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task Run
+         * @description Get a single run for a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task_run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-tasks/{task_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger Data Product Task
+         * @description Trigger an immediate run of a data product task on a Celery worker.
+         */
+        post: operations["interfaces_api_views_products_task_trigger_data_product_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-transformations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Transformations
+         * @description Get data product transformations.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_data_product_transformations"];
+        put?: never;
+        /**
+         * Create Data Product Transformation
+         * @description Create a data product transformation.
+         */
+        post: operations["interfaces_api_views_products_transformation_create_data_product_transformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/data-product-transformations/{transformation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Transformation
+         * @description Get a data product transformation.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_data_product_transformation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Data Product Transformation
+         * @description Delete a data product transformation.
+         */
+        delete: operations["interfaces_api_views_products_transformation_delete_data_product_transformation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Data Product Transformation
+         * @description Update a data product transformation.
+         */
+        patch: operations["interfaces_api_views_products_transformation_update_data_product_transformation"];
+        trace?: never;
+    };
     "/api/data/datastreams": {
         parameters: {
             query?: never;
@@ -245,95 +461,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/observations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Observations
-         * @description Get Datastream Observations.
-         */
-        get: operations["interfaces_api_views_sta_observation_get_observations"];
-        put?: never;
-        /**
-         * Create Observation
-         * @description Create a new Observation.
-         */
-        post: operations["interfaces_api_views_sta_observation_create_observation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}/observations/bulk-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Insert Observations
-         * @description Insert Datastream Observations.
-         */
-        post: operations["interfaces_api_views_sta_observation_insert_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}/observations/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Observations
-         * @description Delete Datastream Observations between the given phenomenon start and end times.
-         */
-        post: operations["interfaces_api_views_sta_observation_delete_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}/observations/{observation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Observation
-         * @description Get an Observation.
-         */
-        get: operations["interfaces_api_views_sta_observation_get_observation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Observation
-         * @description Delete an Observation.
-         */
-        delete: operations["interfaces_api_views_sta_observation_delete_observation"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/etl/data-connections": {
+    "/api/data/etl-data-connections": {
         parameters: {
             query?: never;
             header?: never;
@@ -357,7 +485,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/data-connections/{data_connection_id}": {
+    "/api/data/etl-data-connections/{data_connection_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -385,7 +513,59 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_data_connection_update_data_connection"];
         trace?: never;
     };
-    "/api/data/etl/tasks": {
+    "/api/data/etl-mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Etl Mappings
+         * @description Get ETL mappings.
+         */
+        get: operations["interfaces_api_views_etl_mapping_get_etl_mappings"];
+        put?: never;
+        /**
+         * Create Etl Mapping
+         * @description Create an ETL mapping.
+         */
+        post: operations["interfaces_api_views_etl_mapping_create_etl_mapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/etl-mappings/{mapping_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Etl Mapping
+         * @description Get an ETL mapping.
+         */
+        get: operations["interfaces_api_views_etl_mapping_get_etl_mapping"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Etl Mapping
+         * @description Delete an ETL mapping.
+         */
+        delete: operations["interfaces_api_views_etl_mapping_delete_etl_mapping"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Etl Mapping
+         * @description Update an ETL mapping.
+         */
+        patch: operations["interfaces_api_views_etl_mapping_update_etl_mapping"];
+        trace?: never;
+    };
+    "/api/data/etl-tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -409,7 +589,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}": {
+    "/api/data/etl-tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -437,7 +617,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_task_update_etl_task"];
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/runs": {
+    "/api/data/etl-tasks/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -457,7 +637,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/runs/{run_id}": {
+    "/api/data/etl-tasks/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -477,7 +657,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl/tasks/{task_id}/trigger": {
+    "/api/data/etl-tasks/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -567,6 +747,58 @@ export interface paths {
          * @description Update a Method.
          */
         patch: operations["interfaces_api_views_sta_method_update_method"];
+        trace?: never;
+    };
+    "/api/data/monitoring-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Rules
+         * @description Get monitoring rules.
+         */
+        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rules"];
+        put?: never;
+        /**
+         * Create Monitoring Rule
+         * @description Create a monitoring rule on a datastream belonging to the given task.
+         */
+        post: operations["interfaces_api_views_monitoring_rule_create_monitoring_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Rule
+         * @description Get a monitoring rule.
+         */
+        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rule"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Monitoring Rule
+         * @description Delete a monitoring rule.
+         */
+        delete: operations["interfaces_api_views_monitoring_rule_delete_monitoring_rule"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Rule
+         * @description Update a monitoring rule's parameters.
+         */
+        patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
         trace?: never;
     };
     "/api/data/monitoring-sites": {
@@ -810,7 +1042,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource"];
         trace?: never;
     };
-    "/api/data/monitoring/tasks": {
+    "/api/data/monitoring-tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -834,7 +1066,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}": {
+    "/api/data/monitoring-tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -862,59 +1094,7 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_task_update_monitoring_task"];
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}/rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Rules
-         * @description Get rules for a monitoring task.
-         */
-        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rules"];
-        put?: never;
-        /**
-         * Create Monitoring Rule
-         * @description Create a monitoring rule on a datastream belonging to the given task.
-         */
-        post: operations["interfaces_api_views_monitoring_rule_create_monitoring_rule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring/tasks/{task_id}/rules/{rule_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Rule
-         * @description Get a monitoring rule.
-         */
-        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rule"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Monitoring Rule
-         * @description Delete a monitoring rule.
-         */
-        delete: operations["interfaces_api_views_monitoring_rule_delete_monitoring_rule"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Monitoring Rule
-         * @description Update a monitoring rule's parameters.
-         */
-        patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
-        trace?: never;
-    };
-    "/api/data/monitoring/tasks/{task_id}/runs": {
+    "/api/data/monitoring-tasks/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -934,7 +1114,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}/runs/{run_id}": {
+    "/api/data/monitoring-tasks/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -954,7 +1134,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring/tasks/{task_id}/trigger": {
+    "/api/data/monitoring-tasks/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -969,6 +1149,94 @@ export interface paths {
          */
         post: operations["interfaces_api_views_monitoring_task_trigger_monitoring_task"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Observations
+         * @description Get Observations.
+         */
+        get: operations["interfaces_api_views_sta_observation_get_observations"];
+        put?: never;
+        /**
+         * Create Observation
+         * @description Create a new Observation.
+         */
+        post: operations["interfaces_api_views_sta_observation_create_observation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations/bulk-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Insert Observations
+         * @description Insert Observations.
+         */
+        post: operations["interfaces_api_views_sta_observation_insert_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Observations
+         * @description Delete Observations between the given phenomenon start and end times.
+         */
+        post: operations["interfaces_api_views_sta_observation_delete_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observations/{observation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Observation
+         * @description Get an Observation.
+         */
+        get: operations["interfaces_api_views_sta_observation_get_observation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Observation
+         * @description Delete an Observation.
+         */
+        delete: operations["interfaces_api_views_sta_observation_delete_observation"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1098,326 +1366,6 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_processing_level_update_processing_level"];
         trace?: never;
     };
-    "/api/data/products/rating-curves": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Rating Curves
-         * @description Get rating curves accessible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_products_rating_curve_get_rating_curves"];
-        put?: never;
-        /**
-         * Create Rating Curve
-         * @description Create a new rating curve.
-         */
-        post: operations["interfaces_api_views_products_rating_curve_create_rating_curve"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/rating-curves/{rating_curve_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Rating Curve
-         * @description Get a rating curve.
-         */
-        get: operations["interfaces_api_views_products_rating_curve_get_rating_curve"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Rating Curve
-         * @description Delete a rating curve.
-         */
-        delete: operations["interfaces_api_views_products_rating_curve_delete_rating_curve"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Rating Curve
-         * @description Update a rating curve.
-         */
-        patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
-        trace?: never;
-    };
-    "/api/data/products/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Tasks
-         * @description Get data product tasks accessible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_tasks"];
-        put?: never;
-        /**
-         * Create Data Product Task
-         * @description Create a new data product task.
-         */
-        post: operations["interfaces_api_views_products_task_create_data_product_task"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Task
-         * @description Get a data product task.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_task"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Data Product Task
-         * @description Delete a data product task.
-         */
-        delete: operations["interfaces_api_views_products_task_delete_data_product_task"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Data Product Task
-         * @description Update a data product task.
-         */
-        patch: operations["interfaces_api_views_products_task_update_data_product_task"];
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Task Runs
-         * @description Get runs for a data product task.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_task_runs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/runs/{run_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Data Product Task Run
-         * @description Get a single run for a data product task.
-         */
-        get: operations["interfaces_api_views_products_task_get_data_product_task_run"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/aggregation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Aggregation Transformations
-         * @description Get aggregation transformations for a data product task.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_aggregation_transformations"];
-        put?: never;
-        /**
-         * Create Aggregation Transformation
-         * @description Create an aggregation transformation on a data product task.
-         */
-        post: operations["interfaces_api_views_products_transformation_create_aggregation_transformation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/aggregation/{transformation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Aggregation Transformation
-         * @description Get an aggregation transformation.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_aggregation_transformation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Aggregation Transformation
-         * @description Delete an aggregation transformation.
-         */
-        delete: operations["interfaces_api_views_products_transformation_delete_aggregation_transformation"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Aggregation Transformation
-         * @description Update an aggregation transformation.
-         */
-        patch: operations["interfaces_api_views_products_transformation_update_aggregation_transformation"];
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/derivation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Derivation Transformations
-         * @description Get derivation transformations for a data product task.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_derivation_transformations"];
-        put?: never;
-        /**
-         * Create Derivation Transformation
-         * @description Create a derivation transformation on a data product task.
-         */
-        post: operations["interfaces_api_views_products_transformation_create_derivation_transformation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/derivation/{transformation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Derivation Transformation
-         * @description Get a derivation transformation.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_derivation_transformation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Derivation Transformation
-         * @description Delete a derivation transformation.
-         */
-        delete: operations["interfaces_api_views_products_transformation_delete_derivation_transformation"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Derivation Transformation
-         * @description Update a derivation transformation.
-         */
-        patch: operations["interfaces_api_views_products_transformation_update_derivation_transformation"];
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/rating-curve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Rating Curve Transformations
-         * @description Get rating curve transformations for a data product task.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_rating_curve_transformations"];
-        put?: never;
-        /**
-         * Create Rating Curve Transformation
-         * @description Create a rating curve transformation on a data product task.
-         */
-        post: operations["interfaces_api_views_products_transformation_create_rating_curve_transformation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/rating-curve/{transformation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Rating Curve Transformation
-         * @description Get a rating curve transformation.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_rating_curve_transformation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Rating Curve Transformation
-         * @description Delete a rating curve transformation.
-         */
-        delete: operations["interfaces_api_views_products_transformation_delete_rating_curve_transformation"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Rating Curve Transformation
-         * @description Update a rating curve transformation.
-         */
-        patch: operations["interfaces_api_views_products_transformation_update_rating_curve_transformation"];
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/trigger": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Trigger Data Product Task
-         * @description Trigger an immediate run of a data product task on a Celery worker.
-         */
-        post: operations["interfaces_api_views_products_task_trigger_data_product_task"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/quality-control/histories": {
         parameters: {
             query?: never;
@@ -1427,7 +1375,7 @@ export interface paths {
         };
         /**
          * Get Qc Histories
-         * @description Get QC histories. Returns detail responses (with expanded datastreams) when expand_related=True.
+         * @description Get QC histories.
          */
         get: operations["interfaces_api_views_quality_history_get_qc_histories"];
         put?: never;
@@ -1499,7 +1447,7 @@ export interface paths {
         };
         /**
          * Get Qc Session
-         * @description Get a QC session by ID. Includes dependencies and operations when expand_related=True.
+         * @description Get a QC session by ID.
          */
         get: operations["interfaces_api_views_quality_session_get_qc_session"];
         put?: never;
@@ -1942,166 +1890,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AccountContactDetailResponse */
-        AccountContactDetailResponse: {
-            /** Address */
-            address?: string | null;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Link */
-            link?: string | null;
-            /** Name */
-            name: string;
-            /** Organizationname */
-            organizationName?: string | null;
-            /** Phone */
-            phone?: string | null;
-            /** Type */
-            type: string;
-        };
-        /** AggregationTransformationPatchBody */
-        AggregationTransformationPatchBody: {
-            /**
-             * Aggregationmethod
-             * @enum {string}
-             */
-            aggregationMethod?: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId?: string;
-            /** Minvalues */
-            minValues?: number | null;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId?: string;
-            /** Outputinterval */
-            outputInterval?: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits?: "minutes" | "hours" | "days" | "weeks" | "months";
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("offset" | "iana") | null;
-        };
-        /** AggregationTransformationPostBody */
-        AggregationTransformationPostBody: {
-            /**
-             * Aggregationmethod
-             * @enum {string}
-             */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId: string;
-            /** Minvalues */
-            minValues?: number | null;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /** Outputinterval */
-            outputInterval: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("offset" | "iana") | null;
-        };
-        /** AggregationTransformationResponse */
-        AggregationTransformationResponse: {
-            /**
-             * Aggregationmethod
-             * @enum {string}
-             */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Minvalues */
-            minValues?: number | null;
-            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Outputinterval */
-            outputInterval: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("offset" | "iana") | null;
-        };
-        /** AggregationTransformationSummaryResponse */
-        AggregationTransformationSummaryResponse: {
-            /**
-             * Aggregationmethod
-             * @enum {string}
-             */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId: string;
-            /** Minvalues */
-            minValues?: number | null;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /** Outputinterval */
-            outputInterval: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("offset" | "iana") | null;
-        };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Datastartrow */
-            dataStartRow?: number | null;
-            /** Delimiter */
-            delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
+            dataStartRow: number;
+            /**
+             * Delimiter
+             * @enum {string}
+             */
+            delimiter: "," | "|" | "\t" | ";" | " ";
             /** Headerrow */
-            headerRow?: number | null;
+            headerRow: number;
             /** Timestampformat */
             timestampFormat?: string | null;
             /** Timestampkey */
@@ -2131,16 +1931,15 @@ export interface components {
              */
             type: "CSV";
         };
+        /** CollaboratorCreatedResponse */
+        CollaboratorCreatedResponse: {
+            /** Id */
+            id: number;
+        };
         /** CollaboratorDeleteBody */
         CollaboratorDeleteBody: {
             /** Email */
             email: string;
-        };
-        /** CollaboratorDetailResponse */
-        CollaboratorDetailResponse: {
-            role: components["schemas"]["RoleSummaryResponse"];
-            serviceAccount?: components["schemas"]["ServiceAccountContactResponse"] | null;
-            user?: components["schemas"]["AccountContactDetailResponse"] | null;
         };
         /** CollaboratorPostBody */
         CollaboratorPostBody: {
@@ -2155,17 +1954,27 @@ export interface components {
         /** CollaboratorQueryParameters */
         CollaboratorQueryParameters: {
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            page: number | null;
+            include?: ("role" | "user" | "serviceAccount")[];
             /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("roleId" | "userEmail" | "serviceAccountEmail")[];
             /**
              * Role Id
              * @description Filter collaborators by role ID.
@@ -2173,11 +1982,39 @@ export interface components {
              */
             role_id: string[];
         };
-        /**
-         * DataConnectionOrderBy
-         * @enum {string}
-         */
-        DataConnectionOrderBy: "id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName";
+        /** CollaboratorResponse */
+        CollaboratorResponse: {
+            /**
+             * Roleid
+             * Format: uuid
+             */
+            roleId: string;
+            /** Serviceaccountemail */
+            serviceAccountEmail?: string | null;
+            /** Useremail */
+            userEmail?: string | null;
+        };
+        /** CreatedResponse */
+        CreatedResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** DataConnectionItemQueryParameters */
+        DataConnectionItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
+        };
         /** DataConnectionPatchBody */
         DataConnectionPatchBody: {
             /** Authheadername */
@@ -2236,29 +2073,39 @@ export interface components {
         /** DataConnectionQueryParameters */
         DataConnectionQueryParameters: {
             /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[];
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            order_by: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
             /**
              * Payload Type
              * @description Filter data connections by payload type.
              * @default []
              */
             payload_type: string[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
             /**
              * Workspace Id
              * @description Filter data connections by workspace ID.
@@ -2302,7 +2149,11 @@ export interface components {
             timezone?: string | null;
             /** Timezonetype */
             timezoneType?: ("offset" | "iana") | null;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** DataIngestionWindowBoundaryPostBody */
         DataIngestionWindowBoundaryPostBody: {
@@ -2336,32 +2187,19 @@ export interface components {
             end?: components["schemas"]["DataIngestionWindowBoundaryResponse"] | null;
             start?: components["schemas"]["DataIngestionWindowBoundaryResponse"] | null;
         };
-        /** DataProductTaskDetailResponse */
-        DataProductTaskDetailResponse: {
-            /** Aggregationtransformations */
-            aggregationTransformations: components["schemas"]["AggregationTransformationResponse"][];
-            /** Derivationtransformations */
-            derivationTransformations: components["schemas"]["DerivationTransformationResponse"][];
-            /** Description */
-            description?: string | null;
+        /** DataProductTaskItemQueryParameters */
+        DataProductTaskItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
-            /** Name */
-            name: string;
-            /** Ratingcurvetransformations */
-            ratingCurveTransformations: components["schemas"]["RatingCurveTransformationResponse"][];
-            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            include?: "monitoringSite"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
         };
-        /**
-         * DataProductTaskOrderBy
-         * @enum {string}
-         */
-        DataProductTaskOrderBy: "id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
         /** DataProductTaskPatchBody */
         DataProductTaskPatchBody: {
             /** Description */
@@ -2391,8 +2229,11 @@ export interface components {
         };
         /** DataProductTaskQueryParameters */
         DataProductTaskQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "monitoringSite"[];
             /**
              * Input Datastream Id
              * @description Filter data product tasks by input datastream ID.
@@ -2406,17 +2247,29 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter data product tasks by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
             /**
              * Output Datastream Id
              * @description Filter data product tasks by output datastream ID.
@@ -2424,17 +2277,10 @@ export interface components {
              */
             output_datastream_id: string[];
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
             /**
              * Rating Curve Id
              * @description Filter data product tasks by rating curve ID.
@@ -2454,12 +2300,8 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** DataProductTaskSummaryResponse */
-        DataProductTaskSummaryResponse: {
-            /** Aggregationtransformations */
-            aggregationTransformations: components["schemas"]["AggregationTransformationSummaryResponse"][];
-            /** Derivationtransformations */
-            derivationTransformations: components["schemas"]["DerivationTransformationSummaryResponse"][];
+        /** DataProductTaskResponse */
+        DataProductTaskResponse: {
             /** Description */
             description?: string | null;
             /**
@@ -2475,122 +2317,239 @@ export interface components {
             monitoringSiteId: string;
             /** Name */
             name: string;
-            /** Ratingcurvetransformations */
-            ratingCurveTransformations: components["schemas"]["RatingCurveTransformationSummaryResponse"][];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
+            /**
+             * Transformationtypes
+             * @default []
+             */
+            transformationTypes: string[];
             /**
              * Workspaceid
              * Format: uuid
              */
             workspaceId: string;
         };
-        /**
-         * DataProductTransformationOrderBy
-         * @enum {string}
-         */
-        DataProductTransformationOrderBy: "id" | "outputDatastreamId" | "-id" | "-outputDatastreamId";
-        /** DataProductTransformationTypeQueryParameters */
-        DataProductTransformationTypeQueryParameters: {
+        /** DataProductTransformationItemQueryParameters */
+        DataProductTransformationItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("outputDatastream" | "ratingCurve")[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+        };
+        /** DataProductTransformationPatchBody */
+        DataProductTransformationPatchBody: {
+            /** Aggregationmethod */
+            aggregationMethod?: ("mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean") | null;
+            /** Formula */
+            formula?: string | null;
+            /** Inputdatastreams */
+            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
+            /** Minvalues */
+            minValues?: number | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId?: string;
+            /** Outputinterval */
+            outputInterval?: number | null;
+            /** Outputintervalunits */
+            outputIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /** Ratingcurveid */
+            ratingCurveId?: string | null;
+            /** Stoponerror */
+            stopOnError?: boolean;
+            /** Stoponnodata */
+            stopOnNoData?: boolean;
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
+        };
+        /** DataProductTransformationPostBody */
+        DataProductTransformationPostBody: {
+            /** Aggregationmethod */
+            aggregationMethod?: ("mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean") | null;
+            /** Formula */
+            formula?: string | null;
+            /** Id */
+            id?: string | null;
+            /**
+             * Inputdatastreams
+             * @default []
+             */
+            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
+            /** Minvalues */
+            minValues?: number | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Outputinterval */
+            outputInterval?: number | null;
+            /** Outputintervalunits */
+            outputIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /** Ratingcurveid */
+            ratingCurveId?: string | null;
+            /**
+             * Stoponerror
+             * @default true
+             */
+            stopOnError: boolean;
+            /**
+             * Stoponnodata
+             * @default true
+             */
+            stopOnNoData: boolean;
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
+            /**
+             * Transformationtype
+             * @enum {string}
+             */
+            transformationType: "rating_curve" | "derivation" | "aggregation";
+        };
+        /** DataProductTransformationQueryParameters */
+        DataProductTransformationQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("outputDatastream" | "ratingCurve")[];
             /**
              * Input Datastream Id
-             * @description Filter by input datastream ID.
+             * @description Filter transformations by input datastream ID.
              * @default []
              */
             input_datastream_id: string[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
+            order_by: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[] | null;
             /**
              * Output Datastream Id
-             * @description Filter by output datastream ID.
+             * @description Filter transformations by output datastream ID.
              * @default []
              */
             output_datastream_id: string[];
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
+            properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
             /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
+             * Task Id
+             * @description Filter transformations by data product task ID.
+             * @default []
              */
-            page_size: number | null;
+            task_id: string[];
+            /**
+             * Transformation Type
+             * @description Filter transformations by type.
+             * @default []
+             */
+            transformation_type: string[];
+            /**
+             * Workspace Id
+             * @description Filter transformations by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
         };
-        /** DatastreamDetailResponse */
-        DatastreamDetailResponse: {
-            /** Aggregationstatistic */
-            aggregationStatistic: string;
-            /** Description */
-            description: string;
+        /** DataProductTransformationResponse */
+        DataProductTransformationResponse: {
+            /** Aggregationmethod */
+            aggregationMethod?: ("mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean") | null;
+            /** Formula */
+            formula?: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            /** Intendedtimespacing */
-            intendedTimeSpacing?: number | null;
-            /** Intendedtimespacingunit */
-            intendedTimeSpacingUnit?: ("seconds" | "minutes" | "hours" | "days") | null;
             /**
-             * Isprivate
-             * @default false
+             * Inputdatastreams
+             * @default []
              */
-            isPrivate: boolean;
+            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
+            /** Minvalues */
+            minValues?: number | null;
             /**
-             * Isvisible
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Outputinterval */
+            outputInterval?: number | null;
+            /** Outputintervalunits */
+            outputIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /** Ratingcurveid */
+            ratingCurveId?: string | null;
+            /**
+             * Stoponerror
              * @default true
              */
-            isVisible: boolean;
-            /** Linkedresources */
-            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
-            method: components["schemas"]["MethodSummaryResponse"];
-            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
-            /** Name */
-            name: string;
-            /** Nodatavalue */
-            noDataValue: number;
-            /** Observationtype */
-            observationType: string;
-            observedProperty: components["schemas"]["ObservedPropertySummaryResponse"];
-            /** Phenomenonbegintime */
-            phenomenonBeginTime?: string | null;
-            /** Phenomenonendtime */
-            phenomenonEndTime?: string | null;
-            processingLevel: components["schemas"]["ProcessingLevelSummaryResponse"];
-            /** Resultbegintime */
-            resultBeginTime?: string | null;
-            /** Resultendtime */
-            resultEndTime?: string | null;
-            /** Resulttype */
-            resultType: string;
-            /** Sampledmedium */
-            sampledMedium: string;
-            /** Status */
-            status?: string | null;
+            stopOnError: boolean;
             /**
-             * Tags
-             * @default {}
+             * Stoponnodata
+             * @default true
              */
-            tags: {
-                [key: string]: string;
-            };
-            /** Timeaggregationinterval */
-            timeAggregationInterval: number;
+            stopOnNoData: boolean;
             /**
-             * Timeaggregationintervalunit
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
+            /**
+             * Transformationtype
              * @enum {string}
              */
-            timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
-            unit: components["schemas"]["UnitSummaryResponse"];
-            /** Valuecount */
-            valueCount?: number | null;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+            transformationType: "rating_curve" | "derivation" | "aggregation";
+        };
+        /** DatastreamItemQueryParameters */
+        DatastreamItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
         };
         /** DatastreamPatchBody */
         DatastreamPatchBody: {
@@ -2751,13 +2710,22 @@ export interface components {
         };
         /** DatastreamQueryParameters */
         DatastreamQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
             /**
              * Is Private
              * @description Controls whether the datastreams should be private or public.
              */
             is_private?: boolean | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Method Id
              * @description Filter datastreams by method ID.
@@ -2783,23 +2751,17 @@ export interface components {
              */
             observed_property_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
             /**
              * Phenomenon Begin Time Max
              * @description Sets the maximum phenomenon begin time of filtered datastreams.
@@ -2826,6 +2788,11 @@ export interface components {
              * @default []
              */
             processing_level_id: string[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
             /**
              * Result Begin Time Max
              * @description Sets the maximum result begin time of filtered datastreams.
@@ -2899,8 +2866,8 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** DatastreamSummaryResponse */
-        DatastreamSummaryResponse: {
+        /** DatastreamResponse */
+        DatastreamResponse: {
             /** Aggregationstatistic */
             aggregationStatistic: string;
             /** Description */
@@ -3013,89 +2980,21 @@ export interface components {
             /** Processinglevels */
             processingLevels: components["schemas"]["VisualizationProcessingLevelResponse"][];
         };
-        /** DerivationTransformationPatchBody */
-        DerivationTransformationPatchBody: {
-            /** Formula */
-            formula?: string;
-            /** Inputdatastreams */
-            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
+        /** EtlMappingItemQueryParameters */
+        EtlMappingItemQueryParameters: {
             /**
-             * Outputdatastreamid
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            outputDatastreamId?: string;
-            /** Stoponerror */
-            stopOnError?: boolean;
-            /** Stoponnodata */
-            stopOnNoData?: boolean;
+            include?: "targetDatastream"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
         };
-        /** DerivationTransformationPostBody */
-        DerivationTransformationPostBody: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
-            /** Inputdatastreams */
-            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /**
-             * Stoponerror
-             * @default true
-             */
-            stopOnError: boolean;
-            /**
-             * Stoponnodata
-             * @default true
-             */
-            stopOnNoData: boolean;
-        };
-        /** DerivationTransformationResponse */
-        DerivationTransformationResponse: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inputdatastreams */
-            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
-            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Stoponerror */
-            stopOnError: boolean;
-            /** Stoponnodata */
-            stopOnNoData: boolean;
-        };
-        /** DerivationTransformationSummaryResponse */
-        DerivationTransformationSummaryResponse: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inputdatastreamids */
-            inputDatastreamIds: string[];
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /** Stoponerror */
-            stopOnError: boolean;
-            /** Stoponnodata */
-            stopOnNoData: boolean;
-        };
-        /** EtlDataMappingPatchBody */
-        EtlDataMappingPatchBody: {
+        /** EtlMappingPatchBody */
+        EtlMappingPatchBody: {
             /** Sourceidentifier */
             sourceIdentifier?: string;
             /**
@@ -3104,8 +3003,15 @@ export interface components {
              */
             targetDatastreamId?: string;
         };
-        /** EtlDataMappingPostBody */
-        EtlDataMappingPostBody: {
+        /** EtlMappingPostBody */
+        EtlMappingPostBody: {
+            /**
+             * Etltaskid
+             * Format: uuid
+             */
+            etlTaskId: string;
+            /** Id */
+            id?: string | null;
             /** Sourceidentifier */
             sourceIdentifier: string;
             /**
@@ -3114,44 +3020,98 @@ export interface components {
              */
             targetDatastreamId: string;
         };
-        /** EtlDataMappingResponse */
-        EtlDataMappingResponse: {
-            /** Sourceidentifier */
-            sourceIdentifier: string;
-            targetDatastream: components["schemas"]["DatastreamSummaryResponse"];
+        /** EtlMappingQueryParameters */
+        EtlMappingQueryParameters: {
+            /**
+             * Etl Task Id
+             * @description Filter mappings by ETL task ID.
+             * @default []
+             */
+            etl_task_id: string[];
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "targetDatastream"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+            /**
+             * Source Identifier
+             * @description Filter mappings by source identifier.
+             * @default []
+             */
+            source_identifier: string[];
+            /**
+             * Target Datastream Id
+             * @description Filter mappings by target datastream ID.
+             * @default []
+             */
+            target_datastream_id: string[];
+            /**
+             * Workspace Id
+             * @description Filter mappings by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
         };
-        /** EtlTaskDetailResponse */
-        EtlTaskDetailResponse: {
-            dataConnection: components["schemas"]["DataConnectionResponse"];
-            /** Description */
-            description?: string | null;
+        /** EtlMappingResponse */
+        EtlMappingResponse: {
+            /**
+             * Etltaskid
+             * Format: uuid
+             */
+            etlTaskId: string;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            /** Mappings */
-            mappings: components["schemas"]["EtlDataMappingResponse"][];
-            /** Name */
-            name: string;
-            schedule?: components["schemas"]["ScheduleResponse"] | null;
-            /** Taskvariables */
-            taskVariables: {
-                [key: string]: unknown;
-            };
+            /** Sourceidentifier */
+            sourceIdentifier: string;
+            /**
+             * Targetdatastreamid
+             * Format: uuid
+             */
+            targetDatastreamId: string;
         };
-        /**
-         * EtlTaskOrderBy
-         * @enum {string}
-         */
-        EtlTaskOrderBy: "id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
+        /** EtlTaskItemQueryParameters */
+        EtlTaskItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "dataConnection"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+        };
         /** EtlTaskPatchBody */
         EtlTaskPatchBody: {
             /** Description */
             description?: string | null;
-            /** Mappings */
-            mappings?: components["schemas"]["EtlDataMappingPatchBody"][];
             /** Name */
             name?: string;
             /** Schedule */
@@ -3175,11 +3135,6 @@ export interface components {
              * Format: uuid
              */
             id?: string;
-            /**
-             * Mappings
-             * @default []
-             */
-            mappings: components["schemas"]["EtlDataMappingPostBody"][];
             /** Name */
             name: string;
             schedule?: components["schemas"]["SchedulePostBody"] | null;
@@ -3199,8 +3154,11 @@ export interface components {
              * @default []
              */
             data_connection_id: string[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "dataConnection"[];
             /**
              * Latest Run Finished At Max
              * @description Filter tasks whose latest run finished on or before this datetime.
@@ -3228,29 +3186,34 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter ETL tasks by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            order_by: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
             /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
@@ -3258,8 +3221,8 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** EtlTaskSummaryResponse */
-        EtlTaskSummaryResponse: {
+        /** EtlTaskResponse */
+        EtlTaskResponse: {
             /**
              * Dataconnectionid
              * Format: uuid
@@ -3273,10 +3236,18 @@ export interface components {
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /**
+             * Mappingcount
+             * @default 0
+             */
+            mappingCount: number;
             /** Name */
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            /** Taskvariables */
+            /**
+             * Taskvariables
+             * @default {}
+             */
             taskVariables: {
                 [key: string]: unknown;
             };
@@ -3286,11 +3257,187 @@ export interface components {
              */
             workspaceId: string;
         };
+        /** ItemResponse[DataConnectionResponse] */
+        ItemResponse_DataConnectionResponse_: {
+            data: components["schemas"]["DataConnectionResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[DataProductTaskResponse] */
+        ItemResponse_DataProductTaskResponse_: {
+            data: components["schemas"]["DataProductTaskResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[DataProductTransformationResponse] */
+        ItemResponse_DataProductTransformationResponse_: {
+            data: components["schemas"]["DataProductTransformationResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[DatastreamResponse] */
+        ItemResponse_DatastreamResponse_: {
+            data: components["schemas"]["DatastreamResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[EtlMappingResponse] */
+        ItemResponse_EtlMappingResponse_: {
+            data: components["schemas"]["EtlMappingResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[EtlTaskResponse] */
+        ItemResponse_EtlTaskResponse_: {
+            data: components["schemas"]["EtlTaskResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[MethodResponse] */
+        ItemResponse_MethodResponse_: {
+            data: components["schemas"]["MethodResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[MonitoringRuleResponse] */
+        ItemResponse_MonitoringRuleResponse_: {
+            data: components["schemas"]["MonitoringRuleResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[MonitoringSiteResponse] */
+        ItemResponse_MonitoringSiteResponse_: {
+            data: components["schemas"]["MonitoringSiteResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[MonitoringTaskResponse] */
+        ItemResponse_MonitoringTaskResponse_: {
+            data: components["schemas"]["MonitoringTaskResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[ObservationResponse] */
+        ItemResponse_ObservationResponse_: {
+            data: components["schemas"]["ObservationResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[ObservedPropertyResponse] */
+        ItemResponse_ObservedPropertyResponse_: {
+            data: components["schemas"]["ObservedPropertyResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[ProcessingLevelResponse] */
+        ItemResponse_ProcessingLevelResponse_: {
+            data: components["schemas"]["ProcessingLevelResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[QualityControlHistoryResponse] */
+        ItemResponse_QualityControlHistoryResponse_: {
+            data: components["schemas"]["QualityControlHistoryResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[QualityControlOperationResponse] */
+        ItemResponse_QualityControlOperationResponse_: {
+            data: components["schemas"]["QualityControlOperationResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[QualityControlSessionResponse] */
+        ItemResponse_QualityControlSessionResponse_: {
+            data: components["schemas"]["QualityControlSessionResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[RatingCurveResponse] */
+        ItemResponse_RatingCurveResponse_: {
+            data: components["schemas"]["RatingCurveResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[ResultQualifierResponse] */
+        ItemResponse_ResultQualifierResponse_: {
+            data: components["schemas"]["ResultQualifierResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[RoleResponse] */
+        ItemResponse_RoleResponse_: {
+            data: components["schemas"]["RoleResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[ServiceAccountResponse] */
+        ItemResponse_ServiceAccountResponse_: {
+            data: components["schemas"]["ServiceAccountResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[UnitResponse] */
+        ItemResponse_UnitResponse_: {
+            data: components["schemas"]["UnitResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[WorkspaceResponse] */
+        ItemResponse_WorkspaceResponse_: {
+            data: components["schemas"]["WorkspaceResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Jmespath */
-            jmespath?: string | null;
+            jmespath: string;
             /** Timestampformat */
             timestampFormat?: string | null;
             /** Timestampkey */
@@ -3335,17 +3482,27 @@ export interface components {
         /** LinkedResourceQueryParameters */
         LinkedResourceQueryParameters: {
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            page: number | null;
+            include?: string | null;
             /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: string | null;
             /**
              * Type
              * @description Filter by linked resource type.
@@ -3353,30 +3510,18 @@ export interface components {
              */
             type: string[];
         };
-        /** MethodDetailResponse */
-        MethodDetailResponse: {
-            /** Code */
-            code?: string | null;
-            /** Definition */
-            definition?: string | null;
-            /** Description */
-            description: string;
+        /** MethodItemQueryParameters */
+        MethodItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            /** Name */
-            name: string;
-            /** Sensormodel */
-            sensorModel?: string | null;
-            /** Sensormodeldefinition */
-            sensorModelDefinition?: string | null;
-            /** Sensormodelmanufacturer */
-            sensorModelManufacturer?: string | null;
-            /** Type */
-            type: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
         };
         /** MethodPatchBody */
         MethodPatchBody: {
@@ -3428,8 +3573,17 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Monitoring Site Id
              * @description Filter methods by monitoring_site ID.
@@ -3437,23 +3591,22 @@ export interface components {
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
             /**
              * Sensor Model
              * @description Filter methods by sensor model
@@ -3479,8 +3632,8 @@ export interface components {
              */
             workspace_id: (string | "null")[];
         };
-        /** MethodSummaryResponse */
-        MethodSummaryResponse: {
+        /** MethodResponse */
+        MethodResponse: {
             /** Code */
             code?: string | null;
             /** Definition */
@@ -3505,50 +3658,19 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
-        /** MonitoredDatastreamResponse */
-        MonitoredDatastreamResponse: {
-            datastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Rules */
-            rules: components["schemas"]["MonitoringRuleDetailResponse"][];
-        };
-        /** MonitoredDatastreamSummaryResponse */
-        MonitoredDatastreamSummaryResponse: {
+        /** MonitoringRuleItemQueryParameters */
+        MonitoringRuleItemQueryParameters: {
             /**
-             * Datastreamid
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            datastreamId: string;
-            /** Rules */
-            rules: components["schemas"]["MonitoringRuleDetailResponse"][];
-        };
-        /** MonitoringRuleDetailResponse */
-        MonitoringRuleDetailResponse: {
+            include?: "datastream"[];
             /**
-             * Id
-             * Format: uuid
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            id: string;
-            /** Lastcheckedat */
-            lastCheckedAt?: string | null;
-            /** Maxvalue */
-            maxValue?: number | null;
-            /** Minvalue */
-            minValue?: number | null;
-            /**
-             * Ruletype
-             * @enum {string}
-             */
-            ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
-            /** Windowinterval */
-            windowInterval?: number | null;
-            /** Windowintervalunits */
-            windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
+            properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
         };
-        /**
-         * MonitoringRuleOrderBy
-         * @enum {string}
-         */
-        MonitoringRuleOrderBy: "id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId";
         /** MonitoringRulePatchBody */
         MonitoringRulePatchBody: {
             /** Maxvalue */
@@ -3567,11 +3689,8 @@ export interface components {
              * Format: uuid
              */
             datastreamId: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
+            /** Id */
+            id?: string | null;
             /** Maxvalue */
             maxValue?: number | null;
             /** Minvalue */
@@ -3581,6 +3700,11 @@ export interface components {
              * @enum {string}
              */
             ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
             /** Windowinterval */
             windowInterval?: number | null;
             /** Windowintervalunits */
@@ -3595,33 +3719,59 @@ export interface components {
              */
             datastream_id: string[];
             /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "datastream"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[];
+            order_by: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
             /**
              * Rule Type
              * @description Filter rules by rule type.
              * @default []
              */
             rule_type: string[];
+            /**
+             * Task Id
+             * @description Filter rules by monitoring task ID.
+             * @default []
+             */
+            task_id: string[];
+            /**
+             * Workspace Id
+             * @description Filter rules by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
         };
         /** MonitoringRuleResponse */
         MonitoringRuleResponse: {
-            datastream: components["schemas"]["DatastreamSummaryResponse"];
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /**
              * Id
              * Format: uuid
@@ -3638,54 +3788,28 @@ export interface components {
              * @enum {string}
              */
             ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
             /** Windowinterval */
             windowInterval?: number | null;
             /** Windowintervalunits */
             windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
         };
-        /** MonitoringSiteDetailResponse */
-        MonitoringSiteDetailResponse: {
-            /** Adminarea1 */
-            adminArea1?: string | null;
-            /** Adminarea2 */
-            adminArea2?: string | null;
-            /** Code */
-            code: string;
-            /** Country */
-            country?: string | null;
-            /** Datadisclaimer */
-            dataDisclaimer?: string | null;
-            /** Description */
-            description: string;
-            /** Elevationdatum */
-            elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | null;
+        /** MonitoringSiteItemQueryParameters */
+        MonitoringSiteItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            /** Isprivate */
-            isPrivate: boolean;
-            /** Latitude */
-            latitude: number;
-            /** Linkedresources */
-            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
-            /** Longitude */
-            longitude: number;
-            /** Name */
-            name: string;
+            include?: "workspace"[];
             /**
-             * Tags
-             * @default {}
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            tags: {
-                [key: string]: string;
-            };
-            /** Type */
-            type: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
         };
         /** MonitoringSiteMapSummaryQueryParameters */
         MonitoringSiteMapSummaryQueryParameters: {
@@ -3792,13 +3916,13 @@ export interface components {
             /** Elevationdatum */
             elevationDatum?: string | null;
             /** Elevation M */
-            elevation_m?: number | null;
+            elevation_m?: number | string | null;
             /** Isprivate */
             isPrivate?: boolean;
             /** Latitude */
-            latitude?: number;
+            latitude?: number | string;
             /** Longitude */
-            longitude?: number;
+            longitude?: number | string;
             /** Name */
             name?: string;
             /** Tags */
@@ -3825,15 +3949,15 @@ export interface components {
             /** Elevationdatum */
             elevationDatum?: string | null;
             /** Elevation M */
-            elevation_m?: number | null;
+            elevation_m?: number | string | null;
             /** Id */
             id?: string | null;
             /** Isprivate */
             isPrivate: boolean;
             /** Latitude */
-            latitude: number;
+            latitude: number | string;
             /** Longitude */
-            longitude: number;
+            longitude: number | string;
             /** Name */
             name: string;
             /**
@@ -3877,13 +4001,28 @@ export interface components {
              * @default []
              */
             country: string[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
             /**
              * Is Private
              * @description Controls whether the returned monitoring sites should be private or public.
              */
             is_private?: boolean | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Order By
              * @description Select one or more fields to order the response by.
@@ -3891,17 +4030,10 @@ export interface components {
              */
             order_by: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
             /**
              * Tag
              * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
@@ -3921,8 +4053,8 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** MonitoringSiteSummaryResponse */
-        MonitoringSiteSummaryResponse: {
+        /** MonitoringSiteResponse */
+        MonitoringSiteResponse: {
             /** Adminarea1 */
             adminArea1?: string | null;
             /** Adminarea2 */
@@ -4016,30 +4148,19 @@ export interface components {
             /** Type */
             type: string;
         };
-        /** MonitoringTaskDetailResponse */
-        MonitoringTaskDetailResponse: {
-            /** Description */
-            description?: string | null;
+        /** MonitoringTaskItemQueryParameters */
+        MonitoringTaskItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            /** Monitoreddatastreams */
-            monitoredDatastreams: components["schemas"]["MonitoredDatastreamResponse"][];
-            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
-            /** Name */
-            name: string;
-            /** Recipients */
-            recipients: string[];
-            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            include?: "monitoringSite"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
         };
-        /**
-         * MonitoringTaskOrderBy
-         * @enum {string}
-         */
-        MonitoringTaskOrderBy: "id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
         /** MonitoringTaskPatchBody */
         MonitoringTaskPatchBody: {
             /** Description */
@@ -4082,8 +4203,11 @@ export interface components {
              * @default []
              */
             datastream_id: string[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "monitoringSite"[];
             /**
              * Latest Run Status
              * @description Filter monitoring tasks by their most recent run status.
@@ -4091,29 +4215,34 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
              * @description Filter monitoring tasks by monitoring_site ID.
              * @default []
              */
             monitoring_site_id: string[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
             /**
              * Rule Type
              * @description Filter monitoring tasks by rule type.
@@ -4127,8 +4256,8 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** MonitoringTaskSummaryResponse */
-        MonitoringTaskSummaryResponse: {
+        /** MonitoringTaskResponse */
+        MonitoringTaskResponse: {
             /** Description */
             description?: string | null;
             /**
@@ -4137,8 +4266,6 @@ export interface components {
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            /** Monitoreddatastreams */
-            monitoredDatastreams: components["schemas"]["MonitoredDatastreamSummaryResponse"][];
             /**
              * Monitoringsiteid
              * Format: uuid
@@ -4146,8 +4273,18 @@ export interface components {
             monitoringSiteId: string;
             /** Name */
             name: string;
-            /** Recipients */
+            /**
+             * Recipients
+             * @default []
+             */
             recipients: string[];
+            /**
+             * Ruletypecounts
+             * @default {}
+             */
+            ruleTypeCounts: {
+                [key: string]: number;
+            };
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /**
              * Workspaceid
@@ -4176,6 +4313,11 @@ export interface components {
         };
         /** ObservationBulkColumnarPostBody */
         ObservationBulkColumnarPostBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Phenomenontime */
             phenomenonTime: (string)[];
             /** Result */
@@ -4188,6 +4330,11 @@ export interface components {
         };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Phenomenontimeend */
             phenomenonTimeEnd?: string | null;
             /** Phenomenontimestart */
@@ -4197,6 +4344,11 @@ export interface components {
         ObservationBulkPostBody: {
             /** Data */
             data: unknown[][];
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Fields */
             fields: ("phenomenonTime" | "result" | "resultQualifierCodes")[];
         };
@@ -4208,8 +4360,8 @@ export interface components {
              */
             mode?: ("insert" | "append" | "backfill" | "replace") | null;
         };
-        /** ObservationColumnarResponse */
-        ObservationColumnarResponse: {
+        /** ObservationColumnarData */
+        ObservationColumnarData: {
             /** Phenomenontime */
             phenomenonTime: unknown[];
             /** Result */
@@ -4217,30 +4369,35 @@ export interface components {
             /** Resultqualifiercodes */
             resultQualifierCodes: unknown[];
         };
-        /** ObservationDetailResponse */
-        ObservationDetailResponse: {
-            datastream: components["schemas"]["DatastreamSummaryResponse"];
+        /** ObservationColumnarResponse */
+        ObservationColumnarResponse: {
+            data: components["schemas"]["ObservationColumnarData"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** ObservationItemQueryParameters */
+        ObservationItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
              */
-            id: string;
+            include?: ("datastream" | "workspace")[];
             /**
-             * Phenomenontime
-             * Format: date-time
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
              */
-            phenomenonTime: string;
-            /** Result */
-            result: number;
-            /**
-             * Resultqualifiercodes
-             * @default []
-             */
-            resultQualifierCodes: string[];
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
         };
         /** ObservationPostBody */
         ObservationPostBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Id */
             id?: string | null;
             /** Phenomenontime */
@@ -4255,31 +4412,40 @@ export interface components {
         };
         /** ObservationQueryParameters */
         ObservationQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Datastream Id
+             * @description Filter observations by datastream ID.
+             * @default []
+             */
+            datastream_id: string[];
             /**
              * Format
              * @description Controls the format of the observations response.
              */
             format?: ("record" | "row" | "column") | null;
             /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
+             */
+            include?: ("datastream" | "workspace")[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("phenomenonTime" | "-phenomenonTime")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            order_by: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
             /**
              * Phenomenon Time Max
              * @description Sets the maximum phenomenon time of filtered observations.
@@ -4291,21 +4457,19 @@ export interface components {
              */
             phenomenon_time_min?: string | null;
             /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
+             */
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+            /**
              * Result Qualifier Code
              * @description Filter observations by result qualifier code.
              * @default []
              */
             result_qualifier_code: string[];
         };
-        /** ObservationRowResponse */
-        ObservationRowResponse: {
-            /** Data */
-            data: unknown[][];
-            /** Fields */
-            fields: ("phenomenonTime" | "result" | "resultQualifierCodes")[];
-        };
-        /** ObservationSummaryResponse */
-        ObservationSummaryResponse: {
+        /** ObservationResponse */
+        ObservationResponse: {
             /**
              * Datastreamid
              * Format: uuid
@@ -4334,24 +4498,34 @@ export interface components {
              */
             workspaceId: string;
         };
-        /** ObservedPropertyDetailResponse */
-        ObservedPropertyDetailResponse: {
-            /** Code */
-            code: string;
-            /** Definition */
-            definition?: string | null;
-            /** Description */
-            description: string;
+        /** ObservationRowData */
+        ObservationRowData: {
+            /** Fields */
+            fields: ("phenomenonTime" | "result" | "resultQualifierCodes")[];
+            /** Rows */
+            rows: unknown[][];
+        };
+        /** ObservationRowResponse */
+        ObservationRowResponse: {
+            data: components["schemas"]["ObservationRowData"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** ObservedPropertyItemQueryParameters */
+        ObservedPropertyItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
         };
         /** ObservedPropertyPatchBody */
         ObservedPropertyPatchBody: {
@@ -4391,8 +4565,17 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Monitoring Site Id
              * @description Filter observed properties by monitoring_site ID.
@@ -4400,23 +4583,22 @@ export interface components {
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
             /**
              * Type
              * @description Filter observed properties by type
@@ -4430,8 +4612,8 @@ export interface components {
              */
             workspace_id: (string | "null")[];
         };
-        /** ObservedPropertySummaryResponse */
-        ObservedPropertySummaryResponse: {
+        /** ObservedPropertyResponse */
+        ObservedPropertyResponse: {
             /** Code */
             code: string;
             /** Definition */
@@ -4449,6 +4631,265 @@ export interface components {
             type: string;
             /** Workspaceid */
             workspaceId?: string | null;
+        };
+        /** PaginatedResponse[CollaboratorResponse] */
+        PaginatedResponse_CollaboratorResponse_: {
+            /** Data */
+            data: components["schemas"]["CollaboratorResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DataConnectionResponse] */
+        PaginatedResponse_DataConnectionResponse_: {
+            /** Data */
+            data: components["schemas"]["DataConnectionResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DataProductTaskResponse] */
+        PaginatedResponse_DataProductTaskResponse_: {
+            /** Data */
+            data: components["schemas"]["DataProductTaskResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DataProductTransformationResponse] */
+        PaginatedResponse_DataProductTransformationResponse_: {
+            /** Data */
+            data: components["schemas"]["DataProductTransformationResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[DatastreamResponse] */
+        PaginatedResponse_DatastreamResponse_: {
+            /** Data */
+            data: components["schemas"]["DatastreamResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[EtlMappingResponse] */
+        PaginatedResponse_EtlMappingResponse_: {
+            /** Data */
+            data: components["schemas"]["EtlMappingResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[EtlTaskResponse] */
+        PaginatedResponse_EtlTaskResponse_: {
+            /** Data */
+            data: components["schemas"]["EtlTaskResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MethodResponse] */
+        PaginatedResponse_MethodResponse_: {
+            /** Data */
+            data: components["schemas"]["MethodResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringRuleResponse] */
+        PaginatedResponse_MonitoringRuleResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringRuleResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringSiteResponse] */
+        PaginatedResponse_MonitoringSiteResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringSiteResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringTaskResponse] */
+        PaginatedResponse_MonitoringTaskResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringTaskResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservationResponse] */
+        PaginatedResponse_ObservationResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservationResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservedPropertyResponse] */
+        PaginatedResponse_ObservedPropertyResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservedPropertyResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ProcessingLevelResponse] */
+        PaginatedResponse_ProcessingLevelResponse_: {
+            /** Data */
+            data: components["schemas"]["ProcessingLevelResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlHistoryResponse] */
+        PaginatedResponse_QualityControlHistoryResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlHistoryResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlOperationResponse] */
+        PaginatedResponse_QualityControlOperationResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlOperationResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[QualityControlSessionResponse] */
+        PaginatedResponse_QualityControlSessionResponse_: {
+            /** Data */
+            data: components["schemas"]["QualityControlSessionResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[RatingCurveResponse] */
+        PaginatedResponse_RatingCurveResponse_: {
+            /** Data */
+            data: components["schemas"]["RatingCurveResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ResultQualifierResponse] */
+        PaginatedResponse_ResultQualifierResponse_: {
+            /** Data */
+            data: components["schemas"]["ResultQualifierResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[RoleResponse] */
+        PaginatedResponse_RoleResponse_: {
+            /** Data */
+            data: components["schemas"]["RoleResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ServiceAccountResponse] */
+        PaginatedResponse_ServiceAccountResponse_: {
+            /** Data */
+            data: components["schemas"]["ServiceAccountResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[TaskRunResponse] */
+        PaginatedResponse_TaskRunResponse_: {
+            /** Data */
+            data: components["schemas"]["TaskRunResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[UnitResponse] */
+        PaginatedResponse_UnitResponse_: {
+            /** Data */
+            data: components["schemas"]["UnitResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[WorkspaceResponse] */
+        PaginatedResponse_WorkspaceResponse_: {
+            /** Data */
+            data: components["schemas"]["WorkspaceResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[str] */
+        PaginatedResponse_str_: {
+            /** Data */
+            data: string[];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginationMeta */
+        PaginationMeta: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Totalcount */
+            totalCount: number;
         };
         /** PayloadPatchBody */
         PayloadPatchBody: {
@@ -4469,8 +4910,8 @@ export interface components {
             /** Type */
             type?: ("CSV" | "JSON") | null;
         };
-        /** PermissionDetailResponse */
-        PermissionDetailResponse: {
+        /** PermissionResponse */
+        PermissionResponse: {
             /**
              * Action
              * @enum {string}
@@ -4480,7 +4921,7 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Method" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Method" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
         };
         /** PlaceholderVariablePatchBody */
         PlaceholderVariablePatchBody: {
@@ -4518,22 +4959,18 @@ export interface components {
              */
             type: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
-        /** ProcessingLevelDetailResponse */
-        ProcessingLevelDetailResponse: {
-            /** Code */
-            code: string;
-            /** Definition */
-            definition?: string | null;
-            /** Description */
-            description: string;
+        /** ProcessingLevelItemQueryParameters */
+        ProcessingLevelItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            /** Name */
-            name: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
         };
         /** ProcessingLevelPatchBody */
         ProcessingLevelPatchBody: {
@@ -4569,8 +5006,17 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Monitoring Site Id
              * @description Filter processing levels by monitoring_site ID.
@@ -4578,23 +5024,22 @@ export interface components {
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("code" | "name" | "-code" | "-name")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
             /**
              * Workspace Id
              * @description Filter processing levels by workspace ID.
@@ -4602,8 +5047,8 @@ export interface components {
              */
             workspace_id: (string | "null")[];
         };
-        /** ProcessingLevelSummaryResponse */
-        ProcessingLevelSummaryResponse: {
+        /** ProcessingLevelResponse */
+        ProcessingLevelResponse: {
             /** Code */
             code: string;
             /** Definition */
@@ -4620,28 +5065,18 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
-        /** QualityControlHistoryDetailResponse */
-        QualityControlHistoryDetailResponse: {
+        /** QualityControlHistoryItemQueryParameters */
+        QualityControlHistoryItemQueryParameters: {
             /**
-             * Createdat
-             * Format: date-time
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            createdAt: string;
+            include?: ("managedDatastream" | "sourceDatastream")[];
             /**
-             * Id
-             * Format: uuid
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            id: string;
-            /** Managedchecksum */
-            managedChecksum?: string | null;
-            managedDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Phenomenontimeend */
-            phenomenonTimeEnd?: string | null;
-            /** Phenomenontimestart */
-            phenomenonTimeStart?: string | null;
-            /** Sourcechecksum */
-            sourceChecksum?: string | null;
-            sourceDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
         };
         /** QualityControlHistoryPostBody */
         QualityControlHistoryPostBody: {
@@ -4658,8 +5093,17 @@ export interface components {
         };
         /** QualityControlHistoryQueryParameters */
         QualityControlHistoryQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("managedDatastream" | "sourceDatastream")[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Managed Datastream Id
              * @description Filter histories by managed datastream ID.
@@ -4667,17 +5111,22 @@ export interface components {
              */
             managed_datastream_id: string[];
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
              */
-            page: number | null;
+            offset: number | null;
             /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
              */
-            page_size: number | null;
+            order_by: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
             /**
              * Source Datastream Id
              * @description Filter histories by source datastream ID.
@@ -4685,8 +5134,8 @@ export interface components {
              */
             source_datastream_id: string[];
         };
-        /** QualityControlHistorySummaryResponse */
-        QualityControlHistorySummaryResponse: {
+        /** QualityControlHistoryResponse */
+        QualityControlHistoryResponse: {
             /**
              * Createdat
              * Format: date-time
@@ -4715,6 +5164,14 @@ export interface components {
              * Format: uuid
              */
             sourceDatastreamId: string;
+        };
+        /** QualityControlOperationItemQueryParameters */
+        QualityControlOperationItemQueryParameters: {
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "createdBy" | "order" | "operationType" | "createdAt" | "comment" | "arguments")[];
         };
         /** QualityControlOperationPatchBody */
         QualityControlOperationPatchBody: {
@@ -4746,17 +5203,33 @@ export interface components {
         /** QualityControlOperationQueryParameters */
         QualityControlOperationQueryParameters: {
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            page: number | null;
+            include?: string | null;
             /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "createdBy" | "order" | "operationType" | "createdAt" | "comment" | "arguments")[];
         };
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
@@ -4771,7 +5244,7 @@ export interface components {
              * Format: date-time
              */
             createdAt: string;
-            createdBy: components["schemas"]["AccountContactDetailResponse"];
+            createdBy: components["schemas"]["UserContactResponse"];
             /**
              * Id
              * Format: uuid
@@ -4785,51 +5258,13 @@ export interface components {
             /** Order */
             order: number;
         };
-        /** QualityControlSessionDetailResponse */
-        QualityControlSessionDetailResponse: {
-            /** Committedat */
-            committedAt?: string | null;
+        /** QualityControlSessionItemQueryParameters */
+        QualityControlSessionItemQueryParameters: {
             /**
-             * Createdat
-             * Format: date-time
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            createdAt: string;
-            createdBy: components["schemas"]["AccountContactDetailResponse"];
-            /** Dependencyids */
-            dependencyIds: string[];
-            /** Description */
-            description?: string | null;
-            /**
-             * Historyid
-             * Format: uuid
-             */
-            historyId: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Managedchecksum */
-            managedChecksum?: string | null;
-            /** Operations */
-            operations: components["schemas"]["QualityControlOperationResponse"][];
-            /**
-             * Phenomenontimeend
-             * Format: date-time
-             */
-            phenomenonTimeEnd: string;
-            /**
-             * Phenomenontimestart
-             * Format: date-time
-             */
-            phenomenonTimeStart: string;
-            /** Sourcechecksum */
-            sourceChecksum: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "in_progress" | "committed";
+            properties?: ("id" | "historyId" | "createdBy" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "description" | "sourceChecksum" | "managedChecksum" | "dependencyIds")[];
         };
         /** QualityControlSessionPatchBody */
         QualityControlSessionPatchBody: {
@@ -4852,8 +5287,11 @@ export interface components {
              * @description Return all transitive ancestors of the given session ID.
              */
             ancestor_of?: string | null;
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: string | null;
             /**
              * Include Ancestors
              * @description Also return transitive ancestors of all sessions matched by other filters.
@@ -4861,17 +5299,28 @@ export interface components {
              */
             include_ancestors: boolean;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
+             * Limit
+             * @description The maximum number of items to return.
              * @default 100
              */
-            page_size: number | null;
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "historyId" | "createdBy" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "description" | "sourceChecksum" | "managedChecksum" | "dependencyIds")[];
             /**
              * Range End
              * @description Return sessions overlapping with this range end.
@@ -4885,8 +5334,8 @@ export interface components {
             /** Status */
             status?: ("in_progress" | "committed") | null;
         };
-        /** QualityControlSessionSummaryResponse */
-        QualityControlSessionSummaryResponse: {
+        /** QualityControlSessionResponse */
+        QualityControlSessionResponse: {
             /** Committedat */
             committedAt?: string | null;
             /**
@@ -4894,7 +5343,9 @@ export interface components {
              * Format: date-time
              */
             createdAt: string;
-            createdBy: components["schemas"]["AccountContactDetailResponse"];
+            createdBy: components["schemas"]["UserContactResponse"];
+            /** Dependencyids */
+            dependencyIds: string[];
             /** Description */
             description?: string | null;
             /**
@@ -4927,11 +5378,19 @@ export interface components {
              */
             status: "in_progress" | "committed";
         };
-        /**
-         * RatingCurveOrderBy
-         * @enum {string}
-         */
-        RatingCurveOrderBy: "id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName";
+        /** RatingCurveItemQueryParameters */
+        RatingCurveItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "monitoringSite"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
+        };
         /** RatingCurvePatchBody */
         RatingCurvePatchBody: {
             /** Description */
@@ -4958,11 +5417,8 @@ export interface components {
              * @enum {string}
              */
             fittingMethod: "linear" | "power_law";
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
+            /** Id */
+            id?: string | null;
             /**
              * Monitoringsiteid
              * Format: uuid
@@ -4982,29 +5438,39 @@ export interface components {
         /** RatingCurveQueryParameters */
         RatingCurveQueryParameters: {
             /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "monitoringSite"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
              * Monitoring Site Id
-             * @description Filter rating curves by monitoring_site ID.
+             * @description Filter rating curves by monitoring site ID.
              * @default []
              */
             monitoring_site_id: string[];
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[];
+            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
             /**
              * Workspace Id
              * @description Filter rating curves by workspace ID.
@@ -5026,117 +5492,34 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
-            /** Points */
+            /**
+             * Points
+             * @default []
+             */
             points: [
                 number,
                 number
             ][];
         };
-        /** RatingCurveSummaryResponse */
-        RatingCurveSummaryResponse: {
+        /** ResultQualifierItemQueryParameters */
+        ResultQualifierItemQueryParameters: {
             /**
-             * Fittingmethod
-             * @enum {string}
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            fittingMethod: "linear" | "power_law";
+            include?: "workspace"[];
             /**
-             * Id
-             * Format: uuid
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            id: string;
-            /** Name */
-            name: string;
-        };
-        /** RatingCurveTransformationPatchBody */
-        RatingCurveTransformationPatchBody: {
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId?: string;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId?: string;
-            /**
-             * Ratingcurveid
-             * Format: uuid
-             */
-            ratingCurveId?: string;
-        };
-        /** RatingCurveTransformationPostBody */
-        RatingCurveTransformationPostBody: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId: string;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /**
-             * Ratingcurveid
-             * Format: uuid
-             */
-            ratingCurveId: string;
-        };
-        /** RatingCurveTransformationResponse */
-        RatingCurveTransformationResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            ratingCurve: components["schemas"]["RatingCurveSummaryResponse"];
-        };
-        /** RatingCurveTransformationSummaryResponse */
-        RatingCurveTransformationSummaryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId: string;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /**
-             * Ratingcurveid
-             * Format: uuid
-             */
-            ratingCurveId: string;
-        };
-        /** ResultQualifierDetailResponse */
-        ResultQualifierDetailResponse: {
-            /** Code */
-            code: string;
-            /** Description */
-            description: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            properties?: ("id" | "workspaceId" | "code" | "description")[];
         };
         /** ResultQualifierPatchBody */
         ResultQualifierPatchBody: {
@@ -5164,8 +5547,17 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Monitoring Site Id
              * @description Filter result qualifiers by monitoring_site ID.
@@ -5173,23 +5565,22 @@ export interface components {
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("code" | "-code")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "code" | "description")[];
             /**
              * Workspace Id
              * @description Filter result qualifiers by workspace ID.
@@ -5197,8 +5588,8 @@ export interface components {
              */
             workspace_id: (string | "null")[];
         };
-        /** ResultQualifierSummaryResponse */
-        ResultQualifierSummaryResponse: {
+        /** ResultQualifierResponse */
+        ResultQualifierResponse: {
             /** Code */
             code: string;
             /** Description */
@@ -5211,25 +5602,33 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
-        /** RoleDetailResponse */
-        RoleDetailResponse: {
-            /** Description */
-            description?: string | null;
+        /** RoleItemQueryParameters */
+        RoleItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            id: string;
-            /** Name */
-            name: string;
-            /** Permissions */
-            permissions: components["schemas"]["PermissionDetailResponse"][];
-            workspace: components["schemas"]["WorkspaceDetailResponse"] | null;
+            properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
         };
         /** RoleQueryParameters */
         RoleQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: string | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Order By
              * @description Select one or more fields to order the response by.
@@ -5237,17 +5636,10 @@ export interface components {
              */
             order_by: ("name" | "-name")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
             /**
              * Workspace Id
              * @description Filter roles by workspace ID.
@@ -5255,8 +5647,8 @@ export interface components {
              */
             workspace_id: (string | "null")[];
         };
-        /** RoleSummaryResponse */
-        RoleSummaryResponse: {
+        /** RoleResponse */
+        RoleResponse: {
             /** Description */
             description?: string | null;
             /**
@@ -5267,7 +5659,7 @@ export interface components {
             /** Name */
             name: string;
             /** Permissions */
-            permissions: components["schemas"]["PermissionDetailResponse"][];
+            permissions: components["schemas"]["PermissionResponse"][];
             /** Workspaceid */
             workspaceId: string | null;
         };
@@ -5315,71 +5707,33 @@ export interface components {
             /** Starttime */
             startTime?: string | null;
         };
-        /** ServiceAccountContactResponse */
-        ServiceAccountContactResponse: {
-            /** Email */
-            email: string;
+        /** ServiceAccountCreatedResponse */
+        ServiceAccountCreatedResponse: {
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            /** Name */
-            name: string;
-        };
-        /** ServiceAccountDetailPostResponse */
-        ServiceAccountDetailPostResponse: {
-            /**
-             * Createdat
-             * Format: date-time
-             */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Email */
-            email: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
             /** Key */
             key: string;
-            /** Keyexpiresat */
-            keyExpiresAt?: string | null;
-            /** Lastusedat */
-            lastUsedAt: string | null;
-            /** Name */
-            name: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
         };
-        /** ServiceAccountDetailResponse */
-        ServiceAccountDetailResponse: {
+        /** ServiceAccountItemQueryParameters */
+        ServiceAccountItemQueryParameters: {
             /**
-             * Createdat
-             * Format: date-time
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Email */
-            email: string;
+            include?: "workspace"[];
             /**
-             * Id
-             * Format: uuid
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
-            /** Keyexpiresat */
-            keyExpiresAt?: string | null;
-            /** Lastusedat */
-            lastUsedAt: string | null;
-            /** Name */
-            name: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "isActive" | "keyExpiresAt" | "email" | "createdAt" | "lastUsedAt")[];
+        };
+        /** ServiceAccountKeyResponse */
+        ServiceAccountKeyResponse: {
+            /** Key */
+            key: string;
         };
         /** ServiceAccountPatchBody */
         ServiceAccountPatchBody: {
@@ -5409,8 +5763,23 @@ export interface components {
         };
         /** ServiceAccountQueryParameters */
         ServiceAccountQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
             /**
              * Order By
              * @description Select one or more fields to order the response by.
@@ -5418,52 +5787,13 @@ export interface components {
              */
             order_by: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "name" | "description" | "isActive" | "keyExpiresAt" | "email" | "createdAt" | "lastUsedAt")[];
         };
-        /** ServiceAccountSummaryPostResponse */
-        ServiceAccountSummaryPostResponse: {
-            /**
-             * Createdat
-             * Format: date-time
-             */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Email */
-            email: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
-            /** Key */
-            key: string;
-            /** Keyexpiresat */
-            keyExpiresAt?: string | null;
-            /** Lastusedat */
-            lastUsedAt: string | null;
-            /** Name */
-            name: string;
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** ServiceAccountSummaryResponse */
-        ServiceAccountSummaryResponse: {
+        /** ServiceAccountResponse */
+        ServiceAccountResponse: {
             /**
              * Createdat
              * Format: date-time
@@ -5499,11 +5829,6 @@ export interface components {
             /** Sitetypes */
             siteTypes: string[];
         };
-        /**
-         * TaskRunOrderBy
-         * @enum {string}
-         */
-        TaskRunOrderBy: "id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt";
         /** TaskRunQueryParameters */
         TaskRunQueryParameters: {
             /**
@@ -5517,23 +5842,33 @@ export interface components {
              */
             finished_at_min?: string | null;
             /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: string | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
             /**
              * Started At Max
              * @description Filters for task runs started on or before this date and time.
@@ -5585,30 +5920,30 @@ export interface components {
              */
             datastreamId: string;
             /** Variablename */
-            variableName: string;
+            variableName?: string | null;
         };
         /** TransformationInputResponse */
         TransformationInputResponse: {
-            datastream: components["schemas"]["DatastreamSummaryResponse"];
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
             /** Variablename */
             variableName?: string | null;
         };
-        /** UnitDetailResponse */
-        UnitDetailResponse: {
-            /** Definition */
-            definition?: string | null;
+        /** UnitItemQueryParameters */
+        UnitItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            /** Name */
-            name: string;
-            /** Symbol */
-            symbol: string;
-            /** Type */
-            type: string;
-            workspace: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
         };
         /** UnitPatchBody */
         UnitPatchBody: {
@@ -5644,8 +5979,17 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
             /**
              * Monitoring Site Id
              * @description Filter units by monitoring_site ID.
@@ -5653,23 +5997,22 @@ export interface components {
              */
             monitoring_site_id: (string | "null")[];
             /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
             /**
              * Type
              * @description Filter units by type
@@ -5683,8 +6026,8 @@ export interface components {
              */
             workspace_id: (string | "null")[];
         };
-        /** UnitSummaryResponse */
-        UnitSummaryResponse: {
+        /** UnitResponse */
+        UnitResponse: {
             /** Definition */
             definition?: string | null;
             /**
@@ -5700,6 +6043,26 @@ export interface components {
             type: string;
             /** Workspaceid */
             workspaceId: string | null;
+        };
+        /** UserContactResponse */
+        UserContactResponse: {
+            /** Address */
+            address?: string | null;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Link */
+            link?: string | null;
+            /** Name */
+            name: string;
+            /** Organizationname */
+            organizationName?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Type */
+            type: string;
         };
         /** VisualizationDatastreamResponse */
         VisualizationDatastreamResponse: {
@@ -5805,38 +6168,46 @@ export interface components {
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
             /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: string | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order Desc
              * @description Sort terms by descending.
              * @default false
              */
             order_desc: boolean | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: string | null;
         };
-        /** WorkspaceDetailResponse */
-        WorkspaceDetailResponse: {
-            collaboratorRole?: components["schemas"]["RoleDetailResponse"] | null;
+        /** WorkspaceItemQueryParameters */
+        WorkspaceItemQueryParameters: {
             /**
-             * Id
-             * Format: uuid
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
              */
-            id: string;
-            /** Isprivate */
-            isPrivate: boolean;
-            /** Name */
-            name: string;
-            owner: components["schemas"]["AccountContactDetailResponse"];
-            pendingTransferTo?: components["schemas"]["AccountContactDetailResponse"] | null;
+            include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
         };
         /** WorkspacePatchBody */
         WorkspacePatchBody: {
@@ -5856,8 +6227,11 @@ export interface components {
         };
         /** WorkspaceQueryParameters */
         WorkspaceQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
             /**
              * Is Associated
              * @description Whether the workspace is associated with the authenticated user
@@ -5869,26 +6243,33 @@ export interface components {
              */
             is_private?: boolean | null;
             /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
             order_by: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
             /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
+            properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
         };
-        /** WorkspaceSummaryResponse */
-        WorkspaceSummaryResponse: {
+        /** WorkspaceResponse */
+        WorkspaceResponse: {
+            /** Collaboratorroleid */
+            collaboratorRoleId?: string | null;
             /**
              * Id
              * Format: uuid
@@ -5898,6 +6279,10 @@ export interface components {
             isPrivate: boolean;
             /** Name */
             name: string;
+            /** Owneremail */
+            ownerEmail: string;
+            /** Pendingtransfertoemail */
+            pendingTransferToEmail?: string | null;
         };
         /** WorkspaceTransferBody */
         WorkspaceTransferBody: {
@@ -5916,14 +6301,1015 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    interfaces_api_views_products_rating_curve_get_rating_curves: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[] | null;
+                /** @description Filter rating curves by monitoring site ID. */
+                monitoring_site_id?: string[];
+                /** @description Filter rating curves by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_RatingCurveResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_create_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurvePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_get_rating_curve: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+            };
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_RatingCurveResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_delete_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_update_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurvePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_tasks: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Filter data product tasks by monitoring_site ID. */
+                monitoring_site_id?: string[];
+                /** @description Filter data product tasks by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter data product tasks by their most recent run status. */
+                latest_run_status?: (string | "null")[];
+                /** @description Filter data product tasks by transformation type. */
+                transformation_type?: string[];
+                /** @description Filter data product tasks by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter data product tasks by input datastream ID. */
+                input_datastream_id?: string[];
+                /** @description Filter data product tasks by rating curve ID. */
+                rating_curve_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DataProductTaskResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_create_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTaskPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_DataProductTaskResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_delete_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_update_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTaskPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task_runs: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Filters task runs by their status. */
+                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
+                /** @description Filters for task runs started on or before this date and time. */
+                started_at_max?: string | null;
+                /** @description Filters for task runs started on or after this date and time. */
+                started_at_min?: string | null;
+                /** @description Filters for task runs finished on or before this date and time. */
+                finished_at_max?: string | null;
+                /** @description Filters for task runs finished on or after this date and time. */
+                finished_at_min?: string | null;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_trigger_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_data_product_transformations: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("outputDatastream" | "ratingCurve")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[] | null;
+                /** @description Filter transformations by type. */
+                transformation_type?: string[];
+                /** @description Filter transformations by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter transformations by input datastream ID. */
+                input_datastream_id?: string[];
+                /** @description Filter transformations by data product task ID. */
+                task_id?: string[];
+                /** @description Filter transformations by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DataProductTransformationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_create_data_product_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTransformationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_data_product_transformation: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("outputDatastream" | "ratingCurve")[];
+            };
+            header?: never;
+            path: {
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_DataProductTransformationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_delete_data_product_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_update_data_product_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTransformationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
                 /** @description Filter datastreams by workspace ID. */
@@ -5985,7 +7371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatastreamSummaryResponse"][] | components["schemas"]["DatastreamDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_DatastreamResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -6001,9 +7387,7 @@ export interface operations {
     };
     interfaces_api_views_sta_datastream_create_datastream: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -6020,7 +7404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatastreamSummaryResponse"] | components["schemas"]["DatastreamDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6050,24 +7434,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6083,7 +7462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6091,10 +7470,14 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_linked_resource_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6110,7 +7493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6118,10 +7501,14 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_sampled_mediums: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6137,7 +7524,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6145,10 +7532,14 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_statuses: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -6164,7 +7555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -6238,7 +7629,10 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
             };
             header?: never;
             path: {
@@ -6254,7 +7648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatastreamSummaryResponse"] | components["schemas"]["DatastreamDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_DatastreamResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -6317,9 +7711,7 @@ export interface operations {
     };
     interfaces_api_views_sta_datastream_update_datastream: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 datastream_id: string;
@@ -6332,14 +7724,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["DatastreamSummaryResponse"] | components["schemas"]["DatastreamDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -6361,15 +7751,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6420,10 +7801,14 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_linked_resources: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -6496,7 +7881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6528,15 +7913,6 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6621,14 +7997,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -6675,324 +8049,21 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_get_observations: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("phenomenonTime" | "-phenomenonTime")[] | null;
-                /** @description Controls the format of the observations response. */
-                format?: ("record" | "row" | "column") | null;
-                /** @description Sets the maximum phenomenon time of filtered observations. */
-                phenomenon_time_max?: string | null;
-                /** @description Sets the minimum phenomenon time of filtered observations. */
-                phenomenon_time_min?: string | null;
-                /** @description Filter observations by result qualifier code. */
-                result_qualifier_code?: string[];
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ObservationSummaryResponse"][] | components["schemas"]["ObservationDetailResponse"][] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_create_observation: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ObservationSummaryResponse"] | components["schemas"]["ObservationDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_insert_observations: {
-        parameters: {
-            query?: {
-                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
-                mode?: ("insert" | "append" | "backfill" | "replace") | null;
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_delete_observations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationBulkDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_get_observation: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                datastream_id: string;
-                observation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ObservationSummaryResponse"] | components["schemas"]["ObservationDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_delete_observation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                datastream_id: string;
-                observation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_etl_data_connection_get_data_connections: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[];
+                order_by?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
                 /** @description Filter data connections by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter data connections by payload type. */
@@ -7010,7 +8081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_DataConnectionResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7043,7 +8114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7082,20 +8153,16 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_etl_data_connection_get_data_connection: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
             header?: never;
             path: {
                 data_connection_id: string;
@@ -7110,7 +8177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionResponse"];
+                    "application/json": components["schemas"]["ItemResponse_DataConnectionResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7204,13 +8271,128 @@ export interface operations {
             };
         };
         responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_get_etl_mappings: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "targetDatastream"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+                /** @description Filter mappings by source identifier. */
+                source_identifier?: string[];
+                /** @description Filter mappings by target datastream ID. */
+                target_datastream_id?: string[];
+                /** @description Filter mappings by ETL task ID. */
+                etl_task_id?: string[];
+                /** @description Filter mappings by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionResponse"];
+                    "application/json": components["schemas"]["PaginatedResponse_EtlMappingResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_create_etl_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtlMappingPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7240,8 +8422,169 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_get_etl_mapping: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "targetDatastream"[];
+            };
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_EtlMappingResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_delete_etl_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_etl_mapping_update_etl_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtlMappingPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7254,12 +8597,16 @@ export interface operations {
     interfaces_api_views_etl_task_get_etl_tasks: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "dataConnection"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
                 /** @description Filter ETL tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
@@ -7276,7 +8623,6 @@ export interface operations {
                 latest_run_finished_at_min?: string | null;
                 /** @description Filter tasks whose latest run finished on or before this datetime. */
                 latest_run_finished_at_max?: string | null;
-                expand_related?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7290,7 +8636,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskSummaryResponse"][] | components["schemas"]["EtlTaskDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_EtlTaskResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7323,7 +8669,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskSummaryResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7362,21 +8708,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_etl_task_get_etl_task: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "dataConnection"[];
             };
             header?: never;
             path: {
@@ -7392,7 +8732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskSummaryResponse"] | components["schemas"]["EtlTaskDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_EtlTaskResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7486,14 +8826,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["EtlTaskSummaryResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -7531,24 +8869,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_etl_task_get_etl_task_runs: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -7576,7 +8909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7710,11 +9043,14 @@ export interface operations {
     interfaces_api_views_sta_method_get_methods: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
                 /** @description Filter methods by workspace ID. */
@@ -7742,7 +9078,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MethodSummaryResponse"][] | components["schemas"]["MethodDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MethodResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -7758,9 +9103,7 @@ export interface operations {
     };
     interfaces_api_views_sta_method_create_method: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -7777,7 +9120,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MethodSummaryResponse"] | components["schemas"]["MethodDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7807,24 +9150,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_method_get_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -7840,7 +9178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -7848,7 +9186,10 @@ export interface operations {
     interfaces_api_views_sta_method_get_method: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -7864,7 +9205,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MethodSummaryResponse"] | components["schemas"]["MethodDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_MethodResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -7936,9 +9286,7 @@ export interface operations {
     };
     interfaces_api_views_sta_method_update_method: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 method_id: string;
@@ -7951,13 +9299,128 @@ export interface operations {
             };
         };
         responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_get_monitoring_rules: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "datastream"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[] | null;
+                /** @description Filter rules by datastream ID. */
+                datastream_id?: string[];
+                /** @description Filter rules by rule type. */
+                rule_type?: string[];
+                /** @description Filter rules by monitoring task ID. */
+                task_id?: string[];
+                /** @description Filter rules by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MethodSummaryResponse"] | components["schemas"]["MethodDetailResponse"];
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringRuleResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_create_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringRulePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7987,8 +9450,169 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_get_monitoring_rule: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "datastream"[];
+            };
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_MonitoringRuleResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_delete_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_update_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringRulePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8001,11 +9625,14 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_sites: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
                 /** @description Filter monitoring sites by workspace ID. */
@@ -8037,7 +9664,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"][] | components["schemas"]["MonitoringSiteDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringSiteResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8053,9 +9680,7 @@ export interface operations {
     };
     interfaces_api_views_sta_monitoring_site_create_monitoring_site: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -8072,7 +9697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"] | components["schemas"]["MonitoringSiteDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -8093,24 +9718,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -8126,7 +9746,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -8224,10 +9844,14 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_site_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -8243,7 +9867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -8319,7 +9943,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -8335,7 +9962,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"] | components["schemas"]["MonitoringSiteDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_MonitoringSiteResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8398,9 +10025,7 @@ export interface operations {
     };
     interfaces_api_views_sta_monitoring_site_update_monitoring_site: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 monitoring_site_id: string;
@@ -8413,14 +10038,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"] | components["schemas"]["MonitoringSiteDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -8449,24 +10072,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -8539,7 +10157,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -8571,15 +10189,6 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8664,14 +10273,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -8718,26 +10325,21 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_monitoring_task_get_monitoring_tasks: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
                 /** @description Filter monitoring tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter monitoring tasks by workspace ID. */
@@ -8748,7 +10350,6 @@ export interface operations {
                 datastream_id?: string[];
                 /** @description Filter monitoring tasks by rule type. */
                 rule_type?: string[];
-                expand_related?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -8762,7 +10363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"][] | components["schemas"]["MonitoringTaskDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringTaskResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8795,7 +10396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -8834,21 +10435,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_monitoring_task_get_monitoring_task: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "monitoringSite"[];
             };
             header?: never;
             path: {
@@ -8864,7 +10459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"] | components["schemas"]["MonitoringTaskDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_MonitoringTaskResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8958,255 +10553,6 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_get_monitoring_rules: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[];
-                /** @description Filter rules by datastream ID. */
-                datastream_id?: string[];
-                /** @description Filter rules by rule type. */
-                rule_type?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringRuleResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_create_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MonitoringRulePostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringRuleResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_get_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                rule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringRuleResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_delete_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                rule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
             /** @description No Content */
             204: {
                 headers: {
@@ -9214,60 +10560,6 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_monitoring_rule_update_monitoring_rule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                rule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MonitoringRulePatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringRuleResponse"];
-                };
-            };
             /** @description Bad Request */
             400: {
                 headers: {
@@ -9297,15 +10589,6 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9318,10 +10601,14 @@ export interface operations {
     interfaces_api_views_monitoring_task_get_monitoring_task_runs: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -9349,7 +10636,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -9480,24 +10767,29 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_observed_property_get_observed_properties: {
+    interfaces_api_views_sta_observation_get_observations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                include?: ("datastream" | "workspace")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Filter observations by datastream ID. */
+                datastream_id?: string[];
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
-                /** @description Filter observed properties by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter observed properties by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
-                /** @description Filter observed properties by datastream ID. */
-                datastream_id?: (string | "null")[];
-                /** @description Filter observed properties by type */
-                type?: string[];
+                order_by?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
+                /** @description Controls the format of the observations response. */
+                format?: ("record" | "row" | "column") | null;
+                /** @description Sets the maximum phenomenon time of filtered observations. */
+                phenomenon_time_max?: string | null;
+                /** @description Sets the minimum phenomenon time of filtered observations. */
+                phenomenon_time_min?: string | null;
+                /** @description Filter observations by result qualifier code. */
+                result_qualifier_code?: string[];
             };
             header?: never;
             path?: never;
@@ -9511,11 +10803,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ObservedPropertySummaryResponse"][] | components["schemas"]["ObservedPropertyDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
                 };
             };
-            /** @description Unauthorized */
-            401: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9525,18 +10835,16 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_observed_property_create_observed_property: {
+    interfaces_api_views_sta_observation_create_observation: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ObservedPropertyPostBody"];
+                "application/json": components["schemas"]["ObservationPostBody"];
             };
         };
         responses: {
@@ -9546,7 +10854,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ObservedPropertySummaryResponse"] | components["schemas"]["ObservedPropertyDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9576,8 +10884,291 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+        };
+    };
+    interfaces_api_views_sta_observation_insert_observations: {
+        parameters: {
+            query?: {
+                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
+                mode?: ("insert" | "append" | "backfill" | "replace") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_delete_observations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationBulkDeleteBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_get_observation: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                include?: ("datastream" | "workspace")[];
+            };
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_ObservationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_delete_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_get_observed_properties: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+                /** @description Filter observed properties by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter observed properties by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
+                /** @description Filter observed properties by datastream ID. */
+                datastream_id?: (string | "null")[];
+                /** @description Filter observed properties by type */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ObservedPropertyResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_create_observed_property: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservedPropertyPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9590,10 +11181,14 @@ export interface operations {
     interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -9609,7 +11204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -9617,7 +11212,10 @@ export interface operations {
     interfaces_api_views_sta_observed_property_get_observed_property: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -9633,7 +11231,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ObservedPropertySummaryResponse"] | components["schemas"]["ObservedPropertyDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_ObservedPropertyResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -9705,9 +11312,7 @@ export interface operations {
     };
     interfaces_api_views_sta_observed_property_update_observed_property: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 observed_property_id: string;
@@ -9720,14 +11325,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ObservedPropertySummaryResponse"] | components["schemas"]["ObservedPropertyDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -9756,25 +11359,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_processing_level_get_processing_levels: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("code" | "name" | "-code" | "-name")[] | null;
                 /** @description Filter processing levels by workspace ID. */
@@ -9796,7 +11393,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessingLevelSummaryResponse"][] | components["schemas"]["ProcessingLevelDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ProcessingLevelResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -9812,9 +11418,7 @@ export interface operations {
     };
     interfaces_api_views_sta_processing_level_create_processing_level: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -9831,7 +11435,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessingLevelSummaryResponse"] | components["schemas"]["ProcessingLevelDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9861,21 +11465,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_processing_level_get_processing_level: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -9891,7 +11489,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessingLevelSummaryResponse"] | components["schemas"]["ProcessingLevelDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_ProcessingLevelResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -9963,9 +11570,7 @@ export interface operations {
     };
     interfaces_api_views_sta_processing_level_update_processing_level: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 processing_level_id: string;
@@ -9978,222 +11583,6 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProcessingLevelSummaryResponse"] | components["schemas"]["ProcessingLevelDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_get_rating_curves: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[];
-                /** @description Filter rating curves by monitoring_site ID. */
-                monitoring_site_id?: string[];
-                /** @description Filter rating curves by workspace ID. */
-                workspace_id?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_create_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingCurvePostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_get_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rating_curve_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_delete_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rating_curve_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
             /** @description No Content */
             204: {
                 headers: {
@@ -10201,59 +11590,6 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_rating_curve_update_rating_curve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rating_curve_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingCurvePatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveResponse"];
-                };
-            };
             /** @description Bad Request */
             400: {
                 headers: {
@@ -10274,1381 +11610,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_tasks: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
-                /** @description Filter data product tasks by monitoring_site ID. */
-                monitoring_site_id?: string[];
-                /** @description Filter data product tasks by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter data product tasks by their most recent run status. */
-                latest_run_status?: (string | "null")[];
-                /** @description Filter data product tasks by transformation type. */
-                transformation_type?: string[];
-                /** @description Filter data product tasks by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter data product tasks by input datastream ID. */
-                input_datastream_id?: string[];
-                /** @description Filter data product tasks by rating curve ID. */
-                rating_curve_id?: string[];
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"][] | components["schemas"]["DataProductTaskDetailResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_create_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataProductTaskPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_task: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"] | components["schemas"]["DataProductTaskDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_delete_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_update_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataProductTaskPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_task_runs: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
-                /** @description Filters task runs by their status. */
-                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
-                /** @description Filters for task runs started on or before this date and time. */
-                started_at_max?: string | null;
-                /** @description Filters for task runs started on or after this date and time. */
-                started_at_min?: string | null;
-                /** @description Filters for task runs finished on or before this date and time. */
-                finished_at_max?: string | null;
-                /** @description Filters for task runs finished on or after this date and time. */
-                finished_at_min?: string | null;
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_get_data_product_task_run: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_aggregation_transformations: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
-                /** @description Filter by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter by input datastream ID. */
-                input_datastream_id?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_create_aggregation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AggregationTransformationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_aggregation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_delete_aggregation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_update_aggregation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AggregationTransformationPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_derivation_transformations: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
-                /** @description Filter by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter by input datastream ID. */
-                input_datastream_id?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_create_derivation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DerivationTransformationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_derivation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_delete_derivation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_update_derivation_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DerivationTransformationPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_rating_curve_transformations: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
-                /** @description Filter by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter by input datastream ID. */
-                input_datastream_id?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_create_rating_curve_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingCurveTransformationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_rating_curve_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_delete_rating_curve_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_update_rating_curve_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingCurveTransformationPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_task_trigger_data_product_task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Accepted */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11661,11 +11622,16 @@ export interface operations {
     interfaces_api_views_quality_history_get_qc_histories: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("managedDatastream" | "sourceDatastream")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
                 /** @description Filter histories by managed datastream ID. */
                 managed_datastream_id?: string[];
                 /** @description Filter histories by source datastream ID. */
@@ -11683,7 +11649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlHistorySummaryResponse"][] | components["schemas"]["QualityControlHistoryDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QualityControlHistoryResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11725,7 +11691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlHistoryDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -11764,21 +11730,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_quality_history_get_qc_history: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("managedDatastream" | "sourceDatastream")[];
             };
             header?: never;
             path: {
@@ -11794,7 +11754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlHistorySummaryResponse"] | components["schemas"]["QualityControlHistoryDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_QualityControlHistoryResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11876,11 +11836,16 @@ export interface operations {
     interfaces_api_views_quality_session_get_qc_sessions: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "historyId" | "createdBy" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "description" | "sourceChecksum" | "managedChecksum" | "dependencyIds")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
                 status?: ("in_progress" | "committed") | null;
                 /** @description Return sessions overlapping with this range start. */
                 range_start?: string | null;
@@ -11905,7 +11870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlSessionSummaryResponse"][] | components["schemas"]["QualityControlSessionDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QualityControlSessionResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11958,7 +11923,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlSessionDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -11997,21 +11962,13 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_quality_session_get_qc_session: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "historyId" | "createdBy" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "description" | "sourceChecksum" | "managedChecksum" | "dependencyIds")[];
             };
             header?: never;
             path: {
@@ -12028,7 +11985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlSessionSummaryResponse"] | components["schemas"]["QualityControlSessionDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_QualityControlSessionResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12124,14 +12081,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["QualityControlSessionDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -12162,15 +12117,6 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12192,14 +12138,12 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["QualityControlSessionDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -12237,24 +12181,21 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_quality_operation_get_qc_operations: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "createdBy" | "order" | "operationType" | "createdAt" | "comment" | "arguments")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
             };
             header?: never;
             path: {
@@ -12271,7 +12212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlOperationResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QualityControlOperationResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12325,7 +12266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlOperationResponse"][];
+                    "application/json": components["schemas"]["CreatedResponse"][];
                 };
             };
             /** @description Bad Request */
@@ -12364,20 +12305,14 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_quality_operation_get_qc_operation: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "createdBy" | "order" | "operationType" | "createdAt" | "comment" | "arguments")[];
+            };
             header?: never;
             path: {
                 history_id: string;
@@ -12394,7 +12329,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QualityControlOperationResponse"];
+                    "application/json": components["schemas"]["ItemResponse_QualityControlOperationResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12492,14 +12427,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["QualityControlOperationResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -12537,25 +12470,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_result_qualifier_get_result_qualifiers: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "code" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("code" | "-code")[] | null;
                 /** @description Filter result qualifiers by workspace ID. */
@@ -12577,7 +12504,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResultQualifierSummaryResponse"][] | components["schemas"]["ResultQualifierDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ResultQualifierResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -12593,9 +12529,7 @@ export interface operations {
     };
     interfaces_api_views_sta_result_qualifier_create_result_qualifier: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -12612,7 +12546,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResultQualifierSummaryResponse"] | components["schemas"]["ResultQualifierDetailResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -12624,8 +12558,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12638,7 +12572,10 @@ export interface operations {
     interfaces_api_views_sta_result_qualifier_get_result_qualifier: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "code" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -12654,7 +12591,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResultQualifierSummaryResponse"] | components["schemas"]["ResultQualifierDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_ResultQualifierResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -12713,22 +12659,11 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_sta_result_qualifier_update_result_qualifier: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 result_qualifier_id: string;
@@ -12741,14 +12676,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ResultQualifierSummaryResponse"] | components["schemas"]["ResultQualifierDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {
@@ -12768,25 +12701,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_iam_role_get_roles: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "-name")[] | null;
                 /** @description Filter roles by workspace ID. */
@@ -12804,7 +12731,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleSummaryResponse"][] | components["schemas"]["RoleDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_RoleResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12821,7 +12748,8 @@ export interface operations {
     interfaces_api_views_iam_role_get_role: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
             };
             header?: never;
             path: {
@@ -12837,7 +12765,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleSummaryResponse"] | components["schemas"]["RoleDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_RoleResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12863,11 +12791,14 @@ export interface operations {
     interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
                 /** @description Filter units by workspace ID. */
@@ -12891,42 +12822,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitSummaryResponse"][] | components["schemas"]["UnitDetailResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_unit_create_unit: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UnitPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnitSummaryResponse"] | components["schemas"]["UnitDetailResponse"];
+                    "application/json": components["schemas"]["PaginatedResponse_UnitResponse_"];
                 };
             };
             /** @description Bad Request */
@@ -12947,8 +12843,41 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+        };
+    };
+    interfaces_api_views_sta_unit_create_unit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12961,10 +12890,14 @@ export interface operations {
     interfaces_api_views_sta_unit_get_unit_types: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: string | null;
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Sort terms by descending. */
                 order_desc?: boolean | null;
             };
@@ -12980,7 +12913,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -12988,7 +12921,10 @@ export interface operations {
     interfaces_api_views_sta_unit_get_unit: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -13004,7 +12940,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitSummaryResponse"] | components["schemas"]["UnitDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_UnitResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -13076,9 +13021,7 @@ export interface operations {
     };
     interfaces_api_views_sta_unit_update_unit: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 unit_id: string;
@@ -13091,14 +13034,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["UnitSummaryResponse"] | components["schemas"]["UnitDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -13127,25 +13068,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_iam_workspace_get_workspaces: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
                 /** @description Whether the workspace is associated with the authenticated user */
@@ -13165,7 +13100,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceDetailResponse"][] | components["schemas"]["WorkspaceSummaryResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_WorkspaceResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -13181,9 +13125,7 @@ export interface operations {
     };
     interfaces_api_views_iam_workspace_create_workspace: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -13200,11 +13142,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceDetailResponse"] | components["schemas"]["WorkspaceSummaryResponse"];
+                    "application/json": components["schemas"]["CreatedResponse"];
                 };
             };
-            /** @description Unauthorized */
-            401: {
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13212,8 +13154,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13226,7 +13168,10 @@ export interface operations {
     interfaces_api_views_iam_workspace_get_workspace: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
             };
             header?: never;
             path: {
@@ -13242,7 +13187,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceDetailResponse"] | components["schemas"]["WorkspaceSummaryResponse"];
+                    "application/json": components["schemas"]["ItemResponse_WorkspaceResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -13305,9 +13259,7 @@ export interface operations {
     };
     interfaces_api_views_iam_workspace_update_workspace: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 workspace_id: string;
@@ -13320,13 +13272,20 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WorkspaceDetailResponse"] | components["schemas"]["WorkspaceSummaryResponse"];
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -13347,24 +13306,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_iam_collaborator_get_collaborators: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("roleId" | "userEmail" | "serviceAccountEmail")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("role" | "user" | "serviceAccount")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Filter collaborators by role ID. */
                 role_id?: string[];
             };
@@ -13382,7 +13336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaboratorDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_CollaboratorResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -13420,13 +13374,20 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaboratorDetailResponse"];
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -13440,15 +13401,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13479,7 +13431,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaboratorDetailResponse"];
+                    "application/json": components["schemas"]["CollaboratorCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Unauthorized */
@@ -13493,15 +13454,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13533,6 +13485,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Unauthorized */
             401: {
                 headers: {
@@ -13551,25 +13512,19 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_iam_service_account_get_service_accounts: {
         parameters: {
             query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive" | "keyExpiresAt" | "email" | "createdAt" | "lastUsedAt")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
             };
@@ -13587,7 +13542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"][] | components["schemas"]["ServiceAccountDetailResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ServiceAccountResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -13603,9 +13558,7 @@ export interface operations {
     };
     interfaces_api_views_iam_service_account_create_service_account: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 workspace_id: string;
@@ -13624,20 +13577,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ServiceAccountSummaryPostResponse"] | components["schemas"]["ServiceAccountDetailPostResponse"];
+                    "application/json": components["schemas"]["ServiceAccountCreatedResponse"];
                 };
             };
             /** @description Unauthorized */
             401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13650,7 +13594,10 @@ export interface operations {
     interfaces_api_views_iam_service_account_get_service_account: {
         parameters: {
             query?: {
-                expand_related?: boolean | null;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive" | "keyExpiresAt" | "email" | "createdAt" | "lastUsedAt")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
             };
             header?: never;
             path: {
@@ -13667,7 +13614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"] | components["schemas"]["ServiceAccountDetailResponse"];
+                    "application/json": components["schemas"]["ItemResponse_ServiceAccountResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -13731,9 +13678,7 @@ export interface operations {
     };
     interfaces_api_views_iam_service_account_update_service_account: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 workspace_id: string;
@@ -13747,14 +13692,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"] | components["schemas"]["ServiceAccountDetailResponse"];
-                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {
@@ -13774,22 +13717,11 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     interfaces_api_views_iam_service_account_regenerate_service_account_key: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 workspace_id: string;
@@ -13805,7 +13737,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ServiceAccountSummaryPostResponse"] | components["schemas"]["ServiceAccountDetailPostResponse"];
+                    "application/json": components["schemas"]["ServiceAccountKeyResponse"];
                 };
             };
             /** @description Bad Request */
@@ -13828,15 +13760,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13939,15 +13862,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };

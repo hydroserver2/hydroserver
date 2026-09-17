@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from tests.core.iam.factories import (
@@ -11,7 +13,7 @@ from tests.processing.etl.factories import DataConnectionFactory, PayloadFactory
 
 pytestmark = pytest.mark.django_db
 
-DATA_CONNECTIONS_URL = "/api/data/etl/data-connections"
+DATA_CONNECTIONS_URL = "/api/data/etl-data-connections"
 
 
 def _detail_url(data_connection_id):
@@ -76,7 +78,7 @@ def test_get_data_connections_includes_connection_for_workspace_owner(client):
     response = client.get(DATA_CONNECTIONS_URL)
 
     assert response.status_code == 200
-    assert str(data_connection.id) in [d["id"] for d in response.json()]
+    assert str(data_connection.id) in [d["id"] for d in response.json()["data"]]
 
 
 def test_get_data_connections_excludes_connection_for_outsider(client):
@@ -87,13 +89,49 @@ def test_get_data_connections_excludes_connection_for_outsider(client):
 
     response = client.get(DATA_CONNECTIONS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_data_connections_returns_401_when_unauthenticated(client):
     response = client.get(DATA_CONNECTIONS_URL)
 
     assert response.status_code == 401
+
+
+def test_get_data_connections_include_workspace_sideloads_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = _make_data_connection(workspace)
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    row = next(d for d in body["data"] if d["id"] == str(data_connection.id))
+    assert row["workspaceId"] == str(workspace.id)
+    assert {w["id"] for w in body["included"]["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_data_connections_without_include_omits_included_bucket(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_data_connection(workspace)
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL)
+
+    assert response.status_code == 200
+    assert not response.json().get("included")
+
+
+def test_get_data_connections_include_rejects_unknown_relation(client):
+    owner = UserFactory()
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"include": "bogus"})
+
+    assert response.status_code == 400
 
 
 # --- create_data_connection ----------------------------------------------------------
@@ -111,7 +149,7 @@ def test_create_data_connection_succeeds_with_csv_payload_for_workspace_owner(cl
     )
 
     assert response.status_code == 201
-    assert response.json()["payload"]["type"] == "CSV"
+    assert "id" in response.json()
 
 
 def test_create_data_connection_succeeds_with_json_payload_for_workspace_owner(client):
@@ -126,7 +164,20 @@ def test_create_data_connection_succeeds_with_json_payload_for_workspace_owner(c
     )
 
     assert response.status_code == 201
-    assert response.json()["payload"]["type"] == "JSON"
+    assert "id" in response.json()
+
+
+def test_create_data_connection_returns_404_for_nonexistent_workspace(client):
+    owner = UserFactory()
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(uuid.uuid4()),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
 
 
 def test_create_data_connection_returns_401_when_unauthenticated(client):
@@ -205,6 +256,38 @@ def test_create_data_connection_returns_400_for_invalid_jmespath_expression(clie
     assert response.status_code == 400
 
 
+def test_create_data_connection_returns_400_for_unknown_iana_timezone(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(
+            workspace.id, timezoneType="iana", timezone="Not/Real"
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_data_connection_returns_400_for_malformed_offset_timezone(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(
+            workspace.id, timezoneType="offset", timezone="not-an-offset"
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
 def test_create_data_connection_with_placeholder_variables_succeeds(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -220,7 +303,10 @@ def test_create_data_connection_with_placeholder_variables_succeeds(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["placeholderVariables"] == [
+    created_id = response.json()["id"]
+
+    detail_response = client.get(_detail_url(created_id))
+    assert detail_response.json()["data"]["placeholderVariables"] == [
         {"name": "site_code", "type": "per_task", "timestampFormat": None}
     ]
 
@@ -262,7 +348,7 @@ def test_get_data_connection_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(data_connection.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(data_connection.id)
+    assert response.json()["data"]["id"] == str(data_connection.id)
 
 
 def test_get_data_connection_returns_404_for_outsider(client):
@@ -309,8 +395,10 @@ def test_update_data_connection_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["name"] == "Updated Name"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(data_connection.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
 
 
 def test_update_data_connection_returns_403_for_viewer_collaborator(client):

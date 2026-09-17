@@ -11,7 +11,14 @@ export interface Meta {
 
 // TODO: Return FieldErrors in the error case so the backend can be the one source of truth for the error message
 export type ApiResponse<T> =
-  | { ok: true; status: number; data: T; message?: string; meta?: Meta }
+  | {
+      ok: true
+      status: number
+      data: T
+      message?: string
+      meta?: Meta
+      included?: Meta
+    }
   | { ok: false; status: number; message: string; data?: unknown }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -95,13 +102,18 @@ export async function responseInterceptor<T = unknown>(
   if (response.ok) {
     const record = asRecord(body)
     const looksEnveloped =
-      record !== null && ('data' in record || 'meta' in record)
+      record !== null &&
+      'data' in record &&
+      ('meta' in record || 'included' in record)
 
     const data = (looksEnveloped ? record!.data : body) as T
     const message = extractSuccessMessage(body, response)
     const meta = looksEnveloped ? (record!.meta as Meta | undefined) : undefined
+    const included = looksEnveloped
+      ? (record!.included as Meta | undefined)
+      : undefined
 
-    return { ok: true, data, status: response.status, message, meta }
+    return { ok: true, data, status: response.status, message, meta, included }
   }
 
   // Error path

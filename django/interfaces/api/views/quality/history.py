@@ -1,30 +1,27 @@
 import uuid
-from typing import Optional
 
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 
-from interfaces.api.http.errors import raise_http_errors
-from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.quality.services.history import QCHistoryService
+from interfaces.api.services.quality.history import QCHistoryAPIService
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.quality.history import (
-    QualityControlHistorySummaryResponse,
-    QualityControlHistoryDetailResponse,
+    QualityControlHistoryResponse,
     QualityControlHistoryQueryParameters,
+    QualityControlHistoryItemQueryParameters,
     QualityControlHistoryPostBody,
 )
 
 qc_history_router = Router(tags=["Quality Control Histories"])
-qc_history_service = QCHistoryService()
+qc_history_service = QCHistoryAPIService()
 
 
 @qc_history_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: list[QualityControlHistorySummaryResponse] | list[QualityControlHistoryDetailResponse],
+        200: PaginatedResponse[QualityControlHistoryResponse],
         401: str,
         403: str,
     },
@@ -32,34 +29,24 @@ qc_history_service = QCHistoryService()
 )
 def get_qc_histories(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[QualityControlHistoryQueryParameters],
 ):
-    """Get QC histories. Returns detail responses (with expanded datastreams) when expand_related=True."""
+    """Get QC histories."""
 
-    with raise_http_errors():
-        count, histories = qc_history_service.get_collection(
-            principal=request.principal,
-            **query.model_dump(exclude_unset=True),
-        )
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    return 200, qc_history_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        order_by=query.order_by,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
-
-    if query.expand_related:
-        return 200, [QualityControlHistoryDetailResponse.model_validate(history) for history in histories]
-
-    return 200, [QualityControlHistorySummaryResponse.model_validate(history) for history in histories]
 
 
 @qc_history_router.post(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={201: QualityControlHistoryDetailResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: CreatedResponse, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def create_qc_history(
@@ -68,21 +55,14 @@ def create_qc_history(
 ):
     """Create a new QC history for a managed datastream."""
 
-    with raise_http_errors():
-        history = qc_history_service.create(
-            principal=request.principal,
-            managed_datastream=data.managed_datastream_id,
-            source_datastream=data.source_datastream_id,
-        )
-
-    return 201, history
+    return 201, qc_history_service.create(principal=request.principal, data=data)
 
 
 @qc_history_router.get(
     "/{history_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: QualityControlHistorySummaryResponse | QualityControlHistoryDetailResponse,
+        200: ItemResponse[QualityControlHistoryResponse],
         401: str,
         403: str,
         404: str,
@@ -92,19 +72,13 @@ def create_qc_history(
 def get_qc_history(
     request: HydroServerHttpRequest,
     history_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[QualityControlHistoryItemQueryParameters],
 ):
     """Get a QC history by ID."""
 
-    with raise_http_errors():
-        history = qc_history_service.get(
-            history=history_id, principal=request.principal, expand_related=expand_related
-        )
-
-    if expand_related:
-        return 200, QualityControlHistoryDetailResponse.model_validate(history)
-
-    return 200, QualityControlHistorySummaryResponse.model_validate(history)
+    return 200, qc_history_service.get(
+        principal=request.principal, uid=history_id, include=query.include
+    )
 
 
 @qc_history_router.delete(
@@ -119,7 +93,6 @@ def delete_qc_history(
 ):
     """Delete a QC history and all associated sessions."""
 
-    with raise_http_errors():
-        qc_history_service.delete(history=history_id, principal=request.principal)
+    qc_history_service.delete(principal=request.principal, uid=history_id)
 
     return 204, None

@@ -49,7 +49,7 @@
             </button>
           </template>
           <QualityManagementForm
-            :initial-monitoring-site-id="task.monitoringSite.id"
+            :initial-monitoring-site-id="task.monitoringSiteId"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -107,8 +107,8 @@
       />
       <QualityTaskMappings
         v-else
-        :task="task"
-        :monitoring-site-id="task.monitoringSite?.id"
+        :task-id="task.id"
+        :monitoring-site-id="task.monitoringSiteId"
       />
     </section>
   </div>

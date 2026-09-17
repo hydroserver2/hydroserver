@@ -17,8 +17,8 @@ class HydroServerBaseService:
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         fetch_all: bool = False,
         **kwargs
@@ -28,8 +28,8 @@ class HydroServerBaseService:
         }
         params = kwargs.copy()
         params.update({
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": [order_by_to_camel(order) for order in order_by] if order_by is not ... else order_by
         })
         params = {
@@ -61,10 +61,11 @@ class HydroServerBaseService:
         uid: Union[uuid.UUID, str]
     ):
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        response = self.client.request("get", path).json()
+        payload = self.client.request("get", path).json()
+        data = payload.get("data", payload)
 
         return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
+            client=self.client, uid=uuid.UUID(str(data.pop("id"))), **data
         )
 
     def create(self, **kwargs):
@@ -74,9 +75,7 @@ class HydroServerBaseService:
             "post", path, headers=headers, data=json.dumps(kwargs, default=self.default_serializer)
         ).json()
 
-        return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
-        )
+        return self.get(response["id"])
 
     def update(
         self,
@@ -86,13 +85,11 @@ class HydroServerBaseService:
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
         headers = {"Content-type": "application/json"}
         body = self.prune_unset(kwargs) or {}
-        response = self.client.request(
+        self.client.request(
             "patch", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-        return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
         )
+
+        return self.get(uid)
 
     def delete(
         self,

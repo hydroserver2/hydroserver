@@ -17,8 +17,8 @@ class TaskService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         data_connection: Optional[Union[UUID, str]] = ...,
@@ -32,11 +32,10 @@ class TaskService(HydroServerBaseService):
         """Fetch a collection of ETL tasks."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
             fetch_all=fetch_all,
-            expand_related=True,
             workspace_id=normalize_uuid(workspace),
             data_connection_id=normalize_uuid(data_connection),
             latest_run_status=latest_run_status,
@@ -46,23 +45,12 @@ class TaskService(HydroServerBaseService):
             latest_run_finished_at_max=latest_run_finished_at_max,
         )
 
-    def get(self, uid: Union[UUID, str]) -> EtlTask:
-        """Fetch a single ETL task."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        response = self.client.request("get", path, params={"expand_related": True}).json()
-
-        return self.model(
-            client=self.client, uid=UUID(str(response.pop("id"))), **response
-        )
-
     def create(
         self,
         name: str,
         data_connection: Union[UUID, str],
         description: Optional[str] = None,
         task_variables: Optional[Dict[str, Any]] = None,
-        mappings: Optional[List[dict]] = None,
         crontab: Optional[str] = None,
         interval: Optional[int] = None,
         interval_period: Optional[Literal["minutes", "hours", "days"]] = None,
@@ -77,11 +65,6 @@ class TaskService(HydroServerBaseService):
             "description": description,
             "dataConnectionId": normalize_uuid(data_connection),
             "taskVariables": task_variables or {},
-            "mappings": [
-                {"sourceIdentifier": m.get("source_identifier") or m.get("sourceIdentifier"),
-                 "targetDatastreamId": str(m.get("target_datastream_id") or m.get("targetDatastreamId"))}
-                for m in (mappings or [])
-            ],
         }
 
         if uid is not None:
@@ -102,7 +85,6 @@ class TaskService(HydroServerBaseService):
         self,
         uid: Union[UUID, str],
         name: str,
-        mappings: List[dict],
         description: Optional[str] = ...,
         task_variables: Optional[Dict[str, Any]] = None,
         crontab: Optional[str] = ...,
@@ -117,11 +99,6 @@ class TaskService(HydroServerBaseService):
             "name": name,
             "description": description,
             "taskVariables": task_variables or {},
-            "mappings": [
-                {"sourceIdentifier": m.get("source_identifier") or m.get("sourceIdentifier"),
-                 "targetDatastreamId": str(m.get("target_datastream_id") or m.get("targetDatastreamId"))}
-                for m in mappings
-            ],
         }
 
         if crontab is None and interval is None:
@@ -148,8 +125,8 @@ class TaskService(HydroServerBaseService):
     def list_runs(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = ...,
+        offset: int = ...,
+        limit: int = ...,
         order_by: List[str] = ...,
         status: str = ...,
         started_at_min: datetime = ...,
@@ -160,8 +137,8 @@ class TaskService(HydroServerBaseService):
         """Fetch a collection of task runs for an ETL task."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
+            "offset": offset,
+            "limit": limit,
             "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
             "status": status,
             "started_at_min": started_at_min,
@@ -173,7 +150,7 @@ class TaskService(HydroServerBaseService):
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs"
 
-        return [TaskRun(**run) for run in self.client.request("get", path, params=params).json()]
+        return [TaskRun(**run) for run in self.client.request("get", path, params=params).json()["data"]]
 
     def get_run(self, uid: Union[UUID, str], run_id: Union[UUID, str]) -> TaskRun:
         """Fetch a single task run for an ETL task."""

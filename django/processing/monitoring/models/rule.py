@@ -1,7 +1,10 @@
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 
+from core.iam.permissions.mixins import ResourcePermissionMixin
+from core.iam.permissions.registry import register_resource_type
 from core.sta.models import Datastream
 from processing.monitoring.models.task import MonitoringTask
 
@@ -19,7 +22,8 @@ class WindowIntervalUnits(models.TextChoices):
     DAYS = "days"
 
 
-class MonitoringRule(models.Model):
+@register_resource_type(workspace_field="task__monitoring_site__workspace")
+class MonitoringRule(models.Model, ResourcePermissionMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(
         MonitoringTask,
@@ -50,3 +54,62 @@ class MonitoringRule(models.Model):
 
     def __str__(self):
         return f"{self.task} - {self.datastream} - {self.rule_type}"
+
+    def clean(self):
+        if not self.datastream_id or not self.task_id:
+            return
+
+        try:
+            datastream_site_id = self.datastream.monitoring_site_id
+        except ObjectDoesNotExist:
+            return
+
+        try:
+            task_site_id = self.task.monitoring_site_id
+        except ObjectDoesNotExist:
+            return
+
+        if datastream_site_id != task_site_id:
+            raise ValidationError("The datastream must belong to the same monitoring site as this task.")
+
+        has_min = self.min_value is not None
+        has_max = self.max_value is not None
+        has_window = self.window_interval is not None
+        has_window_units = self.window_interval_units is not None
+
+        if has_window != has_window_units:
+            raise ValidationError("window_interval and window_interval_units must both be set or both be omitted.")
+
+        if self.rule_type == RuleType.ALLOWED_RANGE:
+            if not has_min and not has_max:
+                raise ValidationError("At least one of min_value or max_value is required for rule_type 'range'.")
+            if has_min and has_max and self.min_value >= self.max_value:
+                raise ValidationError("min_value must be less than max_value.")
+            if has_window:
+                raise ValidationError("window_interval must not be set for rule_type 'range'.")
+
+        elif self.rule_type == RuleType.RATE_OF_CHANGE:
+            if not has_max:
+                raise ValidationError("max_value is required for rule_type 'rate_of_change'.")
+            if not has_window:
+                raise ValidationError(
+                    "window_interval and window_interval_units are required for rule_type 'rate_of_change'."
+                )
+            if has_min:
+                raise ValidationError("min_value must not be set for rule_type 'rate_of_change'.")
+
+        elif self.rule_type == RuleType.PERSISTENCE:
+            if not has_window:
+                raise ValidationError(
+                    "window_interval and window_interval_units are required for rule_type 'persistence'."
+                )
+            if has_min and has_max and self.min_value >= self.max_value:
+                raise ValidationError("min_value must be less than max_value.")
+
+        elif self.rule_type == RuleType.MISSING_DATA:
+            if not has_window:
+                raise ValidationError(
+                    "window_interval and window_interval_units are required for rule_type 'missing_data'."
+                )
+            if has_min or has_max:
+                raise ValidationError("min_value and max_value must not be set for rule_type 'missing_data'.")

@@ -7,7 +7,7 @@ from typing import Union, Optional
 from pydantic import ConfigDict
 
 from core.sta.models import Datastream
-from core.sta.services import DatastreamService, ObservationService
+from interfaces.api.services.sta import DatastreamAPIService, ObservationAPIService
 from interfaces.api.schemas import ObservationBulkDeleteBody, ObservationBulkPostBody
 
 from hydroserverpy.etl.loaders import Loader, ETLLoaderResult, ETLTargetResult
@@ -15,8 +15,8 @@ from hydroserverpy.etl.exceptions import ETLError
 
 
 logger = logging.getLogger(__name__)
-observation_service = ObservationService()
-datastream_service = DatastreamService()
+observation_service = ObservationAPIService()
+datastream_service = DatastreamAPIService()
 
 
 class HydroServerInternalLoader(Loader):
@@ -122,6 +122,7 @@ class HydroServerInternalLoader(Loader):
                     observation_service.bulk_delete(
                         principal=task.workspace.owner,
                         data=ObservationBulkDeleteBody(
+                            datastream_id=datastream.pk,
                             phenomenon_time_start=datastream_df["timestamp"].min(),
                             phenomenon_time_end=datastream_df["timestamp"].max(),
                         ),
@@ -148,6 +149,7 @@ class HydroServerInternalLoader(Loader):
                         observation_service.bulk_create(
                             principal=task.workspace.owner,
                             data=ObservationBulkPostBody(
+                                datastream_id=datastream.pk,
                                 fields=["phenomenonTime", "result"],
                                 data=chunk.values.tolist(),
                             ),

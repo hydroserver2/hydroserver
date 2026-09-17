@@ -14,7 +14,8 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'etl-1',
           name: 'CSV load',
-          dataConnection: { id: 'dc-1' },
+          dataConnectionId: 'dc-1',
+          mappingCount: 1,
           latestRun: {
             id: 'run-1',
             status: 'SUCCESS',
@@ -24,45 +25,35 @@ describe('useOrchestrationTaskRows', () => {
             enabled: true,
             nextRunAt: '2025-01-03T00:00:00Z',
           },
-          mappings: [{ targetDatastream: { id: 'ds-1' } }],
         },
       ] as any),
       dataProductTasks: ref([
         {
           id: 'dp-1',
           name: 'Rating curve',
-          monitoringSite: { id: 'monitoringSite-2' },
+          monitoringSiteId: 'monitoringSite-2',
           latestRun: null,
           schedule: null,
-          ratingCurveTransformations: [{}],
+          transformationTypes: ['rating_curve'],
         },
       ] as any),
       monitoringTasks: ref([
         {
           id: 'mon-1',
           name: 'Quality check',
-          monitoringSite: { id: 'monitoringSite-3' },
+          monitoringSiteId: 'monitoringSite-3',
           latestRun: {
             status: 'FAILURE',
             result: { rulesViolated: 2 },
           },
           schedule: null,
-          monitoredDatastreams: [
-            {
-              rules: [
-                { ruleType: 'RANGE_CHECK' },
-                { ruleType: 'RANGE_CHECK' },
-                { ruleType: 'SPIKE_CHECK' },
-              ],
-            },
-          ],
+          ruleTypeCounts: { range: 2, spike_check: 1 },
         },
       ] as any),
-      datastreamMonitoringSiteByDatastreamId: ref({ 'ds-1': 'monitoringSite-1' }),
       runNowTriggeredByTaskId: { 'etl-1': true },
     })
 
-  it('builds ETL rows with data connection, site, run, and schedule metadata', () => {
+  it('builds ETL rows with data connection, run, and schedule metadata', () => {
     const rows = buildRows()
     const row = rows.etlTaskRows.value[0]
 
@@ -71,7 +62,7 @@ describe('useOrchestrationTaskRows', () => {
       kind: 'etl',
       name: 'CSV load',
       dataConnectionId: 'dc-1',
-      monitoringSiteId: 'monitoringSite-1',
+      monitoringSiteId: null,
       userClickedRunNow: true,
       taskType: null,
       noWorkWarning: null,
@@ -98,12 +89,7 @@ describe('useOrchestrationTaskRows', () => {
       monitoringSiteId: 'monitoringSite-3',
       statusName: 'Needs attention',
       statusSort: 'Needs attention',
-      qualityRuleSummary: '2 RANGE CHECK, 1 SPIKE CHECK',
       qualityRuleCount: 3,
-      qualityRuleBreakdown: [
-        { label: 'RANGE CHECK', count: 2 },
-        { label: 'SPIKE CHECK', count: 1 },
-      ],
       monitoringRulesViolated: 2,
       noWorkWarning: null,
     })
@@ -117,103 +103,26 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'dp-expr',
           name: 'Unit conversion',
-          thing: { id: 'thing-4' },
+          monitoringSiteId: 'monitoringSite-4',
           latestRun: null,
           schedule: null,
-          derivationTransformations: [
-            { id: 'expr-1', inputDatastreams: [{ datastream: { id: 'ds-1' } }] },
-          ],
+          transformationTypes: ['derivation'],
         },
         {
           id: 'dp-combined',
           name: 'Combined flow',
-          thing: { id: 'thing-4' },
+          monitoringSiteId: 'monitoringSite-4',
           latestRun: null,
           schedule: null,
-          derivationTransformations: [
-            {
-              id: 'expr-2',
-              inputDatastreams: [
-                { datastream: { id: 'ds-1' } },
-                { datastream: { id: 'ds-2' } },
-              ],
-            },
-          ],
+          transformationTypes: ['derivation'],
         },
       ] as any),
       monitoringTasks: ref([]),
-      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 
     expect(rows.dataProductTaskRows.value[0].taskType).toBe('Derivation')
     expect(rows.dataProductTaskRows.value[1].taskType).toBe('Derivation')
-  })
-
-  it('builds rows from summary task responses without expanded related objects', () => {
-    const rows = useOrchestrationTaskRows({
-      activeTab: ref('ingestion'),
-      workspaceTasks: ref([
-        {
-          id: 'etl-summary',
-          name: 'Summary import',
-          dataConnectionId: 'dc-summary',
-          workspaceId: 'workspace-1',
-          taskVariables: {},
-          latestRun: null,
-          schedule: null,
-        },
-      ] as any),
-      dataProductTasks: ref([
-        {
-          id: 'dp-summary',
-          name: 'Summary product',
-          monitoringSiteId: 'monitoringSite-summary',
-          workspaceId: 'workspace-1',
-          latestRun: null,
-          schedule: null,
-          aggregationTransformations: [{ id: 'agg-1' }],
-          derivationTransformations: [],
-          ratingCurveTransformations: [],
-        },
-      ] as any),
-      monitoringTasks: ref([
-        {
-          id: 'mon-summary',
-          name: 'Summary quality',
-          monitoringSiteId: 'monitoringSite-summary',
-          workspaceId: 'workspace-1',
-          latestRun: null,
-          schedule: null,
-          recipients: [],
-          monitoredDatastreams: [
-            {
-              datastreamId: 'ds-1',
-              rules: [{ ruleType: 'range' }, { ruleType: 'missing_data' }],
-            },
-          ],
-        },
-      ] as any),
-      datastreamMonitoringSiteByDatastreamId: ref({}),
-      runNowTriggeredByTaskId: {},
-    })
-
-    expect(rows.etlTaskRows.value[0]).toMatchObject({
-      id: 'etl-summary',
-      dataConnectionId: 'dc-summary',
-      noWorkWarning: null,
-    })
-    expect(rows.dataProductTaskRows.value[0]).toMatchObject({
-      id: 'dp-summary',
-      monitoringSiteId: 'monitoringSite-summary',
-      taskType: 'Aggregation',
-    })
-    expect(rows.monitoringTaskRows.value[0]).toMatchObject({
-      id: 'mon-summary',
-      monitoringSiteId: 'monitoringSite-summary',
-      qualityRuleSummary: '1 Missing Data, 1 Range',
-      qualityRuleCount: 2,
-    })
   })
 
   it('flags tasks that have no configured work', () => {
@@ -223,35 +132,32 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'etl-empty',
           name: 'Empty import',
-          dataConnection: { id: 'dc-1' },
+          dataConnectionId: 'dc-1',
+          mappingCount: 0,
           latestRun: null,
           schedule: null,
-          mappings: [],
         },
       ] as any),
       dataProductTasks: ref([
         {
           id: 'dp-empty',
           name: 'Empty product',
-          monitoringSite: { id: 'monitoringSite-2' },
+          monitoringSiteId: 'monitoringSite-2',
           latestRun: null,
           schedule: null,
-          aggregationTransformations: [],
-          derivationTransformations: [],
-          ratingCurveTransformations: [],
+          transformationTypes: [],
         },
       ] as any),
       monitoringTasks: ref([
         {
           id: 'mon-empty',
           name: 'Empty quality task',
-          monitoringSite: { id: 'monitoringSite-3' },
+          monitoringSiteId: 'monitoringSite-3',
           latestRun: null,
           schedule: null,
-          monitoredDatastreams: [{ rules: [] }],
+          ruleTypeCounts: {},
         },
       ] as any),
-      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 
@@ -280,7 +186,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'dp-interval',
           name: 'Scheduled rating curve',
-          monitoringSite: { id: 'monitoringSite-2' },
+          monitoringSiteId: 'monitoringSite-2',
           latestRun: null,
           schedule: {
             enabled: true,
@@ -290,11 +196,10 @@ describe('useOrchestrationTaskRows', () => {
             interval: 1,
             intervalPeriod: 'days',
           },
-          ratingCurveTransformations: [{}],
+          transformationTypes: ['rating_curve'],
         },
       ] as any),
       monitoringTasks: ref([]),
-      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 
@@ -312,7 +217,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-ok',
           name: 'Quality OK',
-          monitoringSite: { id: 'monitoringSite-1' },
+          monitoringSiteId: 'monitoringSite-1',
           latestRun: {
             id: 'run-ok',
             status: 'SUCCESS',
@@ -320,10 +225,9 @@ describe('useOrchestrationTaskRows', () => {
             startedAt: '2026-03-13T12:00:00Z',
           },
           schedule: null,
-          monitoredDatastreams: [],
+          ruleTypeCounts: {},
         },
       ] as any),
-      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 

@@ -66,7 +66,7 @@ def test_get_qc_sessions_includes_session_for_workspace_owner(client):
     response = client.get(_sessions_url(history.id))
 
     assert response.status_code == 200
-    assert str(session.id) in [s["id"] for s in response.json()]
+    assert str(session.id) in [s["id"] for s in response.json()["data"]]
 
 
 def test_get_qc_sessions_returns_404_for_outsider(client):
@@ -106,7 +106,7 @@ def test_create_qc_session_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["status"] == "in_progress"
+    assert "id" in response.json()
 
 
 def test_create_qc_session_returns_401_when_unauthenticated(client):
@@ -184,7 +184,7 @@ def test_get_qc_session_returns_200_for_workspace_owner(client):
     response = client.get(_detail_url(history.id, session.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(session.id)
+    assert response.json()["data"]["id"] == str(session.id)
 
 
 def test_get_qc_session_returns_404_for_outsider(client):
@@ -228,8 +228,9 @@ def test_update_qc_session_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["description"] == "Updated description"
+    assert response.status_code == 204
+    session.refresh_from_db()
+    assert session.description == "Updated description"
 
 
 def test_update_qc_session_returns_403_for_viewer_collaborator(client):
@@ -316,8 +317,10 @@ def test_commit_qc_session_succeeds_for_workspace_owner(client):
 
     response = client.post(f"{_detail_url(history.id, session.id)}/commit")
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "committed"
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(history.id, session.id))
+    assert detail.json()["data"]["status"] == "committed"
 
 
 def test_commit_qc_session_returns_403_for_viewer_collaborator(client):

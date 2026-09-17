@@ -1,20 +1,21 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated, cast
+from pydantic import EmailStr, BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
-from pydantic import EmailStr
-from django.contrib.auth import get_user_model
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    UserContactResponse,
+    RoleResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import RoleDetailResponse
-
-
-User = get_user_model()
 
 
 class WorkspaceFields(Schema):
@@ -22,18 +23,68 @@ class WorkspaceFields(Schema):
     is_private: bool
 
 
+WORKSPACE_INCLUDE_RELATIONS = {
+    "owner": {
+        "path": "owner",
+        "bucket": "owners",
+        "response_schema": UserContactResponse,
+    },
+    "pendingTransferTo": {
+        "path": "pending_transfer_to",
+        "bucket": "pendingTransferRecipients",
+        "response_schema": UserContactResponse,
+    },
+    "collaboratorRole": {
+        "path": "collaborator_role",
+        "bucket": "collaboratorRoles",
+        "response_schema": RoleResponse,
+    },
+}
+WorkspaceIncludeRelation = Literal[*WORKSPACE_INCLUDE_RELATIONS.keys()]
+
 _order_by_fields = (
     "name",
     "isPrivate",
 )
-
 WorkspaceOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
+_property_fields = (
+    "id",
+    "ownerEmail",
+    "pendingTransferToEmail",
+    "collaboratorRoleId",
+    *(to_camel(name) for name in cast(dict, WorkspaceFields.model_fields)),  # noqa
+)
+WorkspacePropertyName = Literal[*_property_fields]
 
-class WorkspaceQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class WorkspaceFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[WorkspacePropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(WorkspacePropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[WorkspaceIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(WorkspaceIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
+    pass
+
+
+class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters):
     order_by: Optional[list[WorkspaceOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -46,28 +97,36 @@ class WorkspaceQueryParameters(CollectionQueryParameters):
     )
 
 
-class UserContactFields(Schema):
-    phone: Optional[str] = Field(None, max_length=15)
-    address: Optional[str] = Field(None, max_length=255)
-    link: Optional[str] = Field(None, max_length=2000)
-    user_type: str = Field(..., max_length=255, alias="type")
-
-
-class AccountContactDetailResponse(BaseGetResponse, UserContactFields):
-    name: str = Field(..., max_length=255)
-    email: EmailStr
-    organization_name: Optional[str] = None
-
-
-class WorkspaceSummaryResponse(BaseGetResponse, WorkspaceFields):
+class WorkspaceResponse(BaseGetResponse, WorkspaceFields):
     id: uuid.UUID
+    owner_email: str
+    pending_transfer_to_email: Optional[str] = None
+    collaborator_role_id: Optional[uuid.UUID] = None
 
+    @staticmethod
+    def resolve_owner_email(obj):
+        if hasattr(obj, "owner_email"):
+            return obj.owner_email
 
-class WorkspaceDetailResponse(BaseGetResponse, WorkspaceFields):
-    id: uuid.UUID
-    owner: AccountContactDetailResponse
-    collaborator_role: Optional["RoleDetailResponse"] = None
-    pending_transfer_to: Optional[AccountContactDetailResponse] = None
+        return obj.owner.email
+
+    @staticmethod
+    def resolve_pending_transfer_to_email(obj):
+        if hasattr(obj, "pending_transfer_to_email"):
+            return obj.pending_transfer_to_email
+
+        recipient = getattr(obj, "pending_transfer_to", None)
+
+        return recipient.email if recipient else None
+
+    @staticmethod
+    def resolve_collaborator_role_id(obj):
+        if hasattr(obj, "collaborator_role_id"):
+            return obj.collaborator_role_id
+
+        role = getattr(obj, "collaborator_role", None)
+
+        return role.id if role else None
 
 
 class WorkspacePostBody(BasePostBody, WorkspaceFields):

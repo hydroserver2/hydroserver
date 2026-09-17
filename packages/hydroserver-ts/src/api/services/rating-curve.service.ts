@@ -12,14 +12,15 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
   static writableKeys = C.writableKeys
   static Model = M
 
-  protected override getBaseUrl(): string {
-    return `${this._client.host}/api/data/products`
-  }
-
   override create = async (
     body: M | RatingCurveCreateBody
   ): Promise<ApiResponse<M>> => {
-    return apiMethods.post<M>(this._route, this.serializeCreate(body))
+    const res = await apiMethods.post<{ id: string }>(
+      this._route,
+      this.serializeCreate(body)
+    )
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(res.data.id)
   }
 
   override createItem = async (
@@ -32,12 +33,14 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
   override update = async (
     body: RatingCurvePatchBody,
     originalBody?: RatingCurvePatchBody
-  ) => {
-    return apiMethods.patch<M>(
+  ): Promise<ApiResponse<M>> => {
+    const res = await apiMethods.patch<null>(
       `${this._route}/${body.id}`,
       this.serializePatch(body),
       originalBody ? this.serializePatch(originalBody) : null
     )
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(body.id)
   }
 
   override updateItem = async (

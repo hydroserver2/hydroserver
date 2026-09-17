@@ -76,4 +76,100 @@ test.describe('orchestration', () => {
       })
     ).toBeVisible()
   })
+
+  test('opening Edit on an existing ingestion task pre-populates its mappings', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+
+    await expect(
+      page.getByRole('heading', {
+        name: fixtures.orchestration.dataConnectionName,
+      })
+    ).toBeVisible()
+    await page.getByText(fixtures.orchestration.taskName).click()
+
+    await expect(
+      page.getByRole('heading', { name: fixtures.orchestration.taskName })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+
+    const dialog = page
+      .getByRole('dialog')
+      .filter({ hasText: 'Edit ingestion task' })
+    await expect(dialog.getByText('Edit ingestion task')).toBeVisible()
+    await expect(dialog.locator('input[value="test_value"]')).toBeVisible()
+    await expect(
+      dialog.getByText(fixtures.datastreams.privateWorkspacePublic.name)
+    ).toBeVisible()
+  })
+
+  test('opening Edit on an existing aggregation task pre-populates its transformation', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+
+    await page
+      .getByTestId('nav-rail')
+      .getByRole('button', { name: 'Aggregations & products' })
+      .click()
+    await page
+      .getByRole('button', {
+        name: `Select ${fixtures.monitoringSites.private.name}`,
+      })
+      .click()
+    await page.getByText(fixtures.orchestration.aggregationTaskName).click()
+
+    await expect(
+      page.getByRole('heading', {
+        name: fixtures.orchestration.aggregationTaskName,
+      })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+
+    const dialog = page
+      .getByRole('dialog')
+      .filter({ hasText: 'Edit aggregation task' })
+    await expect(dialog.getByText('Edit aggregation task')).toBeVisible()
+    await expect(dialog.getByText('Mean')).toBeVisible()
+  })
+
+  test('opening Edit on an existing quality task pre-populates its rules', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+
+    await page
+      .getByTestId('nav-rail')
+      .getByRole('button', { name: 'Quality' })
+      .click()
+    await page
+      .getByRole('button', {
+        name: `Select ${fixtures.monitoringSites.private.name}`,
+      })
+      .click()
+    await page.getByText(fixtures.orchestration.monitoringTaskName).click()
+
+    await expect(
+      page.getByRole('heading', {
+        name: fixtures.orchestration.monitoringTaskName,
+      })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByText('Edit')).toBeVisible()
+  })
 })

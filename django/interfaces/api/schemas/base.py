@@ -1,9 +1,17 @@
 import copy
-from enum import Enum, EnumMeta
-from typing import Optional, Any, Union, Annotated
+import uuid
+
+from typing import Optional, Any, Union, Annotated, Generic, TypeVar, get_args
 from ninja import Schema, Query
-from pydantic import AliasGenerator, AliasChoices, ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
+from pydantic import (
+    AliasGenerator,
+    AliasChoices,
+    ConfigDict,
+    field_validator,
+    model_serializer,
+    SerializationInfo,
+)
 
 from core.types import Unset
 
@@ -13,22 +21,77 @@ base_alias_generator = AliasGenerator(
 )
 
 
-class OrderByMeta(EnumMeta):
-    def __new__(mcs, name, bases, namespace):
-        for key in list(namespace._member_names):  # noqa
-            api_name, orm_field = namespace[key]
-            namespace[f"{key}_desc"] = (f"-{api_name}", f"-{orm_field}")
+def split_comma_separated(value: Any) -> Optional[list[str]]:
+    """
+    Splits a given input into a list of non-empty, comma-separated strings.
 
-        return super().__new__(mcs, name, bases, namespace)
+    If the input is a string or an iterable, this function splits the elements
+    by commas, trims any leading or trailing whitespaces, and filters out
+    empty strings. Returns None if the input is None.
+    """
+
+    if value is None:
+        return None
+
+    parts = [value] if isinstance(value, str) else list(value)
+    result: list[str] = []
+
+    for part in parts:
+        result.extend(p.strip() for p in part.split(",") if p.strip())
+
+    return result
 
 
-class OrderByField(str, Enum, metaclass=OrderByMeta):
-    def __new__(cls, api_name: str, orm_field: str):
-        obj = str.__new__(cls, api_name)
-        obj._value_ = api_name
-        obj.orm_field = orm_field
+def comma_array_schema(literal_type: Any) -> dict:
+    """
+    Generates a JSON schema for an array of strings based on a given Python Literal type.
 
-        return obj
+    This function is used to create a schema that defines an array of strings, where each string
+    in the array is restricted to a specific predefined set of values, as determined by the provided
+    Literal type.
+    """
+
+    return {
+        "type": "array",
+        "items": {"type": "string", "enum": list(get_args(literal_type))},
+        "style": "form",
+        "explode": False,
+    }
+
+
+def parse_requested_properties(info: SerializationInfo) -> Optional[set[str]]:
+    """
+    Parses and retrieves the requested properties from the serialization context.
+
+    Extracts the "properties" parameter from the serialization context's request and
+    converts it into a set of property names. If no properties are specified in the
+    request, the function returns None.
+    """
+
+    request = (info.context or {}).get("request") if info.context else None
+    query_dict = getattr(request, "GET", None) if request is not None else None
+    raw_values = query_dict.getlist("properties") if query_dict is not None else []
+    parsed = split_comma_separated(raw_values)
+
+    if not parsed:
+        return None
+
+    return set(parsed)
+
+
+def filter_requested_properties(item: Any, requested: set[str]) -> Any:
+    """
+    Filters properties of a dictionary based on a specified set of keys.
+
+    This function takes a dictionary and a set of requested keys and returns a new dictionary
+    containing only the key-value pairs where the key exists in the requested set. If the input
+    item is not a dictionary, it is returned as is.
+    """
+
+    if not isinstance(item, dict):
+        return item
+
+    return {k: v for k, v in item.items() if k in requested}
 
 
 class BaseQueryParameters(Schema):
@@ -46,9 +109,18 @@ class BaseQueryParameters(Schema):
 
 
 class CollectionQueryParameters(BaseQueryParameters):
-    page: Optional[int] = Query(1, ge=1, description="Page number (1-based).")
-    page_size: Optional[int] = Query(
-        100, ge=0, le=100000, description="The number of items per page."
+    properties: Optional[str] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Optional[str] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+    offset: Optional[int] = Query(0, ge=0, description="Number of items to skip.")
+    limit: Optional[int] = Query(
+        100, ge=0, le=100000, description="The maximum number of items to return."
     )
 
 
@@ -63,6 +135,65 @@ class BaseGetResponse(Schema):
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
     )
+
+
+class CreatedResponse(Schema):
+    id: uuid.UUID
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+class PaginationMeta(Schema):
+    limit: int
+    offset: int
+    total_count: int
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+T = TypeVar("T")
+
+
+class ItemResponse(Schema, Generic[T]):
+    included: Optional[dict[str, list[Any]]] = None
+    data: T
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        requested = parse_requested_properties(info)
+        if requested is not None:
+            data["data"] = filter_requested_properties(data.get("data"), requested)
+
+        return data
+
+
+class PaginatedResponse(Schema, Generic[T]):
+    included: Optional[dict[str, list[Any]]] = None
+    data: list[T]
+    meta: PaginationMeta
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        if not data.get("included"):
+            data.pop("included", None)
+
+        requested = parse_requested_properties(info)
+        if requested is not None and isinstance(data.get("data"), list):
+            data["data"] = [filter_requested_properties(item, requested) for item in data["data"]]
+
+        return data
 
 
 class BasePostBody(Schema):

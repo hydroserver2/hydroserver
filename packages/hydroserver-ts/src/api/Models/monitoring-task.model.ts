@@ -1,5 +1,4 @@
 import type { TaskRun, TaskSchedule } from './task.model'
-import type { Datastream } from '../../types'
 
 export type MonitoringRuleType =
   | 'range'
@@ -11,7 +10,8 @@ export type MonitoringRuleWindowUnit = 'minutes' | 'hours' | 'days'
 
 export interface MonitoringRule {
   id: string
-  datastream: Datastream
+  taskId: string
+  datastreamId: string
   lastCheckedAt?: string | null
   maxValue?: number | null
   minValue?: number | null
@@ -20,26 +20,13 @@ export interface MonitoringRule {
   windowIntervalUnits?: MonitoringRuleWindowUnit | null
 }
 
-export interface MonitoringRulePayload {
-  datastreamId: string
-  ruleType: MonitoringRuleType
-  maxValue?: number | null
-  minValue?: number | null
-  windowInterval?: number | null
-  windowIntervalUnits?: MonitoringRuleWindowUnit | null
-}
-
-export type MonitoringRulePatchPayload = Omit<
-  Partial<MonitoringRulePayload>,
-  'datastreamId' | 'ruleType'
->
-
 export class MonitoringTask {
   id = ''
   name = ''
   description: string | null = null
   recipients: string[] = []
   monitoringSiteId = ''
+  ruleTypeCounts: Partial<Record<MonitoringRuleType, number>> = {}
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<MonitoringTask>) {
@@ -53,11 +40,7 @@ export interface MonitoringTaskExpanded {
   description?: string | null
   recipients: string[]
   monitoringSite: { id: string; name: string; [key: string]: unknown }
-  monitoredDatastreams: Array<{
-    id: string
-    rules?: MonitoringRule[]
-    [key: string]: unknown
-  }>
+  ruleTypeCounts: Partial<Record<MonitoringRuleType, number>>
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }

@@ -1,5 +1,8 @@
 import pytest
 
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
+
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -43,7 +46,7 @@ def test_get_processing_levels_includes_global_levels_for_anonymous(client):
     response = client.get(PROCESSING_LEVELS_URL)
 
     assert response.status_code == 200
-    assert str(processing_level.id) in [p["id"] for p in response.json()]
+    assert str(processing_level.id) in [p["id"] for p in response.json()["data"]]
 
 
 def test_get_processing_levels_excludes_private_workspace_levels_for_outsider(client):
@@ -54,7 +57,7 @@ def test_get_processing_levels_excludes_private_workspace_levels_for_outsider(cl
 
     response = client.get(PROCESSING_LEVELS_URL)
 
-    assert response.json() == []
+    assert response.json()["data"] == []
 
 
 def test_get_processing_levels_includes_workspace_levels_for_workspace_owner(client):
@@ -66,7 +69,135 @@ def test_get_processing_levels_includes_workspace_levels_for_workspace_owner(cli
     response = client.get(PROCESSING_LEVELS_URL)
 
     assert response.status_code == 200
-    assert str(processing_level.id) in [p["id"] for p in response.json()]
+    assert str(processing_level.id) in [p["id"] for p in response.json()["data"]]
+
+
+def test_get_processing_levels_properties_filters_every_item_in_the_list(client):
+    ProcessingLevelFactory(global_=True, code="0", name="Raw")
+    ProcessingLevelFactory(global_=True, code="1", name="QC-1")
+
+    response = client.get(PROCESSING_LEVELS_URL, {"properties": "id,code"})
+
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert len(items) == 2
+    for item in items:
+        assert set(item.keys()) == {"id", "code"}
+
+
+def test_get_processing_levels_properties_accepts_repeated_key_style_too(client):
+    ProcessingLevelFactory(global_=True, code="0")
+
+    response = client.get(PROCESSING_LEVELS_URL, {"properties": ["id", "code"]})
+
+    assert response.status_code == 200
+    item = response.json()["data"][0]
+    assert set(item.keys()) == {"id", "code"}
+
+
+def test_get_processing_levels_properties_rejects_unknown_property(client):
+    response = client.get(PROCESSING_LEVELS_URL, {"properties": "id,bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_processing_levels_without_properties_returns_every_field(client):
+    ProcessingLevelFactory(global_=True, code="0", name="Raw")
+
+    response = client.get(PROCESSING_LEVELS_URL)
+
+    assert response.status_code == 200
+    item = response.json()["data"][0]
+    assert set(item.keys()) == {
+        "id",
+        "code",
+        "name",
+        "description",
+        "definition",
+        "workspaceId",
+    }
+
+
+def test_get_processing_levels_has_no_included_key_without_include_param(client):
+    ProcessingLevelFactory(global_=True)
+
+    response = client.get(PROCESSING_LEVELS_URL)
+
+    assert response.status_code == 200
+    assert "included" not in response.json()
+
+
+def test_get_processing_levels_include_workspace_deduplicates_across_items(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    ProcessingLevelFactory(workspace=workspace, code="0")
+    ProcessingLevelFactory(workspace=workspace, code="1")
+    client.force_login(owner)
+
+    response = client.get(PROCESSING_LEVELS_URL, {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["data"]) == 2
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_processing_levels_include_rejects_unknown_relation(client):
+    response = client.get(PROCESSING_LEVELS_URL, {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_processing_levels_properties_does_not_filter_included_resources(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, name="Acme")
+    ProcessingLevelFactory(workspace=workspace, code="0")
+    client.force_login(owner)
+
+    response = client.get(
+        PROCESSING_LEVELS_URL, {"properties": "code", "include": "workspace"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"][0] == {"code": "0"}
+    included_workspace = body["included"]["workspaces"][0]
+    assert included_workspace["id"] == str(workspace.id)
+    assert included_workspace["name"] == "Acme"
+
+
+def test_get_processing_levels_include_accepts_repeated_key_style_too(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    ProcessingLevelFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(PROCESSING_LEVELS_URL, {"include": ["workspace"]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_processing_levels_include_workspace_does_not_scale_queries_with_count(
+    client,
+):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    for _ in range(5):
+        ProcessingLevelFactory(workspace=workspace)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(PROCESSING_LEVELS_URL, {"include": "workspace"})
+
+    for _ in range(5):
+        ProcessingLevelFactory(workspace=workspace)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(PROCESSING_LEVELS_URL, {"include": "workspace"})
+
+    assert len(large.captured_queries) == len(small.captured_queries)
 
 
 # --- create_processing_level --------------------------------------------------------
@@ -84,10 +215,14 @@ def test_create_processing_level_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 201
-    assert response.json()["code"] == "0"
-    assert response.json()["name"] == "Raw"
-    assert response.json()["description"] == "A new processing level."
-    assert response.json()["definition"] is None
+    assert set(response.json().keys()) == {"id"}
+    processing_level_id = response.json()["id"]
+
+    detail = client.get(_detail_url(processing_level_id))
+    assert detail.json()["data"]["code"] == "0"
+    assert detail.json()["data"]["name"] == "Raw"
+    assert detail.json()["data"]["description"] == "A new processing level."
+    assert detail.json()["data"]["definition"] is None
 
 
 def test_create_processing_level_returns_401_when_unauthenticated(client):
@@ -125,7 +260,7 @@ def test_get_processing_level_returns_global_level_for_anonymous(client):
     response = client.get(_detail_url(processing_level.id))
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(processing_level.id)
+    assert response.json()["data"]["id"] == str(processing_level.id)
 
 
 def test_get_processing_level_returns_404_for_private_workspace_level_when_unrelated(
@@ -158,6 +293,62 @@ def test_get_processing_level_returns_404_for_nonexistent_level(client):
     assert response.status_code == 404
 
 
+def test_get_processing_level_included_is_present_but_empty_without_include_param(
+    client,
+):
+    processing_level = ProcessingLevelFactory(global_=True)
+
+    response = client.get(_detail_url(processing_level.id))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "included" in body
+    assert body["included"] == {}
+
+
+def test_get_processing_level_include_workspace_sideloads_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(processing_level.id), {"include": "workspace"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["id"] == str(processing_level.id)
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_processing_level_include_rejects_unknown_relation(client):
+    processing_level = ProcessingLevelFactory(global_=True)
+
+    response = client.get(_detail_url(processing_level.id), {"include": "bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_processing_level_include_accepts_repeated_key_style_too(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(processing_level.id), {"include": ["workspace"]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_processing_level_properties_rejects_unknown_property(client):
+    processing_level = ProcessingLevelFactory(global_=True)
+
+    response = client.get(_detail_url(processing_level.id), {"properties": "bogus"})
+
+    assert response.status_code == 400
+
+
 # --- update_processing_level ---------------------------------------------------------
 
 
@@ -173,8 +364,11 @@ def test_update_processing_level_succeeds_for_workspace_owner(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 200
-    assert response.json()["code"] == "Updated Code"
+    assert response.status_code == 204
+    assert not response.content
+
+    detail = client.get(_detail_url(processing_level.id))
+    assert detail.json()["data"]["code"] == "Updated Code"
 
 
 def test_update_processing_level_returns_403_for_viewer_collaborator(client):

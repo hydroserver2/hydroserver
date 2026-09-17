@@ -1,72 +1,114 @@
 import uuid
-from typing import Optional, Literal
 
-from ninja import Field, Query
-from core.types import Unset
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
+from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
-    OrderByField,
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
-    MonitoringSiteSummaryResponse,
+    MonitoringSiteResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
 
 
 FittingMethod = Literal["linear", "power_law"]
 
 
-class RatingCurveOrderBy(OrderByField):
-    id = ("id", "id")
-    name = ("name", "name")
-    monitoring_site_id = ("monitoringSiteId", "monitoring_site_id")
-    monitoring_site_name = ("monitoringSiteName", "monitoring_site__name")
-    workspace_id = ("workspaceId", "monitoring_site__workspace_id")
-    workspace_name = ("workspaceName", "monitoring_site__workspace__name")
+class RatingCurveFields(Schema):
+    name: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    fitting_method: FittingMethod
+    points: list[tuple[float, float]] = []
 
 
-class RatingCurveQueryParameters(CollectionQueryParameters):
-    order_by: list[RatingCurveOrderBy] = Query(
+RATING_CURVE_INCLUDE_RELATIONS = {
+    "monitoringSite": {
+        "path": "monitoring_site",
+        "bucket": "monitoringSites",
+        "response_schema": MonitoringSiteResponse,
+    },
+}
+RatingCurveIncludeRelation = Literal[*RATING_CURVE_INCLUDE_RELATIONS.keys()]
+
+_order_by_fields = (
+    "id",
+    "name",
+    "monitoringSiteId",
+    "monitoringSiteName",
+    "workspaceId",
+    "workspaceName",
+)
+RatingCurveOrderByFields = Literal[
+    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+]
+
+_property_fields = (
+    "id",
+    "monitoringSiteId",
+    *(to_camel(name) for name in RatingCurveFields.model_fields),
+)
+RatingCurvePropertyName = Literal[*_property_fields]
+
+
+class RatingCurveFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[RatingCurvePropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(RatingCurvePropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[RatingCurveIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(RatingCurveIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class RatingCurveItemQueryParameters(RatingCurveFilterFields, BaseQueryParameters):
+    pass
+
+
+class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParameters):
+    order_by: Optional[list[RatingCurveOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
-    monitoring_site: list[uuid.UUID] = Query(
-        [], description="Filter rating curves by monitoring_site ID.", alias="monitoring_site_id"
+    monitoring_site_id: list[uuid.UUID] = Query(
+        [], description="Filter rating curves by monitoring site ID."
     )
-    workspace: list[uuid.UUID] = Query(
+    monitoring_site__workspace_id: list[uuid.UUID] = Query(
         [], description="Filter rating curves by workspace ID.", alias="workspace_id"
     )
 
 
-class RatingCurveSummaryResponse(BaseGetResponse):
+class RatingCurveResponse(BaseGetResponse, RatingCurveFields):
     id: uuid.UUID
-    name: str
-    fitting_method: FittingMethod
-
-
-class RatingCurveResponse(BaseGetResponse):
-    id: uuid.UUID
-    name: str
-    description: Optional[str] = None
-    fitting_method: FittingMethod
-    monitoring_site: MonitoringSiteSummaryResponse
-    points: list[tuple[float, float]]
+    monitoring_site_id: uuid.UUID
 
     @staticmethod
     def resolve_points(obj):
-        return [(p.input_value, p.output_value) for p in obj.points.all()]
+        points = getattr(obj, "points", None)
+        if not hasattr(points, "all"):
+            return points
+
+        return [(p.input_value, p.output_value) for p in points.all()]
 
 
-class RatingCurvePostBody(BasePostBody):
-    uid: uuid.UUID | Unset = Field(Unset, alias="id")
-    name: str
-    description: Optional[str] = None
-    fitting_method: FittingMethod
+class RatingCurvePostBody(BasePostBody, RatingCurveFields):
+    id: Optional[uuid.UUID] = None
     monitoring_site_id: uuid.UUID
-    points: list[tuple[float, float]] = []
 
 
-class RatingCurvePatchBody(BasePatchBody):
-    name: str
-    description: Optional[str] = None
-    fitting_method: FittingMethod
-    points: list[tuple[float, float]]
+class RatingCurvePatchBody(BasePatchBody, RatingCurveFields):
+    pass

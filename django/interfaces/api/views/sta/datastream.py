@@ -1,43 +1,45 @@
 import uuid
+
 from typing import Optional
 from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
-from django.http import HttpResponse
 from django.db import transaction
+
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import DatastreamAPIService
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     DatastreamVisualizationBootstrapQueryParameters,
     DatastreamVisualizationBootstrapResponse,
-    DatastreamSummaryResponse,
-    DatastreamDetailResponse,
+    DatastreamResponse,
     DatastreamQueryParameters,
+    DatastreamItemQueryParameters,
     DatastreamPostBody,
     DatastreamPatchBody,
     LinkedResourceQueryParameters,
     LinkedResourceGetResponse,
     LinkedResourcePostBody,
+    PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from core.sta.services import DatastreamService
-from interfaces.api.views.sta.observation import observation_router
 
 datastream_router = Router(tags=["Datastreams"])
-datastream_service = DatastreamService()
+datastream_service = DatastreamAPIService()
 
 
 @datastream_router.get(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[DatastreamSummaryResponse] | list[DatastreamDetailResponse],
+        200: PaginatedResponse[DatastreamResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_datastreams(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[DatastreamQueryParameters],
 ):
     """
@@ -46,12 +48,11 @@ def get_datastreams(
 
     return 200, datastream_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
@@ -82,11 +83,10 @@ def get_datastream_visualization_bootstrap(
     "",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: DatastreamSummaryResponse | DatastreamDetailResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -94,15 +94,12 @@ def get_datastream_visualization_bootstrap(
 def create_datastream(
     request: HydroServerHttpRequest,
     data: DatastreamPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Create a new Datastream.
     """
 
-    return 201, datastream_service.create(
-        principal=request.principal, data=data, expand_related=expand_related
-    )
+    return 201, datastream_service.create(principal=request.principal, data=data)
 
 
 @datastream_router.get(
@@ -130,11 +127,10 @@ def get_datastream_tag_keys(
 
 
 @datastream_router.get(
-    "/aggregation-statistics", response={200: list[str]}, by_alias=True
+    "/aggregation-statistics", response={200: PaginatedResponse[str]}, by_alias=True
 )
 def get_datastream_aggregation_statistics(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -142,17 +138,15 @@ def get_datastream_aggregation_statistics(
     """
 
     return 200, datastream_service.list_aggregation_statistics(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
 
-@datastream_router.get("/statuses", response={200: list[str]}, by_alias=True)
+@datastream_router.get("/statuses", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_datastream_statuses(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -160,17 +154,15 @@ def get_datastream_statuses(
     """
 
     return 200, datastream_service.list_statuses(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
 
-@datastream_router.get("/sampled-mediums", response={200: list[str]}, by_alias=True)
+@datastream_router.get("/sampled-mediums", response={200: PaginatedResponse[str]}, by_alias=True)
 def get_datastream_sampled_mediums(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -178,19 +170,17 @@ def get_datastream_sampled_mediums(
     """
 
     return 200, datastream_service.list_sampled_mediums(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
 
 @datastream_router.get(
-    "/linked-resource-types", response={200: list[str]}, by_alias=True
+    "/linked-resource-types", response={200: PaginatedResponse[str]}, by_alias=True
 )
 def get_datastream_linked_resource_types(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[VocabularyQueryParameters],
 ):
     """
@@ -198,9 +188,8 @@ def get_datastream_linked_resource_types(
     """
 
     return 200, datastream_service.list_linked_resource_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
         order_desc=query.order_desc,
     )
 
@@ -209,24 +198,23 @@ def get_datastream_linked_resource_types(
     "/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: DatastreamSummaryResponse | DatastreamDetailResponse,
+        200: ItemResponse[DatastreamResponse],
         401: str,
         403: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_datastream(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[DatastreamItemQueryParameters],
 ):
     """
     Get a Datastream.
     """
 
     return 200, datastream_service.get(
-        principal=request.principal, uid=datastream_id, expand_related=expand_related
+        principal=request.principal, uid=datastream_id, include=query.include
     )
 
 
@@ -234,11 +222,10 @@ def get_datastream(
     "/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: DatastreamSummaryResponse | DatastreamDetailResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -247,18 +234,18 @@ def update_datastream(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
     data: DatastreamPatchBody,
-    expand_related: Optional[bool] = None,
 ):
     """
     Update a Datastream.
     """
 
-    return 200, datastream_service.update(
+    datastream_service.update(
         principal=request.principal,
         uid=datastream_id,
         data=data,
-        expand_related=expand_related,
     )
+
+    return 204, None
 
 
 @datastream_router.delete(
@@ -312,12 +299,11 @@ def get_datastream_linked_resources(
     "/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        201: LinkedResourceGetResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         413: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -351,13 +337,12 @@ def add_datastream_linked_resource(
     "/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: LinkedResourceGetResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
         413: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -376,7 +361,7 @@ def update_datastream_linked_resource(
     external URL) cannot be changed in place — delete it and create a new one instead.
     """
 
-    return 200, datastream_service.update_linked_resource(
+    datastream_service.update_linked_resource(
         principal=request.principal,
         uid=datastream_id,
         linked_resource_id=linked_resource_id,
@@ -386,6 +371,8 @@ def update_datastream_linked_resource(
         file=file,
         link=link,
     )
+
+    return 204, None
 
 
 @datastream_router.delete(
@@ -426,6 +413,3 @@ def get_datastream_csv(request: HydroServerHttpRequest, datastream_id: Path[uuid
     """
 
     return datastream_service.get_csv(principal=request.principal, uid=datastream_id)
-
-
-datastream_router.add_router("{datastream_id}/observations", observation_router)

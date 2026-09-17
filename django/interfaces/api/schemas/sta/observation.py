@@ -1,17 +1,23 @@
 import uuid
-from pydantic import AliasPath, AliasChoices, model_validator
+
+from typing import Optional, Any, Literal, Annotated, Generic, TypeVar
+from pydantic import (AliasPath, AliasChoices, BeforeValidator, WithJsonSchema, model_validator, model_serializer,
+                      ConfigDict, SerializationInfo)
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Query, Field
-from typing import Optional, Literal, TYPE_CHECKING
+
 from core.types.iso_datetime import ISODatetime, validate_iso_datetime
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    PaginationMeta,
+    WorkspaceResponse,
+    DatastreamResponse,
+    split_comma_separated,
+    comma_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
-    from interfaces.api.schemas import DatastreamSummaryResponse
 
 
 class ObservationFields(Schema):
@@ -20,15 +26,63 @@ class ObservationFields(Schema):
     result_qualifier_codes: list[str] = []
 
 
-_order_by_fields = ("phenomenonTime",)
+OBSERVATION_INCLUDE_RELATIONS = {
+    "datastream": {
+        "path": "datastream",
+        "bucket": "datastreams",
+        "response_schema": DatastreamResponse,
+    },
+    "workspace": {
+        "path": "datastream__monitoring_site__workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ObservationIncludeRelation = Literal[*OBSERVATION_INCLUDE_RELATIONS.keys()]
 
+_order_by_fields = ("phenomenonTime", "datastreamId")
 ObservationOrderByFields = Literal[
     *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
 ]
 
+_property_fields = (
+    "id",
+    "workspaceId",
+    "datastreamId",
+    *(to_camel(name) for name in ObservationFields.model_fields),
+)
+ObservationPropertyName = Literal[*_property_fields]
 
-class ObservationQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
+
+class ObservationFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ObservationPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservationPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted. Only applies to format=record.",
+    )
+    include: Annotated[
+        Optional[list[ObservationIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservationIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the "
+        "response. Only applies to format=record.",
+    )
+
+
+class ObservationItemQueryParameters(ObservationFilterFields, BaseQueryParameters):
+    pass
+
+
+class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters):
+    datastream_id: list[uuid.UUID] = Query(
+        [], description="Filter observations by datastream ID."
+    )
     order_by: Optional[list[ObservationOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
@@ -54,7 +108,7 @@ class ObservationQueryParameters(CollectionQueryParameters):
     )
 
 
-class ObservationSummaryResponse(BaseGetResponse, ObservationFields):
+class ObservationResponse(BaseGetResponse, ObservationFields):
     id: uuid.UUID
     workspace_id: uuid.UUID = Field(
         ...,
@@ -65,27 +119,50 @@ class ObservationSummaryResponse(BaseGetResponse, ObservationFields):
     datastream_id: uuid.UUID
 
 
-class ObservationDetailResponse(BaseGetResponse, ObservationFields):
-    id: uuid.UUID
-    workspace: "WorkspaceSummaryResponse" = Field(
-        ..., validation_alias=AliasPath("datastream", "monitoring_site", "workspace")
-    )
-    datastream: "DatastreamSummaryResponse"
+T = TypeVar("T")
 
 
-class ObservationRowResponse(BaseGetResponse):
+class ObservationFormatResponse(Schema, Generic[T]):
+    data: T
+    meta: PaginationMeta
+    included: Optional[dict[str, list[Any]]] = None
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        if not data.get("included"):
+            data.pop("included", None)
+
+        return data
+
+
+class ObservationRowData(BaseGetResponse):
     fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
-    data: list[list]
+    rows: list[list]
 
 
-class ObservationColumnarResponse(BaseGetResponse):
+class ObservationColumnarData(BaseGetResponse):
     phenomenon_time: list
     result: list
     result_qualifier_codes: list
 
 
+class ObservationRowResponse(ObservationFormatResponse[ObservationRowData]):
+    pass
+
+
+class ObservationColumnarResponse(ObservationFormatResponse[ObservationColumnarData]):
+    pass
+
+
 class ObservationPostBody(BasePostBody, ObservationFields):
     id: Optional[uuid.UUID] = None
+    datastream_id: uuid.UUID
 
 
 class ObservationBulkPostQueryParameters(Schema):
@@ -102,6 +179,7 @@ class ObservationBulkPostQueryParameters(Schema):
 
 
 class ObservationBulkPostBody(BasePostBody):
+    datastream_id: uuid.UUID
     fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
     data: list[list]
 
@@ -127,6 +205,7 @@ class ObservationBulkPostBody(BasePostBody):
 
 
 class ObservationBulkColumnarPostBody(BasePostBody):
+    datastream_id: uuid.UUID
     phenomenon_time: list[ISODatetime]
     result: list[Optional[float]]
     result_qualifier_codes: list[list[str]] = []
@@ -154,5 +233,6 @@ class ObservationBulkColumnarPostBody(BasePostBody):
 
 
 class ObservationBulkDeleteBody(BasePostBody):
+    datastream_id: uuid.UUID
     phenomenon_time_start: Optional[ISODatetime] = None
     phenomenon_time_end: Optional[ISODatetime] = None
