@@ -64,6 +64,11 @@ describe('TaskService', () => {
       '0': [{ id: 'a' }, { id: 'b' }],
       '2': [{ id: 'c' }, { id: 'd' }],
       '4': [{ id: 'e' }, { id: 'f' }],
+      // A real server returns an empty page once past the true end of data -
+      // this is what proves completion when totalCount (6) happens to be an
+      // exact multiple of limit, since a full last page alone can't tell the
+      // client whether more data exists.
+      '6': [],
     }
 
     const fetchMock = vi.fn((input: any) => {
@@ -88,8 +93,9 @@ describe('TaskService', () => {
       'e',
       'f',
     ])
-    // first page + two remaining pages
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    // first page + two remaining pages implied by totalCount + one
+    // confirming fetch proving there's nothing past the (exact) total
+    expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 
   it('omits empty ids from create payloads', async () => {
