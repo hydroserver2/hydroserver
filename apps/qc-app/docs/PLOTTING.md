@@ -218,13 +218,29 @@ calls it instead of assigning `selectedSeries.value.data` directly.
 
 ## Context range
 
-The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (the same
-preset chips and From / To pickers as the Select view) bound to the same
-`beginDate` / `endDate` store range. Picking a preset or a custom date calls
-`setDateRange`, which, while an edit target is set, reloads only the
-context series (`refreshGraphSeriesArray`, which never fetches the edit
-target) and redraws with `redraw(false, true)` to keep the user's current
-zoom. The edit target's working copy is never re-windowed by this control.
+The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (with
+`EDITOR_PRESETS`, which leaves out YTD, and the same From / To pickers as
+the Select view) bound to the same `beginDate` / `endDate` store range.
+Picking a preset or a custom date calls `setDateRange`, which, while an
+edit target is set, reloads only the context series
+(`refreshGraphSeriesArray`, which never fetches the edit target) and
+redraws with `redraw(false, true)` to keep the user's current zoom. The edit
+target's working copy is never re-windowed by this control.
+
+`resolvePresetWindow` is the one place that picks how a preset resolves.
+While an edit target has a session window (`viewedSession`, else
+`inProgressSession`), it uses `presetAroundWindow`: 1w / 1m / 6m / 1y add
+their span before the window's start and after its end, and All (and a
+persisted YTD) is the context data extent widened to cover the window.
+Otherwise, in the Select view or before the session loads, `presetWindow`
+counts back from the context data's end. The extent comes from the context
+series only (`seriesDatastreams` minus the edit target and snapshots).
+
+The context loads on `setEditTarget`'s rebuild, before the session is known.
+The store watches the session window, and when it appears or changes it
+re-applies the active preset through `setDateRange`: one context reload,
+no edit-target fetch, zoom kept, and a no-op when the range is unchanged or
+the range is Custom.
 
 The session window itself is shaded as a layout shape (`name: 'edit-window'`
 in `options.ts`), drawn from `useQcSessionStore().viewedSession` (falling
@@ -234,15 +250,25 @@ previous target's window is never drawn over the new one.
 
 `layout.shapes` has more than one writer: `createPlotlyOption` owns
 `edit-window` and `staging.ts` owns `stage`. `Plotly.update` and
-`Plotly.relayout` replace the whole array, so every write goes through
+`Plotly.relayout` replace the whole array, so partial writes go through
 `utils/plotting/shapes.ts`: `redraw` and `cropXaxisRange` use
 `withLiveShapes` to swap in the fresh `edit-window` and keep the live
 `stage` band, and the staging flush uses `composeShapes` to do the reverse
-(stage stays first so drag events still address `shapes[0]`).
+(stage stays first so drag events still address `shapes[0]`). The
+exception is `handleNewPlot` (`events.ts`): a full rebuild calls
+`Plotly.newPlot` with the whole layout from `createPlotlyOption`, so its
+shapes are only `edit-window` and a live `stage` band is not carried over.
 
 Plot rebuilds (`rebuildPlot`, run when plotted datastreams change) keep
 the user's zoom while an edit target is set and drop it in the Select
-view.
+view. `setEditTarget` clears the zoom history when the target changes, so
+**Undo zoom** never steps back to the Select view's or a previous target's
+viewports.
+
+While observations load, `DataVisualization.vue` keeps `Plot` mounted and
+passes its loading overlay through Plot's `body-overlay` slot. The overlay
+covers the plot and table body only; the toolbar stays usable and shows its
+own spinner.
 
 ## Why `internal.ts` isn't re-exported
 

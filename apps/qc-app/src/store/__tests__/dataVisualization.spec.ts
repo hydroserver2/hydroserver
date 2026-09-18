@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-import { createApp, ref, shallowRef } from 'vue'
-import { subtractMonths } from '@/utils/dateMath'
+import { createApp, nextTick, ref, shallowRef } from 'vue'
+import { subtractDays, subtractMonths } from '@/utils/dateMath'
 
 // Shared mutable stub state so each test can reset between runs.
 const mockPlotlyRef = ref<any>(null)
@@ -410,6 +410,26 @@ describe('useDataVisStore edit target', () => {
     expect(sessions.resumeDatastreamId).toBe('mgd')
   })
 
+  it('entering the editor drops the Select zoom history', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    mockClearZoomHistory.mockClear()
+
+    await store.setEditTarget('mgd')
+
+    expect(mockClearZoomHistory).toHaveBeenCalled()
+  })
+
+  it('setting the same edit target keeps the zoom history', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockClearZoomHistory.mockClear()
+
+    await store.setEditTarget('mgd')
+
+    expect(mockClearZoomHistory).not.toHaveBeenCalled()
+  })
+
   it('setting the same edit target keeps its sessions', async () => {
     const { store } = await managedPair()
     const { useQcSessionStore } = await import('@/store/qcSession')
@@ -497,6 +517,107 @@ describe('useDataVisStore.setDateRange', () => {
     expect(mockFetchObservationsInRange.mock.calls.map((c) => c[0].id)).toContain('src')
     expect(mockRedraw).toHaveBeenCalledWith(false, true)
     expect(mockClearZoomHistory).not.toHaveBeenCalled()
+  })
+})
+
+describe('useDataVisStore context range around the session window', () => {
+  const WIN_START = '2025-06-01T00:00:00Z'
+  const WIN_END = '2025-06-10T00:00:00Z'
+  const loadSession = async () => {
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    useQcSessionStore().applySessions('h1', [
+      {
+        id: 's1',
+        status: 'in_progress',
+        phenomenonTimeStart: WIN_START,
+        phenomenonTimeEnd: WIN_END,
+      },
+    ] as any)
+    await nextTick()
+  }
+  const settle = async () => {
+    for (let i = 0; i < 10; i++) await Promise.resolve()
+  }
+
+  it('the editor counts presets out from the session window', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await loadSession()
+    await settle()
+
+    await store.onDateBtnClick(0)
+
+    expect(store.beginDate.getTime()).toBe(subtractDays(new Date(WIN_START), 7).getTime())
+    expect(store.endDate.getTime()).toBe(subtractDays(new Date(WIN_END), -7).getTime())
+  })
+
+  it('YTD resolves like All around the session window', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await loadSession()
+    await settle()
+
+    await store.onDateBtnClick(3)
+
+    expect(store.beginDate.toISOString()).toBe('2025-01-01T00:00:00.000Z')
+    expect(store.endDate.toISOString()).toBe('2025-12-31T00:00:00.000Z')
+  })
+
+  it('the editor counts back from the data end until a session window is known', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+
+    await store.onDateBtnClick(0)
+
+    expect(store.endDate.toISOString()).toBe('2025-12-31T00:00:00.000Z')
+    expect(store.endDate.getTime() - store.beginDate.getTime()).toBe(7 * 24 * 60 * 60 * 1000)
+  })
+
+  it('the Select view ignores a leftover session window', async () => {
+    const { store, other } = await managedPair()
+    await loadSession()
+    await store.plotDatastream(other as any)
+
+    await store.onDateBtnClick(0)
+
+    expect(store.endDate.toISOString()).toBe('2025-12-31T00:00:00.000Z')
+  })
+
+  it('re-resolves the context once the session window loads, keeping zoom', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    expect(store.endDate.toISOString()).toBe('2025-12-31T00:00:00.000Z')
+    mockFetchObservationsInRange.mockClear()
+    mockFetchGraphSeries.mockClear()
+    mockRedraw.mockClear()
+    mockClearZoomHistory.mockClear()
+
+    await loadSession()
+    await settle()
+
+    expect(store.beginDate.getTime()).toBe(subtractMonths(new Date(WIN_START), 1).getTime())
+    expect(store.endDate.getTime()).toBe(subtractMonths(new Date(WIN_END), -1).getTime())
+    expect(mockFetchObservationsInRange.mock.calls.map((c) => c[0].id)).toEqual(['src'])
+    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
+    expect(mockRedraw).toHaveBeenCalledTimes(1)
+    expect(mockRedraw).toHaveBeenCalledWith(false, true)
+    expect(mockClearZoomHistory).not.toHaveBeenCalled()
+  })
+
+  it('keeps a custom context range when the session window loads', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    const begin = new Date('2025-03-01T00:00:00Z')
+    const end = new Date('2025-04-01T00:00:00Z')
+    await store.setDateRange({ begin, end })
+    mockFetchObservationsInRange.mockClear()
+
+    await loadSession()
+    await settle()
+
+    expect(store.beginDate.getTime()).toBe(begin.getTime())
+    expect(store.endDate.getTime()).toBe(end.getTime())
+    expect(mockFetchObservationsInRange).not.toHaveBeenCalled()
   })
 })
 

@@ -30,6 +30,7 @@ vi.mock('@/components/VisualizeData/DatePickerField.vue', () => ({
 }))
 
 import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
+import { EDITOR_PRESETS } from '@/utils/timeRangePresets'
 
 function mountIt(props: Record<string, unknown> = {}) {
   return mount(DataVisTimeFilters, {
@@ -48,5 +49,18 @@ describe('DataVisTimeFilters.vue', () => {
     const w = mountIt({ description: 'Context around the session.' })
     expect(w.text()).toContain('Context around the session.')
     expect(w.text()).not.toContain('Loaded time window')
+  })
+
+  it('offers every preset, YTD included, by default', () => {
+    const w = mountIt()
+    expect(w.find('[data-testid="date-preset-YTD"]').exists()).toBe(true)
+    expect(w.find('[data-testid="date-preset-All"]').exists()).toBe(true)
+  })
+
+  it('can hide YTD with the editor presets', () => {
+    const w = mountIt({ presets: EDITOR_PRESETS })
+    expect(w.find('[data-testid="date-preset-YTD"]').exists()).toBe(false)
+    expect(w.find('[data-testid="date-preset-1w"]').exists()).toBe(true)
+    expect(w.find('[data-testid="date-preset-All"]').exists()).toBe(true)
   })
 })

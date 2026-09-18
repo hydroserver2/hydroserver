@@ -16,7 +16,7 @@
 
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { setupEditView } from './support/app'
+import { setupEditView, waitForEditorReady } from './support/app'
 
 /**
  * Pull the threshold number out of the auto-mode counter text. The
@@ -74,8 +74,9 @@ test.describe('data-points combobox', () => {
       localStorage.removeItem('qc.plot.tooltipsMaxDataPoints')
     )
     await page.reload()
-    // Wait for the combobox to mount before each test acts on it. In
-    // the default (auto) mode the counter cell is the visible anchor;
+    // The reload resumes the session; the counter shows before that settles.
+    await waitForEditorReady(page)
+    // In the default (auto) mode the counter cell is the visible anchor;
     // the toggle button only renders in manual mode.
     await expect(page.getByTestId('tooltips-counter')).toBeVisible()
   })

@@ -239,7 +239,7 @@ The CI gate prints uncovered line numbers per file. Common causes:
 ```
 e2e/
 ├── support/
-│   ├── app.ts        — flow helpers (gotoHome, setupEditView, startSessionFromRow, openOp, waitForSelection)
+│   ├── app.ts        : flow helpers (gotoHome, setupEditView, startSessionFromRow, waitForEditorReady, openOp, waitForSelection)
 │   ├── fixtures.ts   — workspace / datastream / observation fixtures
 │   ├── mocks.ts      — page.route() handlers that stand in for HydroServer
 │   └── ops.ts        — op-specific preambles (selectAllPoints, expectHistoryContains)

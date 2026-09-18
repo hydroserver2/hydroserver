@@ -133,13 +133,25 @@ export async function setupEditView(page: Page): Promise<void> {
 
 /**
  * From Home: the source row's Edit button, "Start new session" on the managed
- * datastream, then Start with the default window. Waits for the editor footer.
+ * datastream, then Start with the default window. Waits for the editor to be
+ * ready.
  */
 export async function startSessionFromRow(page: Page): Promise<void> {
   await page.getByTestId(`edit-datastream-${DATASTREAM_ID}`).click()
   await page.getByTestId(`edit-managed-${MANAGED_DATASTREAM_ID}`).click()
   await page.getByTestId('session-window-start').click()
+  await waitForEditorReady(page)
+}
+
+/**
+ * Wait for the Edit view to be open with nothing loading, e.g. after a reload
+ * resumes the session. Acting earlier can race the view switch.
+ */
+export async function waitForEditorReady(page: Page): Promise<void> {
   await expect(page.getByTestId('exit-save-btn')).toBeVisible({
+    timeout: 30_000,
+  })
+  await expect(page.getByTestId('data-loading-indicator')).toHaveCount(0, {
     timeout: 30_000,
   })
 }

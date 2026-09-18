@@ -55,6 +55,20 @@ describe('useQcSessionStore', () => {
     expect(store.inProgressSession?.id).toBe(inProgressId)
   })
 
+  it('fetchSessions writes nothing until the caller applies the result', async () => {
+    const { historyId, inProgressId } = await seed()
+    const store = useQcSessionStore()
+    const list = await store.fetchSessions(historyId)
+
+    expect(list).toHaveLength(2)
+    expect(store.historyId).toBeNull()
+    expect(store.sessions).toEqual([])
+
+    store.applySessions(historyId, list)
+    expect(store.historyId).toBe(historyId)
+    expect(store.viewedSessionId).toBe(inProgressId)
+  })
+
   it('viewing a committed session is read-only; returnToCurrent restores editing', async () => {
     const { historyId, committedId, inProgressId } = await seed()
     const store = useQcSessionStore()

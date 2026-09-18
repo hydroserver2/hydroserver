@@ -70,9 +70,10 @@ vi.mock('plotly.js-dist', () => ({ default: { Plots: { resize: vi.fn() } } }))
 
 import Plot from '@/components/VisualizeData/Plot.vue'
 
-function mountIt(preview = true) {
+function mountIt(preview = true, slots: Record<string, string> = {}) {
   return mount(Plot, {
     props: { preview },
+    slots,
     global: {
       plugins: [createTestPinia(), createTestVuetify()],
       stubs: { ContextPlot: true, DataTable: true, DataVisTimeFilters: true },
@@ -142,5 +143,14 @@ describe('Plot.vue delayed mount', () => {
       await flushPromises()
       expect(zoomXaxisTo).not.toHaveBeenCalled()
     })
+  })
+
+  it('renders the body overlay under the toolbar, not over it', () => {
+    const wrapper = mountIt(false, {
+      'body-overlay': '<div data-testid="overlay-probe" />',
+    })
+    expect(wrapper.find('.plot-header [data-testid="overlay-probe"]').exists()).toBe(false)
+    expect(wrapper.find('.plot-body [data-testid="overlay-probe"]').exists()).toBe(true)
+    wrapper.unmount()
   })
 })

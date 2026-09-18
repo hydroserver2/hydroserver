@@ -151,19 +151,30 @@ export function useEditSession() {
     if (!managed) return false
     needsHistory.value = false
 
+    // Entries can overlap; never write the session store for a target
+    // another entry has since taken over.
+    const stillOwner = () => {
+      if (qcDatastream.value?.id !== managed.id) throw new ResumeSupersededError()
+    }
+
     const history = await findHistoryForDatastream(
       hs.value.qualityControlHistories,
       managed.id
     )
+    stillOwner()
     if (!history) {
       // Not a managed datastream: the caller should offer to create one
       // from it (with this datastream as the source).
       needsHistory.value = true
       return false
     }
-    sourceDatastream.value =
+    const source =
       (await hs.value.datastreams.getItem(history.sourceDatastream.id)) ?? null
-    await sessionStore.loadSessions(history.id)
+    stillOwner()
+    sourceDatastream.value = source
+    const sessions = await sessionStore.fetchSessions(history.id)
+    stillOwner()
+    sessionStore.applySessions(history.id, sessions)
 
     const inProgress = sessionStore.inProgressSession
     if (inProgress && sourceDatastream.value) {
@@ -261,7 +272,10 @@ export function useEditSession() {
       historyId,
       clampSpecToSource(spec, source)
     )
-    await sessionStore.loadSessions(historyId)
+    const sessions = await sessionStore.fetchSessions(historyId)
+    // Same ownership rule as `beginEditing`.
+    if (qcDatastream.value?.id !== managed.id) throw new ResumeSupersededError()
+    sessionStore.applySessions(historyId, sessions)
     if (resumed) {
       // It may already hold saved operations; edit their replay, not a bare base.
       await resumeWorkingCopy(managed, source, historyId, session)

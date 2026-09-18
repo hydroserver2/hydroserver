@@ -884,11 +884,11 @@ describe('DataTable.vue onSaveChanges', () => {
   })
 })
 
-// Drives the "zoom to range" scroll: a request on the plotly store should
+// Drives `requestTableScroll`: a request on the plotly store should
 // scroll the virtual list so the first in-range row lands on top. The stub
 // exposes v-data-table-virtual's `scrollToIndex` so we can capture the index
 // the component asks to scroll to.
-describe('DataTable.vue zoom-to-range scroll', () => {
+describe('DataTable.vue scroll requests', () => {
   let scrollToIndexCalls: number[]
 
   beforeEach(() => {

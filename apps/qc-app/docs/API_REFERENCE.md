@@ -205,16 +205,21 @@ const {
 } = useEditSession()
 ```
 
-- `beginEditing()` — resolves the QC history for the QC datastream, loads
+- `beginEditing()`: resolves the QC history for the QC datastream, loads
   its sessions, resumes the in-progress one (or sets `needsSession`); sets
   `needsHistory` when the datastream isn't QC-managed yet. Resuming rebuilds
   the shared working copy; if that rebuild is superseded it throws
   `ResumeSupersededError`, leaves `needsSession` false, and `enterEdit`
-  returns to the Select view.
-- `startSession(spec)` — creates a session and copies the source window in.
+  returns to the Select view. Entries can overlap, so it also throws
+  `ResumeSupersededError` when the edit target changes during any of its
+  fetches, and it never writes the session store (source, sessions) for a
+  target it no longer owns: sessions are fetched with `fetchSessions` and
+  applied only while still the owner.
+- `startSession(spec)`: creates a session and copies the source window in.
   When the history already has an in-progress session it resumes that one
   through the same replay instead (throwing `ResumeSupersededError` the same
-  way), so saved draft operations are never dropped.
+  way), so saved draft operations are never dropped. The same ownership rule
+  guards its session reload.
 - `saveDraft()` — persists the record's edit operations to the session
   (append-only reconcile).
 - `discardUnsavedEdits()` — drops edits made since the last save and restores
@@ -336,13 +341,13 @@ on boot.
 | `selectedData`                      | state    | `number[] \| null`                                | Index list of the active selection (lasso, box, click). |
 | `hasSelectionShape`                 | state    | `boolean`                                         | True while a box/lasso shape exists, even when it captured zero points. |
 | `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. |
-| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it from the context data's (`seriesDatastreams` minus the edit target) phenomenon times on every plot rebuild; a custom range stays fixed. |
+| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it on every plot rebuild: around the edit session's window while one is set (`presetAroundWindow`), otherwise back from the context data's (`seriesDatastreams` minus the edit target) end (`presetWindow`). It also re-resolves when the edit session's window loads or changes. A custom range stays fixed. |
 | `selectedDateBtnId`                 | state    | `number`                                          | Active preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
 | `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves. Otherwise refreshes `seriesDatastreams`; while editing this reloads context only and preserves the zoom (`redraw(false, true)`), since the edit target's data isn't fetched here. Otherwise it clears zoom history and applies the new window. |
-| `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies its window over the context data's extent. With nothing plotted, only the selection changes. |
+| `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies the window the internal `resolvePresetWindow` gives it: around the edit session's window while editing one, otherwise back from the context data's end. With nothing to anchor to, only the selection changes. |
 | `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `seriesDatastreams` (fetch deltas + reorder + recolor), skipping the edit target (its data is owned by the edit session, not this refresh). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. Invalidates the working copy of any managed datastream no longer in `seriesDatastreams`, except the edit target. |
 | `resetState`                        | action   | `() => void`                                      | Clears filters, the plotted set, and the edit target, and drops every working copy, on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
@@ -354,7 +359,7 @@ on boot.
 | `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never touches the edit target; `refreshGraphSeriesArray` skips its fetch. |
 | `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the edit target alone. |
 | `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
-| `setEditTarget`                     | action   | `(managedId: string) => Promise<void>`            | Begin editing `managedId`: drops snapshots, resets the `qcSession` store when the target changes (not `resumeDatastreamId`), sets `qcDatastreamId`, rebuilds the plot. Its data arrives later via `setEditRecord`. This action doesn't fetch it. |
+| `setEditTarget`                     | action   | `(managedId: string) => Promise<void>`            | Begin editing `managedId`: drops snapshots, resets the `qcSession` store (not `resumeDatastreamId`) and clears zoom history when the target changes, sets `qcDatastreamId`, rebuilds the plot. Its data arrives later via `setEditRecord`. This action doesn't fetch it. |
 | `setEditRecord`                     | action   | `(record: ObservationRecord) => Promise<void>`    | Put the edit target's record on the plot: updates its graph series in place if one exists, otherwise adds it (`buildGraphSeries`) and redraws. The only path by which the edit target's data reaches the plot. |
 | `clearEditTarget`                   | action   | `() => Promise<void>`                             | Stop editing: drops snapshots, invalidates the edit target's working copy, clears `qcDatastreamId`, removes its graph series, and rebuilds. Plotted datastreams are left exactly as they were. |
 | `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (refresh series, regenerate options, render). Drops zoom history in the Select view; keeps the zoom while an edit target is set. Coalesces concurrent callers. |
@@ -607,7 +612,9 @@ puts the editor in read-only mode.
 | `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
 | `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
 | `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
-| `loadSessions`      | action   | `(historyId: string) => Promise<void>`  | Load a history's sessions; default the view to the in-progress one. |
+| `fetchSessions`     | action   | `(historyId: string) => Promise<QualityControlSession[]>` | Fetch a history's sessions with their operations without writing any state, so a caller can drop a result that went stale (see `useEditSession`). |
+| `applySessions`     | action   | `(historyId: string, sessions: QualityControlSession[]) => void` | Adopt fetched sessions; default the view to the in-progress one, else the latest committed. |
+| `loadSessions`      | action   | `(historyId: string) => Promise<void>`  | `fetchSessions` then `applySessions`, with `isLoading` set meanwhile. |
 | `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |
 | `returnToCurrent`   | action   | `() => void`                            | Return to the editable in-progress session. |
 | `reset`             | action   | `() => void`                            | Clear all state. |
@@ -644,6 +651,24 @@ columnar fetch, returns `{ datetimes: number[]; dataValues: number[] }`.
 
 `subtractDays`, `subtractMonths`, `subtractYears` for the time-range
 preset buttons.
+
+### `src/utils/timeRangePresets.ts`
+
+Preset definitions (`TIME_RANGE_PRESETS`, ids stable for the share URL)
+and their pure resolution:
+
+- `dataExtent(datastreams)`: earliest begin to latest end over the given
+  phenomenon times; `null` when none has observations.
+- `presetWindow(id, extent)`: the preset counted back from `extent.end`
+  (All is the whole extent, YTD starts Jan 1 of the end year). Used in the
+  Select view and while editing without a session window.
+- `presetAroundWindow(id, window, extent)`: the editor's rule while a
+  session window is known. 1w / 1m / 6m / 1y return
+  `[window.begin - span, window.end + span]`, not clipped to the data.
+  All returns `extent` widened to cover `window` (or `window` when `extent`
+  is `null`); YTD resolves the same as All. `null` for an unknown id.
+- `EDITOR_PRESETS`: the presets the editor's Context menu offers, without
+  YTD and titled for the session window.
 
 ### `src/utils/sessionWindow.ts`
 

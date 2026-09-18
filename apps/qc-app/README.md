@@ -15,7 +15,7 @@ This web app facilitates QC/QA for time series observations stored in a HydroSer
 The app is the operator's view of HydroServer's QC pipeline:
 
 1. **Browse** — pick a workspace, filter datastreams by site / observed property / processing level, and plot up to five at once on a synchronized multi-axis chart.
-2. **QC one stream at a time** — the first plotted stream is the QC target. The other plotted traces are read-only context.
+2. **QC one stream at a time**: the pencil button on a datastream row picks what to edit, separately from the plot checkboxes. The editor draws that stream over its raw source, with the plotted datastreams as read-only context.
 3. **Filter / edit / add** — every operation (Value Threshold, Find Gaps, Persistence, Interpolate, Drift Correction, Fill Gaps, Add Points, etc.) commits a `HistoryItem` to a replayable edit history backed by [`@uwrl/qc-utils`](https://www.npmjs.com/package/@uwrl/qc-utils).
 4. **Save / load a QC History** — export the history as a JSON document, replay it on the same datastream a week later, or templatize across stations.
 5. **Save and commit** — save the edits to a QC session as a draft, then commit the session to push the quality-controlled observations to its managed datastream in `replace` mode.

@@ -79,7 +79,7 @@ The select view is the default landing surface after picking a workspace. The le
 
 The filter drawer has two collapsible sections:
 
-- **Time range**: the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. In the Edit view the loaded window is frozen: plotting or removing a datastream there never moves it.
+- **Time range**: the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. In the Edit view the same preference drives the **Context** menu, where presets count out from the edit session's window instead.
 
 - **Datastream filters**: These filters allow you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
 
@@ -173,9 +173,17 @@ See the [Pan and zoom across axes](#pan-and-zoom-across-axes) section below for 
 Hover any toolbar icon to see its name. The left side of the toolbar flips between **Plot** and **Table** views (see below); the right side carries the **data points toggle**, a share-link button, and the `?` help menu.
 
 Between the help menu and the right edge is the **Context** menu. It holds
-the same preset chips and From / To pickers as the Select view's Time range
+preset chips and From / To pickers like the Select view's Time range
 filter, but here they control how much of the raw source and any plotted
-datastreams load around your edit, not what you're editing. Changing it
+datastreams load around your edit, not what you're editing. The presets
+count out from the edit session's window instead of back from the last
+observation: **1w**, **1m**, **6m** and **1y** load that span before the
+session's start and after its end, and **All** loads all of the context
+data (always including the session's window). **YTD** is not offered here.
+If YTD is your active preset from the Select view, the editor loads the
+context as **All** without changing that preference. When a session loads
+or you view another session, the active preset re-applies around its
+window; a `Custom` From / To range stays as you set it. Changing the range
 reloads that context data and keeps your current zoom. Your edits are
 never reloaded or re-windowed. The editor opens zoomed to the edit session's
 own window; open the Context menu (or click **All**) to see more of the

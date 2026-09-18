@@ -1,33 +1,34 @@
 <template>
   <!-- Stays mounted while loading so a refresh keeps the plot and its zoom. -->
-  <div
+  <Plot
     v-if="isUpdating || isDataAvailable"
-    class="fill-height position-relative"
+    class="fill-height"
+    :preview="preview"
   >
-    <Plot class="data-vis-plot fill-height" :preview="preview" />
-
-    <div
-      v-if="isUpdating"
-      class="data-vis-loading position-absolute d-flex flex-column align-center justify-center pa-6 text-center"
-      data-testid="data-loading-indicator"
-    >
-      <v-progress-circular
-        color="primary"
-        :size="56"
-        :width="4"
-        indeterminate
-        class="mb-4"
-      />
-      <div class="text-title-medium font-weight-bold mb-1">
-        Loading observations…
+    <template #body-overlay>
+      <div
+        v-if="isUpdating"
+        class="data-vis-loading position-absolute d-flex flex-column align-center justify-center pa-6 text-center"
+        data-testid="data-loading-indicator"
+      >
+        <v-progress-circular
+          color="primary"
+          :size="56"
+          :width="4"
+          indeterminate
+          class="mb-4"
+        />
+        <div class="text-title-medium font-weight-bold mb-1">
+          Loading observations…
+        </div>
+        <div class="text-body-small text-medium-emphasis">
+          Fetching data for
+          {{ loadingCount }}
+          datastream{{ loadingCount === 1 ? '' : 's' }}
+        </div>
       </div>
-      <div class="text-body-small text-medium-emphasis">
-        Fetching data for
-        {{ loadingCount }}
-        datastream{{ loadingCount === 1 ? '' : 's' }}
-      </div>
-    </div>
-  </div>
+    </template>
+  </Plot>
 
   <div
     v-else-if="seriesDatastreams.length"
@@ -152,11 +153,6 @@ const isDataAvailable = computed(() => {
 </script>
 
 <style scoped>
-/* Contains Plotly's own z-indexes so the overlay covers them. */
-.data-vis-plot {
-  isolation: isolate;
-}
-
 .data-vis-loading {
   inset: 0;
   z-index: 1;

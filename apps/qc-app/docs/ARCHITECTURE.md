@@ -106,7 +106,7 @@ src/
 ├─ utils/
 │  ├─ plotting/                 Plotly integration (trace builders, event handlers, selection, staging).
 │  ├─ dateMath.ts               Time-range arithmetic for presets ("1w", "1m", "All", …).
-│  ├─ timeRangePresets.ts       Preset definitions, resolved against the plotted data's extent.
+│  ├─ timeRangePresets.ts       Preset definitions, resolved back from the context data's end, or around the session window while editing.
 │  ├─ observations.ts           Observation fetch helpers (paged columnar fetch).
 │  ├─ rules.ts                  Vuetify form validation rules.
 │  └─ time.ts                   Time unit conversions.

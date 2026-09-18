@@ -33,7 +33,7 @@
 
     <div class="time-filters__presets">
       <v-chip
-        v-for="option in TIME_RANGE_PRESETS"
+        v-for="option in presets"
         :key="option.id"
         :data-testid="`date-preset-${option.label}`"
         :color="selectedDateBtnId === option.id ? 'primary' : undefined"
@@ -66,10 +66,18 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import {
   CUSTOM_PRESET_ID,
   TIME_RANGE_PRESETS,
+  type TimeRangePreset,
 } from '@/utils/timeRangePresets'
 import { storeToRefs } from 'pinia'
 
-defineProps<{ description?: string }>()
+withDefaults(
+  defineProps<{
+    description?: string
+    /** Preset chips to offer; the editor leaves out YTD. */
+    presets?: readonly TimeRangePreset[]
+  }>(),
+  { description: undefined, presets: () => TIME_RANGE_PRESETS }
+)
 
 const { setDateRange, onDateBtnClick } = useDataVisStore()
 const { beginDate, endDate, selectedDateBtnId } = storeToRefs(useDataVisStore())

@@ -8,6 +8,7 @@
  *   - the session window band survives staging shapes
  *   - the editor opens zoomed to the session window
  *   - changing the Context range keeps the user zoom
+ *   - Context presets count out from the session window
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test'
@@ -18,6 +19,7 @@ import {
   plotDatastreamById,
   setupEditView,
   startSessionFromRow,
+  waitForEditorReady,
 } from './support/app'
 import {
   DATASTREAM_ID,
@@ -28,7 +30,7 @@ import {
 } from './support/fixtures'
 
 type PlotRoot = HTMLElement & {
-  data?: Array<{ id?: string }>
+  data?: Array<{ id?: string; x?: Array<number | string> }>
   layout?: {
     shapes?: Array<{ name?: string }>
     xaxis?: { range?: Array<number | string> }
@@ -83,6 +85,27 @@ async function typeDateTime(field: Locator, when: Date) {
     await input.pressSequentially(digits)
     await input.blur()
   }
+}
+
+/** First and last x of a trace in epoch ms. Plotly date strings are UTC. */
+function traceXExtent(page: Page, id: string): Promise<[number, number] | null> {
+  return page.evaluate((traceId) => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
+    const xs = (gd?.data ?? []).find((t) => t.id === traceId)?.x
+    if (!xs?.length) return null
+    const toMs = (v: number | string) =>
+      typeof v === 'number' ? v : Date.parse(`${v.replace(' ', 'T')}Z`)
+    return [toMs(xs[0]!), toMs(xs[xs.length - 1]!)] as [number, number]
+  }, id)
+}
+
+/** What a `DatePickerField` shows for `when`: local MM/DD/YYYY and HH:MM. */
+function pickerText(when: Date): [string, string] {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return [
+    `${pad(when.getMonth() + 1)}/${pad(when.getDate())}/${when.getFullYear()}`,
+    `${pad(when.getHours())}:${pad(when.getMinutes())}`,
+  ]
 }
 
 async function openWindowStep(page: Page) {
@@ -334,5 +357,55 @@ test.describe('edit selection', () => {
     }, zoomed)
     expect(drift).toBeLessThanOrEqual(1_000)
     expect(await traceIds(page)).toContain(MANAGED_DATASTREAM_ID)
+  })
+
+  test('Context presets count out from the session window', async ({ page }) => {
+    await gotoHome(page)
+    // Start halfway through the source, so the window has data before it.
+    const mid = new Date((FIXTURE_OBS_START_MS + FIXTURE_OBS_END_MS) / 2)
+    mid.setSeconds(0, 0)
+    await openWindowStep(page)
+    await typeDateTime(page.getByTestId('session-window-from'), mid)
+    await expect(page.getByTestId('session-window-start')).toBeEnabled()
+    await page.getByTestId('session-window-start').click()
+    await waitForEditorReady(page)
+
+    await page.getByTestId('context-range-btn').click()
+    const menu = page.getByTestId('context-range-menu')
+    await expect(menu.getByTestId('date-preset-YTD')).toHaveCount(0)
+    await menu.getByTestId('date-preset-1w').click()
+    await expect(menu.getByTestId('date-preset-1w')).toHaveClass(
+      /v-chip--variant-tonal/
+    )
+    await expect(page.getByTestId('data-loading-indicator')).toHaveCount(0)
+
+    // The fixture spans about 30 hours, so any 1w range loads all of it and
+    // the trace alone cannot tell the rules apart. The loaded range can:
+    // counting back from the data end would put To at the data end.
+    const expectedFrom = new Date(mid)
+    expectedFrom.setDate(expectedFrom.getDate() - 7)
+    const expectedTo = new Date(FIXTURE_OBS_END_MS)
+    expectedTo.setDate(expectedTo.getDate() + 7)
+    const fieldText = (id: string) =>
+      menu.getByTestId(id).locator('input').evaluateAll((inputs) =>
+        inputs.map((i) => (i as HTMLInputElement).value)
+      )
+    await expect.poll(() => fieldText('date-range-from')).toEqual(pickerText(expectedFrom))
+    await expect.poll(() => fieldText('date-range-to')).toEqual(pickerText(expectedTo))
+
+    // The grey source covers the whole window, from the data start (the
+    // week before the window, clamped to the fixture).
+    const tolerance = 60_000
+    await expect
+      .poll(async () => {
+        const x = await traceXExtent(page, DATASTREAM_ID)
+        return (
+          !!x &&
+          Math.abs(x[0] - FIXTURE_OBS_START_MS) <= tolerance &&
+          x[0] <= mid.getTime() &&
+          x[1] >= FIXTURE_OBS_END_MS - tolerance
+        )
+      })
+      .toBe(true)
   })
 })

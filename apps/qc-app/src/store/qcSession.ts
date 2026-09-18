@@ -90,26 +90,36 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     ) as QualityControlSession[]
   }
 
-  /** Load a history's sessions; default the view to the in-progress session. */
+  /** A history's sessions with their operations. Writes nothing, so a caller
+   *  can drop the result if it went stale while loading. */
+  async function fetchSessions(id: string): Promise<QualityControlSession[]> {
+    const { hs } = storeToRefs(useHydroServer())
+    const list = unwrap(
+      await hs.value.qualityControlSessions.list(id, {
+        fetch_all: true,
+        expand_related: true,
+      })
+    )
+    return withOperations(hs.value, id, list)
+  }
+
+  /** Adopt a history's sessions; default the view to the in-progress session. */
+  function applySessions(id: string, list: QualityControlSession[]): void {
+    historyId.value = id
+    sessions.value = list
+    const inProgress = list.find((s) => s.status === 'in_progress') ?? null
+    currentSessionId.value = inProgress?.id ?? null
+    // Default view: the editable session, else the latest committed.
+    const latestCommitted = [...list]
+      .filter((s) => s.status === 'committed')
+      .sort((a, b) => b.phenomenonTimeStart.localeCompare(a.phenomenonTimeStart))[0]
+    viewedSessionId.value = inProgress?.id ?? latestCommitted?.id ?? null
+  }
+
   async function loadSessions(id: string): Promise<void> {
     isLoading.value = true
     try {
-      const { hs } = storeToRefs(useHydroServer())
-      const list = unwrap(
-        await hs.value.qualityControlSessions.list(id, {
-          fetch_all: true,
-          expand_related: true,
-        })
-      )
-      historyId.value = id
-      sessions.value = await withOperations(hs.value, id, list)
-      const inProgress = list.find((s) => s.status === 'in_progress') ?? null
-      currentSessionId.value = inProgress?.id ?? null
-      // Default view: the editable session, else the latest committed.
-      const latestCommitted = [...list]
-        .filter((s) => s.status === 'committed')
-        .sort((a, b) => b.phenomenonTimeStart.localeCompare(a.phenomenonTimeStart))[0]
-      viewedSessionId.value = inProgress?.id ?? latestCommitted?.id ?? null
+      applySessions(id, await fetchSessions(id))
     } finally {
       isLoading.value = false
     }
@@ -153,6 +163,8 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     inProgressSession,
     committedSessions,
     viewedSession,
+    fetchSessions,
+    applySessions,
     loadSessions,
     viewSession,
     returnToCurrent,

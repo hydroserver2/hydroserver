@@ -34,10 +34,14 @@ const lifecycle = vi.hoisted(() => ({ mounts: 0, unmounts: 0 }))
 vi.mock('@/components/VisualizeData/Plot.vue', () => ({
   default: defineComponent({
     name: 'PlotStub',
-    setup() {
+    setup(_props, { slots }) {
       onMounted(() => lifecycle.mounts++)
       onBeforeUnmount(() => lifecycle.unmounts++)
-      return () => h('div', { 'data-testid': 'plot-stub' })
+      return () =>
+        h('div', { 'data-testid': 'plot-stub' }, [
+          h('div', { 'data-testid': 'plot-stub-toolbar' }),
+          h('div', { 'data-testid': 'plot-stub-body' }, slots['body-overlay']?.()),
+        ])
     },
   }),
 }))
@@ -97,6 +101,16 @@ describe('DataVisualization.vue', () => {
     await setLoading(false)
     expect(wrapper.findComponent({ name: 'PlotStub' }).exists()).toBe(true)
     expect(lifecycle.mounts).toBe(1)
+  })
+
+  it('puts the loading overlay in the plot body so the toolbar stays usable', async () => {
+    const wrapper = mountIt()
+    await setLoading(true)
+    const body = wrapper.find('[data-testid="plot-stub-body"]')
+    expect(body.find('[data-testid="data-loading-indicator"]').exists()).toBe(true)
+    expect(
+      wrapper.findAll('[data-testid="data-loading-indicator"]')
+    ).toHaveLength(1)
   })
 
   it('counts only the datastreams being fetched, not the edit target', async () => {

@@ -285,7 +285,10 @@
             </v-btn>
           </template>
           <v-card width="300" class="pa-3" data-testid="context-range-menu">
-            <DataVisTimeFilters description="How much of the source and plotted datastreams to show around the session. Your edits are not reloaded." />
+            <DataVisTimeFilters
+              :presets="EDITOR_PRESETS"
+              description="How much of the source and plotted datastreams to show before and after the session window. Your edits are not reloaded."
+            />
           </v-card>
         </v-menu>
       </div>
@@ -293,8 +296,8 @@
 
     <v-divider></v-divider>
 
-    <div class="d-flex flex-row flex-grow-1">
-      <v-tabs-window v-model="tab" class="flex-grow-1">
+    <div class="plot-body position-relative d-flex flex-row flex-grow-1">
+      <v-tabs-window v-model="tab" class="plot-body__content flex-grow-1">
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="fill-height position-relative d-flex flex-column">
             <div
@@ -389,6 +392,8 @@
           <DataTable v-if="tab === 'table' && !preview" class="fill-height"
         /></v-tabs-window-item>
       </v-tabs-window>
+      <!-- Covers the plot and table only, so the toolbar stays usable. -->
+      <slot name="body-overlay" />
     </div>
   </div>
 </template>
@@ -407,6 +412,7 @@ import {
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
 import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
+import { EDITOR_PRESETS } from '@/utils/timeRangePresets'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
@@ -743,6 +749,11 @@ const onTabChange = () => {
 <style scoped>
 .plot-root {
   min-height: 0;
+}
+
+/* Contains Plotly's own z-indexes so a body overlay covers them. */
+.plot-body__content {
+  isolation: isolate;
 }
 
 .plot-header {

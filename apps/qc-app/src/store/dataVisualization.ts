@@ -10,7 +10,9 @@ import {
   DEFAULT_PRESET_ID,
   dataExtent,
   findPreset,
+  presetAroundWindow,
   presetWindow,
+  type TimeWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
@@ -197,8 +199,23 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const beginDate = ref<Date>(subtractMonths(endDate.value, 1))
   const selectedDateBtnId = ref(DEFAULT_PRESET_ID)
 
-  /** The active preset's window over the plotted data; null for a custom
-   *  range or when nothing plotted has observations. */
+  /** The edit session's window, while an edit target has one. */
+  const editSessionWindow = computed<TimeWindow | null>(() => {
+    if (!qcDatastreamId.value) return null
+    const sessions = useQcSessionStore()
+    const s = sessions.viewedSession ?? sessions.inProgressSession
+    return s
+      ? {
+          begin: new Date(s.phenomenonTimeStart),
+          end: new Date(s.phenomenonTimeEnd),
+        }
+      : null
+  })
+
+  /** The active preset's window; null for a custom range or when there is
+   *  nothing to anchor it to. The single place that picks the rule: around
+   *  the session window while editing one, otherwise back from the context
+   *  data's end. */
   function resolvePresetWindow() {
     if (selectedDateBtnId.value === CUSTOM_PRESET_ID) return null
     const workingCopies = useWorkingCopiesStore()
@@ -209,6 +226,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       ...context,
       ...workingCopies.extents(context.map((d) => d.id)),
     ])
+    const sessionWindow = editSessionWindow.value
+    if (sessionWindow) {
+      return presetAroundWindow(selectedDateBtnId.value, sessionWindow, extent)
+    }
     return extent ? presetWindow(selectedDateBtnId.value, extent) : null
   }
 
@@ -359,9 +380,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   /** Start editing `managedId`. Its data arrives later via `setEditRecord`. */
   async function setEditTarget(managedId: string) {
     dropSnapshotSeries()
-    // The session store describes the previous target until `loadSessions`
-    // lands; drop it so its window is never drawn over this one.
-    if (managedId !== qcDatastreamId.value) useQcSessionStore().reset()
+    if (managedId !== qcDatastreamId.value) {
+      // The session store describes the previous target until its sessions
+      // load; drop it so its window is never drawn over this one.
+      useQcSessionStore().reset()
+      // The rebuild below keeps zoom for an edit target, so drop viewports
+      // from the previous view or target here.
+      usePlotlyStore().clearZoomHistory()
+    }
     qcDatastreamId.value = managedId
     await rebuildPlot()
   }
@@ -574,14 +600,36 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
-  const onDateBtnClick = async (selectedId: number) => {
-    if (!findPreset(selectedId)) return
-    selectedDateBtnId.value = selectedId
+  /** Load the range the active preset resolves to now. A no-op when it
+   *  already matches. */
+  const applyActivePreset = async () => {
     const range = resolvePresetWindow()
     if (range) {
       await setDateRange({ begin: range.begin, end: range.end, custom: false })
     }
   }
+
+  const onDateBtnClick = async (selectedId: number) => {
+    if (!findPreset(selectedId)) return
+    selectedDateBtnId.value = selectedId
+    await applyActivePreset()
+  }
+
+  // The editor loads its context before the session is known, so re-anchor
+  // the preset once the window arrives or changes. Like a Context change, this
+  // reloads context series only and keeps the zoom.
+  watch(
+    () =>
+      editSessionWindow.value &&
+      `${editSessionWindow.value.begin.getTime()}-${editSessionWindow.value.end.getTime()}`,
+    (key) => {
+      if (!key) return
+      applyActivePreset().catch((error) => {
+        console.error('Failed to reload the context range:', error)
+        Snackbar.error('Could not reload the context range')
+      })
+    }
+  )
 
   const updateOrFetchGraphSeries = async (
     datastream: Datastream,

@@ -201,8 +201,8 @@ onMounted(() => {
     if (h && h !== bodyHeight.value) bodyHeight.value = h
   })
   resizeObserver.observe(bodyEl.value)
-  // Honor a zoom-to-range scroll requested while the table was unmounted
-  // (e.g. the preset was picked on the plot tab before switching here).
+  // Honor a scroll requested while the table was unmounted (e.g. the editor
+  // opened zoomed to the session window on the plot tab).
   if (tableScrollRequest.value) scrollToTime(tableScrollRequest.value.time)
 })
 

@@ -286,6 +286,70 @@ describe('useEditSession', () => {
     expect(setEditRecord).not.toHaveBeenCalled()
   })
 
+  // Another entry taking over: `setEditTarget(B)` swaps the target and resets
+  // the session store.
+  const takeOver = () => {
+    qcDatastream.value = { id: 'm-2' }
+    useQcSessionStore().reset()
+  }
+
+  it('beginEditing rejects without writing the session store when the target changes during the source fetch', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    await qc.sessions.create(h.id, WIN)
+    getItem.mockImplementationOnce(async () => {
+      takeOver()
+      return { id: 's-1', name: 'Source' }
+    })
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
+
+    await expect(useEditSession().beginEditing()).rejects.toBeInstanceOf(
+      ResumeSupersededError
+    )
+
+    const store = useQcSessionStore()
+    expect(store.sourceDatastream).toBeNull()
+    expect(store.historyId).toBeNull()
+    expect(store.sessions).toEqual([])
+    expect(wcRebuild).not.toHaveBeenCalled()
+  })
+
+  it('beginEditing rejects without writing the session store when the target changes while sessions load', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    await qc.sessions.create(h.id, WIN)
+    const list = qc.sessions.list.bind(qc.sessions)
+    vi.spyOn(qc.sessions, 'list').mockImplementationOnce(async (...args) => {
+      const res = await list(...args)
+      takeOver()
+      return res
+    })
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
+
+    await expect(useEditSession().beginEditing()).rejects.toBeInstanceOf(
+      ResumeSupersededError
+    )
+
+    const store = useQcSessionStore()
+    expect(store.historyId).toBeNull()
+    expect(store.sessions).toEqual([])
+    expect(store.currentSessionId).toBeNull()
+    expect(store.sourceDatastream).toBeNull()
+    expect(wcRebuild).not.toHaveBeenCalled()
+  })
+
   it('startSession loads the managed datastream as the working base', async () => {
     await seedHistory()
     const managedBase = makeRecord()
@@ -518,6 +582,30 @@ describe('useEditSession', () => {
 
     const store = useQcSessionStore()
     expect(store.committedSessions[0]?.description).toBe('Reviewed January spike')
+  })
+
+  it('startSession rejects without writing the session store when the target changes while sessions load', async () => {
+    await seedHistory()
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
+    const session = useEditSession()
+    await session.beginEditing()
+    const list = qc.sessions.list.bind(qc.sessions)
+    vi.spyOn(qc.sessions, 'list').mockImplementationOnce(async (...args) => {
+      const res = await list(...args)
+      takeOver()
+      return res
+    })
+
+    await expect(session.startSession(WIN)).rejects.toBeInstanceOf(
+      ResumeSupersededError
+    )
+
+    const store = useQcSessionStore()
+    expect(store.historyId).toBeNull()
+    expect(store.sessions).toEqual([])
+    expect(fetchObservationsInRange).not.toHaveBeenCalled()
   })
 
   it('startSession stores its base as the working copy', async () => {
