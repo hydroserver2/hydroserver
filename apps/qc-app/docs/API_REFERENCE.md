@@ -191,7 +191,7 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
   falls through to the `'empty'` prompt rather than leaving silently.
 - `keepSession()` / `discardSessionAndLeave()`: the `'empty'` answers.
   Discarding deletes the session through
-  `useManagedDatastreams().deleteSessionChain`, and refuses if another
+  `useManagedDatastreams().deleteSession`, and refuses if another
   session was somehow built on it. A failed delete keeps the user in the
   session.
 - `closeSession()`: the `'saved'` answer, keeping the session as it is.
@@ -334,6 +334,12 @@ histories and fetches each one's sessions. Feeds the row Edit button's
 chooser (`StartEditingFlow.vue`), which lists managed datastreams with their
 in-progress/committed sessions.
 
+- `deleteManaged(historyId, managedId)`: removes the QC history, then the
+  managed datastream.
+- `deleteSession(historyId, sessionId)`: removes one session and throws the
+  server's message when it refuses (the session has dependents). Callers only
+  offer the newest session, or an empty in-progress one.
+
 ### `useDatastreamMetadata()`
 
 ```ts
@@ -342,7 +348,7 @@ await load()
 ```
 
 Reference data for the create-datastream form: the active workspace's sensors
-(`hs.sensors.list`, including the system-level ones) and the datastream status
+(`hs.sensors.listAllItems`, every page, including the system-level ones) and the datastream status
 vocabulary (`hs.datastreams.getStatuses`). Loaded on demand when the form
 opens rather than with the workspace catalog in `App.vue`, since nothing else
 needs it. Neither request throws: a list that fails to load stays empty and

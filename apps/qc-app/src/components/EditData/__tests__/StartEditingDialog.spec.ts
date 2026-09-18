@@ -126,12 +126,24 @@ describe('StartEditingDialog', () => {
     expect(item('s-0').find('.mdi-check').exists()).toBe(true)
   })
 
-  it('offers delete on every session, and Continue only in progress', () => {
+  it('offers delete only on the most recent session', () => {
     const w = mountDialog()
+    // s-1 is the newest, so nothing can be built on it.
     expect(w.find('[data-testid="delete-session-s-1"]').exists()).toBe(true)
-    // Committed sessions are deletable now that the API allows it.
-    expect(w.find('[data-testid="delete-session-s-0"]').exists()).toBe(true)
+    expect(w.find('[data-testid="delete-session-s-0"]').exists()).toBe(false)
     expect(w.find('[data-testid="continue-session-s-0"]').exists()).toBe(false)
+  })
+
+  it('drops the In progress chip but keeps the state readable', () => {
+    const w = mountDialog()
+    const active = w.find('[data-testid="chooser-session-s-1"]')
+    // The Continue button already says the row is in progress.
+    expect(active.find('.v-chip').exists()).toBe(false)
+    expect(active.find('.d-sr-only').text()).toBe('In progress')
+    // A committed row has no button, so its chip is the only cue.
+    const done = w.find('[data-testid="chooser-session-s-0"]')
+    expect(done.find('.v-chip').text()).toBe('Committed')
+    expect(done.find('.d-sr-only').exists()).toBe(false)
   })
 
   it('asks for confirmation, then emits deleteSession for that session', async () => {
@@ -151,20 +163,16 @@ describe('StartEditingDialog', () => {
     expect(w.emitted('deleteSession')).toBeUndefined()
   })
 
-  it('warns that a lone delete cannot be undone', async () => {
+  it('warns that the delete cannot be undone', async () => {
     const w = mountDialog()
     await w.find('[data-testid="delete-session-s-1"]').trigger('click')
     const dialog = inDialog('delete-session-dialog')!
+    expect(dialog.textContent).toContain('Delete this session?')
     expect(dialog.textContent).toContain('cannot be undone')
-    // One session, so it lists only that one and needs no extra tick-box.
-    expect(
-      document.querySelectorAll('[data-testid^="delete-chain-item-"]')
-    ).toHaveLength(1)
+    // Only the newest session is deletable, so nothing cascades.
+    expect(inDialog('delete-session-chain')).toBeNull()
+    expect(inDialog('delete-session-dependents-note')).toBeNull()
     expect(inDialog('delete-session-acknowledge')).toBeNull()
-    // The listing can be incomplete, so the warning stands on its own.
-    expect(inDialog('delete-session-dependents-note')!.textContent).toContain(
-      'deleted with it'
-    )
   })
 
   it('formats session date ranges readably', () => {
@@ -219,7 +227,7 @@ describe('StartEditingDialog', () => {
   })
 })
 
-describe('StartEditingDialog cascade delete', () => {
+describe('StartEditingDialog session deletion', () => {
   // s-0 committed, s-1 built on it, s-2 built on s-1.
   const chained = [
     {
@@ -270,74 +278,54 @@ describe('StartEditingDialog cascade delete', () => {
     return w
   }
 
-  it('lists the whole chain, target last, when deleting the root', async () => {
-    await openDeleteFor('s-0')
-    const ids = [
-      ...document.querySelectorAll('[data-testid^="delete-chain-item-"]'),
-    ].map((el) => el.getAttribute('data-testid'))
-    expect(ids).toEqual([
-      'delete-chain-item-s-2',
-      'delete-chain-item-s-1',
-      'delete-chain-item-s-0',
-    ])
-  })
-
-  it('says how many sessions go and names them', async () => {
-    await openDeleteFor('s-0')
-    const dialog = inDialog('delete-session-dialog')!
-    expect(dialog.textContent).toContain('Delete 3 sessions?')
-    expect(dialog.textContent).toContain('First pass')
-    expect(dialog.textContent).toContain('Second pass')
-    expect(dialog.textContent).toContain('Third pass')
-    expect(dialog.textContent).toContain('cannot be undone')
-  })
-
-  it('marks which session the user actually picked', async () => {
-    await openDeleteFor('s-0')
-    const target = inDialog('delete-chain-item-s-0')!
-    expect(target.textContent).toContain('the one you picked')
-    expect(inDialog('delete-chain-item-s-1')!.textContent).not.toContain(
-      'the one you picked'
-    )
-  })
-
-  it('holds the delete until the cascade is acknowledged', async () => {
-    const w = await openDeleteFor('s-0')
-    const confirm = inDialog('confirm-delete-session-s-0') as HTMLButtonElement
-    expect(confirm.disabled).toBe(true)
-
-    confirm.click()
-    await flushPromises()
-    expect(w.emitted('deleteSession')).toBeUndefined()
-
-    // v-checkbox puts the test id on its wrapper; the input carries the model.
-    const box = document.querySelector(
-      '[data-testid="delete-session-acknowledge"] input'
-    ) as HTMLInputElement
-    box.click()
-    await flushPromises()
-    expect(
-      (inDialog('confirm-delete-session-s-0') as HTMLButtonElement).disabled
-    ).toBe(false)
-    await clickInDialog('confirm-delete-session-s-0')
-    expect(w.emitted('deleteSession')![0][1]).toBe('s-0')
-  })
-
-  it('needs no acknowledgement for a leaf session', async () => {
-    await openDeleteFor('s-2')
-    expect(inDialog('delete-session-acknowledge')).toBeNull()
-    expect(
-      (inDialog('confirm-delete-session-s-2') as HTMLButtonElement).disabled
-    ).toBe(false)
-  })
-
-  it('tells the user on the row how far the delete reaches', async () => {
+  it('offers delete on the newest session only, whatever came before', () => {
     const w = mountChained()
-    expect(
-      w.find('[data-testid="delete-session-s-0"]').attributes('title')
-    ).toBe('Delete this session and the 2 built on it')
+    expect(w.find('[data-testid="delete-session-s-2"]').exists()).toBe(true)
+    expect(w.find('[data-testid="delete-session-s-1"]').exists()).toBe(false)
+    expect(w.find('[data-testid="delete-session-s-0"]').exists()).toBe(false)
+  })
+
+  it('names the session and deletes it without an acknowledgement', async () => {
+    const w = await openDeleteFor('s-2')
+    const dialog = inDialog('delete-session-dialog')!
+    expect(dialog.textContent).toContain('Delete this session?')
+    expect(dialog.textContent).toContain('Third pass')
+    expect(inDialog('delete-session-acknowledge')).toBeNull()
+
+    const confirm = inDialog('confirm-delete-session-s-2') as HTMLButtonElement
+    expect(confirm.disabled).toBe(false)
+    await clickInDialog('confirm-delete-session-s-2')
+    expect(w.emitted('deleteSession')![0][1]).toBe('s-2')
+  })
+
+  it('labels the trash button for the one session it removes', () => {
+    const w = mountChained()
     expect(
       w.find('[data-testid="delete-session-s-2"]').attributes('title')
     ).toBe('Delete this session')
+  })
+
+  it('offers delete on the only session of a managed datastream', () => {
+    const lone = [
+      {
+        historyId: 'h-9',
+        managed: { id: 'mgd-9', name: 'Temp (QC solo)' },
+        sessions: [
+          {
+            id: 's-solo',
+            status: 'committed',
+            createdAt: '2025-03-01T09:00:00Z',
+            description: 'Only pass',
+            phenomenonTimeStart: '2025-03-01T00:00:00Z',
+            phenomenonTimeEnd: '2025-03-05T00:00:00Z',
+            dependencyIds: [],
+          },
+        ],
+      },
+    ] as any
+    const w = mountDialog({ options: lone })
+    expect(w.find('[data-testid="delete-session-s-solo"]').exists()).toBe(true)
+    // The managed datastream keeps its own delete, separate from the session.
+    expect(w.find('[data-testid="delete-managed-mgd-9"]').exists()).toBe(true)
   })
 })

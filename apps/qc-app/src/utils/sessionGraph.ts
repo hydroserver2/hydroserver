@@ -38,31 +38,3 @@ export function hasDependents(
 ): boolean {
   return (buildDependentsMap(sessions).get(sessionId)?.length ?? 0) > 0
 }
-
-/**
- * The sessions that must be removed to delete `targetId`, ordered so each
- * one is free of dependents by the time its turn comes: descendants first,
- * target last. Empty when the target is not in `sessions`.
- */
-export function collectDeletionChain(
-  sessions: SessionNode[],
-  targetId: string
-): string[] {
-  if (!sessions.some((s) => s.id === targetId)) return []
-
-  const dependents = buildDependentsMap(sessions)
-  const order: string[] = []
-  const visited = new Set<string>()
-
-  // Post-order over the dependents edges: a node is appended only after
-  // everything reachable from it, which is exactly delete order.
-  const visit = (id: string) => {
-    if (visited.has(id)) return
-    visited.add(id)
-    for (const childId of dependents.get(id) ?? []) visit(childId)
-    order.push(id)
-  }
-  visit(targetId)
-
-  return order
-}

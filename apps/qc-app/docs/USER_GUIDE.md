@@ -586,23 +586,25 @@ Things worth knowing:
 ## Deleting a session
 
 The **Edit** chooser shows every session on a managed datastream as a
-timeline, oldest first, each with a trash icon. Both in-progress and committed
-sessions can be deleted. When no session is open, the timeline is headed by a
-**Start new session** node.
+timeline, oldest first. Only the last row, the most recent session, carries a
+trash icon. When no session is open, the timeline is headed by a **Start new
+session** node.
 
 Sessions build on each other: a session started after a commit records that it
-began from that commit's result. Deleting a session therefore also deletes
-every session built on top of it, since those describe edits to data that would
-no longer exist. Hovering the trash icon says how far the delete reaches.
+began from that commit's result. Deleting an older session would therefore have
+to delete every session built on top of it, so the chooser does not offer it.
+The most recent session cannot have anything built on it, which makes it the
+only one safe to remove. It can be in progress or committed. To unwind further,
+delete the newest session, then the next, one at a time.
 
-The confirmation dialog names every session that will go, marks the one you
-picked, and orders them newest first, which is the order they are removed in.
-When the delete reaches beyond the session you picked, you also have to tick a
-box acknowledging the count. **None of this can be undone.**
+The confirmation dialog names the session and says its operations go with it.
+Earlier sessions are untouched. **This cannot be undone.**
 
-If the server rejects a delete part-way through a chain, the sessions already
-removed stay removed. The error says how many, and the chooser reloads so the
+If the server rejects the delete, the chooser reloads from the server so the
 list reflects what actually survived.
+
+To remove a managed datastream and all of its sessions at once, use the trash
+icon on the datastream's own header row instead.
 
 ## Save / load a QC history
 

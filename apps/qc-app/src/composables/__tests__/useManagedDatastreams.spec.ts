@@ -8,6 +8,7 @@ const historiesBySource = new Map<string, any[]>()
 const listAllItems = vi.fn()
 const deleteHistory = vi.fn()
 const deleteDatastream = vi.fn()
+const deleteSessionCall = vi.fn()
 
 vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () => ({ datastreams, historiesBySource }),
@@ -15,7 +16,7 @@ vi.mock('@/store/dataVisualization', () => ({
 vi.mock('@/store/hydroserver', () => ({
   useHydroServer: () => ({
     hs: {
-      qualityControlSessions: { listAllItems },
+      qualityControlSessions: { listAllItems, delete: deleteSessionCall },
       qualityControlHistories: { delete: deleteHistory },
       datastreams: { delete: deleteDatastream },
     },
@@ -89,5 +90,19 @@ describe('useManagedDatastreams.loadForSource', () => {
     const { deleteManaged } = useManagedDatastreams()
     await expect(deleteManaged('h-1', 'mgd-1')).rejects.toThrow('history busy')
     expect(deleteDatastream).not.toHaveBeenCalled()
+  })
+
+  it('deleteSession removes one session', async () => {
+    deleteSessionCall.mockResolvedValue({ ok: true })
+    const { deleteSession } = useManagedDatastreams()
+    await deleteSession('h-1', 'qcs-2')
+    expect(deleteSessionCall).toHaveBeenCalledTimes(1)
+    expect(deleteSessionCall).toHaveBeenCalledWith('h-1', 'qcs-2')
+  })
+
+  it('deleteSession throws the server message when the delete is refused', async () => {
+    deleteSessionCall.mockResolvedValue({ ok: false, message: 'has dependents' })
+    const { deleteSession } = useManagedDatastreams()
+    await expect(deleteSession('h-1', 'qcs-1')).rejects.toThrow('has dependents')
   })
 })

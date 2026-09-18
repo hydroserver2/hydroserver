@@ -23,7 +23,7 @@ import { createTestVuetify } from '@/utils/test/vuetify'
 const {
   loadForSource,
   deleteManaged,
-  deleteSessionChain,
+  deleteSession,
   enterEdit,
   startSessionOver,
   leaveEdit,
@@ -44,7 +44,7 @@ const {
   return {
     loadForSource: vi.fn(),
     deleteManaged: vi.fn(),
-    deleteSessionChain: vi.fn(),
+    deleteSession: vi.fn(),
     enterEdit: vi.fn(),
     startSessionOver: vi.fn(),
     leaveEdit: vi.fn(),
@@ -98,7 +98,7 @@ vi.mock('@/composables/useManagedDatastreams', () => ({
   useManagedDatastreams: () => ({
     loadForSource,
     deleteManaged,
-    deleteSessionChain,
+    deleteSession,
   }),
 }))
 

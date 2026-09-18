@@ -130,7 +130,7 @@
             </v-timeline-item>
 
             <v-timeline-item
-              v-for="s in orderedSessions(opt.sessions)"
+              v-for="(s, i) in orderedSessions(opt.sessions)"
               :key="s.id"
               fill-dot
               size="x-small"
@@ -156,16 +156,22 @@
                   >
                     {{ sessionPeriod(s) }}
                   </div>
+                  <!-- The Continue button carries this state visually, so the
+                       row only needs it spelled out for screen readers. -->
+                  <span v-if="s.status === 'in_progress'" class="d-sr-only">
+                    In progress
+                  </span>
                 </div>
 
                 <v-chip
+                  v-if="s.status !== 'in_progress'"
                   size="x-small"
-                  :color="s.status === 'in_progress' ? 'warning' : 'grey'"
+                  color="grey"
                   variant="tonal"
                   label
                   class="flex-shrink-0"
                 >
-                  {{ s.status === 'in_progress' ? 'In progress' : 'Committed' }}
+                  Committed
                 </v-chip>
 
                 <v-btn
@@ -179,20 +185,22 @@
                 >
                   Continue
                 </v-btn>
+                <!-- Only the newest session can be deleted: anything older may
+                     have sessions built on it. -->
                 <v-btn
+                  v-if="i === opt.sessions.length - 1"
                   icon="mdi-trash-can-outline"
                   size="x-small"
                   variant="text"
                   color="error"
                   class="flex-shrink-0"
                   :data-testid="`delete-session-${s.id}`"
-                  :title="deleteHint(opt, s)"
+                  title="Delete this session"
                   @click="openConfirm(opt, s)"
                 />
               </div>
             </v-timeline-item>
           </v-timeline>
-
         </v-card>
 
         <v-btn
@@ -218,7 +226,7 @@
     </v-card-actions>
   </v-card>
 
-  <v-dialog v-model="confirmOpen" max-width="560" persistent>
+  <v-dialog v-model="confirmOpen" max-width="480" persistent>
     <v-card rounded="lg" data-testid="delete-session-dialog">
       <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
         <v-avatar color="error" variant="tonal" size="40">
@@ -226,11 +234,7 @@
         </v-avatar>
         <div class="d-flex flex-column">
           <div class="text-title-large font-weight-bold">
-            {{
-              chainCount > 1
-                ? `Delete ${chainCount} sessions?`
-                : 'Delete this session?'
-            }}
+            Delete this session?
           </div>
           <div class="text-body-small text-medium-emphasis">
             This permanently removes quality control work
@@ -238,91 +242,15 @@
         </div>
       </div>
 
-      <v-card-text class="pt-2 pb-4 px-6">
+      <v-card-text v-if="confirmingSession" class="pt-2 pb-4 px-6">
         <p class="text-body-medium mb-3">
-          <template v-if="chainCount > 1">
-            Later sessions were built on this one, so they go too. Deleting
-            only the one you picked would leave them describing edits that no
-            longer exist.
-          </template>
-          <template v-else>
-            Its operations and the record of them are removed.
-          </template>
+          "{{ sessionLabel(confirmingSession) }}" and the record of its
+          operations are removed. Earlier sessions are untouched.
         </p>
-
-        <div class="text-body-small font-weight-medium mb-1">
-          {{ chainCount > 1 ? 'Will be deleted, newest first' : 'Will be deleted' }}
-        </div>
-        <v-list
-          density="compact"
-          class="py-0 mb-3 rounded border"
-          :lines="false"
-          data-testid="delete-session-chain"
-        >
-          <v-list-item
-            v-for="s in chainSessions"
-            :key="s.id"
-            :data-testid="`delete-chain-item-${s.id}`"
-          >
-            <template #prepend>
-              <v-icon
-                :icon="
-                  s.id === confirmingSessionId
-                    ? 'mdi-target'
-                    : 'mdi-subdirectory-arrow-right'
-                "
-                :color="s.id === confirmingSessionId ? 'error' : 'warning'"
-                size="16"
-                class="mr-2"
-              />
-            </template>
-            <v-list-item-title class="text-body-small">
-              {{ sessionLabel(s) }}
-              <span v-if="s.id === confirmingSessionId" class="text-medium-emphasis">
-                (the one you picked)
-              </span>
-            </v-list-item-title>
-            <template #append>
-              <v-chip
-                size="x-small"
-                :color="s.status === 'in_progress' ? 'warning' : 'grey'"
-                variant="tonal"
-                label
-              >
-                {{ s.status === 'in_progress' ? 'In progress' : 'Committed' }}
-              </v-chip>
-            </template>
-          </v-list-item>
-        </v-list>
-
-        <div
-          class="text-body-small text-medium-emphasis mb-3"
-          data-testid="delete-session-dependents-note"
-        >
-          Any session built on this one is deleted with it.
-        </div>
 
         <v-alert type="error" variant="tonal" density="compact">
           <span class="text-body-small">This cannot be undone.</span>
         </v-alert>
-
-        <!-- Extra affirmation only when the cascade reaches beyond the
-             session the user actually pointed at. -->
-        <v-checkbox
-          v-if="chainCount > 1"
-          v-model="cascadeAcknowledged"
-          density="compact"
-          hide-details
-          color="error"
-          class="mt-2"
-          data-testid="delete-session-acknowledge"
-        >
-          <template #label>
-            <span class="text-body-small">
-              I understand {{ chainCount }} sessions will be deleted
-            </span>
-          </template>
-        </v-checkbox>
       </v-card-text>
 
       <v-divider />
@@ -335,11 +263,10 @@
           color="error"
           variant="flat"
           prepend-icon="mdi-delete-outline"
-          :disabled="confirmDisabled"
-          :data-testid="`confirm-delete-session-${confirmingSessionId}`"
+          :data-testid="`confirm-delete-session-${confirmingSession?.id}`"
           @click="onDeleteSession"
         >
-          {{ chainCount > 1 ? `Delete ${chainCount} sessions` : 'Delete session' }}
+          Delete session
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -351,7 +278,6 @@ import { computed, ref } from 'vue'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'
 import { formatDateRange } from '@/utils/time'
-import { collectDeletionChain } from '@/utils/sessionGraph'
 import { datastreamSummary } from '@/utils/datastreamSummary'
 
 defineProps<{
@@ -370,54 +296,26 @@ const emit = defineEmits<{
 
 // historyId of the managed datastream whose delete is awaiting confirmation.
 const confirmingDeleteId = ref<string | null>(null)
-// id of the session whose delete is awaiting confirmation, and the option
-// it belongs to, so the chain can be resolved against that option's sessions.
-const confirmingSessionId = ref<string | null>(null)
+// The session whose delete is awaiting confirmation, and the option it
+// belongs to, so the emit can name both.
+const confirmingSession = ref<QualityControlSession | null>(null)
 const confirmingOption = ref<ManagedDatastreamOption | null>(null)
-const cascadeAcknowledged = ref(false)
 
 const confirmOpen = computed({
-  get: () => !!confirmingSessionId.value,
+  get: () => !!confirmingSession.value,
   set: (open: boolean) => {
     if (!open) closeConfirm()
   },
 })
 
-/** The sessions this delete would remove, in the order they go. */
-const chainSessions = computed<QualityControlSession[]>(() => {
-  const opt = confirmingOption.value
-  const targetId = confirmingSessionId.value
-  if (!opt || !targetId) return []
-  const byId = new Map(opt.sessions.map((s) => [s.id, s]))
-  return collectDeletionChain(opt.sessions, targetId)
-    .map((id) => byId.get(id))
-    .filter((s): s is QualityControlSession => !!s)
-})
-
-const chainCount = computed(() => chainSessions.value.length)
-
-// A cascade needs the checkbox; a single session just needs the button.
-const confirmDisabled = computed(
-  () => chainCount.value > 1 && !cascadeAcknowledged.value
-)
-
-const deleteHint = (opt: ManagedDatastreamOption, s: QualityControlSession) => {
-  const count = collectDeletionChain(opt.sessions, s.id).length
-  return count > 1
-    ? `Delete this session and the ${count - 1} built on it`
-    : 'Delete this session'
-}
-
 function openConfirm(opt: ManagedDatastreamOption, s: QualityControlSession) {
   confirmingOption.value = opt
-  confirmingSessionId.value = s.id
-  cascadeAcknowledged.value = false
+  confirmingSession.value = s
 }
 
 function closeConfirm() {
-  confirmingSessionId.value = null
+  confirmingSession.value = null
   confirmingOption.value = null
-  cascadeAcknowledged.value = false
 }
 
 function onDelete(opt: ManagedDatastreamOption) {
@@ -427,7 +325,7 @@ function onDelete(opt: ManagedDatastreamOption) {
 
 function onDeleteSession() {
   const opt = confirmingOption.value
-  const sessionId = confirmingSessionId.value
+  const sessionId = confirmingSession.value?.id
   closeConfirm()
   if (opt && sessionId) emit('deleteSession', opt, sessionId)
 }

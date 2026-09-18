@@ -13,7 +13,7 @@ const {
   unsavedEditCount,
   saveDraft,
   discardUnsavedEdits,
-  deleteSessionChain,
+  deleteSession,
   applySessions,
   redraw,
   invalidate,
@@ -33,7 +33,7 @@ const {
     unsavedEditCount: r(0),
     saveDraft: vi.fn(),
     discardUnsavedEdits: vi.fn(),
-    deleteSessionChain: vi.fn(),
+    deleteSession: vi.fn(),
     applySessions: vi.fn(),
     redraw: vi.fn(),
     invalidate: vi.fn(),
@@ -80,7 +80,7 @@ vi.mock('@/composables/useEditSession', () => ({
 }))
 
 vi.mock('@/composables/useManagedDatastreams', () => ({
-  useManagedDatastreams: () => ({ deleteSessionChain }),
+  useManagedDatastreams: () => ({ deleteSession }),
 }))
 
 vi.mock('@uwrl/qc-utils', () => ({ Snackbar: { success, error } }))
@@ -113,7 +113,7 @@ beforeEach(() => {
   unsavedEditCount.value = 0
   saveDraft.mockResolvedValue(undefined)
   discardUnsavedEdits.mockResolvedValue(undefined)
-  deleteSessionChain.mockResolvedValue(['qcs-1'])
+  deleteSession.mockResolvedValue(undefined)
 })
 
 describe('leaveCase', () => {
@@ -272,7 +272,7 @@ describe('requestLeave', () => {
     keepSession()
 
     expect(await pending).toBe(true)
-    expect(deleteSessionChain).not.toHaveBeenCalled()
+    expect(deleteSession).not.toHaveBeenCalled()
   })
 
   it('deletes only the empty session itself', async () => {
@@ -282,7 +282,7 @@ describe('requestLeave', () => {
 
     await discardSessionAndLeave()
 
-    expect(deleteSessionChain).toHaveBeenCalledWith('h-1', ['qcs-1'])
+    expect(deleteSession).toHaveBeenCalledWith('h-1', 'qcs-1')
     expect(invalidate).toHaveBeenCalledWith('mgd-1')
     // The store no longer lists a session the server does not have.
     expect(applySessions).toHaveBeenCalledWith('h-1', [])
@@ -301,7 +301,7 @@ describe('requestLeave', () => {
 
     await discardSessionAndLeave()
 
-    expect(deleteSessionChain).not.toHaveBeenCalled()
+    expect(deleteSession).not.toHaveBeenCalled()
     expect(error).toHaveBeenCalled()
     expect(leavePrompt.value?.kind).toBe('empty')
     cancelLeave()
@@ -310,7 +310,7 @@ describe('requestLeave', () => {
 
   it('keeps the user in the session when the delete fails', async () => {
     emptySession()
-    deleteSessionChain.mockRejectedValueOnce(new Error('server said no'))
+    deleteSession.mockRejectedValueOnce(new Error('server said no'))
     const { requestLeave, discardSessionAndLeave, leavePrompt, cancelLeave } =
       useLeaveSession()
     const pending = requestLeave()
@@ -333,7 +333,7 @@ describe('requestLeave', () => {
     closeSession()
 
     expect(await pending).toBe(true)
-    expect(deleteSessionChain).not.toHaveBeenCalled()
+    expect(deleteSession).not.toHaveBeenCalled()
   })
 
   it('a second request supersedes the first, which stays put', async () => {

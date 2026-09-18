@@ -374,15 +374,14 @@ Two contract notes worth keeping in mind:
   `description`. Continuing work after a commit means starting a new session;
   the backend links it to every committed session its window overlaps, which
   is how the DAG gets built.
-- **Deleting a session takes its descendants with it.** The API allows
+- **Only a session with no dependents can be deleted.** The API allows
   deleting any session with no dependents, committed or not, and rejects one
-  that still has them. Sessions carry `dependencyIds` (their ancestors) on the
-  detail response only, so `utils/sessionGraph.ts` inverts that over a
-  `expand_related: true` listing to find descendants, and
-  `deleteSessionChain()` removes them deepest-first so each delete meets the
-  server's rule. There is no transaction: a failure part-way leaves the
-  earlier deletes in place, which is why the error names how many are already
-  gone and the chooser reloads from the server rather than guessing. Reopening the most recent commit
+  that still has them. `StartEditingDialog.vue` therefore only offers the
+  trash icon on the newest session in the timeline, which by construction has
+  none, and `useManagedDatastreams().deleteSession()` removes that one session.
+  Sessions carry `dependencyIds` (their ancestors) on an `expand_related: true`
+  listing; `utils/sessionGraph.ts` inverts that so the leave flow can refuse to
+  discard a session something was built on. Reopening the most recent commit
   is a pending backend ask (see the TODO in `store/qcSession.ts`) and needs
   more than lifting the status guard, since a commit also writes observations
   to the managed datastream and rolls the history's checksum and extent
@@ -454,7 +453,7 @@ promise resolves true.
 | Situation | Prompt | What it does |
 |---|---|---|
 | Unsaved edits | Save and close / Discard changes and close / Cancel | Save writes a draft to the in-progress session, and is disabled with no session open. Discarding that empties the session falls through to the next row. |
-| The session holds nothing at all | Keep session / Discard session / Cancel | Discard deletes it with `useManagedDatastreams().deleteSessionChain`. A failed delete keeps the user in the session. |
+| The session holds nothing at all | Keep session / Discard session / Cancel | Discard deletes it with `useManagedDatastreams().deleteSession`. A failed delete keeps the user in the session. |
 | Everything saved | Close / Cancel | Nothing. The session stays in progress. |
 | Nothing being edited, or committed history being viewed | none | Leaves silently. |
 

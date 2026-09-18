@@ -167,7 +167,7 @@ async function discardSessionAndLeave(): Promise<void> {
         'Another session was built on this one, so it cannot be discarded.'
       )
     }
-    await useManagedDatastreams().deleteSessionChain(historyId, [session.id])
+    await useManagedDatastreams().deleteSession(historyId, session.id)
   } catch (e) {
     Snackbar.error(messageOf(e, 'Could not discard the session.'))
     return

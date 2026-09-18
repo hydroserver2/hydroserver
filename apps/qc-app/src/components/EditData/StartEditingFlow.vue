@@ -74,7 +74,6 @@ import {
 import { useDatastreamMetadata } from '@/composables/useDatastreamMetadata'
 import { useProcessingLevels } from '@/composables/useProcessingLevels'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
-import { collectDeletionChain } from '@/utils/sessionGraph'
 import type { TimeWindow } from '@/utils/timeRangePresets'
 import type { View } from '@/store/userInterface'
 
@@ -99,7 +98,7 @@ const { sourceDatastream, sessions, inProgressSession } =
   storeToRefs(useQcSessionStore())
 const qcPreferences = useQcPreferencesStore()
 const workingCopies = useWorkingCopiesStore()
-const { loadForSource, deleteManaged, deleteSessionChain } =
+const { loadForSource, deleteManaged, deleteSession } =
   useManagedDatastreams()
 const { create: createManaged } = useCreateManagedDatastream()
 const { createProcessingLevel } = useProcessingLevels()
@@ -332,32 +331,23 @@ async function onChooserDelete(option: ManagedDatastreamOption) {
   }
 }
 
-// Only the chosen session and those built on it go; the managed datastream
-// and its other commits remain.
+// The chooser only offers the newest session, which nothing builds on, so
+// the managed datastream and its earlier sessions remain.
 async function onChooserDeleteSession(
   option: ManagedDatastreamOption,
   sessionId: string
 ) {
   try {
-    // Same input the confirmation previewed, so the two cannot disagree.
-    const deleted = await deleteSessionChain(
-      option.historyId,
-      collectDeletionChain(option.sessions, sessionId)
-    )
+    await deleteSession(option.historyId, sessionId)
     workingCopies.invalidate(option.managed.id)
-    const gone = new Set(deleted)
     chooserOptions.value = chooserOptions.value.map((o) =>
       o.historyId === option.historyId
-        ? { ...o, sessions: o.sessions.filter((s) => !gone.has(s.id)) }
+        ? { ...o, sessions: o.sessions.filter((s) => s.id !== sessionId) }
         : o
     )
-    Snackbar.success(
-      deleted.length === 1
-        ? 'Session deleted.'
-        : `${deleted.length} sessions deleted.`
-    )
+    Snackbar.success('Session deleted.')
   } catch (e) {
-    // Refresh regardless: a partial cascade leaves the chooser's copy wrong.
+    // The server may have changed under the chooser, so reload its copy.
     if (chooserSource.value) {
       chooserOptions.value = await loadForSource(chooserSource.value.id)
     }
