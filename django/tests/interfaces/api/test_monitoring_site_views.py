@@ -4,10 +4,6 @@ from django.db import connection
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.test.utils import CaptureQueriesContext
 
-from core.sta.models import (
-    LinkedResourceType,
-    SiteType,
-)
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -278,29 +274,6 @@ def test_create_monitoring_site_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-# --- vocabulary endpoints ----------------------------------------------------------
-
-
-def test_get_site_types_returns_registered_type_names(client):
-    SiteType.objects.create(name="Stream")
-    SiteType.objects.create(name="Lake")
-
-    response = client.get(f"{MONITORING_SITES_URL}/site-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Stream", "Lake"}
-
-
-def test_get_linked_resource_types_returns_registered_type_names(client):
-    LinkedResourceType.objects.create(name="Photo")
-    LinkedResourceType.objects.create(name="Report")
-
-    response = client.get(f"{MONITORING_SITES_URL}/linked-resource-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 def test_get_site_type_icons_returns_configured_icon_mappings(client):

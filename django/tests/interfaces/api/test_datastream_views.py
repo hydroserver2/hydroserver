@@ -4,12 +4,6 @@ import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from core.sta.models import (
-    DatastreamAggregation,
-    DatastreamStatus,
-    LinkedResourceType,
-    SampledMedium,
-)
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -234,49 +228,6 @@ def test_create_datastream_returns_400_for_observed_property_from_another_worksp
     )
 
     assert response.status_code == 400
-
-
-# --- vocabulary endpoints ------------------------------------------------------------
-
-
-def test_get_datastream_aggregation_statistics_returns_registered_type_names(client):
-    DatastreamAggregation.objects.create(name="Average")
-    DatastreamAggregation.objects.create(name="Maximum")
-
-    response = client.get(f"{DATASTREAMS_URL}/aggregation-statistics")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Average", "Maximum"}
-
-
-def test_get_datastream_statuses_returns_registered_type_names(client):
-    DatastreamStatus.objects.create(name="Ongoing")
-    DatastreamStatus.objects.create(name="Completed")
-
-    response = client.get(f"{DATASTREAMS_URL}/statuses")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Ongoing", "Completed"}
-
-
-def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
-    SampledMedium.objects.create(name="Water")
-    SampledMedium.objects.create(name="Air")
-
-    response = client.get(f"{DATASTREAMS_URL}/sampled-mediums")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Water", "Air"}
-
-
-def test_get_datastream_linked_resource_types_returns_registered_type_names(client):
-    LinkedResourceType.objects.create(name="Photo")
-    LinkedResourceType.objects.create(name="Report")
-
-    response = client.get(f"{DATASTREAMS_URL}/linked-resource-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 # --- get_datastream --------------------------------------------------------------------

@@ -3,7 +3,6 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
-from core.sta.models import UnitType
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -294,19 +293,6 @@ def test_create_unit_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-# --- get_unit_types ----------------------------------------------------------------
-
-
-def test_get_unit_types_returns_registered_type_names(client):
-    UnitType.objects.create(name="Dimensionless")
-    UnitType.objects.create(name="Length")
-
-    response = client.get(f"{UNITS_URL}/types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Dimensionless", "Length"}
 
 
 # --- get_unit --------------------------------------------------------------------

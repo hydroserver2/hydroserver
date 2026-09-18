@@ -1,29 +1,29 @@
 ---
 - model: sta.methodtype
-  pk: 1
+  pk: 01a0b67f-d61c-7386-aefa-a591812096b3
   fields:
     name: Derivation
 - model: sta.methodtype
-  pk: 2
+  pk: 01a0b67f-d61c-7386-aefa-a592c96b6e51
   fields:
     name: Estimation
 - model: sta.methodtype
-  pk: 3
+  pk: 01a0b67f-d61c-7386-aefa-a5934115fb19
   fields:
     name: Instrument Deployment
 - model: sta.methodtype
-  pk: 4
+  pk: 01a0b67f-d61c-7386-aefa-a5940709c97a
   fields:
     name: Observation
 - model: sta.methodtype
-  pk: 5
+  pk: 01a0b67f-d61c-7386-aefa-a595c1f6f3b9
   fields:
     name: Simulation
 - model: sta.methodtype
-  pk: 6
+  pk: 01a0b67f-d61c-7386-aefa-a596f7fa599d
   fields:
     name: Specimen Analysis
 - model: sta.methodtype
-  pk: 7
+  pk: 01a0b67f-d61c-7386-aefa-a597b5ff49b4
   fields:
     name: Unknown

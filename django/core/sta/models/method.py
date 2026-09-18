@@ -39,7 +39,3 @@ class Method(models.Model):
         indexes = [
             GinIndex(fields=["search_vector"], name="sta_method_search_gin"),
         ]
-
-
-class MethodType(models.Model):
-    name = models.CharField(max_length=255, unique=True)

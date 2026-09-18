@@ -7,7 +7,7 @@ from django.db import IntegrityError
 
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import ObservedProperty, VariableType
+from core.sta.models import ObservedProperty
 from interfaces.api.service import APIService
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.schemas import (
@@ -188,14 +188,3 @@ class ObservedPropertyAPIService(APIService):
             raise ConflictError("Observed property in use by one or more datastreams")
 
         return "Observed property deleted"
-
-    def list_variable_types(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = VariableType.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

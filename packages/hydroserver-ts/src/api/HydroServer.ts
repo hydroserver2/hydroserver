@@ -1,11 +1,19 @@
 import { UserService, SessionService, WorkspaceService } from './services'
 import { MonitoringSiteService } from './services/monitoring-site.service'
+import { MonitoringSiteTypeService } from './services/monitoring-site-type.service'
+import { LinkedResourceTypeService } from './services/linked-resource-type.service'
 import { ObservedPropertyService } from './services/observed-property.service'
+import { ObservedPropertyTypeService } from './services/observed-property-type.service'
 import { UnitService } from './services/unit.service'
+import { UnitTypeService } from './services/unit-type.service'
 import { ProcessingLevelService } from './services/processing-level.service'
 import { ResultQualifierService } from './services/result-qualifier.service'
+import { SampledMediumService } from './services/sampled-medium.service'
+import { AggregationStatisticService } from './services/aggregation-statistic.service'
+import { DatastreamStatusService } from './services/datastream-status.service'
 import { DatastreamService } from './services/datastream.service'
 import { MethodService } from './services/method.service'
+import { MethodTypeService } from './services/method-type.service'
 import { DataConnectionService } from './services/data-connection.service'
 import { TaskService } from './services/task.service'
 import { EtlMappingService } from './services/etl-mapping.service'
@@ -43,11 +51,19 @@ export class HydroServer {
 
   private _workspaces?: WorkspaceService
   private _monitoringSites?: MonitoringSiteService
+  private _monitoringSiteTypes?: MonitoringSiteTypeService
+  private _linkedResourceTypes?: LinkedResourceTypeService
   private _observedProperties?: ObservedPropertyService
+  private _observedPropertyTypes?: ObservedPropertyTypeService
   private _units?: UnitService
+  private _unitTypes?: UnitTypeService
   private _processingLevels?: ProcessingLevelService
   private _resultQualifiers?: ResultQualifierService
+  private _sampledMediums?: SampledMediumService
+  private _aggregationStatistics?: AggregationStatisticService
+  private _datastreamStatuses?: DatastreamStatusService
   private _methods?: MethodService
+  private _methodTypes?: MethodTypeService
   private _datastreams?: DatastreamService
   private _session?: SessionService
   private _user?: UserService
@@ -115,11 +131,23 @@ export class HydroServer {
   get monitoringSites(): MonitoringSiteService {
     return (this._monitoringSites ??= new MonitoringSiteService(this))
   }
+  get monitoringSiteTypes(): MonitoringSiteTypeService {
+    return (this._monitoringSiteTypes ??= new MonitoringSiteTypeService(this))
+  }
+  get linkedResourceTypes(): LinkedResourceTypeService {
+    return (this._linkedResourceTypes ??= new LinkedResourceTypeService(this))
+  }
   get observedProperties(): ObservedPropertyService {
     return (this._observedProperties ??= new ObservedPropertyService(this))
   }
+  get observedPropertyTypes(): ObservedPropertyTypeService {
+    return (this._observedPropertyTypes ??= new ObservedPropertyTypeService(this))
+  }
   get units(): UnitService {
     return (this._units ??= new UnitService(this))
+  }
+  get unitTypes(): UnitTypeService {
+    return (this._unitTypes ??= new UnitTypeService(this))
   }
   get processingLevels(): ProcessingLevelService {
     return (this._processingLevels ??= new ProcessingLevelService(this))
@@ -127,8 +155,20 @@ export class HydroServer {
   get resultQualifiers(): ResultQualifierService {
     return (this._resultQualifiers ??= new ResultQualifierService(this))
   }
+  get sampledMediums(): SampledMediumService {
+    return (this._sampledMediums ??= new SampledMediumService(this))
+  }
+  get aggregationStatistics(): AggregationStatisticService {
+    return (this._aggregationStatistics ??= new AggregationStatisticService(this))
+  }
+  get datastreamStatuses(): DatastreamStatusService {
+    return (this._datastreamStatuses ??= new DatastreamStatusService(this))
+  }
   get methods(): MethodService {
     return (this._methods ??= new MethodService(this))
+  }
+  get methodTypes(): MethodTypeService {
+    return (this._methodTypes ??= new MethodTypeService(this))
   }
   get datastreams(): DatastreamService {
     return (this._datastreams ??= new DatastreamService(this))

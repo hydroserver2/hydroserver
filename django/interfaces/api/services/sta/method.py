@@ -7,7 +7,7 @@ from django.db import IntegrityError
 
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Method, MethodType
+from core.sta.models import Method
 from interfaces.api.service import APIService
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.schemas import (
@@ -189,14 +189,3 @@ class MethodAPIService(APIService):
             raise ConflictError("Method in use by one or more datastreams")
 
         return "Method deleted"
-
-    def list_types(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = MethodType.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

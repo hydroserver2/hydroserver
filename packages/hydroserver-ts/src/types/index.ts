@@ -281,6 +281,134 @@ export class ResultQualifier {
   }
 }
 
+export class SampledMedium {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class AggregationStatistic {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class DatastreamStatus {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class MethodType {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class UnitType {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class ObservedPropertyType {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class MonitoringSiteType {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
+export class LinkedResourceType {
+  id: string
+  workspaceId: string
+  name: string
+  description: string
+  isActive: boolean
+
+  constructor() {
+    this.id = ''
+    this.workspaceId = ''
+    this.name = ''
+    this.description = ''
+    this.isActive = true
+  }
+}
+
 export class Organization {
   name?: string
   code?: string
@@ -360,11 +488,19 @@ export enum PermissionResource {
   ServiceAccount = 'ServiceAccount',
   Collaborator = 'Collaborator',
   MonitoringSite = 'MonitoringSite',
+  MonitoringSiteType = 'MonitoringSiteType',
+  LinkedResourceType = 'LinkedResourceType',
   ObservedProperty = 'ObservedProperty',
+  ObservedPropertyType = 'ObservedPropertyType',
   ProcessingLevel = 'ProcessingLevel',
   ResultQualifier = 'ResultQualifier',
+  SampledMedium = 'SampledMedium',
+  AggregationStatistic = 'AggregationStatistic',
+  DatastreamStatus = 'DatastreamStatus',
   Method = 'Method',
+  MethodType = 'MethodType',
   Unit = 'Unit',
+  UnitType = 'UnitType',
   Datastream = 'Datastream',
   Observation = 'Observation',
   DataConnection = 'DataConnection',

@@ -1,81 +1,81 @@
 ---
 - model: sta.sampledmedium
-  pk: 1
+  pk: 01a0b5d4-ff21-7178-a0d9-e7d8414f639d
   fields:
     name: Air
 - model: sta.sampledmedium
-  pk: 2
+  pk: 01a0b5d4-ff21-7178-a0d9-e7d90108a251
   fields:
     name: Equipment
 - model: sta.sampledmedium
-  pk: 3
+  pk: 01a0b5d4-ff21-7178-a0d9-e7dad26a19b9
   fields:
     name: Gas
 - model: sta.sampledmedium
-  pk: 4
+  pk: 01a0b5d4-ff21-7178-a0d9-e7dbbaf8b63f
   fields:
     name: Habitat
 - model: sta.sampledmedium
-  pk: 5
+  pk: 01a0b5d4-ff21-7178-a0d9-e7dcf0329d06
   fields:
     name: Ice
 - model: sta.sampledmedium
-  pk: 6
+  pk: 01a0b5d4-ff21-7178-a0d9-e7dd516a79e3
   fields:
     name: Liquid aqueous
 - model: sta.sampledmedium
-  pk: 7
+  pk: 01a0b5d4-ff21-7178-a0d9-e7deedfeb2a6
   fields:
     name: Liquid organic
 - model: sta.sampledmedium
-  pk: 8
+  pk: 01a0b5d4-ff21-7178-a0d9-e7df16d4f6ce
   fields:
     name: Mineral
 - model: sta.sampledmedium
-  pk: 9
+  pk: 01a0b5d4-ff22-712d-898d-21c9edbb04c4
   fields:
     name: Not applicable
 - model: sta.sampledmedium
-  pk: 10
+  pk: 01a0b5d4-ff22-712d-898d-21caf6dd7833
   fields:
     name: Organism
 - model: sta.sampledmedium
-  pk: 11
+  pk: 01a0b5d4-ff22-712d-898d-21cb6e3d1e3f
   fields:
     name: Other
 - model: sta.sampledmedium
-  pk: 12
+  pk: 01a0b5d4-ff22-712d-898d-21ccdae744aa
   fields:
     name: Particulate
 - model: sta.sampledmedium
-  pk: 13
+  pk: 01a0b5d4-ff22-712d-898d-21cd4b916e9f
   fields:
     name: Regolith
 - model: sta.sampledmedium
-  pk: 14
+  pk: 01a0b5d4-ff22-712d-898d-21ce72bfefb9
   fields:
     name: Rock
 - model: sta.sampledmedium
-  pk: 15
+  pk: 01a0b5d4-ff22-712d-898d-21cf4e091eab
   fields:
     name: Sediment
 - model: sta.sampledmedium
-  pk: 16
+  pk: 01a0b5d4-ff22-712d-898d-21d01406ff67
   fields:
     name: Snow
 - model: sta.sampledmedium
-  pk: 17
+  pk: 01a0b5d4-ff22-712d-898d-21d1a59c4b69
   fields:
     name: Soil
 - model: sta.sampledmedium
-  pk: 18
+  pk: 01a0b5d4-ff22-712d-898d-21d2f8dafda9
   fields:
     name: Tissue
 - model: sta.sampledmedium
-  pk: 19
+  pk: 01a0b5d4-ff22-712d-898d-21d3456f7b48
   fields:
     name: Unknown
 - model: sta.sampledmedium
-  pk: 20
+  pk: 01a0b5d4-ff22-712d-898d-21d49bf0f060
   fields:
     name: Vegetation

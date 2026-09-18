@@ -3,7 +3,6 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
-from core.sta.models import VariableType
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -303,19 +302,6 @@ def test_create_observed_property_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-# --- get_datastream_aggregation_statistics (variable-types) ---------------------------
-
-
-def test_get_variable_types_returns_registered_type_names(client):
-    VariableType.objects.create(name="Hydrology")
-    VariableType.objects.create(name="Meteorology")
-
-    response = client.get(f"{OBSERVED_PROPERTIES_URL}/variable-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Hydrology", "Meteorology"}
 
 
 # --- get_observed_property -------------------------------------------------------------

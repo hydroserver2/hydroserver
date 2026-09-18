@@ -3,6 +3,11 @@ import { ref } from 'vue'
 import hs from '@hydroserver/client'
 import type { SiteTypeIcon } from '@hydroserver/client'
 
+const GLOBAL_ACTIVE_TERMS = {
+  workspace_id: ['null'] as 'null'[],
+  is_active: true,
+}
+
 export const useVocabularyStore = defineStore('vocabulary', () => {
   const siteTypes = ref<string[]>([])
   const siteTypeIcons = ref<SiteTypeIcon[]>([])
@@ -14,8 +19,8 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   const sampledMediums = ref<string[]>([])
 
   async function fetchSiteTypes() {
-    const res = await hs.monitoringSites.getSiteTypes()
-    if (res.ok) siteTypes.value = res.data
+    const items = await hs.monitoringSiteTypes.listAllItems(GLOBAL_ACTIVE_TERMS)
+    siteTypes.value = items.map((item) => item.name)
   }
 
   async function fetchSiteTypeIcons() {
@@ -24,33 +29,33 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   }
 
   async function fetchMethodTypes() {
-    const res = await hs.methods.getTypes()
-    if (res.ok) methodTypes.value = res.data
+    const items = await hs.methodTypes.listAllItems(GLOBAL_ACTIVE_TERMS)
+    methodTypes.value = items.map((item) => item.name)
   }
 
   async function fetchVariableTypes() {
-    const res = await hs.observedProperties.getVariableTypes()
-    if (res.ok) variableTypes.value = res.data
+    const items = await hs.observedPropertyTypes.listAllItems(GLOBAL_ACTIVE_TERMS)
+    variableTypes.value = items.map((item) => item.name)
   }
 
   async function fetchUnitTypes() {
-    const res = await hs.units.getTypes()
-    if (res.ok) unitTypes.value = res.data
+    const items = await hs.unitTypes.listAllItems(GLOBAL_ACTIVE_TERMS)
+    unitTypes.value = items.map((item) => item.name)
   }
 
   async function fetchDatastreamStatuses() {
-    const res = await hs.datastreams.getStatuses()
-    if (res.ok) datastreamStatuses.value = res.data
+    const items = await hs.datastreamStatuses.listAllItems(GLOBAL_ACTIVE_TERMS)
+    datastreamStatuses.value = items.map((item) => item.name)
   }
 
   async function fetchDatastreamAggregations() {
-    const res = await hs.datastreams.getAggregationStatistics()
-    if (res.ok) datastreamAggregations.value = res.data
+    const items = await hs.aggregationStatistics.listAllItems(GLOBAL_ACTIVE_TERMS)
+    datastreamAggregations.value = items.map((item) => item.name)
   }
 
   async function fetchSampledMediums() {
-    const res = await hs.datastreams.getSampledMediums()
-    if (res.ok) sampledMediums.value = res.data
+    const items = await hs.sampledMediums.listAllItems(GLOBAL_ACTIVE_TERMS)
+    sampledMediums.value = items.map((item) => item.name)
   }
 
   // Fetch all vocabularies in parallel

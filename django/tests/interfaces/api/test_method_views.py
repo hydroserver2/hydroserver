@@ -3,7 +3,6 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
-from core.sta.models import MethodType
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -248,16 +247,6 @@ def test_create_method_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-def test_get_method_types_returns_registered_type_names(client):
-    MethodType.objects.create(name="Instrument Deployment")
-    MethodType.objects.create(name="Estimation")
-
-    response = client.get(f"{METHODS_URL}/types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Instrument Deployment", "Estimation"}
 
 
 # --- get_method --------------------------------------------------------------------

@@ -340,30 +340,4 @@ class APIService:
         linked_resource.delete()
 
 
-class VocabularyAPIService(APIService):
-    def list(
-        self,
-        vocabulary_model: Type[Model],
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = vocabulary_model.objects
-
-        queryset = self.apply_sorting(
-            queryset,
-            ["-name"] if sort_desc else ["name"],
-            [
-                "name",
-            ],
-        )
-
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {
-            "data": list(queryset.values_list("name", flat=True)),
-            "meta": meta,
-        }
-
-
 build_pagination_meta = APIService.build_pagination_meta

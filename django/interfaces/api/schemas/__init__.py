@@ -44,12 +44,27 @@ from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSiteQueryParameters,
     MonitoringSiteItemQueryParameters,
 )
+from interfaces.api.schemas.sta.monitoring_site_type import (
+    MonitoringSiteTypeResponse,
+    MonitoringSiteTypePostBody,
+    MonitoringSiteTypePatchBody,
+)
+from interfaces.api.schemas.sta.linked_resource_type import (
+    LinkedResourceTypeResponse,
+    LinkedResourceTypePostBody,
+    LinkedResourceTypePatchBody,
+)
 from interfaces.api.schemas.sta.observed_property import (
     ObservedPropertyResponse,
     ObservedPropertyQueryParameters,
     ObservedPropertyItemQueryParameters,
     ObservedPropertyPostBody,
     ObservedPropertyPatchBody,
+)
+from interfaces.api.schemas.sta.observed_property_type import (
+    ObservedPropertyTypeResponse,
+    ObservedPropertyTypePostBody,
+    ObservedPropertyTypePatchBody,
 )
 from interfaces.api.schemas.sta.processing_level import (
     ProcessingLevelResponse,
@@ -72,12 +87,37 @@ from interfaces.api.schemas.sta.method import (
     MethodPostBody,
     MethodPatchBody,
 )
+from interfaces.api.schemas.sta.method_type import (
+    MethodTypeResponse,
+    MethodTypePostBody,
+    MethodTypePatchBody,
+)
 from interfaces.api.schemas.sta.unit import (
     UnitResponse,
     UnitQueryParameters,
     UnitItemQueryParameters,
     UnitPostBody,
     UnitPatchBody,
+)
+from interfaces.api.schemas.sta.unit_type import (
+    UnitTypeResponse,
+    UnitTypePostBody,
+    UnitTypePatchBody,
+)
+from interfaces.api.schemas.sta.sampled_medium import (
+    SampledMediumResponse,
+    SampledMediumPostBody,
+    SampledMediumPatchBody,
+)
+from interfaces.api.schemas.sta.aggregation_statistic import (
+    AggregationStatisticResponse,
+    AggregationStatisticPostBody,
+    AggregationStatisticPatchBody,
+)
+from interfaces.api.schemas.sta.datastream_status import (
+    DatastreamStatusResponse,
+    DatastreamStatusPostBody,
+    DatastreamStatusPatchBody,
 )
 from interfaces.api.schemas.sta.datastream import (
     DatastreamVisualizationBootstrapQueryParameters,

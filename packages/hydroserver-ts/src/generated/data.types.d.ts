@@ -4,6 +4,58 @@
  */
 
 export interface paths {
+    "/api/data/aggregation-statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Aggregation Statistics
+         * @description Get public Aggregation Statistics and Aggregation Statistics associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics"];
+        put?: never;
+        /**
+         * Create Aggregation Statistic
+         * @description Create a new Aggregation Statistic.
+         */
+        post: operations["interfaces_api_views_sta_aggregation_statistic_create_aggregation_statistic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/aggregation-statistics/{aggregation_statistic_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Aggregation Statistic
+         * @description Get an Aggregation Statistic.
+         */
+        get: operations["interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistic"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Aggregation Statistic
+         * @description Delete an Aggregation Statistic.
+         */
+        delete: operations["interfaces_api_views_sta_aggregation_statistic_delete_aggregation_statistic"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Aggregation Statistic
+         * @description Update an Aggregation Statistic.
+         */
+        patch: operations["interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic"];
+        trace?: never;
+    };
     "/api/data/data-product-rating-curves": {
         parameters: {
             query?: never;
@@ -220,6 +272,58 @@ export interface paths {
         patch: operations["interfaces_api_views_products_transformation_update_data_product_transformation"];
         trace?: never;
     };
+    "/api/data/datastream-statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Statuses
+         * @description Get public Datastream Statuses and Datastream Statuses associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_datastream_status_get_datastream_statuses"];
+        put?: never;
+        /**
+         * Create Datastream Status
+         * @description Create a new Datastream Status.
+         */
+        post: operations["interfaces_api_views_sta_datastream_status_create_datastream_status"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/datastream-statuses/{datastream_status_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Status
+         * @description Get a Datastream Status.
+         */
+        get: operations["interfaces_api_views_sta_datastream_status_get_datastream_status"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Datastream Status
+         * @description Delete a Datastream Status.
+         */
+        delete: operations["interfaces_api_views_sta_datastream_status_delete_datastream_status"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Datastream Status
+         * @description Update a Datastream Status.
+         */
+        patch: operations["interfaces_api_views_sta_datastream_status_update_datastream_status"];
+        trace?: never;
+    };
     "/api/data/datastreams": {
         parameters: {
             query?: never;
@@ -238,86 +342,6 @@ export interface paths {
          * @description Create a new Datastream.
          */
         post: operations["interfaces_api_views_sta_datastream_create_datastream"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/aggregation-statistics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Aggregation Statistics
-         * @description Get datastream aggregation statistics.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/linked-resource-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Linked Resource Types
-         * @description Get linked resource types.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resource_types"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/sampled-mediums": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Sampled Mediums
-         * @description Get datastream sampled mediums.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_sampled_mediums"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/statuses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Statuses
-         * @description Get datastream statuses.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_statuses"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -677,6 +701,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/linked-resource-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Linked Resource Types
+         * @description Get public Linked Resource Types and Linked Resource Types associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_linked_resource_type_get_linked_resource_types"];
+        put?: never;
+        /**
+         * Create Linked Resource Type
+         * @description Create a new Linked Resource Type.
+         */
+        post: operations["interfaces_api_views_sta_linked_resource_type_create_linked_resource_type"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/linked-resource-types/{linked_resource_type_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Linked Resource Type
+         * @description Get a Linked Resource Type.
+         */
+        get: operations["interfaces_api_views_sta_linked_resource_type_get_linked_resource_type"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Linked Resource Type
+         * @description Delete a Linked Resource Type.
+         */
+        delete: operations["interfaces_api_views_sta_linked_resource_type_delete_linked_resource_type"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Linked Resource Type
+         * @description Update a Linked Resource Type.
+         */
+        patch: operations["interfaces_api_views_sta_linked_resource_type_update_linked_resource_type"];
+        trace?: never;
+    };
+    "/api/data/method-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Method Types
+         * @description Get public Method Types and Method Types associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_method_type_get_method_types"];
+        put?: never;
+        /**
+         * Create Method Type
+         * @description Create a new Method Type.
+         */
+        post: operations["interfaces_api_views_sta_method_type_create_method_type"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/method-types/{method_type_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Method Type
+         * @description Get a Method Type.
+         */
+        get: operations["interfaces_api_views_sta_method_type_get_method_type"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Method Type
+         * @description Delete a Method Type.
+         */
+        delete: operations["interfaces_api_views_sta_method_type_delete_method_type"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Method Type
+         * @description Update a Method Type.
+         */
+        patch: operations["interfaces_api_views_sta_method_type_update_method_type"];
+        trace?: never;
+    };
     "/api/data/methods": {
         parameters: {
             query?: never;
@@ -695,26 +823,6 @@ export interface paths {
          * @description Create a new Method.
          */
         post: operations["interfaces_api_views_sta_method_create_method"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/methods/types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Types
-         * @description Get method types.
-         */
-        get: operations["interfaces_api_views_sta_method_get_types"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -801,6 +909,58 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
         trace?: never;
     };
+    "/api/data/monitoring-site-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Types
+         * @description Get public Monitoring Site Types and Monitoring Site Types associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types"];
+        put?: never;
+        /**
+         * Create Monitoring Site Type
+         * @description Create a new Monitoring Site Type.
+         */
+        post: operations["interfaces_api_views_sta_monitoring_site_type_create_monitoring_site_type"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-site-types/{monitoring_site_type_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Type
+         * @description Get a Monitoring Site Type.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_type"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Monitoring Site Type
+         * @description Delete a Monitoring Site Type.
+         */
+        delete: operations["interfaces_api_views_sta_monitoring_site_type_delete_monitoring_site_type"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Site Type
+         * @description Update a Monitoring Site Type.
+         */
+        patch: operations["interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type"];
+        trace?: never;
+    };
     "/api/data/monitoring-sites": {
         parameters: {
             query?: never;
@@ -819,26 +979,6 @@ export interface paths {
          * @description Create a new MonitoringSite.
          */
         post: operations["interfaces_api_views_sta_monitoring_site_create_monitoring_site"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/linked-resource-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Linked Resource Types
-         * @description Get linked resource types.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -897,26 +1037,6 @@ export interface paths {
          * @description Get the configured site type icon mappings.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/site-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Types
-         * @description Get site types.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_site_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1266,26 +1386,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-properties/variable-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Aggregation Statistics
-         * @description Get variable types.
-         */
-        get: operations["interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/observed-properties/{observed_property_id}": {
         parameters: {
             query?: never;
@@ -1312,6 +1412,58 @@ export interface paths {
          * @description Update an Observed Property.
          */
         patch: operations["interfaces_api_views_sta_observed_property_update_observed_property"];
+        trace?: never;
+    };
+    "/api/data/observed-property-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Observed Property Types
+         * @description Get public Observed Property Types and Observed Property Types associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_observed_property_type_get_observed_property_types"];
+        put?: never;
+        /**
+         * Create Observed Property Type
+         * @description Create a new Observed Property Type.
+         */
+        post: operations["interfaces_api_views_sta_observed_property_type_create_observed_property_type"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/observed-property-types/{observed_property_type_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Observed Property Type
+         * @description Get an Observed Property Type.
+         */
+        get: operations["interfaces_api_views_sta_observed_property_type_get_observed_property_type"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Observed Property Type
+         * @description Delete an Observed Property Type.
+         */
+        delete: operations["interfaces_api_views_sta_observed_property_type_delete_observed_property_type"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Observed Property Type
+         * @description Update an Observed Property Type.
+         */
+        patch: operations["interfaces_api_views_sta_observed_property_type_update_observed_property_type"];
         trace?: never;
     };
     "/api/data/processing-levels": {
@@ -1630,6 +1782,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/sampled-mediums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Sampled Mediums
+         * @description Get public Sampled Mediums and Sampled Mediums associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_sampled_medium_get_sampled_mediums"];
+        put?: never;
+        /**
+         * Create Sampled Medium
+         * @description Create a new Sampled Medium.
+         */
+        post: operations["interfaces_api_views_sta_sampled_medium_create_sampled_medium"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/sampled-mediums/{sampled_medium_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Sampled Medium
+         * @description Get a Sampled Medium.
+         */
+        get: operations["interfaces_api_views_sta_sampled_medium_get_sampled_medium"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Sampled Medium
+         * @description Delete a Sampled Medium.
+         */
+        delete: operations["interfaces_api_views_sta_sampled_medium_delete_sampled_medium"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Sampled Medium
+         * @description Update a Sampled Medium.
+         */
+        patch: operations["interfaces_api_views_sta_sampled_medium_update_sampled_medium"];
+        trace?: never;
+    };
+    "/api/data/unit-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Unit Types
+         * @description Get public Unit Types and Unit Types associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_unit_type_get_unit_types"];
+        put?: never;
+        /**
+         * Create Unit Type
+         * @description Create a new Unit Type.
+         */
+        post: operations["interfaces_api_views_sta_unit_type_create_unit_type"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/unit-types/{unit_type_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Unit Type
+         * @description Get a Unit Type.
+         */
+        get: operations["interfaces_api_views_sta_unit_type_get_unit_type"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Unit Type
+         * @description Delete a Unit Type.
+         */
+        delete: operations["interfaces_api_views_sta_unit_type_delete_unit_type"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Unit Type
+         * @description Update a Unit Type.
+         */
+        patch: operations["interfaces_api_views_sta_unit_type_update_unit_type"];
+        trace?: never;
+    };
     "/api/data/units": {
         parameters: {
             query?: never;
@@ -1648,26 +1904,6 @@ export interface paths {
          * @description Create a new Unit.
          */
         post: operations["interfaces_api_views_sta_unit_create_unit"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/units/types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Unit Types
-         * @description Get unit types.
-         */
-        get: operations["interfaces_api_views_sta_unit_get_unit_types"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1890,6 +2126,56 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AggregationStatisticPatchBody */
+        AggregationStatisticPatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** AggregationStatisticPostBody */
+        AggregationStatisticPostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** AggregationStatisticResponse */
+        AggregationStatisticResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
@@ -1999,6 +2285,66 @@ export interface components {
             serviceAccountEmail?: string | null;
             /** Useremail */
             userEmail?: string | null;
+        };
+        /** ControlledVocabularyItemQueryParameters */
+        ControlledVocabularyItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+        };
+        /** ControlledVocabularyQueryParameters */
+        ControlledVocabularyQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Is Active
+             * @description Filter terms by active status.
+             */
+            is_active?: boolean | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "-name")[] | null;
+            /**
+             * Workspace Id
+             * @description Filter terms by workspace ID.
+             * @default []
+             */
+            workspace_id: (string | "null")[];
         };
         /** CreatedResponse */
         CreatedResponse: {
@@ -2981,6 +3327,56 @@ export interface components {
              */
             workspaceId: string;
         };
+        /** DatastreamStatusPatchBody */
+        DatastreamStatusPatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** DatastreamStatusPostBody */
+        DatastreamStatusPostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** DatastreamStatusResponse */
+        DatastreamStatusResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
         /** DatastreamVisualizationBootstrapQueryParameters */
         DatastreamVisualizationBootstrapQueryParameters: {
             /**
@@ -3283,6 +3679,14 @@ export interface components {
              */
             workspaceId: string;
         };
+        /** ItemResponse[AggregationStatisticResponse] */
+        ItemResponse_AggregationStatisticResponse_: {
+            data: components["schemas"]["AggregationStatisticResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
         /** ItemResponse[DataConnectionResponse] */
         ItemResponse_DataConnectionResponse_: {
             data: components["schemas"]["DataConnectionResponse"];
@@ -3315,6 +3719,14 @@ export interface components {
                 [key: string]: unknown[];
             } | null;
         };
+        /** ItemResponse[DatastreamStatusResponse] */
+        ItemResponse_DatastreamStatusResponse_: {
+            data: components["schemas"]["DatastreamStatusResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
         /** ItemResponse[EtlMappingResponse] */
         ItemResponse_EtlMappingResponse_: {
             data: components["schemas"]["EtlMappingResponse"];
@@ -3331,9 +3743,25 @@ export interface components {
                 [key: string]: unknown[];
             } | null;
         };
+        /** ItemResponse[LinkedResourceTypeResponse] */
+        ItemResponse_LinkedResourceTypeResponse_: {
+            data: components["schemas"]["LinkedResourceTypeResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
         /** ItemResponse[MethodResponse] */
         ItemResponse_MethodResponse_: {
             data: components["schemas"]["MethodResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[MethodTypeResponse] */
+        ItemResponse_MethodTypeResponse_: {
+            data: components["schemas"]["MethodTypeResponse"];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -3350,6 +3778,14 @@ export interface components {
         /** ItemResponse[MonitoringSiteResponse] */
         ItemResponse_MonitoringSiteResponse_: {
             data: components["schemas"]["MonitoringSiteResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[MonitoringSiteTypeResponse] */
+        ItemResponse_MonitoringSiteTypeResponse_: {
+            data: components["schemas"]["MonitoringSiteTypeResponse"];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -3374,6 +3810,14 @@ export interface components {
         /** ItemResponse[ObservedPropertyResponse] */
         ItemResponse_ObservedPropertyResponse_: {
             data: components["schemas"]["ObservedPropertyResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[ObservedPropertyTypeResponse] */
+        ItemResponse_ObservedPropertyTypeResponse_: {
+            data: components["schemas"]["ObservedPropertyTypeResponse"];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -3435,6 +3879,14 @@ export interface components {
                 [key: string]: unknown[];
             } | null;
         };
+        /** ItemResponse[SampledMediumResponse] */
+        ItemResponse_SampledMediumResponse_: {
+            data: components["schemas"]["SampledMediumResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
         /** ItemResponse[ServiceAccountResponse] */
         ItemResponse_ServiceAccountResponse_: {
             data: components["schemas"]["ServiceAccountResponse"];
@@ -3446,6 +3898,14 @@ export interface components {
         /** ItemResponse[UnitResponse] */
         ItemResponse_UnitResponse_: {
             data: components["schemas"]["UnitResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+        };
+        /** ItemResponse[UnitTypeResponse] */
+        ItemResponse_UnitTypeResponse_: {
+            data: components["schemas"]["UnitTypeResponse"];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -3535,6 +3995,56 @@ export interface components {
              * @default []
              */
             type: string[];
+        };
+        /** LinkedResourceTypePatchBody */
+        LinkedResourceTypePatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** LinkedResourceTypePostBody */
+        LinkedResourceTypePostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** LinkedResourceTypeResponse */
+        LinkedResourceTypeResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
         };
         /** MethodItemQueryParameters */
         MethodItemQueryParameters: {
@@ -3686,6 +4196,56 @@ export interface components {
             sensorModelManufacturer?: string | null;
             /** Type */
             type: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
+        /** MethodTypePatchBody */
+        MethodTypePatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** MethodTypePostBody */
+        MethodTypePostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** MethodTypeResponse */
+        MethodTypeResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId: string | null;
         };
@@ -4184,6 +4744,56 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** MonitoringSiteTypePatchBody */
+        MonitoringSiteTypePatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** MonitoringSiteTypePostBody */
+        MonitoringSiteTypePostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** MonitoringSiteTypeResponse */
+        MonitoringSiteTypeResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
         /** MonitoringTaskItemQueryParameters */
         MonitoringTaskItemQueryParameters: {
             /**
@@ -4678,6 +5288,66 @@ export interface components {
             /** Workspaceid */
             workspaceId?: string | null;
         };
+        /** ObservedPropertyTypePatchBody */
+        ObservedPropertyTypePatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** ObservedPropertyTypePostBody */
+        ObservedPropertyTypePostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** ObservedPropertyTypeResponse */
+        ObservedPropertyTypeResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
+        /** PaginatedResponse[AggregationStatisticResponse] */
+        PaginatedResponse_AggregationStatisticResponse_: {
+            /** Data */
+            data: components["schemas"]["AggregationStatisticResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
         /** PaginatedResponse[CollaboratorResponse] */
         PaginatedResponse_CollaboratorResponse_: {
             /** Data */
@@ -4728,6 +5398,16 @@ export interface components {
             } | null;
             meta: components["schemas"]["PaginationMeta"];
         };
+        /** PaginatedResponse[DatastreamStatusResponse] */
+        PaginatedResponse_DatastreamStatusResponse_: {
+            /** Data */
+            data: components["schemas"]["DatastreamStatusResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
         /** PaginatedResponse[EtlMappingResponse] */
         PaginatedResponse_EtlMappingResponse_: {
             /** Data */
@@ -4748,10 +5428,30 @@ export interface components {
             } | null;
             meta: components["schemas"]["PaginationMeta"];
         };
+        /** PaginatedResponse[LinkedResourceTypeResponse] */
+        PaginatedResponse_LinkedResourceTypeResponse_: {
+            /** Data */
+            data: components["schemas"]["LinkedResourceTypeResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
         /** PaginatedResponse[MethodResponse] */
         PaginatedResponse_MethodResponse_: {
             /** Data */
             data: components["schemas"]["MethodResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MethodTypeResponse] */
+        PaginatedResponse_MethodTypeResponse_: {
+            /** Data */
+            data: components["schemas"]["MethodTypeResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -4772,6 +5472,16 @@ export interface components {
         PaginatedResponse_MonitoringSiteResponse_: {
             /** Data */
             data: components["schemas"]["MonitoringSiteResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[MonitoringSiteTypeResponse] */
+        PaginatedResponse_MonitoringSiteTypeResponse_: {
+            /** Data */
+            data: components["schemas"]["MonitoringSiteTypeResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -4802,6 +5512,16 @@ export interface components {
         PaginatedResponse_ObservedPropertyResponse_: {
             /** Data */
             data: components["schemas"]["ObservedPropertyResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservedPropertyTypeResponse] */
+        PaginatedResponse_ObservedPropertyTypeResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservedPropertyTypeResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -4878,6 +5598,16 @@ export interface components {
             } | null;
             meta: components["schemas"]["PaginationMeta"];
         };
+        /** PaginatedResponse[SampledMediumResponse] */
+        PaginatedResponse_SampledMediumResponse_: {
+            /** Data */
+            data: components["schemas"]["SampledMediumResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            meta: components["schemas"]["PaginationMeta"];
+        };
         /** PaginatedResponse[ServiceAccountResponse] */
         PaginatedResponse_ServiceAccountResponse_: {
             /** Data */
@@ -4908,20 +5638,20 @@ export interface components {
             } | null;
             meta: components["schemas"]["PaginationMeta"];
         };
-        /** PaginatedResponse[WorkspaceResponse] */
-        PaginatedResponse_WorkspaceResponse_: {
+        /** PaginatedResponse[UnitTypeResponse] */
+        PaginatedResponse_UnitTypeResponse_: {
             /** Data */
-            data: components["schemas"]["WorkspaceResponse"][];
+            data: components["schemas"]["UnitTypeResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
             } | null;
             meta: components["schemas"]["PaginationMeta"];
         };
-        /** PaginatedResponse[str] */
-        PaginatedResponse_str_: {
+        /** PaginatedResponse[WorkspaceResponse] */
+        PaginatedResponse_WorkspaceResponse_: {
             /** Data */
-            data: string[];
+            data: components["schemas"]["WorkspaceResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -4967,7 +5697,7 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Method" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "MonitoringSiteType" | "LinkedResourceType" | "ObservedProperty" | "ObservedPropertyType" | "ProcessingLevel" | "ResultQualifier" | "Method" | "MethodType" | "Unit" | "UnitType" | "SampledMedium" | "AggregationStatistic" | "DatastreamStatus" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
         };
         /** PlaceholderVariablePatchBody */
         PlaceholderVariablePatchBody: {
@@ -5724,6 +6454,56 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
+        /** SampledMediumPatchBody */
+        SampledMediumPatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** SampledMediumPostBody */
+        SampledMediumPostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** SampledMediumResponse */
+        SampledMediumResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
         /** SchedulePatchBody */
         SchedulePatchBody: {
             /** Crontab */
@@ -6110,6 +6890,56 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
+        /** UnitTypePatchBody */
+        UnitTypePatchBody: {
+            /** Description */
+            description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
+        };
+        /** UnitTypePostBody */
+        UnitTypePostBody: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** UnitTypeResponse */
+        UnitTypeResponse: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Workspaceid */
+            workspaceId: string | null;
+        };
         /** UserContactResponse */
         UserContactResponse: {
             /** Address */
@@ -6231,37 +7061,6 @@ export interface components {
             /** Name */
             name: string;
         };
-        /** VocabularyQueryParameters */
-        VocabularyQueryParameters: {
-            /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: string | null;
-            /**
-             * Limit
-             * @description The maximum number of items to return.
-             * @default 100
-             */
-            limit: number | null;
-            /**
-             * Offset
-             * @description Number of items to skip.
-             * @default 0
-             */
-            offset: number | null;
-            /**
-             * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
-             */
-            properties?: string | null;
-            /**
-             * Sort Desc
-             * @description Sort terms by descending.
-             * @default false
-             */
-            sort_desc: boolean | null;
-        };
         /** WorkspaceItemQueryParameters */
         WorkspaceItemQueryParameters: {
             /**
@@ -6372,6 +7171,237 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_AggregationStatisticResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_aggregation_statistic_create_aggregation_statistic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AggregationStatisticPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistic: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                aggregation_statistic_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_AggregationStatisticResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_aggregation_statistic_delete_aggregation_statistic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aggregation_statistic_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aggregation_statistic_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AggregationStatisticPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_products_rating_curve_get_rating_curves: {
         parameters: {
             query?: {
@@ -7374,6 +8404,237 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_datastream_status_get_datastream_statuses: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DatastreamStatusResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_status_create_datastream_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatastreamStatusPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_status_get_datastream_status: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                datastream_status_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_DatastreamStatusResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_status_delete_datastream_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datastream_status_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_status_update_datastream_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datastream_status_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatastreamStatusPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
@@ -7509,130 +8770,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_linked_resource_types: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_sampled_mediums: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_statuses: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -9121,6 +10258,468 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_linked_resource_type_get_linked_resource_types: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_LinkedResourceTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_linked_resource_type_create_linked_resource_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkedResourceTypePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_linked_resource_type_get_linked_resource_type: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                linked_resource_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_LinkedResourceTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_linked_resource_type_delete_linked_resource_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                linked_resource_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_linked_resource_type_update_linked_resource_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                linked_resource_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkedResourceTypePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_type_get_method_types: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_MethodTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_type_create_method_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MethodTypePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_type_get_method_type: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                method_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_MethodTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_type_delete_method_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                method_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_method_type_update_method_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                method_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MethodTypePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_method_get_methods: {
         parameters: {
             query?: {
@@ -9231,37 +10830,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_method_get_types: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -9705,6 +11273,237 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_MonitoringSiteTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_type_create_monitoring_site_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringSiteTypePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_type: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                monitoring_site_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_MonitoringSiteTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_type_delete_monitoring_site_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringSiteTypePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_monitoring_site_get_monitoring_sites: {
         parameters: {
             query?: {
@@ -9805,37 +11604,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
-                };
-            };
-        };
-    };
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
         parameters: {
             query?: {
@@ -9922,37 +11690,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SiteTypeIconResponse"][];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_site_types: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };
@@ -11267,37 +13004,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
-                };
-            };
-        };
-    };
     interfaces_api_views_sta_observed_property_get_observed_property: {
         parameters: {
             query?: {
@@ -11429,6 +13135,237 @@ export interface operations {
                 content: {
                     "application/json": string;
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_type_get_observed_property_types: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ObservedPropertyTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_type_create_observed_property_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservedPropertyTypePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_type_get_observed_property_type: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                observed_property_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_ObservedPropertyTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_type_delete_observed_property_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observed_property_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_type_update_observed_property_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observed_property_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservedPropertyTypePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {
@@ -12881,6 +14818,468 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_sampled_medium_get_sampled_mediums: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_SampledMediumResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_sampled_medium_create_sampled_medium: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SampledMediumPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_sampled_medium_get_sampled_medium: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                sampled_medium_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_SampledMediumResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_sampled_medium_delete_sampled_medium: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sampled_medium_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_sampled_medium_update_sampled_medium: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sampled_medium_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SampledMediumPatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_unit_type_get_unit_types: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. */
+                limit?: number | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Filter terms by workspace ID. */
+                workspace_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_UnitTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_unit_type_create_unit_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitTypePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_unit_type_get_unit_type: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: "workspace"[];
+            };
+            header?: never;
+            path: {
+                unit_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_UnitTypeResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_unit_type_delete_unit_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_unit_type_update_unit_type: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_type_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitTypePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
@@ -12978,37 +15377,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_unit_get_unit_types: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Sort terms by descending. */
-                sort_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_str_"];
                 };
             };
         };

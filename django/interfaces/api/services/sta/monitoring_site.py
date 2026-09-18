@@ -19,8 +19,6 @@ from core.sta.cache import (
 from core.sta.models import (
     MonitoringSite,
     MonitoringSiteLinkedResource,
-    SiteType,
-    LinkedResourceType,
 )
 from interfaces.api.schemas import (
     MonitoringSiteResponse,
@@ -641,26 +639,3 @@ class MonitoringSiteAPIService(APIService):
             linked_resource_id=linked_resource_id,
         )
 
-    def list_site_types(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = SiteType.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
-
-    def list_linked_resource_types(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = LinkedResourceType.objects.order_by(
-            f"{'-' if sort_desc else ''}name"
-        )
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

@@ -6,14 +6,22 @@ from django.utils import timezone
 from factory.django import DjangoModelFactory
 
 from core.sta.models import (
+    AggregationStatistic,
     Datastream,
+    DatastreamStatus,
+    LinkedResourceType,
+    MethodType,
+    MonitoringSiteType,
     Observation,
     ObservedProperty,
+    ObservedPropertyType,
     ProcessingLevel,
     ResultQualifier,
     Method,
     MonitoringSite,
+    SampledMedium,
     Unit,
+    UnitType,
 )
 from tests.core.iam.factories import WorkspaceFactory
 
@@ -107,6 +115,134 @@ class ResultQualifierFactory(DjangoModelFactory):
 
     workspace = factory.SubFactory(WorkspaceFactory)
     code = factory.Sequence(lambda seq: f"RQ-{seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class SampledMediumFactory(DjangoModelFactory):
+    class Meta:
+        model = SampledMedium
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> SampledMedium: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Sampled Medium {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class AggregationStatisticFactory(DjangoModelFactory):
+    class Meta:
+        model = AggregationStatistic
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> AggregationStatistic: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Aggregation Statistic {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class DatastreamStatusFactory(DjangoModelFactory):
+    class Meta:
+        model = DatastreamStatus
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> DatastreamStatus: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Datastream Status {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class MethodTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = MethodType
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> MethodType: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Method Type {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class UnitTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = UnitType
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> UnitType: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Unit Type {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class ObservedPropertyTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = ObservedPropertyType
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> ObservedPropertyType: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Observed Property Type {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class MonitoringSiteTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = MonitoringSiteType
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> MonitoringSiteType: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Monitoring Site Type {seq}")
+    description = factory.Faker("sentence")
+
+    class Params:
+        global_ = factory.Trait(workspace=None)
+
+
+class LinkedResourceTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = LinkedResourceType
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> LinkedResourceType: ...
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Linked Resource Type {seq}")
     description = factory.Faker("sentence")
 
     class Params:

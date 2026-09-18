@@ -8,7 +8,7 @@ from django.db import IntegrityError
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Unit, UnitType
+from core.sta.models import Unit
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
     UnitResponse,
@@ -178,14 +178,3 @@ class UnitAPIService(APIService):
             raise ConflictError("Unit in use by one or more datastreams")
 
         return "Unit deleted"
-
-    def list_unit_types(
-        self,
-        offset: int | None = None,
-        limit: int | None = None,
-        sort_desc: bool = False,
-    ):
-        queryset = UnitType.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

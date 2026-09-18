@@ -14,11 +14,11 @@ from core.sta.models import (
     DatastreamLinkedResource,
     ResultQualifier,
     Observation,
-    SiteType,
+    MonitoringSiteType,
     MethodType,
-    VariableType,
+    ObservedPropertyType,
     UnitType,
-    DatastreamAggregation,
+    AggregationStatistic,
     DatastreamStatus,
     SampledMedium,
     LinkedResourceType,
@@ -185,31 +185,31 @@ class ResultQualifierAdmin(admin.ModelAdmin):
     list_display = ("id", "code", "workspace__name")
 
 
-class SiteTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
-    change_list_template = "admin/sta/sitetype/change_list.html"
+class MonitoringSiteTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
+    list_display = ("id", "name", "workspace__name", "is_active")
+    change_list_template = "admin/sta/monitoringsitetype/change_list.html"
 
     def get_urls(self):
         urls = super().get_urls()
 
         return [
             path(
-                "load-default-site-type-data/",
+                "load-default-monitoring-site-type-data/",
                 self.admin_site.admin_view(self.load_default_data),
-                name="site_type_load_default_data",
+                name="monitoring_site_type_load_default_data",
             ),
         ] + urls
 
     def load_default_data(self, request):
         return self.load_fixtures(
             request,
-            "admin:sta_sitetype_changelist",
-            ["core/sta/fixtures/default_site_types.yaml"],
+            "admin:sta_monitoringsitetype_changelist",
+            ["core/sta/fixtures/default_monitoring_site_types.yaml"],
         )
 
 
 class MethodTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
+    list_display = ("id", "name", "workspace__name", "is_active")
     change_list_template = "admin/sta/methodtype/change_list.html"
 
     def get_urls(self):
@@ -231,31 +231,31 @@ class MethodTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
         )
 
 
-class VariableTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
-    change_list_template = "admin/sta/variabletype/change_list.html"
+class ObservedPropertyTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
+    list_display = ("id", "name", "workspace__name", "is_active")
+    change_list_template = "admin/sta/observedpropertytype/change_list.html"
 
     def get_urls(self):
         urls = super().get_urls()
 
         return [
             path(
-                "load-default-variable-type-data/",
+                "load-default-observed-property-type-data/",
                 self.admin_site.admin_view(self.load_default_data),
-                name="variable_type_load_default_data",
+                name="observed_property_type_load_default_data",
             ),
         ] + urls
 
     def load_default_data(self, request):
         return self.load_fixtures(
             request,
-            "admin:sta_variabletype_changelist",
-            ["core/sta/fixtures/default_variable_types.yaml"],
+            "admin:sta_observedpropertytype_changelist",
+            ["core/sta/fixtures/default_observed_property_types.yaml"],
         )
 
 
 class UnitTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
+    list_display = ("id", "name", "workspace__name", "is_active")
     change_list_template = "admin/sta/unittype/change_list.html"
 
     def get_urls(self):
@@ -277,31 +277,31 @@ class UnitTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
         )
 
 
-class DatastreamAggregationAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
-    change_list_template = "admin/sta/datastreamaggregation/change_list.html"
+class AggregationStatisticAdmin(admin.ModelAdmin, VocabularyAdmin):
+    list_display = ("id", "name", "workspace__name", "is_active")
+    change_list_template = "admin/sta/aggregationstatistic/change_list.html"
 
     def get_urls(self):
         urls = super().get_urls()
 
         return [
             path(
-                "load-default-datastream-aggregation-data/",
+                "load-default-aggregation-statistic-data/",
                 self.admin_site.admin_view(self.load_default_data),
-                name="datastream_aggregation_load_default_data",
+                name="aggregation_statistic_load_default_data",
             ),
         ] + urls
 
     def load_default_data(self, request):
         return self.load_fixtures(
             request,
-            "admin:sta_datastreamaggregation_changelist",
-            ["core/sta/fixtures/default_datastream_aggregations.yaml"],
+            "admin:sta_aggregationstatistic_changelist",
+            ["core/sta/fixtures/default_aggregation_statistics.yaml"],
         )
 
 
 class DatastreamStatusAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
+    list_display = ("id", "name", "workspace__name", "is_active")
     change_list_template = "admin/sta/datastreamstatus/change_list.html"
 
     def get_urls(self):
@@ -324,7 +324,7 @@ class DatastreamStatusAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class SampledMediumAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
+    list_display = ("id", "name", "workspace__name", "is_active")
     change_list_template = "admin/sta/sampledmedium/change_list.html"
 
     def get_urls(self):
@@ -347,7 +347,7 @@ class SampledMediumAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class LinkedResourceTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
+    list_display = ("id", "name", "workspace__name", "is_active")
     change_list_template = "admin/sta/linkedresourcetype/change_list.html"
 
     def get_urls(self):
@@ -379,10 +379,10 @@ admin.site.register(Datastream, DatastreamAdmin)
 admin.site.register(DatastreamLinkedResource, DatastreamLinkedResourceAdmin)
 admin.site.register(LinkedResourceType, LinkedResourceTypeAdmin)
 admin.site.register(ResultQualifier, ResultQualifierAdmin)
-admin.site.register(SiteType, SiteTypeAdmin)
+admin.site.register(MonitoringSiteType, MonitoringSiteTypeAdmin)
 admin.site.register(MethodType, MethodTypeAdmin)
-admin.site.register(VariableType, VariableTypeAdmin)
+admin.site.register(ObservedPropertyType, ObservedPropertyTypeAdmin)
 admin.site.register(UnitType, UnitTypeAdmin)
-admin.site.register(DatastreamAggregation, DatastreamAggregationAdmin)
+admin.site.register(AggregationStatistic, AggregationStatisticAdmin)
 admin.site.register(DatastreamStatus, DatastreamStatusAdmin)
 admin.site.register(SampledMedium, SampledMediumAdmin)
