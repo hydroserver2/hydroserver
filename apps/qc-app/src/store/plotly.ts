@@ -146,14 +146,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   const axisChips = ref<AxisChip[]>([])
 
-  /**
-   * Toggles a lightweight preview layout in `createPlotlyOption`: the
-   * qualifier flag band, the plot title, select/lasso modebar buttons,
-   * and the custom Y-autoscale button are all suppressed. Plot.vue
-   * flips this based on its `preview` prop so the Select-view chart
-   * stays uncluttered.
-   */
-  const previewMode = ref(false)
   /** The index of the series that represents the datastream selected for quality control */
   const selectedSeriesIndex = computed(() => {
     const { qcDatastream } = storeToRefs(useDataVisStore())
@@ -561,7 +553,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     tableScrollRequest,
     requestTableScroll,
     axisChips,
-    previewMode,
     // Zoom history
     zoomUndoStack,
     zoomRedoStack,

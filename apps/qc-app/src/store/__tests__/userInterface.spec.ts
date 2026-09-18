@@ -6,9 +6,18 @@ const { qcDatastreamRef } = vi.hoisted(() => {
   return { qcDatastreamRef: ref<{ id: string } | null>(null) }
 })
 
-vi.mock('@/store/dataVisualization', () => ({
-  useDataVisStore: () => ({ qcDatastream: qcDatastreamRef }),
-}))
+// A real setup store, so `storeToRefs` and ref unwrapping behave as they do
+// in production.
+vi.mock('@/store/dataVisualization', async () => {
+  const { defineStore } = await import('pinia')
+  const { computed } = await import('vue')
+  return {
+    useDataVisStore: defineStore('dataVisualization', () => ({
+      qcDatastream: qcDatastreamRef,
+      qcDatastreamId: computed(() => qcDatastreamRef.value?.id ?? null),
+    })),
+  }
+})
 vi.mock('@/store/operationParams', () => ({
   useOperationParamsStore: () => ({ load: () => null, save: () => {} }),
 }))
@@ -30,7 +39,10 @@ describe('timeSpacingUnitToTimeUnitKey', () => {
 })
 
 describe('useUIStore drawer', () => {
-  beforeEach(() => { setActivePinia(createPinia()); qcDatastreamRef.value = null })
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    qcDatastreamRef.value = null
+  })
 
   it('defaults to Select drawer open', () => {
     const store = useUIStore()
@@ -52,6 +64,39 @@ describe('useUIStore drawer', () => {
     store.onRailItemClicked(DrawerType.Select)
     store.onRailItemClicked(DrawerType.Select)
     expect(store.isDrawerOpen).toBe(true)
+  })
+  it('showView moves both the view and the drawer', () => {
+    const store = useUIStore()
+    store.showView(DrawerType.Edit)
+    expect(store.currentView).toBe(DrawerType.Edit)
+    expect(store.selectedDrawer).toBe(DrawerType.Edit)
+    expect(store.isDrawerOpen).toBe(true)
+    store.showView(DrawerType.Select)
+    expect(store.currentView).toBe(DrawerType.Select)
+    expect(store.selectedDrawer).toBe(DrawerType.Select)
+  })
+})
+
+describe('useUIStore isPlotPreview', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    qcDatastreamRef.value = null
+  })
+
+  it('previews in the Select view with nothing being edited', () => {
+    expect(useUIStore().isPlotPreview).toBe(true)
+  })
+
+  it('keeps the full plot in the Select view while editing', () => {
+    const store = useUIStore()
+    qcDatastreamRef.value = { id: 'mgd' }
+    expect(store.isPlotPreview).toBe(false)
+  })
+
+  it('never previews in the Edit view', () => {
+    const store = useUIStore()
+    store.showView(DrawerType.Edit)
+    expect(store.isPlotPreview).toBe(false)
   })
 })
 

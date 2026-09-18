@@ -1,6 +1,6 @@
 import { LogicalOperation, Operator, TimeUnit } from '@uwrl/qc-utils'
-import { defineStore, storeToRefs } from 'pinia'
-import { ref, watch } from 'vue'
+import { defineStore } from 'pinia'
+import { computed, ref, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useOperationParamsStore } from '@/store/operationParams'
 
@@ -42,7 +42,7 @@ export enum DrawerType {
   None = '',
 }
 
-type View = DrawerType.Edit | DrawerType.Select
+export type View = DrawerType.Edit | DrawerType.Select
 
 export const useUIStore = defineStore('userInterface', () => {
   // Navigation Drawer
@@ -60,16 +60,33 @@ export const useUIStore = defineStore('userInterface', () => {
   const cardHeight = ref(40)
   const tableHeight = ref(35)
 
-  const onRailItemClicked = (title: DrawerType) => {
-    if (selectedDrawer.value === title) {
-      isDrawerOpen.value = !isDrawerOpen.value
-    } else {
-      selectedDrawer.value = title
-      if (title === DrawerType.Edit) currentView.value = DrawerType.Edit
-      if (title === DrawerType.Select) currentView.value = DrawerType.Select
-      isDrawerOpen.value = true
-    }
+  /** Switch layouts. Neither view owns the edit session, so this only moves
+   *  the chrome: the target, its session and its working copy stay put. */
+  const showView = (view: View) => {
+    currentView.value = view
+    selectedDrawer.value = view
+    isDrawerOpen.value = true
   }
+
+  const onRailItemClicked = (title: DrawerType) => {
+    if (selectedDrawer.value === title) isDrawerOpen.value = !isDrawerOpen.value
+    else if (title !== DrawerType.None) showView(title)
+  }
+
+  /** True while the plot is the Select view's read-only preview. An edit
+   *  target keeps the full plot in both views, so the user always sees the
+   *  session band, the overview strip and the Context range control.
+   *
+   *  The data-vis store is read lazily: building the plot's first options
+   *  instantiates this store from inside that one's own setup, so
+   *  `storeToRefs` would hand back an empty object there. Nothing is being
+   *  edited that early anyway.
+   */
+  const isPlotPreview = computed(
+    () =>
+      currentView.value === DrawerType.Select &&
+      !useDataVisStore().qcDatastreamId
+  )
 
   // Change Values
   const operators = [...Object.keys(Operator)]
@@ -103,9 +120,9 @@ export const useUIStore = defineStore('userInterface', () => {
   //      datastream lacks metadata.
   // A null change (unset) is skipped so closing and reopening the QC
   // drawer without a datastream loaded doesn't clobber form state.
-  const { qcDatastream } = storeToRefs(useDataVisStore())
+  // Read through a getter for the same reason as `isPlotPreview` above.
   watch(
-    qcDatastream,
+    () => useDataVisStore().qcDatastream,
     (ds) => {
       if (!ds) return
       const persisted = useOperationParamsStore().load(ds.id)
@@ -181,10 +198,12 @@ export const useUIStore = defineStore('userInterface', () => {
     selectedDrawer,
     isDrawerOpen,
     currentView,
+    isPlotPreview,
     selectedOperation,
     cardHeight,
     tableHeight,
     onRailItemClicked,
+    showView,
     shiftUnits,
     selectedShiftUnit,
     shiftAmount,

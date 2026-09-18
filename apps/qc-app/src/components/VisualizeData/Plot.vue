@@ -3,7 +3,7 @@
     <div class="plot-header">
       <div class="plot-toolbar d-flex align-center flex-wrap ga-1 px-3 py-1">
         <v-btn-toggle
-          v-if="!preview"
+          v-if="!isPlotPreview"
           v-model="tab"
           density="compact"
           color="primary"
@@ -31,7 +31,7 @@
         />
 
         <v-chip
-          v-if="(selectedData?.length || hasSelectionShape) && !preview"
+          v-if="(selectedData?.length || hasSelectionShape) && !isPlotPreview"
           class="plot-toolbar__selection flex-grow-0 flex-shrink-0"
           size="small"
           color="red"
@@ -48,7 +48,7 @@
         <v-spacer />
 
         <div
-          v-if="preview || tab === 'plot'"
+          v-if="isPlotPreview || tab === 'plot'"
           class="plot-toolbar__points-combo d-inline-flex align-stretch rounded-lg"
           :class="{
             'plot-toolbar__points-combo--on': areTooltipsEnabled,
@@ -184,7 +184,7 @@
         </div>
 
         <v-btn
-          v-if="tab === 'plot' && !preview"
+          v-if="tab === 'plot' && !isPlotPreview"
           size="small"
           variant="text"
           icon="mdi-share-variant-outline"
@@ -195,7 +195,7 @@
 
         <v-menu
           v-model="showHelp"
-          v-if="tab === 'plot' && !preview"
+          v-if="tab === 'plot' && !isPlotPreview"
           :close-on-content-click="false"
           location="bottom end"
           offset="6"
@@ -266,7 +266,7 @@
         </v-menu>
 
         <v-menu
-          v-if="!preview"
+          v-if="!isPlotPreview"
           v-model="contextRangeOpen"
           :close-on-content-click="false"
           location="bottom end"
@@ -306,7 +306,7 @@
               class="flex-fill"
               style="min-height: 0"
             ></div>
-            <template v-if="!preview">
+            <template v-if="!isPlotPreview">
               <div
                 class="plot-context-strip d-flex align-center justify-center cursor-pointer user-select-none"
                 :title="
@@ -389,7 +389,7 @@
 
         <v-tabs-window-item value="table" class="fill-height">
           <!-- Don't keep DataTable mounted when not on the table tab. -->
-          <DataTable v-if="tab === 'table' && !preview" class="fill-height"
+          <DataTable v-if="tab === 'table' && !isPlotPreview" class="fill-height"
         /></v-tabs-window-item>
       </v-tabs-window>
       <!-- Covers the plot and table only, so the toolbar stays usable. -->
@@ -419,11 +419,7 @@ import { usePersistedFlag } from '@/composables/useResizable'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
-
-// Preview strips the in-plot chrome for the Select view.
-const props = defineProps<{
-  preview?: boolean
-}>()
+import { useUIStore } from '@/store/userInterface'
 
 const { setPlotSelection, clearSelected } = useDataSelection()
 const { updateOptions, requestTableScroll } = usePlotlyStore()
@@ -439,7 +435,6 @@ const {
   showCoordinates,
   crosshair,
   axisChips,
-  previewMode,
   plotlyRef,
   activeTab,
   pendingShareZoom,
@@ -448,6 +443,9 @@ const { selectedData, hasSelectionShape, qcDatastream } =
   storeToRefs(useDataVisStore())
 const { trackPlotWork } = useDataVisStore()
 const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
+// The Select view previews the plot only when nothing is being edited; an
+// open session keeps the full chrome in both views.
+const { isPlotPreview } = storeToRefs(useUIStore())
 
 const tooltipsAutoDisabled = computed(
   () =>
@@ -588,10 +586,26 @@ function zoomToEditWindow() {
   requestTableScroll(w.begin)
 }
 
+// A share link's zoom is an explicit viewport, so it wins over that default,
+// once: later windows (viewing another session) zoom as usual.
+let shareZoomWins = false
+watch(
+  pendingShareZoom,
+  (zoom) => {
+    if (zoom) shareZoomWins = true
+  },
+  { immediate: true }
+)
+
 watch(
   () => editWindow.value && `${editWindow.value.begin}-${editWindow.value.end}`,
   () => {
-    if (!props.preview) zoomToEditWindow()
+    if (isPlotPreview.value) return
+    if (shareZoomWins) {
+      shareZoomWins = false
+      return
+    }
+    zoomToEditWindow()
   }
 )
 
@@ -673,9 +687,6 @@ let cancelFirstDraw: (() => void) | null = null
 let isUnmounted = false
 
 onMounted(() => {
-  // Flip before handleNewPlot so createPlotlyOption emits the
-  // preview layout (no qualifier band, no title, tight margins).
-  previewMode.value = !!props.preview
   updateOptions()
 })
 
@@ -714,7 +725,7 @@ function scheduleFirstDraw(target: HTMLDivElement) {
     const hadPendingShareZoom = !!pendingShareZoom.value
     await handleNewPlot(target)
     if (isUnmounted) return
-    if (!props.preview && !hadPendingShareZoom) zoomToEditWindow()
+    if (!isPlotPreview.value && !hadPendingShareZoom) zoomToEditWindow()
     observePlotSize(target)
   })
   drawn.catch((e) => console.error('First plot draw failed', e))
@@ -750,8 +761,6 @@ function observePlotSize(target: HTMLDivElement) {
 
 onBeforeUnmount(() => {
   isUnmounted = true
-  // Reset so the next Plot mount in Edit view doesn't inherit preview.
-  if (previewMode.value) previewMode.value = false
   cancelFirstDraw?.()
   if (pendingResizeFrame != null) {
     cancelAnimationFrame(pendingResizeFrame)

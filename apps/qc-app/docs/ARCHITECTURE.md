@@ -130,7 +130,7 @@ goes one direction.
 | `dataVisualization.ts`| Selected datastream, plotted streams, QC datastream, selectedData.    |
 | `plotly.ts`           | Plot ref, edit history, redraw, `suppressedEchoSelection` sentinel.    |
 | `qualifiers.ts`       | Result qualifier codes per workspace.                                 |
-| `userInterface.ts`    | Drawer state (Select/Edit), persisted prefs, current view.            |
+| `userInterface.ts`    | Drawer state (Select/Edit), persisted prefs, current view, `isPlotPreview`. |
 | `operationParams.ts`  | Per-operation form inputs, persisted so they survive panel re-opens.  |
 | `uiLayout.ts`         | Drawer widths, table heights: persisted UI geometry.                  |
 | `workingCopies.ts`    | Working copy per managed datastream, keyed by its in-progress session.|
@@ -186,6 +186,33 @@ Invariants:
   `plottedDatastreams` as-is. Dispatch only ever runs against
   `selectedSeries.data`, the edit target's series; without an edit target
   `selectedSeries` is undefined.
+
+## Views and the shared plot
+
+`VisualizeData.vue` renders two layouts, Select and Edit, and `userInterface`
+holds which one is showing. A view is chrome only: `dataVisualization` owns the
+edit target (`qcDatastreamId`), so switching views never touches the session,
+the working copy or unsaved edits. Only `useEditEntry.leaveEdit` ends a
+session, and `useLeaveSession` is the one place that decides whether an open
+session may be left behind.
+
+Consequences of that split:
+
+- The Edit layout stays mounted whenever an edit target is set, hidden with
+  `v-show` while the Select layout shows. The open operation panel, its staged
+  range and every panel's own state are component state, and a round trip
+  through Select must not reset them.
+- Both layouts share **one** `DataVisualization` instance, teleported into the
+  active layout's plot host (`#qc-plot-host-select` / `#qc-plot-host-edit`).
+  Moving the Plotly graph div keeps its zoom, its live `layout.shapes` and its
+  WebGL traces; rebuilding it would drop all three. The teleport renders after
+  this component mounts, since the target is resolved with
+  `document.querySelector` and the hosts are still detached before then.
+- `isPlotPreview` (Select view, nothing being edited) drives the plot's
+  preview chrome. An edit target keeps the full plot in both views, so the
+  Select view shows the same series, the session band and the Context control.
+  The flag only flips together with a rebuild (`setEditTarget` /
+  `clearEditTarget`), so no extra redraw is needed for it.
 
 ## Plotly integration
 
@@ -305,10 +332,10 @@ Two contract notes worth keeping in mind:
   the editor closes through `exitToSelect` (Close, Save and close, or close
   without saving), on commit, when its session or managed datastream is
   deleted, and when a managed datastream other than the edit target stops being
-  plotted; `resetState` clears every copy on a workspace reset. A nav rail
-  switch to Select keeps the copy, which then equals the saved state because
-  the exit guard saves or discards first. The next preview or resume rebuilds
-  it from what was actually saved.
+  plotted; `resetState` clears every copy on a workspace reset. Switching to
+  the Select view keeps the copy untouched, unsaved edits and all: it does not
+  end the session. The next preview or resume rebuilds it from what was
+  actually saved.
 - **Editing never starts over saved draft operations without replaying
   them.** The save reconciles operations by position, so a base without the
   replayed draft would delete the server's operations on the next save.

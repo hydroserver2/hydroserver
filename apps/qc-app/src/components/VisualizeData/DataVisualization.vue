@@ -1,10 +1,6 @@
 <template>
   <!-- Stays mounted while loading so a refresh keeps the plot and its zoom. -->
-  <Plot
-    v-if="isUpdating || isDataAvailable"
-    class="fill-height"
-    :preview="preview"
-  >
+  <Plot v-if="isUpdating || isDataAvailable" class="fill-height">
     <template #body-overlay>
       <div
         v-if="isUpdating"
@@ -131,10 +127,6 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
 import Plot from '@/components/VisualizeData/Plot.vue'
-
-defineProps<{
-  preview?: boolean
-}>()
 
 const { plotlyOptions } = storeToRefs(usePlotlyStore())
 

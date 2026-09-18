@@ -168,7 +168,7 @@ describe('encodeShareState: omits defaults', () => {
     expect(q.yz).toBe('1:1~2')
   })
 
-  it('writes ed only in the Edit view', () => {
+  it('writes ed whenever an edit target is set, in either view', () => {
     expect(
       encodeShareState({
         editView: true,
@@ -176,9 +176,14 @@ describe('encodeShareState: omits defaults', () => {
         datastreamIds: ['a'],
       }).ed
     ).toBe('mgd')
-    expect(
-      encodeShareState({ editView: false, editDatastreamId: 'mgd' }).ed
-    ).toBeUndefined()
+    // Select view with the session still open: the target travels, `m` does not.
+    const select = encodeShareState({
+      editView: false,
+      editDatastreamId: 'mgd',
+    })
+    expect(select.ed).toBe('mgd')
+    expect(select.m).toBeUndefined()
+    expect(encodeShareState({ editView: true }).ed).toBeUndefined()
   })
 
   it('omits data points keys when the mode is auto and threshold is default', () => {

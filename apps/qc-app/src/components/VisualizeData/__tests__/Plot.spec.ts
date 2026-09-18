@@ -15,7 +15,6 @@ const plotly = {
   showCoordinates: ref(false),
   crosshair: ref({ visible: false }),
   axisChips: ref<any[]>([]),
-  previewMode: ref(false),
   plotlyRef: ref<any>(null),
   activeTab: ref('plot'),
   pendingShareZoom: ref<any>(null),
@@ -62,6 +61,12 @@ vi.mock('@/composables/useDataSelection', () => ({
   }),
 }))
 
+const isPlotPreview = ref(true)
+
+vi.mock('@/store/userInterface', () => ({
+  useUIStore: () => reactive({ isPlotPreview }),
+}))
+
 vi.mock('@/composables/useResizable', () => ({
   usePersistedFlag: (_key: string, initial: boolean) => ref(initial),
 }))
@@ -82,8 +87,8 @@ vi.mock('plotly.js-dist', () => ({ default: { Plots: { resize: vi.fn() } } }))
 import Plot from '@/components/VisualizeData/Plot.vue'
 
 function mountIt(preview = true, slots: Record<string, string> = {}) {
+  isPlotPreview.value = preview
   return mount(Plot, {
-    props: { preview },
     slots,
     global: {
       plugins: [createTestPinia(), createTestVuetify()],

@@ -22,6 +22,7 @@ import {
   updateAxisChips,
 } from './interaction'
 import type { AppPlotlyTrace } from './options'
+import { withLiveShapes } from './shapes'
 
 const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -139,12 +140,19 @@ export const handleNewPlot = async (
     }
   }
 
+  // A re-plot keeps the shapes other writers own (the staged range band);
+  // `createPlotlyOption` only rebuilds the session window band. A first
+  // mount has no live plot to read them from.
+  const layout = element
+    ? plotlyOptions.value.layout
+    : withLiveShapes(plotlyOptions.value.layout, plotlyRef.value?.layout)
+
   // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
   // `plotlyRef` is now typed as `PlotlyHTMLElement | null`
   const newElement = await Plotly.newPlot(
     element || plotlyRef.value as Plotly.Root,
     plotlyOptions.value.traces,
-    plotlyOptions.value.layout,
+    layout,
     plotlyOptions.value.config
   )
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value

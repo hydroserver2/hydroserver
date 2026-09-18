@@ -39,11 +39,16 @@ export function useResumeEditSession(
     }
   }
 
+  // The chance to resume closes as soon as the catalog lands: a pointer set
+  // after that belongs to an entry that is already navigating on its own, and
+  // a later catalog refresh (a commit rewrites the managed datastream) must
+  // not re-enter behind the user.
   watch(
     datastreams,
     (list) => {
-      if (attempted || !list.length || !resumeDatastreamId.value) return
+      if (attempted || !list.length) return
       attempted = true
+      if (!resumeDatastreamId.value) return
       run().catch((e) => {
         Snackbar.error(
           e instanceof Error ? e.message : 'Could not reopen the edit session.'

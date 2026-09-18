@@ -70,6 +70,7 @@
         <span v-if="item.title === 'Edit' && !qcDatastream">
           Edit a datastream from its row first.
         </span>
+        <span v-else-if="item.title === 'Edit'">Back to the editor</span>
         <span v-else>{{ item.title }}</span>
       </v-tooltip>
     </div>
@@ -205,8 +206,9 @@ const { hasUnsavedChanges, unsavedEditCount, saveDraft, discardUnsavedEdits } =
   useEditSession()
 const { leaveEdit } = useEditEntry()
 
+// Home, the workspace switch and log out are the exits that end the session.
 const needsExitConfirm = computed(
-  () => currentView.value === DrawerType.Edit && hasUnsavedChanges.value
+  () => !!qcDatastream.value && hasUnsavedChanges.value
 )
 // With no in-progress session there is nothing to save to.
 const canSave = computed(() => !!inProgressSession.value)
@@ -286,13 +288,12 @@ const items = ref([
   { title: 'Edit', icon: 'mdi-pencil' },
 ])
 
+// Switching views never ends the session, so neither item prompts: Select
+// keeps the editor's target, session and unsaved edits alive behind it, and
+// Edit brings them back.
 function onMainRailItemClicked(item: DrawerType) {
   if (item === DrawerType.Edit && !qcDatastream.value) return
-  if (item === DrawerType.Select && currentView.value === DrawerType.Edit) {
-    guardExit(() => leaveEdit())
-    return
-  }
-  guardExit(() => onRailItemClicked(item))
+  onRailItemClicked(item)
 }
 
 async function onLogout() {

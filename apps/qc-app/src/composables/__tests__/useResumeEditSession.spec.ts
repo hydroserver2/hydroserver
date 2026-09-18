@@ -122,6 +122,22 @@ describe('useResumeEditSession', () => {
     expect(resume).toHaveBeenCalledTimes(1)
   })
 
+  // Entering the editor sets the pointer itself, and a later catalog
+  // refresh (a commit rewrites the managed datastream) must not re-enter
+  // behind the user's back.
+  it('ignores a pointer set after the catalog landed', async () => {
+    datastreams.value = [{ id: 'mgd-1' }]
+    mountHost()
+    await flushPromises()
+
+    resumeDatastreamId.value = 'mgd-1'
+    datastreams.value = [{ id: 'mgd-1' }, { id: 'mgd-2' }]
+    await flushPromises()
+
+    expect(resume).not.toHaveBeenCalled()
+    expect(resumeDatastreamId.value).toBe('mgd-1')
+  })
+
   it('surfaces a failure instead of failing silently', async () => {
     resumeDatastreamId.value = 'mgd-1'
     resume.mockRejectedValueOnce(new Error('boom'))

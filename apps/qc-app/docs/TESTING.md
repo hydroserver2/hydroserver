@@ -12,8 +12,8 @@ the operator's manual; QUALITY.md is the policy.
 
 | Layer      | Runner                          | Where                        | Count    |
 | ---------- | ------------------------------- | ---------------------------- | -------- |
-| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 59 files |
-| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 30 files |
+| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 72 files |
+| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 33 files |
 
 There is no separate "integration" tier; component tests live in the
 unit tier and mount real Vue components with the Vue Test Utils

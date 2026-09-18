@@ -22,9 +22,13 @@ const {
   hasUnsavedChanges,
   push,
   assign,
+  showView,
 } = vi.hoisted(() => {
   const { ref: r, computed: c } = require('vue') as typeof import('vue')
   const qcDatastreamId = r<string | null>(null)
+  const currentView = r('Edit')
+  const selectedDrawer = r('Edit')
+  const isDrawerOpen = r(true)
   return {
     qcDatastreamId,
     qcDatastream: c(() =>
@@ -36,13 +40,18 @@ const {
     clearEditTarget: vi.fn(async () => {
       qcDatastreamId.value = null
     }),
-    currentView: r('Edit'),
-    selectedDrawer: r('Edit'),
-    isDrawerOpen: r(true),
+    currentView,
+    selectedDrawer,
+    isDrawerOpen,
     resumeDatastreamId: r<string | null>(null),
     hasUnsavedChanges: r(false),
     push: vi.fn(async () => {}),
     assign: vi.fn(),
+    showView: vi.fn((view: string) => {
+      currentView.value = view
+      selectedDrawer.value = view
+      isDrawerOpen.value = true
+    }),
   }
 })
 
@@ -67,7 +76,12 @@ vi.mock('@/store/userInterface', async () => {
       currentView,
       selectedDrawer,
       isDrawerOpen,
-      onRailItemClicked: vi.fn(),
+      showView,
+      onRailItemClicked: vi.fn((title: string) => {
+        if (selectedDrawer.value === title) {
+          isDrawerOpen.value = !isDrawerOpen.value
+        } else showView(title)
+      }),
     })),
   }
 })
@@ -154,6 +168,58 @@ function mountRail() {
     }
   )
 }
+
+describe('NavigationRail view switching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    qcDatastreamId.value = 'm-1'
+    resumeDatastreamId.value = 'm-1'
+    currentView.value = 'Edit'
+    selectedDrawer.value = 'Edit'
+    hasUnsavedChanges.value = true
+  })
+
+  it('Select keeps the session, even with unsaved edits', async () => {
+    const wrapper = mountRail()
+    await wrapper.find('[data-testid="nav-rail-item-select"]').trigger('click')
+    await flushPromises()
+
+    expect(currentView.value).toBe('Select')
+    expect(qcDatastreamId.value).toBe('m-1')
+    expect(resumeDatastreamId.value).toBe('m-1')
+    expect(clearEditTarget).not.toHaveBeenCalled()
+    expect(wrapper.find('.v-dialog').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('Edit returns to the editor from the Select view', async () => {
+    currentView.value = 'Select'
+    selectedDrawer.value = 'Select'
+    const wrapper = mountRail()
+    const editRail = wrapper.find('[data-testid="nav-rail-item-edit"]')
+    expect(editRail.attributes('aria-disabled')).toBe('false')
+    await editRail.trigger('click')
+    await flushPromises()
+
+    expect(currentView.value).toBe('Edit')
+    expect(qcDatastreamId.value).toBe('m-1')
+    wrapper.unmount()
+  })
+
+  it('Edit stays disabled with no edit target', async () => {
+    qcDatastreamId.value = null
+    currentView.value = 'Select'
+    selectedDrawer.value = 'Select'
+    const wrapper = mountRail()
+    const editRail = wrapper.find('[data-testid="nav-rail-item-edit"]')
+    expect(editRail.attributes('aria-disabled')).toBe('true')
+    await editRail.trigger('click')
+    await flushPromises()
+
+    expect(currentView.value).toBe('Select')
+    wrapper.unmount()
+  })
+})
 
 describe('NavigationRail leaving the editor', () => {
   beforeEach(() => {

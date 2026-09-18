@@ -71,7 +71,7 @@ vi.mock('@/store/observations', () => ({
 }))
 
 vi.mock('@/store/operationParams', () => ({
-  useOperationParamsStore: () => ({}),
+  useOperationParamsStore: () => ({ load: () => null }),
 }))
 
 describe('useFilterDispatch.getActiveFilterRange', () => {

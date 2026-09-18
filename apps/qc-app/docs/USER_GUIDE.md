@@ -63,13 +63,15 @@ A thin, always-visible column of icons.
 | Icon | Action |
 |------|--------|
 | HydroServer logo | Top left. Go home. Resets the current view. Prompts before discarding unsaved edits. |
-| Cursor (Select) | Top left. Show the datastream Select drawer + plot. |
+| Cursor (Select) | Top left. Show the datastream Select drawer + plot. While you are editing, this keeps the session open behind it. |
 | Pencil (Edit) | Top left. Return to the Edit view. **Disabled** until you're editing: pick a datastream to edit with its row's pencil button first. |
 | Stopwatch (Performance) | Bottom left. Open the Performance Calibration dialog. See "Performance" below. |
 | Briefcase (Workspaces) | Bottom left. Switch workspace, or Continue in the current one. |
 | Logout | Bottom left. Sign out. |
 
-If you click any of these while the Edit view has edits not yet saved to the session, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. **Save & continue** saves a draft to the session before leaving; it is unavailable when no session is open. **Discard** drops the edits made since the last save, and they cannot be recovered.
+Switching between **Select** and **Edit** never ends an edit session, so neither asks anything: the datastream you are editing, its session, and any unsaved edits stay exactly as they were.
+
+Home, Workspaces and Logout do leave the session. If you click one of them while there are edits not yet saved to the session, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. **Save & continue** saves a draft to the session before leaving; it is unavailable when no session is open. **Discard** drops the edits made since the last save, and they cannot be recovered.
 
 ### Select view
 
@@ -85,12 +87,39 @@ The filter drawer has two collapsible sections:
 
 The main area to the right of the window is split top/bottom:
 
-- **Top card** carries the preview plot and a header showing how many datastreams are plotted ("N datastreams plotted" or "No datastream plotted"). The right pane of the card lists currently plotted datastreams.
+- **Top card** carries the preview plot and a header showing how many datastreams are plotted ("N datastreams plotted" or "No datastream plotted"). The right pane of the card lists currently plotted datastreams, and, while you are editing, an **Editing** panel above it.
 - **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row has a **Plot** toggle (check box) and an **Edit** column (pencil button). See [Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions) below for what the Edit button does.
 
 ![Select view with one datastream plotted](./images/home-plotted.png)
 
 Clicking a datastream row shows the full metadata for a datastream. Clicking the plot toggle (check box) in the row plots the datastream as read-only context: plotting never picks what you edit, and the first plotted datastream has no special role.
+
+### The Select view while you are editing
+
+Clicking **Select** in the rail during an edit session does not leave it. The
+session, its working copy and every unsaved edit stay open; the Select view is
+just a different way to look at the same thing, so you can change what is
+plotted *around* the data you are editing.
+
+What changes:
+
+- An **Editing** panel appears in the top card's right pane: the managed
+  datastream's name, the session's time window, whether anything is unsaved,
+  and a **Back to editor** button. Editing operations stay in the editor.
+- The preview plot draws the same series the editor does, the edit target and
+  its raw source included, with the session window shaded.
+- The row check boxes add and remove **context** datastreams. The edit target
+  and its source stay on the plot and cannot be removed here.
+- The filter drawer's **Time range** is the editor's Context range: the same
+  window the Context menu sets, with presets counting out from the session
+  window. Your edits are never reloaded by it.
+- The rail's **Edit** button and the panel's **Back to editor** button both
+  return to the editor with the session, your zoom and any staged range intact.
+- The row **Edit** button on the datastream you are already editing returns to
+  the editor too. On a different datastream it starts the usual entry flow.
+
+A link copied from here carries the edit target, so opening it reopens the
+session behind the Select view.
 
 ### Datastreams with quality-controlled versions
 
@@ -258,7 +287,7 @@ The URL encodes everything needed to reproduce what the sender is looking at - q
 - **View** (Select vs Edit; `m=e` for Edit)
 - **Active center-column tab** (`tab=t` for Table)
 - **Plotted datastreams** (`ds`), in order.
-- **Edit target** (`ed`), the datastream you're editing, present only in the Edit view.
+- **Edit target** (`ed`), the datastream you're editing. It travels from either view, since the Select view keeps the session open.
 - **Time window**: either a preset id (`r=0..5`) which the recipient resolves against the plotted data, or an explicit `from` / `to` pair as base36 second-epochs when the sender used a custom range.
 - **Per-trace eye-toggle visibility** (`h`) and **per-axis visibility** (`ya`) as hex bitmasks over the `ds` order.
 - **Plot zoom**: X zoom (`z`) plus optional per-Y-axis zoom (`yz`) for axes that aren't at their default fit.
@@ -551,7 +580,8 @@ Things worth knowing:
   snapshots of any other session replay what was saved to the server.
 - Snapshots travel in the share link, so a link reproduces the comparison.
   Each one replays on load, so a link carrying several is slower to open.
-- Leaving the editor for the Select view drops every snapshot.
+- Closing the session drops every snapshot. Switching to the Select view does
+  not, since the session stays open.
 
 ## Deleting a session
 
@@ -675,6 +705,7 @@ Click **Workspaces** in the nav rail and **Select** another, or **Continue** to 
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
 | Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in Time range. |
 | The Edit rail item is greyed out | You are not editing. | Click a row's pencil button. |
+| The Select view shows an "Editing" panel | A session is still open. | That is expected: click **Back to editor** to return to it, or **Close** in the editor to end it. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |
 | The history shows a red failed entry after Load | The QC history referenced something missing in this datastream. | The rest of the QC history still ran. Click the chevron on the row to see its arguments. |

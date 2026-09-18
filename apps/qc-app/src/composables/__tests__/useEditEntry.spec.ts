@@ -17,6 +17,7 @@ const {
   resumeDatastreamId,
   success,
   error,
+  canLeaveSession,
   ResumeSupersededError,
 } = vi.hoisted(() => {
   const { ref: r } = require('vue') as typeof import('vue')
@@ -40,6 +41,7 @@ const {
     resumeDatastreamId: r<string | null>(null),
     success: vi.fn(),
     error: vi.fn(),
+    canLeaveSession: vi.fn(),
     ResumeSupersededError,
   }
 })
@@ -64,9 +66,18 @@ vi.mock('@/store/userInterface', async () => {
       currentView,
       selectedDrawer,
       isDrawerOpen,
+      showView: (view: string) => {
+        currentView.value = view
+        selectedDrawer.value = view
+        isDrawerOpen.value = true
+      },
     })),
   }
 })
+
+vi.mock('@/composables/useLeaveSession', () => ({
+  useLeaveSession: () => ({ canLeaveSession }),
+}))
 
 vi.mock('@/store/qcSession', async () => {
   const { defineStore } = await import('pinia')
@@ -88,6 +99,7 @@ vi.mock('@/composables/useEditSession', () => ({
 vi.mock('@uwrl/qc-utils', () => ({ Snackbar: { success, error } }))
 
 import { useEditEntry } from '../useEditEntry'
+import { DrawerType } from '@/store/userInterface'
 
 const window = {
   begin: new Date('2025-01-01T00:00:00Z'),
@@ -112,6 +124,7 @@ beforeEach(() => {
   })
   beginEditing.mockResolvedValue(true)
   startSession.mockResolvedValue(undefined)
+  canLeaveSession.mockResolvedValue(true)
 })
 
 describe('useEditEntry', () => {
@@ -260,6 +273,64 @@ describe('useEditEntry', () => {
     expect(success).toHaveBeenCalledWith('Edit session started.')
     startSession.mockRejectedValueOnce(new Error('nope'))
     expect(await startSessionOver(window)).toBe(false)
+  })
+
+  it('lands on Select when the caller asks for it', async () => {
+    const result = await useEditEntry().enterEdit(
+      'mgd',
+      undefined,
+      DrawerType.Select
+    )
+    expect(result).toBe('editing')
+    expect(currentView.value).toBe('Select')
+    expect(selectedDrawer.value).toBe('Select')
+    expect(resumeDatastreamId.value).toBe('mgd')
+  })
+
+  it('shows the editor again without re-entering its own target', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    currentView.value = 'Select'
+    expect(await useEditEntry().enterEdit('mgd')).toBe('editing')
+    expect(currentView.value).toBe('Edit')
+    expect(setEditTarget).not.toHaveBeenCalled()
+    expect(beginEditing).not.toHaveBeenCalled()
+  })
+
+  it('still starts a session over a window on its own target', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    beginEditing.mockImplementation(async () => {
+      needsSession.value = true
+      return false
+    })
+    expect(await useEditEntry().enterEdit('mgd', window)).toBe('editing')
+    expect(startSession).toHaveBeenCalled()
+  })
+
+  it('asks before taking over from another open session', async () => {
+    qcDatastream.value = { id: 'other' }
+    canLeaveSession.mockResolvedValueOnce(false)
+    expect(await useEditEntry().enterEdit('mgd')).toBe('kept')
+    expect(setEditTarget).not.toHaveBeenCalled()
+    expect(qcDatastream.value).toEqual({ id: 'other' })
+    expect(currentView.value).toBe('Select')
+  })
+
+  it('takes over when leaving the open session is allowed', async () => {
+    qcDatastream.value = { id: 'other' }
+    expect(await useEditEntry().enterEdit('mgd')).toBe('editing')
+    expect(canLeaveSession).toHaveBeenCalled()
+    expect(setEditTarget).toHaveBeenCalledWith('mgd')
+  })
+
+  it('openEditor shows the editor without touching the target', () => {
+    qcDatastream.value = { id: 'mgd' }
+    resumeDatastreamId.value = 'mgd'
+    useEditEntry().openEditor()
+    expect(currentView.value).toBe('Edit')
+    expect(selectedDrawer.value).toBe('Edit')
+    expect(isDrawerOpen.value).toBe(true)
+    expect(clearEditTarget).not.toHaveBeenCalled()
+    expect(resumeDatastreamId.value).toBe('mgd')
   })
 
   it('leaveEdit returns to Select and forgets the resume target', async () => {

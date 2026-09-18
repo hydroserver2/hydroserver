@@ -244,7 +244,7 @@ describe('StartEditingFlow', () => {
     wrapper.findComponent(ChooserStub).vm.$emit('edit', option)
     await flushPromises()
     expect(enterEdit).toHaveBeenCalledTimes(1)
-    expect(enterEdit.mock.calls[0]).toEqual(['mgd', undefined])
+    expect(enterEdit.mock.calls[0]).toEqual(['mgd', undefined, undefined])
     expect(present('window-stub')).toBe(false)
   })
 
@@ -261,7 +261,7 @@ describe('StartEditingFlow', () => {
 
     wrapper.findComponent(WindowStub).vm.$emit('confirm', window)
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalledWith('mgd', window)
+    expect(enterEdit).toHaveBeenCalledWith('mgd', window, undefined)
     expect(present('window-stub')).toBe(false)
   })
 
@@ -272,7 +272,7 @@ describe('StartEditingFlow', () => {
     const { flow } = mountFlow()
     await flow.resume('mgd')
     await flushPromises()
-    expect(enterEdit.mock.calls[0]).toEqual(['mgd', undefined])
+    expect(enterEdit.mock.calls[0]).toEqual(['mgd', undefined, undefined])
     expect(present('window-stub')).toBe(true)
   })
 
@@ -443,6 +443,6 @@ describe('StartEditingFlow', () => {
 
     wrapper.findComponent(WindowStub).vm.$emit('confirm', window)
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalledWith('mgd-new', window)
+    expect(enterEdit).toHaveBeenCalledWith('mgd-new', window, undefined)
   })
 })

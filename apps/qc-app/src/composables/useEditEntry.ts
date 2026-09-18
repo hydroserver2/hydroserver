@@ -6,17 +6,22 @@
  * Entries can overlap (a reload resume and a click). Whichever set the target
  * last owns the view, so an entry that finds the target changed after an await
  * stands down without touching view state, the target or the resume pointer.
+ *
+ * Only `leaveEdit` ends a session. Switching between the Select and Edit views
+ * keeps the target, so `openEditor` and an entry on the open target are pure
+ * navigation.
  */
 
 import { storeToRefs } from 'pinia'
 import { Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
-import { DrawerType, useUIStore } from '@/store/userInterface'
+import { DrawerType, useUIStore, type View } from '@/store/userInterface'
 import {
   ResumeSupersededError,
   useEditSession,
 } from '@/composables/useEditSession'
+import { useLeaveSession } from '@/composables/useLeaveSession'
 import type { TimeWindow } from '@/utils/timeRangePresets'
 
 export type EnterEditResult =
@@ -24,6 +29,8 @@ export type EnterEditResult =
   | 'needs-window'
   | 'not-managed'
   | 'superseded'
+  /** The open session was kept, so the requested target was not entered. */
+  | 'kept'
 
 type StartOutcome = 'started' | 'superseded' | 'failed'
 
@@ -31,20 +38,25 @@ export function useEditEntry() {
   const dataVis = useDataVisStore()
   const { qcDatastream } = storeToRefs(dataVis)
   const { setEditTarget, clearEditTarget } = dataVis
-  const { currentView, selectedDrawer, isDrawerOpen } = storeToRefs(useUIStore())
+  const { showView } = useUIStore()
   const { resumeDatastreamId } = storeToRefs(useQcSessionStore())
   const { beginEditing, startSession, needsSession, needsHistory } =
     useEditSession()
+  const { canLeaveSession } = useLeaveSession()
 
   const owns = (id: string | undefined) => qcDatastream.value?.id === id
   // A cleared target is not a takeover: leaving again is harmless.
   const takenOver = (id: string | undefined) =>
     !!qcDatastream.value && !owns(id)
 
+  /** Show the editor on the current target. Nothing about the session, the
+   *  working copy or the staged edits changes. */
+  function openEditor() {
+    showView(DrawerType.Edit)
+  }
+
   async function leaveEdit() {
-    currentView.value = DrawerType.Select
-    selectedDrawer.value = DrawerType.Select
-    isDrawerOpen.value = true
+    showView(DrawerType.Select)
     resumeDatastreamId.value = null
     await clearEditTarget()
   }
@@ -81,8 +93,18 @@ export function useEditEntry() {
 
   async function enterEdit(
     managedId: string,
-    window?: TimeWindow
+    window?: TimeWindow,
+    view: View = DrawerType.Edit
   ): Promise<EnterEditResult> {
+    // Already this target: show the view again and leave the session, the
+    // working copy and any unsaved edits alone. A window means "start a
+    // session over it", which still has work to do.
+    if (owns(managedId) && !window) {
+      showView(view)
+      resumeDatastreamId.value = managedId
+      return 'editing'
+    }
+    if (takenOver(managedId) && !(await canLeaveSession())) return 'kept'
     try {
       await setEditTarget(managedId)
       await beginEditing()
@@ -99,9 +121,7 @@ export function useEditEntry() {
       Snackbar.error('This datastream is not set up for QC editing.')
       return 'not-managed'
     }
-    currentView.value = DrawerType.Edit
-    selectedDrawer.value = DrawerType.Edit
-    isDrawerOpen.value = true
+    showView(view)
     resumeDatastreamId.value = managedId
     if (!needsSession.value) return 'editing'
     if (!window) return 'needs-window'
@@ -110,5 +130,5 @@ export function useEditEntry() {
     return outcome === 'failed' ? 'needs-window' : 'superseded'
   }
 
-  return { enterEdit, startSessionOver, leaveEdit }
+  return { enterEdit, startSessionOver, openEditor, leaveEdit }
 }

@@ -76,6 +76,7 @@ import { useProcessingLevels } from '@/composables/useProcessingLevels'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { collectDeletionChain } from '@/utils/sessionGraph'
 import type { TimeWindow } from '@/utils/timeRangePresets'
+import type { View } from '@/store/userInterface'
 
 // 'entering': the editor is not open yet. 'resume': it opened with no session.
 // 'footer': it is open on committed history.
@@ -194,13 +195,18 @@ function openNewSession() {
   openSessionWindow('footer')
 }
 
-async function resume(managedId: string) {
-  await runEnter(managedId)
+/** Reload / share-link entry. `view` is the layout the link was made from. */
+async function resume(managedId: string, view?: View) {
+  await runEnter(managedId, undefined, view)
 }
 
-async function runEnter(managedId: string, window?: TimeWindow) {
+async function runEnter(
+  managedId: string,
+  window?: TimeWindow,
+  view?: View
+) {
   try {
-    const result = await enterEdit(managedId, window)
+    const result = await enterEdit(managedId, window, view)
     if (result === 'needs-window' && !openSessionWindow('resume')) {
       // No source to window, so the open editor has nothing to edit.
       await leaveEdit()

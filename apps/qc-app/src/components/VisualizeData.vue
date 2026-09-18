@@ -1,6 +1,6 @@
 ﻿<template>
   <div
-    v-if="currentView === DrawerType.Select"
+    v-if="!isEditLayout"
     class="select-view fill-height d-flex flex-column pa-4"
   >
     <v-card class="select-view__card d-flex flex-column mb-3">
@@ -18,7 +18,10 @@
             <template v-else>No datastream plotted</template>
           </span>
           <span class="text-body-small text-medium-emphasis">
-            <template v-if="plottedDatastreams.length">
+            <template v-if="qcDatastream">
+              Choose what to plot around the session you are editing
+            </template>
+            <template v-else-if="plottedDatastreams.length">
               Use the pencil button on a row to edit a datastream
             </template>
             <template v-else>
@@ -31,15 +34,24 @@
       <v-divider />
 
       <div class="select-view__card-body d-flex flex-grow-1">
-        <div class="select-view__plot-body flex-grow-1 pa-2">
-          <DataVisualization preview />
-        </div>
+        <div
+          id="qc-plot-host-select"
+          class="select-view__plot-body flex-grow-1 pa-2"
+        ></div>
 
-        <template v-if="plottedDatastreams.length">
+        <template v-if="plottedDatastreams.length || qcDatastream">
           <v-divider vertical class="select-view__divider-vertical" />
           <v-divider class="select-view__divider-horizontal" />
-          <div class="select-view__plotted d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden">
-            <div class="select-view__plotted-body flex-grow-1 overflow-y-auto">
+          <div
+            data-testid="select-side-panel"
+            class="select-view__side d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden"
+          >
+            <EditTargetPanel v-if="qcDatastream" />
+            <v-divider v-if="qcDatastream && plottedDatastreams.length" />
+            <div
+              v-if="plottedDatastreams.length"
+              class="select-view__plotted-body flex-grow-1 overflow-y-auto"
+            >
               <PlottedDatastreams />
             </div>
           </div>
@@ -55,8 +67,12 @@
     </v-card>
   </div>
 
+  <!-- Kept mounted while an edit target is set, even in the Select view: the
+       open operation, its staged range and the panels' own state survive the
+       round trip because nothing here is torn down. -->
   <div
-    v-else-if="currentView === DrawerType.Edit"
+    v-if="qcDatastream"
+    v-show="isEditLayout"
     class="edit-view d-flex bg-background"
   >
     <aside
@@ -103,9 +119,11 @@
       class="edit-view__col edit-view__col--plot d-flex flex-column flex-fill pa-3 overflow-hidden"
     >
       <v-card class="fill-height d-flex flex-column" elevation="1">
-        <div class="flex-grow-1 pa-2" style="min-height: 0">
-          <DataVisualization />
-        </div>
+        <div
+          id="qc-plot-host-edit"
+          class="flex-grow-1 pa-2"
+          style="min-height: 0"
+        ></div>
       </v-card>
     </div>
 
@@ -445,6 +463,14 @@
     </v-dialog>
 </div>
 
+  <!-- One plot for both layouts. Moving it instead of rebuilding it is what
+       keeps the zoom, the session band and a staged range across a view
+       switch. The hosts only exist once this component is in the document,
+       hence the mounted gate. -->
+  <Teleport v-if="isMounted" :to="plotHost">
+    <DataVisualization />
+  </Teleport>
+
   <StartEditingFlow ref="startEditing" />
 </template>
 
@@ -455,6 +481,7 @@ import EditHistory from '@/components/EditData/EditHistory.vue'
 import OperationPanel from '@/components/EditData/OperationPanel.vue'
 import EditDrawer from '@/components/Navigation/EditDrawer.vue'
 import StartEditingFlow from '@/components/EditData/StartEditingFlow.vue'
+import EditTargetPanel from '@/components/EditData/EditTargetPanel.vue'
 
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
@@ -492,6 +519,7 @@ const { resetState } = useDataVisStore()
 const { toggleSnapshot } = useHistorySnapshots()
 const {
   plottedDatastreams,
+  qcDatastream,
   qcDatastreamId,
   isEditorReady,
   datastreams,
@@ -565,6 +593,22 @@ const { leaveEdit } = useEditEntry()
 const canEditWorkspace = computed(() => canEdit())
 const workspaceRole = computed(() => roleName())
 
+// The Edit layout needs a resolved target to render; without one the Select
+// layout shows, so exactly one plot host is in the DOM at any time.
+const isEditLayout = computed(
+  () => currentView.value === DrawerType.Edit && !!qcDatastream.value
+)
+
+// Teleport resolves its target with `document.querySelector`, and this
+// component's own DOM is still detached while it first mounts.
+const isMounted = ref(false)
+onMounted(() => {
+  isMounted.value = true
+})
+const plotHost = computed(() =>
+  isEditLayout.value ? '#qc-plot-host-edit' : '#qc-plot-host-select'
+)
+
 const startEditing =
   useTemplateRef<InstanceType<typeof StartEditingFlow>>('startEditing')
 
@@ -577,14 +621,19 @@ const router = useRouter()
 // A share link's `ed` becomes the resume pointer. Set it before registering
 // the resume hook, which checks the pointer only once.
 const initialShareState = decodeShareState(route.query as Record<string, unknown>)
-if (initialShareState.editView && initialShareState.editDatastreamId) {
+if (initialShareState.editDatastreamId) {
   resumeDatastreamId.value = initialShareState.editDatastreamId
 }
+// `m` says which layout the link was made from. Without it the session is
+// reopened behind the Select view, exactly as the sender left it.
+const initialView = initialShareState.editView
+  ? DrawerType.Edit
+  : DrawerType.Select
 
-// Reopens the editor after a page reload; waits for the catalog to land.
+// Reopens the session after a page reload; waits for the catalog to land.
 useResumeEditSession(async (id) => {
   await flowMounted
-  await startEditing.value?.resume(id)
+  await startEditing.value?.resume(id, initialView)
 })
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
@@ -863,7 +912,7 @@ const hydrateFromUrl = () => {
   // means its sessions were applied) rather than chaining off
   // `setPlottedDatastreams`, which only settles the plot.
   const snapshots = state.snapshots ?? []
-  const editTargetId = state.editView ? state.editDatastreamId : undefined
+  const editTargetId = state.editDatastreamId
   // No `immediate`: resuming the editor always takes at least one await, so
   // the ready condition cannot already hold when this watch is created.
   if (snapshots.length && editTargetId) {
@@ -942,7 +991,8 @@ watch(
     const state: ShareState = {
       workspaceId: selectedWorkspaceId.value || null,
       editView: isEdit,
-      editDatastreamId: isEdit ? (qcDatastreamId.value ?? undefined) : undefined,
+      // The Select view keeps the session open, so the target travels too.
+      editDatastreamId: qcDatastreamId.value ?? undefined,
       tableTab: activeTab.value === 'table',
       datastreamIds: ids,
       snapshots,
@@ -1004,13 +1054,13 @@ onUnmounted(() => {
 
 .select-view__card-body,
 .select-view__plot-body,
-.select-view__plotted,
+.select-view__side,
 .select-view__table {
   min-height: 0;
 }
 
 .select-view__card-body {
-  /* Inner row: plot + vertical divider + plotted list. */
+  /* Inner row: plot + vertical divider + side panels. */
   overflow: hidden;
 }
 
@@ -1022,7 +1072,7 @@ onUnmounted(() => {
   display: none;
 }
 
-.select-view__plotted {
+.select-view__side {
   width: 280px;
 }
 
@@ -1041,7 +1091,7 @@ onUnmounted(() => {
   .select-view__card-body {
     flex-direction: column;
   }
-  .select-view__plotted {
+  .select-view__side {
     width: 100%;
     max-height: 240px;
   }

@@ -115,35 +115,56 @@ await clearSelected({ recordHistory: false })  // skip history append on cleanup
 ### `useEditEntry()`
 
 ```ts
-const { enterEdit, startSessionOver, leaveEdit } = useEditEntry()
+const { enterEdit, startSessionOver, openEditor, leaveEdit } = useEditEntry()
 
 const result = await enterEdit(managedId, window)
-// result: 'editing' | 'needs-window' | 'not-managed' | 'superseded'
+// result: 'editing' | 'needs-window' | 'not-managed' | 'superseded' | 'kept'
 ```
 
 Sets the edit target and switches to the Edit view. Shared by the row Edit
 flow (`StartEditingFlow.vue`), reload resume (`useResumeEditSession()`
 below), and share-link hydration (the `ed` query param).
 
-- `enterEdit(managedId, window?)`: sets the edit target
+- `enterEdit(managedId, window?, view?)`: sets the edit target
   (`setEditTarget`), resolves its QC history via `beginEditing()`, and
   resumes an in-progress session. With no session and no `window`, returns
   `'needs-window'` so the caller opens `SessionWindowDialog.vue` (the
   session-window step) and calls back in with the chosen window, or calls
   `startSessionOver` instead; with a `window`, starts the session
-  immediately.
+  immediately. `view` is the layout to land on, `Edit` by default; a share
+  link made from the Select view passes `Select`, so the session reopens
+  behind it. Called on the target already open, with no `window`, it only
+  shows that view: nothing about the session is re-entered. Taking over from
+  another open session first asks `useLeaveSession().canLeaveSession()`, and
+  returns `'kept'` when it says no.
 - `startSessionOver(window)`: starts a new session on the current edit
   target over `window` (a `utils/timeRangePresets.ts` `TimeWindow`); backs
   **Start new session** and the editor footer's **New session**.
+- `openEditor()`: shows the Edit layout for the current target. Pure
+  navigation, used by the nav rail's Edit button and the Select view's
+  **Back to editor**.
 - `leaveEdit()`: returns to the Select view, clears the resume pointer and
   the edit target (`clearEditTarget`). Every exit uses it, including the nav
   rail's Home and Workspaces buttons, so a reload never reopens an editor the
-  user left.
+  user left. Switching views is not an exit and does not use it.
 
 Entries can overlap (a reload resume and a click land close together);
 whichever call sets the edit target last owns the view: a call that finds
 the target changed after an `await` stands down without touching view
 state, the target, or the resume pointer.
+
+### `useLeaveSession()`
+
+```ts
+const { canLeaveSession } = useLeaveSession()
+if (!(await canLeaveSession())) return
+```
+
+The one decision point for abandoning an open edit session: taking over with
+another edit target, and every other exit that ends it. Switching between the
+Select and Edit views is not an exit, so it never asks. Leaving is always
+allowed today; the prompts that offer to save, discard or keep the session
+belong here.
 
 ### `useResumeEditSession()`
 
@@ -159,8 +180,11 @@ Reopens the editor after a page reload, using the persisted
 datastream id (normally wired to `StartEditingFlow`'s exposed `resume`, which
 enters through `useEditEntry()` and opens the session-window step when there
 is no session to continue). Resumes at
-most once. A pointer to a datastream missing from the catalog (deleted, or
-another workspace) is dropped rather than retried.
+most once, and the chance closes as soon as the catalog lands: a pointer set
+after that belongs to an entry already navigating on its own, and a later
+catalog refresh (a commit rewrites the managed datastream) must not re-enter
+behind the user. A pointer to a datastream missing from the catalog (deleted,
+or another workspace) is dropped rather than retried.
 
 Note the watcher must not use Vue's `once` together with `immediate`: the
 immediate call fires on the initial empty catalog and stops the watcher, so
@@ -463,7 +487,6 @@ handles, live chart caches).
 | `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Set when the plot zooms to the session window; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
 | `requestTableScroll`       | action   | `(time: number) => void`                          | Publish a `tableScrollRequest` for the given epoch-ms range start (bumps `seq`). |
 | `axisChips`                | state    | `AxisChip[]`                                      | Horizontal axis title chips (replaces Plotly's rotated titles). |
-| `previewMode`              | state    | `boolean`                                         | Strips select/lasso/etc when the chart is rendered in the Select view's preview slot. |
 | `zoomUndoStack`            | state    | `ZoomState[]`                                     | Captured viewports for the modebar's Undo zoom button. |
 | `zoomRedoStack`            | state    | `ZoomState[]`                                     | Cleared on every new user-initiated zoom. |
 | `suppressZoomHistory`      | state    | `boolean`                                         | Flipped on during programmatic restores so the recorder doesn't double-capture. |
@@ -530,6 +553,7 @@ defaults are reseeded from the datastream on each mount.
 | `selectedDrawer`                  | state  | `DrawerType`                                      | `Edit`, `Select`, or `None`: which left drawer is active. |
 | `isDrawerOpen`                    | state  | `boolean`                                         | Drawer open/collapsed. |
 | `currentView`                     | state  | `'Edit' \| 'Select'`                              | Current main view (drives the nav rail's active state). |
+| `isPlotPreview`                   | computed | `boolean`                                       | True only in the Select view with nothing being edited; an open edit target keeps the full plot chrome in both views. |
 | `selectedOperation`               | state  | `string \| null`                                  | Open operation panel id; `null` when nothing is open. |
 | `cardHeight` / `tableHeight`      | state  | `number`                                          | Select-view top/bottom split. |
 | `operators`                       | state  | `string[]`                                        | `Object.keys(Operator)`: Change-values operator choices. |
@@ -549,6 +573,7 @@ defaults are reseeded from the datastream on each mount.
 | `filterRangeActive`               | state  | `boolean`                                         | Toggles the shared filter-window UX; the only persisted field. |
 | `filterRangeFromTs` / `filterRangeToTs` | state | `number \| null`                            | Filter-window epoch bounds; reseed on each panel mount. |
 | `onRailItemClicked`               | action | `(title: DrawerType) => void`                     | Nav-rail click handler: toggles open/closed on repeat, switches view on first click. |
+| `showView`                        | action | `(view: View) => void`                            | Switch layouts (view + drawer). Layout only: an open edit session is untouched. |
 
 ### `useQualifierStore()` (`src/store/qualifiers.ts`)
 

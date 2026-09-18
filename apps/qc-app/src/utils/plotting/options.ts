@@ -14,6 +14,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
 import { useQualifierStore } from '@/store/qualifiers'
+import { useUIStore } from '@/store/userInterface'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
 import { undoZoom, redoZoom } from './zoom'
@@ -410,11 +411,12 @@ export const createPlotlyOption = (
 ): PlotlyChartOptions => {
   const { qcDatastream, sourceContextDatastream, beginDate, endDate } =
     storeToRefs(useDataVisStore())
-  const { previewMode, hiddenAxisIds, hiddenTraceIds, plotlyRef } = storeToRefs(
+  const { hiddenAxisIds, hiddenTraceIds, plotlyRef } = storeToRefs(
     usePlotlyStore()
   )
   const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
-  const isPreview = previewMode?.value ?? false
+  const { isPlotPreview } = storeToRefs(useUIStore())
+  const isPreview = isPlotPreview?.value ?? false
   const hiddenAxes = hiddenAxisIds?.value ?? new Set<string>()
   const hiddenTraces = hiddenTraceIds?.value ?? new Set<string>()
 

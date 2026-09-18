@@ -49,18 +49,21 @@ vi.mock('@/store/qcSession', () => ({
   })),
 }))
 
-const previewMode = ref(false)
+const isPlotPreview = ref(false)
 const hiddenAxisIds = ref<Set<string>>(new Set())
 const plotlyRef = ref<unknown>(null)
 const editHistory = ref<unknown[]>([])
 
 vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
-    previewMode,
     hiddenAxisIds,
     plotlyRef,
     editHistory,
   }),
+}))
+
+vi.mock('@/store/userInterface', () => ({
+  useUIStore: () => ({ isPlotPreview }),
 }))
 
 const applications: Array<{ qualifierId: string; index: number; appliedAt: string; appliedBy: string }> = []
@@ -193,7 +196,7 @@ describe('createPlotlyOption', () => {
     inProgressSession.value = null
     beginDate.value = null
     endDate.value = null
-    previewMode.value = false
+    isPlotPreview.value = false
     hiddenAxisIds.value = new Set()
     plotlyRef.value = null
     applications.length = 0
@@ -228,8 +231,8 @@ describe('createPlotlyOption', () => {
     expect((opts.traces[1] as any).id).toBe('a')
   })
 
-  it('omits select/lasso modebar buttons when previewMode is true', () => {
-    previewMode.value = true
+  it('omits select/lasso modebar buttons in the Select preview', () => {
+    isPlotPreview.value = true
     const opts = createPlotlyOption([])
     const cfg = opts.config as any
     const flat = cfg.modeBarButtons.flat()

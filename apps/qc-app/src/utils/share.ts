@@ -3,8 +3,8 @@
  *
  * The URL keeps every plot-relevant piece of state the sender sees so
  * a recipient lands on an identical view: plotted datastreams (`ds`),
- * the datastream being edited (`ed`, Edit view only), time range,
- * current view (Select / Edit), Plot/Table tab, per-trace visibility,
+ * the datastream being edited (`ed`), time range,
+ * current view (`m`, Select / Edit), Plot/Table tab, per-trace visibility,
  * per-Y-axis visibility, X/Y zoom, and the data-points (markers) mode
  * and threshold. Sidebar filters are kept only on the Select view,
  * since they drive the datastreams table, not the plot.
@@ -45,7 +45,8 @@ export interface ShareState {
   workspaceId?: string | null
   /** Edit view active when true. Select view is the default. */
   editView?: boolean
-  /** The datastream being edited. Emitted only in the Edit view. */
+  /** The datastream being edited. Travels in both views: the Select view
+   *  keeps the session open, so a link from it reopens the same session. */
   editDatastreamId?: string
   /** Table tab active when true. Plot tab is the default. */
   tableTab?: boolean
@@ -136,7 +137,7 @@ export function encodeShareState(state: ShareState): Record<string, string> {
 
   if (state.workspaceId) q.ws = state.workspaceId
   if (state.editView) q.m = 'e'
-  if (state.editView && state.editDatastreamId) q.ed = state.editDatastreamId
+  if (state.editDatastreamId) q.ed = state.editDatastreamId
   if (state.tableTab) q.tab = 't'
 
   if (state.datastreamIds?.length) {

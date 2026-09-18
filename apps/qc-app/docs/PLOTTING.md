@@ -221,7 +221,9 @@ calls it instead of assigning `selectedSeries.value.data` directly.
 The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (with
 `EDITOR_PRESETS`, which leaves out YTD and highlights All for a persisted
 YTD through `shownPresetId`, and the same From / To pickers as
-the Select view) bound to the same `beginDate` / `endDate` store range.
+the Select view) bound to the same `beginDate` / `endDate` store range. The
+Select view's own Time range drives that same state, so while an edit target
+is set the two are one control.
 Picking a preset or a custom date calls `setDateRange`, which, while an
 edit target is set, reloads only the context series
 (`refreshGraphSeriesArray`, which never fetches the edit target) and
@@ -271,16 +273,29 @@ previous target's window is never drawn over the new one.
 `utils/plotting/shapes.ts`: `redraw` and `cropXaxisRange` use
 `withLiveShapes` to swap in the fresh `edit-window` and keep the live
 `stage` band, and the staging flush uses `composeShapes` to do the reverse
-(stage stays first so drag events still address `shapes[0]`). The
-exception is `handleNewPlot` (`events.ts`): a full rebuild calls
-`Plotly.newPlot` with the whole layout from `createPlotlyOption`, so its
-shapes are only `edit-window` and a live `stage` band is not carried over.
+(stage stays first so drag events still address `shapes[0]`).
+`handleNewPlot` (`events.ts`) does the same on a re-plot of the live element,
+so an operation's staged band survives a rebuild; a first mount has no live
+layout to carry anything from.
 
 Plot rebuilds (`rebuildPlot`, run when plotted datastreams change) keep
 the user's zoom while an edit target is set and drop it in the Select
 view. `setEditTarget` clears the zoom history when the target changes, so
 **Undo zoom** never steps back to the Select view's or a previous target's
 viewports.
+
+One `Plot` serves both views. `VisualizeData.vue` teleports a single
+`DataVisualization` into whichever layout is showing, so a Select / Edit round
+trip moves the Plotly graph div instead of rebuilding it: the zoom, the live
+`layout.shapes` and the WebGL traces all stay. `userInterface.isPlotPreview`
+(Select view, nothing being edited) drives the preview chrome; with an edit
+target the full plot shows in both views, and the flag only flips alongside a
+rebuild (`setEditTarget` / `clearEditTarget`).
+
+A share link's zoom (`pendingShareZoom`) is an explicit viewport, so it beats
+the editor's default "open on the session window" once: the first session
+window that arrives afterwards does not re-zoom, later ones (viewing another
+session) do.
 
 While observations load, `DataVisualization.vue` keeps `Plot` mounted and
 passes its loading overlay through Plot's `body-overlay` slot. The overlay

@@ -3,8 +3,9 @@
  *   - fresh browser redirects to /workspaces
  *   - picking a workspace navigates to Home
  *   - the nav-rail workspace-switch button offers to revisit the picker
- *   - the edit rail item is enabled only while editing
- *   - leaving Edit with edits not saved to the session asks first
+ *   - the edit rail item is enabled only while an edit target is set
+ *   - leaving the workspace with edits not saved to the session asks first
+ *   - switching to the Select view keeps the session and asks nothing
  */
 
 import { expect, test, type Page } from '@playwright/test'
@@ -29,6 +30,12 @@ async function applyChangeValues(page: Page) {
 
 function exitDialog(page: Page) {
   return page.getByRole('dialog').filter({ hasText: 'Unsaved edits' })
+}
+
+function expectWorkspacePicker(page: Page) {
+  return expect(page.getByTestId(`workspace-pick-${WORKSPACE_ID}`)).toBeVisible({
+    timeout: 30_000,
+  })
 }
 
 test.describe('navigation', () => {
@@ -117,14 +124,12 @@ test.describe('navigation: leaving a QC session', () => {
   }) => {
     await applyChangeValues(page)
 
-    await page.getByTestId('nav-rail-item-select').click()
+    await page.getByTestId('nav-rail-workspaces').click()
     const dialog = exitDialog(page)
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: /save & continue/i }).click()
 
-    await expect(page.getByTestId('datastreams-table')).toBeVisible({
-      timeout: 30_000,
-    })
+    await expectWorkspacePicker(page)
     const session = sessions.find((s) => s.status === 'in_progress')
     expect(session!.operations.map((o) => o.operationType)).toContain(
       'CHANGE_VALUES'
@@ -135,14 +140,12 @@ test.describe('navigation: leaving a QC session', () => {
   test('Discard continues without saving', async ({ page }) => {
     await applyChangeValues(page)
 
-    await page.getByTestId('nav-rail-item-select').click()
+    await page.getByTestId('nav-rail-workspaces').click()
     const dialog = exitDialog(page)
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: /discard/i }).click()
 
-    await expect(page.getByTestId('datastreams-table')).toBeVisible({
-      timeout: 30_000,
-    })
+    await expectWorkspacePicker(page)
     const session = sessions.find((s) => s.status === 'in_progress')
     expect(session!.operations).toHaveLength(0)
     expect(submissions).toHaveLength(0)
@@ -153,10 +156,24 @@ test.describe('navigation: leaving a QC session', () => {
     await page.getByTestId('exit-save-btn').click()
     await expect(page.getByText('Draft saved.')).toBeVisible()
 
+    await page.getByTestId('nav-rail-workspaces').click()
+    await expectWorkspacePicker(page)
+    await expect(exitDialog(page)).toHaveCount(0)
+  })
+
+  // Switching views is not an exit, so it never asks.
+  test('the Select view keeps the session with unsaved edits', async ({
+    page,
+  }) => {
+    await applyChangeValues(page)
+
     await page.getByTestId('nav-rail-item-select').click()
     await expect(page.getByTestId('datastreams-table')).toBeVisible({
       timeout: 30_000,
     })
     await expect(exitDialog(page)).toHaveCount(0)
+    await expect(page.getByTestId('edit-target-panel')).toBeVisible()
+    const session = sessions.find((s) => s.status === 'in_progress')
+    expect(session!.operations).toHaveLength(0)
   })
 })
