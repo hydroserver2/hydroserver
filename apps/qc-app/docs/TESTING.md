@@ -280,7 +280,7 @@ frontends to be running, and enters QC through the Data Management
 same-origin entrypoint. It edits through a QC session, so the workspace
 needs a source datastream with a managed datastream and QC history: the
 spec plots the first source showing the managed-count badge, clicks its
-row's pencil (Edit) button, and ends by saving and committing the session.
+row's Edit button, and ends by saving and committing the session.
 
 ### Mocks
 
@@ -315,7 +315,7 @@ a spec can pass a `qcSessionState` array and assert on what was persisted
 (see `submit.spec.ts`).
 
 Save and Commit only appear once a session is open. `setupEditView` enters
-through a row's pencil (Edit) button rather than the nav rail, so it needs
+through a row's Edit button rather than the nav rail, so it needs
 `installMocks(page, { qcHistories: true })` to give the source a managed
 datastream for the chooser to pick. Use `startSessionFromRow` (also with
 `qcHistories: true`) when a spec needs to plot or pick a range first and

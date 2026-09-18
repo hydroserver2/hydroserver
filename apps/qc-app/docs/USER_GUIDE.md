@@ -13,8 +13,8 @@ If you are looking for developer / deployment docs for the QC App, start with [A
 The QC App is the operator's view of HydroServer's quality control pipeline. With it you can:
 
 1. **Browse** monitoring sites and datastreams in a HydroServer workspace.
-2. **Plot up to five datastreams** on a synchronized multi-axis chart for visual context.
-3. **Pick one datastream to edit with its row's pencil button.** Plotted datastreams are read-only context.
+2. **Plot up to four datastreams** on a synchronized multi-axis chart for visual context, keeping the fifth plot slot for the datastream you edit.
+3. **Pick one datastream to edit with its row's Edit button.** Plotted datastreams are read-only context.
 4. **Filter** suspicious points using value thresholds, time windows, change detection, rate-of-change limits, gap detection, or persistence runs.
 5. **Edit** the selected points: change values, interpolate, drift-correct, shift datetimes, delete, fill gaps, add points, attach qualifier flags.
 6. **Save your edits as a QC history** (a JSON file you can replay on the same datastream later).
@@ -64,7 +64,7 @@ A thin, always-visible column of icons.
 |------|--------|
 | HydroServer logo | Top left. Go home. Resets the current view. Asks what should happen to an open edit session first. |
 | Cursor (Select) | Top left. Show the datastream Select drawer + plot. While you are editing, this keeps the session open behind it. |
-| Pencil (Edit) | Top left. Return to the Edit view. **Disabled** until you're editing: pick a datastream to edit with its row's pencil button first. |
+| Pencil (Edit) | Top left. Return to the Edit view. **Disabled** until you're editing: pick a datastream to edit with its row's Edit button first. |
 | Stopwatch (Performance) | Bottom left. Open the Performance Calibration dialog. See "Performance" below. |
 | Briefcase (Workspaces) | Bottom left. Switch workspace, or Continue in the current one. |
 | Logout | Bottom left. Sign out. |
@@ -88,7 +88,7 @@ The filter drawer has two collapsible sections:
 The main area to the right of the window is split top/bottom:
 
 - **Top card** carries the preview plot and a header showing how many datastreams are plotted ("N datastreams plotted" or "No datastream plotted"). The right pane of the card lists currently plotted datastreams, and, while you are editing, an **Editing** panel above it.
-- **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row has a **Plot** toggle (check box) and an **Edit** column (pencil button). See [Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions) below for what the Edit button does.
+- **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row has a **Plot** toggle (check box) and an **Edit** column (Edit button). See [Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions) below for what the Edit button does.
 
 ![Select view with one datastream plotted](./images/home-plotted.png)
 
@@ -135,13 +135,13 @@ a raw series against the quality-controlled version derived from it.
 
 Clicking the check box again reopens the chooser with the current selection, so
 that is also where you change or clear it. Unticking everything and applying
-unplots every series from that source. The five-series plot cap still applies:
-once it is reached, unticked rows are disabled.
+unplots every series from that source. The four-datastream plot cap still
+applies: once it is reached, unticked rows are disabled.
 
 The row's check box reflects the whole group. It is filled when the raw
 datastream is plotted, and shows a partial mark when only managed versions are.
 
-The row's pencil (**Edit**) button is separate from plotting: it opens a
+The row's **Edit** button is separate from plotting: it opens a
 chooser of that source's managed datastreams, or, the first time, skips
 straight to the create-datastream form. Pick a managed datastream to
 continue its in-progress session, or **Start new session** to open the
@@ -314,7 +314,7 @@ While editing, the edit target's row shows the session's working data: committed
 
 ### Plotting multiple datastreams
 
-You can plot up to **5 datastreams at a time**. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/5 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source are shown in addition to the 5 plotted datastreams. They don't count against the cap.
+You can check up to **4 datastreams at a time**. The fifth plot slot is kept for the datastream you edit, so there is always room for it. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/4 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source are shown in addition to the 4 plotted datastreams. They don't count against the cap.
 
 ![Two datastreams on independent y-axes](./images/home-multi-datastreams.png)
 
@@ -686,7 +686,7 @@ Which question depends on where the session stands:
 - **Everything is saved.** The dialog only confirms that the session stays in
   progress; **Close** leaves, **Cancel** stays.
 
-To come back to a session you left in progress, click the pencil button on
+To come back to a session you left in progress, click the Edit button on
 that datastream's row again. It reopens where you left off.
 
 **Cancel** puts you back where you were: same zoom, same staged range, same
@@ -712,7 +712,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 
 ### "I just want to drop everything above 1000 and re-submit."
 
-1. Pick a workspace, then click the pencil button on the row of the datastream you want to QC.
+1. Pick a workspace, then click the Edit button on the row of the datastream you want to QC.
 2. Expand **Value thresholds**, set `Greater than: 1000`, press Enter.
 3. Expand **Delete points**, click Delete.
 4. Click **Save** at the bottom of the Edit history panel, then **Commit** and confirm in the dialog.
@@ -742,9 +742,9 @@ Click **Workspaces** in the nav rail and **Select** another, or **Continue** to 
 |---------|--------------|-----|
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
 | Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in Time range. |
-| The Edit rail item is greyed out | You are not editing. | Click a row's pencil button. |
+| The Edit rail item is greyed out | You are not editing. | Click a row's Edit button. |
 | The Select view shows an "Editing" panel | A session is still open. | That is expected: click **Back to editor** to return to it, or **Close** in the editor to end it. |
-| I closed the editor and cannot find my session | It is still in progress, just not open. | Click the pencil button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |
+| I closed the editor and cannot find my session | It is still in progress, just not open. | Click the Edit button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |
 | The history shows a red failed entry after Load | The QC history referenced something missing in this datastream. | The rest of the QC history still ran. Click the chevron on the row to see its arguments. |

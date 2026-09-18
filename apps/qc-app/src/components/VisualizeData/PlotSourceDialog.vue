@@ -60,7 +60,7 @@
           class="text-body-small text-medium-emphasis"
           data-testid="plot-source-cap"
         >
-          Maximum of 5 datastreams plotted; remove one to add another.
+          Maximum of 4 datastreams plotted; remove one to add another.
         </div>
       </template>
     </div>
@@ -95,7 +95,7 @@ const props = defineProps<{
   options: ManagedDatastreamOption[]
   plottedIds: string[]
   loading?: boolean
-  /** Free slots under the 5-series plot cap, ignoring this source's group. */
+  /** Free slots under the 4-datastream plot cap, ignoring this source's group. */
   slotsLeft: number
 }>()
 

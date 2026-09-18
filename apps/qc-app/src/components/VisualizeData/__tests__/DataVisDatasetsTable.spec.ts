@@ -143,6 +143,22 @@ describe('DataVisDatasetsTable plot checkbox', () => {
     expect(plotSourceSelection).toHaveBeenCalledWith('src', ['mgd'])
   })
 
+  // The fifth plot slot belongs to the datastream being edited.
+  it('stops at four checked datastreams', async () => {
+    plottedDatastreams.value = [
+      { id: 'a' },
+      { id: 'b' },
+      { id: 'c' },
+      { id: 'd' },
+    ]
+    const wrapper = await mountTable()
+    expect(wrapper.text()).toContain('4/4 plotted')
+
+    await checkbox(wrapper, 'solo').trigger('click')
+    await flushPromises()
+    expect(toggleDatastream).not.toHaveBeenCalled()
+  })
+
   it('shows a checked box when the raw datastream is plotted', async () => {
     plottedDatastreams.value = [raw]
     const wrapper = await mountTable()

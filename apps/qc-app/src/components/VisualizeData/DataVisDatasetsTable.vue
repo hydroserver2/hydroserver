@@ -126,19 +126,14 @@
         </template>
 
         <template #header.edit>
-          <v-icon
-            icon="mdi-pencil"
-            size="18"
-            title="Edit"
-            aria-label="Edit"
-          />
+          <span class="text-body-small">Edit</span>
         </template>
 
         <template v-slot:item.plot="{ item }">
           <v-tooltip
             :disabled="!isAtCap(item)"
             location="top"
-            :text="`Maximum of ${PLOT_CAP} datastreams plotted; remove one to add another`"
+            :text="`Maximum of ${PLOT_CAP} datastreams plotted, one slot is kept for the datastream you edit; remove one to add another`"
           >
             <template #activator="{ props: tooltipProps }">
               <div class="d-flex align-center" v-bind="tooltipProps">
@@ -195,15 +190,18 @@
               <!-- A disabled button passes clicks to this wrapper; keep them off the row. -->
               <span v-bind="tooltipProps" @click.stop>
                 <v-btn
-                  icon="mdi-pencil"
+                  prepend-icon="mdi-pencil"
                   size="small"
-                  variant="text"
+                  variant="tonal"
+                  color="primary"
                   density="comfortable"
                   :data-testid="`edit-datastream-${item.id}`"
                   :aria-label="`Edit ${item.name}`"
                   :disabled="!canEditWorkspace"
                   @click.stop="emit('edit', item)"
-                />
+                >
+                  Edit
+                </v-btn>
               </span>
             </template>
           </v-tooltip>
@@ -297,8 +295,9 @@ import {
 import { Snackbar } from '@uwrl/qc-utils'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 
-/** Maximum series the plot holds at once. */
-const PLOT_CAP = 5
+/** Datastreams the user can check. The fifth plot slot is kept for the
+ *  datastream being edited. */
+const PLOT_CAP = 4
 
 const emit = defineEmits<{
   (e: 'edit', datastream: Datastream & DatastreamExtended): void
@@ -491,7 +490,7 @@ const getRowProps = ({ item }: { item: Datastream }) => ({
 const search = ref()
 const headers = reactive([
   { title: 'Plot', key: 'plot', visible: true, width: 96, sortable: false },
-  { title: 'Edit', key: 'edit', visible: true, width: 56, sortable: false },
+  { title: 'Edit', key: 'edit', visible: true, width: 96, sortable: false },
   {
     title: 'Name',
     key: 'name',

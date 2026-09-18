@@ -47,8 +47,9 @@ Order-of-magnitude envelope:
 | 5 million obs     | ~60 MB            | Still feasible on a modern desktop. Initial fetch is the long pole.    |
 | 50 million obs    | ~600 MB           | Browser tab approaching its memory budget. Avoid plotting more than 1 stream. Performance becomes dominated by Plotly redraw, not qc-utils. |
 
-The architecture caps the plot at **5 concurrent streams** in the UI to
-keep the multi-axis chart readable and the memory envelope predictable.
+The architecture caps the plot at **4 checked streams** in the UI, plus the
+datastream being edited and its source, to keep the multi-axis chart readable
+and the memory envelope predictable.
 
 ## Worker pool and calibration
 
@@ -139,7 +140,7 @@ synchronized plotting at high point density is the dominant interactive
 cost. Practical guidance:
 
 - **One edit target, its source, and one or two context streams** is the sweet spot.
-  Five plotted streams is the hard cap; in practice three is comfortable
+  Four checked streams is the hard cap; in practice two is comfortable
   at multi-hundred-thousand points.
 - **Tick alignment and viewport recompute are debounced.** See
   `src/utils/plotting/relayout.ts`.
