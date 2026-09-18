@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django_celery_beat.models import PeriodicTask
@@ -16,9 +18,13 @@ class Task(models.Model):
         PeriodicTask, null=True, blank=True, on_delete=models.SET_NULL, related_name="orchestration_task"
     )
     next_run_at = models.DateTimeField(null=True, blank=True)
+    search_vector = SearchVectorField(null=True, editable=False)
 
     class Meta:
         app_label = "orchestration"
+        indexes = [
+            GinIndex(fields=["search_vector"], name="orch_task_search_gin"),
+        ]
 
     def __str__(self):
         return self.name

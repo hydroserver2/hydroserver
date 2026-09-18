@@ -158,11 +158,12 @@ class DatastreamAPIService(APIService):
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
-
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,
             sortby,
             list(get_args(DatastreamSortByFields)),
+            rank=has_search,
         )
 
         queryset = queryset.select_related("monitoring_site").prefetch_related(

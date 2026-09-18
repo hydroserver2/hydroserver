@@ -1,12 +1,15 @@
 import json
 import uuid
+
 from typing import Union, Any, Optional, Type
 from pydantic.alias_generators import to_snake
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.exceptions import EmptyResultSet
 from django.db import connection
-from django.db.models import QuerySet, Model, Q
+from django.db.models import QuerySet, Model, Q, F
+
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, NotFoundError
@@ -16,6 +19,8 @@ User = get_user_model()
 
 
 class APIService:
+    SEARCH_CONFIG = "english"
+
     @staticmethod
     def get_workspace(
         principal: Union[User, ServiceAccount, AnonymousPrincipal],
@@ -83,11 +88,12 @@ class APIService:
         allowed_fields: list[str],
         field_aliases: Optional[dict[str, str]] = None,
         default_sortby: tuple[str, ...] = ("id",),
+        rank: bool = False,
     ):
         field_aliases = field_aliases or {}
 
         if not sortby:
-            sortby_fields = list(default_sortby)
+            sortby_fields = [] if rank else list(default_sortby)
         else:
             stripped_fields = [field.lstrip("-") for field in sortby]
             if len(stripped_fields) != len(set(stripped_fields)):
@@ -102,12 +108,47 @@ class APIService:
                 resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
                 sortby_fields.append(f"-{resolved_field}" if descending else resolved_field)
 
-        # Add ID as a sortby tiebreaker if not already present.
+        if rank:
+            sortby_fields.append("-rank")
+
         stripped_sortby_fields = [field.lstrip("-") for field in sortby_fields]
         if "id" not in stripped_sortby_fields:
             sortby_fields.append("id")
 
         return queryset.order_by(*sortby_fields)
+
+    @classmethod
+    def apply_search(
+        cls, queryset: QuerySet, q: Optional[str], field: str = "search_vector"
+    ) -> tuple[QuerySet, bool]:
+        """
+        Filters a queryset by the `q` full-text search parameter and annotates a `rank`
+        field for relevance ordering.
+
+        Comma-separated terms are combined with OR; the whitespace-separated words within
+        each term are combined with AND. Matching is case-insensitive.
+
+        Returns the (possibly unchanged) queryset and whether search was applied, so
+        callers can pass that through to `apply_sorting`'s `rank` argument.
+        """
+
+        if not q or not q.strip():
+            return queryset, False
+
+        groups = [group.strip() for group in q.split(",") if group.strip()]
+        if not groups:
+            return queryset, False
+
+        search_query = None
+        for group in groups:
+            group_query = SearchQuery(group, config=cls.SEARCH_CONFIG, search_type="plain")
+            search_query = group_query if search_query is None else search_query | group_query
+
+        queryset = queryset.annotate(rank=SearchRank(F(field), search_query)).filter(
+            **{field: search_query}
+        )
+
+        return queryset, True
 
     @staticmethod
     def resolve_include_set(include: Optional[list[str]]) -> set[str]:

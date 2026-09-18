@@ -2107,6 +2107,11 @@ export interface components {
              */
             properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -2281,6 +2286,11 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Rating Curve Id
              * @description Filter data product tasks by rating curve ID.
@@ -2794,6 +2804,11 @@ export interface components {
              */
             properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Result Begin Time Max
              * @description Sets the maximum result begin time of filtered datastreams.
              */
@@ -3215,6 +3230,11 @@ export interface components {
              */
             properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -3607,6 +3627,11 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Sensor Model
              * @description Filter methods by sensor model
@@ -4035,6 +4060,11 @@ export interface components {
              */
             properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -4243,6 +4273,11 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Rule Type
              * @description Filter monitoring tasks by rule type.
@@ -4599,6 +4634,11 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -5041,6 +5081,11 @@ export interface components {
              */
             properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -5472,6 +5517,11 @@ export interface components {
              */
             properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -5581,6 +5631,11 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "code" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -6014,6 +6069,11 @@ export interface components {
              */
             properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -6266,6 +6326,11 @@ export interface components {
              */
             properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
@@ -6320,6 +6385,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter rating curves by monitoring site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter rating curves by workspace ID. */
@@ -6585,6 +6652,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter data product tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter data product tasks by workspace ID. */
@@ -7318,6 +7387,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter datastreams by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter datastreams by monitoring_site ID. */
@@ -8070,6 +8141,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter data connections by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter data connections by payload type. */
@@ -8613,6 +8686,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter ETL tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
@@ -9059,6 +9134,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter methods by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter methods by monitoring_site ID. */
@@ -9641,6 +9718,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
@@ -10346,6 +10425,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter monitoring tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter monitoring tasks by workspace ID. */
@@ -11089,6 +11170,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter observed properties by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter observed properties by monitoring_site ID. */
@@ -11380,6 +11463,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("code" | "name" | "-code" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter processing levels by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter processing levels by monitoring_site ID. */
@@ -12491,6 +12576,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("code" | "-code")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter result qualifiers by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter result qualifiers by monitoring_site ID. */
@@ -12807,6 +12894,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter units by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter units by monitoring_site ID. */
@@ -13089,6 +13178,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Whether the workspace is associated with the authenticated user */
                 is_associated?: boolean | null;
                 /** @description Whether the returned workspaces should be private or public. */

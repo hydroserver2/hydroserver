@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.conf import settings
 
 from core.iam.models import Workspace
@@ -42,6 +43,7 @@ class MonitoringSite(models.Model):
     is_private = models.BooleanField(default=False)
     data_disclaimer = models.TextField(null=True, blank=True)
     tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
+    search_vector = SearchVectorField(null=True, editable=False)
 
     objects = MonitoringSiteQuerySet.as_manager()
 
@@ -52,6 +54,7 @@ class MonitoringSite(models.Model):
                 name="sta_monitoringsite_tags_gin",
                 opclasses=["jsonb_path_ops"],
             ),
+            GinIndex(fields=["search_vector"], name="sta_monitoringsite_search_gin"),
         ]
 
     def __str__(self):

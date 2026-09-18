@@ -79,11 +79,13 @@ class RatingCurveAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,
             sortby,
             list(get_args(RatingCurveSortByFields)),
             field_aliases=RATING_CURVE_SORTBY_ALIASES,
+            rank=has_search,
         )
 
         queryset = queryset.prefetch_related("points")

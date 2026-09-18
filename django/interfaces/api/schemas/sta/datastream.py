@@ -149,6 +149,11 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     sortby: Optional[list[DatastreamSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
         [], description="Filter datastreams by workspace ID.", alias="workspace_id"
     )

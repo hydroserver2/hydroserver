@@ -90,10 +90,12 @@ class WorkspaceAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,
             sortby,
             list(get_args(WorkspaceSortByFields)),
+            rank=has_search,
         )
 
         queryset = queryset.select_related(

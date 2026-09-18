@@ -85,6 +85,11 @@ class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParamet
     sortby: Optional[list[RatingCurveSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     monitoring_site_id: list[uuid.UUID] = Query(
         [], description="Filter rating curves by monitoring site ID."
     )

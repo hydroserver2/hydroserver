@@ -2,6 +2,8 @@ import uuid
 import typing
 
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
@@ -36,6 +38,7 @@ class Workspace(models.Model):
         related_name="owned_workspaces",
     )
     is_private = models.BooleanField(default=False)
+    search_vector = SearchVectorField(null=True, editable=False)
 
     objects = WorkspaceQuerySet.as_manager()
 
@@ -50,6 +53,9 @@ class Workspace(models.Model):
             models.UniqueConstraint(
                 fields=["name", "owner"], name="unique_workspace_name_per_owner"
             )
+        ]
+        indexes = [
+            GinIndex(fields=["search_vector"], name="iam_workspace_search_gin"),
         ]
 
     @property

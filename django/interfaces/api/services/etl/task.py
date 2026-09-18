@@ -4,7 +4,6 @@ from typing import Optional, Literal, get_args
 from django.db import transaction
 from django.db.models import Count
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
@@ -108,12 +107,6 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
-        if "search_term" in filtering:
-            search_vector = SearchVector("name", "description", "data_connection__name")
-            queryset = queryset.annotate(search=search_vector).filter(
-                search=SearchQuery(filtering["search_term"])
-            )
-
         if "monitoring_site_id" in filtering:
             queryset = self.apply_filters(
                 queryset, "etl_mappings__target_datastream__monitoring_site_id", filtering["monitoring_site_id"]
@@ -142,8 +135,13 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         if "latest_run_finished_at_max" in filtering:
             queryset = queryset.filter(latest_run_finished_at__lte=filtering["latest_run_finished_at_max"])
 
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
-            queryset, sortby, list(get_args(EtlTaskSortByFields)), self.sortby_aliases
+            queryset,
+            sortby,
+            list(get_args(EtlTaskSortByFields)),
+            self.sortby_aliases,
+            rank=has_search,
         )
 
         queryset = queryset.select_related("periodic_task__crontab", "periodic_task__interval")

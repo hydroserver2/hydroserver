@@ -97,6 +97,11 @@ class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryP
     sortby: Optional[list[DataConnectionSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     workspace: list[uuid.UUID] = Query(
         [], description="Filter data connections by workspace ID.", alias="workspace_id"
     )

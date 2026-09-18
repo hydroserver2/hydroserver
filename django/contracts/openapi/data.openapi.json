@@ -678,6 +678,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sortby": {
             "anyOf": [
               {
@@ -1255,6 +1267,18 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
           },
           "rating_curve_id": {
             "default": [],
@@ -2782,6 +2806,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "result_begin_time_max": {
             "anyOf": [
               {
@@ -3808,6 +3844,18 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
           },
           "sortby": {
             "anyOf": [
@@ -5062,6 +5110,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sensor_model": {
             "default": [],
             "description": "Filter methods by sensor model",
@@ -6315,6 +6375,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sortby": {
             "anyOf": [
               {
@@ -6839,6 +6911,18 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
           },
           "rule_type": {
             "default": [],
@@ -7856,6 +7940,18 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
           },
           "sortby": {
             "anyOf": [
@@ -9353,6 +9449,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sortby": {
             "anyOf": [
               {
@@ -10585,6 +10693,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sortby": {
             "anyOf": [
               {
@@ -10883,6 +11003,18 @@
             "style": "form",
             "title": "Properties",
             "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
           },
           "sortby": {
             "anyOf": [
@@ -12226,6 +12358,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sortby": {
             "anyOf": [
               {
@@ -12892,6 +13036,18 @@
             "title": "Properties",
             "type": "array"
           },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
           "sortby": {
             "anyOf": [
               {
@@ -13138,6 +13294,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {
@@ -13725,6 +13899,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {
@@ -15563,6 +15755,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {
@@ -17797,6 +18007,24 @@
             }
           },
           {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filter data connections by workspace ID.",
             "in": "query",
             "name": "workspace_id",
@@ -19001,6 +19229,24 @@
             }
           },
           {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filter ETL tasks by monitoring_site ID.",
             "in": "query",
             "name": "monitoring_site_id",
@@ -20183,6 +20429,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {
@@ -21613,6 +21877,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {
@@ -23450,6 +23732,24 @@
             }
           },
           {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filter monitoring tasks by monitoring_site ID.",
             "in": "query",
             "name": "monitoring_site_id",
@@ -25276,6 +25576,24 @@
             }
           },
           {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filter observed properties by workspace ID.",
             "in": "query",
             "name": "workspace_id",
@@ -26009,6 +26327,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {
@@ -28565,6 +28901,24 @@
             }
           },
           {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filter result qualifiers by workspace ID.",
             "in": "query",
             "name": "workspace_id",
@@ -29406,6 +29760,24 @@
             }
           },
           {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filter units by workspace ID.",
             "in": "query",
             "name": "workspace_id",
@@ -30129,6 +30501,24 @@
               "default": [],
               "description": "Select one or more fields to sort the response by.",
               "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
             }
           },
           {

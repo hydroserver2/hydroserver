@@ -4,7 +4,6 @@ from typing import Optional, Literal, get_args
 from django.db import transaction
 from django.db.models import Count
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
@@ -141,12 +140,6 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
-        if "search_term" in filtering:
-            search_vector = SearchVector("name", "description", "monitoring_site__name")
-            queryset = queryset.annotate(search=search_vector).filter(
-                search=SearchQuery(filtering["search_term"])
-            )
-
         if "monitoring_site" in filtering:
             queryset = self.apply_filters(queryset, "monitoring_site_id", filtering["monitoring_site"])
 
@@ -164,8 +157,13 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         if "rule_type" in filtering:
             queryset = self.apply_filters(queryset, "rules__rule_type", filtering["rule_type"])
 
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
-            queryset, sortby, list(get_args(MonitoringTaskSortByFields)), self.sortby_aliases
+            queryset,
+            sortby,
+            list(get_args(MonitoringTaskSortByFields)),
+            self.sortby_aliases,
+            rank=has_search,
         )
 
         queryset = queryset.select_related(

@@ -88,6 +88,11 @@ class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters)
     sortby: Optional[list[WorkspaceSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     is_associated: Optional[bool] = Query(
         None,
         description="Whether the workspace is associated with the authenticated user",

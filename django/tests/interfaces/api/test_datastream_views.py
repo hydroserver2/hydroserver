@@ -115,6 +115,20 @@ def test_get_datastreams_returns_400_for_malformed_tag(client):
     assert response.status_code == 400
 
 
+# --- full-text search (q) ------------------------------------------------------------
+
+
+def test_get_datastreams_q_matches_tag_value(client):
+    workspace = WorkspaceFactory()
+    match = _make_datastream(workspace, name="Datastream A", tags={"season": "summer"})
+    _make_datastream(workspace, name="Datastream B", tags={})
+
+    response = client.get(DATASTREAMS_URL, {"q": "summer"})
+
+    assert response.status_code == 200
+    assert {d["id"] for d in response.json()["data"]} == {str(match.id)}
+
+
 # --- create_datastream ---------------------------------------------------------------
 
 

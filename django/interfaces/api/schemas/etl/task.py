@@ -93,6 +93,11 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters):
     sortby: Optional[list[EtlTaskSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     monitoring_site_id: list[uuid.UUID] = Query(
         [], description="Filter ETL tasks by monitoring_site ID."
     )

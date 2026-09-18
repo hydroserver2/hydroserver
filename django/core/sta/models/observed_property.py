@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 from core.iam.models import Workspace
 from core.iam.permissions.registry import register_resource_type
@@ -21,12 +23,16 @@ class ObservedProperty(models.Model):
     description = models.TextField()
     type = models.CharField(max_length=500)
     code = models.CharField(max_length=500)
+    search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):
         return f"{self.name} — {self.id}"
 
     class Meta:
         verbose_name_plural = "Observed properties"
+        indexes = [
+            GinIndex(fields=["search_vector"], name="sta_obsproperty_search_gin"),
+        ]
 
 
 class VariableType(models.Model):

@@ -70,6 +70,11 @@ class ResultQualifierQueryParameters(ResultQualifierFilterFields, CollectionQuer
     sortby: Optional[list[ResultQualifierSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter result qualifiers by workspace ID."
     )

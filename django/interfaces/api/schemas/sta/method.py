@@ -80,6 +80,11 @@ class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters):
     sortby: Optional[list[MethodSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter methods by workspace ID."
     )

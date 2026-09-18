@@ -80,10 +80,12 @@ class ResultQualifierAPIService(APIService):
             ):
                 queryset = ResultQualifier.objects.none()
 
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,
             sortby,
             list(get_args(ResultQualifierSortByFields)),
+            rank=has_search,
         )
 
         if requested_includes:

@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 from core.iam.permissions.mixins import ResourcePermissionMixin
 from core.iam.permissions.registry import register_resource_type
@@ -23,9 +25,13 @@ class RatingCurve(models.Model, ResourcePermissionMixin):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     fitting_method = models.CharField(max_length=20, choices=FittingMethod)
+    search_vector = SearchVectorField(null=True, editable=False)
 
     class Meta:
         app_label = "products"
+        indexes = [
+            GinIndex(fields=["search_vector"], name="products_ratingcurve_search"),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.id}"

@@ -426,7 +426,7 @@ class MonitoringSiteAPIService(APIService):
 
         queryset = self.apply_bbox_filter(queryset, filtering.get("bbox"))
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
-
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,
             sortby,
@@ -436,6 +436,7 @@ class MonitoringSiteAPIService(APIService):
                 "adminArea1": "admin_area_1",
                 "adminArea2": "admin_area_2",
             },
+            rank=has_search,
         )
 
         queryset = queryset.prefetch_related("monitoring_site_linked_resources")

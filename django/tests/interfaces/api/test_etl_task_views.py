@@ -136,6 +136,22 @@ def test_get_etl_tasks_returns_401_when_unauthenticated(client):
     assert response.status_code == 401
 
 
+# --- full-text search (q) ------------------------------------------------------------
+
+
+def test_get_etl_tasks_q_matches_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    match = _make_etl_task(workspace, name="Zephyr Ingest Task")
+    _make_etl_task(workspace, name="Unrelated Task")
+    client.force_login(owner)
+
+    response = client.get(ETL_TASKS_URL, {"q": "Zephyr"})
+
+    assert response.status_code == 200
+    assert {t["id"] for t in response.json()["data"]} == {str(match.id)}
+
+
 # --- create_etl_task -----------------------------------------------------------------
 
 

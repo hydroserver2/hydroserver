@@ -94,6 +94,11 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
     sortby: Optional[list[DataProductTaskSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
     monitoring_site: list[uuid.UUID] = Query(
         [], description="Filter data product tasks by monitoring_site ID.", alias="monitoring_site_id"
     )

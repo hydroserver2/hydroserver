@@ -9,7 +9,6 @@ from django.db.models import Count, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Coalesce
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.utils import timezone as django_tz
 
 from core.types import Unset
@@ -147,21 +146,19 @@ class DataConnectionAPIService(SchedulingService, APIService):
 
         queryset = DataConnection.objects
 
-        if "search_term" in filtering:
-            search_vector = SearchVector(
-                "name", "description", "workspace__name", "source_url",
-                "timezone_type", "timezone"
-            )
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(filtering["search_term"]))
-
         if "workspace" in filtering:
             queryset = self.apply_filters(queryset, "workspace_id", filtering["workspace"])
 
         if "payload_type" in filtering:
             queryset = self.apply_filters(queryset, "payload__payload_type", filtering["payload_type"])
 
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
-            queryset, sortby, list(get_args(DataConnectionSortByFields)), self.sortby_aliases
+            queryset,
+            sortby,
+            list(get_args(DataConnectionSortByFields)),
+            self.sortby_aliases,
+            rank=has_search,
         )
 
         queryset = queryset.prefetch_related("placeholder_variables", "payload")
