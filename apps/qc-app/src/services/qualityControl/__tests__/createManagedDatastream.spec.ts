@@ -60,8 +60,24 @@ describe('buildManagedDatastreamBody', () => {
   it('applies overrides last', () => {
     const body = buildManagedDatastreamBody(makeSource(), 'pl-qc', {
       name: 'QC Temperature',
+      description: 'Cleaned temperature',
+      status: 'complete',
+      sensorId: 'sensor-2',
     })
     expect(body.name).toBe('QC Temperature')
+    expect(body.description).toBe('Cleaned temperature')
+    expect(body.status).toBe('complete')
+    expect(body.sensorId).toBe('sensor-2')
+  })
+
+  // The API takes no status rather than an empty one.
+  it('drops the status when the override clears it', () => {
+    const body = buildManagedDatastreamBody(
+      makeSource({ status: 'ongoing' } as Partial<Datastream>),
+      'pl-qc',
+      { status: undefined }
+    )
+    expect(body.status).toBeUndefined()
   })
 
   it('extracts flat ids from an expand_related (nested) source', () => {

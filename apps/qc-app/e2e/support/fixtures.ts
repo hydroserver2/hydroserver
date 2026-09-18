@@ -79,7 +79,17 @@ export const processingLevels = [
     definition: 'Raw data',
     explanation: 'Unprocessed readings',
   },
+  {
+    id: QC_PROC_LEVEL_ID,
+    workspaceId: WORKSPACE_ID,
+    code: 'QC',
+    definition: 'Quality controlled',
+    explanation: 'Reviewed readings',
+  },
 ]
+
+/** The datastream status vocabulary, as `/datastreams/statuses` serves it. */
+export const datastreamStatuses = ['ongoing', 'complete', 'planned']
 
 export const observedProperties = [
   {

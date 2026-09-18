@@ -16,6 +16,11 @@ export interface CreateManagedDatastreamSpec {
   source: Datastream
   processingLevelId: string
   name?: string
+  description: string
+  /** Left out to create the datastream without a status. */
+  status?: string
+  /** A datastream's method is its sensor. */
+  sensorId: string
 }
 
 export function useCreateManagedDatastream() {
@@ -27,7 +32,13 @@ export function useCreateManagedDatastream() {
     return createManagedDatastream(hs.value, hs.value.qualityControlHistories, {
       source: spec.source,
       processingLevelId: spec.processingLevelId,
-      overrides: spec.name ? { name: spec.name } : undefined,
+      overrides: {
+        ...(spec.name ? { name: spec.name } : {}),
+        description: spec.description,
+        // Explicit, so clearing the status drops the source's one.
+        status: spec.status,
+        sensorId: spec.sensorId,
+      },
     })
   }
 

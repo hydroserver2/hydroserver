@@ -1,4 +1,4 @@
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
 import { createTestVuetify } from '@/utils/test/vuetify'
 import CreateDatastreamForm from '@/components/EditData/CreateDatastreamForm.vue'
@@ -8,21 +8,39 @@ import CreateDatastreamForm from '@/components/EditData/CreateDatastreamForm.vue
   disconnect() {}
 }
 
-const source = { id: 's-1', name: 'Raw Temp', processingLevelId: 'pl-raw' } as any
+const source = {
+  id: 's-1',
+  name: 'Raw Temp',
+  description: 'Raw temperature readings',
+  status: 'ongoing',
+  sensorId: 'sn-1',
+  processingLevelId: 'pl-raw',
+} as any
 
 const processingLevels = [
   { id: 'pl-raw', definition: 'Raw' },
   { id: 'pl-qc', definition: 'Quality Controlled' },
 ]
 
-const mountForm = () =>
+const sensors = [
+  { id: 'sn-1', name: 'Thermistor' },
+  { id: 'sn-2', name: 'Weather station' },
+]
+
+const statuses = ['ongoing', 'complete']
+
+const mountForm = (props: Record<string, unknown> = {}) =>
   mount(CreateDatastreamForm, {
-    props: { source, processingLevels },
+    props: { source, processingLevels, sensors, statuses, ...props },
     global: { plugins: [createTestVuetify()] },
   })
 
+// Every field below is a Vuetify component carrying the test id.
+const field = (w: ReturnType<typeof mountForm>, testId: string) =>
+  w.findComponent(`[data-testid="${testId}"]`) as VueWrapper
+
 const levelSelect = (w: ReturnType<typeof mountForm>) =>
-  w.findComponent({ name: 'VSelect' })
+  field(w, 'create-processing-level')
 
 describe('CreateDatastreamForm', () => {
   it('disables create until a different processing level is chosen', async () => {
@@ -37,7 +55,7 @@ describe('CreateDatastreamForm', () => {
     expect(confirm().attributes('disabled')).toBeUndefined()
   })
 
-  it('emits the create spec on confirm, defaulting the name from the source', async () => {
+  it('emits the create spec on confirm, defaulting the fields from the source', async () => {
     const w = mountForm()
     await levelSelect(w).vm.$emit('update:modelValue', 'pl-qc')
     await w.find('[data-testid="create-confirm"]').trigger('click')
@@ -46,17 +64,69 @@ describe('CreateDatastreamForm', () => {
       source: { id: string }
       processingLevelId: string
       name?: string
+      description: string
+      status?: string
+      sensorId: string
     }
     expect(spec.source.id).toBe('s-1')
     expect(spec.processingLevelId).toBe('pl-qc')
     expect(spec.name).toBe('Raw Temp (QC)')
+    expect(spec.description).toBe('Raw temperature readings')
+    expect(spec.status).toBe('ongoing')
+    expect(spec.sensorId).toBe('sn-1')
+  })
+
+  it('emits the edited description, status and method', async () => {
+    const w = mountForm({ defaultProcessingLevelId: 'pl-qc' })
+    await field(w, 'create-description').vm.$emit('update:modelValue', 'QC pass')
+    await field(w, 'create-status').vm.$emit('update:modelValue', 'complete')
+    await field(w, 'create-sensor').vm.$emit('update:modelValue', 'sn-2')
+    await w.find('[data-testid="create-confirm"]').trigger('click')
+
+    const spec = w.emitted('confirm')![0][0] as {
+      description: string
+      status?: string
+      sensorId: string
+    }
+    expect(spec.description).toBe('QC pass')
+    expect(spec.status).toBe('complete')
+    expect(spec.sensorId).toBe('sn-2')
+  })
+
+  it('requires a description, and allows an empty status', async () => {
+    const w = mountForm({ defaultProcessingLevelId: 'pl-qc' })
+    const confirm = () => w.find('[data-testid="create-confirm"]')
+
+    await field(w, 'create-status').vm.$emit('update:modelValue', null)
+    expect(confirm().attributes('disabled')).toBeUndefined()
+
+    await field(w, 'create-description').vm.$emit('update:modelValue', '  ')
+    expect(confirm().attributes('disabled')).toBeDefined()
+
+    await field(w, 'create-description').vm.$emit('update:modelValue', 'QC pass')
+    expect(confirm().attributes('disabled')).toBeUndefined()
+    await confirm().trigger('click')
+    const spec = w.emitted('confirm')![0][0] as { status?: string }
+    expect(spec.status).toBeUndefined()
+  })
+
+  it('keeps the source values when the lists could not be loaded', async () => {
+    const w = mountForm({
+      defaultProcessingLevelId: 'pl-qc',
+      sensors: [],
+      statuses: [],
+    })
+    await w.find('[data-testid="create-confirm"]').trigger('click')
+    const spec = w.emitted('confirm')![0][0] as {
+      status?: string
+      sensorId: string
+    }
+    expect(spec.status).toBe('ongoing')
+    expect(spec.sensorId).toBe('sn-1')
   })
 
   it('uses the provided default processing level', async () => {
-    const w = mount(CreateDatastreamForm, {
-      props: { source, processingLevels, defaultProcessingLevelId: 'pl-qc' },
-      global: { plugins: [createTestVuetify()] },
-    })
+    const w = mountForm({ defaultProcessingLevelId: 'pl-qc' })
     // Valid immediately since the default differs from the source's level.
     expect(w.find('[data-testid="create-confirm"]').attributes('disabled')).toBeUndefined()
     await w.find('[data-testid="create-confirm"]').trigger('click')
@@ -71,15 +141,8 @@ describe('CreateDatastreamForm', () => {
   })
 
   it('ignores a remembered default not in this workspace, and stays invalid until a real level is picked', async () => {
-    const w = mount(CreateDatastreamForm, {
-      props: {
-        source,
-        processingLevels,
-        // A level id persisted from another workspace/backend.
-        defaultProcessingLevelId: 'pl-from-elsewhere',
-      },
-      global: { plugins: [createTestVuetify()] },
-    })
+    // A level id persisted from another workspace/backend.
+    const w = mountForm({ defaultProcessingLevelId: 'pl-from-elsewhere' })
     // Stale default dropped -> confirm disabled (not submitted as-is).
     expect(
       w.find('[data-testid="create-confirm"]').attributes('disabled')
@@ -93,10 +156,7 @@ describe('CreateDatastreamForm', () => {
   it('adds a processing level inline and selects the new one', async () => {
     const created = { id: 'pl-new', code: 'Quality Controlled' }
     const onCreateProcessingLevel = vi.fn().mockResolvedValue(created)
-    const w = mount(CreateDatastreamForm, {
-      props: { source, processingLevels, onCreateProcessingLevel },
-      global: { plugins: [createTestVuetify()] },
-    })
+    const w = mountForm({ onCreateProcessingLevel })
 
     // Open the inline add panel and submit a new level.
     await w.find('[data-testid="add-level-toggle"]').trigger('click')
@@ -118,14 +178,9 @@ describe('CreateDatastreamForm', () => {
   })
 
   it('blocks create and shows a warning when permissionError is set', async () => {
-    const w = mount(CreateDatastreamForm, {
-      props: {
-        source,
-        processingLevels,
-        defaultProcessingLevelId: 'pl-qc', // otherwise valid
-        permissionError: 'You cannot create datastreams here.',
-      },
-      global: { plugins: [createTestVuetify()] },
+    const w = mountForm({
+      defaultProcessingLevelId: 'pl-qc', // otherwise valid
+      permissionError: 'You cannot create datastreams here.',
     })
     expect(w.find('[data-testid="create-permission-error"]').exists()).toBe(true)
     expect(w.text()).toContain('You cannot create datastreams here.')

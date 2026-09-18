@@ -288,6 +288,7 @@ Per-spec overrides go through `options`:
 await installMocks(page, {
   observations: { phenomenonTime: [...], result: [...] },
   submissions: collectedSubmissions,   // accumulates bulk POSTs for assertion
+  datastreamCreates: collectedBodies,   // accumulates datastream create bodies
   authenticated: false,                 // simulate signed-out
   qcHistories: true,                    // give DATASTREAM_ID a managed datastream
   qcSessionState: sessions,             // live QC sessions, for assertions

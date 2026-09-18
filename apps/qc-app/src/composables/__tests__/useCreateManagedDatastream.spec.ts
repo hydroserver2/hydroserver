@@ -54,11 +54,17 @@ describe('useCreateManagedDatastream', () => {
       source: makeSource(),
       processingLevelId: 'pl-qc',
       name: 'My QC',
+      description: 'Cleaned series',
+      status: 'complete',
+      sensorId: 'sn-2',
     })
 
     const body = hsCreate.mock.calls[0][0]
     expect(body.processingLevelId).toBe('pl-qc')
     expect(body.name).toBe('My QC')
+    expect(body.description).toBe('Cleaned series')
+    expect(body.status).toBe('complete')
+    expect(body.sensorId).toBe('sn-2')
     expect(body.valueCount).toBe(0)
 
     expect(result.history.managedDatastream.id).toBe('managed-1')
@@ -68,5 +74,20 @@ describe('useCreateManagedDatastream', () => {
       'source-1',
       expect.objectContaining({ value: 'managed-1' })
     )
+  })
+
+  it('sends no status when the spec leaves it out', async () => {
+    const { useCreateManagedDatastream } = await import(
+      '@/composables/useCreateManagedDatastream'
+    )
+    const { create } = useCreateManagedDatastream()
+    await create({
+      source: makeSource({ status: 'ongoing' }),
+      processingLevelId: 'pl-qc',
+      description: 'Cleaned series',
+      sensorId: 'sn-1',
+    })
+
+    expect(hsCreate.mock.calls[0][0].status).toBeUndefined()
   })
 })

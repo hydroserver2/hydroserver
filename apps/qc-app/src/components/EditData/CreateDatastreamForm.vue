@@ -116,6 +116,43 @@
       label="Name"
       density="compact"
       hide-details="auto"
+      class="mb-2"
+    />
+
+    <v-textarea
+      v-model="description"
+      data-testid="create-description"
+      label="Description"
+      rows="2"
+      auto-grow
+      density="compact"
+      :error-messages="descriptionError"
+      hide-details="auto"
+      class="mb-2"
+    />
+
+    <v-select
+      v-model="status"
+      data-testid="create-status"
+      :items="statusItems"
+      label="Status"
+      density="compact"
+      clearable
+      hide-details="auto"
+      class="mb-2"
+    />
+
+    <v-select
+      v-model="sensorId"
+      data-testid="create-sensor"
+      :items="sensorItems"
+      item-title="title"
+      item-value="value"
+      label="Select method"
+      no-data-text="No available methods"
+      density="compact"
+      :error-messages="sensorError"
+      hide-details="auto"
       class="mb-3"
     />
 
@@ -146,15 +183,30 @@ interface ProcessingLevelOption {
   code?: string
 }
 
+interface SensorOption {
+  id: string
+  name: string
+}
+
 export interface CreateDatastreamSpec {
   source: Datastream
   processingLevelId: string
   name?: string
+  description: string
+  /** Left out when the user clears it: the field is nullable. */
+  status?: string
+  /** A datastream's method is its sensor. */
+  sensorId: string
 }
 
 const props = defineProps<{
   source: Datastream
   processingLevels: ProcessingLevelOption[]
+  /** The workspace's methods. Empty when the list could not be loaded, and
+   *  the source's own method is then the only option. */
+  sensors?: SensorOption[]
+  /** The datastream status vocabulary. Empty when it could not be loaded. */
+  statuses?: string[]
   defaultProcessingLevelId?: string | null
   /** When set, the user can't create datastreams here: shown as a warning
    *  and the confirm button is disabled. */
@@ -191,6 +243,42 @@ const processingLevelId = ref<string | null>(
     : null
 )
 const name = ref(`${props.source.name} (QC)`)
+const description = ref(props.source.description ?? '')
+const status = ref<string | null>(props.source.status ?? null)
+
+// Datastreams load expand_related, so the sensor arrives nested.
+const sourceSensor = computed(() => {
+  const s = props.source as Datastream & { sensor?: SensorOption }
+  return { id: props.source.sensorId ?? s.sensor?.id ?? '', name: s.sensor?.name }
+})
+const sensorId = ref(sourceSensor.value.id)
+
+// The source's own value stays selectable when the list is missing it, so a
+// failed load never silently changes what gets created.
+const statusItems = computed(() => {
+  const items = [...(props.statuses ?? [])]
+  const current = props.source.status
+  if (current && !items.includes(current)) items.unshift(current)
+  return items
+})
+
+const sensorItems = computed(() => {
+  const items = (props.sensors ?? []).map((s) => ({
+    title: s.name,
+    value: s.id,
+  }))
+  const { id, name: sensorName } = sourceSensor.value
+  if (id && !items.some((i) => i.value === id)) {
+    items.unshift({ title: sensorName || "The source's method", value: id })
+  }
+  return items
+})
+
+const descriptionError = computed(() =>
+  description.value.trim() ? '' : 'A description is required'
+)
+
+const sensorError = computed(() => (sensorId.value ? '' : 'A method is required'))
 
 const processingLevelItems = computed(() =>
   props.processingLevels.map((p) => ({
@@ -218,6 +306,8 @@ const isValid = computed(
     !!processingLevelId.value &&
     knownLevelIds.value.has(processingLevelId.value) &&
     !processingLevelError.value &&
+    !descriptionError.value &&
+    !!sensorId.value &&
     !props.permissionError
 )
 
@@ -227,6 +317,9 @@ function onConfirm(): void {
     source: props.source,
     processingLevelId: processingLevelId.value,
     name: name.value.trim() || undefined,
+    description: description.value.trim(),
+    status: status.value || undefined,
+    sensorId: sensorId.value,
   })
 }
 

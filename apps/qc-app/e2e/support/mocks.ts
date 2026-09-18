@@ -28,6 +28,7 @@ import {
   processingLevels,
   QC_SESSION_AUTHOR,
   QC_SOURCE_CHECKSUM,
+  datastreamStatuses,
   qcHistories,
   qcSessions,
   resultQualifiers,
@@ -67,6 +68,11 @@ export interface MockOptions {
    * payload contents without installing a second route handler.
    */
   submissions?: Array<{ mode: string | null; body: any }>
+  /**
+   * Accumulates every datastream create body the app posts, so a spec can
+   * assert on what the create-datastream form sent.
+   */
+  datastreamCreates?: Array<Record<string, any>>
   /**
    * Serve the QC history fixture, so `DATASTREAM_ID` has a managed
    * datastream derived from it. Off by default: most specs want a catalog
@@ -151,6 +157,7 @@ export async function installMocks(
   const observations = options.observations ?? buildObservations()
   const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
+  const datastreamCreates = options.datastreamCreates ?? []
   const withQcHistories = options.qcHistories ?? false
   const sessionState = options.qcSessionState ?? []
   if (withQcHistories) {
@@ -260,10 +267,15 @@ export async function installMocks(
     if (qcSessionRoute) {
       return handleQcSessions(route, sessionState, qcSessionRoute)
     }
-    if (
-      path.endsWith('/api/data/quality-control/histories') &&
-      method === 'GET'
-    ) {
+    if (path.endsWith('/api/data/quality-control/histories')) {
+      if (method === 'POST') {
+        const body = await safeJson(request)
+        return json(
+          route,
+          { data: { id: 'qch-e2e-new', ...body } },
+          201
+        )
+      }
       return json(route, { data: withQcHistories ? qcHistories : [] })
     }
 
@@ -271,8 +283,38 @@ export async function installMocks(
     if (path.endsWith('/api/data/things') && method === 'GET') {
       return json(route, { data: things })
     }
-    if (path.endsWith('/api/data/datastreams') && method === 'GET') {
+    if (path.endsWith('/api/data/datastreams')) {
+      if (method === 'POST') {
+        const body = await safeJson(request)
+        datastreamCreates.push(body)
+        // Echo the body back the way the server does, with an assigned id
+        // and the nested relations `expand_related: true` asks for.
+        const created = { ...body, id: 'ds-qc-e2e-created' }
+        return json(
+          route,
+          {
+            data: {
+              ...created,
+              thing: things.find((t) => t.id === created.thingId),
+              unit: units.find((u) => u.id === created.unitId),
+              sensor: sensors.find((s) => s.id === created.sensorId),
+              observedProperty: observedProperties.find(
+                (o) => o.id === created.observedPropertyId
+              ),
+              processingLevel: processingLevels.find(
+                (p) => p.id === created.processingLevelId
+              ),
+            },
+          },
+          201
+        )
+      }
       return json(route, { data: catalog })
+    }
+    // Ahead of the single-datastream route, which would otherwise treat
+    // "statuses" as a datastream id.
+    if (path.endsWith('/api/data/datastreams/statuses') && method === 'GET') {
+      return json(route, { data: datastreamStatuses })
     }
     if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
       return json(route, { data: processingLevels })

@@ -426,7 +426,12 @@ describe('StartEditingFlow', () => {
     await flushPromises()
     wrapper
       .findComponent(CreateStub)
-      .vm.$emit('confirm', { source, processingLevelId: 'pl' })
+      .vm.$emit('confirm', {
+        source,
+        processingLevelId: 'pl',
+        description: 'Cleaned series',
+        sensorId: 'sn-1',
+      })
     await flushPromises()
 
     expect(addQcHistory).toHaveBeenCalledWith({ id: 'h-new' })

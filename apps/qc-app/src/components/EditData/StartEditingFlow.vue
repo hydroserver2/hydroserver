@@ -16,8 +16,11 @@
   <v-dialog v-model="showCreateDatastream" max-width="560" persistent>
     <v-card v-if="chooserSource" rounded="lg">
       <CreateDatastreamForm
+        :key="chooserSource.id"
         :source="chooserSource"
         :processing-levels="processingLevels"
+        :sensors="sensors"
+        :statuses="statuses"
         :default-processing-level-id="qcPreferences.processingLevelId"
         :on-create-processing-level="onCreateProcessingLevel"
         :permission-error="createPermissionError"
@@ -48,7 +51,7 @@
  * then enter the editor.
  */
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Snackbar } from '@uwrl/qc-utils'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
@@ -68,6 +71,7 @@ import {
   useManagedDatastreams,
   type ManagedDatastreamOption,
 } from '@/composables/useManagedDatastreams'
+import { useDatastreamMetadata } from '@/composables/useDatastreamMetadata'
 import { useProcessingLevels } from '@/composables/useProcessingLevels'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { collectDeletionChain } from '@/utils/sessionGraph'
@@ -98,6 +102,8 @@ const { loadForSource, deleteManaged, deleteSessionChain } =
   useManagedDatastreams()
 const { create: createManaged } = useCreateManagedDatastream()
 const { createProcessingLevel } = useProcessingLevels()
+const { sensors, statuses, load: loadDatastreamMetadata } =
+  useDatastreamMetadata()
 const { canCreateDatastream, roleName } = useWorkspacePermissions()
 const { enterEdit, startSessionOver, leaveEdit } = useEditEntry()
 
@@ -112,6 +118,11 @@ const chooserLoading = ref(false)
 const chooserOptions = ref<ManagedDatastreamOption[]>([])
 const chooserSource = ref<Datastream | null>(null)
 const showCreateDatastream = ref(false)
+
+// The form's method and status lists are only needed once it opens.
+watch(showCreateDatastream, (open) => {
+  if (open) void loadDatastreamMetadata()
+})
 
 const windowTarget = ref<WindowTarget | null>(null)
 let windowTargetCount = 0

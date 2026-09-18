@@ -118,6 +118,25 @@ straight to the create-datastream form. Pick a managed datastream to
 continue its in-progress session, or **Start new session** to open the
 session window step.
 
+#### Creating a managed datastream
+
+The create-datastream form builds the quality-controlled datastream from the
+source's metadata. Everything you can change is prefilled from the source:
+
+- **New processing level**: required, and it has to differ from the source's.
+  Use **Add processing level** if the workspace has no suitable one yet.
+- **Name**: the source's name with "(QC)" appended.
+- **Description**: required, since the datastream cannot be saved without one.
+- **Status**: the HydroServer status vocabulary. It can be left empty.
+- **Select method**: the workspace's methods, which are its sensors. A
+  datastream's method is the sensor that produced it.
+
+If the method or status list cannot be loaded, the form keeps the source's own
+value so creation still goes through. Everything else (site, observed
+property, unit, medium, aggregation) is copied from the source and cannot be
+changed here; edit the datastream in the Data Management app afterwards if you
+need to.
+
 #### The session window
 
 The session window step shows the source's data extent and, if the managed

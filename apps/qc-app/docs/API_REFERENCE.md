@@ -238,8 +238,20 @@ const {
 
 ```ts
 const { create } = useCreateManagedDatastream()
-const { managedDatastream, history } = await create({ source, processingLevelId, name })
+const { managedDatastream, history } = await create({
+  source,
+  processingLevelId,
+  name,
+  description,
+  status, // omitted to create the datastream without one
+  sensorId, // the datastream's method
+})
 ```
+
+`description`, `status` and `sensorId` are writable on a datastream create
+(see the client's `writableKeys`); there is no separate method field, since a
+datastream's method is its sensor. They are passed as overrides, so they win
+over the values copied from the source.
 
 Delegates to the tested `createManagedDatastream` orchestration with the
 live client (`hs.datastreams` + `hs.qualityControlHistories`). The datastream
@@ -261,6 +273,20 @@ Resolves a source datastream's managed (QC) datastreams from the loaded QC
 histories and fetches each one's sessions. Feeds the row Edit button's
 chooser (`StartEditingFlow.vue`), which lists managed datastreams with their
 in-progress/committed sessions.
+
+### `useDatastreamMetadata()`
+
+```ts
+const { sensors, statuses, load } = useDatastreamMetadata()
+await load()
+```
+
+Reference data for the create-datastream form: the active workspace's sensors
+(`hs.sensors.list`, including the system-level ones) and the datastream status
+vocabulary (`hs.datastreams.getStatuses`). Loaded on demand when the form
+opens rather than with the workspace catalog in `App.vue`, since nothing else
+needs it. Neither request throws: a list that fails to load stays empty and
+the form falls back to the source datastream's own value.
 
 ### `useWorkspacePermissions()`
 
