@@ -43,10 +43,7 @@ test.describe('navigation', () => {
     await installMocks(page, { qcHistories: true })
   })
 
-  // The two picker tests boot the app without a seeded workspace, so they
-  // pay the dev server's cold start when this file runs first.
   test('fresh browser redirects to the workspace picker', async ({ page }) => {
-    test.slow()
     await page.goto('/')
     // Either still /workspaces, or the picker's select button is visible.
     await expect(
@@ -58,7 +55,6 @@ test.describe('navigation', () => {
   })
 
   test('picking a workspace lands the user on Home', async ({ page }) => {
-    test.slow()
     // Don't use `gotoHome` here: it pre-seeds localStorage and skips
     // the picker. We want to exercise the actual pick flow.
     await page.goto('/')

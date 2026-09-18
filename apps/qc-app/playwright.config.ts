@@ -18,6 +18,8 @@ const reporter = process.env.CI
 
 export default defineConfig({
   testDir: './e2e',
+  // Loads the app once so the first test does not pay Vite's cold transform.
+  globalSetup: './e2e/support/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,

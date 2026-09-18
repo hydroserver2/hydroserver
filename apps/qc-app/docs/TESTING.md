@@ -233,6 +233,13 @@ The CI gate prints uncovered line numbers per file. Common causes:
 - `webServer.command: npm run dev` with
   `env: { VITE_APP_E2E_HOOKS: '1' }`. The env var arms test hooks
   (see [Test hooks](#test-hooks)).
+- `globalSetup: './e2e/support/global-setup.ts'`. Playwright starts
+  `webServer` before global setup, so the setup boots the app once
+  (same mocks, same seeded workspace) and waits for the datastreams
+  table. Vite transforms the module graph on demand, and paying for
+  it inside a test made the first `page.goto('/')` of a file exceed
+  the 30 s test timeout; warming it once moves that cost out of the
+  tests and every worker reuses the cached transform.
 
 ### Support layout
 
@@ -241,6 +248,7 @@ e2e/
 ├── support/
 │   ├── app.ts        : flow helpers (gotoHome, setupEditView, startSessionFromRow, waitForEditorReady, openOp, waitForSelection)
 │   ├── fixtures.ts   : workspace / datastream / observation fixtures
+│   ├── global-setup.ts : warms the dev server before the first test
 │   ├── mocks.ts      : page.route() handlers that stand in for HydroServer
 │   └── ops.ts        : op-specific preambles (selectAllPoints, expectHistoryContains)
 └── *.spec.ts         : one file per feature
