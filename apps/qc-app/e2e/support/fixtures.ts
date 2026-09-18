@@ -2,7 +2,7 @@
  * Fixture data for the mocked HydroServer backend.
  *
  * These shapes intentionally carry only the fields the QC app reads at
- * render time — enough to light up the workspace picker, datastream
+ * render time: enough to light up the workspace picker, datastream
  * table, plot, and every filter / edit operation. Fields the server
  * would normally include but which the app ignores (audit stamps,
  * embedded documents, etc.) are omitted to keep the fixtures small.

@@ -346,7 +346,7 @@ describe('usePlotlyStore zoom history', () => {
       store.pushZoomState({ ...fakeZoom(), xRange: [i, i + 1] })
     }
     expect(store.zoomUndoStack.length).toBe(50)
-    // Oldest 10 entries should have been shifted off — first entry's xRange[0] is 10.
+    // Oldest 10 entries should have been shifted off; first entry's xRange[0] is 10.
     expect(store.zoomUndoStack[0].xRange?.[0]).toBe(10)
     expect(store.zoomUndoStack[49].xRange?.[0]).toBe(59)
   })
@@ -452,7 +452,7 @@ describe('usePlotlyStore.updateOptions + selectedSeries', () => {
   })
 })
 
-describe('usePlotlyStore — data-points (tooltips) mode', () => {
+describe('usePlotlyStore: data-points (tooltips) mode', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -490,7 +490,7 @@ describe('usePlotlyStore — data-points (tooltips) mode', () => {
     const { usePlotlyStore } = await import('@/store/plotly')
     const store = usePlotlyStore()
     store.tooltipsMode = 'manual'
-    // Way over the cap — auto would have switched off here.
+    // Way over the cap; auto would have switched off here.
     store.tooltipsMaxDataPoints = 100
     store.visiblePoints = 100_000
 
@@ -505,7 +505,7 @@ describe('usePlotlyStore — data-points (tooltips) mode', () => {
     // The relayout pipeline reads `areTooltipsEnabled` as the single
     // source of truth. Earlier versions also re-applied the threshold
     // check on top, which silently flipped manual-on back off when
-    // the user zoomed out — the regression this guards against.
+    // the user zoomed out, the regression this guards against.
     const { usePlotlyStore } = await import('@/store/plotly')
     const store = usePlotlyStore()
     store.tooltipsMode = 'manual'

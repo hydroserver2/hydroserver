@@ -13,7 +13,7 @@ vi.mock('plotly.js-dist', () => ({
 // plotlyRef is accessed via `storeToRefs` (returns ref) in captureCurrentZoomState,
 // and via raw property access (`store.plotlyRef`) in applyZoomState. Other fields
 // like zoomUndoStack/zoomRedoStack/suppressZoomHistory are mutated directly on the
-// store object (not via `.value`), so they must be plain properties — not refs.
+// store object (not via `.value`), so they must be plain properties, not refs.
 const plotlyRefRef = ref<any>(null)
 
 type ZoomSnap = { xRange: [number, number] | null; yRanges: Record<string, [number, number]>; source: 'user' | 'init' }
@@ -294,7 +294,7 @@ describe('applyZoomState', () => {
     plotlyRefRef.value = { layout: {} }
     await applyZoomState({
       xRange: [0, 10],
-      // `y` (trace-axis ref) — applyZoomState converts to `yaxis`
+      // `y` (trace-axis ref): applyZoomState converts to `yaxis`
       // before emitting the Plotly relayout payload.
       yRanges: { y: [0, 1] },
       source: 'user',

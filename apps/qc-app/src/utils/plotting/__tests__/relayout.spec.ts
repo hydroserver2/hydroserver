@@ -471,7 +471,7 @@ describe('handleRelayout', () => {
 
   it('keeps scatter-only series markers visible past DENSITY_HIDE_MARKERS in auto mode', async () => {
     // Auto-mode + visible >> threshold normally trips the density fade.
-    // The scatter-only exemption has to win here too — otherwise a busy
+    // The scatter-only exemption has to win here too, otherwise a busy
     // view of a no-cadence series wipes itself out as soon as the user
     // pans into a dense zoom level.
     qcDatastream.value = { id: 'qc-target' }

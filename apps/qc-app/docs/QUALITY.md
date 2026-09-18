@@ -51,7 +51,7 @@ with rationale. The high-level groups:
 | Group                                                  | Rationale                                                                |
 |--------------------------------------------------------|--------------------------------------------------------------------------|
 | `store/observations.ts`, `store/hydroserver.ts`, `store/user.ts` | Thin REST wrappers; tested via integration / E2E.                |
-| Most `components/EditData/*.vue`, all `components/FilterPoints/*.vue`, all `components/Navigation/*.vue` | One operation panel per file — heavily Vuetify-driven; mocking the v-component surface costs more than the marginal coverage. Three SFCs are unit-tested as exemplars. |
+| Most `components/EditData/*.vue`, all `components/FilterPoints/*.vue`, all `components/Navigation/*.vue` | One operation panel per file, heavily Vuetify-driven; mocking the v-component surface costs more than the marginal coverage. Three SFCs are unit-tested as exemplars. |
 | `components/VisualizeData/*.vue` (most), `pages/**`, `account/**`, `base/**` | Same Vuetify-shell rationale.                                  |
 | `utils/plotting/events.ts`, `interaction.ts`, `operations.ts`, `staging.ts` | DOM-staging / Plotly relayout seams that resist meaningful unit testing. |
 | `plugins/**`, `router/**`, `types/**`, `config/**`, `main.ts`, `*.d.ts` | Setup / declaration files with no logic.                       |
@@ -59,7 +59,7 @@ with rationale. The high-level groups:
 ### E2E
 
 Playwright specs in `e2e/`, run on **chromium and firefox only**.
-WebKit is intentionally excluded — `SharedArrayBuffer` + COOP/COEP
+WebKit is intentionally excluded: `SharedArrayBuffer` + COOP/COEP
 behavior differs in Safari and needs separate validation.
 
 Mocked specs intercept HydroServer routes via `page.route()`. The live
@@ -75,7 +75,7 @@ entrypoint so QC and Data Management share the same session.
 
 ## Areas of technical debt
 
-These are real, named, worth flagging up front. Not exhaustive — but
+These are real, named, worth flagging up front. Not exhaustive, but
 the items most likely to bite a new team in the first three months.
 
 ### 1. Result-qualifier commit path is partial
@@ -123,15 +123,15 @@ To balance the debt list:
 - **The Plotly integration is decomposed by concern.** Each file is
   short, named, and tested where testable.
 - **The QC History format is versioned**, replayable, and stable on
-  disk — this is the durability story you want.
+  disk; this is the durability story you want.
 - **CI is fast and gates the right things** (type-check, coverage,
   build).
 
 ## See also
 
-- [TESTING.md](./TESTING.md) — how to run, write, and debug tests
+- [TESTING.md](./TESTING.md): how to run, write, and debug tests
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
-- [PLOTTING.md](./PLOTTING.md) — plotting-layer composition end-to-end
-- [ONBOARDING.md](./ONBOARDING.md) — documentation gaps and learning path
-- [PERFORMANCE.md](./PERFORMANCE.md) — performance characteristics
-- `vite.config.ts` — the source of truth on coverage thresholds + excludes
+- [PLOTTING.md](./PLOTTING.md): plotting-layer composition end-to-end
+- [ONBOARDING.md](./ONBOARDING.md): documentation gaps and learning path
+- [PERFORMANCE.md](./PERFORMANCE.md): performance characteristics
+- `vite.config.ts`: the source of truth on coverage thresholds + excludes

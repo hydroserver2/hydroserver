@@ -89,7 +89,7 @@ export type AxisChip = {
 // from the lighter non-QC companions). Slots 1..8 are the light half
 // of d3's category20 with red and pink removed.
 export const COLORS = [
-  '#3f3f3f', // QC — medium grey
+  '#3f3f3f', // QC: medium grey
   '#aec7e8', // light blue
   '#ffbb78', // light orange
   '#98df8a', // light green
@@ -102,7 +102,7 @@ export const COLORS = [
 
 // Darkened companion palette used for tick labels and axis titles.
 export const LABEL_COLORS = [
-  '#3f3f3f', // QC — dark grey (unchanged)
+  '#3f3f3f', // QC: dark grey (unchanged)
   '#1f77b4', // blue
   '#c06a00', // orange
   '#208020', // green
@@ -143,7 +143,7 @@ const primaryAxis = (
 })
 
 /**
- * Indices `i` (i >= 1) where `x[i] - x[i-1] > thresholdMs` — every spot
+ * Indices `i` (i >= 1) where `x[i] - x[i-1] > thresholdMs`: every spot
  * where a synthetic break should be inserted to disconnect the rendered
  * line. Callers pass `intendedSpacingMs`; a strict `>` matches "wider
  * than the intended cadence" without flagging cadence-tight points.
@@ -193,7 +193,7 @@ export const insertGapBreaks = (
 }
 
 // Colour palette for qualifier-flag markers along the bottom of the plot.
-// Reds and pinks are deliberately excluded — red is reserved for point
+// Reds and pinks are deliberately excluded; red is reserved for point
 // selection.
 export const QUALIFIER_COLORS = [
   '#ff7f0e', // orange
@@ -211,7 +211,7 @@ const iconRescaleY = {
   height: 600,
   path: 'M182.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 109.3l0 293.5L86.6 361.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 402.7l0-293.5 41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96z',
 }
-// Horizontal double-arrow — FontAwesome `arrows-alt-h`.
+// Horizontal double-arrow (FontAwesome `arrows-alt-h`).
 const iconRescaleX = {
   width: 512,
   height: 512,
@@ -362,7 +362,7 @@ function buildQualifierBand(
       const ts = new Date(e.appliedAt)
       const when = isNaN(ts.getTime()) ? e.appliedAt : ts.toLocaleString()
       texts.push(
-        `<b>${code}</b>${e.description ? ' — ' + e.description : ''}` +
+        `<b>${code}</b>${e.description ? ': ' + e.description : ''}` +
         `<br>Applied: ${when}` +
         `<br>By: ${e.appliedBy}`
       )
@@ -483,7 +483,7 @@ export const createPlotlyOption = (
     // Series with a declared cadence get a sibling lines overlay; series
     // without one render as a pure scatter. Hoisted here so the marker-
     // opacity seed below can skip the density fade for scatter-only
-    // series — they have no line fallback to read once markers vanish.
+    // series, since they have no line fallback to read once markers vanish.
     const spacingMs = s.intendedSpacingMs ?? null
     const hasLineFallback = !!(spacingMs && spacingMs > 0)
 
@@ -503,7 +503,7 @@ export const createPlotlyOption = (
     // intended cadence, a sibling overlay trace draws the connecting line
     // with NaN-y breaks at gaps; otherwise the series renders as a pure
     // scatter plot. Either way the main trace owns selection and point
-    // indices, so its `line` attribute would be dead config — omitted.
+    // indices, so its `line` attribute would be dead config, so it is omitted.
     const trace: AppPlotlyTrace = {
       id: s.id,
       x: xData,
@@ -523,7 +523,7 @@ export const createPlotlyOption = (
       trace.selected = { marker: { color: 'red', opacity: 1 } }
 
       // Data is pre-windowed in the record, so plot indices already align
-      // with it — no offset needed.
+      // with it; no offset needed.
       trace._windowStartIdx = 0
 
       ;(yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = primaryAxis(
@@ -601,7 +601,7 @@ export const createPlotlyOption = (
     // intended cadence, a sibling overlay trace draws the connecting
     // line with NaN-y break points at every gap wider than the cadence,
     // so the rendered polyline visually disconnects across real gaps.
-    // Series without a declared cadence stay as a pure scatter — the
+    // Series without a declared cadence stay as a pure scatter. The
     // main trace already renders markers-only, so simply not pushing
     // an overlay is enough. The overlay carries no `id`, so
     // selection/lookup logic that finds traces by datastream id keeps
@@ -752,7 +752,7 @@ export const createPlotlyOption = (
   // Custom Reset Axes button. Replaces Plotly's stock `resetScale2d`,
   // which restores from `_rangeInitial0/1`. Those markers get pinned
   // to whatever range was active when the user first interacted with
-  // the plot — which on a fresh reload with a URL zoom is the URL
+  // the plot, which on a fresh reload with a URL zoom is the URL
   // view, not the data extent. Reset then bounces back to the URL
   // view instead of the data extent, which the user perceived as
   // "Reset doesn't work."

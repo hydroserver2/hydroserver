@@ -79,7 +79,7 @@ async function initializeApp() {
   // Run qc-utils' worker/inline calibration when the browser is idle so
   // the crossover thresholds match this device. Results are cached in
   // `localStorage`; the "Recalibrate" button in the nav rail can force
-  // a rerun. Non-critical — failures just fall back to conservative
+  // a rerun. Non-critical: failures just fall back to conservative
   // defaults baked into qc-utils.
   const kickoffCalibration = () => {
     ensureCalibration().catch((err) => {

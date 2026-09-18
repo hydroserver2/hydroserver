@@ -16,7 +16,7 @@
  * Most captures use a Locator so each PNG is tightly cropped to the
  * region the doc actually references. The viewport is intentionally
  * tall so operation panels render their full body without internal
- * scroll — the locator screenshot would otherwise clip whatever fell
+ * scroll, since the locator screenshot would otherwise clip whatever fell
  * outside the panel's visible area.
  */
 
@@ -49,7 +49,7 @@ const OUT = path.resolve(__dirname, '..', 'docs', 'images')
  * Wait for the Plotly chart in the page (if any) to finish its
  * post-mount layout. `handleNewPlot` runs inside a 200 ms setTimeout
  * in `Plot.vue`'s mount hook, and a ResizeObserver fires a frame
- * later to size the canvas to its container — both happen *after*
+ * later to size the canvas to its container. Both happen *after*
  * `setupEditView`'s "Filter Data is visible" gate. Without this
  * extra wait the screenshot captures the initial undersized layout,
  * leaving an empty stripe between the right edge of the plotting
@@ -65,11 +65,11 @@ async function waitForPlotLayoutSettled(page: Page) {
         | null
       if (!gd) return true
       // The plot div stays in the DOM behind the Table tab but its
-      // offsetWidth collapses to 0 — treat that as settled too.
+      // offsetWidth collapses to 0; treat that as settled too.
       if (gd.offsetWidth === 0) return true
       const layout = gd._fullLayout
       if (!layout?.width) return false
-      // Allow a few pixels of slop — Plotly rounds.
+      // Allow a few pixels of slop (Plotly rounds).
       return Math.abs(layout.width - gd.offsetWidth) <= 4
     },
     undefined,
@@ -106,7 +106,7 @@ const SHOULD_CAPTURE = process.env.CAPTURE_SCREENSHOTS === '1'
 test.describe('docs screenshots', () => {
   test.skip(
     !SHOULD_CAPTURE,
-    'Opt-in only — set CAPTURE_SCREENSHOTS=1 to regenerate docs/images/ PNGs.'
+    'Opt-in only: set CAPTURE_SCREENSHOTS=1 to regenerate docs/images/ PNGs.'
   )
 
   test('login page', async ({ page }) => {
@@ -246,7 +246,7 @@ test.describe('docs screenshots', () => {
   ] as const
 
   for (const id of filterOps) {
-    test(`filter panel — ${id}`, async ({ page }) => {
+    test(`filter panel: ${id}`, async ({ page }) => {
       await page.setViewportSize(TALL_VIEWPORT)
       await installMocks(page, { qcHistories: true })
       await setupEditView(page)
@@ -265,7 +265,7 @@ test.describe('docs screenshots', () => {
   ] as const
 
   for (const id of editOps) {
-    test(`edit panel — ${id}`, async ({ page }) => {
+    test(`edit panel: ${id}`, async ({ page }) => {
       await page.setViewportSize(TALL_VIEWPORT)
       await installMocks(page, { qcHistories: true })
       await setupEditView(page)
@@ -290,7 +290,7 @@ test.describe('docs screenshots', () => {
     await snapEl(panel, 'panel-date-range-mask.png')
   })
 
-  test('add panel — qualifyingComments', async ({ page }) => {
+  test('add panel: qualifyingComments', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
     await installMocks(page, { qcHistories: true })
     await setupEditView(page)
@@ -300,7 +300,7 @@ test.describe('docs screenshots', () => {
     await snapEl(panel, 'panel-qualifyingComments.png')
   })
 
-  test('add panel — addPoints', async ({ page }) => {
+  test('add panel: addPoints', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
     await installMocks(page, { qcHistories: true })
     await setupEditView(page)
@@ -309,7 +309,7 @@ test.describe('docs screenshots', () => {
     await snapEl(panel, 'panel-addPoints.png')
   })
 
-  test('add panel — fillGaps', async ({ page }) => {
+  test('add panel: fillGaps', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
     await installMocks(page, { qcHistories: true })
     await setupEditView(page)

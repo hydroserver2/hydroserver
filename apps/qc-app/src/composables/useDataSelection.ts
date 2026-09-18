@@ -27,7 +27,7 @@ export function useDataSelection() {
    * Tell the next `plotly_relayout`-induced `handleSelected` call
    * what selection to expect from this programmatic write. The
    * relayout handler compares the expected payload against the
-   * trace's actual `selectedpoints` — a match is the echo (skip
+   * trace's actual `selectedpoints`: a match is the echo (skip
    * dispatch); a mismatch means a user gesture (box / lasso select)
    * raced through the same debounce window, so dispatch normally.
    *
@@ -45,7 +45,7 @@ export function useDataSelection() {
    * Locate the plotly trace index for the QC series we're editing.
    * Traces are rendered in the order: non-QC → QC → qualifier band, so
    * the old `data.length - 1` shortcut targeted the last qualifier-band
-   * trace whenever a qualifier band was present — selected points were
+   * trace whenever a qualifier band was present, so selected points were
    * written to an invisible trace, which matched the reported bug: the
    * "N points selected" label still tracked `selectedData`, but the QC
    * trace had no `selectedpoints` and nothing was highlighted. Match by
@@ -66,7 +66,7 @@ export function useDataSelection() {
 
   /**
    * Push `selection` into Plotly as the QC trace's `selectedpoints`
-   * and mirror it into `selectedData`. Visual-only — does NOT push
+   * and mirror it into `selectedData`. Visual-only: does NOT push
    * a SELECTION entry into the ObservationRecord history. The
    * Plotly write triggers a `plotly_relayout` that would otherwise
    * round-trip through `handleSelected` and dispatch a SELECTION
@@ -93,7 +93,7 @@ export function useDataSelection() {
    * SELECTION lands from that round-trip.
    *
    * `recordHistory` (default `true`) controls whether the clear is
-   * recorded in qc-utils history — when true, an empty SELECTION is
+   * recorded in qc-utils history. When true, an empty SELECTION is
    * dispatched, which `_selection` may use to drop the underlying
    * filter entry (the user actively cleared a filter-driven
    * selection). Programmatic callers that have already logged what
@@ -129,8 +129,8 @@ export function useDataSelection() {
 
   // `startDate` / `endDate` bracket the current selection, or the full
   // series when nothing is selected. The `|| fallback` arm that used to
-  // sit on `new Date(...)` was dead code — `new Date()` is truthy even
-  // when given `undefined` (it just produces an Invalid Date) — so the
+  // sit on `new Date(...)` was dead code: `new Date()` is truthy even
+  // when given `undefined` (it just produces an Invalid Date), so the
   // fallback was unreachable. The computeds now always return a Date,
   // and the downstream string helpers stop guarding against a value
   // that can't appear.

@@ -8,7 +8,7 @@ const router = createRouter({
 })
 
 export function setupRouteGuards() {
-  // Return the guard's result rather than calling `next()` — the callback
+  // Return the guard's result rather than calling `next()`. The callback
   // form is deprecated in vue-router. `false` cancels, a route location
   // redirects, and null/undefined proceeds to the next guard.
   guards.forEach((fn) => {

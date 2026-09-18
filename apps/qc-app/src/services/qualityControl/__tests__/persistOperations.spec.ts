@@ -49,7 +49,7 @@ describe('sessionOperationsFromSerialized', () => {
   })
 })
 
-describe('persistSessionOperations — comments', () => {
+describe('persistSessionOperations: comments', () => {
   it('sends a comment with a newly-appended operation', async () => {
     const qc = makeQcFake()
     const { historyId, sessionId } = await sessionWith(qc)

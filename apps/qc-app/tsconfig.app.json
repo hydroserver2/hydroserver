@@ -1,7 +1,7 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
-    // `paths` without `baseUrl` — TS 5+ resolves each pattern relative
+    // `paths` without `baseUrl`: TS 5+ resolves each pattern relative
     // to this tsconfig's directory, so `@/*` still maps to `./src/*`.
     // `baseUrl` itself is deprecated in TS 6 and removed in TS 7.
     "paths": {
@@ -39,7 +39,7 @@
     "src/**/*.vue",
     "vitest.config.ts"
   ],
-  // Tests live under `tsconfig.test.json` (more lenient — see comments
+  // Tests live under `tsconfig.test.json` (more lenient; see comments
   // there); excluding them from the app project keeps production code
   // strict while the suite still type-checks under its own config.
   "exclude": [

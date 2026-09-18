@@ -37,7 +37,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
   const showTooltip = ref(false)
   const isUpdating = ref(false)
-  // Persisted as a user preference — large plots are cheap on fast machines
+  // Persisted as a user preference. Large plots are cheap on fast machines
   // and expensive on slow ones, so let the user pick. Bounded in the UI
   // but not hard-clamped here so power users can override via storage.
   // Persistence is wired through pinia-plugin-persistedstate at the
@@ -45,9 +45,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const tooltipsMaxDataPoints = ref<number>(10 * 1000)
   const visiblePoints: Ref<number> = ref(0)
   // Two-mode toggle for individual data-point rendering / hover.
-  //   - 'manual' — user controls on/off via `tooltipsManualEnabled`.
+  //   - 'manual': user controls on/off via `tooltipsManualEnabled`.
   //                Threshold ignored.
-  //   - 'auto'   — threshold-driven: on while visiblePoints <=
+  //   - 'auto':   threshold-driven: on while visiblePoints <=
   //                threshold, off otherwise. Default keeps backward
   //                behavior for existing users.
   const tooltipsMode = ref<'manual' | 'auto'>('auto')
@@ -55,7 +55,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // `auto`. Defaults to `true` so the first manual click feels like
   // an explicit toggle off.
   const tooltipsManualEnabled = ref(true)
-  // Derived "is hover currently rendering?" — read by the relayout
+  // Derived "is hover currently rendering?", read by the relayout
   // pipeline and the toolbar UI. Auto mode reads the live threshold;
   // manual mode reads the user's explicit on/off.
   const areTooltipsEnabled = computed(() => {
@@ -75,7 +75,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * `processMouseMove` on every frame. Lives outside Plotly's
    * `showspikes` because the built-in spikes are gated on
    * `hoverinfo !== 'skip'` and so disappear when tooltips auto-
-   * disable at high point counts — users want the crosshair to stay
+   * disable at high point counts, and users want the crosshair to stay
    * regardless of tooltip state. The CSS driver also avoids the
    * noticeable lag behind the cursor that Plotly's spike layer has
    * on scattergl.
@@ -93,7 +93,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Datastream IDs whose non-QC right-side y-axis is currently hidden.
    * `createPlotlyOption` reads this while building overlay axes and
-   * sets `visible: false` on matches — the trace itself keeps
+   * sets `visible: false` on matches. The trace itself keeps
    * rendering, only the axis chrome (line, ticks, labels, title) goes
    * away, and autoshift reclaims the column's horizontal space. Keyed
    * by datastream id so trace reorders and QC promotions don't
@@ -138,7 +138,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Horizontal title chips rendered above each non-QC right-side axis
    * (see `.plot-axis-chip` in Plot.vue). Replaces Plotly's rotated
-   * vertical axis titles — horizontal text is much easier to scan
+   * vertical axis titles, since horizontal text is much easier to scan
    * when several right-side axes stack up. Populated by
    * `updateAxisChips` after each plot/relayout; each entry carries
    * the datastream id, the axis line's pixel position (for
@@ -169,7 +169,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * Sentinel armed by programmatic Plotly writes (`setPlotSelection`,
    * `clearSelected`). When the next `plotly_relayout`-induced
    * `handleSelected` call fires, we compare the current selection
-   * against this expected payload — if they match it's the echo of
+   * against this expected payload: if they match it's the echo of
    * our own write (skip the SELECTION dispatch); if they differ a
    * user gesture (box/lasso select) raced through the same debounce
    * window, so we let the dispatch proceed. `handleClick` (the
@@ -201,7 +201,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Monotonic counter bumped once per `handleNewPlot` run. `Plotly.newPlot`
    * reuses the same DOM element (so `plotlyRef.value`'s identity does not
-   * change) but purges every externally-attached event listener — code
+   * change) but purges every externally-attached event listener, so code
    * outside `handleNewPlot` that subscribes to `plotly_relayout` /
    * `plotly_restyle` (e.g. `ContextPlot.vue`) needs a positive signal to
    * re-attach. Watch this ref instead of trying to detect element
@@ -231,7 +231,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // }
 
   /**
-   * Zoom history — separate from `editHistory` (which tracks QC data
+   * Zoom history, separate from `editHistory` (which tracks QC data
    * edits). Each entry captures the plot's visible ranges at a point in
    * time so the user can step back/forward through viewport changes.
    *
@@ -250,7 +250,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
   /**
    * Live ranges currently shown on the plot. Top of the undo stack
-   * after every relayout (zoom, pan, axis drag) — `null` when nothing
+   * after every relayout (zoom, pan, axis drag), or `null` when nothing
    * has been recorded yet (initial mount before the first layout
    * settles). The share URL watcher subscribes to this so the link
    * reflects the latest viewport without poking into the stack
@@ -307,7 +307,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * @param preserveZoom When true (default), the current live x/y ranges
    *   are copied onto the fresh layout so QC edits don't reset the user's
    *   zoom. Pass `false` when the caller *wants* the new layout's default
-   *   range to apply — notably when the user changed the date filter
+   *   range to apply, notably when the user changed the date filter
    *   (`useDataVisStore#setDateRange`), where preserving the old range
    *   would defeat the action.
    */
@@ -456,7 +456,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    *
    * Race-safe because the walk is synchronous and reads the array
    * exactly once. Stable across reloads because the walk order is
-   * the user-facing legend order, not fetch-completion order — so
+   * the user-facing legend order, not fetch-completion order, so
    * the same `plottedDatastreams` configuration yields the same
    * colour assignment every time.
    *

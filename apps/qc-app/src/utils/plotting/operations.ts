@@ -17,7 +17,7 @@ import type { AppPlotlyTrace } from './options'
 /**
  * Zoom the x-axis to an explicit [start, end] window without touching
  * the data. Used by the editor's preset buttons, which should be a
- * visual-only zoom — unlike the Select-view sidebar presets, which
+ * visual-only zoom, unlike the Select-view sidebar presets, which
  * drive a fresh fetch + redraw via `useDataVisStore#onDateBtnClick`.
  */
 export const zoomXaxisTo = async (
@@ -54,8 +54,8 @@ export const toggleTraceVisibility = async (
  *
  * A dot-path relayout (`{'yaxisN.visible': false}`) hides the chrome
  * but doesn't rerun the autoshift pass, so the column stays reserved.
- * We rebuild via `handleNewPlot(preserveZoom)` — the same replot path
- * used for QC swaps and trace reorders — which regenerates the layout
+ * We rebuild via `handleNewPlot(preserveZoom)` (the same replot path
+ * used for QC swaps and trace reorders), which regenerates the layout
  * from `createPlotlyOption` with the updated `hiddenAxisIds` and
  * preserves the user's viewport.
  *
@@ -199,7 +199,7 @@ export const cropXaxisRange = async () => {
  * points. Mirror of `fitYaxisToVisible`: for each trace we consider the
  * points already within the live x-range, keep those whose y also falls
  * inside the trace's live y-range, and shrink the x-axis to span their
- * min/max x (with 10% padding — same amount as the Y variant).
+ * min/max x (with 10% padding, same amount as the Y variant).
  * @param _eventData unused; preserved for the modebar click signature.
  */
 export const fitXaxisToVisible = async (_eventData?: unknown) => {
@@ -280,7 +280,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
 /**
  * Crops the QC trace's y axis to the extent of its currently visible
  * points. Only the primary `yaxis` (where QC always lives, per
- * `createPlotlyOption`) is rescaled — every non-QC overlay keeps the
+ * `createPlotlyOption`) is rescaled; every non-QC overlay keeps the
  * range the user set on it, so clicking this button never reshuffles
  * the companion axes. The data considered is exclusively the QC
  * trace's y-values within the current live x-range.
@@ -343,10 +343,10 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
 
     if (yMax === yMin || !Number.isFinite(yMin) || !Number.isFinite(yMax)) return
 
-    // Fit Y means fit; no padding. Mirrors `fitXaxisToVisible` — any
+    // Fit Y means fit; no padding. Mirrors `fitXaxisToVisible`: any
     // padding reads as a margin Plotly conjured up.
     // Reuse the Plotly.update layout-object form (same shape the old
-    // loop-over-all-axes seam used) — a previous attempt with
+    // loop-over-all-axes seam used). A previous attempt with
     // Plotly.relayout + dot-path keys silently no-op'd in some cases
     // and left the y-axis showing the whole extent.
     const layoutUpdates: Partial<Layout> & Record<string, Partial<LayoutAxis>> = {

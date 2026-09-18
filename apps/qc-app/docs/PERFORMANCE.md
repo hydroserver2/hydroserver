@@ -10,13 +10,13 @@ This document answers two questions:
 It is design-review + measured-behavior, not a marketing benchmark. The
 numbers are calibrated per-device by the qc-utils calibration layer, so
 your envelope on a 2018 laptop is different from your envelope on a 2024
-desktop — that's the whole point of the calibration mechanism.
+desktop. That's the whole point of the calibration mechanism.
 
 ## Where the work happens
 
 The app is a static SPA, so "performance" almost entirely means
 **in-browser computation and memory**. The HydroServer backend handles
-metadata, auth, and observation transport — the QC App does not
+metadata, auth, and observation transport; the QC App does not
 introduce its own server-side bottleneck.
 
 | Tier                          | Bottleneck                                                                |
@@ -67,8 +67,8 @@ shouldUseWorker(EnumEditOperations.FILL_GAPS, {
 // → { useWorker: false, predictedInlineMs: 12.4, predictedWorkerMs: 53.0, ... }
 ```
 
-Spawn overhead varies hugely across devices — Windows Chrome can take
-~100 ms, macOS ~10 ms — so static thresholds baked into the library are
+Spawn overhead varies hugely across devices (Windows Chrome can take
+~100 ms, macOS ~10 ms), so static thresholds baked into the library are
 wrong for most users. The calibration layer measures three primitives
 once per device (cached in `localStorage` for 30 days):
 
@@ -92,7 +92,7 @@ serve `Cross-Origin-Opener-Policy: same-origin` +
 the demo deployment both set those headers; if your CDN doesn't, the
 worker layer falls back transparently to inline kernels.
 
-The fallback is correct but slower on large edits — expect a 2-5×
+The fallback is correct but slower on large edits: expect a 2-5×
 slowdown on multi-hundred-thousand-point operations, and a noticeable
 UI freeze on operations that take >300 ms inline.
 
@@ -155,7 +155,7 @@ deployment because:
 
 It is **less well-shaped** when:
 
-- **You need centrally orchestrated QC** — automated runs on a schedule,
+- **You need centrally orchestrated QC**: automated runs on a schedule,
   a queue of datastreams to process. The app is a single-operator GUI;
   for batch QC, drive `@uwrl/qc-utils` directly from a Node or Python
   (Pyodide) process and bypass the app.
@@ -176,7 +176,7 @@ its envelope, the things to watch:
    bundle.
 4. **The calibration widget** on representative user devices. If
    `predictedInlineMs` is much higher than reality, the calibration is
-   stale — re-benchmark.
+   stale. Re-benchmark.
 
 Today there is no automated reporter that aggregates these numbers off
 the user's machine (see [DEPLOYMENT.md "Operational observability"](./DEPLOYMENT.md#operational-observability));
@@ -191,7 +191,7 @@ windows in the hundreds-of-thousands range). The
 
 There is no published large-scale benchmark suite. If you're evaluating
 the app for a >1M-operator-monthly workload, treat that as an open
-question — the architecture has nothing structurally preventing it
+question. The architecture has nothing structurally preventing it
 (every user has their own browser), but bandwidth and HydroServer
 backend capacity are the constraints, not the QC App itself.
 

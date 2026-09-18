@@ -91,7 +91,7 @@ describe('useObservationStore.fetchObservationsInRange windowing', () => {
     )
     expect(second).toBe(first)
     // applyWindow is a no-op for the same window, so the data buffer is the
-    // same instance — edits/history would survive.
+    // same instance, so edits/history would survive.
     expect(second.dataX).toBe(beforeX)
   })
 

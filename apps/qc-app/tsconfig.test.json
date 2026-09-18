@@ -7,7 +7,7 @@
     // mocked-store arrays positionally on every line. Under strict
     // `noUncheckedIndexedAccess` each access widens to `T | undefined`
     // and the tests would need a non-null assertion on every line for
-    // no real safety gain — the indices are deterministic in the test
+    // no real safety gain, since the indices are deterministic in the test
     // fixtures. Disabling the check here keeps production code strict
     // while letting specs read naturally.
     "noUncheckedIndexedAccess": false
@@ -19,7 +19,7 @@
     // Source must transitively compile when a test imports it, but the
     // ambient module shims (`plotly.js-dist`, vite/client, vuetify
     // styles) live in `src/types/` and need to be visible to this
-    // project too — declarations are project-scoped, not loaded
+    // project too: declarations are project-scoped, not loaded
     // through the file graph.
     "src/**/*.ts",
     "src/**/*.vue",

@@ -1,5 +1,5 @@
 /**
- * Unit tests for PlotSourceDialog.vue — the chooser shown when plotting a
+ * Unit tests for PlotSourceDialog.vue, the chooser shown when plotting a
  * source datastream that has managed (QC) datastreams derived from it.
  * Purely presentational, so no stores are mocked.
  */

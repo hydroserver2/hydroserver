@@ -64,7 +64,7 @@ export interface ShareState {
   /** Custom-window end (epoch ms). Only emitted when no preset is
    *  active. */
   endMs?: number | null
-  /** Sidebar filters — only emitted when the recipient lands on the
+  /** Sidebar filters. Only emitted when the recipient lands on the
    *  Select view (they don't affect the plot). */
   thingIds?: string[]
   observedPropertyNames?: string[]
@@ -78,7 +78,7 @@ export interface ShareState {
    *  position in `datastreamIds` (`ds`), same exclusions as
    *  `traceVisibility`. */
   axisVisibility?: boolean[]
-  /** Plot zoom — both x and per-axis y. */
+  /** Plot zoom: both x and per-axis y. */
   zoom?: ShareableZoom
   /** Data-points marker mode. Default is `auto`. */
   dataPointsMode?: 'auto' | 'manualOn' | 'manualOff'
@@ -175,7 +175,7 @@ export function encodeShareState(state: ShareState): Record<string, string> {
     q.pl = state.processingLevelNames.join(',')
   }
 
-  // Visibility — only serialise when at least one trace is hidden
+  // Visibility: only serialise when at least one trace is hidden
   // (false). Empty/all-visible → omit.
   if (state.traceVisibility?.some((v) => v === false)) {
     const hidden = state.traceVisibility.map((v) => v === false)

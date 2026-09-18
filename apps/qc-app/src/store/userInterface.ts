@@ -52,7 +52,7 @@ export const useUIStore = defineStore('userInterface', () => {
   // View
   const currentView = ref<View>(DrawerType.Select)
 
-  // Operation panel — which operation's details are shown in the right
+  // Operation panel: which operation's details are shown in the right
   // sidebar below the edit history. `null` means no panel is open.
   const selectedOperation = ref<string | null>(null)
 
@@ -95,11 +95,11 @@ export const useUIStore = defineStore('userInterface', () => {
   // Seed gap / fill defaults when the QC datastream changes. Preference
   // order:
   //   1. Per-datastream persisted values (user's last commit for this
-  //      series) — so reopening a panel feels continuous.
+  //      series), so reopening a panel feels continuous.
   //   2. Datastream's declared `intendedTimeSpacing` /
-  //      `intendedTimeSpacingUnit` / `noDataValue` — a reasonable
+  //      `intendedTimeSpacingUnit` / `noDataValue`, a reasonable
   //      starting point for first-time use.
-  //   3. Current ref values — keep whatever the user had if the
+  //   3. Current ref values, keeping whatever the user had if the
   //      datastream lacks metadata.
   // A null change (unset) is skipped so closing and reopening the QC
   // drawer without a datastream loaded doesn't clobber form state.
@@ -214,7 +214,7 @@ export const useUIStore = defineStore('userInterface', () => {
 }, {
   // Persist only the user-toggleable preference. The from/to of the
   // active filter window are panel state and reseed from data bounds
-  // on each mount — restoring stale ms across sessions would point at
+  // on each mount; restoring stale ms across sessions would point at
   // a window that no longer overlaps the current datastream's data.
   // `:v1` suffix matches the `qc-utils:calibration:v1` template so we
   // can invalidate the persisted value by bumping the version.

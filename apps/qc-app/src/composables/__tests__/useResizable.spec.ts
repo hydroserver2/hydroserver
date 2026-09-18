@@ -3,7 +3,7 @@ import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
 
-// Real `useUiLayoutStore` is fine — it's a tiny pinia store backed by a
+// Real `useUiLayoutStore` is fine: it's a tiny pinia store backed by a
 // Map and we want to exercise the persistence wiring end-to-end.
 import { useUiLayoutStore } from '@/store/uiLayout'
 
@@ -149,7 +149,7 @@ describe('useResizable', () => {
     })
     onStart(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }))
     dispatchMouse('mousemove', 200, 0)
-    // Raw pixels — no percent scaling.
+    // Raw pixels, no percent scaling.
     expect(size.value).toBe(230)
     dispatchMouse('mouseup', 200, 0)
   })

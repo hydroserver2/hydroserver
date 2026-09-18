@@ -1,7 +1,7 @@
 /**
  * Datetime-range filter: selects points whose phenomenonTime falls
  * inside [from, to] using the DatePickerField inputs. The panel is
- * live-commit — opening it seeds a selection that spans the full
+ * live-commit: opening it seeds a selection that spans the full
  * series range, without any Apply-filter button to press.
  */
 
@@ -21,7 +21,7 @@ test.describe('filter: datetime range', () => {
     await openOp(page, 'datetimeRange')
     // Live-commit: the RangeStager pushes a selection as soon as it
     // resolves its initial range, so we just wait for the selection
-    // to populate — no Apply-filter button exists.
+    // to populate (no Apply-filter button exists).
     await waitForSelection(page, 1)
 
     // Sanity: the "N points selected in range." label appears after

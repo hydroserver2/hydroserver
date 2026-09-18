@@ -19,7 +19,7 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 | Build / dev      | Vite 7                                       | Fast cold start, native ESM, first-class TypeScript + Vue SFC support. The dev server is also what serves the COOP/COEP headers `SharedArrayBuffer` needs. |
 | Type system      | TypeScript 5 (strict)                        | Surfaces shape errors early; eliminates a class of regressions around `ObservationRecord` API drift. |
 | Unit tests       | Vitest + Vue Test Utils (`jsdom`)            | Shares the Vite build pipeline, runs in-process, transparent ESM. |
-| E2E tests        | Playwright (chromium + firefox)              | Cross-browser, headless-or-headed, intercepts network requests cleanly. WebKit excluded — see [QUALITY.md](./QUALITY.md). |
+| E2E tests        | Playwright (chromium + firefox)              | Cross-browser, headless-or-headed, intercepts network requests cleanly. WebKit excluded (see [QUALITY.md](./QUALITY.md)). |
 | Auth             | HydroServer session cookies                  | Authentication is owned by the data-management app; QC consumes the existing session. |
 | Package manager  | npm                                          | Stays compatible with CI cache + the published `@uwrl/qc-utils` workflow.       |
 
@@ -28,16 +28,16 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 **The QC App itself runs no database.** It is a static SPA. Persistent state
 lives in three places, in increasing order of authority:
 
-1. **In-memory typed arrays** — every loaded observation window is held in a
+1. **In-memory typed arrays**: every loaded observation window is held in a
    pair of `Float64Array` (datetimes, ms epoch) + `Float32Array` (values),
    backed by a `SharedArrayBuffer` when COOP/COEP are on so worker kernels
    can scan the same memory without copying. Lives in `ObservationRecord`
-   (qc-utils). Lost on reload — by design.
-2. **`localStorage`** — workspace selection, drawer widths, persisted
+   (qc-utils). Lost on reload, by design.
+2. **`localStorage`**: workspace selection, drawer widths, persisted
    operator inputs (`pinia-plugin-persistedstate`). Per-browser, never
    sent to the backend. Use only for ephemeral UI prefs; **never** persist
    observation data here.
-3. **HydroServer backend** — the system of record. The QC App reads
+3. **HydroServer backend**: the system of record. The QC App reads
    observations and writes edited observations back via the
    `@hydroserver/client`'s `replace`-mode bulk POST. The backend stores
    everything in HydroServer's Postgres-compatible store, and is the
@@ -80,7 +80,7 @@ always be recovered by a hard refresh.
 ```
 
 All QC computation runs in-browser. The backend never sees the intermediate
-edit state — it only sees the final observations the operator chooses to
+edit state; it only sees the final observations the operator chooses to
 submit.
 
 ## Source layout
@@ -102,7 +102,7 @@ src/
 │  ├─ useQcHistory.ts            Save / load QC Historys (calls qc-utils' serializeHistory / applyHistory).
 │  ├─ useResizable.ts           Generic drag-to-resize hook used by drawers + the plot.
 │  └─ useBufferedNumber.ts      Debounced numeric input wrapper for filter panels.
-├─ store/                       Pinia stores — see "State stores" below.
+├─ store/                       Pinia stores. See "State stores" below.
 ├─ utils/
 │  ├─ plotting/                 Plotly integration (trace builders, event handlers, selection, staging).
 │  ├─ dateMath.ts               Time-range arithmetic for presets ("1w", "1m", "All", …).
@@ -132,13 +132,13 @@ goes one direction.
 | `qualifiers.ts`       | Result qualifier codes per workspace.                                 |
 | `userInterface.ts`    | Drawer state (Select/Edit), persisted prefs, current view.            |
 | `operationParams.ts`  | Per-operation form inputs, persisted so they survive panel re-opens.  |
-| `uiLayout.ts`         | Drawer widths, table heights — persisted UI geometry.                 |
+| `uiLayout.ts`         | Drawer widths, table heights: persisted UI geometry.                  |
 | `workingCopies.ts`    | Working copy per managed datastream, keyed by its in-progress session.|
 
 The persisted stores use `pinia-plugin-persistedstate` with explicit
 `storage: localStorage` and an explicit `paths` list. **Never** persist
 ephemeral state (drawer open flags during a single session are fine; the
-current plot ref or fetched observations are not — they belong in memory).
+current plot ref or fetched observations are not; they belong in memory).
 
 ## Data flow: a QC edit
 
@@ -235,7 +235,7 @@ SDK services on the `hs` instance: `qualityControlHistories`,
 `qualityControlSessions` (with `commit`), and `qualityControlOperations`. They
 are normal SDK services built on the shared `apiMethods` layer, so they inherit
 the session auth (CSRF cookie -> `X-CSRFToken`, `credentials: 'include'`) and
-the `ApiResponse` return shape — methods never throw on HTTP errors. Bodies are
+the `ApiResponse` return shape: methods never throw on HTTP errors. Bodies are
 camelCase (`by_alias`); query parameters are snake_case (`expand_related`,
 `range_start`, `managed_datastream_id`, `ancestor_of`, ...).
 
@@ -244,7 +244,7 @@ composes those services with `@uwrl/qc-utils` and the datastream/observation
 APIs: `createManagedDatastream`, the session lifecycle (`session.ts`),
 `persistOperations`, `commitSession`, `reconstructSession`, `findHistory`, and
 the `observationsBulkBody` serializer. `unwrap` bridges `ApiResponse` to the
-thrown errors this glue surfaces. None of it is a transport — swapping the QC
+thrown errors this glue surfaces. None of it is a transport; swapping the QC
 client out is a `@hydroserver/client` change, not an app one.
 
 **Edit entry.** The row Edit button on a source (`StartEditingFlow.vue`)
@@ -261,7 +261,7 @@ owned by the session (working copy, `startSession`, `viewSession`,
 
 Two contract notes worth keeping in mind:
 
-- **The backend stores the operation DAG as metadata only — it never replays
+- **The backend stores the operation DAG as metadata only; it never replays
   operations.** The app applies ops locally (qc-utils), pushes the edited
   series to the managed datastream via `bulk-create` (replace mode), then calls
   `/commit`, which only records checksums and extends the history window.
@@ -322,7 +322,7 @@ Two contract notes worth keeping in mind:
   reproduce the final state. `reconstructCommittedSession` instead fetches the
   ancestor closure (`ancestor_of`), loads the raw source over the union of
   every window in the chain, and replays the chain in **commit order**
-  (`committedAt`, falling back to `createdAt`) — committing is what writes
+  (`committedAt`, falling back to `createdAt`): committing is what writes
   observations into the managed datastream, so it is commit order, not
   authoring order, that decides what a later session built on. The union
   window matters because operations replay against array indices: loading
@@ -339,8 +339,8 @@ Two contract notes worth keeping in mind:
   scannable. It is never sent back: the field is
   provenance, not input. Operations applied in the current session show no
   attribution until they are saved and reloaded. Comments have no author of
-  their own — `comment` is a plain nullable column that can be rewritten
-  later — so "who wrote this note" is a pending backend ask.
+  their own (`comment` is a plain nullable column that can be rewritten
+  later), so "who wrote this note" is a pending backend ask.
 - **A commit is terminal.** The API rejects updating, adding operations to,
   or re-committing a committed session, and its PATCH body carries only
   `description`. Continuing work after a commit means starting a new session;
@@ -362,7 +362,7 @@ Two contract notes worth keeping in mind:
 
 Tests stub the three services with `makeQcFake()` (a stateful in-memory double
 under `services/qualityControl/__tests__/` that returns
-`{ histories, sessions, operations }`) — the production client lives in the
+`{ histories, sessions, operations }`); the production client lives in the
 package, not the app.
 
 **Permission gating.** QC editing writes to the source datastream's workspace
@@ -404,10 +404,10 @@ Three constraints shape the implementation:
 vue-router 5, two routes (Home, Workspaces). Two guards run on
 every navigation:
 
-- **`hasAuthGuard`** — redirects unauthenticated users to the
+- **`hasAuthGuard`**: redirects unauthenticated users to the
   data-management app's `/login` route and remembers the intended QC
   destination.
-- **`hasWorkspaceGuard`** — redirects users without a selected workspace
+- **`hasWorkspaceGuard`**: redirects users without a selected workspace
   to `/workspaces`.
 
 The nav rail's "Edit" entry is enabled only while an edit target is set: it
@@ -435,10 +435,10 @@ either way (just slower on large edits).
 
 ## See also
 
-- [README](../README.md) — quick start, config, scripts
-- [ONBOARDING.md](./ONBOARDING.md) — first-day setup checklist + doc gaps
-- [DEPLOYMENT.md](./DEPLOYMENT.md) — infrastructure, operations, upgrades
-- [API_REFERENCE.md](./API_REFERENCE.md) — store / composable / util surfaces, REST integration
-- [PERFORMANCE.md](./PERFORMANCE.md) — performance characteristics and scaling
-- [QUALITY.md](./QUALITY.md) — testing posture, code quality, tech debt
-- [USER_GUIDE.md](./USER_GUIDE.md) — operator-facing feature walkthrough
+- [README](../README.md): quick start, config, scripts
+- [ONBOARDING.md](./ONBOARDING.md): first-day setup checklist + doc gaps
+- [DEPLOYMENT.md](./DEPLOYMENT.md): infrastructure, operations, upgrades
+- [API_REFERENCE.md](./API_REFERENCE.md): store / composable / util surfaces, REST integration
+- [PERFORMANCE.md](./PERFORMANCE.md): performance characteristics and scaling
+- [QUALITY.md](./QUALITY.md): testing posture, code quality, tech debt
+- [USER_GUIDE.md](./USER_GUIDE.md): operator-facing feature walkthrough

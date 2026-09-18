@@ -4,7 +4,7 @@
  * `Mar 3`), which made `subtractMonths(Aug 31, 6)` land three days
  * into March instead of on the Feb/Mar boundary. Clone the input,
  * subtract, and clamp the day-of-month back to the target month's
- * last day — matching the arithmetic Plotly's `rangeselector`
+ * last day, matching the arithmetic Plotly's `rangeselector`
  * performs internally.
  */
 

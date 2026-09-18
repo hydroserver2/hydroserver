@@ -20,7 +20,7 @@ function parseStoreExports(source: string): string[] | null {
   if (!/\bdefineStore\b/.test(source)) return null
 
   const lines = source.split(/\r?\n/)
-  // Find the LAST `  return {` line — defineStore setup functions can
+  // Find the LAST `  return {` line: defineStore setup functions can
   // have inner `return {` (e.g. inside helpers); the outer one is the
   // store's exported shape and always at indent 2.
   let start = -1

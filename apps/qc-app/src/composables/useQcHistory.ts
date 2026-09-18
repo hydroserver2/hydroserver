@@ -1,5 +1,5 @@
 /**
- * QC History — Vue-side save / load wrapper.
+ * QC History: Vue-side save / load wrapper.
  *
  * Wraps qc-utils' `serializeHistory` / `parseHistory` / `applyHistory`
  * with the consumer-specific glue:
@@ -101,7 +101,7 @@ export function useQcHistory() {
    * operations. Returns the per-op report so the caller can surface
    * a Snackbar / toast summary.
    *
-   * No datastream-id matching is enforced — QC histories are reusable
+   * No datastream-id matching is enforced. QC histories are reusable
    * across datastreams (see qc-utils' QC_HISTORY.md "Stay reusable").
    */
   async function importHistory(file: File): Promise<ApplyHistoryReport> {

@@ -4,7 +4,7 @@
  * The signed-in user's role on a workspace travels with the `Workspace`
  * object: owners have a null `collaboratorRole`, collaborators carry their
  * role's `permissions[]`, and admins (`accountType === 'admin'`) override
- * everything. No separate "am I an editor" endpoint is needed — the role is
+ * everything. No separate "am I an editor" endpoint is needed: the role is
  * embedded in `hs.workspaces.list()`. (`hs.user.can()` is the async
  * single-shot equivalent; this composable is the synchronous, reactive one
  * for gating UI.)
@@ -69,7 +69,7 @@ export function useWorkspacePermissions() {
   }
 
   /**
-   * Can run the QC edit workflow in this workspace — needs to create the
+   * Can run the QC edit workflow in this workspace. Needs to create the
    * managed datastream and/or write observations. Used to gate the editor's
    * row Edit / Save / Commit controls.
    */

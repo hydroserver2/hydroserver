@@ -1,5 +1,5 @@
 /**
- * Unit tests for PlottedDatastreams.vue — focused on the per-row load
+ * Unit tests for PlottedDatastreams.vue, focused on the per-row load
  * status (subtitle text + empty-window indicator). Mocks the two
  * stores the component reads so the rendered text reflects whatever
  * we drop into `graphSeriesArray` for each case.
@@ -107,7 +107,7 @@ function seedSeries(
   }
 }
 
-describe('PlottedDatastreams.vue — load status', () => {
+describe('PlottedDatastreams.vue: load status', () => {
   beforeEach(() => {
     plottedDatastreams.value = [datastreamA]
     qcDatastream.value = datastreamA

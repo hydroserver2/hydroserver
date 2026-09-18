@@ -53,7 +53,7 @@ export const guards: RouteGuard[] = [
     return null
   },
 
-  // Workspaces picker shortcut — if the user already has a selection
+  // Workspaces picker shortcut: if the user already has a selection
   // (typical reload / deep-link case), skip the picker synchronously
   // so it never flashes on the way to the intended page. The nav
   // rail's "Switch workspace" action sets `?switch=1` to opt into
@@ -66,7 +66,7 @@ export const guards: RouteGuard[] = [
     return nextLocation(to.query.next)
   },
 
-  // hasWorkspaceGuard — every data-bearing route needs an active
+  // hasWorkspaceGuard: every data-bearing route needs an active
   // HydroServer workspace context. If none is selected, bounce to the
   // picker and carry a `next` hint so we can come back here once the
   // user commits to a workspace.

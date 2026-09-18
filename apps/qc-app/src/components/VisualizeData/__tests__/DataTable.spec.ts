@@ -613,7 +613,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const checkboxes = wrapper.findAllComponents({ name: 'VCheckbox' })
-    // toggle row 2 first, then row 0 — result should be sorted [0, 2]
+    // toggle row 2 first, then row 0; result should be sorted [0, 2]
     await checkboxes[2].vm.$emit('update:modelValue', true)
     await checkboxes[0].vm.$emit('update:modelValue', true)
     await flushPromises()
@@ -697,7 +697,7 @@ describe('DataTable.vue ResizeObserver integration', () => {
 
   it('uses bodyEl.clientHeight when non-zero and updates on resize', async () => {
     // The cast tells TS the class-constructor assignment widens the
-    // value back to the callable type — without it the analyzer pins
+    // value back to the callable type. Without it the analyzer pins
     // the variable to `null` after the literal initialiser.
     let capturedCallback = null as ((entries: any) => void) | null
     class CapturingRO {

@@ -46,7 +46,7 @@ export interface GraphSeries {
    * the plot breaks the line wherever consecutive observations sit
    * farther apart than this value, so true data gaps render as
    * disconnected segments. Null/undefined when the datastream has no
-   * declared cadence — those series draw lines through every gap as
+   * declared cadence; those series draw lines through every gap as
    * before.
    */
   intendedSpacingMs?: number | null

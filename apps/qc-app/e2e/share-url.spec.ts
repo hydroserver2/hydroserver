@@ -168,7 +168,7 @@ test.describe('share URL', () => {
     await setupEditView(page)
     await waitForPlotMeta(page)
 
-    // Drop a wheel event over the *left gutter* — the band between
+    // Drop a wheel event over the *left gutter*, the band between
     // the plot edge and the primary Y axis. Our custom wheel handler
     // routes that zone to the primary y axis only, so the resulting
     // relayout updates `yaxis.range` without touching X. That sweep
@@ -377,7 +377,7 @@ test.describe('share URL', () => {
     // default 30 s under worker contention.
     test.setTimeout(90_000)
     // Bug (options.ts:689): on a fresh mount with a URL `z=`, Plotly
-    // pins `_rangeInitial0/1` to the URL view — stock Reset bounces
+    // pins `_rangeInitial0/1` to the URL view, so stock Reset bounces
     // back there instead of the data extent. A cold goto to a zoomed
     // URL reproduces the same condition as the user-reported
     // zoom→reload flow. Only a plotted datastream is needed.
@@ -396,7 +396,7 @@ test.describe('share URL', () => {
     expect(hydratedSpan).toBeLessThan(fullSpan * 0.5)
 
     // Pan drag exercises Plotly's user-gesture path
-    // (`_storeDirectGUIEdit`), which re-anchors `_rangeInitial` —
+    // (`_storeDirectGUIEdit`), which re-anchors `_rangeInitial`;
     // the custom Reset button has to override that.
     await page.mouse.move(
       afterHydrate!.cursorClient.x,

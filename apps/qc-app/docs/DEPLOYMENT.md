@@ -27,10 +27,10 @@ A typical deployment looks like:
 
 Three required pieces:
 
-1. **Static hosting** — any object store + CDN. AWS S3 + CloudFront is
+1. **Static hosting**: any object store + CDN. AWS S3 + CloudFront is
    what the demo workflow uses (see below); GitHub Pages, Cloudflare
    Pages, Azure Blob + Front Door, or nginx in a container all work.
-2. **A HydroServer instance on the same origin** — QC expects `/api` and
+2. **A HydroServer instance on the same origin**: QC expects `/api` and
    `/login` to be served from the same origin as `/qc/`.
 3. **Response headers** at the edge:
    - `Cross-Origin-Opener-Policy: same-origin`
@@ -40,7 +40,7 @@ Three required pieces:
    them the app still works, just slower on large edits; the worker layer
    transparently falls back to inline kernels. If your HydroServer
    deployment can't yet emit `Cross-Origin-Resource-Policy`, build with
-   `VITE_APP_DISABLE_COOP=1` so the headers are dropped — otherwise the
+   `VITE_APP_DISABLE_COOP=1` so the headers are dropped; otherwise the
    browser will block the API response.
 
 ## Reference deployment: AWS S3 + CloudFront
@@ -58,7 +58,7 @@ deploys to AWS. The flow:
 3. **`verify-ci-success`** queries the GitHub API for the latest CI run
    on the chosen branch. If it didn't succeed, the deploy aborts with a
    pointer to the failing run. **You cannot deploy a branch whose CI is
-   red** — by design.
+   red**, by design.
 4. **`deploy-hydroserver-data-mgmt-app`**:
    - Assumes the IAM role via OIDC (`aws-actions/configure-aws-credentials`).
    - Checks out the chosen branch.
@@ -141,7 +141,7 @@ The QC App is browser-side software, so the observability story is
 ### What you have today
 
 - **In-app Snackbar notifications** (`Snackbar` from `qc-utils`) surface
-  successes, warnings, and failures for every user-driven action — load
+  successes, warnings, and failures for every user-driven action: load
   failures, submit results, script import reports, etc.
 - **Browser console** carries qc-utils dispatch logs and any unhandled
   promise rejections. The history panel in dev mode displays per-entry
@@ -159,7 +159,7 @@ The QC App is browser-side software, so the observability story is
   no Datadog RUM, no Google Analytics). The team has consciously kept
   the SPA telemetry-free; adding it is an opt-in deployment decision.
 - **No server-side metrics**, because there is no server-side runtime.
-- **No audit log** of QC edits — the QC History file is the closest
+- **No audit log** of QC edits. The QC History file is the closest
   equivalent (export before submitting to keep a replayable record).
 - **No alerting** beyond what your CDN / object-store provider offers.
 
@@ -179,7 +179,7 @@ shape-stable. If you ever need to break a persisted shape:
 - Bump a version key inside the affected store's persisted slice and
   drop the old value on rehydrate. The `qc-utils` calibration store
   uses this pattern (`qc-utils:calibration:v<n>`); copy it.
-- Never silently coerce — if the persisted shape might be wrong, drop
+- Never silently coerce. If the persisted shape might be wrong, drop
   it and let the user re-pick their workspace / preferences. Reset is
   cheap; data corruption is not.
 
@@ -198,7 +198,7 @@ npm run build
 ```
 
 The package is pre-1.0, so assume any minor bump may require code
-changes in the consumer — read the qc-utils commit log and re-run E2E.
+changes in the consumer. Read the qc-utils commit log and re-run E2E.
 
 For local development against unreleased qc-utils changes, run the QC app
 dev server. It aliases `@uwrl/qc-utils` to `packages/qc-utils/src`, so no
@@ -219,14 +219,14 @@ matters here is **how the QC App weathers them**:
 
 - The app talks to the backend over REST through `@hydroserver/client`.
   Schema changes that break the response shape will manifest as type
-  errors at build time (good — won't deploy) or runtime Snackbar errors
+  errors at build time (good: won't deploy) or runtime Snackbar errors
   (bad but visible).
 - The QC App consumes the local `@hydroserver/client` package from
   `packages/hydroserver-ts`. When the backend ships a schema change,
   update that client, run `npx vue-tsc --noEmit` to see the breakage, and
   patch the call sites.
 - The observation upload path uses `mode: 'replace'` on the bulk POST.
-  Replace semantics are stable across HydroServer versions — if you ever
+  Replace semantics are stable across HydroServer versions. If you ever
   need to change to append-only or upsert semantics, that's a coordinated
   release between the QC App and the backend.
 
@@ -244,9 +244,9 @@ matters here is **how the QC App weathers them**:
 
 `.github/workflows/ci.yml` runs on every push and PR to `main`:
 
-1. `npx vue-tsc --noEmit` — type-check.
-2. `npm run coverage` — Vitest with the 80% coverage threshold.
-3. `npm run build` — production build sanity check.
+1. `npx vue-tsc --noEmit`: type-check.
+2. `npm run coverage`: Vitest with the 80% coverage threshold.
+3. `npm run build`: production build sanity check.
 
 Concurrency is grouped by workflow + ref with `cancel-in-progress: true`,
 so pushing again kills the older run. The deploy workflow refuses to run
@@ -274,7 +274,7 @@ Dependabot is enabled (`.github/dependabot.yml`); a separate
 
 ## See also
 
-- [README](../README.md) — quick start, config keys
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — what's running where
-- [ONBOARDING.md](./ONBOARDING.md) — first-day setup
-- [PERFORMANCE.md](./PERFORMANCE.md) — what scales and what doesn't
+- [README](../README.md): quick start, config keys
+- [ARCHITECTURE.md](./ARCHITECTURE.md): what's running where
+- [ONBOARDING.md](./ONBOARDING.md): first-day setup
+- [PERFORMANCE.md](./PERFORMANCE.md): what scales and what doesn't

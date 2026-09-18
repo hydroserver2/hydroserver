@@ -96,7 +96,7 @@ export const useQualifierStore = defineStore(
 /**
      * Create a ResultQualifier on the server for the active workspace.
      * Falls back to a purely local record (no `workspaceId`) if no
-     * workspace is selected — that's the only path on which an entry
+     * workspace is selected. That's the only path on which an entry
      * can exist without a server id; callers that need persistence
      * should wait until a workspace is active.
      */
@@ -230,7 +230,7 @@ export const useQualifierStore = defineStore(
     }
   },
   {
-    // Persist only the per-observation application map — the
+    // Persist only the per-observation application map. The
     // dictionary is reloaded from the server on every workspace
     // change, and persisting it would compete with that fresh data.
     persist: {

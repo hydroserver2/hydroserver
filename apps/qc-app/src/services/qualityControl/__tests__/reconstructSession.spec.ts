@@ -375,7 +375,7 @@ describe('reconstructCommittedSession', () => {
   })
 })
 
-describe('reconstructCommittedSession — chain order', () => {
+describe('reconstructCommittedSession: chain order', () => {
   // The fake allows only one in-progress session at a time, so creation
   // order always matches commit order there. Stub the services directly to
   // build the case where they disagree.
@@ -476,7 +476,7 @@ describe('reconstructCommittedSession — chain order', () => {
   })
 })
 
-describe('reconstructCommittedSession — attribution', () => {
+describe('reconstructCommittedSession: attribution', () => {
   const ok = (data: unknown) => ({ ok: true, data, status: 200, message: '' })
 
   it('carries the operation performer through to the replayed history', async () => {

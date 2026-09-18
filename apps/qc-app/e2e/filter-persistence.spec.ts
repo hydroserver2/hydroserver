@@ -1,7 +1,7 @@
 /**
  * Persistence filter: flags runs of identical consecutive Y values
  * that repeat at least N times. The default fixture is sinusoidal
- * so no run exists — we build a step-function series with a 5-point
+ * so no run exists. We build a step-function series with a 5-point
  * plateau to give the filter something to match.
  */
 
@@ -11,7 +11,7 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 import { FIXTURE_OBS_START_MS } from './support/fixtures'
 
 function observationsWithPlateau() {
-  // See FIXTURE_OBS_START_MS — anchored to "now" so the series sits
+  // See FIXTURE_OBS_START_MS: anchored to "now" so the series sits
   // inside the QC app's default time range.
   const startMs = FIXTURE_OBS_START_MS
   const spacingMs = 15 * 60 * 1000
@@ -33,13 +33,13 @@ test.describe('filter: persistence', () => {
 
   test('flags the 5-point plateau as persistent', async ({ page }) => {
     await openOp(page, 'persistence')
-    // Default threshold is 2 — accept anything >= 3 for the plateau.
+    // Default threshold is 2; accept anything >= 3 for the plateau.
     await page.locator('input[type="number"]').fill('3')
     await page.getByRole('button', { name: /apply filter/i }).click()
     await waitForSelection(page, 1)
 
     // Filter entry may be collapsed to a rolled-up "Selection" row after
-    // dispatchSelection fires — accept either as proof the filter ran.
+    // dispatchSelection fires; accept either as proof the filter ran.
     const row = page
       .locator('[data-testid^="history-item-"]')
       .filter({ hasText: /Persistence|Selection/ })

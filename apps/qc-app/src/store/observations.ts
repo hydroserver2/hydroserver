@@ -55,7 +55,7 @@ export const useObservationStore = defineStore(
           observationsRaw.value[id].datetimes[0] as number
         )
 
-        // Strict `<` — skip the request entirely when the requested
+        // Strict `<`: skip the request entirely when the requested
         // begin is at or inside the cached window. `<=` used to fire a
         // 1-second range request on exact matches (e.g. re-clicking
         // the same preset), which is pure waste.

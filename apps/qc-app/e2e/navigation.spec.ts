@@ -48,7 +48,7 @@ test.describe('navigation', () => {
   })
 
   test('picking a workspace lands the user on Home', async ({ page }) => {
-    // Don't use `gotoHome` here — it pre-seeds localStorage and skips
+    // Don't use `gotoHome` here: it pre-seeds localStorage and skips
     // the picker. We want to exercise the actual pick flow.
     await page.goto('/')
     const pickButton = page

@@ -61,7 +61,7 @@ describe('share encoding primitives', () => {
   })
 })
 
-describe('encodeShareState — omits defaults', () => {
+describe('encodeShareState: omits defaults', () => {
   it('emits an empty query for the empty state', () => {
     expect(encodeShareState({})).toEqual({})
   })

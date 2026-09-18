@@ -126,7 +126,7 @@ describe('handleSelected', () => {
     selectedSeries.value = { data: { dispatchFilter } }
     plotlyRef.value = makePlot('qc', [4, 5])
     // Programmatic write expected [9, 10], user gesture landed [4, 5]
-    // — mismatch should fall through to dispatch.
+    // so the mismatch should fall through to dispatch.
     suppressedEchoSelection.value = [9, 10]
     await handleSelected({} as any, { fromRelayout: true })
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [4, 5])

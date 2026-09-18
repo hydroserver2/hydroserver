@@ -28,12 +28,12 @@ test.describe('filter range toggle', () => {
     await expect(page.locator(dateRangeSection)).toHaveCount(0)
     await expect(page.locator(rangePanel)).toHaveCount(0)
 
-    // Open Persistence — section appears in the empty state by default.
+    // Open Persistence: section appears in the empty state by default.
     await openOp(page, 'persistence')
     await expect(page.locator(enableBtn)).toBeVisible()
     await expect(page.locator(rangePanel)).toHaveCount(0)
 
-    // Enable — panel mounts and X icon replaces the empty state.
+    // Enable: panel mounts and X icon replaces the empty state.
     await page.locator(enableBtn).click()
     await expect(page.locator(rangePanel)).toBeVisible()
     await expect(page.locator(disableBtn)).toBeVisible()
@@ -46,7 +46,7 @@ test.describe('filter range toggle', () => {
     await page.locator(enableBtn).click()
     await expect(page.locator(rangePanel)).toBeVisible()
 
-    // Switch to datetime-range — that op brings its own picker, so the
+    // Switch to datetime-range: that op brings its own picker, so the
     // shared section and panel both go away.
     await openOp(page, 'datetimeRange')
     // Only the operation section remains, not the date-range section.

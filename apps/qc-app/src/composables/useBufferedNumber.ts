@@ -3,7 +3,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 /**
  * Two-stage edit buffer over a numeric ref. Bind your input to
  * `pending` so per-keystroke writes don't bounce the underlying
- * `source` — only `apply()` (or whatever your UI wires it to) commits.
+ * `source`. Only `apply()` (or whatever your UI wires it to) commits.
  *
  * `gateOpen` re-syncs the buffer from `source` every time it
  * transitions from false → true, so opening a popover always shows

@@ -27,7 +27,7 @@ export async function waitForHomeReady(page: Page): Promise<void> {
  * entirely. Relying on the UI to click the Select button is fragile
  * cross-browser (Firefox in particular sometimes swallows the click
  * when the v-list-item row and its nested Select button both register
- * click handlers). Seeding storage sidesteps the picker entirely —
+ * click handlers). Seeding storage sidesteps the picker entirely,
  * equivalent to a user who already chose a workspace in a previous
  * session.
  *
@@ -54,7 +54,7 @@ export async function seedWorkspaceSelection(page: Page): Promise<void> {
           JSON.stringify({ selectedWorkspace: ws })
         )
       } catch {
-        // storage disabled — fall back to UI flow
+        // storage disabled: fall back to UI flow
       }
     },
     { ws: workspace }

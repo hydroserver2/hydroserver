@@ -413,7 +413,7 @@ const plottedIds = computed(
 const isChecked = (item: Datastream) =>
   sourceGroupIds(item.id).some((id) => plottedIds.value.has(id))
 
-// Only managed series from this source are plotted, not the raw one — the
+// Only managed series from this source are plotted, not the raw one, so the
 // row shouldn't claim the raw line is on the plot.
 const isPartial = (item: Datastream) =>
   !plottedIds.value.has(item.id) && isChecked(item)

@@ -39,7 +39,7 @@ async function loginThroughDataManagementIfNeeded(page: Page) {
 //
 // Steps:
 //   0. Enter via Data Management's same-origin /qc/ route; log in if needed.
-//   1. Navigate to app root — a fresh browser has no persisted workspace
+//   1. Navigate to app root. A fresh browser has no persisted workspace
 //      selection, so the router's workspace guard redirects to /workspaces.
 //   2. Select "Test Workspace #2" from the picker.
 //   3. Wait for datastreams table (init-complete signal on Home).
@@ -54,7 +54,7 @@ async function loginThroughDataManagementIfNeeded(page: Page) {
 // Needs a workspace source datastream with a managed datastream and QC
 // history; without one there is no session to Save or Commit.
 //
-// Live smoke — talks to the backend configured behind Data Management's
+// Live smoke: talks to the backend configured behind Data Management's
 // /api proxy. Opt in with
 // `npm run e2e:live` (E2E_LIVE=1 playwright test qc-golden-path --headed)
 // so CI runs the fast mocked suite by default; the live smoke is for
@@ -71,12 +71,12 @@ test.describe('QC golden path (live same-origin)', () => {
     // flow room to breathe on a cold dev server.
     test.setTimeout(180_000)
 
-    // Step 0 — Enter QC through the Data Management origin. If the browser
+    // Step 0: Enter QC through the Data Management origin. If the browser
     // has no valid session, Data Management handles the login page and
     // redirects back to /qc/ via the `next` query.
     await loginThroughDataManagementIfNeeded(page)
 
-    // Step 1 & 2 — Navigate to app root. Fresh browser has no stored
+    // Step 1 & 2: Navigate to app root. Fresh browser has no stored
     // workspace, so the guard redirects to /workspaces. Pick
     // "Test Workspace #2" (pinned because the datastream referenced
     // below lives there). The picker loads the workspace list
@@ -89,7 +89,7 @@ test.describe('QC golden path (live same-origin)', () => {
     await expect(pickButton).toBeVisible({ timeout: 60_000 })
     await pickButton.click()
 
-    // Step 3 — Wait for datastreams table. App.vue's onMounted fetches
+    // Step 3: Wait for datastreams table. App.vue's onMounted fetches
     // the workspace catalog; the table becomes visible once the fetch
     // settles.
     await expect(page.getByTestId('datastreams-table')).toBeVisible({
@@ -123,10 +123,10 @@ test.describe('QC golden path (live same-origin)', () => {
     await expect(saveBtn).toBeVisible({ timeout: 60_000 })
     await expect(page.getByText('Filter Data')).toBeVisible()
 
-    // Step 6 — Open "Value thresholds" operation panel, add a filter.
+    // Step 6: Open "Value thresholds" operation panel, add a filter.
     // Conservative value (0) chosen per plan 01-03 to ensure the threshold
     // selects at least some points against arbitrary live observations.
-    // The drawer row carries both the title text and a per-op testid —
+    // The drawer row carries both the title text and a per-op testid;
     // use the testid so we don't collide with the panel header that
     // renders the same title after the click.
     await page.getByTestId('op-valueThreshold').click()
@@ -135,10 +135,10 @@ test.describe('QC golden path (live same-origin)', () => {
     ).toBeVisible()
     await page.getByLabel('Value').fill('0')
     await page.getByRole('button', { name: 'Add filter' }).click()
-    // Panel dismissal isn't needed — selecting another drawer item
+    // Panel dismissal isn't needed: selecting another drawer item
     // swaps the rendered operation in the shared OperationPanel.
 
-    // Step 7 — Apply a "Change values" edit.
+    // Step 7: Apply a "Change values" edit.
     // Wait for the ValueThreshold filter to populate selectedData via the
     // app-side test hook installed from main.ts. The hook registers a Pinia
     // `watch` on useDataVisStore().selectedData and resolves as soon as
@@ -157,7 +157,7 @@ test.describe('QC golden path (live same-origin)', () => {
     await page.getByLabel('Value').fill('1')
     await page.getByRole('button', { name: 'Apply' }).click()
 
-    // Step 8 — Assert the edit landed in EditHistory. Filters now emit
+    // Step 8: Assert the edit landed in EditHistory. Filters now emit
     // their own history rows, so we can't pin to history-item-0; the
     // CHANGE_VALUES row lands after the ValueThreshold one. Find the
     // row by text instead. EditHistory formats ALL_CAPS_SNAKE as
@@ -169,7 +169,7 @@ test.describe('QC golden path (live same-origin)', () => {
 
     // Dev-only sanity check: the calibration layer attached an
     // execution-mode chip ("inline" or "worker") to the history row.
-    // This asserts the chip rendered without pinning its content —
+    // This asserts the chip rendered without pinning its content;
     // either is a legitimate calibration outcome depending on the
     // device running the test.
     const modeChip = changeRow.locator('.edit-history__mode-chip')

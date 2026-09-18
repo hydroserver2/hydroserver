@@ -157,7 +157,7 @@ export const handleNewPlot = async (
   // real data.
   //
   // Note: this does NOT need to preserve Plotly's `_rangeInitial0/1`
-  // for Reset Axes — the custom Reset button in `options.ts`
+  // for Reset Axes: the custom Reset button in `options.ts`
   // computes the data extent directly from `trace.x` rather than
   // relying on Plotly's internal anchors.
   if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
@@ -184,7 +184,7 @@ export const handleNewPlot = async (
   // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
   // identity is unchanged and Vue's ref watchers don't refire. It does
   // wipe externally-attached listeners (the ContextPlot's brush sync,
-  // etc.) — bump an epoch so those subscribers know to re-attach.
+  // etc.), so bump an epoch so those subscribers know to re-attach.
   mainPlotEpoch.value++
 
   // Debounce long enough that a rapid scroll-wheel burst collapses
@@ -196,7 +196,7 @@ export const handleNewPlot = async (
   handleRelayout(null)
 
   // Only listen to `plotly_relayout`. We used to also wire
-  // `plotly_redraw`, which fires on every Plotly re-paint — so each
+  // `plotly_redraw`, which fires on every Plotly re-paint, so each
   // scroll tick routed through BOTH debouncers (one per event
   // type) and handleRelayout ran twice per gesture, each heavy pass
   // competing with the user's in-progress zoom. The relayout event
@@ -206,7 +206,7 @@ export const handleNewPlot = async (
     'plotly_relayout',
     debounce(handleRelayout, debounceDelay)
   )
-  // Zoom-history recorder — runs on its own 350 ms debouncer so a single
+  // Zoom-history recorder: runs on its own 350 ms debouncer so a single
   // drag/scroll gesture collapses to one entry. Kept independent of the
   // relayout handler above, which does tooltip/visible-point work.
   installZoomTracking(plotlyRef.value)

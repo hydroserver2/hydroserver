@@ -23,7 +23,7 @@ test.describe('filter: rate of change', () => {
     await waitForSelection(page, 1)
 
     // Filter entry may be collapsed to a rolled-up "Selection" row after
-    // dispatchSelection fires — accept either as proof the filter ran.
+    // dispatchSelection fires; accept either as proof the filter ran.
     const row = page
       .locator('[data-testid^="history-item-"]')
       .filter({ hasText: /Rate Of Change|Selection/ })

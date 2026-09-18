@@ -77,7 +77,7 @@ function currentDragmode(): string {
 /**
  * Force the plot back into pan mode. Called by the staging-based
  * operation panels (Find Gaps / Fill Gaps) when they open so the
- * range overlay is immediately interactive — otherwise a user who
+ * range overlay is immediately interactive. Otherwise a user who
  * was last in zoom/select/lasso mode would open the panel to a
  * hidden band (we drop it outside pan mode to keep those tools
  * unobstructed) and have to switch tools themselves to resize it.
@@ -93,7 +93,7 @@ export async function enterPanMode(): Promise<void> {
  * Add (or replace) the single editable range shape that represents
  * the operation's staged date window. The shape spans the full
  * y-axis so the user can grab it anywhere vertically. It only
- * actually renders in pan mode (see `flushShapes`) — zoom /
+ * actually renders in pan mode (see `flushShapes`); zoom /
  * select / lasso modes drop it entirely to keep their box-drag
  * gestures unobstructed.
  */
@@ -245,7 +245,7 @@ export function onStageDrag(
     // Rebuild the shape with the horizontal update applied and y
     // pinned to the full paper span. Pushing the whole shape (not
     // a dotted-path y0/y1 relayout) overrides Plotly's in-progress
-    // drag state in a single write — the earlier split approach
+    // drag state in a single write. The earlier split approach
     // (x via the parent's watcher, y via a separate relayout) was
     // racing, leaving vertical edits visible and horizontal edits
     // dropped.

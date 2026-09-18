@@ -249,7 +249,7 @@ describe('createPlotlyOption', () => {
 
   it('emits a lines-only gap overlay when intendedSpacingMs is set', () => {
     // Spacing 1.5 → the [1,2,3,4,5] x grid (Δ=1) never exceeds, so the
-    // overlay's x/y match the main trace verbatim — but the trace
+    // overlay's x/y match the main trace verbatim, but the trace
     // pair is still emitted so the line-drawing path is exercised
     // regardless of whether real gaps are present.
     qcDatastream.value = { id: 'qc' }

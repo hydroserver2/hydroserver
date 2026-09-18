@@ -528,7 +528,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   const filteredDatastreams = computed(() => {
-    // `?? []` — during a workspace switch `datastreams.value` is
+    // `?? []`: during a workspace switch `datastreams.value` is
     // briefly cleared in App.vue before the new catalog lands. Without
     // the fallback this computed returns `undefined`, which then
     // propagates into `tableItems.map(...)` in DataVisDatasetsTable
@@ -562,7 +562,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     // No-op when neither bound actually moved. Every sidebar path —
     // clicking the already-active preset, date-text-field blur,
     // time-text-field blur, calendar picker confirming the current
-    // day — calls this with fresh Date references whose timestamps
+    // day) calls this with fresh Date references whose timestamps
     // often match the current range. Without this guard each of those
     // clicks triggers a full data refetch + plot redraw that resets
     // the user's zoom for no reason.
@@ -737,7 +737,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   //   - setEditTarget / setEditRecord / clearEditTarget
   // Each mutation site now calls the action so side effects (time range
   // sync, graph-series rebuild, zoom history clear, Plotly re-render)
-  // happen inline and in a predictable order — no reactive cascade.
+  // happen inline and in a predictable order, with no reactive cascade.
 
   // TODO: Revisit this. Does it make sense to convert qualifierValue to a string in preprocessing
   // just to split it into an array of strings here? Maybe just save it as an array of strings instead

@@ -9,7 +9,7 @@ const NUMBER = new Intl.NumberFormat()
 /**
  * One-line recap of a datastream, so several derived from the same source
  * are distinguishable in a chooser: processing level, observation count,
- * and — when sessions are supplied — how many QC sessions it carries.
+ * and (when sessions are supplied) how many QC sessions it carries.
  */
 export function datastreamSummary(
   datastream: Datastream & Partial<DatastreamExtended>,

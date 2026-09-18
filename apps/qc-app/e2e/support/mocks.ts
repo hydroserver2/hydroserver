@@ -163,7 +163,7 @@ export async function installMocks(
   ).map((ds) => ({ ...ds, ...overrides[ds.id] }))
 
   // Match only real HydroServer API calls by pathname. A bare `**/api/**`
-  // glob also catches the dev server's own source modules — the QC app
+  // glob also catches the dev server's own source modules. The QC app
   // aliases `@hydroserver/client` to `packages/hydroserver-ts/src`, whose
   // files live under `.../src/api/...` and are served from
   // `/qc/@fs/.../src/api/runtime.ts`. Those URLs contain `/api/` but their
@@ -172,7 +172,7 @@ export async function installMocks(
   // requests always have a pathname that starts with `/api/`.
   const isApiRequest = (url: URL): boolean => url.pathname.startsWith('/api/')
 
-  // Preflights for anything — the real server serves OPTIONS via
+  // Preflights for anything: the real server serves OPTIONS via
   // middleware; swallowing them here keeps the mocks happy.
   await page.route(isApiRequest, async (route) => {
     const request = route.request()
@@ -196,7 +196,7 @@ export async function installMocks(
       })
     }
     if (path.includes('/api/auth/')) {
-      // Any other auth endpoint (providers, redirects) — return OK.
+      // Any other auth endpoint (providers, redirects): return OK.
       return json(route, { status: 200, data: {}, meta: { is_authenticated: authenticated } })
     }
 
@@ -221,7 +221,7 @@ export async function installMocks(
       // cache-extension logic in `fetchObservationsInRange` (which
       // re-fetches the segment outside its cached window every time
       // the range moves) would receive the full fixture series on
-      // each call and stack duplicates into the ObservationRecord —
+      // each call and stack duplicates into the ObservationRecord,
       // visible as wrong point counts and a long phantom line
       // connecting the first and last observations.
       const tMin = parseISOorNull(params.get('phenomenon_time_min'))
@@ -296,7 +296,7 @@ export async function installMocks(
     }
 
     // --- Tags / attachments / other sub-resources the app may touch
-    //     in DatastreamInformationCard — return empty arrays so the
+    //     in DatastreamInformationCard: return empty arrays so the
     //     UI renders without errors.
     if (path.includes('/tags') || path.includes('/attachments')) {
       return json(route, { data: [] })

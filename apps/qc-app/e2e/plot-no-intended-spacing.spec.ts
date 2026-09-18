@@ -2,7 +2,7 @@
  * Plotting policy for datastreams without a declared `intendedTimeSpacing`.
  *
  * Two related guarantees, both covered here:
- *   1. The main trace renders as a pure scatter — `mode: 'markers'` with
+ *   1. The main trace renders as a pure scatter: `mode: 'markers'` with
  *      no companion `_gapOverlayFor` lines trace pushed alongside it.
  *   2. The "data points" toggle (manual mode + click off) does not hide
  *      the markers of such a series. Without a line fallback, honouring
@@ -57,7 +57,7 @@ function withoutIntendedSpacing(ds: DatastreamRecord): DatastreamRecord {
   // Mirror what the backend serves for an older / minimally-configured
   // datastream: both spacing fields cleared. The QC app's
   // `spacingMsFromDatastream` returns null for either missing field, so
-  // wiping the unit alone would already trip the scatter path — clearing
+  // wiping the unit alone would already trip the scatter path; clearing
   // both keeps the fixture honest about the upstream shape.
   return { ...ds, intendedTimeSpacing: null, intendedTimeSpacingUnit: null }
 }
@@ -145,7 +145,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     expect(trace.mainMode).toBe('markers')
     expect(trace.overlayExists).toBe(false)
     expect(trace.anyGapOverlay).toBe(false)
-    // Initial paint must keep the scatter markers fully opaque —
+    // Initial paint must keep the scatter markers fully opaque;
     // otherwise the series has nothing visible on screen.
     expect(trace.mainMarkerOpacity).toBe(1)
   })
@@ -158,7 +158,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
 
     // The toggle button only renders in manual mode; default is auto,
     // so open the dropdown and pick manual first. Picking manual also
-    // fires `handleRelayout(null)` internally — that pass is the one
+    // fires `handleRelayout(null)` internally, and that pass is the one
     // that would have wiped the markers if the scatter exemption were
     // missing.
     await page.getByTestId('tooltips-mode-btn').click()
