@@ -35,7 +35,7 @@ DATA_CONNECTION_INCLUDE_RELATIONS = {
 }
 DataConnectionIncludeRelation = Literal[*DATA_CONNECTION_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "id",
     "name",
     "timestampKey",
@@ -46,8 +46,8 @@ _order_by_fields = (
     "workspaceName",
 )
 
-DataConnectionOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+DataConnectionSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -94,8 +94,13 @@ class DataConnectionItemQueryParameters(DataConnectionFilterFields, BaseQueryPar
 
 
 class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[DataConnectionOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[DataConnectionSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace: list[uuid.UUID] = Query(
         [], description="Filter data connections by workspace ID.", alias="workspace_id"

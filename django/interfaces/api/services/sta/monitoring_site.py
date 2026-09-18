@@ -30,7 +30,7 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSiteFields,
-    MonitoringSiteOrderByFields,
+    MonitoringSiteSortByFields,
     MONITORING_SITE_INCLUDE_RELATIONS,
 )
 from processing.orchestration.attention import attention_filter, latest_run_status_subquery
@@ -398,7 +398,7 @@ class MonitoringSiteAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -426,20 +426,18 @@ class MonitoringSiteAPIService(APIService):
 
         queryset = self.apply_bbox_filter(queryset, filtering.get("bbox"))
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
-
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(MonitoringSiteOrderByFields)),
-                {
-                    "elevationDatum": "elevation_datum",
-                    "adminArea1": "admin_area_1",
-                    "adminArea2": "admin_area_2",
-                },
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(MonitoringSiteSortByFields)),
+            {
+                "elevationDatum": "elevation_datum",
+                "adminArea1": "admin_area_1",
+                "adminArea2": "admin_area_2",
+            },
+            rank=has_search,
+        )
 
         queryset = queryset.prefetch_related("monitoring_site_linked_resources")
 
@@ -647,9 +645,9 @@ class MonitoringSiteAPIService(APIService):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
-        queryset = SiteType.objects.order_by(f"{'-' if order_desc else ''}name")
+        queryset = SiteType.objects.order_by(f"{'-' if sort_desc else ''}name")
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
         return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
@@ -658,10 +656,10 @@ class MonitoringSiteAPIService(APIService):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
         queryset = LinkedResourceType.objects.order_by(
-            f"{'-' if order_desc else ''}name"
+            f"{'-' if sort_desc else ''}name"
         )
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 

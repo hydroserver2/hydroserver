@@ -29,7 +29,7 @@ class DatastreamService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
         monitoring_site: Union["MonitoringSite", UUID, str] = ...,
         method: Union["Method", UUID, str] = ...,
@@ -59,7 +59,7 @@ class DatastreamService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),
             method_id=normalize_uuid(method),
@@ -238,7 +238,7 @@ class DatastreamService(HydroServerBaseService):
         uid: Union[UUID, str],
         offset: int = ...,
         limit: int = 100000,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
         result_qualifier_code: str = ...,
@@ -250,7 +250,7 @@ class DatastreamService(HydroServerBaseService):
             "datastream_id": str(uid),
             "offset": offset,
             "limit": limit,
-            "order_by": ",".join(order_by) if order_by is not ... else order_by,
+            "sortby": ",".join(sortby) if sortby is not ... else sortby,
             "phenomenon_time_max": phenomenon_time_max,
             "phenomenon_time_min": phenomenon_time_min,
             "result_qualifier_code": result_qualifier_code,
@@ -268,11 +268,11 @@ class DatastreamService(HydroServerBaseService):
         collection = ObservationCollection(
             datastream=datastream,
             response=response,
-            order_by=order_by if order_by is not ... else None,
+            sortby=sortby if sortby is not ... else None,
             filters={
                 k: v
                 for k, v in params.items()
-                if k not in ["datastream_id", "offset", "limit", "order_by", "format"]
+                if k not in ["datastream_id", "offset", "limit", "sortby", "format"]
             },
         )
         if fetch_all is True:

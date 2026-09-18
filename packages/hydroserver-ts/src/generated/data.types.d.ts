@@ -1981,6 +1981,12 @@ export interface components {
              * @default []
              */
             role_id: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "roleId" | "-id" | "-roleId")[] | null;
         };
         /** CollaboratorResponse */
         CollaboratorResponse: {
@@ -2090,12 +2096,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
-            /**
              * Payload Type
              * @description Filter data connections by payload type.
              * @default []
@@ -2106,6 +2106,17 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
             /**
              * Workspace Id
              * @description Filter data connections by workspace ID.
@@ -2265,12 +2276,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
-            /**
              * Output Datastream Id
              * @description Filter data product tasks by output datastream ID.
              * @default []
@@ -2282,11 +2287,22 @@ export interface components {
              */
             properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
             /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
              * Rating Curve Id
              * @description Filter data product tasks by rating curve ID.
              * @default []
              */
             rating_curve_id: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
             /**
              * Transformation Type
              * @description Filter data product tasks by transformation type.
@@ -2449,12 +2465,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[] | null;
-            /**
              * Output Datastream Id
              * @description Filter transformations by output datastream ID.
              * @default []
@@ -2465,6 +2475,12 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
             /**
              * Task Id
              * @description Filter transformations by data product task ID.
@@ -2757,12 +2773,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
-            /**
              * Phenomenon Begin Time Max
              * @description Sets the maximum phenomenon begin time of filtered datastreams.
              */
@@ -2793,6 +2803,11 @@ export interface components {
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Result Begin Time Max
              * @description Sets the maximum result begin time of filtered datastreams.
@@ -2831,6 +2846,12 @@ export interface components {
              * @default []
              */
             sampled_medium: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
             /**
              * Status
              * @description Filter monitoring_sites by status.
@@ -3046,16 +3067,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
             /**
              * Source Identifier
              * @description Filter mappings by source identifier.
@@ -3204,16 +3225,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
             /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
@@ -3597,16 +3623,15 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Sensor Model
              * @description Filter methods by sensor model
@@ -3619,6 +3644,12 @@ export interface components {
              * @default []
              */
             sensor_model_manufacturer: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
             /**
              * Type
              * @description Filter methods by type
@@ -3736,12 +3767,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
@@ -3752,6 +3777,12 @@ export interface components {
              * @default []
              */
             rule_type: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
             /**
              * Task Id
              * @description Filter rules by monitoring task ID.
@@ -4024,16 +4055,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
             /**
              * Tag
              * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
@@ -4233,22 +4269,27 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
             /**
              * Rule Type
              * @description Filter monitoring tasks by rule type.
              * @default []
              */
             rule_type: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
             /**
              * Workspace Id
              * @description Filter monitoring tasks by workspace ID.
@@ -4441,12 +4482,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
-            /**
              * Phenomenon Time Max
              * @description Sets the maximum phenomenon time of filtered observations.
              */
@@ -4467,6 +4502,12 @@ export interface components {
              * @default []
              */
             result_qualifier_code: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
         };
         /** ObservationResponse */
         ObservationResponse: {
@@ -4589,16 +4630,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
             /**
              * Type
              * @description Filter observed properties by type
@@ -5030,16 +5076,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("code" | "name" | "-code" | "-name")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("code" | "name" | "-code" | "-name")[] | null;
             /**
              * Workspace Id
              * @description Filter processing levels by workspace ID.
@@ -5117,16 +5168,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
             /**
              * Source Datastream Id
              * @description Filter histories by source datastream ID.
@@ -5220,16 +5271,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "createdBy" | "order" | "operationType" | "createdAt" | "comment" | "arguments")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
         };
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
@@ -5311,12 +5362,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
@@ -5331,6 +5376,12 @@ export interface components {
              * @description Return sessions overlapping with this range start.
              */
             range_start?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
             /** Status */
             status?: ("in_progress" | "committed") | null;
         };
@@ -5461,16 +5512,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
             /**
              * Workspace Id
              * @description Filter rating curves by workspace ID.
@@ -5571,16 +5627,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("code" | "-code")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "code" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("code" | "-code")[] | null;
             /**
              * Workspace Id
              * @description Filter result qualifiers by workspace ID.
@@ -5630,16 +5691,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "-name")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "-name")[] | null;
             /**
              * Workspace Id
              * @description Filter roles by workspace ID.
@@ -5781,16 +5842,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "description" | "isActive" | "keyExpiresAt" | "email" | "createdAt" | "lastUsedAt")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
         };
         /** ServiceAccountResponse */
         ServiceAccountResponse: {
@@ -5859,16 +5920,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
             /**
              * Started At Max
              * @description Filters for task runs started on or before this date and time.
@@ -6003,16 +6064,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
             /**
              * Type
              * @description Filter units by type
@@ -6185,16 +6251,16 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order Desc
-             * @description Sort terms by descending.
-             * @default false
-             */
-            order_desc: boolean | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: string | null;
+            /**
+             * Sort Desc
+             * @description Sort terms by descending.
+             * @default false
+             */
+            sort_desc: boolean | null;
         };
         /** WorkspaceItemQueryParameters */
         WorkspaceItemQueryParameters: {
@@ -6255,16 +6321,21 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
-            /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
         };
         /** WorkspaceResponse */
         WorkspaceResponse: {
@@ -6312,8 +6383,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter rating curves by monitoring site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter rating curves by workspace ID. */
@@ -6577,8 +6650,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter data product tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter data product tasks by workspace ID. */
@@ -6852,8 +6927,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -7021,8 +7096,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
                 /** @description Filter transformations by type. */
                 transformation_type?: string[];
                 /** @description Filter transformations by output datastream ID. */
@@ -7310,8 +7385,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter datastreams by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter datastreams by monitoring_site ID. */
@@ -7448,7 +7525,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7479,7 +7556,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7510,7 +7587,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7541,7 +7618,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -8062,8 +8139,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter data connections by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter data connections by payload type. */
@@ -8318,8 +8397,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
                 /** @description Filter mappings by source identifier. */
                 source_identifier?: string[];
                 /** @description Filter mappings by target datastream ID. */
@@ -8605,8 +8684,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter ETL tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
@@ -8882,8 +8963,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -9051,8 +9132,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter methods by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter methods by monitoring_site ID. */
@@ -9164,7 +9247,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -9346,8 +9429,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
                 /** @description Filter rules by datastream ID. */
                 datastream_id?: string[];
                 /** @description Filter rules by rule type. */
@@ -9633,8 +9716,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
@@ -9732,7 +9817,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -9853,7 +9938,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -10338,8 +10423,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter monitoring tasks by monitoring_site ID. */
                 monitoring_site_id?: string[];
                 /** @description Filter monitoring tasks by workspace ID. */
@@ -10609,8 +10696,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -10780,8 +10867,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Filter observations by datastream ID. */
                 datastream_id?: string[];
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
                 /** @description Controls the format of the observations response. */
                 format?: ("record" | "row" | "column") | null;
                 /** @description Sets the maximum phenomenon time of filtered observations. */
@@ -11081,8 +11168,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter observed properties by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter observed properties by monitoring_site ID. */
@@ -11190,7 +11279,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -11372,8 +11461,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("code" | "name" | "-code" | "-name")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("code" | "name" | "-code" | "-name")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter processing levels by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter processing levels by monitoring_site ID. */
@@ -11630,8 +11721,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
                 /** @description Filter histories by managed datastream ID. */
                 managed_datastream_id?: string[];
                 /** @description Filter histories by source datastream ID. */
@@ -11844,8 +11935,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
                 status?: ("in_progress" | "committed") | null;
                 /** @description Return sessions overlapping with this range start. */
                 range_start?: string | null;
@@ -12194,8 +12285,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
             };
             header?: never;
             path: {
@@ -12483,8 +12574,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("code" | "-code")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("code" | "-code")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter result qualifiers by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter result qualifiers by monitoring_site ID. */
@@ -12714,8 +12807,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "-name")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name")[] | null;
                 /** @description Filter roles by workspace ID. */
                 workspace_id?: (string | "null")[];
             };
@@ -12799,8 +12892,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Filter units by workspace ID. */
                 workspace_id?: (string | "null")[];
                 /** @description Filter units by monitoring_site ID. */
@@ -12899,7 +12994,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
+                sort_desc?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -13081,8 +13176,10 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
                 /** @description Whether the workspace is associated with the authenticated user */
                 is_associated?: boolean | null;
                 /** @description Whether the returned workspaces should be private or public. */
@@ -13321,6 +13418,8 @@ export interface operations {
                 limit?: number | null;
                 /** @description Filter collaborators by role ID. */
                 role_id?: string[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("id" | "roleId" | "-id" | "-roleId")[] | null;
             };
             header?: never;
             path: {
@@ -13525,8 +13624,8 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
             };
             header?: never;
             path: {

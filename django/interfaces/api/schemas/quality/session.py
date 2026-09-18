@@ -19,7 +19,7 @@ from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
 
 SessionStatus = Literal["in_progress", "committed"]
 
-_order_by_fields = (
+_sortby_fields = (
     "id",
     "createdAt",
     "phenomenonTimeStart",
@@ -27,8 +27,8 @@ _order_by_fields = (
     "status",
     "committedAt",
 )
-QualityControlSessionOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+QualityControlSessionSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -65,8 +65,8 @@ class QualityControlSessionItemQueryParameters(QualityControlSessionFilterFields
 
 
 class QualityControlSessionQueryParameters(QualityControlSessionFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[QualityControlSessionOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[QualityControlSessionSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     status: Optional[SessionStatus] = None
     range_start: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range start.")

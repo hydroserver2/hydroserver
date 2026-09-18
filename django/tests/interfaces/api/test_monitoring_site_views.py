@@ -99,6 +99,121 @@ def test_get_monitoring_sites_returns_400_for_malformed_tag(client):
     assert response.status_code == 400
 
 
+# --- full-text search (q) ------------------------------------------------------------
+
+
+def test_get_monitoring_sites_q_matches_name(client):
+    workspace = WorkspaceFactory()
+    match = MonitoringSiteFactory(
+        workspace=workspace, name="Zephyrsite Creek", description="A creek site.", type="Stream"
+    )
+    MonitoringSiteFactory(
+        workspace=workspace, name="Unrelated Site", description="Nothing to do with it.", type="Stream"
+    )
+
+    response = client.get(MONITORING_SITES_URL, {"q": "Zephyrsite"})
+
+    assert response.status_code == 200
+    assert {s["id"] for s in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_monitoring_sites_q_matches_type_field(client):
+    workspace = WorkspaceFactory()
+    match = MonitoringSiteFactory(
+        workspace=workspace, name="Site A", description="desc a", type="Groundwater Well"
+    )
+    MonitoringSiteFactory(workspace=workspace, name="Site B", description="desc b", type="Stream")
+
+    response = client.get(MONITORING_SITES_URL, {"q": "Groundwater"})
+
+    assert {s["id"] for s in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_monitoring_sites_q_matches_tag_value(client):
+    workspace = WorkspaceFactory()
+    match = MonitoringSiteFactory(
+        workspace=workspace, name="Site A", type="Stream", tags={"season": "summer"}
+    )
+    MonitoringSiteFactory(workspace=workspace, name="Site B", type="Stream", tags={})
+
+    response = client.get(MONITORING_SITES_URL, {"q": "summer"})
+
+    assert {s["id"] for s in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_monitoring_sites_q_comma_separated_terms_are_or(client):
+    workspace = WorkspaceFactory()
+    site_a = MonitoringSiteFactory(workspace=workspace, name="Alphasite", type="Stream")
+    site_b = MonitoringSiteFactory(workspace=workspace, name="Betasite", type="Stream")
+    MonitoringSiteFactory(workspace=workspace, name="Gammasite", type="Stream")
+
+    response = client.get(MONITORING_SITES_URL, {"q": "Alphasite, Betasite"})
+
+    assert {s["id"] for s in response.json()["data"]} == {str(site_a.id), str(site_b.id)}
+
+
+def test_get_monitoring_sites_q_whitespace_separated_terms_are_and(client):
+    workspace = WorkspaceFactory()
+    match = MonitoringSiteFactory(workspace=workspace, name="Redfish Creek", type="Stream")
+    MonitoringSiteFactory(workspace=workspace, name="Redfish Lake", type="Stream")
+
+    response = client.get(MONITORING_SITES_URL, {"q": "Redfish Creek"})
+
+    assert {s["id"] for s in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_monitoring_sites_q_is_case_insensitive(client):
+    workspace = WorkspaceFactory()
+    match = MonitoringSiteFactory(workspace=workspace, name="Zephyrsite Creek", type="Stream")
+
+    response = client.get(MONITORING_SITES_URL, {"q": "ZEPHYRSITE"})
+
+    assert {s["id"] for s in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_monitoring_sites_q_orders_by_relevance_by_default(client):
+    workspace = WorkspaceFactory()
+    name_match = MonitoringSiteFactory(workspace=workspace, name="Willowbrook", type="Stream")
+    description_match = MonitoringSiteFactory(
+        workspace=workspace,
+        name="Other Site",
+        description="Willowbrook mentioned here",
+        type="Stream",
+    )
+
+    response = client.get(MONITORING_SITES_URL, {"q": "Willowbrook"})
+
+    ids = [s["id"] for s in response.json()["data"]]
+    assert ids == [str(name_match.id), str(description_match.id)]
+
+
+def test_get_monitoring_sites_user_sortby_takes_precedence_over_relevance(client):
+    workspace = WorkspaceFactory()
+    name_match = MonitoringSiteFactory(workspace=workspace, name="Bravo Fernwood", type="Stream")
+    description_match = MonitoringSiteFactory(
+        workspace=workspace,
+        name="Alpha Site",
+        description="Fernwood mentioned",
+        type="Stream",
+    )
+
+    response = client.get(MONITORING_SITES_URL, {"q": "Fernwood", "sortby": "name"})
+
+    names = [s["name"] for s in response.json()["data"]]
+    assert names == [description_match.name, name_match.name]
+
+
+def test_get_monitoring_sites_empty_q_does_not_filter(client):
+    workspace = WorkspaceFactory()
+    MonitoringSiteFactory(workspace=workspace, name="Site A", type="Stream")
+    MonitoringSiteFactory(workspace=workspace, name="Site B", type="Stream")
+
+    without_q = client.get(MONITORING_SITES_URL)
+    with_empty_q = client.get(MONITORING_SITES_URL, {"q": ""})
+
+    assert without_q.json()["meta"]["totalCount"] == with_empty_q.json()["meta"]["totalCount"] == 2
+
+
 # --- create_monitoring_site ------------------------------------------------------------------
 
 

@@ -4,7 +4,6 @@ import logging
 from typing import Optional, Literal, get_args
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
@@ -15,7 +14,7 @@ from processing.products.models import DataProductTask, DataProductTransformatio
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
 from interfaces.api.schemas.products.task import (
-    DataProductTaskOrderByFields,
+    DataProductTaskSortByFields,
     DataProductTaskResponse,
     DataProductTaskPostBody,
     DataProductTaskPatchBody,
@@ -35,10 +34,10 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
     task_model = DataProductTask
     INCLUDE_RELATIONS = DATA_PRODUCT_TASK_INCLUDE_RELATIONS
 
-    order_by_fields = {
-        "id", "name", "monitoring_site_id", "monitoring_site__name",
-        "monitoring_site__workspace_id", "monitoring_site__workspace__name",
-        "latest_run_status", "latest_run_started_at", "latest_run_finished_at",
+    sortby_aliases = {
+        "monitoringSiteName": "monitoring_site__name",
+        "workspaceId": "monitoring_site__workspace_id",
+        "workspaceName": "monitoring_site__workspace__name",
     }
 
     @classmethod
@@ -121,7 +120,7 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
         properties: Optional[list[str]] = None,
@@ -131,18 +130,12 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
 
         queryset = self.task_model.objects
 
-        order_by = order_by or []
+        sortby = sortby or []
 
         if "latest_run_status" in filtering or any(
-            term.lstrip("-") in self.latest_run_filter_fields for term in order_by
+            term.lstrip("-") in self.latest_run_filter_fields for term in sortby
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
-
-        if "search_term" in filtering:
-            search_vector = SearchVector("name", "description", "monitoring_site__name")
-            queryset = queryset.annotate(search=search_vector).filter(
-                search=SearchQuery(filtering["search_term"])
-            )
 
         if "monitoring_site" in filtering:
             queryset = self.apply_filters(queryset, "monitoring_site_id", filtering["monitoring_site"])
@@ -177,12 +170,14 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
                 queryset, "transformations__rating_curve", filtering["rating_curve"]
             )
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(DataProductTaskOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("-id")
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(DataProductTaskSortByFields)),
+            self.sortby_aliases,
+            rank=has_search,
+        )
 
         queryset = queryset.select_related(
             "periodic_task__crontab", "periodic_task__interval"

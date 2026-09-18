@@ -41,7 +41,7 @@ def get_qc_sessions(
         history=history_id,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
     )
 

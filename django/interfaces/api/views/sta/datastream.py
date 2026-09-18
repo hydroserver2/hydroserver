@@ -50,7 +50,7 @@ def get_datastreams(
         principal=request.principal,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
@@ -140,7 +140,7 @@ def get_datastream_aggregation_statistics(
     return 200, datastream_service.list_aggregation_statistics(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 
@@ -156,7 +156,7 @@ def get_datastream_statuses(
     return 200, datastream_service.list_statuses(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 
@@ -172,7 +172,7 @@ def get_datastream_sampled_mediums(
     return 200, datastream_service.list_sampled_mediums(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 
@@ -190,7 +190,7 @@ def get_datastream_linked_resource_types(
     return 200, datastream_service.list_linked_resource_types(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 

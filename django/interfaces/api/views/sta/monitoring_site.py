@@ -56,7 +56,7 @@ def get_monitoring_sites(
         principal=request.principal,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
@@ -190,7 +190,7 @@ def get_site_types(
     return 200, monitoring_site_service.list_site_types(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 
@@ -219,7 +219,7 @@ def get_monitoring_site_linked_resource_types(
     return 200, monitoring_site_service.list_linked_resource_types(
         offset=query.offset,
         limit=query.limit,
-        order_desc=query.order_desc,
+        sort_desc=query.sort_desc,
     )
 
 

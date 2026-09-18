@@ -136,6 +136,22 @@ def test_get_etl_tasks_returns_401_when_unauthenticated(client):
     assert response.status_code == 401
 
 
+# --- full-text search (q) ------------------------------------------------------------
+
+
+def test_get_etl_tasks_q_matches_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    match = _make_etl_task(workspace, name="Zephyr Ingest Task")
+    _make_etl_task(workspace, name="Unrelated Task")
+    client.force_login(owner)
+
+    response = client.get(ETL_TASKS_URL, {"q": "Zephyr"})
+
+    assert response.status_code == 200
+    assert {t["id"] for t in response.json()["data"]} == {str(match.id)}
+
+
 # --- create_etl_task -----------------------------------------------------------------
 
 
@@ -383,7 +399,7 @@ def test_get_etl_task_run_returns_200_for_workspace_owner(client):
     assert response.json()["id"] == str(run.id)
 
 
-def test_get_etl_task_runs_order_by_started_at_ascending(client):
+def test_get_etl_task_runs_sortby_started_at_ascending(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task = _make_etl_task(workspace)
@@ -392,20 +408,20 @@ def test_get_etl_task_runs_order_by_started_at_ascending(client):
     newer = TaskRun.objects.create(task=task, status="SUCCESS", started_at=now)
     client.force_login(owner)
 
-    response = client.get(f"{_detail_url(task.id)}/runs", {"order_by": "startedAt"})
+    response = client.get(f"{_detail_url(task.id)}/runs", {"sortby": "startedAt"})
 
     assert response.status_code == 200
     ids = [r["id"] for r in response.json()["data"]]
     assert ids == [str(older.id), str(newer.id)]
 
 
-def test_get_etl_task_runs_order_by_rejects_unknown_field(client):
+def test_get_etl_task_runs_sortby_rejects_unknown_field(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task = _make_etl_task(workspace)
     client.force_login(owner)
 
-    response = client.get(f"{_detail_url(task.id)}/runs", {"order_by": "bogus"})
+    response = client.get(f"{_detail_url(task.id)}/runs", {"sortby": "bogus"})
 
     assert response.status_code == 400
 

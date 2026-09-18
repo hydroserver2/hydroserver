@@ -13,7 +13,7 @@ from interfaces.api.service import APIService
 from interfaces.api.services.products.task import DataProductTaskAPIService
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationFields,
-    DataProductTransformationOrderByFields,
+    DataProductTransformationSortByFields,
     DataProductTransformationPatchBody,
     DataProductTransformationPostBody,
     DataProductTransformationResponse,
@@ -77,7 +77,7 @@ class DataProductTransformationAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -99,9 +99,9 @@ class DataProductTransformationAPIService(APIService):
                 queryset, "task__monitoring_site__workspace_id", filtering["workspace_id"]
             )
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(DataProductTransformationOrderByFields))
+        if sortby:
+            queryset = self.apply_sorting(
+                queryset, sortby, list(get_args(DataProductTransformationSortByFields))
             )
         else:
             queryset = queryset.order_by("id")

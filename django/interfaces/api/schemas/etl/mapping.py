@@ -22,9 +22,9 @@ class EtlMappingFields(Schema):
     target_datastream_id: uuid.UUID
 
 
-_order_by_fields = ("id", "sourceIdentifier", "targetDatastreamId")
+_sortby_fields = ("id", "sourceIdentifier", "targetDatastreamId")
 
-EtlMappingOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
+EtlMappingSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
 
 _property_fields = (
     "id",
@@ -72,8 +72,8 @@ class EtlMappingItemQueryParameters(EtlMappingFilterFields, BaseQueryParameters)
 
 
 class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[EtlMappingOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[EtlMappingSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     source_identifier: list[str] = Query(
         [], description="Filter mappings by source identifier."

@@ -42,7 +42,7 @@ def get_data_product_tasks(
         principal=request.principal,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
         properties=query.properties,
@@ -204,7 +204,7 @@ def get_data_product_task_runs(
     run_kwargs = query.model_dump(
         exclude_unset=True,
         include={
-            "offset", "limit", "order_by", "status",
+            "offset", "limit", "sortby", "status",
             "started_at__gte", "started_at__lte", "finished_at__gte", "finished_at__lte",
         },
     )

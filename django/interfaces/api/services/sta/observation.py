@@ -19,7 +19,7 @@ from interfaces.api.services.sta.datastream import DatastreamAPIService
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
-    ObservationOrderByFields,
+    ObservationSortByFields,
     ObservationResponse,
     ObservationPostBody,
     ObservationBulkPostBody,
@@ -142,7 +142,7 @@ class ObservationAPIService(APIService):
         response: HttpResponse,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         response_format: Optional[str] = None,
         include: Optional[list[str]] = None,
@@ -197,13 +197,11 @@ class ObservationAPIService(APIService):
             result_qualifier_codes=F("result_qualifiers")
         )
 
-        if not order_by:
-            order_by = ["datastreamId", "phenomenonTime"]
-
-        queryset = self.apply_ordering(
+        queryset = self.apply_sorting(
             queryset,
-            order_by,
-            list(get_args(ObservationOrderByFields)),
+            sortby,
+            list(get_args(ObservationSortByFields)),
+            default_sortby=("datastream_id", "phenomenon_time"),
         )
 
         select_paths = ["datastream__monitoring_site"]

@@ -17,7 +17,7 @@ class RatingCurveService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         fetch_all: bool = False,
@@ -27,7 +27,7 @@ class RatingCurveService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             monitoring_site_id=normalize_uuid(monitoring_site),
             workspace_id=normalize_uuid(workspace),

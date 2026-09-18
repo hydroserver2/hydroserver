@@ -36,9 +36,9 @@ OperationType = Literal[
     "ASSIGN_DATETIMES_BULK",
 ]
 
-_order_by_fields = ("id", "order", "operationType", "createdAt")
-QualityControlOperationOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("id", "order", "operationType", "createdAt")
+QualityControlOperationSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -70,8 +70,8 @@ class QualityControlOperationItemQueryParameters(QualityControlOperationFilterFi
 
 
 class QualityControlOperationQueryParameters(QualityControlOperationFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[QualityControlOperationOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[QualityControlOperationSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
 
 

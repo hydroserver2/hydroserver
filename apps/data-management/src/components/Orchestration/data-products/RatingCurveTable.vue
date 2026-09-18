@@ -893,7 +893,7 @@ async function refreshRatingCurves() {
   backendLoading.value = true
   try {
     const items = await hs.ratingCurves.listItemsForMonitoringSite(props.monitoringSiteId, {
-      order_by: ['name'],
+      sortby: ['name'],
     })
     backendRatingCurves.value = items.sort((a, b) =>
       a.name.localeCompare(b.name)

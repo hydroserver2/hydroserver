@@ -37,14 +37,16 @@ METHOD_INCLUDE_RELATIONS = {
 }
 MethodIncludeRelation = Literal[*METHOD_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "code",
     "type",
     "sensorModel",
     "sensorModelManufacturer",
+    "definition",
+    "sensorModelDefinition",
 )
-MethodOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
+MethodSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
 
 _property_fields = ("id", "workspaceId", *(to_camel(name) for name in MethodFields.model_fields))
 MethodPropertyName = Literal[*_property_fields]
@@ -75,8 +77,13 @@ class MethodItemQueryParameters(MethodFilterFields, BaseQueryParameters):
 
 
 class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[MethodOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[MethodSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter methods by workspace ID."

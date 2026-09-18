@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
@@ -67,6 +68,7 @@ class Datastream(models.Model):
     is_private = models.BooleanField(default=True)
     is_visible = models.BooleanField(default=True)
     tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
+    search_vector = SearchVectorField(null=True, editable=False)
 
     objects = DatastreamQuerySet.as_manager()
 
@@ -77,6 +79,7 @@ class Datastream(models.Model):
                 name="sta_datastream_tags_gin",
                 opclasses=["jsonb_path_ops"],
             ),
+            GinIndex(fields=["search_vector"], name="sta_datastream_search_gin"),
         ]
 
     def __str__(self):

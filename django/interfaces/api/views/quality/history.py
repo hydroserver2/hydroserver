@@ -37,7 +37,7 @@ def get_qc_histories(
         principal=request.principal,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )

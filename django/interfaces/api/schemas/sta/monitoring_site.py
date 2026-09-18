@@ -60,7 +60,7 @@ MONITORING_SITE_INCLUDE_RELATIONS = {
 }
 MonitoringSiteIncludeRelation = Literal[*MONITORING_SITE_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "code",
     "type",
@@ -73,8 +73,8 @@ _order_by_fields = (
     "adminArea2",
     "country",
 )
-MonitoringSiteOrderByFields = Literal[
-    *_order_by_fields, *[f"-{field}" for field in _order_by_fields]
+MonitoringSiteSortByFields = Literal[
+    *_sortby_fields, *[f"-{field}" for field in _sortby_fields]
 ]
 
 _property_fields = (
@@ -115,8 +115,13 @@ class MonitoringSiteItemQueryParameters(MonitoringSiteFilterFields, BaseQueryPar
 
 
 class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[MonitoringSiteOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[MonitoringSiteSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter monitoring sites by workspace ID."

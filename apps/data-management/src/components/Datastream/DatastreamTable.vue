@@ -1629,15 +1629,15 @@ const loadLinkedTasks = async () => {
     const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
         monitoring_site_id: [site.id],
-        order_by: ['name'],
+        sortby: ['name'],
       }),
       hs.dataProductTasks.listAllItems({
         monitoring_site_id: [site.id],
-        order_by: ['name'],
+        sortby: ['name'],
       }),
       hs.monitoringTasks.listAllItems({
         monitoring_site_id: [site.id],
-        order_by: ['name'],
+        sortby: ['name'],
       }),
     ])
     if (requestId !== linkedTasksRequestId) return

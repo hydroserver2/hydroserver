@@ -16,7 +16,7 @@ def normalize_uuid(
     return str(obj)
 
 
-def order_by_to_camel(s: str) -> str:
+def sortby_to_camel(s: str) -> str:
     if s.startswith('-'):
         return '-' + to_camel(s[1:])
     return to_camel(s)

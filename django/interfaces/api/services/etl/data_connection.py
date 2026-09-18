@@ -9,7 +9,6 @@ from django.db.models import Count, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Coalesce
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.utils import timezone as django_tz
 
 from core.types import Unset
@@ -25,7 +24,7 @@ from processing.etl.models import (
 )
 from interfaces.api.schemas.etl.data_connection import (
     DATA_CONNECTION_INCLUDE_RELATIONS,
-    DataConnectionOrderByFields,
+    DataConnectionSortByFields,
     DataConnectionResponse,
 )
 
@@ -79,7 +78,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
             task_attention_count=attention_count_subquery,
         )
 
-    order_by_aliases = {
+    sortby_aliases = {
         "timestampKey": "payload__timestamp_key",
         "timestampFormat": "payload__timestamp_format",
         "workspaceName": "workspace__name",
@@ -138,7 +137,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -147,25 +146,20 @@ class DataConnectionAPIService(SchedulingService, APIService):
 
         queryset = DataConnection.objects
 
-        if "search_term" in filtering:
-            search_vector = SearchVector(
-                "name", "description", "workspace__name", "source_url",
-                "timezone_type", "timezone"
-            )
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(filtering["search_term"]))
-
         if "workspace" in filtering:
             queryset = self.apply_filters(queryset, "workspace_id", filtering["workspace"])
 
         if "payload_type" in filtering:
             queryset = self.apply_filters(queryset, "payload__payload_type", filtering["payload_type"])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(DataConnectionOrderByFields)), self.order_by_aliases
-            )
-        else:
-            queryset = queryset.order_by("-id")
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(DataConnectionSortByFields)),
+            self.sortby_aliases,
+            rank=has_search,
+        )
 
         queryset = queryset.prefetch_related("placeholder_variables", "payload")
         if requested_includes:

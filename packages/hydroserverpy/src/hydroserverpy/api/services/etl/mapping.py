@@ -19,7 +19,7 @@ class EtlMappingService(HydroServerBaseService):
         workspace: Optional[Union[UUID, str]] = ...,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         source_identifier: str = ...,
         fetch_all: bool = False,
     ):
@@ -28,7 +28,7 @@ class EtlMappingService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             etl_task_id=normalize_uuid(etl_task),
             workspace_id=normalize_uuid(workspace),

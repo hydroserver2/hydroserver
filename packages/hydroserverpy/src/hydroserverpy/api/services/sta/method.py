@@ -18,7 +18,7 @@ class MethodService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
         datastream: Optional[Union["Datastream", UUID, str]] = ...,
@@ -32,7 +32,7 @@ class MethodService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
             monitoring_site_id=normalize_uuid(monitoring_site),
             datastream_id=normalize_uuid(datastream),

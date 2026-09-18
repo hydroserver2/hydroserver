@@ -60,7 +60,7 @@ All `list()` methods accept these parameters in addition to any entity-specific 
 |---|---|---|---|
 | `page` | `int` | `1` | Page number to fetch |
 | `page_size` | `int` | `100` | Results per page |
-| `order_by` | `List[str]` | `[]` | Fields to sort by; prefix with `-` for descending |
+| `sortby` | `List[str]` | `[]` | Fields to sort by; prefix with `-` for descending |
 | `fetch_all` | `bool` | `False` | If `True`, fetches and merges all pages automatically |
 
 ### Model methods
@@ -423,7 +423,7 @@ datastream.get_observations(
     result_qualifier_code=None,
     page=1,
     page_size=100000,
-    order_by=None,
+    sortby=None,
     fetch_all=False,
 ) -> ObservationCollection
 ```
@@ -562,7 +562,7 @@ Mappings are a list of dicts with `source_identifier` and `target_datastream_id`
 | Method | Returns | Description |
 |---|---|---|
 | `trigger()` | `TaskRun` | Dispatch an immediate run |
-| `list_runs(status=None, started_at_min=None, started_at_max=None, finished_at_min=None, finished_at_max=None, page=1, page_size=100, order_by=None)` | `List[TaskRun]` | Fetch run history |
+| `list_runs(status=None, started_at_min=None, started_at_max=None, finished_at_min=None, finished_at_max=None, page=1, page_size=100, sortby=None)` | `List[TaskRun]` | Fetch run history |
 | `get_run(run_id)` | `TaskRun` | Fetch a single run by ID |
 
 ---

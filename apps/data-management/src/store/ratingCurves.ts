@@ -65,7 +65,7 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     loading.value = true
     try {
       const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId, {
-        order_by: ['name'],
+        sortby: ['name'],
       })
       existingRatingCurves.value = [...items].sort((a, b) =>
         a.name.localeCompare(b.name)

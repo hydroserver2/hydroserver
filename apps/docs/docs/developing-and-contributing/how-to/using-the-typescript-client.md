@@ -64,7 +64,7 @@ Most endpoints support query params such as:
 
 - `page`
 - `page_size`
-- `order_by`
+- `sortby`
 - `expand_related`
 - Resource-specific filters
 
@@ -96,11 +96,11 @@ const allWorkspaces = await hs.workspaces.listAllItems({
 
 ```ts
 const ordered = await hs.workspaces.list({
-  order_by: ["name"],
+  sortby: ["name"],
 });
 
 const multiOrdered = await hs.workspaces.list({
-  order_by: ["-name", "isPrivate"],
+  sortby: ["-name", "isPrivate"],
 });
 ```
 
@@ -567,7 +567,7 @@ const observations = await hs.datastreams.getObservations(
   "00000000-0000-0000-0000-000000000000",
   {
     format: "row",
-    order_by: ["phenomenonTime"],
+    sortby: ["phenomenonTime"],
     phenomenon_time_min: "2025-01-01T00:00:00Z",
     phenomenon_time_max: "2025-12-31T23:59:59Z",
     page_size: 1000,
@@ -758,7 +758,7 @@ const taskId = "00000000-0000-0000-0000-000000000000";
 
 const runs = await hs.tasks.getTaskRuns(taskId, {
   page_size: 50,
-  order_by: ["-startedAt"],
+  sortby: ["-startedAt"],
 });
 
 const run = await hs.tasks.getTaskRun(
@@ -906,7 +906,7 @@ const sourceRes = await hs.datastreams.getObservations(
   history.sourceDatastream.id,
   {
     format: "record",
-    order_by: ["phenomenonTime"],
+    sortby: ["phenomenonTime"],
     phenomenon_time_min: rangeStart,
     phenomenon_time_max: rangeEnd,
   }

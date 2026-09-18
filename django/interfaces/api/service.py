@@ -1,12 +1,15 @@
 import json
 import uuid
+
 from typing import Union, Any, Optional, Type
 from pydantic.alias_generators import to_snake
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.exceptions import EmptyResultSet
 from django.db import connection
-from django.db.models import QuerySet, Model, Q
+from django.db.models import QuerySet, Model, Q, F
+
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, NotFoundError
@@ -16,6 +19,8 @@ User = get_user_model()
 
 
 class APIService:
+    SEARCH_CONFIG = "english"
+
     @staticmethod
     def get_workspace(
         principal: Union[User, ServiceAccount, AnonymousPrincipal],
@@ -77,38 +82,73 @@ class APIService:
             return queryset.filter(**{field_name: values})
 
     @staticmethod
-    def apply_ordering(
+    def apply_sorting(
         queryset: QuerySet,
-        order_by: list[str],
+        sortby: list[str],
         allowed_fields: list[str],
         field_aliases: Optional[dict[str, str]] = None,
+        default_sortby: tuple[str, ...] = ("id",),
+        rank: bool = False,
     ):
-        order_by_fields = []
         field_aliases = field_aliases or {}
 
-        stripped_fields = [field.lstrip("-") for field in order_by]
-        if len(stripped_fields) != len(set(stripped_fields)):
-            raise BadRequestError("Fields cannot be repeated in order_by arguments")
+        if not sortby:
+            sortby_fields = [] if rank else list(default_sortby)
+        else:
+            stripped_fields = [field.lstrip("-") for field in sortby]
+            if len(stripped_fields) != len(set(stripped_fields)):
+                raise BadRequestError("Fields cannot be repeated in sortby arguments")
 
-        for field in order_by:
-            if field not in allowed_fields:
-                raise BadRequestError(f"Response cannot be ordered by field '{field}'")
-            descending = field.startswith("-")
-            stripped_field = field.lstrip("-")
-            resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
-            order_by_fields.append(f"-{resolved_field}" if descending else resolved_field)
+            sortby_fields = []
+            for field in sortby:
+                if field not in allowed_fields:
+                    raise BadRequestError(f"Response cannot be sorted by field '{field}'")
+                descending = field.startswith("-")
+                stripped_field = field.lstrip("-")
+                resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
+                sortby_fields.append(f"-{resolved_field}" if descending else resolved_field)
 
-        # Requested fields (e.g. "name") are rarely unique, so rows that tie on
-        # them have no guaranteed relative order. Since results are fetched a
-        # page at a time via separate queries (see paginatedFetch on the
-        # client), an unstable tie order lets rows shift between pages and
-        # silently drop out of every page. Appending the primary key as a
-        # final tiebreaker makes the ordering - and therefore pagination -
-        # deterministic.
-        if "id" not in stripped_fields:
-            order_by_fields.append("id")
+        if rank:
+            sortby_fields.append("-rank")
 
-        return queryset.order_by(*order_by_fields)
+        stripped_sortby_fields = [field.lstrip("-") for field in sortby_fields]
+        if "id" not in stripped_sortby_fields:
+            sortby_fields.append("id")
+
+        return queryset.order_by(*sortby_fields)
+
+    @classmethod
+    def apply_search(
+        cls, queryset: QuerySet, q: Optional[str], field: str = "search_vector"
+    ) -> tuple[QuerySet, bool]:
+        """
+        Filters a queryset by the `q` full-text search parameter and annotates a `rank`
+        field for relevance ordering.
+
+        Comma-separated terms are combined with OR; the whitespace-separated words within
+        each term are combined with AND. Matching is case-insensitive.
+
+        Returns the (possibly unchanged) queryset and whether search was applied, so
+        callers can pass that through to `apply_sorting`'s `rank` argument.
+        """
+
+        if not q or not q.strip():
+            return queryset, False
+
+        groups = [group.strip() for group in q.split(",") if group.strip()]
+        if not groups:
+            return queryset, False
+
+        search_query = None
+        for group in groups:
+            group_query = SearchQuery(group, config=cls.SEARCH_CONFIG, search_type="plain")
+            search_query = group_query if search_query is None else search_query | group_query
+
+        queryset = queryset.annotate(rank=SearchRank(F(field), search_query)).filter(
+            **{field: search_query}
+        )
+
+        return queryset, True
 
     @staticmethod
     def resolve_include_set(include: Optional[list[str]]) -> set[str]:
@@ -306,13 +346,13 @@ class VocabularyAPIService(APIService):
         vocabulary_model: Type[Model],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
         queryset = vocabulary_model.objects
 
-        queryset = self.apply_ordering(
+        queryset = self.apply_sorting(
             queryset,
-            ["-name"] if order_desc else ["name"],
+            ["-name"] if sort_desc else ["name"],
             [
                 "name",
             ],

@@ -68,7 +68,7 @@ export function useOrchestrationData() {
       const [dcItems, taskSummaryResponse] = await Promise.all([
         hs.dataConnections.listAllItems({
           workspace_id: requestedWorkspaceId,
-          order_by: 'name',
+          sortby: 'name',
         } as any),
         hs.monitoringSites.listTaskSummaries({
           workspace_id: [requestedWorkspaceId],
@@ -99,7 +99,7 @@ export function useOrchestrationData() {
     }
     dataConnections.value = await hs.dataConnections.listAllItems({
       workspace_id: requestedWorkspaceId,
-      order_by: 'name',
+      sortby: 'name',
     } as any)
   }
 
@@ -135,7 +135,7 @@ export function useOrchestrationData() {
         const items = await hs.tasks.listAllItems({
           workspace_id: [requestedWorkspaceId],
           data_connection_id: [groupId],
-          order_by: ['name'],
+          sortby: ['name'],
           expand_related: true,
         } as any)
         if (requestId !== taskRequestId) return
@@ -144,7 +144,7 @@ export function useOrchestrationData() {
         const items = await hs.dataProductTasks.listAllItems({
           workspace_id: [requestedWorkspaceId],
           monitoring_site_id: [groupId],
-          order_by: ['name'],
+          sortby: ['name'],
         } as any)
         if (requestId !== taskRequestId) return
         dataProductTasks.value = items as any
@@ -152,7 +152,7 @@ export function useOrchestrationData() {
         const items = await hs.monitoringTasks.listAllItems({
           workspace_id: [requestedWorkspaceId],
           monitoring_site_id: [groupId],
-          order_by: ['name'],
+          sortby: ['name'],
         } as any)
         if (requestId !== taskRequestId) return
         monitoringTasks.value = items as any

@@ -8,6 +8,8 @@ from jmespath.exceptions import JMESPathError
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django_celery_beat.models import PeriodicTask
@@ -79,9 +81,13 @@ class DataConnection(models.Model, ResourcePermissionMixin):
     auth_header_value = models.TextField(null=True, blank=True)
     timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)
     timezone = models.CharField(max_length=255, blank=True, null=True)
+    search_vector = SearchVectorField(null=True, editable=False)
 
     class Meta:
         app_label = "etl"
+        indexes = [
+            GinIndex(fields=["search_vector"], name="etl_dataconn_search_gin"),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.id}"

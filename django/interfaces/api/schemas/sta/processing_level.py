@@ -33,9 +33,9 @@ PROCESSING_LEVEL_INCLUDE_RELATIONS = {
 }
 ProcessingLevelIncludeRelation = Literal[*PROCESSING_LEVEL_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = ("code", "name")
-ProcessingLevelOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("code", "name")
+ProcessingLevelSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -69,8 +69,13 @@ class ProcessingLevelItemQueryParameters(ProcessingLevelFilterFields, BaseQueryP
 
 
 class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[ProcessingLevelOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[ProcessingLevelSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter processing levels by workspace ID."

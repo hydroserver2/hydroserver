@@ -98,6 +98,51 @@ def test_get_data_connections_returns_401_when_unauthenticated(client):
     assert response.status_code == 401
 
 
+# --- full-text search (q) ------------------------------------------------------------
+
+
+def test_get_data_connections_q_matches_name(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    match = _make_data_connection(workspace, name="Zephyr Gauge Feed")
+    _make_data_connection(workspace, name="Unrelated Feed")
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"q": "Zephyr"})
+
+    assert response.status_code == 200
+    assert {d["id"] for d in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_data_connections_q_matches_timezone_type_field(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    match = _make_data_connection(
+        workspace, name="Site A", timezone_type="iana", timezone="America/Denver"
+    )
+    _make_data_connection(workspace, name="Site B", timezone_type=None, timezone=None)
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"q": "iana"})
+
+    assert {d["id"] for d in response.json()["data"]} == {str(match.id)}
+
+
+def test_get_data_connections_q_orders_by_relevance_by_default(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    name_match = _make_data_connection(workspace, name="Willowbrook Feed")
+    description_match = _make_data_connection(
+        workspace, name="Other Feed", description="Willowbrook mentioned here"
+    )
+    client.force_login(owner)
+
+    response = client.get(DATA_CONNECTIONS_URL, {"q": "Willowbrook"})
+
+    ids = [d["id"] for d in response.json()["data"]]
+    assert ids == [str(name_match.id), str(description_match.id)]
+
+
 def test_get_data_connections_include_workspace_sideloads_it(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)

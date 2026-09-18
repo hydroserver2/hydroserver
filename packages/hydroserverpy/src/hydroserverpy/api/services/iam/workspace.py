@@ -25,7 +25,7 @@ class WorkspaceService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         is_private: bool = ...,
         is_associated: bool = ...,
         fetch_all: bool = False,
@@ -35,7 +35,7 @@ class WorkspaceService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             is_private=is_private,
             is_associated=is_associated,

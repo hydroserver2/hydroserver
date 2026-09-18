@@ -17,7 +17,7 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.sta.processing_level import (
     ProcessingLevelFields,
-    ProcessingLevelOrderByFields,
+    ProcessingLevelSortByFields,
     PROCESSING_LEVEL_INCLUDE_RELATIONS,
 )
 
@@ -63,7 +63,7 @@ class ProcessingLevelAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -78,14 +78,13 @@ class ProcessingLevelAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(ProcessingLevelOrderByFields)),
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(ProcessingLevelSortByFields)),
+            rank=has_search,
+        )
 
         if requested_includes:
             select_paths = [

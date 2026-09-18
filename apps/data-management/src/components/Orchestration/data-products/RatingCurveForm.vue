@@ -333,7 +333,7 @@ async function loadOptions() {
   try {
     const datastreamItems = await hs.datastreams.listAllItems({
       workspace_id: [workspaceId],
-      order_by: ['name'],
+      sortby: ['name'],
       expand_related: true,
     } as any)
     datastreams.value = datastreamItems as Datastream[]
@@ -391,7 +391,7 @@ async function loadRatingCurves(monitoringSiteId: string) {
     const items = await hs.ratingCurves.listItemsForMonitoringSite(
       monitoringSiteId,
       {
-        order_by: ['name'],
+        sortby: ['name'],
       }
     )
     ratingCurves.value = [...items].sort((a, b) => a.name.localeCompare(b.name))

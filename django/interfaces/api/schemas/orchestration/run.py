@@ -14,9 +14,9 @@ from interfaces.api.schemas import (
 )
 
 
-_order_by_fields = ("id", "status", "startedAt", "finishedAt")
-TaskRunOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("id", "status", "startedAt", "finishedAt")
+TaskRunSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 TaskRunPropertyName = Literal[
@@ -34,8 +34,8 @@ class TaskRunQueryParameters(CollectionQueryParameters):
         description="Comma-separated list of properties to include in the response. "
         "All properties are returned if omitted.",
     )
-    order_by: list[TaskRunOrderByFields] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: list[TaskRunSortByFields] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     status: list[Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]] = Query(
         [], description="Filters task runs by their status."

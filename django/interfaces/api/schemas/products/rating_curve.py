@@ -36,16 +36,17 @@ RATING_CURVE_INCLUDE_RELATIONS = {
 }
 RatingCurveIncludeRelation = Literal[*RATING_CURVE_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "id",
     "name",
     "monitoringSiteId",
     "monitoringSiteName",
     "workspaceId",
     "workspaceName",
+    "fittingMethod",
 )
-RatingCurveOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+RatingCurveSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -81,8 +82,13 @@ class RatingCurveItemQueryParameters(RatingCurveFilterFields, BaseQueryParameter
 
 
 class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[RatingCurveOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[RatingCurveSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site_id: list[uuid.UUID] = Query(
         [], description="Filter rating curves by monitoring site ID."

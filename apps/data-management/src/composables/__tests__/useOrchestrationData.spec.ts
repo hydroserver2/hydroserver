@@ -56,7 +56,7 @@ describe('useOrchestrationData', () => {
     expect(data.monitoringSites.value.map((item) => item.id)).toEqual(['monitoringSite-1'])
     expect(dataConnectionsListMock).toHaveBeenCalledWith({
       workspace_id: 'workspace-1',
-      order_by: 'name',
+      sortby: 'name',
     })
     expect(monitoringSitesTaskSummariesMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
@@ -99,7 +99,7 @@ describe('useOrchestrationData', () => {
     expect(tasksListMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
       data_connection_id: ['dc-1'],
-      order_by: ['name'],
+      sortby: ['name'],
       expand_related: true,
     })
 
@@ -108,7 +108,7 @@ describe('useOrchestrationData', () => {
     expect(dataProductTasksListMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
       monitoring_site_id: ['monitoringSite-1'],
-      order_by: ['name'],
+      sortby: ['name'],
     })
 
     await data.fetchTasksForGroup('quality', 'monitoringSite-1', 'workspace-1')
@@ -116,7 +116,7 @@ describe('useOrchestrationData', () => {
     expect(monitoringTasksListMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
       monitoring_site_id: ['monitoringSite-1'],
-      order_by: ['name'],
+      sortby: ['name'],
     })
   })
 

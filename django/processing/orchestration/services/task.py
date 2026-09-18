@@ -6,7 +6,6 @@ from pydantic import validate_call, ConfigDict, Field
 from django.db import transaction
 from django.db.models import QuerySet, Subquery, OuterRef
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
@@ -25,8 +24,8 @@ T = TypeVar("T", bound=Task)
 class TaskService(SchedulingService, Generic[T]):
 
     task_model: type[T]
-    task_run_order_by_fields = ("id", "status", "startedAt", "finishedAt")
-    task_run_order_by_aliases = {"startedAt": "started_at", "finishedAt": "finished_at"}
+    task_run_sortby_fields = ("id", "status", "startedAt", "finishedAt")
+    task_run_sortby_aliases = {"startedAt": "started_at", "finishedAt": "finished_at"}
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get(
@@ -127,8 +126,7 @@ class TaskService(SchedulingService, Generic[T]):
         principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         offset: int = Field(ge=0, default=0),
         limit: int = Field(ge=0, le=100000, default=100),
-        order_by: list[str] = Field(default_factory=list),
-        search_term: str | Unset = Unset,
+        sortby: list[str] = Field(default_factory=list),
         status: list[str] | Unset = Unset,
         started_at__gte: datetime | Unset = Unset,
         started_at__lte: datetime | Unset = Unset,
@@ -142,10 +140,6 @@ class TaskService(SchedulingService, Generic[T]):
         task = self.get(task=task, action="view", principal=principal)
 
         queryset = TaskRun.objects.filter(task=task)
-
-        if search_term is not Unset:
-            search_vector = SearchVector("status", "message")
-            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
 
         if status is not Unset:
             queryset = queryset.filter(status__in=status)
@@ -162,16 +156,17 @@ class TaskService(SchedulingService, Generic[T]):
         if finished_at__lte is not Unset:
             queryset = queryset.filter(finished_at__lte=finished_at__lte)
 
-        if order_by:
-            allowed_fields = [
-                *self.task_run_order_by_fields,
-                *[f"-{f}" for f in self.task_run_order_by_fields],
-            ]
-            queryset = APIService.apply_ordering(
-                queryset, order_by, allowed_fields, field_aliases=self.task_run_order_by_aliases
-            )
-        else:
-            queryset = queryset.order_by("-started_at", "-id")
+        allowed_fields = [
+            *self.task_run_sortby_fields,
+            *[f"-{f}" for f in self.task_run_sortby_fields],
+        ]
+        queryset = APIService.apply_sorting(
+            queryset,
+            sortby,
+            allowed_fields,
+            field_aliases=self.task_run_sortby_aliases,
+            default_sortby=("-started_at", "-id"),
+        )
 
         count = queryset.count()
 
@@ -199,7 +194,7 @@ class TaskService(SchedulingService, Generic[T]):
         Annotate a task queryset with fields from the latest run.
 
         Each annotation is a correlated subquery evaluated per row, so callers that only need a
-        subset (e.g., for filtering or ordering) should pass ``fields`` to avoid computing the
+        subset (e.g., for filtering or sorting) should pass ``fields`` to avoid computing the
         rest. See ``attach_latest_runs`` for resolving full latest-run data on a page of results
         without the per-row subqueries.
         """
@@ -222,7 +217,7 @@ class TaskService(SchedulingService, Generic[T]):
         Resolves the most recent run per task with one ``DISTINCT ON`` query instead of the six
         correlated subqueries ``annotate_latest_run`` would add to the (un-paginated) collection
         query. This keeps the collection scan free of latest-run subqueries unless they are needed
-        for filtering or ordering.
+        for filtering or sorting.
         """
 
         task_ids = [task.pk for task in tasks]

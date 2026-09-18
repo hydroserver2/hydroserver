@@ -42,13 +42,15 @@ SERVICE_ACCOUNT_INCLUDE_RELATIONS = {
 ServiceAccountIncludeRelation = Literal[*SERVICE_ACCOUNT_INCLUDE_RELATIONS.keys()]
 
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "isActive",
     "keyExpiresAt",
+    "createdAt",
+    "lastUsedAt",
 )
-ServiceAccountOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+ServiceAccountSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 
@@ -85,8 +87,8 @@ class ServiceAccountItemQueryParameters(ServiceAccountFilterFields, BaseQueryPar
 
 
 class ServiceAccountQueryParameters(ServiceAccountFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[ServiceAccountOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[ServiceAccountSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
 
 

@@ -19,7 +19,7 @@ class MonitoringRuleService(HydroServerBaseService):
         workspace: Optional[Union[UUID, str]] = ...,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         datastream: Optional[Union[UUID, str]] = ...,
         rule_type: str = ...,
         fetch_all: bool = False,
@@ -29,7 +29,7 @@ class MonitoringRuleService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             task_id=normalize_uuid(task),
             workspace_id=normalize_uuid(workspace),

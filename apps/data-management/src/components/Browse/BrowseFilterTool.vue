@@ -732,7 +732,7 @@ const onClearFilters = () => {
 
 onMounted(async () => {
   workspaces.value = await hs.workspaces.listAllItems({
-    order_by: ['name'],
+    sortby: ['name'],
   })
   workspacesLoaded.value = true
   void applyRouteState()

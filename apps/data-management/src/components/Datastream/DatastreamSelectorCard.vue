@@ -804,7 +804,7 @@ async function loadFallbackData() {
       ? Promise.resolve([])
       : hs.monitoringSites.listAllItems({
           workspace_id: [workspaceId],
-          order_by: ['name'],
+          sortby: ['name'],
         } as any),
   ])
   fetchedDatastreams.value = datastreams as Datastream[]

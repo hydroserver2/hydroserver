@@ -15,7 +15,7 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.iam.service_account import (
     ServiceAccountInputFields,
-    ServiceAccountOrderByFields,
+    ServiceAccountSortByFields,
     SERVICE_ACCOUNT_INCLUDE_RELATIONS,
 )
 
@@ -69,7 +69,7 @@ class ServiceAccountAPIService(APIService):
         workspace_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -79,12 +79,9 @@ class ServiceAccountAPIService(APIService):
         )
         queryset = ServiceAccount.objects.filter(workspace=workspace)
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(ServiceAccountOrderByFields))
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(ServiceAccountSortByFields))
+        )
 
         if requested_includes:
             select_paths = [

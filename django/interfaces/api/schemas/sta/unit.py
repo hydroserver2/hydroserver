@@ -33,12 +33,12 @@ UNIT_INCLUDE_RELATIONS = {
 }
 UnitIncludeRelation = Literal[*UNIT_INCLUDE_RELATIONS.keys()]
 
-_order_by_fields = (
+_sortby_fields = (
     "name",
     "symbol",
     "type",
 )
-UnitOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
+UnitSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
 
 _property_fields = ("id", "workspaceId", *(to_camel(name) for name in UnitFields.model_fields))
 UnitPropertyName = Literal[*_property_fields]
@@ -69,8 +69,13 @@ class UnitItemQueryParameters(UnitFilterFields, BaseQueryParameters):
 
 
 class UnitQueryParameters(UnitFilterFields, CollectionQueryParameters):
-    order_by: Optional[list[UnitOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[UnitSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
+    )
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter units by workspace ID."

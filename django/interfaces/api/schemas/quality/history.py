@@ -32,9 +32,9 @@ QualityControlHistoryIncludeRelation = Literal[
     *QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS.keys()
 ]
 
-_order_by_fields = ("id", "createdAt", "phenomenonTimeStart", "phenomenonTimeEnd")
-QualityControlHistoryOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("id", "createdAt", "phenomenonTimeStart", "phenomenonTimeEnd")
+QualityControlHistorySortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -79,8 +79,8 @@ class QualityControlHistoryItemQueryParameters(
 class QualityControlHistoryQueryParameters(
     QualityControlHistoryFilterFields, CollectionQueryParameters
 ):
-    order_by: Optional[list[QualityControlHistoryOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[QualityControlHistorySortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     managed_datastream_id: list[uuid.UUID] = Query(
         [], description="Filter histories by managed datastream ID."

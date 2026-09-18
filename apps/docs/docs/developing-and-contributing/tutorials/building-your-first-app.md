@@ -87,7 +87,7 @@ const row = ({ name, latitude, longitude }: MonitoringSite) => {
 const res = await hs.monitoringSites.list({
   page: 1,
   page_size: 50,
-  order_by: ["name"],
+  sortby: ["name"],
   is_private: false,
 });
 

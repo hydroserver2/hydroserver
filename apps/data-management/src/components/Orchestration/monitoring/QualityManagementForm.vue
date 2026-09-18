@@ -465,7 +465,7 @@ async function loadDatastreams() {
   try {
     const items = await hs.datastreams.listAllItems({
       workspace_id: [selectedWorkspace.value.id],
-      order_by: ['name'],
+      sortby: ['name'],
       expand_related: true,
     } as any)
     datastreams.value = items as Datastream[]
@@ -497,7 +497,7 @@ async function loadExistingTask() {
       hs.monitoringTasks.get(props.editTaskId),
       hs.monitoringRules.list({
         task_id: props.editTaskId,
-        order_by: ['datastreamId', 'ruleType'],
+        sortby: ['datastreamId', 'ruleType'],
       } as any),
     ])
 

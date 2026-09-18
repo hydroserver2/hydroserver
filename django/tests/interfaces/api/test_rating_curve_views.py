@@ -291,7 +291,7 @@ def test_get_rating_curves_filters_by_workspace_id(client):
 
 
 @pytest.mark.parametrize(
-    "order_by_value,expected_order",
+    "sortby_value,expected_order",
     [
         ("name", ["A Curve", "B Curve"]),
         ("-name", ["B Curve", "A Curve"]),
@@ -299,7 +299,7 @@ def test_get_rating_curves_filters_by_workspace_id(client):
         ("workspaceName", ["A Curve", "B Curve"]),
     ],
 )
-def test_get_rating_curves_orders_by_requested_field(client, order_by_value, expected_order):
+def test_get_rating_curves_sorts_by_requested_field(client, sortby_value, expected_order):
     owner = UserFactory()
     workspace_a = WorkspaceFactory(owner=owner, name="Workspace A")
     workspace_b = WorkspaceFactory(owner=owner, name="Workspace B")
@@ -309,13 +309,13 @@ def test_get_rating_curves_orders_by_requested_field(client, order_by_value, exp
     RatingCurveFactory(monitoring_site=site_b, name="B Curve")
     client.force_login(owner)
 
-    response = client.get(RATING_CURVES_URL, {"order_by": order_by_value})
+    response = client.get(RATING_CURVES_URL, {"sortby": sortby_value})
 
     assert response.status_code == 200
     assert [r["name"] for r in response.json()["data"]] == expected_order
 
 
-def test_get_rating_curves_orders_by_workspace_id(client):
+def test_get_rating_curves_sorts_by_workspace_id(client):
     owner = UserFactory()
     workspace_a = WorkspaceFactory(owner=owner)
     workspace_b = WorkspaceFactory(owner=owner)
@@ -325,7 +325,7 @@ def test_get_rating_curves_orders_by_workspace_id(client):
     RatingCurveFactory(monitoring_site=site_b, name="Second")
     client.force_login(owner)
 
-    response = client.get(RATING_CURVES_URL, {"order_by": "workspaceId"})
+    response = client.get(RATING_CURVES_URL, {"sortby": "workspaceId"})
 
     workspace_ids_sorted = sorted([str(workspace_a.id), str(workspace_b.id)])
     expected_first_name = "First" if workspace_ids_sorted[0] == str(workspace_a.id) else "Second"
@@ -334,10 +334,10 @@ def test_get_rating_curves_orders_by_workspace_id(client):
     assert response.json()["data"][0]["name"] == expected_first_name
 
 
-def test_get_rating_curves_order_by_rejects_unknown_field(client):
+def test_get_rating_curves_sortby_rejects_unknown_field(client):
     client.force_login(UserFactory())
 
-    response = client.get(RATING_CURVES_URL, {"order_by": "bogus"})
+    response = client.get(RATING_CURVES_URL, {"sortby": "bogus"})
 
     assert response.status_code == 400
 

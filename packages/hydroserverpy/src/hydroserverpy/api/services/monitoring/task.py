@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, TYPE_CHECKING
 from uuid import UUID
 from hydroserverpy.api.models.monitoring.task import MonitoringTask
 from hydroserverpy.api.models.orchestration.run import TaskRun
-from hydroserverpy.api.utils import normalize_uuid, order_by_to_camel
+from hydroserverpy.api.utils import normalize_uuid, sortby_to_camel
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ class MonitoringTaskService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         latest_run_status: str = ...,
@@ -32,7 +32,7 @@ class MonitoringTaskService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             monitoring_site_id=normalize_uuid(monitoring_site),
             workspace_id=normalize_uuid(workspace),
@@ -123,7 +123,7 @@ class MonitoringTaskService(HydroServerBaseService):
         uid: Union[UUID, str],
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         status: str = ...,
         started_at_min: datetime = ...,
         started_at_max: datetime = ...,
@@ -135,7 +135,7 @@ class MonitoringTaskService(HydroServerBaseService):
         params = {
             "offset": offset,
             "limit": limit,
-            "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
+            "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "status": status,
             "started_at_min": started_at_min,
             "started_at_max": started_at_max,

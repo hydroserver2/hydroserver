@@ -1,6 +1,6 @@
 import uuid
 
-from typing import Optional
+from typing import Optional, get_args
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 
@@ -8,7 +8,10 @@ from core.iam.models import Collaborator, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, PermissionDeniedError
 from interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody, CollaboratorResponse
-from interfaces.api.schemas.iam.collaborator import COLLABORATOR_INCLUDE_RELATIONS
+from interfaces.api.schemas.iam.collaborator import (
+    COLLABORATOR_INCLUDE_RELATIONS,
+    CollaboratorSortByFields,
+)
 from interfaces.api.service import APIService
 
 from .role import RoleAPIService
@@ -52,6 +55,7 @@ class CollaboratorAPIService(APIService):
         workspace_id: uuid.UUID,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -74,11 +78,9 @@ class CollaboratorAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
-        # The client fetches collaborators page by page.  Without an explicit
-        # ordering, PostgreSQL is free to return tied rows in a different
-        # order for each request, which can make a collaborator move between
-        # pages or disappear from the merged result.  Keep pagination stable.
-        queryset = queryset.order_by("id")
+        queryset = self.apply_sorting(
+            queryset, sortby, list(get_args(CollaboratorSortByFields)), {"roleId": "role_id"}
+        )
 
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 

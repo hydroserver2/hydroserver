@@ -38,7 +38,7 @@ def get_qc_operations(
         session=session_id,
         offset=query.offset,
         limit=query.limit,
-        order_by=query.order_by,
+        sortby=query.sortby,
     )
 
 

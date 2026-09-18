@@ -27,7 +27,7 @@ from interfaces.api.schemas import (
     LinkedResourcePostBody,
 )
 from interfaces.api.schemas.sta.datastream import (
-    DatastreamOrderByFields,
+    DatastreamSortByFields,
     DatastreamResponse,
     DATASTREAM_INCLUDE_RELATIONS,
 )
@@ -110,7 +110,7 @@ class DatastreamAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -158,15 +158,13 @@ class DatastreamAPIService(APIService):
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
-
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(DatastreamOrderByFields)),
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(DatastreamSortByFields)),
+            rank=has_search,
+        )
 
         queryset = queryset.select_related("monitoring_site").prefetch_related(
             "datastream_linked_resources"
@@ -509,10 +507,10 @@ class DatastreamAPIService(APIService):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
         queryset = DatastreamAggregation.objects.order_by(
-            f"{'-' if order_desc else ''}name"
+            f"{'-' if sort_desc else ''}name"
         )
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
@@ -522,9 +520,9 @@ class DatastreamAPIService(APIService):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
-        queryset = DatastreamStatus.objects.order_by(f"{'-' if order_desc else ''}name")
+        queryset = DatastreamStatus.objects.order_by(f"{'-' if sort_desc else ''}name")
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
         return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
@@ -533,9 +531,9 @@ class DatastreamAPIService(APIService):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
-        queryset = SampledMedium.objects.order_by(f"{'-' if order_desc else ''}name")
+        queryset = SampledMedium.objects.order_by(f"{'-' if sort_desc else ''}name")
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
         return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
@@ -544,10 +542,10 @@ class DatastreamAPIService(APIService):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
         queryset = LinkedResourceType.objects.order_by(
-            f"{'-' if order_desc else ''}name"
+            f"{'-' if sort_desc else ''}name"
         )
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 

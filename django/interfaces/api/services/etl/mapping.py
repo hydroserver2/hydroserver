@@ -11,7 +11,7 @@ from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundE
 from interfaces.api.service import APIService
 from interfaces.api.schemas.etl.mapping import (
     EtlMappingFields,
-    EtlMappingOrderByFields,
+    EtlMappingSortByFields,
     EtlMappingPatchBody,
     EtlMappingPostBody,
     EtlMappingResponse,
@@ -72,7 +72,7 @@ class EtlMappingAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
+        sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
@@ -90,9 +90,9 @@ class EtlMappingAPIService(APIService):
                 queryset, "etl_task__data_connection__workspace_id", filtering["workspace_id"]
             )
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset, order_by, list(get_args(EtlMappingOrderByFields))
+        if sortby:
+            queryset = self.apply_sorting(
+                queryset, sortby, list(get_args(EtlMappingSortByFields))
             )
         else:
             queryset = queryset.order_by("id")

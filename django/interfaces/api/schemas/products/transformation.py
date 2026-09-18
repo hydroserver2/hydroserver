@@ -65,9 +65,9 @@ DataProductTransformationIncludeRelation = Literal[
     *DATA_PRODUCT_TRANSFORMATION_INCLUDE_RELATIONS.keys()
 ]
 
-_order_by_fields = ("id", "outputDatastreamId")
-DataProductTransformationOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("id", "outputDatastreamId", "transformationType")
+DataProductTransformationSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
@@ -107,8 +107,8 @@ class DataProductTransformationItemQueryParameters(
 class DataProductTransformationQueryParameters(
     DataProductTransformationFilterFields, CollectionQueryParameters
 ):
-    order_by: Optional[list[DataProductTransformationOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+    sortby: Optional[list[DataProductTransformationSortByFields]] = Query(
+        [], description="Select one or more fields to sort the response by."
     )
     transformation_type: list[str] = Query(
         [], description="Filter transformations by type."

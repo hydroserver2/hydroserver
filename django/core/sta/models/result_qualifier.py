@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 from core.iam.models import Workspace
 from core.iam.permissions.registry import register_resource_type
@@ -18,6 +20,7 @@ class ResultQualifier(models.Model):
     )
     code = models.CharField(max_length=255)
     description = models.TextField()
+    search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):
         return f"{self.code} — {self.id}"
@@ -29,4 +32,7 @@ class ResultQualifier(models.Model):
                 name="unique_scoped_result_qualifier_code",
                 nulls_distinct=False,
             ),
+        ]
+        indexes = [
+            GinIndex(fields=["search_vector"], name="sta_resultqual_search_gin"),
         ]

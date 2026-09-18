@@ -54,18 +54,18 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         methodsResponse,
         resultQualifiersResponse,
       ] = await Promise.all([
-        hs.units.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.units.listAllItems({ sortby: ['name'], ...workspaceFilter }),
         hs.observedProperties.listAllItems({
-          order_by: ['name'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
         hs.processingLevels.listAllItems({
-          order_by: ['code'],
+          sortby: ['code'],
           ...workspaceFilter,
         }),
-        hs.methods.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.methods.listAllItems({ sortby: ['name'], ...workspaceFilter }),
         hs.resultQualifiers.listAllItems({
-          order_by: ['code'],
+          sortby: ['code'],
           ...workspaceFilter,
         }),
       ])

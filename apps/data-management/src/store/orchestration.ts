@@ -156,7 +156,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     const requestId = ++workspaceMonitoringSitesRequestId
     const list = await hs.monitoringSites.listAllItems({
       workspace_id: [requestedWorkspaceId],
-      order_by: ['name'],
+      sortby: ['name'],
     } as any)
     if (requestId !== workspaceMonitoringSitesRequestId) {
       return workspaceMonitoringSites.value

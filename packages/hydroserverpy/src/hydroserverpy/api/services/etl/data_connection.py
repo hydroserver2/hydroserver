@@ -17,7 +17,7 @@ class DataConnectionService(HydroServerBaseService):
         self,
         offset: int = ...,
         limit: int = ...,
-        order_by: List[str] = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         payload_type: str = ...,
         fetch_all: bool = False,
@@ -27,7 +27,7 @@ class DataConnectionService(HydroServerBaseService):
         return super().list(
             offset=offset,
             limit=limit,
-            order_by=order_by,
+            sortby=sortby,
             fetch_all=fetch_all,
             workspace_id=normalize_uuid(workspace),
             payload_type=payload_type,

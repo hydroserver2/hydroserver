@@ -17,7 +17,7 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.sta.unit import (
     UnitFields,
-    UnitOrderByFields,
+    UnitSortByFields,
     UNIT_INCLUDE_RELATIONS,
 )
 
@@ -58,7 +58,7 @@ class UnitAPIService(APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         offset: int | None = None,
         limit: int | None = None,
-        order_by: list[str] | None = None,
+        sortby: list[str] | None = None,
         filtering: dict | None = None,
         include: Optional[list[str]] = None,
     ):
@@ -74,14 +74,13 @@ class UnitAPIService(APIService):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(UnitOrderByFields)),
-            )
-        else:
-            queryset = queryset.order_by("id")
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(UnitSortByFields)),
+            rank=has_search,
+        )
 
         if requested_includes:
             select_paths = [
@@ -184,9 +183,9 @@ class UnitAPIService(APIService):
         self,
         offset: int | None = None,
         limit: int | None = None,
-        order_desc: bool = False,
+        sort_desc: bool = False,
     ):
-        queryset = UnitType.objects.order_by(f"{'-' if order_desc else ''}name")
+        queryset = UnitType.objects.order_by(f"{'-' if sort_desc else ''}name")
         queryset, meta = self.apply_pagination(queryset, offset, limit)
 
         return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
