@@ -422,45 +422,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-dialog v-model="showCloseConfirm" max-width="520">
-      <v-card rounded="lg">
-        <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
-          <v-avatar color="primary" variant="tonal" size="40">
-            <v-icon icon="mdi-content-save-outline" size="22" />
-          </v-avatar>
-          <div class="d-flex flex-column">
-            <div class="text-title-large font-weight-bold">Save before closing?</div>
-            <div class="text-body-small text-medium-emphasis">
-              <template v-if="unsavedEditCount > 0">
-                {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
-                not yet saved to the session
-              </template>
-              <template v-else> You have unsaved changes </template>
-            </div>
-          </div>
-        </div>
-        <v-card-text class="text-body-medium pt-2 pb-4 px-6">
-          Save your edits to the in-progress session before closing, or close
-          without saving (unsaved changes are dropped; previously-saved draft
-          operations stay in the session).
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
-          <v-btn variant="text" @click="showCloseConfirm = false">Cancel</v-btn>
-          <v-spacer />
-          <v-btn variant="text" @click="closeWithoutSaving">Close without saving</v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            prepend-icon="mdi-content-save-outline"
-            @click="saveDraftAndClose"
-          >
-            Save &amp; close
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 </div>
 
   <!-- One plot for both layouts. Moving it instead of rebuilding it is what
@@ -586,7 +547,7 @@ async function onViewSession(sessionId: string) {
 const { isReadOnly, inProgressSession, viewedSession, resumeDatastreamId } =
   storeToRefs(useQcSessionStore())
 const { canEdit, roleName } = useWorkspacePermissions()
-const { leaveEdit } = useEditEntry()
+const { closeEditor } = useEditEntry()
 
 // Gate the editor footer so a read-only collaborator sees a disabled state
 // instead of a 403 mid-flow.
@@ -638,7 +599,6 @@ useResumeEditSession(async (id) => {
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
 const showCommitConfirm = ref(false)
-const showCloseConfirm = ref(false)
 const commitDescription = ref('')
 const isSavingDraft = ref(false)
 const isCommitting = ref(false)
@@ -742,10 +702,6 @@ const historyPaneStyle = computed(() => {
   return { flex: '1 1 auto' }
 })
 
-function exitToSelect() {
-  void leaveEdit()
-}
-
 async function onDiscardUnsaved() {
   showDiscardConfirm.value = false
   isDiscarding.value = true
@@ -776,10 +732,6 @@ async function onSaveDraft(): Promise<boolean> {
   }
 }
 
-async function onSaveAndClose() {
-  if (await onSaveDraft()) exitToSelect()
-}
-
 // Prefill the description with the session's current one so committing
 // preserves/edits it rather than blanking it.
 function openCommit() {
@@ -801,24 +753,10 @@ async function onCommit() {
   }
 }
 
+// Closing goes through the one leave flow, which decides what happens to the
+// session and says so before anything is lost.
 function requestClose() {
-  // Only prompt to save when there are edits not yet persisted to the
-  // session; otherwise close straight back to the select view.
-  if (hasUnsavedChanges.value) {
-    showCloseConfirm.value = true
-  } else {
-    exitToSelect()
-  }
-}
-
-async function saveDraftAndClose() {
-  showCloseConfirm.value = false
-  await onSaveAndClose()
-}
-
-function closeWithoutSaving() {
-  showCloseConfirm.value = false
-  exitToSelect()
+  void closeEditor()
 }
 
 // Hydrate state from the URL once datastream metadata is available.

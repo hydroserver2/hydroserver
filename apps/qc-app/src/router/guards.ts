@@ -1,4 +1,5 @@
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useLeaveSession } from '@/composables/useLeaveSession'
 import hs from '@hydroserver/client'
 import {
   RouteLocationNormalized,
@@ -31,8 +32,27 @@ const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
   return false as const
 }
 
+/**
+ * Navigating to another page ends an open edit session, so it goes through
+ * the leave flow first. Staying on the page (the editor rewrites its own URL
+ * as the user works) is not an exit.
+ *
+ * Only the resume pointer is cleared here. The page being left unmounts the
+ * editor, which resets the rest; clearing the edit target now would have the
+ * editor's URL writer replace the route in the middle of this navigation.
+ */
+export const leaveSessionGuard: RouteGuard = async (to, from) => {
+  if (!from.name || to.name === from.name) return null
+  const { requestLeave, forgetSession } = useLeaveSession()
+  if (!(await requestLeave())) return false
+  forgetSession()
+  return null
+}
+
 /** Guards are executed in the order they appear in this array */
 export const guards: RouteGuard[] = [
+  leaveSessionGuard,
+
   (to) => {
     if (!to.meta?.hasAuthGuard) return null
     if (hs.session?.isAuthenticated) return null

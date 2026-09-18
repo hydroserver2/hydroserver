@@ -182,6 +182,8 @@ test.describe('edit selection', () => {
     await plotDatastreamById(page, DATASTREAM_ID_B)
     await startSessionFromRow(page)
     await page.getByTestId('exit-close-btn').click()
+    // The session was never touched, so closing asks what to do with it.
+    await page.getByTestId('leave-keep-btn').click()
     await expect(page.getByTestId('datastreams-table')).toBeVisible({
       timeout: 30_000,
     })

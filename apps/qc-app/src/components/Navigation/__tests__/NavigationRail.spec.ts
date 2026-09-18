@@ -20,6 +20,8 @@ const {
   isDrawerOpen,
   resumeDatastreamId,
   hasUnsavedChanges,
+  inProgressSession,
+  hasSessionOperations,
   push,
   assign,
   showView,
@@ -45,6 +47,8 @@ const {
     isDrawerOpen,
     resumeDatastreamId: r<string | null>(null),
     hasUnsavedChanges: r(false),
+    inProgressSession: r<{ id: string } | null>(null),
+    hasSessionOperations: r(false),
     push: vi.fn(async () => {}),
     assign: vi.fn(),
     showView: vi.fn((view: string) => {
@@ -92,7 +96,11 @@ vi.mock('@/store/qcSession', async () => {
   return {
     useQcSessionStore: defineStore('qcSession', () => ({
       resumeDatastreamId,
-      inProgressSession: ref(null),
+      historyId: ref('h-1'),
+      sessions: ref([]),
+      inProgressSession,
+      isReadOnly: ref(false),
+      hasSessionOperations,
     })),
   }
 })
@@ -101,7 +109,9 @@ vi.mock('@/store/hydroserver', async () => {
   const { defineStore } = await import('pinia')
   const { ref } = await import('vue')
   return {
-    useHydroServer: defineStore('hydroserver', () => ({ hs: ref({}) })),
+    useHydroServer: defineStore('hydroserver', () => ({
+      hs: ref({ session: { logout: vi.fn() } }),
+    })),
   }
 })
 
@@ -151,6 +161,7 @@ vi.mock('@/components/Navigation/PerformanceCalibration.vue', () => ({
 }))
 
 import NavigationRail from '@/components/Navigation/NavigationRail.vue'
+import { useLeaveSession } from '@/composables/useLeaveSession'
 
 function mountRail() {
   return mount(
@@ -229,6 +240,8 @@ describe('NavigationRail leaving the editor', () => {
     currentView.value = 'Edit'
     selectedDrawer.value = 'Edit'
     hasUnsavedChanges.value = false
+    inProgressSession.value = null
+    hasSessionOperations.value = false
     vi.stubGlobal('location', { ...window.location, assign })
   })
 
@@ -244,11 +257,20 @@ describe('NavigationRail leaving the editor', () => {
     wrapper.unmount()
   })
 
-  it('switching workspace navigates first, then clears the resume pointer', async () => {
-    let pointerAtPush: string | null = null
-    push.mockImplementationOnce(async () => {
-      pointerAtPush = resumeDatastreamId.value
-    })
+  it('logging out ends the session first', async () => {
+    const wrapper = mountRail()
+    await wrapper.find('[data-testid="nav-rail-logout"]').trigger('click')
+    await flushPromises()
+
+    expect(resumeDatastreamId.value).toBeNull()
+    expect(qcDatastreamId.value).toBeNull()
+    expect(assign).toHaveBeenCalledWith('/login')
+    wrapper.unmount()
+  })
+
+  // The router guard runs the leave flow for in-app navigation, so the rail
+  // only navigates.
+  it('switching workspace navigates and leaves the session to the guard', async () => {
     const wrapper = mountRail()
     await wrapper.find('[data-testid="nav-rail-workspaces"]').trigger('click')
     await flushPromises()
@@ -257,20 +279,27 @@ describe('NavigationRail leaving the editor', () => {
       name: 'Workspaces',
       query: { switch: '1' },
     })
-    expect(pointerAtPush).toBe('m-1')
-    expect(resumeDatastreamId.value).toBeNull()
-    expect(clearEditTarget).toHaveBeenCalled()
-    expect(currentView.value).toBe('Select')
+    expect(clearEditTarget).not.toHaveBeenCalled()
+    expect(resumeDatastreamId.value).toBe('m-1')
     wrapper.unmount()
   })
 
-  it('asks before leaving with unsaved edits', async () => {
+  it('asks about unsaved edits and stays put when the user cancels', async () => {
     hasUnsavedChanges.value = true
+    inProgressSession.value = { id: 'qcs-1' }
     const wrapper = mountRail()
-    await wrapper.find('[data-testid="nav-rail-workspaces"]').trigger('click')
+    await wrapper.find('button[aria-label="Home"]').trigger('click')
     await flushPromises()
 
-    expect(push).not.toHaveBeenCalled()
+    const { leavePrompt, cancelLeave } = useLeaveSession()
+    expect(leavePrompt.value?.kind).toBe('unsaved')
+    expect(assign).not.toHaveBeenCalled()
+
+    cancelLeave()
+    await flushPromises()
+
+    expect(assign).not.toHaveBeenCalled()
+    expect(qcDatastreamId.value).toBe('m-1')
     expect(resumeDatastreamId.value).toBe('m-1')
     wrapper.unmount()
   })

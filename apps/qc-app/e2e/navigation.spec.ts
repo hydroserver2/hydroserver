@@ -4,7 +4,7 @@
  *   - picking a workspace navigates to Home
  *   - the nav-rail workspace-switch button offers to revisit the picker
  *   - the edit rail item is enabled only while an edit target is set
- *   - leaving the workspace with edits not saved to the session asks first
+ *   - leaving the workspace runs the leave flow (see leave-session.spec.ts)
  *   - switching to the Select view keeps the session and asks nothing
  */
 
@@ -28,8 +28,8 @@ async function applyChangeValues(page: Page) {
   await expectHistoryContains(page, 'Change Values')
 }
 
-function exitDialog(page: Page) {
-  return page.getByRole('dialog').filter({ hasText: 'Unsaved edits' })
+function leaveDialog(page: Page) {
+  return page.getByTestId('leave-session-dialog')
 }
 
 function expectWorkspacePicker(page: Page) {
@@ -43,7 +43,10 @@ test.describe('navigation', () => {
     await installMocks(page, { qcHistories: true })
   })
 
+  // The two picker tests boot the app without a seeded workspace, so they
+  // pay the dev server's cold start when this file runs first.
   test('fresh browser redirects to the workspace picker', async ({ page }) => {
+    test.slow()
     await page.goto('/')
     // Either still /workspaces, or the picker's select button is visible.
     await expect(
@@ -55,6 +58,7 @@ test.describe('navigation', () => {
   })
 
   test('picking a workspace lands the user on Home', async ({ page }) => {
+    test.slow()
     // Don't use `gotoHome` here: it pre-seeds localStorage and skips
     // the picker. We want to exercise the actual pick flow.
     await page.goto('/')
@@ -119,15 +123,15 @@ test.describe('navigation: leaving a QC session', () => {
     await setupEditView(page)
   })
 
-  test('Save & continue saves the draft without posting observations', async ({
+  test('the workspace switch saves the draft on the way out', async ({
     page,
   }) => {
     await applyChangeValues(page)
 
     await page.getByTestId('nav-rail-workspaces').click()
-    const dialog = exitDialog(page)
-    await expect(dialog).toBeVisible()
-    await dialog.getByRole('button', { name: /save & continue/i }).click()
+    const dialog = leaveDialog(page)
+    await expect(dialog).toContainText('Unsaved edits')
+    await page.getByTestId('leave-save-btn').click()
 
     await expectWorkspacePicker(page)
     const session = sessions.find((s) => s.status === 'in_progress')
@@ -137,28 +141,19 @@ test.describe('navigation: leaving a QC session', () => {
     expect(submissions).toHaveLength(0)
   })
 
-  test('Discard continues without saving', async ({ page }) => {
+  test('cancelling the workspace switch cancels the navigation', async ({
+    page,
+  }) => {
     await applyChangeValues(page)
 
     await page.getByTestId('nav-rail-workspaces').click()
-    const dialog = exitDialog(page)
-    await expect(dialog).toBeVisible()
-    await dialog.getByRole('button', { name: /discard/i }).click()
+    await expect(leaveDialog(page)).toBeVisible()
+    await page.getByTestId('leave-cancel-btn').click()
 
-    await expectWorkspacePicker(page)
-    const session = sessions.find((s) => s.status === 'in_progress')
-    expect(session!.operations).toHaveLength(0)
+    await expect(leaveDialog(page)).toHaveCount(0)
+    await expect(page.getByTestId('edit-plot-column')).toBeVisible()
+    await expectHistoryContains(page, 'Change Values')
     expect(submissions).toHaveLength(0)
-  })
-
-  test('saved edits leave without asking', async ({ page }) => {
-    await applyChangeValues(page)
-    await page.getByTestId('exit-save-btn').click()
-    await expect(page.getByText('Draft saved.')).toBeVisible()
-
-    await page.getByTestId('nav-rail-workspaces').click()
-    await expectWorkspacePicker(page)
-    await expect(exitDialog(page)).toHaveCount(0)
   })
 
   // Switching views is not an exit, so it never asks.
@@ -171,7 +166,7 @@ test.describe('navigation: leaving a QC session', () => {
     await expect(page.getByTestId('datastreams-table')).toBeVisible({
       timeout: 30_000,
     })
-    await expect(exitDialog(page)).toHaveCount(0)
+    await expect(leaveDialog(page)).toHaveCount(0)
     await expect(page.getByTestId('edit-target-panel')).toBeVisible()
     const session = sessions.find((s) => s.status === 'in_progress')
     expect(session!.operations).toHaveLength(0)

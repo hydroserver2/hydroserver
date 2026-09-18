@@ -17,7 +17,8 @@ const {
   resumeDatastreamId,
   success,
   error,
-  canLeaveSession,
+  requestLeave,
+  forgetSession,
   ResumeSupersededError,
 } = vi.hoisted(() => {
   const { ref: r } = require('vue') as typeof import('vue')
@@ -27,6 +28,7 @@ const {
       this.name = 'ResumeSupersededError'
     }
   }
+  const resumeDatastreamId = r<string | null>(null)
   return {
     qcDatastream: r<{ id: string } | null>(null),
     setEditTarget: vi.fn(),
@@ -38,10 +40,13 @@ const {
     currentView: r('Select'),
     selectedDrawer: r('Select'),
     isDrawerOpen: r(false),
-    resumeDatastreamId: r<string | null>(null),
+    resumeDatastreamId,
     success: vi.fn(),
     error: vi.fn(),
-    canLeaveSession: vi.fn(),
+    requestLeave: vi.fn(),
+    forgetSession: vi.fn(() => {
+      resumeDatastreamId.value = null
+    }),
     ResumeSupersededError,
   }
 })
@@ -76,7 +81,7 @@ vi.mock('@/store/userInterface', async () => {
 })
 
 vi.mock('@/composables/useLeaveSession', () => ({
-  useLeaveSession: () => ({ canLeaveSession }),
+  useLeaveSession: () => ({ requestLeave, forgetSession }),
 }))
 
 vi.mock('@/store/qcSession', async () => {
@@ -124,7 +129,7 @@ beforeEach(() => {
   })
   beginEditing.mockResolvedValue(true)
   startSession.mockResolvedValue(undefined)
-  canLeaveSession.mockResolvedValue(true)
+  requestLeave.mockResolvedValue(true)
 })
 
 describe('useEditEntry', () => {
@@ -308,7 +313,7 @@ describe('useEditEntry', () => {
 
   it('asks before taking over from another open session', async () => {
     qcDatastream.value = { id: 'other' }
-    canLeaveSession.mockResolvedValueOnce(false)
+    requestLeave.mockResolvedValueOnce(false)
     expect(await useEditEntry().enterEdit('mgd')).toBe('kept')
     expect(setEditTarget).not.toHaveBeenCalled()
     expect(qcDatastream.value).toEqual({ id: 'other' })
@@ -318,7 +323,7 @@ describe('useEditEntry', () => {
   it('takes over when leaving the open session is allowed', async () => {
     qcDatastream.value = { id: 'other' }
     expect(await useEditEntry().enterEdit('mgd')).toBe('editing')
-    expect(canLeaveSession).toHaveBeenCalled()
+    expect(requestLeave).toHaveBeenCalled()
     expect(setEditTarget).toHaveBeenCalledWith('mgd')
   })
 
@@ -340,5 +345,31 @@ describe('useEditEntry', () => {
     expect(currentView.value).toBe('Select')
     expect(resumeDatastreamId.value).toBeNull()
     expect(clearEditTarget).toHaveBeenCalled()
+  })
+
+  it('closeEditor ends the session once the user agrees to leave', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    resumeDatastreamId.value = 'mgd'
+    currentView.value = 'Edit'
+
+    expect(await useEditEntry().closeEditor()).toBe(true)
+
+    expect(requestLeave).toHaveBeenCalled()
+    expect(clearEditTarget).toHaveBeenCalled()
+    expect(currentView.value).toBe('Select')
+    expect(resumeDatastreamId.value).toBeNull()
+  })
+
+  it('closeEditor leaves everything in place when the user stays', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    resumeDatastreamId.value = 'mgd'
+    currentView.value = 'Edit'
+    requestLeave.mockResolvedValueOnce(false)
+
+    expect(await useEditEntry().closeEditor()).toBe(false)
+
+    expect(clearEditTarget).not.toHaveBeenCalled()
+    expect(currentView.value).toBe('Edit')
+    expect(resumeDatastreamId.value).toBe('mgd')
   })
 })

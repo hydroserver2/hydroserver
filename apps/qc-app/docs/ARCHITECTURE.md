@@ -194,7 +194,7 @@ holds which one is showing. A view is chrome only: `dataVisualization` owns the
 edit target (`qcDatastreamId`), so switching views never touches the session,
 the working copy or unsaved edits. Only `useEditEntry.leaveEdit` ends a
 session, and `useLeaveSession` is the one place that decides whether an open
-session may be left behind.
+session may be left behind (see "Leaving a session").
 
 Consequences of that split:
 
@@ -428,9 +428,11 @@ Three constraints shape the implementation:
 
 ## Routing and auth
 
-vue-router 5, two routes (Home, Workspaces). Two guards run on
+vue-router 5, two routes (Home, Workspaces). Three guards run on
 every navigation:
 
+- **`leaveSessionGuard`**: a change of page ends an open edit session, so it
+  runs the leave flow first and cancels the navigation if the user stays.
 - **`hasAuthGuard`**: redirects unauthenticated users to the
   data-management app's `/login` route and remembers the intended QC
   destination.
@@ -438,12 +440,35 @@ every navigation:
   to `/workspaces`.
 
 The nav rail's "Edit" entry is enabled only while an edit target is set: it
-returns to the open editor and never picks one itself. Leaving
-the Edit view with edits not yet saved to the session runs the "Unsaved
-edits" dialog: Save & continue saves a draft to the in-progress session and
-Discard returns to the last save. The unsaved state comes from
-`useEditSession`, whose saved-edits baseline lives in the `qcSession` store so
-the rail and the editor footer agree (see `NavigationRail.vue`).
+returns to the open editor and never picks one itself.
+
+## Leaving a session
+
+A user never leaves an edit session without choosing to, and the choice says
+what happens to the work. `useLeaveSession.requestLeave()` decides which of
+four situations applies and shows the matching prompt; `LeaveSessionDialog`,
+mounted once in `App.vue`, renders it, and the caller proceeds only when the
+promise resolves true.
+
+| Situation | Prompt | What it does |
+|---|---|---|
+| Unsaved edits | Save and close / Discard changes and close / Cancel | Save writes a draft to the in-progress session, and is disabled with no session open. Discarding that empties the session falls through to the next row. |
+| The session holds nothing at all | Keep session / Discard session / Cancel | Discard deletes it with `useManagedDatastreams().deleteSessionChain`. A failed delete keeps the user in the session. |
+| Everything saved | Close / Cancel | Nothing. The session stays in progress. |
+| Nothing being edited, or committed history being viewed | none | Leaves silently. |
+
+The unsaved signal comes from `useEditSession`, whose saved-edits baseline
+lives in the `qcSession` store; whether the session holds any operations at
+all comes from `qcSession.hasSessionOperations`, which reads the server's
+operations plus anything saved since. Neither is a guess about the UI.
+
+Every exit routes through it: the editor footer's **Close** and the nav rail's
+Home and Log out via `useEditEntry.closeEditor()`, the row Edit button on
+another datastream via `enterEdit`, and in-app navigation (including the
+workspace switch) via `leaveSessionGuard`. Cancelling leaves the user exactly
+where they were, zoom, staged band and unsaved edits intact. The native
+`beforeunload` prompt still covers a reload or a closed tab, with the
+browser's own wording.
 
 Auth itself is delegated to HydroServer's Django AllAuth setup; the app
 keeps no credentials of its own. The browser holds a session cookie.

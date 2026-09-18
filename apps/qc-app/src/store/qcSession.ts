@@ -29,7 +29,7 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   const isSwitchingSession = ref(false)
   /** Edit history entries (by reference) at the last load or save, the
    *  baseline `useEditSession` compares against for unsaved edits. Kept here
-   *  so the editor and the nav rail's exit guard agree. */
+   *  so the editor and the leave flow agree. */
   const savedEdits = ref<HistoryItem[]>([])
   /** Comment text of `savedEdits`, since comments are edited in place. */
   const savedComments = ref<string[]>([])
@@ -59,6 +59,21 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   const viewedSession = computed(
     () => sessions.value.find((s) => s.id === viewedSessionId.value) ?? null
   )
+
+  /**
+   * True when the in-progress session holds any work at all: the operations
+   * the server returned with it, plus anything saved since (a save writes
+   * operations this copy of the session doesn't have yet, and leaves them in
+   * `savedEdits`). The leave flow uses it to tell an untouched session from
+   * one worth keeping.
+   */
+  const hasSessionOperations = computed(() => {
+    const session = inProgressSession.value as
+      | { operations?: unknown[] }
+      | null
+    if (!session) return false
+    return (session.operations?.length ?? 0) > 0 || savedEdits.value.length > 0
+  })
 
   /**
    * Guarantee every session carries its `operations`, which the previews
@@ -151,6 +166,7 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     inProgressSession,
     committedSessions,
     viewedSession,
+    hasSessionOperations,
     fetchSessions,
     applySessions,
     viewSession,

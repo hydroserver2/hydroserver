@@ -86,7 +86,7 @@ export function useEditSession() {
   const workingCopies = useWorkingCopiesStore()
 
   // The saved-edits snapshot lives in the store so every caller (the editor
-  // footer and the nav rail's exit guard) sees the same unsaved state.
+  // footer and the leave flow) sees the same unsaved state.
   const { sourceDatastream, savedEdits, savedComments } =
     storeToRefs(sessionStore)
   /** True when the managed datastream has no in-progress session to resume. */

@@ -7,9 +7,9 @@
  * last owns the view, so an entry that finds the target changed after an await
  * stands down without touching view state, the target or the resume pointer.
  *
- * Only `leaveEdit` ends a session. Switching between the Select and Edit views
- * keeps the target, so `openEditor` and an entry on the open target are pure
- * navigation.
+ * Only `closeEditor` and `leaveEdit` end a session. Switching between the
+ * Select and Edit views keeps the target, so `openEditor` and an entry on the
+ * open target are pure navigation.
  */
 
 import { storeToRefs } from 'pinia'
@@ -42,7 +42,7 @@ export function useEditEntry() {
   const { resumeDatastreamId } = storeToRefs(useQcSessionStore())
   const { beginEditing, startSession, needsSession, needsHistory } =
     useEditSession()
-  const { canLeaveSession } = useLeaveSession()
+  const { requestLeave, forgetSession } = useLeaveSession()
 
   const owns = (id: string | undefined) => qcDatastream.value?.id === id
   // A cleared target is not a takeover: leaving again is harmless.
@@ -55,10 +55,20 @@ export function useEditEntry() {
     showView(DrawerType.Edit)
   }
 
+  /** End the session and show the Select view. The caller has already asked
+   *  the user, or there was nothing to ask about. */
   async function leaveEdit() {
     showView(DrawerType.Select)
-    resumeDatastreamId.value = null
+    forgetSession()
     await clearEditTarget()
+  }
+
+  /** Leave the editor the way a user asks to: decide what happens to the
+   *  session, then end it. False means they chose to stay. */
+  async function closeEditor(): Promise<boolean> {
+    if (!(await requestLeave())) return false
+    await leaveEdit()
+    return true
   }
 
   // A superseded start has already left the editor (unless a newer entry
@@ -104,7 +114,7 @@ export function useEditEntry() {
       resumeDatastreamId.value = managedId
       return 'editing'
     }
-    if (takenOver(managedId) && !(await canLeaveSession())) return 'kept'
+    if (takenOver(managedId) && !(await requestLeave())) return 'kept'
     try {
       await setEditTarget(managedId)
       await beginEditing()
@@ -130,5 +140,5 @@ export function useEditEntry() {
     return outcome === 'failed' ? 'needs-window' : 'superseded'
   }
 
-  return { enterEdit, startSessionOver, openEditor, leaveEdit }
+  return { enterEdit, startSessionOver, openEditor, leaveEdit, closeEditor }
 }

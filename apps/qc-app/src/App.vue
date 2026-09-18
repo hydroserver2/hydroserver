@@ -6,11 +6,14 @@
     </v-main>
 
     <Notifications />
+    <!-- One dialog for every exit from an edit session, wherever it starts. -->
+    <LeaveSessionDialog />
   </v-app>
 </template>
 
 <script setup lang="ts">
 import Notifications from '@/components/base/Notifications.vue'
+import LeaveSessionDialog from '@/components/EditData/LeaveSessionDialog.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
 import { setupRouteGuards } from '@/router/router'

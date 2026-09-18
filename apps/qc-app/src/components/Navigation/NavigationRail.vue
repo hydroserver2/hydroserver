@@ -4,7 +4,7 @@
       <button
         class="home-icon-btn"
         aria-label="Home"
-        @click="guardExit(goHome)"
+        @click="goHome"
       >
         <v-img
           :src="HydroServerIcon"
@@ -83,7 +83,7 @@
             v-bind="tipProps"
             class="rail-btn rail-btn-secondary"
             data-testid="nav-rail-workspaces"
-            @click.prevent="guardExit(onSwitchWorkspace)"
+            @click.prevent="onSwitchWorkspace"
           >
             <span class="rail-pill rail-pill-secondary">
               <v-icon icon="mdi-briefcase-outline" size="22" />
@@ -103,7 +103,8 @@
           <button
             v-bind="tipProps"
             class="rail-btn rail-btn-secondary"
-            @click.prevent="guardExit(onLogout)"
+            data-testid="nav-rail-logout"
+            @click.prevent="onLogout"
           >
             <span class="rail-pill rail-pill-secondary">
               <v-icon icon="mdi-logout" size="22" />
@@ -117,67 +118,10 @@
   </v-navigation-drawer>
 
   <SelectDrawer v-if="isDrawerOpen && selectedDrawer === DrawerType.Select" />
-
-  <v-dialog v-model="showExitConfirm" max-width="520" persistent>
-    <v-card rounded="lg">
-      <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
-        <v-avatar color="warning" variant="tonal" size="40">
-          <v-icon icon="mdi-alert-outline" size="22" />
-        </v-avatar>
-        <div class="d-flex flex-column">
-          <div class="text-title-large font-weight-bold">Unsaved edits</div>
-          <div class="text-body-small text-medium-emphasis">
-            <template v-if="unsavedEditCount > 0">
-              {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
-              not yet saved to the session
-            </template>
-            <template v-else>You have unsaved changes</template>
-          </div>
-        </div>
-      </div>
-      <v-card-text class="text-body-medium pt-2 pb-4 px-6">
-        <template v-if="canSave">
-          Save your edits to the session before leaving, or discard the edits
-          made since the last save. Discarded edits cannot be recovered.
-        </template>
-        <template v-else>
-          No session is open, so these edits cannot be saved. Discard them to
-          continue. Discarded edits cannot be recovered.
-        </template>
-      </v-card-text>
-      <v-divider />
-      <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
-        <v-btn variant="text" :disabled="isBusy" @click="cancelExit">
-          Cancel
-        </v-btn>
-        <v-spacer />
-        <v-btn
-          color="error"
-          variant="tonal"
-          prepend-icon="mdi-delete-outline"
-          :disabled="isBusy"
-          :loading="isBusy && exitAction === 'discard'"
-          @click="discardAndContinue"
-        >
-          Discard
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          prepend-icon="mdi-content-save-outline"
-          :disabled="isBusy || !canSave"
-          :loading="isBusy && exitAction === 'save'"
-          @click="saveAndContinue"
-        >
-          Save &amp; continue
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import HydroServerIcon from '@/assets/icon-color-thick.svg'
 import SelectDrawer from '@/components/Navigation/SelectDrawer.vue'
 import PerformanceCalibration from '@/components/Navigation/PerformanceCalibration.vue'
@@ -188,9 +132,6 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import router from '@/router/router'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
-import { usePlotlyStore } from '@/store/plotly'
-import { useQcSessionStore } from '@/store/qcSession'
-import { useEditSession } from '@/composables/useEditSession'
 import { useEditEntry } from '@/composables/useEditEntry'
 
 const { onRailItemClicked } = useUIStore()
@@ -200,86 +141,12 @@ const { qcDatastream } = storeToRefs(useDataVisStore())
 const { hs } = storeToRefs(useHydroServer())
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace } = storeToRefs(workspaceStore)
-const { redraw } = usePlotlyStore()
-const { inProgressSession } = storeToRefs(useQcSessionStore())
-const { hasUnsavedChanges, unsavedEditCount, saveDraft, discardUnsavedEdits } =
-  useEditSession()
-const { leaveEdit } = useEditEntry()
+const { closeEditor } = useEditEntry()
 
-// Home, the workspace switch and log out are the exits that end the session.
-const needsExitConfirm = computed(
-  () => !!qcDatastream.value && hasUnsavedChanges.value
-)
-// With no in-progress session there is nothing to save to.
-const canSave = computed(() => !!inProgressSession.value)
-
-const showExitConfirm = ref(false)
-const exitAction = ref<'save' | 'discard' | null>(null)
-const isBusy = ref(false)
-let pendingAction: (() => void | Promise<void>) | null = null
-
-function guardExit(action: () => void | Promise<void>) {
-  if (needsExitConfirm.value) {
-    pendingAction = action
-    showExitConfirm.value = true
-  } else {
-    action()
-  }
-}
-
-function cancelExit() {
-  if (isBusy.value) return
-  pendingAction = null
-  showExitConfirm.value = false
-}
-
-async function continueExit() {
-  const next = pendingAction
-  pendingAction = null
-  showExitConfirm.value = false
-  await next?.()
-}
-
-async function saveAndContinue() {
-  if (isBusy.value || !canSave.value) return
-  isBusy.value = true
-  exitAction.value = 'save'
-  try {
-    await saveDraft()
-    Snackbar.success('Draft saved.')
-  } catch (e) {
-    Snackbar.error(e instanceof Error ? e.message : 'Could not save the draft.')
-    return
-  } finally {
-    isBusy.value = false
-    exitAction.value = null
-  }
-  await continueExit()
-}
-
-async function discardAndContinue() {
-  if (isBusy.value) return
-  isBusy.value = true
-  exitAction.value = 'discard'
-  try {
-    await discardUnsavedEdits()
-    await redraw()
-  } catch (e) {
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not discard the edits.'
-    )
-    return
-  } finally {
-    isBusy.value = false
-    exitAction.value = null
-  }
-  await continueExit()
-}
-
+// Home and log out reload the page, so they end the session themselves.
 async function goHome() {
+  if (!(await closeEditor())) return
   resetState()
-  // Clears the resume pointer, or the reload would reopen the editor.
-  await leaveEdit()
   window.location.assign('/')
 }
 
@@ -297,6 +164,7 @@ function onMainRailItemClicked(item: DrawerType) {
 }
 
 async function onLogout() {
+  if (!(await closeEditor())) return
   await hs.value.session.logout()
   workspaceStore.clearSelection()
   Snackbar.info('You have logged out')
@@ -304,11 +172,10 @@ async function onLogout() {
 }
 
 async function onSwitchWorkspace() {
-  // Navigate BEFORE mutating refs: VisualizeData's deep watcher syncs
-  // filters to router.replace, racing our push and stranding the user.
+  // In-app navigation goes through the router's leave guard, which asks and
+  // tears the session down once the navigation is on its way.
   // `switch=1` prevents the Workspaces picker from auto-redirecting back.
   await router.push({ name: 'Workspaces', query: { switch: '1' } })
-  await leaveEdit()
 }
 </script>
 

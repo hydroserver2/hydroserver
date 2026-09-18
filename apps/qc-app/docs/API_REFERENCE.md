@@ -115,7 +115,8 @@ await clearSelected({ recordHistory: false })  // skip history append on cleanup
 ### `useEditEntry()`
 
 ```ts
-const { enterEdit, startSessionOver, openEditor, leaveEdit } = useEditEntry()
+const { enterEdit, startSessionOver, openEditor, leaveEdit, closeEditor } =
+  useEditEntry()
 
 const result = await enterEdit(managedId, window)
 // result: 'editing' | 'needs-window' | 'not-managed' | 'superseded' | 'kept'
@@ -135,8 +136,8 @@ below), and share-link hydration (the `ed` query param).
   link made from the Select view passes `Select`, so the session reopens
   behind it. Called on the target already open, with no `window`, it only
   shows that view: nothing about the session is re-entered. Taking over from
-  another open session first asks `useLeaveSession().canLeaveSession()`, and
-  returns `'kept'` when it says no.
+  another open session first asks `useLeaveSession().requestLeave()`, and
+  returns `'kept'` when the user keeps the open one.
 - `startSessionOver(window)`: starts a new session on the current edit
   target over `window` (a `utils/timeRangePresets.ts` `TimeWindow`); backs
   **Start new session** and the editor footer's **New session**.
@@ -144,9 +145,14 @@ below), and share-link hydration (the `ed` query param).
   navigation, used by the nav rail's Edit button and the Select view's
   **Back to editor**.
 - `leaveEdit()`: returns to the Select view, clears the resume pointer and
-  the edit target (`clearEditTarget`). Every exit uses it, including the nav
-  rail's Home and Workspaces buttons, so a reload never reopens an editor the
-  user left. Switching views is not an exit and does not use it.
+  the edit target (`clearEditTarget`). The user has already been asked by
+  then, or there was nothing to ask about. Switching views is not an exit and
+  does not use it.
+- `closeEditor()`: what a user's exit calls. Runs the leave flow
+  (`useLeaveSession().requestLeave()`) and, once it resolves true, ends the
+  session with `leaveEdit()`. Returns false when the user chose to stay, so
+  the caller abandons its own exit. Backs the editor footer's **Close** and
+  the nav rail's Home and Log out.
 
 Entries can overlap (a reload resume and a click land close together);
 whichever call sets the edit target last owns the view: a call that finds
@@ -156,15 +162,40 @@ state, the target, or the resume pointer.
 ### `useLeaveSession()`
 
 ```ts
-const { canLeaveSession } = useLeaveSession()
-if (!(await canLeaveSession())) return
+const { requestLeave } = useLeaveSession()
+if (!(await requestLeave())) return // the user stayed; nothing changed
 ```
 
-The one decision point for abandoning an open edit session: taking over with
-another edit target, and every other exit that ends it. Switching between the
-Select and Edit views is not an exit, so it never asks. Leaving is always
-allowed today; the prompts that offer to save, discard or keep the session
-belong here.
+The one decision point for leaving an open edit session, used by every exit:
+the editor footer's **Close**, the nav rail's Home, workspace switch and log
+out, the row Edit button on a different datastream, and in-app navigation
+(`leaveSessionGuard` in `router/guards.ts`). Switching between the Select and
+Edit views is not an exit, so it never asks. The prompt state is module-wide
+and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
+
+- `leaveCase()`: which of the four situations applies right now.
+  `'none'` (nothing being edited, no session, or committed history being
+  viewed) leaves silently; `'unsaved'` has edits that never reached the
+  session; `'empty'` is a session holding no operations at all; `'saved'` is
+  a session whose work is all saved.
+- `requestLeave()`: decides the case, shows the matching prompt and carries
+  the answer out. Resolves true when the caller may go on, false when the
+  user stays. A second request supersedes the first, whose caller stays put.
+- `saveAndLeave()` / `discardEditsAndLeave()`: the `'unsaved'` answers.
+  Saving is refused with no session open. Discarding that empties the session
+  falls through to the `'empty'` prompt rather than leaving silently.
+- `keepSession()` / `discardSessionAndLeave()`: the `'empty'` answers.
+  Discarding deletes the session through
+  `useManagedDatastreams().deleteSessionChain`, and refuses if another
+  session was somehow built on it. A failed delete keeps the user in the
+  session.
+- `closeSession()`: the `'saved'` answer, keeping the session as it is.
+- `cancelLeave()`: stay, with the zoom, staged band and unsaved edits intact.
+- `forgetSession()`: drop the resume pointer only. For exits that unmount the
+  editor, where clearing the edit target would have the editor's URL writer
+  replace the route mid-navigation.
+- `leavePrompt` / `leaveWork`: what the dialog renders, and which answer is
+  currently running.
 
 ### `useResumeEditSession()`
 
@@ -256,7 +287,7 @@ const {
 - `hasUnsavedChanges` / `unsavedEditCount`: the working copy compared with
   the saved-edits baseline (`qcSession.savedEdits` / `savedComments`). The
   baseline lives in the store, so every caller agrees: the editor footer and
-  the nav rail's exit guard both read it.
+  the leave flow both read it.
 
 ### `useCreateManagedDatastream()`
 
@@ -661,12 +692,13 @@ puts the editor in read-only mode.
 | `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
 | `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
 | `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
-| `savedEdits`        | state    | `HistoryItem[]`                         | Edit history entries (by reference) at the last load or save. `useEditSession` compares the working copy against it for `hasUnsavedChanges`; kept in the store so the editor footer and the nav rail's exit guard agree. |
+| `savedEdits`        | state    | `HistoryItem[]`                         | Edit history entries (by reference) at the last load or save. `useEditSession` compares the working copy against it for `hasUnsavedChanges`; kept in the store so the editor footer and the leave flow agree. |
 | `savedComments`     | state    | `string[]`                              | Comment text of `savedEdits`, since comments are edited in place. |
 | `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |
 | `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
 | `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
 | `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
+| `hasSessionOperations` | computed | `boolean`                            | True when the in-progress session holds any work: the operations the server returned with it, plus anything saved since (a save leaves them in `savedEdits` before the sessions are re-fetched). The leave flow tells an untouched session from one worth keeping with it. |
 | `fetchSessions`     | action   | `(historyId: string) => Promise<QualityControlSession[]>` | Fetch a history's sessions with their operations without writing any state, so a caller can drop a result that went stale (see `useEditSession`). |
 | `applySessions`     | action   | `(historyId: string, sessions: QualityControlSession[]) => void` | Adopt fetched sessions; default the view to the in-progress one, else the latest committed. |
 | `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |

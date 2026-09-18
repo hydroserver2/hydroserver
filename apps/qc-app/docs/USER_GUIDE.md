@@ -62,7 +62,7 @@ A thin, always-visible column of icons.
 
 | Icon | Action |
 |------|--------|
-| HydroServer logo | Top left. Go home. Resets the current view. Prompts before discarding unsaved edits. |
+| HydroServer logo | Top left. Go home. Resets the current view. Asks what should happen to an open edit session first. |
 | Cursor (Select) | Top left. Show the datastream Select drawer + plot. While you are editing, this keeps the session open behind it. |
 | Pencil (Edit) | Top left. Return to the Edit view. **Disabled** until you're editing: pick a datastream to edit with its row's pencil button first. |
 | Stopwatch (Performance) | Bottom left. Open the Performance Calibration dialog. See "Performance" below. |
@@ -71,7 +71,7 @@ A thin, always-visible column of icons.
 
 Switching between **Select** and **Edit** never ends an edit session, so neither asks anything: the datastream you are editing, its session, and any unsaved edits stay exactly as they were.
 
-Home, Workspaces and Logout do leave the session. If you click one of them while there are edits not yet saved to the session, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. **Save & continue** saves a draft to the session before leaving; it is unavailable when no session is open. **Discard** drops the edits made since the last save, and they cannot be recovered.
+Home, Workspaces and Logout do leave the session, so they go through the same question as the editor's **Close** button. See "Leaving a session" below.
 
 ### Select view
 
@@ -647,7 +647,7 @@ When you're satisfied with the edits, hit one of the action buttons at the botto
 - **Commit**: materializes the session into the managed datastream and locks it into the history.
 - **Discard**: drops every edit made since the last save, returning the session to its last saved state. Edits already saved to the session stay. Disabled when there is nothing unsaved, and it asks for confirmation first.
 - **New session**: replaces Save and Commit once the session is committed. Opens the session window step, starting from the state the last commit left behind.
-- **Close**: leaves the editor. If you have unsaved edits, a "Save before closing?" dialog lets you save first or close without saving.
+- **Close**: leaves the editor, after asking what should happen to the session. See "Leaving a session" below.
 
 Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.
 
@@ -658,6 +658,36 @@ The dialog lets you add an optional session description. Once you confirm:
 1. The app saves the session's operations, then POSTs the cleaned observations to the managed datastream in `replace` mode, overwriting its observations over the session's time range.
 2. The session is committed and becomes read-only. The Snackbar shows "Session committed." and the footer swaps Save and Commit for **New session**.
 3. On failure, the Snackbar shows the backend's error message verbatim. Show that to your administrator if you need help.
+
+## Leaving a session
+
+You never leave an edit session by accident. Anything that ends it, the
+editor's **Close** button, the HydroServer logo, the workspace switch, Log
+out, the browser's Back button, or editing a different datastream, asks the
+same question first and tells you what happens to your work.
+
+Which question depends on where the session stands:
+
+- **You have edits that are not saved to the session yet.** Choose **Save and
+  close** to write them to the session first, **Discard changes and close** to
+  drop everything since your last save, or **Cancel** to stay. Either way the
+  session stays in progress and you can pick it up later. Save is unavailable
+  when no session is open, because there is nowhere to save to. If discarding
+  leaves the session with nothing in it, the next question is the one below.
+- **The session has no edits at all**, nothing saved and nothing unsaved (you
+  started it and then changed your mind). Choose **Keep session** to leave it
+  in progress, or **Discard session** to delete it from the server. Keeping it
+  is the safe choice: it costs nothing and you can resume it.
+- **Everything is saved.** The dialog only confirms that the session stays in
+  progress; **Close** leaves, **Cancel** stays.
+
+To come back to a session you left in progress, click the pencil button on
+that datastream's row again. It reopens where you left off.
+
+**Cancel** always puts you back exactly where you were: same zoom, same staged
+range, same unsaved edits. Switching between the **Select** and **Edit** views
+is not leaving, so it never asks. Reloading the page or closing the tab still
+shows the browser's own "leave site?" prompt, which the app cannot reword.
 
 ## Performance and big datastreams
 
@@ -696,7 +726,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 
 ### "I picked the wrong workspace."
 
-Click **Workspaces** in the nav rail and **Select** another, or **Continue** to stay in the current one. If you have unsaved edits, the app asks first.
+Click **Workspaces** in the nav rail and **Select** another, or **Continue** to stay in the current one. If an edit session is open, the app asks what should happen to it first.
 
 ## Troubleshooting
 
@@ -706,6 +736,7 @@ Click **Workspaces** in the nav rail and **Select** another, or **Continue** to 
 | Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in Time range. |
 | The Edit rail item is greyed out | You are not editing. | Click a row's pencil button. |
 | The Select view shows an "Editing" panel | A session is still open. | That is expected: click **Back to editor** to return to it, or **Close** in the editor to end it. |
+| I closed the editor and cannot find my session | It is still in progress, just not open. | Click the pencil button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |
 | The history shows a red failed entry after Load | The QC history referenced something missing in this datastream. | The rest of the QC history still ran. Click the chevron on the row to see its arguments. |

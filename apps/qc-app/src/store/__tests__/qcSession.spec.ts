@@ -211,3 +211,57 @@ describe('useQcSessionStore', () => {
     expect(store.sourceDatastream).toBeNull()
   })
 })
+
+describe('hasSessionOperations', () => {
+  it('is false for a session the server returned empty', async () => {
+    const { historyId } = await seed()
+    const store = useQcSessionStore()
+    store.applySessions(historyId, await store.fetchSessions(historyId))
+
+    expect(store.inProgressSession).not.toBeNull()
+    expect(store.hasSessionOperations).toBe(false)
+  })
+
+  it('reads the in-progress session operations the server returned', async () => {
+    const { historyId, inProgressId } = await seed()
+    await qc.operations.create(historyId, inProgressId, [
+      { operationType: 'DELETE_POINTS' as any, order: 0 },
+    ])
+    const store = useQcSessionStore()
+    store.applySessions(historyId, await store.fetchSessions(historyId))
+
+    expect(store.hasSessionOperations).toBe(true)
+  })
+
+  it('ignores operations that belong to a committed session', async () => {
+    const { historyId, committedId } = await seed()
+    const store = useQcSessionStore()
+    const sessions = await store.fetchSessions(historyId)
+    store.applySessions(
+      historyId,
+      sessions.map((s) =>
+        s.id === committedId
+          ? ({ ...s, operations: [{ id: 'op-1' }] } as any)
+          : s
+      )
+    )
+
+    expect(store.hasSessionOperations).toBe(false)
+  })
+
+  // A save writes operations the store's copy of the session doesn't have
+  // yet; the saved-edits snapshot is what it left behind.
+  it('counts edits saved since the sessions were loaded', async () => {
+    const { historyId } = await seed()
+    const store = useQcSessionStore()
+    store.applySessions(historyId, await store.fetchSessions(historyId))
+
+    store.savedEdits = [{ type: 'DELETE_POINTS' } as any]
+
+    expect(store.hasSessionOperations).toBe(true)
+  })
+
+  it('is false with no session at all', () => {
+    expect(useQcSessionStore().hasSessionOperations).toBe(false)
+  })
+})
