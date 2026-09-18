@@ -66,6 +66,13 @@ export function formatDayStamp(iso?: string | null): string {
 const isMidnight = (d: Date) =>
   d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0
 
+/** One boundary: `Mar 14, 2026`, or `Mar 14, 2026, 2:30 PM` off midnight. */
+export function formatStamp(when: Date): string {
+  if (Number.isNaN(when.getTime())) return '–'
+  const day = MONTH_DAY_YEAR.format(when)
+  return isMidnight(when) ? day : `${day}, ${CLOCK.format(when)}`
+}
+
 /**
  * A session's phenomenon-time window, readable at a glance:
  *   `Jan 5 – Feb 1, 2025`                    whole days in one year

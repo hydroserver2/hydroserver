@@ -781,11 +781,24 @@ opened from the row Edit chooser or the editor footer's **New session**):
   full extent, begin to end. `null` when the source has no observations.
   The rules below accept it whenever the committed history lies inside that
   extent; the dialog reports the rare case where it does not.
-- `validateSessionWindow(window, source, sessions)`: `null` when `window`
-  is valid, otherwise an error string. The window must lie inside the
-  source's extent, and it can't leave a gap before or after the committed
-  history (history spec 7.2.3 / 7.2.4). Touching an edge or overlapping is
-  fine.
+- `sessionWindowIssue(window, source, sessions)`: `null` when `window` is
+  valid, otherwise `{ kind, message, fix }` for the first broken rule. The
+  window must lie inside the source's extent, and it can't leave a gap
+  before or after the committed history (history spec 7.2.3 / 7.2.4).
+  Touching an edge or overlapping is fine. `fix` carries only the
+  endpoints at fault, set to the nearest valid value (source start or end,
+  committed end for a gap after, committed start for a gap before), plus
+  button copy naming the date. It is `null` when the start is not before
+  the end, or when the correction would itself break a rule. The dialog
+  shows it as a button on the warning.
+- `NO_SOURCE_DATA_ISSUE`: the issue for a source without observations.
+- `sessionWindowPresets(source, sessions)`: the dialog's preset chips.
+  `All` (the whole record, the default), then `1y`, `6m`, `1m` counting back
+  from the source's last observation through `presetWindow`, and, when
+  something is committed, `Since commit` (committed end to source end).
+  Each carries its `window` and a short `disabledReason` when that window
+  breaks a rule; the dialog disables it and shows the reason as its
+  tooltip. Empty when the source has no observations.
 - `committedExtent(sessions)`: the earliest committed start to the latest
   committed end, or `null` with nothing committed.
 

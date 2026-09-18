@@ -3,6 +3,7 @@
  * editor draws around the session.
  *   - Edit on a row does not plot it
  *   - the window step prefills a valid window and blocks an invalid one
+ *   - the window step offers presets and a one-click fix
  *   - the editor draws the edit target, its source, and plotted datastreams
  *   - closing the editor keeps the plotted datastreams
  *   - the session window band survives staging shapes
@@ -150,6 +151,45 @@ test.describe('edit selection', () => {
     )
     await expect(page.getByTestId('session-window-error')).toBeVisible()
     await expect(page.getByTestId('session-window-start')).toBeDisabled()
+  })
+
+  test('the window step offers presets and a one-click fix', async ({ page }) => {
+    await gotoHome(page)
+    await openWindowStep(page)
+
+    // The fixture record spans about a day, fully committed: only All fits.
+    await expect(page.getByTestId('session-window-preset-all')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    await expect(page.getByTestId('session-window-preset-1m')).toHaveClass(
+      /v-chip--disabled/
+    )
+    await expect(
+      page.getByTestId('session-window-preset-slot-1m')
+    ).toHaveAttribute('title', 'Longer than the record')
+
+    const start = new Date(FIXTURE_OBS_START_MS)
+    const end = new Date(FIXTURE_OBS_END_MS)
+    await typeDateTime(
+      page.getByTestId('session-window-from'),
+      new Date(FIXTURE_OBS_START_MS - 2 * 24 * 60 * 60 * 1000)
+    )
+    await expect(page.getByTestId('session-window-start')).toBeDisabled()
+    const fix = page.getByTestId('session-window-fix')
+    await expect(fix).toContainText('Start at')
+    await fix.click()
+
+    await expect(page.getByTestId('session-window-error')).toBeHidden()
+    await expect(page.getByTestId('session-window-start')).toBeEnabled()
+    const [fromDate, fromTime] = pickerText(start)
+    const [toDate, toTime] = pickerText(end)
+    const from = page.getByTestId('session-window-from').locator('input')
+    const to = page.getByTestId('session-window-to').locator('input')
+    await expect(from.nth(0)).toHaveValue(fromDate)
+    await expect(from.nth(1)).toHaveValue(fromTime)
+    await expect(to.nth(0)).toHaveValue(toDate)
+    await expect(to.nth(1)).toHaveValue(toTime)
   })
 
   test('the editor draws the source and plotted datastreams around the session', async ({

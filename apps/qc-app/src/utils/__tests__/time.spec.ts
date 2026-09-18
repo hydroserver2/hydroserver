@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { formatDateInput, formatDateRange, formatDayStamp } from '../time'
+import {
+  formatDateInput,
+  formatDateRange,
+  formatDayStamp,
+  formatStamp,
+} from '../time'
 
 // Datetime strings without a timezone offset are parsed as local time, so
 // these assertions are stable regardless of the test runner's zone.
@@ -68,5 +73,21 @@ describe('formatDayStamp', () => {
   it('falls back for nullish and unparseable input', () => {
     expect(formatDayStamp(null)).toBe('–')
     expect(formatDayStamp('nonsense')).toBe('nonsense')
+  })
+})
+
+describe('formatStamp', () => {
+  it('drops the clock on a whole-day boundary', () => {
+    expect(formatStamp(new Date(2026, 2, 14))).toBe('Mar 14, 2026')
+  })
+
+  it('keeps the clock at any other time', () => {
+    expect(formatStamp(new Date(2026, 2, 14, 14, 30))).toBe(
+      'Mar 14, 2026, 2:30 PM'
+    )
+  })
+
+  it('falls back for an unparseable date', () => {
+    expect(formatStamp(new Date(NaN))).toBe('–')
   })
 })

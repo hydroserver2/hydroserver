@@ -280,7 +280,9 @@ as the edit target and switches to the Edit view, resuming an in-progress
 session, or opening the session-window step when one is needed. Session
 window validity (inside the source's extent, no gap before or after
 committed history) is a pure util, `utils/sessionWindow.ts`, used by the
-session-window dialog. `startSession` only clamps the chosen window to the
+session-window dialog. The same util builds the dialog's preset chips
+(disabled with a reason when they break a rule) and the one-click fix on
+its warning, which moves only the endpoint at fault. `startSession` only clamps the chosen window to the
 source's extent (`clampSpecToSource`) as a backstop. Once editing, context refresh
 (`refreshGraphSeriesArray`) never fetches the edit target: its data is
 owned by the session (working copy, `startSession`, `viewSession`,

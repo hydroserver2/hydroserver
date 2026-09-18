@@ -29,6 +29,29 @@
       </div>
 
       <template v-if="begin && end">
+        <div v-if="presets.length" class="session-window__presets">
+          <span
+            v-for="preset in presets"
+            :key="preset.id"
+            :data-testid="`session-window-preset-slot-${preset.id}`"
+            :title="preset.disabledReason ?? preset.title"
+          >
+            <v-chip
+              :data-testid="`session-window-preset-${preset.id}`"
+              :color="activePresetId === preset.id ? 'primary' : undefined"
+              :variant="activePresetId === preset.id ? 'tonal' : 'outlined'"
+              size="small"
+              role="button"
+              :aria-pressed="String(activePresetId === preset.id)"
+              :disabled="!!preset.disabledReason"
+              class="session-window__preset-chip"
+              @click="applyPreset(preset)"
+            >
+              {{ preset.label }}
+            </v-chip>
+          </span>
+        </div>
+
         <div>
           <div class="text-body-small text-medium-emphasis mb-1">From</div>
           <DatePickerField
@@ -48,13 +71,23 @@
       </template>
 
       <v-alert
-        v-if="error"
+        v-if="issue"
         type="warning"
         variant="tonal"
         density="compact"
         data-testid="session-window-error"
       >
-        <span class="text-body-small">{{ error }}</span>
+        <span class="text-body-small">{{ issue.message }}</span>
+        <div v-if="issue.fix" class="mt-2">
+          <v-btn
+            size="small"
+            variant="tonal"
+            data-testid="session-window-fix"
+            @click="applyFix(issue.fix)"
+          >
+            {{ issue.fix.label }}
+          </v-btn>
+        </div>
       </v-alert>
     </div>
 
@@ -74,7 +107,7 @@
         color="primary"
         variant="flat"
         data-testid="session-window-start"
-        :disabled="!!error"
+        :disabled="!!issue"
         :loading="loading"
         @click="onStart"
       >
@@ -90,10 +123,15 @@ import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 import { formatDateRange } from '@/utils/time'
 import type { TimeWindow } from '@/utils/timeRangePresets'
 import {
+  NO_SOURCE_DATA_ISSUE,
   committedExtent,
   defaultSessionWindow,
-  validateSessionWindow,
+  sessionWindowIssue,
+  sessionWindowPresets,
   type SessionRange,
+  type SessionWindowFix,
+  type SessionWindowIssue,
+  type SessionWindowPreset,
   type SourceExtent,
 } from '@/utils/sessionWindow'
 
@@ -114,20 +152,54 @@ const begin = ref<Date | null>(initial?.begin ?? null)
 const end = ref<Date | null>(initial?.end ?? null)
 
 const history = computed(() => committedExtent(props.sessions))
+const presets = computed(() => sessionWindowPresets(props.source, props.sessions))
 
-const error = computed(() => {
-  if (!begin.value || !end.value) {
-    return 'The source datastream has no observations to edit.'
-  }
-  return validateSessionWindow(
+const issue = computed<SessionWindowIssue | null>(() => {
+  if (!begin.value || !end.value) return NO_SOURCE_DATA_ISSUE
+  return sessionWindowIssue(
     { begin: begin.value, end: end.value },
     props.source,
     props.sessions
   )
 })
 
+const activePresetId = computed(() => {
+  const from = begin.value?.getTime()
+  const to = end.value?.getTime()
+  if (from === undefined || to === undefined) return null
+  return (
+    presets.value.find(
+      (p) => p.window.begin.getTime() === from && p.window.end.getTime() === to
+    )?.id ?? null
+  )
+})
+
+function applyPreset(preset: SessionWindowPreset) {
+  begin.value = new Date(preset.window.begin)
+  end.value = new Date(preset.window.end)
+}
+
+// Only the endpoints the fix names move; a valid one is left as the user set it.
+function applyFix(fix: SessionWindowFix) {
+  if (fix.begin) begin.value = new Date(fix.begin)
+  if (fix.end) end.value = new Date(fix.end)
+}
+
 function onStart() {
-  if (error.value || !begin.value || !end.value) return
+  if (issue.value || !begin.value || !end.value) return
   emit('confirm', { begin: begin.value, end: end.value })
 }
 </script>
+
+<style scoped>
+.session-window__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.session-window__preset-chip {
+  font-size: 0.75rem !important;
+  height: 26px !important;
+}
+</style>
