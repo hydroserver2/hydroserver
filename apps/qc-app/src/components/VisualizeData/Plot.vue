@@ -438,6 +438,7 @@ const {
   plotlyRef,
   activeTab,
   pendingShareZoom,
+  shareZoomEditTarget,
 } = storeToRefs(usePlotlyStore())
 const { selectedData, hasSelectionShape, qcDatastream } =
   storeToRefs(useDataVisStore())
@@ -586,24 +587,17 @@ function zoomToEditWindow() {
   requestTableScroll(w.begin)
 }
 
-// A share link's zoom is an explicit viewport, so it wins over that default,
-// once: later windows (viewing another session) zoom as usual.
-let shareZoomWins = false
-watch(
-  pendingShareZoom,
-  (zoom) => {
-    if (zoom) shareZoomWins = true
-  },
-  { immediate: true }
-)
-
+// A share link's zoom is an explicit viewport, so it wins over that default
+// for the session the link itself opened. Any other window zooms as usual and
+// drops the pointer, so the link cannot reach a later editing session.
 watch(
   () => editWindow.value && `${editWindow.value.begin}-${editWindow.value.end}`,
   () => {
     if (isPlotPreview.value) return
-    if (shareZoomWins) {
-      shareZoomWins = false
-      return
+    const shareTarget = shareZoomEditTarget.value
+    if (shareTarget) {
+      shareZoomEditTarget.value = null
+      if (shareTarget === qcDatastream.value?.id) return
     }
     zoomToEditWindow()
   }

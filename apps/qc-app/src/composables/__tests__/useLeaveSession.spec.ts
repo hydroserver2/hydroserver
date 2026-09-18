@@ -87,6 +87,9 @@ vi.mock('@uwrl/qc-utils', () => ({ Snackbar: { success, error } }))
 
 import { useLeaveSession } from '../useLeaveSession'
 
+/** Let every already-settled promise deliver before asserting. */
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0))
+
 /** Nothing saved, nothing unsaved: an untouched in-progress session. */
 function emptySession() {
   qcDatastream.value = { id: 'mgd-1' }
@@ -342,6 +345,29 @@ describe('requestLeave', () => {
     expect(await first).toBe(false)
     cancelLeave()
     expect(await second).toBe(false)
+  })
+
+  it('refuses a second request while the first answer is being carried out', async () => {
+    emptySession()
+    hasUnsavedChanges.value = true
+    let finishSave!: () => void
+    saveDraft.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve))
+    )
+    const { requestLeave, saveAndLeave } = useLeaveSession()
+    const first = requestLeave()
+    void saveAndLeave()
+    await tick()
+
+    // The save is still running, so the second exit is refused outright
+    // rather than inheriting the answer the user gave the first one.
+    const second = requestLeave()
+    expect(await Promise.race([second, tick().then(() => 'unanswered')])).toBe(
+      false
+    )
+
+    finishSave()
+    expect(await first).toBe(true)
   })
 })
 

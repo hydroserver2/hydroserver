@@ -27,6 +27,7 @@ const {
   enterEdit,
   startSessionOver,
   leaveEdit,
+  closeEditor,
   createManaged,
   addQcHistory,
   removeManagedDatastream,
@@ -47,6 +48,7 @@ const {
     enterEdit: vi.fn(),
     startSessionOver: vi.fn(),
     leaveEdit: vi.fn(),
+    closeEditor: vi.fn(),
     createManaged: vi.fn(),
     addQcHistory: vi.fn(),
     removeManagedDatastream: vi.fn(),
@@ -101,7 +103,7 @@ vi.mock('@/composables/useManagedDatastreams', () => ({
 }))
 
 vi.mock('@/composables/useEditEntry', () => ({
-  useEditEntry: () => ({ enterEdit, startSessionOver, leaveEdit }),
+  useEditEntry: () => ({ enterEdit, startSessionOver, leaveEdit, closeEditor }),
 }))
 
 vi.mock('@/composables/useCreateManagedDatastream', () => ({
@@ -213,6 +215,7 @@ beforeEach(() => {
   enterEdit.mockResolvedValue('editing')
   startSessionOver.mockResolvedValue(true)
   leaveEdit.mockResolvedValue(undefined)
+  closeEditor.mockResolvedValue(true)
 })
 
 describe('StartEditingFlow', () => {
@@ -412,6 +415,63 @@ describe('StartEditingFlow', () => {
     expect(startSessionOver).toHaveBeenCalledWith(window)
     expect(enterEdit).not.toHaveBeenCalled()
     expect(present('window-stub')).toBe(false)
+  })
+
+  it('leaves the open session before the create form, not after the create', async () => {
+    loadForSource.mockResolvedValue([])
+    qcDatastream.value = { id: 'mgd', name: 'Temp (QC)' }
+    const { flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    expect(closeEditor).toHaveBeenCalled()
+    expect(present('create-stub')).toBe(true)
+  })
+
+  it('creates nothing when the open session is kept', async () => {
+    loadForSource.mockResolvedValue([])
+    closeEditor.mockResolvedValue(false)
+    qcDatastream.value = { id: 'mgd', name: 'Temp (QC)' }
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    expect(dialogOpen(wrapper, 1)).toBe(false)
+    expect(createManaged).not.toHaveBeenCalled()
+  })
+
+  it('asks before the create form opened from the chooser', async () => {
+    const option = optionWith([inProgress])
+    loadForSource.mockResolvedValue([option])
+    qcDatastream.value = { id: 'other', name: 'Other (QC)' }
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    wrapper.findComponent(ChooserStub).vm.$emit('create')
+    await flushPromises()
+    expect(closeEditor).toHaveBeenCalled()
+    expect(present('create-stub')).toBe(true)
+  })
+
+  it('returns to the chooser when the open session is kept', async () => {
+    const option = optionWith([inProgress])
+    loadForSource.mockResolvedValue([option])
+    closeEditor.mockResolvedValue(false)
+    qcDatastream.value = { id: 'other', name: 'Other (QC)' }
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    wrapper.findComponent(ChooserStub).vm.$emit('create')
+    await flushPromises()
+    expect(dialogOpen(wrapper, 1)).toBe(false)
+    expect(dialogOpen(wrapper, 0)).toBe(true)
+  })
+
+  it('does not ask when nothing is being edited', async () => {
+    loadForSource.mockResolvedValue([])
+    const { flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    expect(closeEditor).not.toHaveBeenCalled()
+    expect(present('create-stub')).toBe(true)
   })
 
   it('asks for a window for a newly created managed datastream', async () => {

@@ -664,7 +664,9 @@ The dialog lets you add an optional session description. Once you confirm:
 You never leave an edit session by accident. Anything that ends it, the
 editor's **Close** button, the HydroServer logo, the workspace switch, Log
 out, the browser's Back button, or editing a different datastream, asks the
-same question first and tells you what happens to your work.
+same question first and tells you what happens to your work. If that other
+datastream has no QC datastream yet, the question comes before the create
+form, so cancelling leaves nothing new behind.
 
 Which question depends on where the session stands:
 
@@ -673,7 +675,8 @@ Which question depends on where the session stands:
   drop everything since your last save, or **Cancel** to stay. Either way the
   session stays in progress and you can pick it up later. Save is unavailable
   when no session is open, because there is nowhere to save to. If discarding
-  leaves the session with nothing in it, the next question is the one below.
+  leaves the session with nothing in it, the next question is the one below;
+  the edits are gone by then, so that question is only about the session.
 - **The session has no edits at all**, nothing saved and nothing unsaved (you
   started it and then changed your mind). Choose **Keep session** to leave it
   in progress, or **Discard session** to delete it from the server. Keeping it
@@ -684,8 +687,11 @@ Which question depends on where the session stands:
 To come back to a session you left in progress, click the pencil button on
 that datastream's row again. It reopens where you left off.
 
-**Cancel** always puts you back exactly where you were: same zoom, same staged
-range, same unsaved edits. Switching between the **Select** and **Edit** views
+**Cancel** puts you back where you were: same zoom, same staged range, same
+unsaved edits. The one exception is the question that follows **Discard
+changes and close**, where the edits were already dropped by the choice you
+made: cancelling there keeps you in the session, not in your edits. Switching
+between the **Select** and **Edit** views
 is not leaving, so it never asks. Reloading the page or closing the tab still
 shows the browser's own "leave site?" prompt, which the app cannot reword.
 

@@ -12,7 +12,7 @@
 
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { setupEditView } from './support/app'
+import { setupEditView, startSessionFromRow } from './support/app'
 import {
   DATASTREAM_ID,
   DATASTREAM_ID_B,
@@ -98,6 +98,48 @@ async function clickResetAxes(page: Page) {
     if (!button) throw new Error('Reset axes modebar button was not found')
     button.click()
   }, selector)
+}
+
+/** The live X range of the main plot as `[loMs, hiMs]`, or null. */
+async function plotXRange(page: Page): Promise<[number, number] | null> {
+  return page.evaluate(() => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as
+      | (HTMLElement & {
+          _fullLayout?: { xaxis?: { range?: [number | string, number | string] } }
+        })
+      | null
+    const range = gd?._fullLayout?.xaxis?.range
+    if (!range) return null
+    const toMs = (v: number | string) =>
+      typeof v === 'number' ? v : Date.parse(v)
+    return [toMs(range[0]), toMs(range[1])] as [number, number]
+  })
+}
+
+/**
+ * Whether the plot is showing the session-window band the editor draws, which
+ * is what "the editor opened on its session window" looks like from outside.
+ */
+async function zoomedToSessionWindow(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as
+      | (HTMLElement & {
+          _fullLayout?: { xaxis?: { range?: [number | string, number | string] } }
+          layout?: { shapes?: { name?: string; x0?: unknown; x1?: unknown }[] }
+        })
+      | null
+    const range = gd?._fullLayout?.xaxis?.range
+    const band = (gd?.layout?.shapes ?? []).find((s) => s.name === 'edit-window')
+    if (!range) return 'no plot'
+    if (!band) return 'no session band'
+    const toMs = (v: unknown) =>
+      typeof v === 'number' ? v : Date.parse(String(v))
+    const near = (a: number, b: number) => Math.abs(a - b) <= 2000
+    return near(toMs(range[0]), toMs(band.x0)) &&
+      near(toMs(range[1]), toMs(band.x1))
+      ? 'session window'
+      : 'another range'
+  })
 }
 
 /** Wait until the live plot draws a trace for every id in `ids`. */
@@ -311,6 +353,37 @@ test.describe('share URL', () => {
     expect(Math.abs((live as [number, number])[1] - xHi)).toBeLessThanOrEqual(
       1500
     )
+  })
+
+  test('a Select-view zoom leaves a later editor on its session window', async ({
+    page,
+  }) => {
+    test.setTimeout(90_000)
+    // A link with `z=` but no `ed=` carries the sender's Select viewport. It
+    // must not outrank the session window of an editor opened afterwards,
+    // which is the only zoom telling the user what they are editing.
+    const fullSpan = FIXTURE_OBS_END_MS - FIXTURE_OBS_START_MS
+    const xHi = FIXTURE_OBS_END_MS - fullSpan * 0.1
+    const xLo = xHi - fullSpan * 0.2
+    const toS36 = (ms: number) => Math.floor(ms / 1000).toString(36)
+    await page.goto(
+      `/?ws=${WORKSPACE_ID}&ds=${DATASTREAM_ID}&z=${toS36(xLo)}.${toS36(xHi)}`
+    )
+    await waitForTraces(page, [DATASTREAM_ID])
+
+    // The link's own zoom lands first, so the assertion below is about the
+    // editor overriding it rather than the zoom never arriving.
+    await expect
+      .poll(async () => (await plotXRange(page))?.[0] ?? null, {
+        timeout: 30_000,
+      })
+      .toBeCloseTo(xLo, -4)
+
+    await startSessionFromRow(page)
+
+    await expect
+      .poll(() => zoomedToSessionWindow(page), { timeout: 30_000 })
+      .toBe('session window')
   })
 
   test('hydrator hides traces flagged by the URL `h=` bitmask on a cold load', async ({

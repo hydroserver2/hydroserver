@@ -293,9 +293,11 @@ target the full plot shows in both views, and the flag only flips alongside a
 rebuild (`setEditTarget` / `clearEditTarget`).
 
 A share link's zoom (`pendingShareZoom`) is an explicit viewport, so it beats
-the editor's default "open on the session window" once: the first session
-window that arrives afterwards does not re-zoom, later ones (viewing another
-session) do.
+the editor's default "open on the session window" for the session that link
+itself opens. `plotly.shareZoomEditTarget` holds the link's `ed` target for
+exactly that, and `Plot.vue` drops it at the first session window it sees: a
+link without an edit target, or an editor opened later in the page's life,
+zooms to its session window as usual.
 
 While observations load, `DataVisualization.vue` keeps `Plot` mounted and
 passes its loading overlay through Plot's `body-overlay` slot. The overlay

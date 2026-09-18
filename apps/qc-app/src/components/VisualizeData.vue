@@ -503,6 +503,7 @@ const {
   hiddenAxisIds,
   currentZoom,
   pendingShareZoom,
+  shareZoomEditTarget,
   tooltipsMode,
   tooltipsManualEnabled,
   tooltipsMaxDataPoints,
@@ -838,6 +839,10 @@ const hydrateFromUrl = () => {
         yRanges: state.zoom.yRanges,
         source: 'user',
       }
+    : null
+  // It only outranks the session window when the link opens a session at all.
+  shareZoomEditTarget.value = state.zoom
+    ? (state.editDatastreamId ?? null)
     : null
 
   // `resumeDatastreamId` is already set from `ed` by the early block above,

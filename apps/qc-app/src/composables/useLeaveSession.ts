@@ -87,6 +87,10 @@ function settle(leave: boolean): void {
  * chose to stay, in which case nothing has changed.
  */
 async function requestLeave(): Promise<boolean> {
+  // The user's answer to the open prompt is already being carried out, and
+  // it belongs to the exit that asked for it. Refuse rather than let this
+  // request inherit it or leave it stranded behind disabled buttons.
+  if (leaveWork.value) return false
   const kind = leaveCase()
   if (kind === 'none') return true
   // A second exit request supersedes the first, whose caller stays put.

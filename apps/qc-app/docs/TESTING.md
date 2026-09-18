@@ -414,6 +414,13 @@ them so the next contributor doesn't rediscover them.
    session window is known, the edit record is on the plot, no session is
    opening, and no plot load or tracked draw is pending).
 
+6. **With an edit target set, the editor stays mounted behind the Select
+   view.** It is hidden with `v-show`, not unmounted, so its test ids exist
+   twice in the DOM: `plotted-item-*`, `history-item-*` and the rest resolve
+   to two elements and a bare `getByTestId` is strict-mode ambiguous. Scope
+   Select-view assertions through the panel, as `select-while-editing.spec.ts`
+   does with `page.getByTestId('select-side-panel')`.
+
 ### Debugging a failure
 
 Playwright's HTML report (`playwright-report/index.html`) opens

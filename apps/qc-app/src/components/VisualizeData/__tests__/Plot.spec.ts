@@ -18,6 +18,7 @@ const plotly = {
   plotlyRef: ref<any>(null),
   activeTab: ref('plot'),
   pendingShareZoom: ref<any>(null),
+  shareZoomEditTarget: ref<string | null>(null),
 }
 const updateOptions = vi.fn()
 const requestTableScroll = vi.fn()
@@ -37,12 +38,14 @@ async function trackPlotWork(work: () => Promise<void>) {
   }
 }
 
+const qcDatastream = ref<{ id: string } | null>(null)
+
 vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () =>
     reactive({
       selectedData: ref(null),
       hasSelectionShape: ref(false),
-      qcDatastream: ref(null),
+      qcDatastream,
       trackPlotWork,
     }),
 }))
@@ -213,6 +216,64 @@ describe('Plot.vue delayed mount', () => {
       resolveDraw()
       await flushPromises()
       expect(zoomXaxisTo).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('a share link zoom against the session window', () => {
+    const windowA = {
+      phenomenonTimeStart: '2020-01-01T00:00:00Z',
+      phenomenonTimeEnd: '2020-01-02T00:00:00Z',
+    }
+    const windowB = {
+      phenomenonTimeStart: '2020-02-01T00:00:00Z',
+      phenomenonTimeEnd: '2020-02-02T00:00:00Z',
+    }
+
+    beforeEach(() => {
+      plotly.plotlyRef.value = {}
+      plotly.pendingShareZoom.value = { xRange: [1, 2], source: 'user' }
+      handleNewPlot.mockResolvedValue(undefined)
+    })
+
+    afterEach(() => {
+      plotly.pendingShareZoom.value = null
+      plotly.shareZoomEditTarget.value = null
+      qcDatastream.value = null
+    })
+
+    it('leaves a later editor to open on its own session window', async () => {
+      // A Select-view link: a zoom, and no edit target for it to outrank.
+      const wrapper = mountIt(true)
+      await vi.advanceTimersByTimeAsync(200)
+      await flushPromises()
+      expect(zoomXaxisTo).not.toHaveBeenCalled()
+
+      // The user opens the editor later in the same page life.
+      isPlotPreview.value = false
+      qcDatastream.value = { id: 'mgd-1' }
+      viewedSession.value = windowA
+      await flushPromises()
+
+      expect(zoomXaxisTo).toHaveBeenCalledTimes(1)
+      wrapper.unmount()
+    })
+
+    it('outranks the session window of the editor the link opened', async () => {
+      plotly.shareZoomEditTarget.value = 'mgd-1'
+      qcDatastream.value = { id: 'mgd-1' }
+      const wrapper = mountIt(false)
+      await vi.advanceTimersByTimeAsync(200)
+      await flushPromises()
+
+      viewedSession.value = windowA
+      await flushPromises()
+      expect(zoomXaxisTo).not.toHaveBeenCalled()
+
+      // Only the window the link landed on; viewing another one zooms.
+      viewedSession.value = windowB
+      await flushPromises()
+      expect(zoomXaxisTo).toHaveBeenCalledTimes(1)
+      wrapper.unmount()
     })
   })
 

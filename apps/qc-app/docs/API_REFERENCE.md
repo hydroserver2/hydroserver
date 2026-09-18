@@ -137,7 +137,10 @@ below), and share-link hydration (the `ed` query param).
   behind it. Called on the target already open, with no `window`, it only
   shows that view: nothing about the session is re-entered. Taking over from
   another open session first asks `useLeaveSession().requestLeave()`, and
-  returns `'kept'` when the user keeps the open one.
+  returns `'kept'` when the user keeps the open one. The create step in
+  `StartEditingFlow.vue` asks earlier, through `closeEditor()`: a created
+  managed datastream is always a new target, so the takeover is certain and
+  the question must come before anything reaches the server.
 - `startSessionOver(window)`: starts a new session on the current edit
   target over `window` (a `utils/timeRangePresets.ts` `TimeWindow`); backs
   **Start new session** and the editor footer's **New session**.
@@ -180,7 +183,9 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
   a session whose work is all saved.
 - `requestLeave()`: decides the case, shows the matching prompt and carries
   the answer out. Resolves true when the caller may go on, false when the
-  user stays. A second request supersedes the first, whose caller stays put.
+  user stays. A second request supersedes the first, whose caller stays put;
+  once an answer is being carried out (`leaveWork`), a second request is
+  refused outright rather than inheriting that answer.
 - `saveAndLeave()` / `discardEditsAndLeave()`: the `'unsaved'` answers.
   Saving is refused with no session open. Discarding that empties the session
   falls through to the `'empty'` prompt rather than leaving silently.
@@ -522,6 +527,7 @@ handles, live chart caches).
 | `zoomRedoStack`            | state    | `ZoomState[]`                                     | Cleared on every new user-initiated zoom. |
 | `suppressZoomHistory`      | state    | `boolean`                                         | Flipped on during programmatic restores so the recorder doesn't double-capture. |
 | `pendingShareZoom`         | state    | `ZoomState \| null`                               | URL-hydrated zoom; applied once on mount then cleared. |
+| `shareZoomEditTarget`      | state    | `string \| null`                                  | The `ed` target of that link, when it carried one: the one session window the share zoom outranks. |
 | `canUndoZoom`              | computed | `boolean`                                         | `zoomUndoStack.length > 1`. |
 | `canRedoZoom`              | computed | `boolean`                                         | `zoomRedoStack.length > 0`. |
 | `currentZoom`              | computed | `ZoomState \| null`                               | Top of the undo stack; what the share URL writer subscribes to. |

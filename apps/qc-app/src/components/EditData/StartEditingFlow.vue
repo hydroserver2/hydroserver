@@ -106,7 +106,7 @@ const { createProcessingLevel } = useProcessingLevels()
 const { sensors, statuses, load: loadDatastreamMetadata } =
   useDatastreamMetadata()
 const { canCreateDatastream, roleName } = useWorkspacePermissions()
-const { enterEdit, startSessionOver, leaveEdit } = useEditEntry()
+const { enterEdit, startSessionOver, leaveEdit, closeEditor } = useEditEntry()
 
 const createPermissionError = computed(() =>
   canCreateDatastream()
@@ -139,6 +139,17 @@ const showWindow = computed({
   },
 })
 
+/**
+ * A created managed datastream is always a new edit target, so an open
+ * session is certainly abandoned. Ask and end it before anything reaches the
+ * server, rather than after a create the user might not want. False means the
+ * session was kept and the create step must not open.
+ */
+async function leaveOpenSession(): Promise<boolean> {
+  if (!qcDatastream.value) return true
+  return closeEditor()
+}
+
 /** Row Edit button: choose a managed datastream, or create the first one. */
 async function openFor(source: Datastream) {
   chooserSource.value = source
@@ -155,7 +166,7 @@ async function openFor(source: Datastream) {
     chooserLoading.value = false
   }
   if (chooserOptions.value.length) showChooser.value = true
-  else showCreateDatastream.value = true
+  else if (await leaveOpenSession()) showCreateDatastream.value = true
 }
 
 async function onChooserEdit(option: ManagedDatastreamOption) {
@@ -249,9 +260,11 @@ async function onWindowCancel() {
   }
 }
 
-function onChooserCreate() {
+async function onChooserCreate() {
   showChooser.value = false
-  showCreateDatastream.value = true
+  // Keeping the session returns to the chooser, where Continue is still there.
+  if (await leaveOpenSession()) showCreateDatastream.value = true
+  else showChooser.value = true
 }
 
 // Cancelling create returns to the chooser it was opened from, if any.

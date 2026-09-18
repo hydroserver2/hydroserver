@@ -329,10 +329,11 @@ Two contract notes worth keeping in mind:
   built on a copy of the base (`reconstructSession`/`loadLatestBase`'s
   `cloneRecord`), never the observation store's cached record, so the raw
   datastream's cached observations are never edited. It is invalidated when
-  the editor closes through `exitToSelect` (Close, Save and close, or close
-  without saving), on commit, when its session or managed datastream is
-  deleted, and when a managed datastream other than the edit target stops being
-  plotted; `resetState` clears every copy on a workspace reset. Switching to
+  the edit target is cleared (`dataVisualization.clearEditTarget`, which every
+  exit reaches through `useEditEntry.leaveEdit`), on commit, when its session
+  or managed datastream is deleted, and when a managed datastream other than
+  the edit target stops being plotted; `resetState` clears every copy when the
+  page unmounts or the workspace is reset. Switching to
   the Select view keeps the copy untouched, unsaved edits and all: it does not
   end the session. The next preview or resume rebuilds it from what was
   actually saved.
@@ -465,10 +466,15 @@ operations plus anything saved since. Neither is a guess about the UI.
 Every exit routes through it: the editor footer's **Close** and the nav rail's
 Home and Log out via `useEditEntry.closeEditor()`, the row Edit button on
 another datastream via `enterEdit`, and in-app navigation (including the
-workspace switch) via `leaveSessionGuard`. Cancelling leaves the user exactly
-where they were, zoom, staged band and unsaved edits intact. The native
-`beforeunload` prompt still covers a reload or a closed tab, with the
-browser's own wording.
+workspace switch) via `leaveSessionGuard`. When that row Edit button leads to
+a create step, `StartEditingFlow` asks through `closeEditor()` before the
+create rather than waiting for `enterEdit`: a new managed datastream is always
+a new target, so cancelling later would have left an orphan datastream and its
+QC history on the server. While an answer is being carried out, a second exit
+request is refused rather than resolved by work the user did not answer for.
+Cancelling leaves the user exactly where they were, zoom, staged band and
+unsaved edits intact. The native `beforeunload` prompt still covers a reload
+or a closed tab, with the browser's own wording.
 
 Auth itself is delegated to HydroServer's Django AllAuth setup; the app
 keeps no credentials of its own. The browser holds a session cookie.

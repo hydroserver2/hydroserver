@@ -262,6 +262,14 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   const pendingShareZoom = ref<ZoomState | null>(null)
 
+  /**
+   * The edit target whose session window the share zoom outranks, set with
+   * `pendingShareZoom` only when the link also carried one. `Plot.vue` drops
+   * it at the first session window it sees, so a link without an edit target
+   * never suppresses the zoom of an editor opened later in the page's life.
+   */
+  const shareZoomEditTarget = ref<string | null>(null)
+
   function clearZoomHistory() {
     zoomUndoStack.value = []
     zoomRedoStack.value = []
@@ -561,6 +569,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     canRedoZoom,
     currentZoom,
     pendingShareZoom,
+    shareZoomEditTarget,
     clearZoomHistory,
     pushZoomState,
   }

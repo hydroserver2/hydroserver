@@ -194,25 +194,31 @@ test.describe('leaving a session', () => {
     expect(inProgress(sessions)).toBeDefined()
   })
 
-  test('editing another datastream asks about the open session', async ({
+  test('editing another datastream asks before anything is created', async ({
     page,
   }) => {
     await goToSelect(page)
 
-    // Datastream B has no managed datastream yet, so Edit goes through the
-    // create step before it can take the editor over.
+    // Datastream B has no managed datastream yet, so Edit would create one.
+    // Cancelling must leave nothing behind on the server.
     await page.getByTestId(`edit-datastream-${DATASTREAM_ID_B}`).click()
-    await page.getByTestId('create-processing-level').click()
-    await page
-      .getByRole('option', { name: 'Quality controlled', exact: true })
-      .click()
-    await page.getByTestId('create-confirm').click()
-    await page.getByTestId('session-window-start').click()
-
     await expect(leaveDialog(page)).toBeVisible()
     await page.getByTestId('leave-cancel-btn').click()
 
+    await expect(page.getByTestId('create-confirm')).toHaveCount(0)
     // The original session is still the one being edited.
     await expect(editPanel(page)).toContainText('Streamflow Datastream (QC)')
+  })
+
+  test('answering the question opens the create step', async ({ page }) => {
+    await goToSelect(page)
+
+    await page.getByTestId(`edit-datastream-${DATASTREAM_ID_B}`).click()
+    await page.getByTestId('leave-keep-btn').click()
+
+    await expect(page.getByTestId('create-confirm')).toBeVisible()
+    // The session was left the moment the user said so, not at the end.
+    await expect(editPanel(page)).toHaveCount(0)
+    expect(inProgress(sessions)).toBeDefined()
   })
 })
