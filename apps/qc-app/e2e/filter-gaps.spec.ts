@@ -35,7 +35,7 @@ function observationsWithGap() {
 
 test.describe('filter: find gaps', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page, { observations: observationsWithGap() })
+    await installMocks(page, { observations: observationsWithGap(), qcHistories: true })
     await setupEditView(page)
   })
 

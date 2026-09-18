@@ -19,7 +19,7 @@ import { expectHistoryContains, selectAllPoints } from './support/ops'
 
 test.describe('QC history: save / load round-trip', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 

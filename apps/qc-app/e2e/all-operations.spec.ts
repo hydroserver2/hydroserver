@@ -61,7 +61,7 @@ async function seedWideSelection(page: Page) {
 
 test.describe('all operations: single-session walkthrough', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page, { observations: observationsWithGap() })
+    await installMocks(page, { observations: observationsWithGap(), qcHistories: true })
     await setupEditView(page)
   })
 

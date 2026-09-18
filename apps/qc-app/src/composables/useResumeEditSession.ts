@@ -1,8 +1,9 @@
 /**
- * Reopen the editor after a page reload, from the last saved state:
- * `beginEditing` rebuilds the session and working copy from the server.
+ * Reopen the editor after a page reload on the managed datastream it was last
+ * open on. `resume` does the entering; this only waits for the catalog and
+ * drops a pointer to a datastream that no longer exists.
  *
- * The watcher must not use `once` with `immediate` — that fires on the
+ * The watcher must not use `once` with `immediate`: that fires on the
  * initial empty catalog and stops, which is the cold-reload case this
  * exists for. The flag gives once-only semantics without that trap.
  */
@@ -13,26 +14,24 @@ import { Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
 
-export function useResumeEditSession(enterEdit: () => Promise<void>) {
-  const dataVis = useDataVisStore()
-  const { datastreams } = storeToRefs(dataVis)
+export function useResumeEditSession(
+  resume: (managedId: string) => Promise<void>
+) {
+  const { datastreams } = storeToRefs(useDataVisStore())
   const { resumeDatastreamId } = storeToRefs(useQcSessionStore())
 
   let attempted = false
 
   /** Returns true when the editor was reopened. */
-  async function resume(): Promise<boolean> {
+  async function run(): Promise<boolean> {
     const id = resumeDatastreamId.value
     if (!id) return false
-    const managed = datastreams.value.find((d) => d.id === id)
-    if (!managed) {
+    if (!datastreams.value.some((d) => d.id === id)) {
       resumeDatastreamId.value = null
       return false
     }
     try {
-      await dataVis.plotDatastream(managed)
-      await dataVis.setQcDatastream(id)
-      await enterEdit()
+      await resume(id)
       return true
     } catch (e) {
       resumeDatastreamId.value = null
@@ -45,7 +44,7 @@ export function useResumeEditSession(enterEdit: () => Promise<void>) {
     (list) => {
       if (attempted || !list.length || !resumeDatastreamId.value) return
       attempted = true
-      resume().catch((e) => {
+      run().catch((e) => {
         Snackbar.error(
           e instanceof Error ? e.message : 'Could not reopen the edit session.'
         )
@@ -54,5 +53,5 @@ export function useResumeEditSession(enterEdit: () => Promise<void>) {
     { immediate: true }
   )
 
-  return { resume }
+  return { resume: run }
 }

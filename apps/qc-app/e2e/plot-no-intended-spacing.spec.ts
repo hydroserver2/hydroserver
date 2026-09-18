@@ -18,10 +18,14 @@
 
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { datastreams, DATASTREAM_ID } from './support/fixtures'
+import {
+  datastreams,
+  managedDatastream,
+  MANAGED_DATASTREAM_ID,
+} from './support/fixtures'
 import { setupEditView } from './support/app'
 
-type DatastreamRecord = (typeof datastreams)[number]
+type DatastreamRecord = (typeof datastreams)[number] | typeof managedDatastream
 type RoutedTrace = {
   id?: string
   mode?: string
@@ -58,6 +62,9 @@ function withoutIntendedSpacing(ds: DatastreamRecord): DatastreamRecord {
   return { ...ds, intendedTimeSpacing: null, intendedTimeSpacingUnit: null }
 }
 
+// The managed datastream is served too, so the row Edit flow can enter the editor.
+const catalog: DatastreamRecord[] = [...datastreams, managedDatastream]
+
 async function patchDatastreamFixture(route: Route): Promise<void> {
   const request = route.request()
   if (request.method() !== 'GET') return route.fallback()
@@ -80,13 +87,13 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
       status: 200,
       contentType: 'application/json',
       headers,
-      body: JSON.stringify({ data: datastreams.map(withoutIntendedSpacing) }),
+      body: JSON.stringify({ data: catalog.map(withoutIntendedSpacing) }),
     })
   }
   const single = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
   if (single) {
     const id = single[1]
-    const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]!
+    const ds = catalog.find((d) => d.id === id) ?? catalog[0]!
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -99,7 +106,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
 
 test.describe('plot: datastream without intendedTimeSpacing', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     // Routes added with `page.route` are invoked LIFO, so this stack
     // sits on top of the catch-all installed by `installMocks` and
     // wins for both the list and single-get endpoints. The sub-path
@@ -114,7 +121,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     page,
   }) => {
     await setupEditView(page)
-    await waitForTraceRendered(page, DATASTREAM_ID)
+    await waitForTraceRendered(page, MANAGED_DATASTREAM_ID)
 
     const trace = await page.evaluate((id) => {
       const gd = document.querySelector('[data-testid="main-plot"]') as
@@ -133,7 +140,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
         // so its absence is the precise signal.
         anyGapOverlay: traces.some((t) => t._gapOverlayFor === id),
       }
-    }, DATASTREAM_ID)
+    }, MANAGED_DATASTREAM_ID)
 
     expect(trace.mainMode).toBe('markers')
     expect(trace.overlayExists).toBe(false)
@@ -147,7 +154,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     page,
   }) => {
     await setupEditView(page)
-    await waitForTraceRendered(page, DATASTREAM_ID)
+    await waitForTraceRendered(page, MANAGED_DATASTREAM_ID)
 
     // The toggle button only renders in manual mode; default is auto,
     // so open the dropdown and pick manual first. Picking manual also
@@ -176,7 +183,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
         | null
       const t = gd?.data?.find((tr) => tr.id === id)
       return t ? { opacity: t.marker?.opacity ?? null } : null
-    }, DATASTREAM_ID)
+    }, MANAGED_DATASTREAM_ID)
 
     expect(main).not.toBeNull()
     // Scatter-only series ignore the toggle: markers stay fully opaque.

@@ -1,32 +1,36 @@
-﻿<template>
+<template>
+  <!-- Stays mounted while loading so a refresh keeps the plot and its zoom. -->
   <div
-    v-if="isUpdating"
-    class="data-vis-state fill-height d-flex flex-column align-center justify-center pa-6 text-center"
-    data-testid="data-loading-indicator"
+    v-if="isUpdating || isDataAvailable"
+    class="fill-height position-relative"
   >
-    <v-progress-circular
-      color="primary"
-      :size="56"
-      :width="4"
-      indeterminate
-      class="mb-4"
-    />
-    <div class="text-title-medium font-weight-bold mb-1">
-      Loading observations…
-    </div>
-    <div class="text-body-small text-medium-emphasis">
-      Fetching data for
-      {{ plottedDatastreams.length }}
-      datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
-    </div>
-  </div>
+    <Plot class="data-vis-plot fill-height" :preview="preview" />
 
-  <div v-else-if="isDataAvailable" class="fill-height">
-    <Plot class="fill-height" :preview="preview" />
+    <div
+      v-if="isUpdating"
+      class="data-vis-loading position-absolute d-flex flex-column align-center justify-center pa-6 text-center"
+      data-testid="data-loading-indicator"
+    >
+      <v-progress-circular
+        color="primary"
+        :size="56"
+        :width="4"
+        indeterminate
+        class="mb-4"
+      />
+      <div class="text-title-medium font-weight-bold mb-1">
+        Loading observations…
+      </div>
+      <div class="text-body-small text-medium-emphasis">
+        Fetching data for
+        {{ loadingCount }}
+        datastream{{ loadingCount === 1 ? '' : 's' }}
+      </div>
+    </div>
   </div>
 
   <div
-    v-else-if="plottedDatastreams.length"
+    v-else-if="seriesDatastreams.length"
     class="data-vis-state fill-height d-flex flex-column align-center justify-center pa-6 text-center"
   >
     <v-icon
@@ -39,7 +43,7 @@
       No observations in this range
     </div>
     <div class="text-body-medium text-medium-emphasis" style="max-width: 360px">
-      The selected datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
+      The selected datastream{{ seriesDatastreams.length === 1 ? '' : 's' }}
       returned no data for the current time window. Try a different range from
       the drawer on the left.
     </div>
@@ -70,16 +74,15 @@
       <div class="data-vis-state__step">
         <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">2</div>
         <v-icon
-          icon="mdi-radiobox-marked"
+          icon="mdi-checkbox-marked-outline"
           size="24"
           color="primary"
           class="data-vis-state__step-icon"
         />
         <div class="data-vis-state__step-body">
-          <div class="text-title-small font-weight-bold">Pick the QC target</div>
+          <div class="text-title-small font-weight-bold">Plot datastreams</div>
           <div class="text-body-small text-medium-emphasis">
-            Click the <b>Plot</b> checkbox on a row. The first one becomes the
-            quality-control target, shown in primary blue.
+            Click the <b>Plot</b> checkbox on rows to preview them together.
           </div>
         </div>
       </div>
@@ -100,6 +103,23 @@
           </div>
         </div>
       </div>
+
+      <div class="data-vis-state__step">
+        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">4</div>
+        <v-icon
+          icon="mdi-pencil"
+          size="24"
+          color="primary"
+          class="data-vis-state__step-icon"
+        />
+        <div class="data-vis-state__step-body">
+          <div class="text-title-small font-weight-bold">Edit one</div>
+          <div class="text-body-small text-medium-emphasis">
+            Click the <b>pencil</b> on a row to pick or create its QC datastream
+            and start a session.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -117,18 +137,32 @@ defineProps<{
 
 const { plotlyOptions } = storeToRefs(usePlotlyStore())
 
-const { loadingStates, plottedDatastreams } = storeToRefs(useDataVisStore())
+const { loadingStates, seriesDatastreams } = storeToRefs(useDataVisStore())
 
-const isUpdating = computed(() =>
-  Array.from(loadingStates.value.values()).some((isLoading) => isLoading)
+// Only what is fetching: the edit target never is.
+const loadingCount = computed(
+  () => Array.from(loadingStates.value.values()).filter(Boolean).length
 )
+const isUpdating = computed(() => loadingCount.value > 0)
 
+// The editor draws its target and source even with nothing else plotted.
 const isDataAvailable = computed(() => {
-  return plotlyOptions.value.traces?.length && plottedDatastreams.value?.length
+  return plotlyOptions.value.traces?.length && seriesDatastreams.value?.length
 })
 </script>
 
 <style scoped>
+/* Contains Plotly's own z-indexes so the overlay covers them. */
+.data-vis-plot {
+  isolation: isolate;
+}
+
+.data-vis-loading {
+  inset: 0;
+  z-index: 1;
+  background-color: rgba(var(--v-theme-surface), 0.75);
+}
+
 .data-vis-state {
   background-color: rgba(var(--v-theme-primary), 0.02);
 }

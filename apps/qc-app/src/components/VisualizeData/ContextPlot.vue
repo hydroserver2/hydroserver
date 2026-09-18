@@ -40,7 +40,7 @@ import Plotly from 'plotly.js-dist'
 import type { Layout, LayoutAxis, PlotlyHTMLElement } from 'plotly.js-dist'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { COLORS, type AppPlotlyTrace } from '@/utils/plotting/plotly'
+import { COLORS, SOURCE_CONTEXT_COLOR, type AppPlotlyTrace } from '@/utils/plotting/plotly'
 import type { GraphSeries } from '@/types'
 
 const TARGET_POINTS = 2000
@@ -55,7 +55,7 @@ type PlotlyEventEmitter = {
 
 const { plotlyRef, graphSeriesArray, mainPlotEpoch } =
   storeToRefs(usePlotlyStore())
-const { qcDatastream } = storeToRefs(useDataVisStore())
+const { qcDatastream, sourceContextDatastream } = storeToRefs(useDataVisStore())
 
 const rootEl = ref<HTMLDivElement>()
 const plotEl = ref<HTMLDivElement>()
@@ -119,6 +119,7 @@ function buildContextTraces(series: GraphSeries[]): {
   extent: [number, number] | null
 } {
   const qcId = qcDatastream.value?.id
+  const sourceId = sourceContextDatastream.value?.id
   const traces: AppPlotlyTrace[] = []
   let xMin = Infinity
   let xMax = -Infinity
@@ -133,7 +134,8 @@ function buildContextTraces(series: GraphSeries[]): {
     const sampled = strideSample(xs, ys, TARGET_POINTS)
     const yNorm = normalize(sampled.y)
     const isQc = !!qcId && s.id === qcId
-    const color = isQc ? COLORS[0] : (s.color ?? COLORS[1])
+    const isSource = !!sourceId && s.id === sourceId
+    const color = isQc ? COLORS[0] : isSource ? SOURCE_CONTEXT_COLOR : (s.color ?? COLORS[1])
     traces.push({
       x: sampled.x,
       y: yNorm,
@@ -417,11 +419,12 @@ async function buildOrUpdate() {
 // per-cell y-edits stay cheap; overall shape barely changes anyway.
 const rebuildSignature = computed(() => {
   const qid = qcDatastream.value?.id ?? ''
+  const sid = sourceContextDatastream.value?.id ?? ''
   const parts = graphSeriesArray.value.map(
     (s) => `${s.id}:${s.data?.dataX?.length ?? 0}:${s.color}`
   )
   const hidden = [...hiddenIds.value].sort().join(',')
-  return parts.join('|') + '#' + qid + '!' + hidden
+  return parts.join('|') + '#' + qid + '~' + sid + '!' + hidden
 })
 
 watch(rebuildSignature, () => {

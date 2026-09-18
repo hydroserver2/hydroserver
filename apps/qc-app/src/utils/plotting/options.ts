@@ -8,14 +8,17 @@ import type {
   LayoutAxis,
   PlotData,
   PlotlyHTMLElement,
+  Shape,
 } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useQcSessionStore } from '@/store/qcSession'
 import { useQualifierStore } from '@/store/qualifiers'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
 import { undoZoom, redoZoom } from './zoom'
 import { fitXaxisToVisible, fitYaxisToVisible } from './operations'
+import { EDIT_WINDOW_SHAPE_NAME } from './shapes'
 
 /**
  * Return type of `createPlotlyOption`. Plan 03-03 will reuse this shape
@@ -110,6 +113,10 @@ export const LABEL_COLORS = [
   '#117a85', // cyan
 ]
 
+// Read-only raw-source context drawn behind the edit target while editing.
+export const SOURCE_CONTEXT_COLOR = '#9e9e9e'
+export const SOURCE_CONTEXT_LABEL_COLOR = '#616161'
+
 /** Companion text colour for a `COLORS[i]` line; falls back to QC grey. */
 export const labelColorFor = (lineColor: string): string => {
   const idx = COLORS.indexOf(lineColor)
@@ -118,6 +125,22 @@ export const labelColorFor = (lineColor: string): string => {
   // a runtime fallback for a guaranteed-defined position.
   return idx >= 0 ? LABEL_COLORS[idx]! : LABEL_COLORS[0]!
 }
+
+/** Left-side primary-axis chrome shared by the edit target and the first
+ *  Select-view series. Title is omitted on purpose: the horizontal chip
+ *  rendered above the plot (Plot.vue) replaces Plotly's vertical title. */
+const primaryAxis = (
+  tickColor: string,
+  lineColor: string
+): Partial<LayoutAxis> => ({
+  title: undefined,
+  tickfont: { color: tickColor },
+  side: 'left',
+  showline: true,
+  linecolor: lineColor,
+  automargin: true,
+  tickformat: '~s',
+})
 
 /**
  * Indices `i` (i >= 1) where `x[i] - x[i-1] > thresholdMs` — every spot
@@ -385,10 +408,12 @@ export { buildQualifierBand }
 export const createPlotlyOption = (
   seriesArray: GraphSeries[]
 ): PlotlyChartOptions => {
-  const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
+  const { qcDatastream, sourceContextDatastream, beginDate, endDate } =
+    storeToRefs(useDataVisStore())
   const { previewMode, hiddenAxisIds, hiddenTraceIds, plotlyRef } = storeToRefs(
     usePlotlyStore()
   )
+  const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
   const isPreview = previewMode?.value ?? false
   const hiddenAxes = hiddenAxisIds?.value ?? new Set<string>()
   const hiddenTraces = hiddenTraceIds?.value ?? new Set<string>()
@@ -421,10 +446,14 @@ export const createPlotlyOption = (
   let minDatetime = Infinity
 
   // Axis-naming scheme:
-  //   yaxis       (no suffix, primary)        — QC series
-  //   yaxis2, yaxis3, … (overlaying, right)   — every non-QC series
+  //   yaxis       (no suffix, primary)      : the edit target while editing
+  //                                            (its raw source shares this
+  //                                            axis, drawn under it), or the
+  //                                            first series in Select
+  //   yaxis2, yaxis3, … (overlaying, right) : every other series
   let nonQcAxisCount = 0
   let visibleNonQcCount = 0
+  let primaryAssigned = false
 
   seriesArray.forEach((s) => {
     const color = s.color ?? COLORS[1]
@@ -441,8 +470,13 @@ export const createPlotlyOption = (
       minDatetime = Math.min(xDataStart, minDatetime)
     }
 
-    const isQc = s.id === qcDatastream.value?.id
-    const axisSuffix: string | number = isQc ? '' : nonQcAxisCount + 2
+    const editId = qcDatastream?.value?.id
+    const isQc = !!editId && s.id === editId
+    const isSource = !!editId && s.id === sourceContextDatastream?.value?.id
+    // Without an edit target the first series owns the primary axis.
+    const isPrimary = isQc || isSource || (!editId && !primaryAssigned)
+    if (isPrimary) primaryAssigned = true
+    const axisSuffix: string | number = isPrimary ? '' : nonQcAxisCount + 2
     const axisKey = `yaxis${axisSuffix}`
     const axisRef = `y${axisSuffix}`
 
@@ -492,17 +526,26 @@ export const createPlotlyOption = (
       // with it — no offset needed.
       trace._windowStartIdx = 0
 
-      // Title omitted on purpose — the horizontal QC chip (rendered as
-      // an HTML overlay in Plot.vue) replaces Plotly's vertical title.
-      ;(yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
-        title: undefined,
-        tickfont: { color: COLORS[0] },
-        side: 'left',
-        showline: true,
-        linecolor: COLORS[0],
-        automargin: true,
-        tickformat: '~s',
-      } as Partial<LayoutAxis>
+      ;(yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = primaryAxis(
+        COLORS[0]!,
+        COLORS[0]!
+      )
+
+    } else if (isSource) {
+      // Read-only raw-source context: grey, shares the edit target's axis,
+      // never gets its own axis entry or selection styling.
+      trace.marker = { ...(trace.marker ?? {}), color: SOURCE_CONTEXT_COLOR }
+      trace.unselected = { marker: { opacity: markerOpacity } }
+
+    } else if (isPrimary) {
+      // First series in Select view: same primary-axis placement as the
+      // QC branch, styled with the series' own colour.
+      trace.unselected = { marker: { opacity: markerOpacity } }
+
+      ;(yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = primaryAxis(
+        labelColorFor(color),
+        color
+      )
 
     } else {
       // Plotly applies a global selection-fade once any trace has
@@ -578,7 +621,7 @@ export const createPlotlyOption = (
         mode: 'lines',
         hoverinfo: 'skip',
         showLegend: false,
-        line: { color: isQc ? COLORS[0] : color },
+        line: { color: isQc ? COLORS[0] : isSource ? SOURCE_CONTEXT_COLOR : color },
         _isGapOverlay: true,
         _gapOverlayFor: s.id,
       }
@@ -590,7 +633,8 @@ export const createPlotlyOption = (
     }
   })
 
-  // Reverse so the top of the legend paints last.
+  // Reverse so seriesArray[0] paints last (on top). Order is
+  // [edit, source, ...], so the source already paints under the edit trace.
   traces.reverse()
 
   const counter = nonQcAxisCount
@@ -649,6 +693,31 @@ export const createPlotlyOption = (
       ? { l: 24, r: 24, t: 28, b: 64, pad: 0 }
       : { l: 24, r: 24, t: 32, b: 64, pad: 0 },
     showlegend: false,
+  }
+
+  // Shade the session window while editing: the viewed session takes
+  // precedence over the in-progress one (viewing history overrides the
+  // live session's own window).
+  const editWindow = qcDatastream?.value
+    ? (viewedSession?.value ?? inProgressSession?.value)
+    : null
+  if (editWindow) {
+    layout.shapes = [
+      {
+        name: EDIT_WINDOW_SHAPE_NAME,
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        x0: Date.parse(editWindow.phenomenonTimeStart),
+        x1: Date.parse(editWindow.phenomenonTimeEnd),
+        y0: 0,
+        y1: 1,
+        fillcolor: 'rgba(25, 118, 210, 0.07)',
+        line: { width: 0 },
+        layer: 'below',
+        editable: false,
+      } as Partial<Shape>,
+    ]
   }
 
   // Modebar buttons. `isPreview` drops select/lasso and the Fit buttons.

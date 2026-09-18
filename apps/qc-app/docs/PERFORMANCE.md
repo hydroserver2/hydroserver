@@ -128,7 +128,7 @@ Plotly handles downsampling internally on zoom, but multi-axis
 synchronized plotting at high point density is the dominant interactive
 cost. Practical guidance:
 
-- **One QC target + one or two context streams** is the sweet spot.
+- **One edit target, its source, and one or two context streams** is the sweet spot.
   Five plotted streams is the hard cap; in practice three is comfortable
   at multi-hundred-thousand points.
 - **Tick alignment and viewport recompute are debounced.** See

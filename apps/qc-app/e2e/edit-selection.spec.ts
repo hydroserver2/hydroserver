@@ -1,0 +1,338 @@
+/**
+ * Picking what to edit: the row Edit button, the window step, and what the
+ * editor draws around the session.
+ *   - Edit on a row does not plot it
+ *   - the window step prefills a valid window and blocks an invalid one
+ *   - the editor draws the edit target, its source, and plotted datastreams
+ *   - closing the editor keeps the plotted datastreams
+ *   - the session window band survives staging shapes
+ *   - the editor opens zoomed to the session window
+ *   - changing the Context range keeps the user zoom
+ */
+
+import { expect, test, type Locator, type Page } from '@playwright/test'
+import { installMocks } from './support/mocks'
+import {
+  gotoHome,
+  openOp,
+  plotDatastreamById,
+  setupEditView,
+  startSessionFromRow,
+} from './support/app'
+import {
+  DATASTREAM_ID,
+  DATASTREAM_ID_B,
+  FIXTURE_OBS_END_MS,
+  FIXTURE_OBS_START_MS,
+  MANAGED_DATASTREAM_ID,
+} from './support/fixtures'
+
+type PlotRoot = HTMLElement & {
+  data?: Array<{ id?: string }>
+  layout?: {
+    shapes?: Array<{ name?: string }>
+    xaxis?: { range?: Array<number | string> }
+  }
+}
+
+function shapeNames(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
+    return (gd?.layout?.shapes ?? []).map((s) => s.name ?? '')
+  })
+}
+
+type ReloadProbe = { __contextStart: number; __afterplots: number[] }
+
+function traceIds(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
+    return (gd?.data ?? []).map((t) => t.id ?? '').filter(Boolean)
+  })
+}
+
+/** Live x-axis range in epoch ms. Plotly date strings are UTC. */
+function xRange(page: Page): Promise<[number, number] | null> {
+  return page.evaluate(() => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
+    const range = gd?.layout?.xaxis?.range
+    if (!range || range.length !== 2) return null
+    const toMs = (v: number | string) =>
+      typeof v === 'number' ? v : Date.parse(`${v.replace(' ', 'T')}Z`)
+    return [toMs(range[0]!), toMs(range[1]!)] as [number, number]
+  })
+}
+
+/**
+ * Type a local date and time into a `DatePickerField`. Its inputs mask
+ * digit by digit, so select the whole value and type digits only.
+ */
+async function typeDateTime(field: Locator, when: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const date = `${pad(when.getMonth() + 1)}${pad(when.getDate())}${when.getFullYear()}`
+  const time = `${pad(when.getHours())}${pad(when.getMinutes())}`
+  const inputs = field.locator('input')
+  for (const [input, digits] of [
+    [inputs.nth(0), date],
+    [inputs.nth(1), time],
+  ] as const) {
+    await input.click()
+    await input.evaluate((el: HTMLInputElement) =>
+      el.setSelectionRange(0, el.value.length)
+    )
+    await input.pressSequentially(digits)
+    await input.blur()
+  }
+}
+
+async function openWindowStep(page: Page) {
+  await page.getByTestId(`edit-datastream-${DATASTREAM_ID}`).click()
+  await page.getByTestId(`edit-managed-${MANAGED_DATASTREAM_ID}`).click()
+  await expect(page.getByTestId('session-window-start')).toBeVisible()
+}
+
+test.describe('edit selection', () => {
+  test.beforeEach(async ({ page }) => {
+    test.slow()
+    await installMocks(page, { qcHistories: true })
+  })
+
+  test('Edit on a row does not plot it', async ({ page }) => {
+    await gotoHome(page)
+    await page.getByTestId(`edit-datastream-${DATASTREAM_ID}`).click()
+    await expect(
+      page.getByTestId(`edit-managed-${MANAGED_DATASTREAM_ID}`)
+    ).toBeVisible()
+    await page.getByTestId('chooser-cancel').click()
+    await expect(
+      page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`)
+    ).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  test('the window step prefills a valid window and blocks an invalid one', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await openWindowStep(page)
+    await expect(page.getByTestId('session-window-start')).toBeEnabled()
+    await expect(page.getByTestId('session-window-error')).toBeHidden()
+    await expect(page.getByTestId('session-window-committed')).not.toContainText(
+      'Nothing committed'
+    )
+
+    // A From after the source ends is outside the source data.
+    await typeDateTime(
+      page.getByTestId('session-window-from'),
+      new Date(FIXTURE_OBS_END_MS + 2 * 24 * 60 * 60 * 1000)
+    )
+    await expect(page.getByTestId('session-window-error')).toBeVisible()
+    await expect(page.getByTestId('session-window-start')).toBeDisabled()
+  })
+
+  test('the editor draws the source and plotted datastreams around the session', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await startSessionFromRow(page)
+
+    await expect
+      .poll(() => traceIds(page))
+      .toEqual(
+        expect.arrayContaining([
+          MANAGED_DATASTREAM_ID,
+          DATASTREAM_ID,
+          DATASTREAM_ID_B,
+        ])
+      )
+
+    await page.getByTestId('context-range-btn').click()
+    await page
+      .getByTestId('context-range-menu')
+      .getByTestId('date-preset-All')
+      .click()
+    await expect(page.getByTestId('exit-save-btn')).toBeVisible()
+  })
+
+  test('closing the editor keeps the plotted datastreams', async ({ page }) => {
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await startSessionFromRow(page)
+    await page.getByTestId('exit-close-btn').click()
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(
+      page.getByTestId(`plot-checkbox-${DATASTREAM_ID_B}`)
+    ).toHaveAttribute('aria-pressed', 'true')
+    await expect(
+      page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`)
+    ).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  test('the session window band survives staging shapes', async ({ page }) => {
+    await setupEditView(page)
+    await expect.poll(() => shapeNames(page)).toContain('edit-window')
+
+    await openOp(page, 'gaps')
+    await page.getByTestId('filter-range-enable-btn').click()
+    await expect.poll(() => shapeNames(page)).toContain('stage')
+    expect(await shapeNames(page)).toContain('edit-window')
+
+    // A context reload redraws the plot; the stage band must survive it.
+    await page.evaluate(() => {
+      const gd = document.querySelector('[data-testid="main-plot"]') as
+        | (PlotRoot & { on: (event: string, cb: () => void) => void })
+      const w = window as unknown as { __updates: number }
+      w.__updates = 0
+      gd.on('plotly_update', () => w.__updates++)
+    })
+    await page.getByTestId('context-range-btn').click()
+    const menu = page.getByTestId('context-range-menu')
+    const allActive = /v-chip--variant-tonal/.test(
+      (await menu.getByTestId('date-preset-All').getAttribute('class')) ?? ''
+    )
+    await menu.getByTestId(allActive ? 'date-preset-1w' : 'date-preset-All').click()
+    await page.waitForFunction(
+      () => (window as unknown as { __updates: number }).__updates > 0
+    )
+    await page.keyboard.press('Escape')
+    expect(await shapeNames(page)).toEqual(
+      expect.arrayContaining(['stage', 'edit-window'])
+    )
+
+    await page.getByTestId('filter-range-disable-btn').click()
+    await expect.poll(() => shapeNames(page)).not.toContain('stage')
+    expect(await shapeNames(page)).toContain('edit-window')
+  })
+
+  test('the editor opens zoomed to the session window', async ({ page }) => {
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await page.getByTestId('date-preset-All').click()
+
+    // Start the session halfway through the source, so the window is
+    // narrower than the context around it.
+    const mid = new Date((FIXTURE_OBS_START_MS + FIXTURE_OBS_END_MS) / 2)
+    mid.setSeconds(0, 0)
+    await openWindowStep(page)
+    await typeDateTime(page.getByTestId('session-window-from'), mid)
+    await expect(page.getByTestId('session-window-start')).toBeEnabled()
+    await page.getByTestId('session-window-start').click()
+    await expect(page.getByTestId('exit-save-btn')).toBeVisible({
+      timeout: 30_000,
+    })
+
+    const tolerance = 60_000
+    await expect
+      .poll(async () => {
+        const r = await xRange(page)
+        return (
+          !!r &&
+          Math.abs(r[0] - mid.getTime()) <= tolerance &&
+          Math.abs(r[1] - FIXTURE_OBS_END_MS) <= tolerance
+        )
+      })
+      .toBe(true)
+  })
+
+  test('changing the Context range keeps the user zoom', async ({ page }) => {
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await page.getByTestId('date-preset-All').click()
+    await startSessionFromRow(page)
+    await expect.poll(() => xRange(page)).not.toBeNull()
+    const opened = (await xRange(page))!
+
+    // Zoom in with the wheel so the view differs from the session window.
+    const box = (await page.getByTestId('main-plot').boundingBox())!
+    await page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2)
+    for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -200)
+    await expect
+      .poll(async () => {
+        const r = await xRange(page)
+        return !!r && r[1] - r[0] < (opened[1] - opened[0]) * 0.9
+      })
+      .toBe(true)
+    const zoomed = (await xRange(page))!
+
+    await page.getByTestId('context-range-btn').click()
+    const menu = page.getByTestId('context-range-menu')
+
+    // Record every redraw from here on, in page time, so none is missed.
+    await page.evaluate(() => {
+      const gd = document.querySelector('[data-testid="main-plot"]') as
+        | (PlotRoot & { on: (event: string, cb: () => void) => void })
+      const w = window as unknown as ReloadProbe
+      // Dev-server module loads fill the default resource timing buffer.
+      performance.clearResourceTimings()
+      performance.setResourceTimingBufferSize(1_000)
+      w.__contextStart = performance.now()
+      w.__afterplots = []
+      gd.on('plotly_afterplot', () => w.__afterplots.push(performance.now()))
+    })
+    // The reload refetches the source and plotted datastreams, never the edit target.
+    const reloaded = Promise.all(
+      [DATASTREAM_ID, DATASTREAM_ID_B].map((id) =>
+        page.waitForResponse(
+          (r) =>
+            r.url().includes(`/api/data/datastreams/${id}/observations`) &&
+            r.request().method() === 'GET'
+        )
+      )
+    )
+    // 1w, not All: All is already the context, so picking it changes nothing.
+    await menu.getByTestId('date-preset-1w').click()
+    await expect(menu.getByTestId('date-preset-1w')).toHaveClass(
+      /v-chip--variant-tonal/
+    )
+    await expect(menu.getByTestId('date-preset-All')).not.toHaveClass(
+      /v-chip--variant-tonal/
+    )
+    await reloaded
+
+    // Redrawn after both refetches landed: a plotly_afterplot later than the
+    // last observations response in the page's resource timeline.
+    await page.waitForFunction((ids) => {
+      const w = window as unknown as ReloadProbe
+      const fetched = performance
+        .getEntriesByType('resource')
+        .filter((e) => e.startTime >= w.__contextStart)
+      const ends = ids.map((id) =>
+        Math.max(
+          ...fetched
+            .filter((e) => e.name.includes(`/datastreams/${id}/observations`))
+            .map((e) => (e as PerformanceResourceTiming).responseEnd)
+        )
+      )
+      if (ends.some((t) => !Number.isFinite(t))) return false
+      const landed = Math.max(...ends)
+      return w.__afterplots.some((t) => t > landed)
+    }, [DATASTREAM_ID, DATASTREAM_ID_B])
+    expect(await traceIds(page)).toContain(MANAGED_DATASTREAM_ID)
+
+    // Sample the range over several frames so a late redraw would show up.
+    const drift = await page.evaluate(async ([lo, hi]) => {
+      const toMs = (v: number | string) =>
+        typeof v === 'number' ? v : Date.parse(`${v.replace(' ', 'T')}Z`)
+      let worst = 0
+      const end = performance.now() + 1_500
+      while (performance.now() < end) {
+        const gd = document.querySelector('[data-testid="main-plot"]') as
+          | (HTMLElement & { layout?: { xaxis?: { range?: Array<number | string> } } })
+          | null
+        const r = gd?.layout?.xaxis?.range
+        if (!r) return Infinity
+        worst = Math.max(
+          worst,
+          Math.abs(toMs(r[0]!) - lo!),
+          Math.abs(toMs(r[1]!) - hi!)
+        )
+        await new Promise((res) => setTimeout(res, 100))
+      }
+      return worst
+    }, zoomed)
+    expect(drift).toBeLessThanOrEqual(1_000)
+    expect(await traceIds(page)).toContain(MANAGED_DATASTREAM_ID)
+  })
+})

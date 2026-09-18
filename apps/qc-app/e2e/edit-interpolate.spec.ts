@@ -10,7 +10,7 @@ import { expectHistoryContains, selectAllPoints } from './support/ops'
 
 test.describe('edit: interpolate', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await selectAllPoints(page)
   })

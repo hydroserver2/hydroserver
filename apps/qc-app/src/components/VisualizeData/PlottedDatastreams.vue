@@ -1,6 +1,9 @@
 <template>
   <div class="plotted-wrapper d-flex flex-column">
-    <div v-if="!lockQc" class="plotted-toolbar d-flex align-center px-3 py-2">
+    <div
+      v-if="!qcDatastream"
+      class="plotted-toolbar d-flex align-center px-3 py-2"
+    >
       <v-spacer></v-spacer>
       <v-btn
         :disabled="!plottedDatastreams.length"
@@ -15,12 +18,12 @@
     <v-divider />
     <ul class="plotted-list pa-0 ma-0">
       <li
-        v-for="(datastream, index) of plottedDatastreams"
+        v-for="(datastream, index) of seriesDatastreams"
         :key="datastream.id"
         class="plotted-item"
         :class="{
-          'plotted-item--qc': qcDatastream === datastream,
-          'plotted-item--locked': lockQc,
+          'plotted-item--qc': isEdit(datastream),
+          'plotted-item--source': isSource(datastream),
           'plotted-item--hidden': visibleDict[datastream.id] === false,
           'plotted-item--drop-before':
             dragIndex !== null &&
@@ -33,7 +36,8 @@
             dropIndex !== dragIndex &&
             (dragIndex as number) < index,
         }"
-        draggable="true"
+        :data-testid="`plotted-item-${datastream.id}`"
+        :draggable="!isPinned(datastream)"
         @dragstart="onDragStart(index, $event)"
         @dragover.prevent="onDragOver(index, $event)"
         @dragleave="onDragLeave(index)"
@@ -41,30 +45,14 @@
         @dragend="onDragEnd"
       >
         <v-icon
+          v-if="!isPinned(datastream)"
           class="plotted-item__drag cursor-grab"
           icon="mdi-drag-vertical"
           size="16"
-          :color="plottedDatastreams.length > 1 ? 'grey' : 'grey-lighten-2'"
+          :color="contextCount > 1 ? 'grey' : 'grey-lighten-2'"
           title="Drag to reorder"
         />
-
-        <button
-          v-if="!lockQc"
-          type="button"
-          class="plotted-item__dot cursor-pointer rounded-circle"
-          :class="{ 'plotted-item__dot--active': qcDatastream === datastream }"
-          :style="{
-            color: colorForDatastream(datastream.id),
-          }"
-          :disabled="isUpdating"
-          :title="
-            qcDatastream === datastream
-              ? 'Current QC target'
-              : 'Set as QC target'
-          "
-          :aria-pressed="qcDatastream === datastream"
-          @click="setQcDatastream(datastream)"
-        />
+        <span v-else />
 
         <button
           type="button"
@@ -90,10 +78,9 @@
           />
         </button>
 
-        <!-- QC rows sit on the always-rendered primary left axis, so
-             the Y-axis toggle is only for non-QC rows. -->
+        <!-- Primary rows sit on the always-rendered left axis. -->
         <button
-          v-if="qcDatastream !== datastream"
+          v-if="!isPrimary(datastream, index)"
           type="button"
           class="plotted-item__axis-toggle d-inline-flex align-center justify-center cursor-pointer rounded-sm"
           :title="
@@ -135,6 +122,15 @@
               class="flex-shrink-0"
             />
             <span>{{ datastream.name }}</span>
+            <v-chip
+              v-if="isSource(datastream)"
+              size="x-small"
+              variant="tonal"
+              label
+              class="flex-shrink-0"
+            >
+              raw source
+            </v-chip>
             <v-chip
               v-if="snapshotFor(datastream.id)"
               size="x-small"
@@ -182,7 +178,7 @@
         </div>
 
         <button
-          v-if="!(lockQc && qcDatastream === datastream)"
+          v-if="!isPinned(datastream)"
           type="button"
           class="plotted-item__close d-inline-flex align-center justify-center cursor-pointer rounded-sm"
           :title="`Remove ${datastream.name} from plot`"
@@ -198,8 +194,6 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ sectionTitle?: string; lockQc?: boolean }>()
-
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
@@ -210,8 +204,11 @@ import {
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import type { GraphSeries } from '@/types'
 import { usePlotlyStore } from '@/store/plotly'
-const { updateOptions, colorForDatastream, labelColorForDatastream } =
-  usePlotlyStore()
+import { ref, computed } from 'vue'
+import { Datastream } from '@hydroserver/client'
+import { formatDayStamp } from '@/utils/time'
+
+const { updateOptions, labelColorForDatastream } = usePlotlyStore()
 const {
   plotlyRef,
   graphSeriesArray,
@@ -219,31 +216,37 @@ const {
   hiddenTraceIds,
   plotlyOptions,
 } = storeToRefs(usePlotlyStore())
-import { ref, computed } from 'vue'
-import { Datastream } from '@hydroserver/client'
-import { formatDayStamp } from '@/utils/time'
 
-const { plottedDatastreams, qcDatastream, loadingStates } =
-  storeToRefs(useDataVisStore())
 const {
-  toggleDatastream,
-  setQcDatastream: setQcInStore,
-  clearPlottedDatastreams,
-} = useDataVisStore()
+  plottedDatastreams,
+  seriesDatastreams,
+  qcDatastream,
+  sourceContextDatastream,
+  loadingStates,
+} = storeToRefs(useDataVisStore())
+const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
+
+const isEdit = (ds: Datastream) => qcDatastream.value?.id === ds.id
+const isSource = (ds: Datastream) =>
+  sourceContextDatastream.value?.id === ds.id
+/** Edit target and its source: always shown, never removed or reordered. */
+const isPinned = (ds: Datastream) => isEdit(ds) || isSource(ds)
+const isPrimary = (ds: Datastream, index: number) =>
+  isPinned(ds) || (!qcDatastream.value && index === 0)
+
+const contextCount = computed(
+  () => seriesDatastreams.value.filter((ds) => !isPinned(ds)).length
+)
 
 // Template treats `visibleDict[id] === false` as "hidden"; source of
 // truth lives in the store so the share URL can read it.
 const visibleDict = computed<Record<string, boolean>>(() => {
   const out: Record<string, boolean> = {}
-  for (const ds of plottedDatastreams.value) {
+  for (const ds of seriesDatastreams.value) {
     out[ds.id] = !hiddenTraceIds.value.has(ds.id)
   }
   return out
 })
-
-const setQcDatastream = async (datastream: Datastream) => {
-  await setQcInStore(datastream.id)
-}
 
 const isUpdating = computed(() =>
   Array.from(loadingStates.value.values()).some((isLoading) => isLoading)
@@ -324,18 +327,25 @@ const toggleVisibility = async (datastream: Datastream) => {
   }
 }
 
-// Firefox needs `setData` for a drag to actually start, hence the payload.
+// Drag indices are row positions in `seriesDatastreams`. Firefox needs
+// `setData` for a drag to actually start, hence the payload.
 const dragIndex = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 
+const isPinnedAt = (index: number) => {
+  const ds = seriesDatastreams.value[index]
+  return !ds || isPinned(ds)
+}
+
 function onDragStart(index: number, ev: DragEvent) {
+  if (isPinnedAt(index)) return
   dragIndex.value = index
   ev.dataTransfer?.setData('text/plain', String(index))
   if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move'
 }
 
 function onDragOver(index: number, ev: DragEvent) {
-  if (dragIndex.value === null) return
+  if (dragIndex.value === null || isPinnedAt(index)) return
   dropIndex.value = index
   if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move'
 }
@@ -348,8 +358,8 @@ async function onDrop(index: number) {
   const from = dragIndex.value
   dragIndex.value = null
   dropIndex.value = null
-  if (from === null || from === index) return
-  reorder(from, index)
+  if (from === null || from === index || isPinnedAt(index)) return
+  if (!reorder(from, index)) return
   updateOptions()
   await handleNewPlot(undefined, { preserveZoom: true })
 }
@@ -359,23 +369,24 @@ function onDragEnd() {
   dropIndex.value = null
 }
 
-// Mirrors the reorder onto `graphSeriesArray` so plot trace order (and
-// the colour assignments derived from it) stays in sync.
-function reorder(from: number, to: number) {
+// Moves the dragged row to the target row's place in `plottedDatastreams`,
+// then re-sorts `graphSeriesArray` so trace order (and the colours derived
+// from it) follows `seriesDatastreams`.
+function reorder(from: number, to: number): boolean {
+  const movedId = seriesDatastreams.value[from]?.id
+  const targetId = seriesDatastreams.value[to]?.id
   const list = plottedDatastreams.value
-  const moved = list.splice(from, 1)[0]
-  if (!moved) return
-  list.splice(to, 0, moved)
+  const fromPos = list.findIndex((d) => d.id === movedId)
+  const toPos = list.findIndex((d) => d.id === targetId)
+  if (fromPos < 0 || toPos < 0) return false
+  const moved = list.splice(fromPos, 1)[0]!
+  list.splice(toPos, 0, moved)
 
-  const series = graphSeriesArray.value as GraphSeries[]
-  const fromSeries = series.findIndex((s) => s.id === moved.id)
-  if (fromSeries >= 0) {
-    const movedSeries = series.splice(fromSeries, 1)[0]
-    if (!movedSeries) return
-    const ids = list.map((d) => d.id)
-    const newIdx = ids.indexOf(moved.id)
-    series.splice(Math.max(0, newIdx), 0, movedSeries)
-  }
+  const order = new Map(seriesDatastreams.value.map((d, i) => [d.id, i]))
+  ;(graphSeriesArray.value as GraphSeries[]).sort(
+    (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)
+  )
+  return true
 }
 </script>
 
@@ -394,17 +405,13 @@ function reorder(from: number, to: number) {
 
 .plotted-item {
   display: grid;
-  grid-template-columns: 16px 18px 22px 22px 1fr 22px;
+  grid-template-columns: 16px 22px 22px 1fr 22px;
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   transition: background-color 120ms ease;
   position: relative;
-}
-
-.plotted-item--locked {
-  grid-template-columns: 16px 22px 22px 1fr 22px;
 }
 
 .plotted-item:last-child {
@@ -457,33 +464,6 @@ function reorder(from: number, to: number) {
 
 .plotted-item__drag:active {
   cursor: grabbing;
-}
-
-/* Compact QC-target radio. currentColor picks up the inline series
-   colour per row; v-radio was too tall for the rail. */
-.plotted-item__dot {
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  border: 2px solid currentColor;
-  background: transparent;
-  transition:
-    background-color 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.plotted-item__dot:hover:not(:disabled) {
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
-}
-
-.plotted-item__dot--active {
-  background: currentColor;
-  box-shadow: inset 0 0 0 2px #fff;
-}
-
-.plotted-item__dot:disabled {
-  cursor: default;
-  opacity: 0.5;
 }
 
 .plotted-item__visibility,

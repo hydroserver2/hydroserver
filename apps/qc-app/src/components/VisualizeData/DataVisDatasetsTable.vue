@@ -100,17 +100,6 @@
 
     <v-divider />
 
-    <div
-      v-if="!plottedDatastreams.length"
-      class="datasets-table__hint d-flex align-center px-3 py-1"
-    >
-      <v-icon icon="mdi-information-outline" size="14" class="mr-2" />
-      <span class="text-body-small">
-        First plotted datastream becomes the
-        <b>QC target</b>. Click a row to see its details.
-      </span>
-    </div>
-
     <div class="datasets-table__body flex-grow-1 d-flex flex-column">
       <v-data-table-virtual
         data-testid="datastreams-table"
@@ -136,15 +125,20 @@
           />
         </template>
 
+        <template #header.edit>
+          <v-icon
+            icon="mdi-pencil"
+            size="18"
+            title="Edit"
+            aria-label="Edit"
+          />
+        </template>
+
         <template v-slot:item.plot="{ item }">
           <v-tooltip
-            :disabled="!isAtCap(item) && !isQc(item)"
+            :disabled="!isAtCap(item)"
             location="top"
-            :text="
-              isQc(item)
-                ? 'QC target: first plotted datastream'
-                : `Maximum of ${PLOT_CAP} datastreams plotted; remove one to add another`
-            "
+            :text="`Maximum of ${PLOT_CAP} datastreams plotted; remove one to add another`"
           >
             <template #activator="{ props: tooltipProps }">
               <div class="d-flex align-center" v-bind="tooltipProps">
@@ -175,12 +169,6 @@
                   />
                 </button>
                 <span
-                  v-if="isQc(item)"
-                  class="qc-pill ml-1 d-inline-flex align-center justify-center text-white"
-                >
-                  QC
-                </span>
-                <span
                   v-if="managedCount(item) > 0"
                   class="managed-count ml-1 d-inline-flex align-center justify-center"
                   :title="`${managedCount(item)} managed (QC) datastream${
@@ -190,6 +178,33 @@
                   {{ managedCount(item) }}
                 </span>
               </div>
+            </template>
+          </v-tooltip>
+        </template>
+
+        <template #item.edit="{ item }">
+          <v-tooltip
+            location="top"
+            :text="
+              canEditWorkspace
+                ? 'Edit'
+                : `Your role on this workspace (${workspaceRole}) is read-only`
+            "
+          >
+            <template #activator="{ props: tooltipProps }">
+              <!-- A disabled button passes clicks to this wrapper; keep them off the row. -->
+              <span v-bind="tooltipProps" @click.stop>
+                <v-btn
+                  icon="mdi-pencil"
+                  size="small"
+                  variant="text"
+                  density="comfortable"
+                  :data-testid="`edit-datastream-${item.id}`"
+                  :aria-label="`Edit ${item.name}`"
+                  :disabled="!canEditWorkspace"
+                  @click.stop="emit('edit', item)"
+                />
+              </span>
             </template>
           </v-tooltip>
         </template>
@@ -280,11 +295,20 @@ import {
   type ManagedDatastreamOption,
 } from '@/composables/useManagedDatastreams'
 import { Snackbar } from '@uwrl/qc-utils'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 
 /** Maximum series the plot holds at once. */
 const PLOT_CAP = 5
 
-const { filteredDatastreams, plottedDatastreams, qcDatastream, historiesBySource } =
+const emit = defineEmits<{
+  (e: 'edit', datastream: Datastream & DatastreamExtended): void
+}>()
+
+const { canEdit, roleName } = useWorkspacePermissions()
+const canEditWorkspace = computed(() => canEdit())
+const workspaceRole = computed(() => roleName())
+
+const { filteredDatastreams, plottedDatastreams, historiesBySource } =
   storeToRefs(useDataVisStore())
 const {
   toggleDatastream,
@@ -394,8 +418,6 @@ const isChecked = (item: Datastream) =>
 const isPartial = (item: Datastream) =>
   !plottedIds.value.has(item.id) && isChecked(item)
 
-const isQc = (item: Datastream) => qcDatastream.value?.id === item.id
-
 // How many managed (QC) datastreams exist for this source datastream.
 const managedCount = (item: Datastream) =>
   historiesBySource.value.get(item.id)?.length ?? 0
@@ -463,13 +485,13 @@ const getRowProps = ({ item }: { item: Datastream }) => ({
   class: {
     'datasets-table__row--at-cap': isAtCap(item),
     'datasets-table__row--plotted': isChecked(item),
-    'datasets-table__row--qc': isQc(item),
   },
 })
 
 const search = ref()
 const headers = reactive([
   { title: 'Plot', key: 'plot', visible: true, width: 96, sortable: false },
+  { title: 'Edit', key: 'edit', visible: true, width: 56, sortable: false },
   {
     title: 'Name',
     key: 'name',
@@ -507,7 +529,7 @@ const headers = reactive([
 const visibleHeaders = computed(() => headers.filter((h) => h.visible))
 
 const selectableHeaders = computed(() =>
-  headers.filter((h) => !['plot'].includes(h.key))
+  headers.filter((h) => !['plot', 'edit'].includes(h.key))
 )
 
 // Single-sort default. Multi-sort was previously enabled but the
@@ -539,35 +561,18 @@ const resetSort = () => {
   min-height: 0;
 }
 
-/* Inline tip strip below the toolbar; only rendered while no
-   datastreams are plotted (see template). Quiet primary tint so it
-   reads as guidance, not an alert. */
-.datasets-table__hint {
-  background-color: rgba(var(--v-theme-primary), 0.06);
-  color: rgba(var(--v-theme-on-surface), 0.75);
-  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.12);
-}
-
 :deep(.v-table .v-data-table__tr:nth-child(even) td) {
   background: #f7f7f7;
 }
 
 /* Tint + primary leading bar so a plotted row reads even when the
-   checkbox column is scrolled away. QC row gets a saturated bar. */
+   checkbox column is scrolled away. */
 :deep(tbody tr.datasets-table__row--plotted > td) {
   background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 :deep(tbody tr.datasets-table__row--plotted > td:first-child) {
   box-shadow: inset 3px 0 0 rgba(var(--v-theme-primary), 0.45);
-}
-
-:deep(tbody tr.datasets-table__row--qc > td) {
-  background-color: rgba(var(--v-theme-primary), 0.09);
-}
-
-:deep(tbody tr.datasets-table__row--qc > td:first-child) {
-  box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary));
 }
 
 :deep(tbody tr:hover > td) {
@@ -680,17 +685,5 @@ const resetSort = () => {
   color: rgb(var(--v-theme-primary));
   background-color: rgba(var(--v-theme-primary), 0.14);
   border-radius: 9px;
-}
-
-/* Compact "QC" pill rendered next to the plot checkbox on the QC row.
-   Marks the quality-control target without occupying its own column. */
-.qc-pill {
-  height: 18px;
-  padding: 0 6px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background-color: rgb(var(--v-theme-primary));
-  border-radius: 4px;
 }
 </style>

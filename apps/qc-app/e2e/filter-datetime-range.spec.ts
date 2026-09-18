@@ -11,7 +11,7 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 
 test.describe('filter: datetime range', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 

@@ -43,8 +43,9 @@ async function loginThroughDataManagementIfNeeded(page: Page) {
 //      selection, so the router's workspace guard redirects to /workspaces.
 //   2. Select "Test Workspace #2" from the picker.
 //   3. Wait for datastreams table (init-complete signal on Home).
-//   4. Plot the first source with a managed datastream, load the All range.
-//   5. Start editing on its first managed datastream, which opens a session.
+//   4. Find the first source with a managed datastream.
+//   5. Its row Edit button, then its first managed datastream; resume the
+//      session in progress or Start one in the window step.
 //   6. Open "Value thresholds", add a filter, close dialog.
 //   7. Wait for selection to populate, open "Change values", apply edit.
 //   8. Assert CHANGE_VALUES appears in EditHistory.
@@ -95,37 +96,31 @@ test.describe('QC golden path (live same-origin)', () => {
       timeout: 60_000,
     })
 
-    // Step 4: Plot the first rendered source that has a managed datastream
+    // Step 4: Find the first rendered source that has a managed datastream
     // (managed-count badge). The table is virtualized, so the workspace needs
-    // such a source near the top. Its check box opens the plot-source chooser;
-    // plot the raw source, then load the All range so the session window
-    // covers real observations.
-    const sourceCheckbox = page
+    // such a source near the top.
+    const sourceEdit = page
       .locator('tr')
       .filter({ has: page.locator('.managed-count') })
-      .locator('[data-testid^="plot-checkbox-"]')
+      .locator('[data-testid^="edit-datastream-"]')
       .first()
-    await expect(sourceCheckbox).toBeVisible({ timeout: 30_000 })
-    const sourceId = (await sourceCheckbox.getAttribute('data-testid'))!.replace(
-      'plot-checkbox-',
+    await expect(sourceEdit).toBeVisible({ timeout: 30_000 })
+    const sourceId = (await sourceEdit.getAttribute('data-testid'))!.replace(
+      'edit-datastream-',
       ''
     )
-    await sourceCheckbox.click()
-    await page.getByTestId(`plot-option-${sourceId}`).locator('input').check()
-    await page.getByTestId('plot-source-apply').click()
-    const loading = page.getByTestId('data-loading-indicator')
-    await loading.waitFor({ state: 'hidden', timeout: 90_000 })
-    await page.getByTestId('date-preset-All').click()
-    await loading.waitFor({ state: 'hidden', timeout: 90_000 })
 
-    // Step 5: Start editing and pick the first managed datastream. This
-    // resumes its in-progress session or starts one, which is what renders
-    // Save and Commit in the history footer.
-    await page.getByRole('button', { name: 'Start editing' }).click()
+    // Step 5: The row's Edit button, then the first managed datastream. A
+    // managed datastream with a session in progress resumes it directly;
+    // otherwise the window step opens and Start begins a session over the
+    // default window. Either way Save and Commit render in the footer.
+    await page.getByTestId(`edit-datastream-${sourceId}`).click()
     await page.locator('[data-testid^="edit-managed-"]').first().click()
-    await expect(page.getByTestId('exit-save-btn')).toBeVisible({
-      timeout: 60_000,
-    })
+    const windowStart = page.getByTestId('session-window-start')
+    const saveBtn = page.getByTestId('exit-save-btn')
+    await expect(windowStart.or(saveBtn)).toBeVisible({ timeout: 60_000 })
+    if (await windowStart.isVisible()) await windowStart.click()
+    await expect(saveBtn).toBeVisible({ timeout: 60_000 })
     await expect(page.getByText('Filter Data')).toBeVisible()
 
     // Step 6 — Open "Value thresholds" operation panel, add a filter.

@@ -10,7 +10,7 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 
 test.describe('filter: rate of change', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 

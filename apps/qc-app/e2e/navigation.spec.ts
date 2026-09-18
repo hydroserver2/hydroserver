@@ -3,7 +3,7 @@
  *   - fresh browser redirects to /workspaces
  *   - picking a workspace navigates to Home
  *   - the nav-rail workspace-switch button offers to revisit the picker
- *   - the edit rail item is disabled until a datastream is plotted
+ *   - the edit rail item is enabled only while editing
  *   - leaving Edit with edits not saved to the session asks first
  */
 
@@ -12,12 +12,12 @@ import { installMocks, type MockQcSession } from './support/mocks'
 import {
   gotoHome,
   openOp,
-  plotFirstDatastream,
+  plotDatastreamById,
   setupEditView,
-  setupSessionEditView,
+  startSessionFromRow,
 } from './support/app'
 import { expectHistoryContains, selectAllPoints } from './support/ops'
-import { WORKSPACE_ID } from './support/fixtures'
+import { DATASTREAM_ID_B, WORKSPACE_ID } from './support/fixtures'
 
 async function applyChangeValues(page: Page) {
   await selectAllPoints(page)
@@ -33,7 +33,7 @@ function exitDialog(page: Page) {
 
 test.describe('navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
   })
 
   test('fresh browser redirects to the workspace picker', async ({ page }) => {
@@ -81,27 +81,16 @@ test.describe('navigation', () => {
     })
   })
 
-  test('Edit rail item is disabled until a datastream is plotted', async ({
-    page,
-  }) => {
+  test('Edit rail item is disabled outside the editor', async ({ page }) => {
+    test.slow()
     await gotoHome(page)
     const editRail = page.getByTestId('nav-rail-item-edit')
     await expect(editRail).toHaveAttribute('aria-disabled', 'true')
-    await plotFirstDatastream(page)
+    // Plotting never picks an edit target.
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await expect(editRail).toHaveAttribute('aria-disabled', 'true')
+    await startSessionFromRow(page)
     await expect(editRail).toHaveAttribute('aria-disabled', 'false')
-  })
-
-  test('without a session the exit dialog cannot save', async ({ page }) => {
-    await setupEditView(page)
-    await applyChangeValues(page)
-
-    await page.getByTestId('nav-rail-item-select').click()
-    const dialog = exitDialog(page)
-    await expect(dialog).toBeVisible()
-    await expect(
-      dialog.getByRole('button', { name: /save & continue/i })
-    ).toBeDisabled()
-    await expect(dialog.getByRole('button', { name: /discard/i })).toBeEnabled()
   })
 })
 
@@ -110,8 +99,8 @@ test.describe('navigation: leaving a QC session', () => {
   let sessions: MockQcSession[]
 
   test.beforeEach(async ({ page }) => {
-    // Entering through Start editing and starting a session is slow enough to
-    // outrun the default budget when these run in parallel.
+    // Entering through the row Edit flow and starting a session is slow
+    // enough to outrun the default budget when these run in parallel.
     test.slow()
     submissions = []
     sessions = []
@@ -120,7 +109,7 @@ test.describe('navigation: leaving a QC session', () => {
       submissions,
       qcSessionState: sessions,
     })
-    await setupSessionEditView(page)
+    await setupEditView(page)
   })
 
   test('Save & continue saves the draft without posting observations', async ({

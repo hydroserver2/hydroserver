@@ -64,7 +64,7 @@ test.describe('data-points combobox', () => {
   test.setTimeout(60_000)
 
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     // Reset the persisted preference bag so each test starts in auto
     // mode at the default threshold. The store persists `tooltipsMode`,

@@ -13,7 +13,10 @@ import {
   cropXaxisRange,
   labelColorFor,
   LABEL_COLORS,
+  SOURCE_CONTEXT_COLOR,
+  SOURCE_CONTEXT_LABEL_COLOR,
 } from '@/utils/plotting/plotly'
+import { withLiveShapes } from '@/utils/plotting/shapes'
 import type {
   AppPlotlyHTMLElement,
   AppPlotlyTrace,
@@ -118,11 +121,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const activeTab = ref<'plot' | 'table'>('plot')
 
   /**
-   * Cross-component signal for the "zoom to range" presets. Plot.vue
-   * sets `time` to the epoch-ms start of the chosen range; DataTable.vue
-   * watches `seq` and scrolls its virtual list so the first in-range row
-   * sits at the top. `seq` is bumped on every request so re-selecting the
-   * same preset still re-triggers the scroll.
+   * Cross-component scroll signal. Plot.vue sets `time` to the start of
+   * the session window when it zooms to it; DataTable.vue watches `seq`
+   * and scrolls its virtual list so the first row at or after `time` sits
+   * at the top. `seq` is bumped on every request so a repeat still
+   * re-triggers the scroll.
    */
   const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
   function requestTableScroll(time: number) {
@@ -355,7 +358,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
         x: opts.traces.map((t) => (t as AppPlotlyTrace).x),
         y: opts.traces.map((t) => (t as AppPlotlyTrace).y),
       } as unknown as Partial<PlotData>,
-      opts.layout
+      // `Plotly.update` replaces the whole shapes array; keep the stage band.
+      withLiveShapes(opts.layout, plotlyRef.value?.layout)
     )
 
     if (recomputeXaxisRange) {
@@ -496,8 +500,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   function colorForDatastream(id: string | undefined): string {
     if (!id) return COLORS[1]!
-    const { qcDatastream } = storeToRefs(useDataVisStore())
+    const { qcDatastream, sourceContextDatastream } = storeToRefs(useDataVisStore())
     if (qcDatastream.value?.id === id) return COLORS[0]!
+    if (sourceContextDatastream.value?.id === id) return SOURCE_CONTEXT_COLOR
     const series = graphSeriesArray.value.find((s) => s.id === id)
     // `||` (not `??`) so the empty-string sentinel emitted by
     // `fetchGraphSeries` before `assignSeriesColors` runs also falls
@@ -514,8 +519,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   function labelColorForDatastream(id: string | undefined): string {
     if (!id) return LABEL_COLORS[1]!
-    const { qcDatastream } = storeToRefs(useDataVisStore())
+    const { qcDatastream, sourceContextDatastream } = storeToRefs(useDataVisStore())
     if (qcDatastream.value?.id === id) return LABEL_COLORS[0]!
+    if (sourceContextDatastream.value?.id === id) return SOURCE_CONTEXT_LABEL_COLOR
     const series = graphSeriesArray.value.find((s) => s.id === id)
     if (!series || !series.color) return LABEL_COLORS[1]!
     return labelColorFor(series.color)

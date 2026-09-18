@@ -4,9 +4,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // vi.hoisted vars are safe to reference inside vi.mock factories.
 // options.ts imports usePlotlyStore (circular), so we inline constants here.
-const { COLORS, LABEL_COLORS, qcId } = vi.hoisted(() => {
+const { COLORS, LABEL_COLORS, qcId, sourceId } = vi.hoisted(() => {
   const { ref } = require('vue') as typeof import('vue')
   const qcId = ref<string | null>(null)
+  const sourceId = ref<string | null>(null)
   const COLORS = [
     '#3f3f3f', '#aec7e8', '#ffbb78', '#98df8a', '#c5b0d5',
     '#c49c94', '#f7b6d2', '#dbdb8d', '#9edae5', '#ad494a',
@@ -15,7 +16,7 @@ const { COLORS, LABEL_COLORS, qcId } = vi.hoisted(() => {
     '#3f3f3f', '#1f77b4', '#c06a00', '#208020', '#7a4da3',
     '#8c564b', '#e377c2', '#bcbd22', '#17becf', '#d62728',
   ]
-  return { COLORS, LABEL_COLORS, qcId }
+  return { COLORS, LABEL_COLORS, qcId, sourceId }
 })
 
 // Mock dataVisualization as a real Pinia store so storeToRefs works naturally.
@@ -24,7 +25,10 @@ vi.mock('@/store/dataVisualization', () => {
     const qcDatastream = computed(() =>
       qcId.value ? ({ id: qcId.value } as { id: string }) : null
     )
-    return { qcDatastream }
+    const sourceContextDatastream = computed(() =>
+      sourceId.value ? ({ id: sourceId.value } as { id: string }) : null
+    )
+    return { qcDatastream, sourceContextDatastream }
   })
   return { useDataVisStore }
 })
@@ -34,9 +38,14 @@ vi.mock('@/store/observations', () => ({
 }))
 
 // Inline constants to break circular dep: options.ts → usePlotlyStore → plotly barrel.
+const SOURCE_CONTEXT_COLOR = '#9e9e9e'
+const SOURCE_CONTEXT_LABEL_COLOR = '#616161'
+
 vi.mock('@/utils/plotting/plotly', () => ({
   COLORS,
   LABEL_COLORS,
+  SOURCE_CONTEXT_COLOR,
+  SOURCE_CONTEXT_LABEL_COLOR,
   labelColorFor: (lineColor: string) => {
     const idx = COLORS.indexOf(lineColor)
     return idx >= 0 ? LABEL_COLORS[idx] : LABEL_COLORS[0]
@@ -67,6 +76,7 @@ describe('usePlotlyStore.assignSeriesColors', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('hands out colours in legend order for a fresh cold load', async () => {
@@ -212,6 +222,7 @@ describe('usePlotlyStore.colorForDatastream', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('returns the persisted series color for non-qc datastreams', async () => {
@@ -235,6 +246,14 @@ describe('usePlotlyStore.colorForDatastream', () => {
     store.graphSeriesArray.push(makeSeries('a', COLORS[2]))
     expect(store.colorForDatastream('zzz')).toBe(COLORS[1])
   })
+
+  it('returns SOURCE_CONTEXT_COLOR when id matches sourceContextDatastream', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.graphSeriesArray.push(makeSeries('src', COLORS[4]))
+    sourceId.value = 'src'
+    expect(store.colorForDatastream('src')).toBe(SOURCE_CONTEXT_COLOR)
+  })
 })
 
 describe('usePlotlyStore.labelColorForDatastream', () => {
@@ -242,6 +261,7 @@ describe('usePlotlyStore.labelColorForDatastream', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('returns LABEL_COLORS[1] fallback for undefined id', async () => {
@@ -270,6 +290,14 @@ describe('usePlotlyStore.labelColorForDatastream', () => {
     const store = usePlotlyStore()
     expect(store.labelColorForDatastream('missing')).toBe(LABEL_COLORS[1])
   })
+
+  it('returns SOURCE_CONTEXT_LABEL_COLOR when id matches sourceContextDatastream', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.graphSeriesArray.push(makeSeries('src', COLORS[4]))
+    sourceId.value = 'src'
+    expect(store.labelColorForDatastream('src')).toBe(SOURCE_CONTEXT_LABEL_COLOR)
+  })
 })
 
 describe('usePlotlyStore zoom history', () => {
@@ -277,6 +305,7 @@ describe('usePlotlyStore zoom history', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('starts with empty stacks and canUndo/canRedo false', async () => {
@@ -349,6 +378,7 @@ describe('usePlotlyStore.clearChartState', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('empties graphSeriesArray and zoom history', async () => {
@@ -383,6 +413,7 @@ describe('usePlotlyStore.updateOptions + selectedSeries', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('updateOptions rebuilds plotlyOptions via createPlotlyOption', async () => {
@@ -426,6 +457,7 @@ describe('usePlotlyStore — data-points (tooltips) mode', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('defaults: mode=auto, manualEnabled=true, threshold=10000', async () => {
@@ -489,6 +521,7 @@ describe('usePlotlyStore.requestTableScroll', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('starts with no pending scroll request', async () => {
@@ -518,6 +551,7 @@ describe('usePlotlyStore.editHistory', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
+    sourceId.value = null
   })
 
   it('is empty when no series is selected for QC', async () => {
@@ -552,5 +586,49 @@ describe('usePlotlyStore.editHistory', () => {
     } as any
 
     expect(store.editHistory).toHaveLength(2)
+  })
+})
+
+describe('usePlotlyStore.redraw shapes', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    qcId.value = null
+    sourceId.value = null
+  })
+
+  it('keeps a live stage shape and replaces the edit-window shape', async () => {
+    const mod = await import('@/utils/plotting/plotly')
+    const freshWindow = { name: 'edit-window', x0: 300, x1: 400 }
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    ;(mod.createPlotlyOption as any).mockReturnValueOnce({
+      traces: [],
+      layout: { shapes: [freshWindow] },
+    })
+    const stage = { name: 'stage', x0: 10, x1: 20 }
+    store.plotlyRef = {
+      layout: { shapes: [stage, { name: 'edit-window', x0: 100, x1: 200 }] },
+    } as any
+
+    await store.redraw()
+
+    const layout = (mod.applyTraceUpdate as any).mock.calls.at(-1)[2]
+    expect(layout.shapes).toEqual([stage, freshWindow])
+  })
+
+  it('drops a stale edit-window shape once the layout has none', async () => {
+    const mod = await import('@/utils/plotting/plotly')
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    const stage = { name: 'stage', x0: 10, x1: 20 }
+    store.plotlyRef = {
+      layout: { shapes: [stage, { name: 'edit-window', x0: 100, x1: 200 }] },
+    } as any
+
+    await store.redraw()
+
+    const layout = (mod.applyTraceUpdate as any).mock.calls.at(-1)[2]
+    expect(layout.shapes).toEqual([stage])
   })
 })

@@ -19,7 +19,7 @@ const rangePanel = '[data-testid="filter-range-panel"]'
 
 test.describe('filter range toggle', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 

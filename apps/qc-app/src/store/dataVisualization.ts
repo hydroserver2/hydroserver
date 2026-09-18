@@ -13,8 +13,8 @@ import {
   presetWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
-import { DrawerType, useUIStore } from '@/store/userInterface'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
+import { useQcSessionStore } from '@/store/qcSession'
 import type { SnapshotMeta } from '@/types'
 import type { ObservationRecord } from '@uwrl/qc-utils'
 import {
@@ -65,7 +65,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     const workingCopies = useWorkingCopiesStore()
     await Promise.all(
       plottedDatastreams.value
-        .filter((ds) => managedDatastreamIds.value.has(ds.id))
+        .filter(
+          (ds) =>
+            ds.id !== qcDatastreamId.value &&
+            managedDatastreamIds.value.has(ds.id)
+        )
         .map(async (ds) => {
           const context = managedContext(ds.id)
           if (!context) return
@@ -83,7 +87,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    *  the QC target keeps its copy for the editor. */
   function invalidateUnplottedWorkingCopies() {
     const workingCopies = useWorkingCopiesStore()
-    const plotted = new Set(plottedDatastreams.value.map((d) => d.id))
+    const plotted = new Set(seriesDatastreams.value.map((d) => d.id))
     for (const { id } of graphSeriesArray.value) {
       if (plotted.has(id) || id === qcDatastreamId.value) continue
       if (managedDatastreamIds.value.has(id)) workingCopies.invalidate(id)
@@ -146,25 +150,33 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   // Datasets
   const plottedDatastreams = ref<Datastream[]>([])
-  /**
-   * The datastream selected to go through the quality control process.
-   *
-   * Stored as an id (`qcDatastreamId`) and resolved through a computed
-   * (`qcDatastream`) that looks up the live object in
-   * `plottedDatastreams`. This avoids stale-object bugs where
-   * `qcDatastream` would hold a reference to a datastream no longer in
-   * the plot — in that case the old stored-object approach silently
-   * broke downstream code (notably the `QC is always black` colour
-   * override). With the computed, the QC reference automatically becomes
-   * `null` when the id is no longer plotted.
-   */
+
+  /** The datastream being edited. Set only by the edit flow, null in Select. */
   const qcDatastreamId = ref<string | null>(null)
-  const qcDatastream = computed<Datastream | null>(() => {
-    if (!qcDatastreamId.value) return null
-    return (
-      plottedDatastreams.value.find((ds) => ds.id === qcDatastreamId.value) ??
-      null
-    )
+  const qcDatastream = computed(() =>
+    qcDatastreamId.value
+      ? (datastreams.value.find((ds) => ds.id === qcDatastreamId.value) ?? null)
+      : null
+  )
+
+  /** The edit target's source, drawn behind it as context. */
+  const sourceContextDatastream = computed(() =>
+    qcDatastreamId.value
+      ? (managedContext(qcDatastreamId.value)?.source ?? null)
+      : null
+  )
+
+  /** What the plot draws, in order: edit target, its source, then plotted. */
+  const seriesDatastreams = computed<Datastream[]>(() => {
+    const edit = qcDatastream.value
+    if (!edit) return plottedDatastreams.value
+    const pinned: Datastream[] = [edit]
+    if (sourceContextDatastream.value) pinned.push(sourceContextDatastream.value)
+    const pinnedIds = new Set(pinned.map((d) => d.id))
+    return [
+      ...pinned,
+      ...plottedDatastreams.value.filter((d) => !pinnedIds.has(d.id)),
+    ]
   })
 
   // Qualifiers
@@ -190,9 +202,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   function resolvePresetWindow() {
     if (selectedDateBtnId.value === CUSTOM_PRESET_ID) return null
     const workingCopies = useWorkingCopiesStore()
+    const context = seriesDatastreams.value.filter(
+      (d) => d.id !== qcDatastreamId.value && !isSnapshotId(d.id)
+    )
     const extent = dataExtent([
-      ...plottedDatastreams.value,
-      ...workingCopies.extents(plottedDatastreams.value.map((d) => d.id)),
+      ...context,
+      ...workingCopies.extents(context.map((d) => d.id)),
     ])
     return extent ? presetWindow(selectedDateBtnId.value, extent) : null
   }
@@ -219,25 +234,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     else await plotDatastream(datastream)
   }
 
-  /** Add a datastream to the plot. Promotes it to QC if there isn't one
-   *  already. Triggers an explicit plot rebuild — no watcher. */
+  /** Add a datastream to the plot. Triggers an explicit plot rebuild, no watcher. */
   async function plotDatastream(ds: Datastream) {
     if (plottedDatastreams.value.some((d) => d.id === ds.id)) return
     plottedDatastreams.value.push(ds)
-    if (!qcDatastreamId.value) qcDatastreamId.value = ds.id
     await rebuildPlot()
   }
 
-  /** Remove a datastream from the plot. If the QC datastream is being
-   *  removed, promote the previous plotted entry (or clear QC). */
+  /** Remove a datastream from the plot. */
   async function unplotDatastream(id: string) {
     const idx = plottedDatastreams.value.findIndex((d) => d.id === id)
     if (idx === -1) return
     plottedDatastreams.value.splice(idx, 1)
-    if (qcDatastreamId.value === id) {
-      qcDatastreamId.value =
-        plottedDatastreams.value[Math.max(idx - 1, 0)]?.id ?? null
-    }
     await rebuildPlot()
   }
 
@@ -267,7 +275,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       snapshot: meta,
     })
 
-    assignSeriesColors(plottedDatastreams.value.map((d) => d.id))
+    orderAndColorSeries()
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
@@ -309,12 +317,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   /**
    * Apply a whole "what to plot for this source" choice at once: `ids` is
    * the complete set wanted from that source's group. Group members absent
-   * from `ids` are unplotted; additions are appended in `ids` order, so the
-   * first-plotted-wins QC rule sees the caller's ordering.
-   *
-   * Batched rather than looping plot/unplot so the QC target is promoted
-   * once against the final set instead of drifting through each
-   * intermediate state.
+   * from `ids` are unplotted; additions are appended in `ids` order.
    */
   async function plotSourceSelection(sourceId: string, ids: string[]) {
     const group = new Set(sourceGroupIds(sourceId))
@@ -336,16 +339,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       next.every((d, i) => d.id === plottedDatastreams.value[i]?.id)
     if (unchanged) return
 
-    const previousIndex = plottedDatastreams.value.findIndex(
-      (d) => d.id === qcDatastreamId.value
-    )
     plottedDatastreams.value = next
-    if (!next.some((d) => d.id === qcDatastreamId.value)) {
-      // Same promotion rule as `unplotDatastream`: the entry before the one
-      // that left, clamped into the surviving set.
-      const idx = Math.max(Math.min(previousIndex - 1, next.length - 1), 0)
-      qcDatastreamId.value = next[idx]?.id ?? null
-    }
     await rebuildPlot()
   }
 
@@ -353,106 +347,51 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   async function clearPlottedDatastreams() {
     if (!plottedDatastreams.value.length) return
     plottedDatastreams.value = []
-    qcDatastreamId.value = null
     await rebuildPlot()
   }
 
-  /** Replace the plotted set wholesale (used by URL hydration). Falls
-   *  back to promoting the first item as QC when `qcId` isn't supplied
-   *  or points to a datastream not in `items`. */
-  async function setPlottedDatastreams(
-    items: Datastream[],
-    qcId?: string | null
-  ) {
+  /** Replace the plotted set wholesale (used by URL hydration). */
+  async function setPlottedDatastreams(items: Datastream[]) {
     plottedDatastreams.value = items.slice()
-    if (qcId !== undefined) {
-      const valid = items.some((d) => d.id === qcId)
-      qcDatastreamId.value = valid ? (qcId ?? null) : (items[0]?.id ?? null)
-    } else if (!items.some((d) => d.id === qcDatastreamId.value)) {
-      qcDatastreamId.value = items[0]?.id ?? null
-    }
     await rebuildPlot()
   }
 
-  /** Change which datastream is under QC. Preserves the current zoom. */
-  async function setQcDatastream(id: string | null) {
-    if (qcDatastreamId.value === id) return
-    qcDatastreamId.value = id
-    updateOptions()
-    const { plotlyRef } = storeToRefs(usePlotlyStore())
-    if (plotlyRef.value) {
-      await handleNewPlot(undefined, { preserveZoom: true })
-    }
-  }
-
-  /**
-   * Enter editing on a freshly-created managed datastream by reusing the
-   * source's already-loaded series as the managed datastream's working copy,
-   * rather than adding a second, empty plotted item. The managed datastream
-   * is empty on the server, so re-fetching it would blank the plot; the QC
-   * editor zooms (never re-fetches), so this working copy survives until the
-   * first commit materializes the managed datastream.
-   */
-  async function adoptManagedDatastream(managed: Datastream, sourceId: string) {
-    const idx = plottedDatastreams.value.findIndex((d) => d.id === sourceId)
-    if (idx >= 0) plottedDatastreams.value.splice(idx, 1, managed)
-    else plottedDatastreams.value.push(managed)
-    qcDatastreamId.value = managed.id
-
-    // Re-key the loaded series to the managed datastream, keeping its data.
-    const series = graphSeriesArray.value.find((s) => s.id === sourceId)
-    if (series) {
-      series.id = managed.id
-      series.name = managed.name
-    }
-    const ids = new Set(plottedDatastreams.value.map((d) => d.id))
-    graphSeriesArray.value = graphSeriesArray.value.filter((s) => ids.has(s.id))
-
-    assignSeriesColors(plottedDatastreams.value.map((d) => d.id))
-    updateOptions()
-    const { plotlyRef } = storeToRefs(usePlotlyStore())
-    if (plotlyRef.value) {
-      await handleNewPlot(undefined, { preserveZoom: true })
-    }
-  }
-
-  /**
-   * Inverse of `adoptManagedDatastream`, for leaving the editor. Managed
-   * datastreams are hidden from the catalog, so without this the Select
-   * view shows a plot with no row selected. No-op when the QC target isn't
-   * managed or its source isn't in the catalog. Snapshots are dropped
-   * regardless: they have no place in the Select view.
-   */
-  async function releaseManagedDatastream() {
+  /** Start editing `managedId`. Its data arrives later via `setEditRecord`. */
+  async function setEditTarget(managedId: string) {
     dropSnapshotSeries()
+    // The session store describes the previous target until `loadSessions`
+    // lands; drop it so its window is never drawn over this one.
+    if (managedId !== qcDatastreamId.value) useQcSessionStore().reset()
+    qcDatastreamId.value = managedId
+    await rebuildPlot()
+  }
 
-    const managedId = qcDatastreamId.value
-    if (!managedId) return
-    const history = qcHistories.value.find(
-      (h) => historyManagedId(h) === managedId
-    )
-    const sourceId = history ? historySourceId(history) : undefined
-    const source = sourceId
-      ? datastreams.value.find((d) => d.id === sourceId)
-      : undefined
-    if (!source) return
-
-    const idx = plottedDatastreams.value.findIndex((d) => d.id === managedId)
-    if (idx < 0) return
-    // The source can already be plotted alongside its managed datastream
-    // (both picked in the plot chooser); replacing would duplicate it.
-    if (plottedDatastreams.value.some((d) => d.id === source.id)) {
-      plottedDatastreams.value.splice(idx, 1)
-    } else {
-      plottedDatastreams.value.splice(idx, 1, source)
+  /** Put the edit target's record on the plot, adding its series if needed. */
+  async function setEditRecord(record: ObservationRecord) {
+    const edit = qcDatastream.value
+    if (!edit) return
+    const existing = graphSeriesArray.value.find((s) => s.id === edit.id)
+    if (existing) {
+      existing.data = record
+      await usePlotlyStore().redraw()
+      return
     }
-    qcDatastreamId.value = source.id
+    graphSeriesArray.value.push(buildGraphSeries(edit, record))
+    orderAndColorSeries()
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
 
-    // The working copy holds uncommitted edits; `rebuildPlot` refetches.
-    graphSeriesArray.value = graphSeriesArray.value.filter(
-      (s) => s.id !== managedId
-    )
-
+  /** Stop editing. Plotted datastreams stay as they were. */
+  async function clearEditTarget() {
+    dropSnapshotSeries()
+    const id = qcDatastreamId.value
+    if (!id) return
+    // Unsaved edits live only on the working copy.
+    useWorkingCopiesStore().invalidate(id)
+    qcDatastreamId.value = null
+    graphSeriesArray.value = graphSeriesArray.value.filter((s) => s.id !== id)
     await rebuildPlot()
   }
 
@@ -507,39 +446,31 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
-  /** Rebuild the plot from scratch: drop zoom history, rebuild the
-   *  graph-series array from `plottedDatastreams`, regenerate Plotly
-   *  options, and re-render. Must run serialized — see the lock in
+  /** Rebuild the plot from scratch: rebuild the graph-series array from
+   *  `seriesDatastreams`, regenerate Plotly options, and re-render. Select
+   *  drops the zoom; the editor keeps it, since context changes never move
+   *  the user's view of the session. Must run serialized, see the lock in
    *  `rebuildPlot` above. */
   async function doRebuildPlot() {
     hasSelectionShape.value = false
-    if (!plottedDatastreams.value.length) {
+    if (!seriesDatastreams.value.length) {
       invalidateUnplottedWorkingCopies()
       clearChartState()
       return
     }
-    const { clearZoomHistory } = usePlotlyStore()
-    clearZoomHistory()
+    const keepZoom = !!qcDatastreamId.value
+    if (!keepZoom) usePlotlyStore().clearZoomHistory()
     await loadWorkingCopies()
-    // Presets re-anchor only in the Select view. In the Edit view the
-    // loaded window is the edit session's window; moving it here would
-    // refetch the working copy over a different range and corrupt what
-    // gets committed. `useUIStore()` is called lazily here, not at this
-    // store's setup top level, since userInterface.ts imports this store
-    // back and calling it during setup would recurse into a store that
-    // isn't finished constructing.
-    if (useUIStore().currentView !== DrawerType.Edit) {
-      const presetRange = resolvePresetWindow()
-      if (presetRange) {
-        beginDate.value = presetRange.begin
-        endDate.value = presetRange.end
-      }
+    const presetRange = resolvePresetWindow()
+    if (presetRange) {
+      beginDate.value = presetRange.begin
+      endDate.value = presetRange.end
     }
     await refreshGraphSeriesArray()
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) {
-      await handleNewPlot()
+      await handleNewPlot(undefined, { preserveZoom: keepZoom })
     }
   }
 
@@ -622,19 +553,24 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       update &&
       beginDate.value &&
       endDate.value &&
-      plottedDatastreams.value.length
+      seriesDatastreams.value.length
     ) {
       const { redraw, clearZoomHistory } = usePlotlyStore()
       await refreshGraphSeriesArray()
-      // A date-filter change refetches data and drops the zoom window —
-      // the recorded zoom stack refers to the OLD time range and would
-      // be meaningless after redraw, so clear it.
-      clearZoomHistory()
-      // The user explicitly changed the date filter — they expect the
-      // new window to actually apply, so opt out of the zoom-preserving
-      // path in `redraw` (which otherwise copies the live range over
-      // the fresh layout and the plot would stay on the old window).
-      redraw(false, false)
+      if (qcDatastreamId.value) {
+        // Context reload in the editor: the user's view of the session stays put.
+        await redraw(false, true)
+      } else {
+        // A date-filter change refetches data and drops the zoom window:
+        // the recorded zoom stack refers to the OLD time range and would
+        // be meaningless after redraw, so clear it.
+        clearZoomHistory()
+        // The user explicitly changed the date filter, so they expect the
+        // new window to actually apply, so opt out of the zoom-preserving
+        // path in `redraw` (which otherwise copies the live range over
+        // the fresh layout and the plot would stay on the old window).
+        redraw(false, false)
+      }
     }
   }
 
@@ -707,53 +643,42 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
+  /** Sort `graphSeriesArray` to match `seriesDatastreams` and assign colours.
+   *  Colour assignment excludes the edit target and its source so context
+   *  colours stay stable between Select and Edit. Re-sorting after every
+   *  fetch avoids the race where parallel cold fetches land out of order
+   *  and the plot's draw-layering / legend order goes out of sync. */
+  function orderAndColorSeries() {
+    const order = seriesDatastreams.value
+    const indexByDs = new Map(order.map((ds, i) => [ds.id, i]))
+    graphSeriesArray.value.sort(
+      (a, b) => (indexByDs.get(a.id) ?? 0) - (indexByDs.get(b.id) ?? 0)
+    )
+    const pinned = new Set([qcDatastreamId.value, sourceContextDatastream.value?.id])
+    assignSeriesColors(order.map((ds) => ds.id).filter((id) => !pinned.has(id)))
+  }
+
   /** Refreshes the graphSeriesArray based on the current selection of datastreams */
   const refreshGraphSeriesArray = async () => {
     // Remove graphSeries that are no longer selected
     invalidateUnplottedWorkingCopies()
-    const currentIds = new Set(plottedDatastreams.value.map((ds) => ds.id))
+    const currentIds = new Set(seriesDatastreams.value.map((ds) => ds.id))
     graphSeriesArray.value = graphSeriesArray.value.filter((s) =>
       currentIds.has(s.id)
     )
 
-    const updateOrFetchPromises = plottedDatastreams.value
-      // Frozen replays: no server-side datastream to fetch.
-      .filter((ds) => !isSnapshotId(ds.id))
+    const updateOrFetchPromises = seriesDatastreams.value
+      // Snapshots have no server datastream; the edit target's data belongs to the session.
+      .filter((ds) => !isSnapshotId(ds.id) && ds.id !== qcDatastreamId.value)
       .map(async (ds) => {
         loadingStates.value.set(ds.id, true)
         return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
       })
 
     const results = await Promise.all(updateOrFetchPromises)
-
-    // `updateOrFetchGraphSeries` pushes new series into `graphSeriesArray`
-    // in whatever order the parallel fetches resolve. For URL preload
-    // (multiple datastream ids loading cold at once) that completion
-    // order usually doesn't match the user-facing `plottedDatastreams`
-    // order — so the plot iterated traces out of legend order, breaking
-    // the draw-layering and per-series colour mapping. Re-sort the
-    // array to mirror `plottedDatastreams` now that every fetch has
-    // landed; the iteration order downstream is the legend order again.
-    const indexByDs = new Map(
-      plottedDatastreams.value.map((ds, i) => [ds.id, i])
-    )
-    graphSeriesArray.value.sort(
-      (a, b) => (indexByDs.get(a.id) ?? 0) - (indexByDs.get(b.id) ?? 0)
-    )
-
-    // Colour assignment runs once per refresh, after every fetch
-    // has landed and the array is in legend order. Doing it here
-    // (rather than inline in `fetchGraphSeries`) eliminates the
-    // race where two parallel cold fetches both read the array
-    // before either's push had landed and ended up claiming the
-    // same colour slot — visible as two non-QC traces sharing a
-    // line colour, and as different colours rolling on each reload
-    // depending on which fetch resolved first.
-    assignSeriesColors(plottedDatastreams.value.map((ds) => ds.id))
-
+    orderAndColorSeries()
     return results
   }
-
 
   // The old watcher on `plottedDatastreams` that computed prev/next id
   // diffs and forked between "update time range" and "rebuild plot"
@@ -761,7 +686,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   //   - plotDatastream / unplotDatastream / toggleDatastream
   //   - clearPlottedDatastreams
   //   - setPlottedDatastreams (URL hydration)
-  //   - setQcDatastream
+  //   - setEditTarget / setEditRecord / clearEditTarget
   // Each mutation site now calls the action so side effects (time range
   // sync, graph-series rebuild, zoom history clear, Plotly re-render)
   // happen inline and in a predictable order — no reactive cascade.
@@ -824,6 +749,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     selectedDateBtnId,
     qcDatastream,
     qcDatastreamId,
+    sourceContextDatastream,
+    seriesDatastreams,
     qualifierSet,
     selectedQualifier,
     selectedData,
@@ -844,9 +771,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     addSnapshotSeries,
     removeSnapshotSeries,
     setPlottedDatastreams,
-    setQcDatastream,
-    adoptManagedDatastream,
-    releaseManagedDatastream,
+    setEditTarget,
+    setEditRecord,
+    clearEditTarget,
     rebuildPlot,
     // updateOrFetchGraphSeries,
   }

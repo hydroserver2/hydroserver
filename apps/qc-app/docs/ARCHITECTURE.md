@@ -181,8 +181,11 @@ Invariants:
   `plotly_selected` events both for user gestures and for our programmatic
   `Plotly.restyle({ selectedpoints })` calls. The sentinel in `plotly.ts`
   drops the echo so we don't append a duplicate `SELECTION` entry.
-- **The first plotted stream is the QC target.** The others are read-only
-  context traces. Dispatch only ever runs against `selectedSeries.data`.
+- **The plot draws `seriesDatastreams`, not `plottedDatastreams` directly.**
+  While editing it's `[edit target, its source, ...plotted]`; otherwise it's
+  `plottedDatastreams` as-is. Dispatch only ever runs against
+  `selectedSeries.data`, the edit target's series; without an edit target
+  `selectedSeries` is undefined.
 
 ## Plotly integration
 
@@ -196,6 +199,7 @@ in tests.
 | `relayout.ts`    | Debounced viewport recomputation, tick alignment.                      |
 | `selected.ts`    | Translates Plotly selection events into a `SELECTION` dispatch.        |
 | `staging.ts`     | Ghost-fill markers + drag-resizable stage shape (Add Points, Fill Gaps). |
+| `shapes.ts`      | Composes `layout.shapes` by name so each writer keeps the others' shapes. |
 | `interaction.ts` | High-level "user clicked a point" / "user dragged the stage" wiring.   |
 | `operations.ts`  | Per-op redraw concerns (highlighting after a filter, fading after delete). |
 | `zoom.ts`        | Synchronized multi-axis zoom + scroll-zoom handling.                   |
@@ -243,6 +247,18 @@ the `observationsBulkBody` serializer. `unwrap` bridges `ApiResponse` to the
 thrown errors this glue surfaces. None of it is a transport — swapping the QC
 client out is a `@hydroserver/client` change, not an app one.
 
+**Edit entry.** The row Edit button on a source (`StartEditingFlow.vue`)
+picks the managed datastream to edit and, through `useEditEntry()`, sets it
+as the edit target and switches to the Edit view, resuming an in-progress
+session, or opening the session-window step when one is needed. Session
+window validity (inside the source's extent, no gap before or after
+committed history) is a pure util, `utils/sessionWindow.ts`, used by the
+session-window dialog. `startSession` only clamps the chosen window to the
+source's extent (`clampSpecToSource`) as a backstop. Once editing, context refresh
+(`refreshGraphSeriesArray`) never fetches the edit target: its data is
+owned by the session (working copy, `startSession`, `viewSession`,
+`resumeWorkingCopy`).
+
 Two contract notes worth keeping in mind:
 
 - **The backend stores the operation DAG as metadata only — it never replays
@@ -288,7 +304,7 @@ Two contract notes worth keeping in mind:
   datastream's cached observations are never edited. It is invalidated when
   the editor closes through `exitToSelect` (Close, Save and close, or close
   without saving), on commit, when its session or managed datastream is
-  deleted, and when a managed datastream other than the QC target stops being
+  deleted, and when a managed datastream other than the edit target stops being
   plotted; `resetState` clears every copy on a workspace reset. A nav rail
   switch to Select keeps the copy, which then equals the saved state because
   the exit guard saves or discards first. The next preview or resume rebuilds
@@ -352,8 +368,8 @@ package, not the app.
 **Permission gating.** QC editing writes to the source datastream's workspace
 (creates the managed datastream, pushes observations), so the editor's entry
 points are gated on the signed-in user's workspace role via
-`useWorkspacePermissions()` — a read-only collaborator sees disabled Start
-editing / Save / Commit controls and an explanation instead of a mid-flow 403,
+`useWorkspacePermissions()`: a read-only collaborator sees a disabled row
+Edit button, and disabled Save / Commit controls, with an explanation instead of a mid-flow 403,
 and each workspace's role is marked on the picker. The role rides along on the
 `Workspace` object (`collaboratorRole.permissions`; owners have a null role;
 admins override), so no extra request is needed.
@@ -379,9 +395,9 @@ Three constraints shape the implementation:
   `snap:<sessionId>:<opIndex>` so legend rendering, colour assignment,
   visibility and reorder work unchanged. `isSnapshotId()` guards the paths
   that would otherwise treat one as real: `refreshGraphSeriesArray` skips its
-  fetch, `releaseManagedDatastream` drops them when the editor closes, and
+  fetch, `clearEditTarget` drops them when the editor closes, and
   the share encoder keeps them out of `ds` (they use their own `snap` key, so
-  the QC-target-is-first rule and the `h`/`ya` bitmask indices still hold).
+  the `h`/`ya` bitmask indices over the plotted list still hold).
 
 ## Routing and auth
 
@@ -394,7 +410,8 @@ every navigation:
 - **`hasWorkspaceGuard`** — redirects users without a selected workspace
   to `/workspaces`.
 
-The nav rail's "Edit" entry is gated behind a selected QC datastream. Leaving
+The nav rail's "Edit" entry is enabled only while an edit target is set: it
+returns to the open editor and never picks one itself. Leaving
 the Edit view with edits not yet saved to the session runs the "Unsaved
 edits" dialog: Save & continue saves a draft to the in-progress session and
 Discard returns to the last save. The unsaved state comes from

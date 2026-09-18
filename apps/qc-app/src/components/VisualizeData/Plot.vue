@@ -265,36 +265,29 @@
           </v-card>
         </v-menu>
 
-        <v-speed-dial
+        <v-menu
           v-if="!preview"
-          v-model="rangeDialOpen"
-          location="bottom center"
-          transition="fade-transition"
+          v-model="contextRangeOpen"
+          :close-on-content-click="false"
+          location="bottom end"
+          offset="6"
         >
-          <template #activator="{ props: activatorProps }">
+          <template #activator="{ props: menuProps }">
             <v-btn
-              v-bind="activatorProps"
+              v-bind="menuProps"
               size="small"
               variant="text"
-              icon="mdi-magnify-scan"
-              title="Zoom to range (does not reload data)"
-              aria-label="Zoom to range"
-            />
+              prepend-icon="mdi-calendar-range"
+              data-testid="context-range-btn"
+              title="Context range"
+            >
+              Context
+            </v-btn>
           </template>
-
-          <v-btn
-            v-for="option in editorDateOptions"
-            :key="option.id"
-            color="surface"
-            variant="flat"
-            size="small"
-            :title="option.title"
-            class="text-none text-body-small font-weight-medium border elevation-2"
-            @click="selectRangePreset(option.id)"
-          >
-            {{ option.label }}
-          </v-btn>
-        </v-speed-dial>
+          <v-card width="300" class="pa-3" data-testid="context-range-menu">
+            <DataVisTimeFilters description="How much of the source and plotted datastreams to show around the session. Your edits are not reloaded." />
+          </v-card>
+        </v-menu>
       </div>
     </div>
 
@@ -411,18 +404,15 @@ import {
   handleRelayout,
   zoomXaxisTo,
 } from '@/utils/plotting/plotly'
-import {
-  ALL_PRESET_ID,
-  TIME_RANGE_PRESETS,
-  presetWindow,
-} from '@/utils/timeRangePresets'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
+import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useQcSessionStore } from '@/store/qcSession'
 
 // Preview strips the in-plot chrome for the Select view.
 const props = defineProps<{
@@ -446,9 +436,11 @@ const {
   previewMode,
   plotlyRef,
   activeTab,
+  pendingShareZoom,
 } = storeToRefs(usePlotlyStore())
 const { selectedData, hasSelectionShape, qcDatastream } =
   storeToRefs(useDataVisStore())
+const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
 
 const tooltipsAutoDisabled = computed(
   () =>
@@ -511,8 +503,6 @@ const yReadoutUnit = computed(() => {
   return symbol ? ` ${symbol}` : ''
 })
 
-const { graphSeriesArray } = storeToRefs(usePlotlyStore())
-
 // Default left placement; promote to right when the measured chip
 // fits between the axis line and the plot's right edge.
 const chipEls = new Map<string, HTMLElement>()
@@ -571,50 +561,32 @@ async function copyShareableLink() {
   }
 }
 
-const earliestDataX = computed<number | null>(() => {
-  let min = Infinity
-  for (const s of graphSeriesArray.value) {
-    const xs = s.data?.dataX
-    if (!xs?.length) continue
-    const first = xs[0] as number
-    if (first < min) min = first
-  }
-  return Number.isFinite(min) ? min : null
+const contextRangeOpen = ref(false)
+
+const editWindow = computed(() => {
+  const s = viewedSession.value ?? inProgressSession.value
+  return s
+    ? {
+        begin: Date.parse(s.phenomenonTimeStart),
+        end: Date.parse(s.phenomenonTimeEnd),
+      }
+    : null
 })
 
-const latestDataX = computed<number | null>(() => {
-  let max = -Infinity
-  for (const s of graphSeriesArray.value) {
-    const xs = s.data?.dataX
-    if (!xs?.length) continue
-    const last = xs[xs.length - 1] as number
-    if (last > max) max = last
+// The editor opens on the session window; context stays a zoom-out away.
+function zoomToEditWindow() {
+  const w = editWindow.value
+  if (!w || !plotlyRef.value) return
+  zoomXaxisTo(plotlyRef.value, w.begin, w.end)
+  requestTableScroll(w.begin)
+}
+
+watch(
+  () => editWindow.value && `${editWindow.value.begin}-${editWindow.value.end}`,
+  () => {
+    if (!props.preview) zoomToEditWindow()
   }
-  return Number.isFinite(max) ? max : null
-})
-
-const editorDateOptions = TIME_RANGE_PRESETS.filter((o) => o.label !== 'YTD')
-
-const rangeDialOpen = ref(false)
-
-function selectRangePreset(id: number) {
-  onEditorDatePreset(id)
-  rangeDialOpen.value = false
-}
-
-// Editor presets are a pure x-axis zoom (no refetch) so they don't blow away
-// the edit history. They resolve against the loaded data.
-function onEditorDatePreset(id: number) {
-  if (earliestDataX.value == null || latestDataX.value == null) return
-  const range = presetWindow(id, {
-    begin: new Date(earliestDataX.value),
-    end: new Date(latestDataX.value),
-  })
-  if (!range) return
-  zoomXaxisTo(plotlyRef.value, range.begin.getTime(), range.end.getTime())
-  // Keep the table in sync: scroll it so the range's first row is on top.
-  requestTableScroll(range.begin.getTime())
-}
+)
 
 function toggleTooltips() {
   // Manual override; switching back to auto must go through the
@@ -689,6 +661,9 @@ const keyboardShortcuts = [
 
 let plotResizeObserver: ResizeObserver | null = null
 let pendingResizeFrame: number | null = null
+let mountDrawTimer: ReturnType<typeof setTimeout> | null = null
+// Deferred work checks this so it never touches a detached plot.
+let isUnmounted = false
 
 onMounted(async () => {
   // Flip before handleNewPlot so createPlotlyOption emits the
@@ -697,13 +672,17 @@ onMounted(async () => {
   updateOptions()
 
   // Wait for the view-switch animation to expand the container.
-  setTimeout(async () => {
+  mountDrawTimer = setTimeout(async () => {
+    mountDrawTimer = null
     updateOptions()
-    const drawn = handleNewPlot(plot.value)
-    if (!props.preview) onEditorDatePreset(ALL_PRESET_ID)
-    await drawn
+    // A share-URL zoom, if any, is applied and cleared inside
+    // handleNewPlot itself, so capture it before that happens: it
+    // should win over the session-window zoom below.
+    const hadPendingShareZoom = !!pendingShareZoom.value
+    await handleNewPlot(plot.value)
+    if (isUnmounted) return
+    if (!props.preview && !hadPendingShareZoom) zoomToEditWindow()
 
-    // Unmounted while drawing.
     const target = plot.value
     if (target && typeof ResizeObserver !== 'undefined') {
       // The plot can be laid out before the container reaches its final
@@ -734,8 +713,13 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  isUnmounted = true
   // Reset so the next Plot mount in Edit view doesn't inherit preview.
   if (previewMode.value) previewMode.value = false
+  if (mountDrawTimer != null) {
+    clearTimeout(mountDrawTimer)
+    mountDrawTimer = null
+  }
   if (pendingResizeFrame != null) {
     cancelAnimationFrame(pendingResizeFrame)
     pendingResizeFrame = null
@@ -749,6 +733,7 @@ onBeforeUnmount(() => {
 const onTabChange = () => {
   if (tab.value === 'plot') {
     setTimeout(() => {
+      if (isUnmounted) return
       setPlotSelection(selectedData.value || [])
     })
   }

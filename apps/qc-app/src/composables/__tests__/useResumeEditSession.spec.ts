@@ -5,18 +5,10 @@ import { createPinia, setActivePinia } from 'pinia'
 
 // vi.mock factories are hoisted above module-level consts, so anything they
 // close over has to be created inside vi.hoisted.
-const {
-  datastreams,
-  plotDatastream,
-  setQcDatastream,
-  resumeDatastreamId,
-  error,
-} = vi.hoisted(() => {
+const { datastreams, resumeDatastreamId, error } = vi.hoisted(() => {
   const { ref: r } = require('vue') as typeof import('vue')
   return {
     datastreams: r<any[]>([]),
-    plotDatastream: vi.fn(),
-    setQcDatastream: vi.fn(),
     resumeDatastreamId: r<string | null>(null),
     error: vi.fn(),
   }
@@ -26,11 +18,7 @@ const {
 vi.mock('@/store/dataVisualization', async () => {
   const { defineStore } = await import('pinia')
   return {
-    useDataVisStore: defineStore('dataVisualization', () => ({
-      datastreams,
-      plotDatastream,
-      setQcDatastream,
-    })),
+    useDataVisStore: defineStore('dataVisualization', () => ({ datastreams })),
   }
 })
 
@@ -47,7 +35,7 @@ vi.mock('@uwrl/qc-utils', () => ({ Snackbar: { error } }))
 
 import { useResumeEditSession } from '../useResumeEditSession'
 
-const enterEdit = vi.fn()
+const resume = vi.fn()
 
 let pinia: ReturnType<typeof createPinia>
 // The stores are module-level refs shared across tests, so a host left
@@ -58,7 +46,7 @@ const mountHost = () => {
   const wrapper = mount(
     defineComponent({
       setup() {
-        useResumeEditSession(enterEdit)
+        useResumeEditSession(resume)
         return () => null
       },
     }),
@@ -77,6 +65,7 @@ beforeEach(() => {
   pinia = createPinia()
   setActivePinia(pinia)
   vi.clearAllMocks()
+  resume.mockResolvedValue(undefined)
   datastreams.value = []
   resumeDatastreamId.value = null
 })
@@ -88,14 +77,12 @@ describe('useResumeEditSession', () => {
   it('resumes when the catalog arrives after mount', async () => {
     resumeDatastreamId.value = 'mgd-1'
     mountHost()
-    expect(enterEdit).not.toHaveBeenCalled()
+    expect(resume).not.toHaveBeenCalled()
 
     datastreams.value = [{ id: 'mgd-1' }]
     await flushPromises()
 
-    expect(plotDatastream).toHaveBeenCalledWith({ id: 'mgd-1' })
-    expect(setQcDatastream).toHaveBeenCalledWith('mgd-1')
-    expect(enterEdit).toHaveBeenCalled()
+    expect(resume).toHaveBeenCalledWith('mgd-1')
   })
 
   it('resumes immediately when the catalog is already loaded', async () => {
@@ -103,14 +90,14 @@ describe('useResumeEditSession', () => {
     datastreams.value = [{ id: 'mgd-1' }]
     mountHost()
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalled()
+    expect(resume).toHaveBeenCalledWith('mgd-1')
   })
 
   it('does nothing without a stored session', async () => {
     datastreams.value = [{ id: 'mgd-1' }]
     mountHost()
     await flushPromises()
-    expect(enterEdit).not.toHaveBeenCalled()
+    expect(resume).not.toHaveBeenCalled()
   })
 
   it('drops a pointer to a datastream missing from the catalog', async () => {
@@ -119,7 +106,7 @@ describe('useResumeEditSession', () => {
     datastreams.value = [{ id: 'mgd-1' }]
     await flushPromises()
 
-    expect(enterEdit).not.toHaveBeenCalled()
+    expect(resume).not.toHaveBeenCalled()
     expect(resumeDatastreamId.value).toBeNull()
   })
 
@@ -128,16 +115,16 @@ describe('useResumeEditSession', () => {
     mountHost()
     datastreams.value = [{ id: 'mgd-1' }]
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalledTimes(1)
+    expect(resume).toHaveBeenCalledTimes(1)
 
     datastreams.value = [{ id: 'mgd-1' }, { id: 'mgd-2' }]
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalledTimes(1)
+    expect(resume).toHaveBeenCalledTimes(1)
   })
 
   it('surfaces a failure instead of failing silently', async () => {
     resumeDatastreamId.value = 'mgd-1'
-    enterEdit.mockRejectedValueOnce(new Error('boom'))
+    resume.mockRejectedValueOnce(new Error('boom'))
     mountHost()
     datastreams.value = [{ id: 'mgd-1' }]
     await flushPromises()

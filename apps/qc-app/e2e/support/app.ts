@@ -2,7 +2,7 @@
  * Flow helpers shared by every mocked e2e spec.
  *
  * Specs should usually go through these so the "boot → pick workspace
- * → plot datastream → open edit view" preamble doesn't get copy-pasted
+ * → Edit a row → start a session" preamble doesn't get copy-pasted
  * across 15 files. The helpers assume `installMocks()` has been
  * called; they do not install mocks themselves.
  */
@@ -121,37 +121,24 @@ export async function plotDatastreamById(
 }
 
 /**
- * Full "ready to edit" preamble: home → plot → switch to edit view.
- * After this returns the EditDrawer is visible and operation panels
- * can be opened via `op-<id>` testids.
+ * Enter the editor the way a user does: the row's Edit button, the managed
+ * datastream's "Start new session", then Start in the window step. Needs
+ * `installMocks(page, { qcHistories: true })`.
  */
 export async function setupEditView(page: Page): Promise<void> {
   await gotoHome(page)
-  await plotFirstDatastream(page)
-  await page.getByTestId('nav-rail-item-edit').click()
+  await startSessionFromRow(page)
   await expect(page.getByText('Filter Data')).toBeVisible()
 }
 
 /**
- * Enter the editor through a QC session, which is what puts Save and Commit
- * in the history footer: plot the raw source from its chooser, Start editing,
- * and start a new session on the managed datastream. `setupEditView` only
- * switches views and never opens a session. Needs
- * `installMocks(page, { qcHistories: true })`.
+ * From Home: the source row's Edit button, "Start new session" on the managed
+ * datastream, then Start with the default window. Waits for the editor footer.
  */
-export async function setupSessionEditView(page: Page): Promise<void> {
-  await gotoHome(page)
-  await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
-  await page
-    .getByTestId(`plot-option-${DATASTREAM_ID}`)
-    .locator('input')
-    .check()
-  await page.getByTestId('plot-source-apply').click()
-  await page
-    .getByTestId('data-loading-indicator')
-    .waitFor({ state: 'hidden', timeout: 30_000 })
-  await page.getByRole('button', { name: 'Start editing' }).click()
+export async function startSessionFromRow(page: Page): Promise<void> {
+  await page.getByTestId(`edit-datastream-${DATASTREAM_ID}`).click()
   await page.getByTestId(`edit-managed-${MANAGED_DATASTREAM_ID}`).click()
+  await page.getByTestId('session-window-start').click()
   await expect(page.getByTestId('exit-save-btn')).toBeVisible({
     timeout: 30_000,
   })

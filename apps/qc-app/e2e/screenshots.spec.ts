@@ -27,10 +27,10 @@ import { installMocks } from './support/mocks'
 import {
   gotoHome,
   setupEditView,
-  setupSessionEditView,
   openOp,
   plotFirstDatastream,
   plotDatastreamById,
+  startSessionFromRow,
   waitForHomeReady,
 } from './support/app'
 import { selectAllPoints } from './support/ops'
@@ -147,7 +147,7 @@ test.describe('docs screenshots', () => {
 
   test('edit view (full layout)', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await snapPage(page, 'edit-view.png')
   })
@@ -174,15 +174,15 @@ test.describe('docs screenshots', () => {
   }) => {
     await page.setViewportSize(STD_VIEWPORT)
     await installMocks(page, {
+      qcHistories: true,
       observationsById: {
         [DATASTREAM_ID]: buildObservations(),
         [DATASTREAM_ID_B]: buildTemperatureObservations(),
       },
     })
     await gotoHome(page)
-    await plotDatastreamById(page, DATASTREAM_ID)
     await plotDatastreamById(page, DATASTREAM_ID_B)
-    await page.getByTestId('nav-rail-item-edit').click()
+    await startSessionFromRow(page)
     await expect(page.getByText('Filter Data')).toBeVisible()
     await page.waitForTimeout(800)
     await snapPage(page, 'edit-view-multi.png')
@@ -190,7 +190,7 @@ test.describe('docs screenshots', () => {
 
   test('data points mode menu (auto, threshold visible)', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await page.getByTestId('tooltips-mode-btn').click()
     const menu = page.getByTestId('tooltips-mode-menu')
@@ -200,7 +200,7 @@ test.describe('docs screenshots', () => {
 
   test('table view (observations editable rows)', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     // Plot tab is the default; switch to Table.
     await page.getByRole('button', { name: /^Table$/ }).click()
@@ -211,7 +211,7 @@ test.describe('docs screenshots', () => {
 
   test('plot help menu (open)', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     // The help button is the only `?` icon in the toolbar.
     await page.getByRole('button', { name: /plot controls/i }).click()
@@ -248,7 +248,7 @@ test.describe('docs screenshots', () => {
   for (const id of filterOps) {
     test(`filter panel — ${id}`, async ({ page }) => {
       await page.setViewportSize(TALL_VIEWPORT)
-      await installMocks(page)
+      await installMocks(page, { qcHistories: true })
       await setupEditView(page)
       await openOp(page, id)
       const panel = page.getByTestId(`operation-panel-${id}`)
@@ -267,7 +267,7 @@ test.describe('docs screenshots', () => {
   for (const id of editOps) {
     test(`edit panel — ${id}`, async ({ page }) => {
       await page.setViewportSize(TALL_VIEWPORT)
-      await installMocks(page)
+      await installMocks(page, { qcHistories: true })
       await setupEditView(page)
       // Edit ops require a selection; seed one with a wide value
       // threshold so the panel renders its real body.
@@ -280,7 +280,7 @@ test.describe('docs screenshots', () => {
 
   test('date range mask (filter panel, mask enabled)', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await openOp(page, 'valueThreshold')
     const panel = page.getByTestId('operation-panel-valueThreshold')
@@ -292,7 +292,7 @@ test.describe('docs screenshots', () => {
 
   test('add panel — qualifyingComments', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await selectAllPoints(page)
     await openOp(page, 'qualifyingComments')
@@ -302,7 +302,7 @@ test.describe('docs screenshots', () => {
 
   test('add panel — addPoints', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await openOp(page, 'addPoints')
     const panel = page.getByTestId('operation-panel-addPoints')
@@ -311,7 +311,7 @@ test.describe('docs screenshots', () => {
 
   test('add panel — fillGaps', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await openOp(page, 'fillGaps')
     const panel = page.getByTestId('operation-panel-fillGaps')
@@ -320,7 +320,7 @@ test.describe('docs screenshots', () => {
 
   test('edit history with entries', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await selectAllPoints(page)
     await openOp(page, 'changeValues')
@@ -338,7 +338,7 @@ test.describe('docs screenshots', () => {
   test('commit confirmation dialog', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
     await installMocks(page, { qcHistories: true })
-    await setupSessionEditView(page)
+    await setupEditView(page)
     await selectAllPoints(page)
     await openOp(page, 'changeValues')
     const opPanel = page.getByTestId('operation-panel-changeValues')

@@ -11,7 +11,7 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 
 test.describe('date picker dialog', () => {
   test('opens at the full width of the date picker', async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await openOp(page, 'datetimeRange')
     await waitForSelection(page, 1)

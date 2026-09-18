@@ -239,7 +239,7 @@ The CI gate prints uncovered line numbers per file. Common causes:
 ```
 e2e/
 ├── support/
-│   ├── app.ts        — flow helpers (gotoHome, setupEditView, setupSessionEditView, openOp, waitForSelection)
+│   ├── app.ts        — flow helpers (gotoHome, setupEditView, startSessionFromRow, openOp, waitForSelection)
 │   ├── fixtures.ts   — workspace / datastream / observation fixtures
 │   ├── mocks.ts      — page.route() handlers that stand in for HydroServer
 │   └── ops.ts        — op-specific preambles (selectAllPoints, expectHistoryContains)
@@ -271,8 +271,8 @@ backend. The live golden-path spec is gated by `E2E_LIVE=1`, expects both
 frontends to be running, and enters QC through the Data Management
 same-origin entrypoint. It edits through a QC session, so the workspace
 needs a source datastream with a managed datastream and QC history: the
-spec plots the first source showing the managed-count badge, clicks Start
-editing, and ends by saving and committing the session.
+spec plots the first source showing the managed-count badge, clicks its
+row's pencil (Edit) button, and ends by saving and committing the session.
 
 ### Mocks
 
@@ -305,10 +305,12 @@ session fixtures and apply the app's creates, saves, commits and deletes, so
 a spec can pass a `qcSessionState` array and assert on what was persisted
 (see `submit.spec.ts`).
 
-Save and Commit only appear once a session is open. `setupEditView` switches
-to the Edit view through the rail, which opens no session, so those specs see
-New session in the history footer. Use `setupSessionEditView` (with
-`qcHistories: true`) to go through Start editing and start a session first.
+Save and Commit only appear once a session is open. `setupEditView` enters
+through a row's pencil (Edit) button rather than the nav rail, so it needs
+`installMocks(page, { qcHistories: true })` to give the source a managed
+datastream for the chooser to pick. Use `startSessionFromRow` (also with
+`qcHistories: true`) when a spec needs to plot or pick a range first and
+then enter from the row; `setupEditView` is `gotoHome` plus that call.
 
 ### Fixtures: "now"-anchored timestamps
 

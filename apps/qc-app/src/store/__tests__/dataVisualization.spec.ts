@@ -12,7 +12,7 @@ const mockGraphSeriesArray = shallowRef<any[]>([])
 const mockUpdateOptions = vi.fn()
 const mockClearChartState = vi.fn()
 const mockClearZoomHistory = vi.fn()
-const mockFetchGraphSeries = vi.fn().mockResolvedValue({ id: 'stub', data: {} })
+const mockFetchGraphSeries = vi.fn(async (ds: any) => ({ id: ds.id, name: ds.name, data: {} }))
 const mockBuildGraphSeries = vi.fn((ds: any, data: any) => ({ id: ds.id, name: ds.name, data }))
 const mockAssignSeriesColors = vi.fn()
 const mockRedraw = vi.fn()
@@ -60,14 +60,6 @@ vi.mock('@/store/workingCopies', () => ({
   }),
 }))
 
-// Only `currentView` matters to the store under test; the real store also
-// wires up qcDatastream/operationParams watchers that don't belong here.
-const mockCurrentView = ref<'Edit' | 'Select'>('Select')
-vi.mock('@/store/userInterface', () => ({
-  useUIStore: () => ({ currentView: mockCurrentView.value }),
-  DrawerType: { Edit: 'Edit', Select: 'Select', None: '' },
-}))
-
 // handleNewPlot touches DOM / Plotly; stub everything the store imports.
 vi.mock('@/utils/plotting/plotly', () => ({
   handleNewPlot: vi.fn().mockResolvedValue(undefined),
@@ -95,7 +87,6 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockPlotlyRef.value = null
   mockGraphSeriesArray.value = []
-  mockCurrentView.value = 'Select'
   mockWorkingCopies.clear()
 })
 
@@ -210,47 +201,13 @@ describe('useDataVisStore.filteredDatastreams', () => {
   })
 })
 
-describe('useDataVisStore.qcDatastream', () => {
-  it('resolves the plotted datastream matching qcDatastreamId', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' }), makeDs({ id: 'b' })] as any
-    store.qcDatastreamId = 'b'
-    expect(store.qcDatastream?.id).toBe('b')
-  })
-
-  it('returns null when qcDatastreamId is unset', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' })] as any
-    expect(store.qcDatastream).toBeNull()
-  })
-
-  it('returns null when qcDatastreamId is set but not in plottedDatastreams', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' })] as any
-    store.qcDatastreamId = 'missing'
-    expect(store.qcDatastream).toBeNull()
-  })
-})
-
 describe('useDataVisStore.plotDatastream', () => {
-  it('adds the datastream and auto-elects it as qc when none set', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    await store.plotDatastream(makeDs({ id: 'a' }) as any)
-    expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['a'])
-    expect(store.qcDatastreamId).toBe('a')
-  })
-
-  it('does not change qcDatastreamId when plotting a second datastream', async () => {
+  it('adds a second datastream alongside the first', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     await store.plotDatastream(makeDs({ id: 'a' }) as any)
     await store.plotDatastream(makeDs({ id: 'b' }) as any)
-    expect(store.plottedDatastreams).toHaveLength(2)
-    expect(store.qcDatastreamId).toBe('a')
+    expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['a', 'b'])
   })
 
   it('is idempotent when the datastream is already plotted', async () => {
@@ -264,34 +221,13 @@ describe('useDataVisStore.plotDatastream', () => {
 })
 
 describe('useDataVisStore.unplotDatastream', () => {
-  it('removes the datastream and promotes the previous entry to qc when removing qc', async () => {
+  it('removes only the given datastream', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     await store.plotDatastream(makeDs({ id: 'a' }) as any)
     await store.plotDatastream(makeDs({ id: 'b' }) as any)
-    // qc = 'a'; removing 'a' promotes the datastream at max(0-1,0)=0, now 'b'.
     await store.unplotDatastream('a')
     expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['b'])
-    expect(store.qcDatastreamId).toBe('b')
-  })
-
-  it('leaves qcDatastreamId untouched when removing a non-qc datastream', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    await store.plotDatastream(makeDs({ id: 'a' }) as any)
-    await store.plotDatastream(makeDs({ id: 'b' }) as any)
-    await store.unplotDatastream('b')
-    expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['a'])
-    expect(store.qcDatastreamId).toBe('a')
-  })
-
-  it('clears qcDatastreamId when last plotted datastream is removed', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    await store.plotDatastream(makeDs({ id: 'a' }) as any)
-    await store.unplotDatastream('a')
-    expect(store.plottedDatastreams).toEqual([])
-    expect(store.qcDatastreamId).toBeNull()
   })
 
   it('is a no-op when the id is not present', async () => {
@@ -299,61 +235,191 @@ describe('useDataVisStore.unplotDatastream', () => {
     const store = useDataVisStore()
     await store.unplotDatastream('ghost')
     expect(store.plottedDatastreams).toEqual([])
-    expect(store.qcDatastreamId).toBeNull()
   })
 })
 
 describe('useDataVisStore.setPlottedDatastreams', () => {
-  it('honors qcId when present in the new list', async () => {
+  it('replaces the plotted list and rebuilds', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
-    await store.setPlottedDatastreams(
-      [makeDs({ id: 'a' }), makeDs({ id: 'b' })] as any,
-      'b'
-    )
-    expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['a', 'b'])
-    expect(store.qcDatastreamId).toBe('b')
-  })
-
-  it('falls back to first item when qcId is not in the list', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    await store.setPlottedDatastreams(
-      [makeDs({ id: 'a' }), makeDs({ id: 'b' })] as any,
-      'missing'
-    )
-    expect(store.qcDatastreamId).toBe('a')
-  })
-
-  it('clears qcDatastreamId when the list is empty', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' })] as any
-    store.qcDatastreamId = 'a'
-    await store.setPlottedDatastreams([], null)
-    expect(store.plottedDatastreams).toEqual([])
-    expect(store.qcDatastreamId).toBeNull()
-  })
-
-  it('preserves qcDatastreamId when it still appears in the new list (no qcId arg)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' })] as any
-    store.qcDatastreamId = 'a'
     await store.setPlottedDatastreams([
       makeDs({ id: 'a' }),
       makeDs({ id: 'b' }),
     ] as any)
-    expect(store.qcDatastreamId).toBe('a')
+    expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['a', 'b'])
+  })
+})
+
+const managedPair = async () => {
+  const { useDataVisStore } = await import('@/store/dataVisualization')
+  const store = useDataVisStore()
+  const source = makeDs({ id: 'src', phenomenonBeginTime: '2025-01-01T00:00:00Z', phenomenonEndTime: '2025-12-31T00:00:00Z' })
+  const managed = makeDs({ id: 'mgd' })
+  const other = makeDs({ id: 'other', phenomenonBeginTime: '2025-01-01T00:00:00Z', phenomenonEndTime: '2025-12-31T00:00:00Z' })
+  store.datastreams = [source, managed, other] as any
+  store.qcHistories = [
+    { id: 'h1', sourceDatastreamId: 'src', managedDatastreamId: 'mgd' },
+  ] as any
+  return { store, source, managed, other }
+}
+
+describe('useDataVisStore edit target', () => {
+  it('plotting never picks an edit target', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    expect(store.qcDatastreamId).toBeNull()
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['other'])
   })
 
-  it('promotes first item when current qc is no longer in list (no qcId arg)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' })] as any
-    store.qcDatastreamId = 'a'
-    await store.setPlottedDatastreams([makeDs({ id: 'c' })] as any)
-    expect(store.qcDatastreamId).toBe('c')
+  it('resolves the edit target from the catalog without plotting it', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    expect(store.qcDatastream?.id).toBe('mgd')
+    expect(store.plottedDatastreams).toEqual([])
+  })
+
+  it('orders series as edit target, source, then plotted', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.setEditTarget('mgd')
+    expect(store.sourceContextDatastream?.id).toBe('src')
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'src', 'other'])
+  })
+
+  it('does not duplicate a source the user already plotted', async () => {
+    const { store, source, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.plotDatastream(source as any)
+    await store.setEditTarget('mgd')
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'src', 'other'])
+  })
+
+  it('never fetches the edit target when refreshing', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    // `setEditTarget` already loaded `src` as context, so this refresh
+    // updates it in place via `fetchObservationsInRange`, not a fresh fetch.
+    mockFetchGraphSeries.mockClear()
+    mockFetchObservationsInRange.mockClear()
+    await store.refreshGraphSeriesArray()
+    expect(mockFetchObservationsInRange.mock.calls.map((c) => c[0].id)).toEqual(['src'])
+    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
+  })
+
+  it('setEditTarget with nothing plotted still fetches the source as context', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    expect(mockFetchGraphSeries.mock.calls.map((c) => c[0].id)).toEqual(['src'])
+  })
+
+  it('unplotting the last plotted datastream while editing keeps the edit series', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.setEditTarget('mgd')
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    mockClearChartState.mockClear()
+
+    await store.unplotDatastream('other')
+
+    expect(mockGraphSeriesArray.value.some((s) => s.id === 'mgd')).toBe(true)
+    expect(mockClearChartState).not.toHaveBeenCalled()
+  })
+
+  it('setEditRecord adds the edit series, then updates it in place', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    const first = { dataX: [1], history: [] } as any
+    const second = { dataX: [2], history: [] } as any
+    await store.setEditRecord(first)
+    expect(mockGraphSeriesArray.value.find((s) => s.id === 'mgd')?.data).toBe(first)
+    await store.setEditRecord(second)
+    const edits = mockGraphSeriesArray.value.filter((s) => s.id === 'mgd')
+    expect(edits).toHaveLength(1)
+    expect(edits[0].data).toBe(second)
+  })
+
+  it('clearEditTarget keeps the plotted datastreams and drops edit series', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.setEditTarget('mgd')
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    await store.clearEditTarget()
+    expect(store.qcDatastreamId).toBeNull()
+    expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['other'])
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['other'])
+    expect(mockGraphSeriesArray.value.some((s) => s.id === 'mgd')).toBe(false)
+    expect(mockInvalidateWorkingCopy).toHaveBeenCalledWith('mgd')
+  })
+
+  it('unplotting never touches the edit target', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.setEditTarget('mgd')
+    await store.unplotDatastream('other')
+    expect(store.qcDatastreamId).toBe('mgd')
+  })
+
+  it('rebuilding while editing keeps the zoom', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.setEditTarget('mgd')
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    vi.mocked(handleNewPlot).mockClear()
+    mockClearZoomHistory.mockClear()
+
+    await store.unplotDatastream('other')
+
+    expect(handleNewPlot).toHaveBeenCalledWith(undefined, { preserveZoom: true })
+    expect(mockClearZoomHistory).not.toHaveBeenCalled()
+  })
+
+  it('rebuilding in Select drops the zoom', async () => {
+    const { store, other, source } = await managedPair()
+    await store.plotDatastream(other as any)
+    await store.plotDatastream(source as any)
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    vi.mocked(handleNewPlot).mockClear()
+    mockClearZoomHistory.mockClear()
+
+    await store.unplotDatastream('other')
+
+    expect(handleNewPlot).toHaveBeenCalledWith(undefined, { preserveZoom: false })
+    expect(mockClearZoomHistory).toHaveBeenCalled()
+  })
+
+  it('a new edit target starts from an empty session store', async () => {
+    const { store } = await managedPair()
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    const sessions = useQcSessionStore()
+    await store.setEditTarget('mgd')
+    sessions.historyId = 'h1'
+    sessions.sessions = [{ id: 's1', status: 'in_progress' }] as any
+    sessions.currentSessionId = 's1'
+    sessions.viewedSessionId = 's1'
+    sessions.resumeDatastreamId = 'mgd'
+    await store.clearEditTarget()
+
+    await store.setEditTarget('other')
+
+    expect(sessions.historyId).toBeNull()
+    expect(sessions.sessions).toEqual([])
+    expect(sessions.viewedSession).toBeNull()
+    // The resume pointer is the entry flow's to set.
+    expect(sessions.resumeDatastreamId).toBe('mgd')
+  })
+
+  it('setting the same edit target keeps its sessions', async () => {
+    const { store } = await managedPair()
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    const sessions = useQcSessionStore()
+    await store.setEditTarget('mgd')
+    sessions.historyId = 'h1'
+
+    await store.setEditTarget('mgd')
+
+    expect(sessions.historyId).toBe('h1')
   })
 })
 
@@ -412,6 +478,25 @@ describe('useDataVisStore.setDateRange', () => {
       end: new Date('2025-02-01T00:00:00Z'),
     })
     expect(mockRedraw).not.toHaveBeenCalled()
+  })
+
+  it('refreshes context when only the edit target is set, nothing plotted', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    // `setEditTarget` already loaded `src` as context, so the date change
+    // updates it in place via `fetchObservationsInRange`.
+    mockFetchObservationsInRange.mockClear()
+    mockRedraw.mockClear()
+    mockClearZoomHistory.mockClear()
+
+    await store.setDateRange({
+      begin: new Date('2025-02-01T00:00:00Z'),
+      end: new Date('2025-03-01T00:00:00Z'),
+    })
+
+    expect(mockFetchObservationsInRange.mock.calls.map((c) => c[0].id)).toContain('src')
+    expect(mockRedraw).toHaveBeenCalledWith(false, true)
+    expect(mockClearZoomHistory).not.toHaveBeenCalled()
   })
 })
 
@@ -542,7 +627,6 @@ describe('useDataVisStore time range presets', () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     store.plottedDatastreams = [oldDs(), newerDs()] as any
-    store.qcDatastreamId = 'old'
     await store.unplotDatastream('newer')
     expect(store.endDate.toISOString()).toBe('2021-06-30T12:00:00.000Z')
   })
@@ -557,58 +641,6 @@ describe('useDataVisStore time range presets', () => {
     expect(store.selectedDateBtnId).toBe(-1)
     expect(store.beginDate.getTime()).toBe(begin.getTime())
     expect(store.endDate.getTime()).toBe(end.getTime())
-  })
-})
-
-// Plotting/unplotting in the Edit view must not move the edit session's
-// loaded window (finding: preset re-anchoring was reachable from
-// DatastreamInformationCard / PlottedDatastreams in the Edit view too).
-describe('useDataVisStore time range freeze in the Edit view', () => {
-  const OLD_END = '2021-06-30T12:00:00Z'
-  const oldDs = (overrides: Record<string, any> = {}) =>
-    makeDs({
-      id: 'old',
-      phenomenonBeginTime: '2019-01-01T00:00:00Z',
-      phenomenonEndTime: OLD_END,
-      ...overrides,
-    })
-  const newerDs = () =>
-    makeDs({
-      id: 'newer',
-      phenomenonBeginTime: '2020-01-01T00:00:00Z',
-      phenomenonEndTime: '2022-03-01T00:00:00Z',
-    })
-
-  it('leaves beginDate/endDate unchanged when plotting a datastream', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    mockCurrentView.value = 'Edit'
-    const begin = store.beginDate.getTime()
-    const end = store.endDate.getTime()
-    await store.plotDatastream(oldDs() as any)
-    expect(store.beginDate.getTime()).toBe(begin)
-    expect(store.endDate.getTime()).toBe(end)
-  })
-
-  it('leaves beginDate/endDate unchanged when unplotting a datastream', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [oldDs(), newerDs()] as any
-    store.qcDatastreamId = 'old'
-    mockCurrentView.value = 'Edit'
-    const begin = store.beginDate.getTime()
-    const end = store.endDate.getTime()
-    await store.unplotDatastream('newer')
-    expect(store.beginDate.getTime()).toBe(begin)
-    expect(store.endDate.getTime()).toBe(end)
-  })
-
-  it('still re-anchors in the Select view (unaffected by the freeze)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    mockCurrentView.value = 'Select'
-    await store.plotDatastream(oldDs() as any)
-    expect(store.endDate.toISOString()).toBe('2021-06-30T12:00:00.000Z')
   })
 })
 
@@ -661,35 +693,14 @@ describe('useDataVisStore persisted preset', () => {
   })
 })
 
-describe('useDataVisStore.setQcDatastream', () => {
-  it('updates qcDatastreamId and calls updateOptions', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.plottedDatastreams = [makeDs({ id: 'a' }), makeDs({ id: 'b' })] as any
-    store.qcDatastreamId = 'a'
-    await store.setQcDatastream('b')
-    expect(store.qcDatastreamId).toBe('b')
-    expect(mockUpdateOptions).toHaveBeenCalled()
-  })
-
-  it('is a no-op when id matches current qcDatastreamId', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.qcDatastreamId = 'a'
-    await store.setQcDatastream('a')
-    expect(mockUpdateOptions).not.toHaveBeenCalled()
-  })
-})
-
 describe('useDataVisStore.clearPlottedDatastreams + toggleDatastream', () => {
-  it('clearPlottedDatastreams empties the list and clears qcDatastreamId', async () => {
+  it('clearPlottedDatastreams empties the list', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     await store.plotDatastream(makeDs({ id: 'a' }) as any)
     await store.plotDatastream(makeDs({ id: 'b' }) as any)
     await store.clearPlottedDatastreams()
     expect(store.plottedDatastreams).toEqual([])
-    expect(store.qcDatastreamId).toBeNull()
   })
 
   it('clearPlottedDatastreams is a no-op when already empty', async () => {
@@ -707,103 +718,6 @@ describe('useDataVisStore.clearPlottedDatastreams + toggleDatastream', () => {
     expect(store.plottedDatastreams.map((d) => d.id)).toEqual(['a'])
     await store.toggleDatastream(ds)
     expect(store.plottedDatastreams).toEqual([])
-  })
-})
-
-describe('useDataVisStore.adoptManagedDatastream', () => {
-  it('reuses the source series as the managed working copy (one item, data kept)', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    const sourceData = { tag: 'loaded-record' }
-    store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
-    store.qcDatastreamId = 'src'
-    mockGraphSeriesArray.value = [
-      { id: 'src', name: 'Raw', data: sourceData, color: '#1', yAxisLabel: 'T' },
-    ]
-
-    await store.adoptManagedDatastream(
-      makeDs({ id: 'mgd', name: 'Raw (QC)' }) as any,
-      'src'
-    )
-
-    // Single plotted item, now the managed datastream as the QC target.
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd'])
-    expect(store.qcDatastreamId).toBe('mgd')
-    // The loaded series was re-keyed in place, keeping its data...
-    expect(mockGraphSeriesArray.value).toHaveLength(1)
-    expect(mockGraphSeriesArray.value[0].id).toBe('mgd')
-    expect(mockGraphSeriesArray.value[0].name).toBe('Raw (QC)')
-    expect(mockGraphSeriesArray.value[0].data).toEqual(sourceData)
-    // ...and the working copy was reused, not re-fetched (managed is empty).
-    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
-    expect(mockFetchObservationsInRange).not.toHaveBeenCalled()
-  })
-})
-
-describe('useDataVisStore.releaseManagedDatastream', () => {
-  const withHistory = (store: any) => {
-    store.qcHistories = [
-      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' },
-    ] as any
-    store.datastreams = [
-      makeDs({ id: 'src', name: 'Raw' }),
-      makeDs({ id: 'mgd', name: 'Raw (QC)' }),
-    ] as any
-  }
-
-  // Managed datastreams are hidden from the catalog table, so leaving the
-  // editor with one plotted shows a plot with no row selected.
-  it('swaps the managed datastream back to its source and refetches its data', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    withHistory(store)
-    const working = { tag: 'uncommitted-edits' }
-    store.plottedDatastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
-    store.qcDatastreamId = 'mgd'
-    mockGraphSeriesArray.value = [
-      { id: 'mgd', name: 'Raw (QC)', data: working, color: '#1', yAxisLabel: 'T' },
-    ]
-
-    await store.releaseManagedDatastream()
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
-    expect(store.qcDatastreamId).toBe('src')
-    // The editor's working copy carries uncommitted edits, so it is dropped
-    // and the source's stored data fetched instead.
-    expect(
-      mockGraphSeriesArray.value.some((s: any) => s.data === working)
-    ).toBe(false)
-    expect(mockFetchGraphSeries).toHaveBeenCalled()
-    expect(mockFetchGraphSeries.mock.calls[0][0].id).toBe('src')
-  })
-
-  it('is a no-op when the plotted datastream is not a managed one', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    withHistory(store)
-    store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
-    store.qcDatastreamId = 'src'
-
-    await store.releaseManagedDatastream()
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
-    expect(store.qcDatastreamId).toBe('src')
-  })
-
-  it('leaves the plot alone when the source is missing from the catalog', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.qcHistories = [
-      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'gone' },
-    ] as any
-    store.datastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
-    store.plottedDatastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
-    store.qcDatastreamId = 'mgd'
-
-    await store.releaseManagedDatastream()
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd'])
-    expect(store.qcDatastreamId).toBe('mgd')
   })
 })
 
@@ -861,35 +775,30 @@ describe('useDataVisStore snapshot series', () => {
     expect(store.qcDatastreamId).toBeNull()
   })
 
-  // Snapshots belong to the editor. The Select view lists real datastreams
-  // and lets the user pick a QC target, neither of which a snapshot can be.
-  it('drops snapshots when the editor releases the managed datastream', async () => {
+  // Snapshots belong to the editor. Leaving the edit target must not leave
+  // a replay line stranded on the plot.
+  it('drops snapshots when the editor clears the edit target', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
-    store.qcHistories = [
-      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' },
-    ] as any
-    store.datastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
-    store.plottedDatastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
+    store.datastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
     store.qcDatastreamId = 'mgd'
 
     await store.addSnapshotSeries('snap:sess-1:0', { history: [] } as any, meta as any)
-    await store.releaseManagedDatastream()
+    await store.clearEditTarget()
 
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
+    expect(store.qcDatastreamId).toBeNull()
     expect(
       mockGraphSeriesArray.value.some((s: any) => s.id === 'snap:sess-1:0')
     ).toBe(false)
   })
 
-  it('drops snapshots even when there is no managed datastream to release', async () => {
+  it('drops snapshots even when there is no edit target set', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
-    store.qcDatastreamId = 'src'
 
     await store.addSnapshotSeries('snap:sess-1:0', { history: [] } as any, meta as any)
-    await store.releaseManagedDatastream()
+    await store.clearEditTarget()
 
     expect(
       store.plottedDatastreams.some((d: any) => d.id === 'snap:sess-1:0')
@@ -926,31 +835,6 @@ describe('useDataVisStore.plotSourceSelection', () => {
     ] as any
   }
 
-  it('plots the chosen series and promotes the first as QC target', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    withGroup(store)
-
-    await store.plotSourceSelection('src', ['src', 'mgd-1'])
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual([
-      'src',
-      'mgd-1',
-    ])
-    expect(store.qcDatastreamId).toBe('src')
-  })
-
-  it('makes a managed datastream the QC target when the raw one is not picked', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    withGroup(store)
-
-    await store.plotSourceSelection('src', ['mgd-2'])
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd-2'])
-    expect(store.qcDatastreamId).toBe('mgd-2')
-  })
-
   it('adds and removes within the group in a single call', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
@@ -959,7 +843,6 @@ describe('useDataVisStore.plotSourceSelection', () => {
       makeDs({ id: 'src', name: 'Raw' }),
       makeDs({ id: 'mgd-1', name: 'Raw (QC)' }),
     ] as any
-    store.qcDatastreamId = 'src'
 
     await store.plotSourceSelection('src', ['mgd-1', 'mgd-2'])
 
@@ -974,7 +857,6 @@ describe('useDataVisStore.plotSourceSelection', () => {
     const store = useDataVisStore()
     withGroup(store)
     store.plottedDatastreams = [makeDs({ id: 'other', name: 'Other' })] as any
-    store.qcDatastreamId = 'other'
 
     await store.plotSourceSelection('src', ['mgd-1'])
 
@@ -982,39 +864,17 @@ describe('useDataVisStore.plotSourceSelection', () => {
       'other',
       'mgd-1',
     ])
-    expect(store.qcDatastreamId).toBe('other')
   })
 
-  it('promotes a new QC target when the current one is deselected', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    withGroup(store)
-    store.plottedDatastreams = [
-      makeDs({ id: 'other', name: 'Other' }),
-      makeDs({ id: 'src', name: 'Raw' }),
-    ] as any
-    store.qcDatastreamId = 'src'
-
-    await store.plotSourceSelection('src', ['mgd-1'])
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual([
-      'other',
-      'mgd-1',
-    ])
-    expect(store.qcDatastreamId).toBe('other')
-  })
-
-  it('clears the QC target when nothing is left plotted', async () => {
+  it('empties the group when nothing is selected', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     withGroup(store)
     store.plottedDatastreams = [makeDs({ id: 'mgd-1', name: 'Raw (QC)' })] as any
-    store.qcDatastreamId = 'mgd-1'
 
     await store.plotSourceSelection('src', [])
 
     expect(store.plottedDatastreams).toEqual([])
-    expect(store.qcDatastreamId).toBeNull()
   })
 
   it('ignores ids that do not belong to the source group', async () => {
@@ -1044,37 +904,10 @@ describe('useDataVisStore.plotSourceSelection', () => {
     const store = useDataVisStore()
     withGroup(store)
     store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
-    store.qcDatastreamId = 'src'
 
     await store.plotSourceSelection('src', ['src'])
 
     expect(mockUpdateOptions).not.toHaveBeenCalled()
-  })
-})
-
-// Both the source and a managed datastream can be plotted at once now, so
-// leaving the editor must not re-add a source that is already there.
-describe('useDataVisStore.releaseManagedDatastream with the source plotted', () => {
-  it('drops the managed datastream instead of duplicating the source', async () => {
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.qcHistories = [
-      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' },
-    ] as any
-    store.datastreams = [
-      makeDs({ id: 'src', name: 'Raw' }),
-      makeDs({ id: 'mgd', name: 'Raw (QC)' }),
-    ] as any
-    store.plottedDatastreams = [
-      makeDs({ id: 'src', name: 'Raw' }),
-      makeDs({ id: 'mgd', name: 'Raw (QC)' }),
-    ] as any
-    store.qcDatastreamId = 'mgd'
-
-    await store.releaseManagedDatastream()
-
-    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
-    expect(store.qcDatastreamId).toBe('src')
   })
 })
 
@@ -1194,13 +1027,17 @@ describe('useDataVisStore managed datastream working copy', () => {
     const store = useDataVisStore()
     withManaged(store)
     mockWorkingCopies.set('mgd', copy)
-    await store.plotDatastream(store.datastreams[1] as any)
+    store.qcDatastreamId = 'mgd'
+    // Seed the series so `invalidateUnplottedWorkingCopies`'s loop actually
+    // has an 'mgd' entry to skip, not an empty array the skip is vacuous over.
+    mockGraphSeriesArray.value = [
+      { id: 'mgd', name: 'Raw (QC)', data: copy.record, color: '#1', yAxisLabel: 'T' },
+    ]
 
-    store.plottedDatastreams = [store.datastreams[0] as any]
     await store.refreshGraphSeriesArray()
 
-    expect(store.qcDatastreamId).toBe('mgd')
-    expect(mockInvalidateWorkingCopy).not.toHaveBeenCalled()
+    expect(mockInvalidateWorkingCopy).not.toHaveBeenCalledWith('mgd')
+    expect(mockFetchGraphSeries.mock.calls.map((c) => c[0].id)).not.toContain('mgd')
   })
 })
 

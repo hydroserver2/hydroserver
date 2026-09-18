@@ -20,17 +20,33 @@ vi.mock('@uwrl/qc-utils', () => ({
 }))
 
 const qcDatastream = ref<{ id: string; phenomenonBeginTime?: string } | null>(null)
+const sourceContextDatastream = ref<{ id: string } | null>(null)
 const beginDate = ref<Date | null>(null)
 const endDate = ref<Date | null>(null)
 const selectedData = ref<number[] | null>(null)
 
+// `vi.fn()`-wrapped so individual tests can override the return value for
+// one call (`mockReturnValueOnce`) to simulate `createPlotlyOption` being
+// invoked while the data-vis store is still under construction, when
+// `storeToRefs` yields an object with no properties at all.
 vi.mock('@/store/dataVisualization', () => ({
-  useDataVisStore: () => ({
+  useDataVisStore: vi.fn(() => ({
     qcDatastream,
+    sourceContextDatastream,
     beginDate,
     endDate,
     selectedData,
-  }),
+  })),
+}))
+
+const viewedSession = ref<{ phenomenonTimeStart: string; phenomenonTimeEnd: string } | null>(null)
+const inProgressSession = ref<{ phenomenonTimeStart: string; phenomenonTimeEnd: string } | null>(null)
+
+vi.mock('@/store/qcSession', () => ({
+  useQcSessionStore: vi.fn(() => ({
+    viewedSession,
+    inProgressSession,
+  })),
 }))
 
 const previewMode = ref(false)
@@ -74,12 +90,15 @@ import {
   COLORS,
   LABEL_COLORS,
   QUALIFIER_COLORS,
+  SOURCE_CONTEXT_COLOR,
   labelColorFor,
   buildQualifierBand,
   createPlotlyOption,
   findGapIndices,
   insertGapBreaks,
 } from '../options'
+import { useDataVisStore } from '@/store/dataVisualization'
+import { useQcSessionStore } from '@/store/qcSession'
 
 const makeSeries = (overrides: Partial<Record<string, unknown>> = {}) => {
   const x = new Float64Array([1, 2, 3, 4, 5])
@@ -169,6 +188,9 @@ describe('createPlotlyOption', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     qcDatastream.value = null
+    sourceContextDatastream.value = null
+    viewedSession.value = null
+    inProgressSession.value = null
     beginDate.value = null
     endDate.value = null
     previewMode.value = false
@@ -324,6 +346,89 @@ describe('createPlotlyOption', () => {
     const opts = createPlotlyOption([qc])
     const main = opts.traces.find((t: any) => t.id === 'qc') as any
     expect(main.marker.opacity).toBe(0)
+  })
+
+  it('puts the first series on the primary axis when nothing is being edited', () => {
+    const a = makeSeries({ id: 'a' })
+    const b = makeSeries({ id: 'b', color: COLORS[2] })
+    const opts = createPlotlyOption([a, b])
+    expect((opts.traces.find((t: any) => t.id === 'a') as any).yaxis).toBe('y')
+    expect((opts.traces.find((t: any) => t.id === 'b') as any).yaxis).toBe('y2')
+  })
+
+  it('draws the source on the edit axis in grey, without its own axis', () => {
+    qcDatastream.value = { id: 'qc' }
+    sourceContextDatastream.value = { id: 'src' }
+    const opts = createPlotlyOption([
+      makeSeries({ id: 'qc' }),
+      makeSeries({ id: 'src', color: COLORS[3] }),
+      makeSeries({ id: 'other', color: COLORS[2] }),
+    ])
+    const src = opts.traces.find((t: any) => t.id === 'src') as any
+    expect(src.yaxis).toBe('y')
+    expect(src.marker.color).toBe(SOURCE_CONTEXT_COLOR)
+    expect(src.selected).toBeUndefined()
+    expect((opts.traces.find((t: any) => t.id === 'other') as any).yaxis).toBe('y2')
+    expect((opts.layout as any).yaxis3).toBeUndefined()
+  })
+
+  it('paints the source under the edit trace', () => {
+    qcDatastream.value = { id: 'qc' }
+    sourceContextDatastream.value = { id: 'src' }
+    const opts = createPlotlyOption([makeSeries({ id: 'qc' }), makeSeries({ id: 'src' })])
+    const ids = opts.traces.map((t: any) => t.id).filter(Boolean)
+    expect(ids.indexOf('src')).toBeLessThan(ids.indexOf('qc'))
+  })
+
+  it('shades the session window while editing', () => {
+    qcDatastream.value = { id: 'qc' }
+    inProgressSession.value = {
+      phenomenonTimeStart: '2025-02-01T00:00:00Z',
+      phenomenonTimeEnd: '2025-03-01T00:00:00Z',
+    }
+    const opts = createPlotlyOption([makeSeries({ id: 'qc' })])
+    const shape = ((opts.layout as any).shapes ?? []).find((s: any) => s.name === 'edit-window')
+    expect(shape.x0).toBe(Date.parse('2025-02-01T00:00:00Z'))
+    expect(shape.x1).toBe(Date.parse('2025-03-01T00:00:00Z'))
+    expect(shape.yref).toBe('paper')
+  })
+
+  it('prefers the viewed session window over the in-progress one', () => {
+    qcDatastream.value = { id: 'qc' }
+    inProgressSession.value = { phenomenonTimeStart: '2025-02-01T00:00:00Z', phenomenonTimeEnd: '2025-03-01T00:00:00Z' }
+    viewedSession.value = { phenomenonTimeStart: '2025-01-01T00:00:00Z', phenomenonTimeEnd: '2025-01-15T00:00:00Z' }
+    const opts = createPlotlyOption([makeSeries({ id: 'qc' })])
+    const shape = (opts.layout as any).shapes.find((s: any) => s.name === 'edit-window')
+    expect(shape.x0).toBe(Date.parse('2025-01-01T00:00:00Z'))
+  })
+
+  it('draws no window without an edit target', () => {
+    inProgressSession.value = { phenomenonTimeStart: '2025-02-01T00:00:00Z', phenomenonTimeEnd: '2025-03-01T00:00:00Z' }
+    const opts = createPlotlyOption([makeSeries({ id: 'a' })])
+    expect(((opts.layout as any).shapes ?? []).some((s: any) => s.name === 'edit-window')).toBe(false)
+  })
+
+  it('does not throw when called during store setup, before the data-vis and qcSession refs exist', () => {
+    // Regression: `usePlotlyStore` seeds `plotlyOptions` with
+    // `createPlotlyOption([])` while its own store setup runs, at which
+    // point `useDataVisStore()` (and `useQcSessionStore()`) can still be
+    // under construction. `storeToRefs` on that in-progress store yields
+    // an object with no properties, so every destructured ref is
+    // `undefined` rather than a ref holding `null`.
+    vi.mocked(useDataVisStore).mockReturnValueOnce({} as any)
+    vi.mocked(useQcSessionStore).mockReturnValueOnce({} as any)
+
+    let opts: ReturnType<typeof createPlotlyOption> | undefined
+    expect(() => {
+      opts = createPlotlyOption([])
+    }).not.toThrow()
+
+    expect(opts!.traces).toEqual([])
+    expect(opts!.layout).toBeDefined()
+    expect(opts!.config).toBeDefined()
+    expect(
+      ((opts!.layout as any).shapes ?? []).some((s: any) => s.name === 'edit-window')
+    ).toBe(false)
   })
 })
 

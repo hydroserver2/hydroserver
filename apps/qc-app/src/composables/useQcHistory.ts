@@ -3,8 +3,8 @@
  *
  * Wraps qc-utils' `serializeHistory` / `parseHistory` / `applyHistory`
  * with the consumer-specific glue:
- *   - reading the active wall-clock window from the data-vis store
- *     for the save side
+ *   - using the session window (or, with no session, the loaded
+ *     window) as the saved history's window
  *   - file-picker / blob-download plumbing
  *   - fetching the QC history's window into the active datastream's
  *     `ObservationRecord` before replay (qc-utils itself is data-
@@ -23,6 +23,7 @@ import {
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useObservationStore } from '@/store/observations'
+import { useQcSessionStore } from '@/store/qcSession'
 
 /** Filename for downloaded QC histories: `qc-history-<datastream>-<isoTimestamp>.json`. */
 function defaultFilename(datastreamName?: string): string {
@@ -54,6 +55,23 @@ export function useQcHistory() {
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
   const { fetchObservationsInRange } = useObservationStore()
+  const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
+
+  // While editing, `beginDate`/`endDate` follow the context range, not the
+  // window the edits were made over.
+  function historyWindow() {
+    const session = viewedSession.value ?? inProgressSession.value
+    if (!session) {
+      return {
+        startDate: beginDate.value.toISOString(),
+        endDate: endDate.value.toISOString(),
+      }
+    }
+    return {
+      startDate: new Date(session.phenomenonTimeStart).toISOString(),
+      endDate: new Date(session.phenomenonTimeEnd).toISOString(),
+    }
+  }
 
   /**
    * Serialize the current QC history to JSON and trigger a browser
@@ -68,10 +86,10 @@ export function useQcHistory() {
     // qc-utils' `ObservationRecord` exposes a deep typed shape; the
     // cast pins the value to that public type so vue-tsc doesn't try
     // to structurally re-derive it from the live worker bindings.
-    const history = serializeHistory(series as ObservationRecord, {
-      startDate: beginDate.value.toISOString(),
-      endDate: endDate.value.toISOString(),
-    })
+    const history = serializeHistory(
+      series as ObservationRecord,
+      historyWindow()
+    )
 
     const datastreamName = qcDatastream.value?.name
     downloadJson(history, defaultFilename(datastreamName))

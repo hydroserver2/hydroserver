@@ -22,6 +22,7 @@ contributor can read the modules in the order the code runs.
 | `interaction.ts`  | DOM-level handlers: throttled mousemove crosshair, wheel-zoom, axis-chip placement, y-axis drag-rect widening.         |
 | `operations.ts`   | Imperative helpers callable from components: `zoomXaxisTo`, `toggleTraceVisibility`, `setSelectedPoints`, etc.         |
 | `staging.ts`      | Visual-only overlays while a Find-Gaps / Fill-Gaps operation is staged. Ghost-fill trace + drag-resizable shape.       |
+| `shapes.ts`       | `composeShapes` / `withLiveShapes`: each `layout.shapes` writer replaces only the shapes it names.                     |
 
 The split is not by file size, it's by the Plotly API each module
 talks to. `options.ts` owns trace + layout construction. `events.ts`
@@ -168,8 +169,8 @@ A `GraphSeries` carrying a `snapshot` field is a frozen replay of a QC
 session at one operation, not a live datastream. To `createPlotlyOption` it
 is an ordinary non-QC series: it gets its own overlaying right-side axis and
 its own colour from the shared assigner. That is deliberate. Being able to
-shift a snapshot on its own axis is how the user lines it up against the QC
-target, which is the point of plotting it.
+shift a snapshot on its own axis is how the user lines it up against the
+edit target, which is the point of plotting it.
 
 What differs is upstream, not here: the data never refetches (see
 `refreshGraphSeriesArray`'s `isSnapshotId` guard), and `PlottedDatastreams`
@@ -187,21 +188,61 @@ table, and its check box opens `PlotSourceDialog` rather than toggling.
 dialog's answer as a whole: `ids` is the complete set wanted from that group,
 so members absent from it are unplotted in the same pass.
 
-Doing it in one pass matters. Looping `plotDatastream` / `unplotDatastream`
-would promote the QC target once per change, letting it land on a datastream
-the user is in the middle of deselecting; the batched action promotes once
-against the final set, using the same "entry before the one that left" rule as
-`unplotDatastream`. It also means one `rebuildPlot`, so the coalescing lock
-never has to absorb a burst.
+Doing it in one pass matters even with nothing to promote: looping
+`plotDatastream` / `unplotDatastream` would trigger a `rebuildPlot` per
+change, where the batched action means exactly one, against the final set.
+The coalescing lock never has to absorb a burst.
 
 Additions are appended in `ids` order, which the dialog builds in display
-order (raw first, then managed). That is what keeps the first-plotted-wins QC
-rule predictable: picking raw alongside a managed version from an empty plot
-leaves the raw datastream as QC target.
+order (raw first, then managed). Plotting never singles one out as an edit
+target, so this order only matters for the legend and axis stacking.
 
-`releaseManagedDatastream` has to account for this too: the source can already
-be plotted next to its managed datastream, so it drops the managed entry
-rather than replacing it, which would otherwise duplicate the source.
+## Series roles
+
+`createPlotlyOption` reads roles off the stores, not a field on `GraphSeries`:
+
+- **Edit target** (`useDataVisStore().qcDatastream`): primary axis `y`,
+  black, selectable.
+- **Source context** (`sourceContextDatastream`): shares `y` with the edit
+  target, grey, drawn underneath it, read-only (no selection styling, no
+  own axis).
+- **Everything else** (context traces, and history snapshots): overlaying
+  right-side axes (`y2`, `y3`, …), same as today.
+- **No edit target** (Select view): the first entry in `seriesDatastreams`
+  (the first plotted datastream) takes the primary axis `y`, styled like any
+  other context trace but without an axis chip.
+
+The edit target's data reaches the plot through one store action,
+`setEditRecord(record)`, which upserts its graph series. `useEditSession`
+calls it instead of assigning `selectedSeries.value.data` directly.
+
+## Context range
+
+The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (the same
+preset chips and From / To pickers as the Select view) bound to the same
+`beginDate` / `endDate` store range. Picking a preset or a custom date calls
+`setDateRange`, which, while an edit target is set, reloads only the
+context series (`refreshGraphSeriesArray`, which never fetches the edit
+target) and redraws with `redraw(false, true)` to keep the user's current
+zoom. The edit target's working copy is never re-windowed by this control.
+
+The session window itself is shaded as a layout shape (`name: 'edit-window'`
+in `options.ts`), drawn from `useQcSessionStore().viewedSession` (falling
+back to `inProgressSession`), only while an edit target is set.
+`setEditTarget` resets the session store when the target changes, so the
+previous target's window is never drawn over the new one.
+
+`layout.shapes` has more than one writer: `createPlotlyOption` owns
+`edit-window` and `staging.ts` owns `stage`. `Plotly.update` and
+`Plotly.relayout` replace the whole array, so every write goes through
+`utils/plotting/shapes.ts`: `redraw` and `cropXaxisRange` use
+`withLiveShapes` to swap in the fresh `edit-window` and keep the live
+`stage` band, and the staging flush uses `composeShapes` to do the reverse
+(stage stays first so drag events still address `shapes[0]`).
+
+Plot rebuilds (`rebuildPlot`, run when plotted datastreams change) keep
+the user's zoom while an edit target is set and drop it in the Select
+view.
 
 ## Why `internal.ts` isn't re-exported
 

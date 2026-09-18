@@ -2,8 +2,11 @@
   <div class="d-flex flex-column ga-2 w-100">
     <div>
       <div class="text-body-small text-medium-emphasis">
-        <strong>Loaded time window.</strong>
-        Presets count back from the plotted data's last observation.
+        <template v-if="description">{{ description }}</template>
+        <template v-else>
+          <strong>Loaded time window.</strong>
+          Presets count back from the plotted data's last observation.
+        </template>
       </div>
     </div>
 
@@ -65,6 +68,8 @@ import {
   TIME_RANGE_PRESETS,
 } from '@/utils/timeRangePresets'
 import { storeToRefs } from 'pinia'
+
+defineProps<{ description?: string }>()
 
 const { setDateRange, onDateBtnClick } = useDataVisStore()
 const { beginDate, endDate, selectedDateBtnId } = storeToRefs(useDataVisStore())

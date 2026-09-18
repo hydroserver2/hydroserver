@@ -55,9 +55,9 @@ describe('share encoding primitives', () => {
     expect(axisNameFromIndex(0)).toBe('y')
     expect(axisNameFromIndex(1)).toBe('y2')
     expect(axisNameFromIndex(4)).toBe('y5')
-    expect(axisIndexFromName('y', 5)).toBe(0)
-    expect(axisIndexFromName('y3', 5)).toBe(2)
-    expect(axisIndexFromName('bogus', 5)).toBe(-1)
+    expect(axisIndexFromName('y')).toBe(0)
+    expect(axisIndexFromName('y3')).toBe(2)
+    expect(axisIndexFromName('bogus')).toBe(-1)
   })
 })
 
@@ -160,6 +160,27 @@ describe('encodeShareState — omits defaults', () => {
     expect(q.yz).toBe('0:0~10;1:-5~5.1235')
   })
 
+  it('keeps yz entries for axes beyond the plotted count', () => {
+    const q = encodeShareState({
+      datastreamIds: ['a'],
+      zoom: { xRange: null, yRanges: { y2: [1, 2] } },
+    })
+    expect(q.yz).toBe('1:1~2')
+  })
+
+  it('writes ed only in the Edit view', () => {
+    expect(
+      encodeShareState({
+        editView: true,
+        editDatastreamId: 'mgd',
+        datastreamIds: ['a'],
+      }).ed
+    ).toBe('mgd')
+    expect(
+      encodeShareState({ editView: false, editDatastreamId: 'mgd' }).ed
+    ).toBeUndefined()
+  })
+
   it('omits data points keys when the mode is auto and threshold is default', () => {
     const q = encodeShareState({
       dataPointsMode: 'auto',
@@ -241,6 +262,16 @@ describe('decodeShareState', () => {
     expect(decoded.dataPointsMode).toBe('manualOff')
     expect(decoded.dataPointsThreshold).toBe(25000)
   })
+
+  it('reads ed back', () => {
+    expect(decodeShareState({ m: 'e', ed: 'mgd' }).editDatastreamId).toBe('mgd')
+  })
+
+  it('reads ed even without m=e, leaving editView unset', () => {
+    const decoded = decodeShareState({ ed: 'x' })
+    expect(decoded.editDatastreamId).toBe('x')
+    expect(decoded.editView).toBeUndefined()
+  })
 })
 
 describe('round-trip', () => {
@@ -250,6 +281,7 @@ describe('round-trip', () => {
     const original: ShareState = {
       workspaceId: '01a2b3c4-d5e6-7f89-0a1b-2c3d4e5f6789',
       editView: true,
+      editDatastreamId: 'ds-1',
       tableTab: true,
       datastreamIds: ['ds-1', 'ds-2', 'ds-3'],
       datePresetId: -1,
@@ -306,8 +338,7 @@ describe('history snapshots', () => {
     expect(out.snapshots).toEqual([{ sessionId: 'sess-1', opIndex: 3 }])
   })
 
-  // Snapshots stay out of `ds` so "QC target is the first id" and the
-  // h/ya bitmask indices keep holding.
+  // Snapshots stay out of `ds` so the h/ya bitmask indices keep holding.
   it('leaves snapshots out of the datastream id list', () => {
     const q = encodeShareState({
       datastreamIds: ['ds-a'],

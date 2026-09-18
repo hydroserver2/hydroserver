@@ -6,8 +6,15 @@ import { unwrap } from '@/services/qualityControl/unwrap'
 
 const qcDatastream = ref<any>(null)
 const replaceDatastream = vi.fn()
+const setEditRecord = vi.fn(async (record: any) => {
+  // A real await here so a dropped `await` before `setEditRecord` in the
+  // composable (leaving the update to run after the caller reads
+  // `selectedSeries`) shows up as a test failure instead of passing by luck.
+  await Promise.resolve()
+  selectedSeries.value = { data: record }
+})
 vi.mock('@/store/dataVisualization', () => ({
-  useDataVisStore: () => ({ qcDatastream, replaceDatastream }),
+  useDataVisStore: () => ({ qcDatastream, replaceDatastream, setEditRecord }),
 }))
 
 const selectedSeries = ref<any>(null)
@@ -189,13 +196,37 @@ describe('useEditSession', () => {
       h.id,
       expect.objectContaining({ id: created.id })
     )
-    // The QC-target series shows exactly the record the working copy store
-    // resolved, so the plot and the editor never diverge. `toRaw` unwraps
-    // the reactive proxy Vue puts on the assigned object.
+    // setEditRecord renders the resumed record, so the plot and the editor
+    // never diverge.
+    expect(setEditRecord).toHaveBeenCalledWith(sharedRecord)
+    // `toRaw` unwraps the reactive proxy Vue puts on the assigned object.
     expect(toRaw(selectedSeries.value.data)).toBe(sharedRecord)
-    // Nothing watches for a swapped-in record, so resume has to rebuild the
-    // plot itself or it keeps rendering the pre-reconstruction trace.
-    expect(redraw).toHaveBeenCalled()
+  })
+
+  it('resumes an in-progress session even before the edit series exists', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const created = unwrap(await qc.sessions.create(h.id, WIN))
+    // No edit series yet: `qcDatastream` isn't guaranteed to have a graph
+    // series before a record arrives, so resume must not depend on one.
+    selectedSeries.value = undefined
+    const rebuiltRecord = makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
+    wcRebuild.mockResolvedValue({
+      sessionId: created.id,
+      record: rebuiltRecord,
+      begin: new Date(0),
+      end: new Date(1),
+    })
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const { beginEditing } = useEditSession()
+
+    await expect(beginEditing()).resolves.toBe(true)
+
+    expect(setEditRecord).toHaveBeenCalledWith(rebuiltRecord)
   })
 
   it('beginEditing rejects when the working copy is superseded mid-resume, without asking to start a session', async () => {
@@ -222,7 +253,37 @@ describe('useEditSession', () => {
     expect(needsSession.value).toBe(false)
     expect(selectedSeries.value.data).toBe(original)
     expect(useQcSessionStore().savedEdits).toEqual([])
-    expect(redraw).not.toHaveBeenCalled()
+    expect(setEditRecord).not.toHaveBeenCalled()
+  })
+
+  it('beginEditing rejects when the edit target is cleared while the resume is in flight, without calling setEditRecord', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    await qc.sessions.create(h.id, WIN)
+    // Simulates leaving the editor mid-resume: it clears the edit target but
+    // not the session store, so the awaited rebuild resolves into a stale
+    // `managed` that no longer matches `qcDatastream`.
+    wcRebuild.mockImplementationOnce(async () => {
+      qcDatastream.value = null
+      return {
+        sessionId: 'x',
+        record: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]),
+        begin: new Date(0),
+        end: new Date(1),
+      }
+    })
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
+    const { beginEditing } = useEditSession()
+
+    await expect(beginEditing()).rejects.toBeInstanceOf(ResumeSupersededError)
+
+    expect(setEditRecord).not.toHaveBeenCalled()
   })
 
   it('startSession loads the managed datastream as the working base', async () => {
@@ -646,7 +707,7 @@ describe('useEditSession.viewSession', () => {
     expect(toRaw(seriesRecord)).not.toBe(viewed)
     expect(store.viewedSessionId).toBe(committed.id)
     expect(store.isReadOnly).toBe(true)
-    expect(redraw).toHaveBeenCalled()
+    expect(setEditRecord).toHaveBeenCalledWith(toRaw(seriesRecord))
   })
 
   it('moves the selection before loading, so the spinner sits on the new session', async () => {
@@ -746,10 +807,69 @@ describe('useEditSession.viewSession', () => {
     expect(session.needsSession.value).toBe(false)
   })
 
+  it('rejects when the edit target changes while a committed session loads, without calling setEditRecord', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.sessions.commit(h.id, committed.id)
+    const inProgress = unwrap(await qc.sessions.create(h.id, WIN))
+
+    const store = useQcSessionStore()
+    const { useEditSession, ResumeSupersededError } = await import(
+      '@/composables/useEditSession'
+    )
+    const session = useEditSession()
+    await session.beginEditing()
+    setEditRecord.mockClear()
+
+    // The user leaves and enters another target mid-reconstruction.
+    fetchObservationsInRange.mockImplementationOnce(async () => {
+      qcDatastream.value = { id: 'm-2' }
+      return makeRecord([])
+    })
+
+    await expect(session.viewSession(committed.id)).rejects.toBeInstanceOf(
+      ResumeSupersededError
+    )
+    expect(setEditRecord).not.toHaveBeenCalled()
+    expect(store.viewedSessionId).toBe(inProgress.id)
+    expect(store.isSwitchingSession).toBe(false)
+  })
+
   it('rejects before a managed datastream is loaded', async () => {
     const { useEditSession } = await import('@/composables/useEditSession')
     await expect(useEditSession().viewSession('s-1')).rejects.toThrow(
       /Load a managed datastream/
     )
+  })
+
+  it('rejects when the edit target is gone even though the session store still has state', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.sessions.commit(h.id, committed.id)
+    await qc.sessions.create(h.id, WIN)
+
+    const store = useQcSessionStore()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    const viewedBefore = store.viewedSessionId
+
+    // Leaving the editor clears the edit target but not the session store.
+    qcDatastream.value = null
+
+    await expect(session.viewSession(committed.id)).rejects.toThrow(
+      /Load a managed datastream/
+    )
+    expect(store.viewedSessionId).toBe(viewedBefore)
   })
 })

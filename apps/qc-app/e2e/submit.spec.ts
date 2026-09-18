@@ -8,7 +8,7 @@
 
 import { expect, test } from '@playwright/test'
 import { installMocks, type MockQcSession } from './support/mocks'
-import { openOp, setupSessionEditView } from './support/app'
+import { openOp, setupEditView } from './support/app'
 import { expectHistoryContains, selectAllPoints } from './support/ops'
 
 test.describe('commit a QC session', () => {
@@ -20,7 +20,7 @@ test.describe('commit a QC session', () => {
       submissions,
       qcSessionState: sessions,
     })
-    await setupSessionEditView(page)
+    await setupEditView(page)
 
     await selectAllPoints(page)
     await openOp(page, 'changeValues')

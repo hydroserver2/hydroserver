@@ -6,12 +6,9 @@
  * helper tolerates being called when the plot isn't mounted yet so
  * callers can fire-and-forget from setup/unmount hooks.
  *
- * We own the shape state in module-local refs rather than
- * round-tripping through `gd.layout.shapes` between writes: Plotly
- * canonicalises layout reads (e.g. date `x0` values come back as ISO
- * strings, unknown fields like `name` get stripped) which made the
- * older "read, filter by name, write" pattern lose track of its own
- * shapes on the second call.
+ * The stage band is the only shape this module owns. Every flush
+ * rebuilds the live `layout.shapes` through `composeShapes`, so shapes
+ * other writers own (the session window band) are carried through.
  *
  * Gap bands used to live here as secondary red rectangles marking
  * detected gaps. They were removed because `edits.shapePosition:
@@ -28,23 +25,20 @@ import type { Layout } from 'plotly.js-dist'
 import { ref } from 'vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
+import { composeShapes, STAGE_SHAPE_NAME, type PlotlyShape } from './shapes'
 
 const GHOST_TRACE_NAME = 'qc-ghost-fills'
-
-type PlotlyShape = Partial<NonNullable<Layout['shapes']>[number]> & {
-  editable?: boolean
-}
 
 let stageShape: PlotlyShape | null = null
 /** True when the plot is in pan mode, meaning the editable stage
  *  shape should be rendered. In zoom / select / lasso modes we drop
  *  the shape from the flushed array entirely so it can't swallow
- *  the mouse-down gesture or keep its grab cursor over the band —
- *  setting `editable: false` alone doesn't fully back out Plotly's
- *  shape-edit hit-testing when `edits.shapePosition` is on.
+ *  the mouse-down gesture or keep its grab cursor over the band,
+ *  since setting `editable: false` alone doesn't fully back out
+ *  Plotly's shape-edit hit-testing when `edits.shapePosition` is on.
  *
  *  Reactive so RangeStager can show a hint ("Range hidden in zoom
- *  mode — switch back to pan to resize") when the band goes away.
+ *  mode, switch back to pan to resize") when the band goes away.
  */
 export const stagePanMode = ref(true)
 
@@ -57,11 +51,14 @@ function getRoot(): HTMLElement | null {
 async function flushShapes() {
   const root = getRoot()
   if (!root) return
-  // The stage shape is the only shape we own. Drop it outside pan
-  // mode so zoom / select / lasso gestures aren't captured by the
-  // shape-edit hit-tester.
-  const shapes: PlotlyShape[] =
-    stageShape && stagePanMode.value ? [stageShape] : []
+  const live = (root as unknown as { layout?: { shapes?: PlotlyShape[] } })
+    .layout?.shapes
+  // Drop the stage shape outside pan mode so zoom / select / lasso
+  // gestures aren't captured by the shape-edit hit-tester. Stage stays
+  // at index 0 when present so `onStageDrag`'s `shapes[0].*` event keys
+  // keep pointing at it.
+  const own = stageShape && stagePanMode.value ? [stageShape] : []
+  const shapes = composeShapes(live, STAGE_SHAPE_NAME, own, { first: true })
   await Plotly.relayout(root, { shapes } as unknown as Partial<Layout>)
 }
 
@@ -103,6 +100,7 @@ export async function enterPanMode(): Promise<void> {
 export async function setStageShape(fromTs: number, toTs: number) {
   stagePanMode.value = currentDragmode() === 'pan'
   stageShape = {
+    name: STAGE_SHAPE_NAME,
     type: 'rect',
     xref: 'x',
     yref: 'paper',
@@ -221,8 +219,9 @@ export function onStageDrag(
       return
     }
 
-    // Stage shape is the only shape we flush, so its index is
-    // always 0 in the layout shapes array.
+    // The stage shape is always prepended first in `flushShapes`, so
+    // its index in the layout shapes array is always 0 regardless of
+    // how many other shapes (e.g. the edit-window band) are present.
     const stageIdx = 0
     const x0Key = `shapes[${stageIdx}].x0`
     const x1Key = `shapes[${stageIdx}].x1`

@@ -9,76 +9,23 @@
       >
         <v-icon icon="mdi-chart-line" color="primary" size="24" class="mr-1" />
         <div class="d-flex flex-column flex-1-1-auto" style="min-width: 0">
-          <span v-if="qcDatastream" class="text-title-medium font-weight-bold">
-            {{ qcDatastream.name }}
-          </span>
-          <span v-else class="text-title-medium font-weight-bold">
-            No datastream plotted
+          <span class="text-title-medium font-weight-bold">
+            <template v-if="plottedDatastreams.length">
+              {{ plottedDatastreams.length }}
+              datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
+              plotted
+            </template>
+            <template v-else>No datastream plotted</template>
           </span>
           <span class="text-body-small text-medium-emphasis">
-            <template v-if="qcDatastream">
-              Quality-control target: preview ready
+            <template v-if="plottedDatastreams.length">
+              Use the pencil button on a row to edit a datastream
             </template>
             <template v-else>
-              Select one from the table below to preview its data here
+              Select datastreams from the table below to preview their data
             </template>
           </span>
         </div>
-
-        <v-chip
-          v-if="qcDatastream"
-          size="small"
-          variant="tonal"
-          :color="canEditWorkspace ? 'primary' : 'grey'"
-          :prepend-icon="canEditWorkspace ? 'mdi-pencil' : 'mdi-eye-outline'"
-          class="mr-2 align-self-center"
-          :title="`Your role on this workspace: ${workspaceRole}`"
-        >
-          {{ workspaceRole }}
-        </v-chip>
-
-        <v-tooltip
-          v-if="!qcDatastream"
-          location="start"
-          text="Pick a datastream below (radio button) to enable editing"
-        >
-          <template #activator="{ props: tooltipProps }">
-            <div v-bind="tooltipProps" class="ml-auto">
-              <v-btn
-                color="primary"
-                variant="flat"
-                prepend-icon="mdi-pencil"
-                append-icon="mdi-arrow-right"
-                disabled
-              >
-                Start editing
-              </v-btn>
-            </div>
-          </template>
-        </v-tooltip>
-
-        <v-tooltip
-          v-else
-          location="start"
-          :disabled="canEditWorkspace"
-          :text="`Your role on this workspace (${workspaceRole}) is read-only. Ask a workspace owner for an editor role to make edits.`"
-        >
-          <template #activator="{ props: tooltipProps }">
-            <div v-bind="tooltipProps" class="ml-auto">
-              <v-btn
-                color="primary"
-                variant="flat"
-                prepend-icon="mdi-pencil"
-                append-icon="mdi-arrow-right"
-                :loading="isCreating"
-                :disabled="!canEditWorkspace"
-                @click="openEditChooser"
-              >
-                Start editing
-              </v-btn>
-            </div>
-          </template>
-        </v-tooltip>
       </div>
 
       <v-divider />
@@ -101,40 +48,11 @@
     </v-card>
 
     <v-card class="select-view__table d-flex flex-column flex-1-1-0 overflow-hidden">
-      <DataVisDatasetsTable class="fill-height" />
-    </v-card>
-
-    <v-dialog v-model="showChooser" max-width="640">
-      <StartEditingDialog
-        v-if="chooserSource"
-        :source="chooserSource"
-        :options="chooserOptions"
-        :loading="chooserLoading"
-        @edit="editManaged"
-        @delete="onChooserDelete"
-        @delete-session="onChooserDeleteSession"
-        @create="onChooserCreate"
-        @cancel="showChooser = false"
+      <DataVisDatasetsTable
+        class="fill-height"
+        @edit="startEditing?.openFor($event)"
       />
-    </v-dialog>
-
-    <v-dialog v-model="showCreateDatastream" max-width="560" persistent>
-      <v-card v-if="qcDatastream" rounded="lg">
-        <CreateDatastreamForm
-          :source="qcDatastream"
-          :processing-levels="processingLevels"
-          :default-processing-level-id="qcPreferences.processingLevelId"
-          :on-create-processing-level="onCreateProcessingLevel"
-          :permission-error="
-            canCreateDatastreamHere
-              ? ''
-              : `Your role on this workspace (${workspaceRole}) can't create datastreams. Ask a workspace owner for an editor role.`
-          "
-          @cancel="onCreateCancel"
-          @confirm="onCreateDatastream"
-        />
-      </v-card>
-    </v-dialog>
+    </v-card>
   </div>
 
   <div
@@ -258,7 +176,7 @@
             :style="{ height: plottedHeight + 'px' }"
           >
             <div class="rounded border bg-surface overflow-hidden">
-              <PlottedDatastreams lock-qc />
+              <PlottedDatastreams />
             </div>
           </div>
         </section>
@@ -341,14 +259,13 @@
                   variant="flat"
                   color="primary"
                   prepend-icon="mdi-plus"
-                  :disabled="!canEditWorkspace || isStartingSession"
-                  :loading="isStartingSession"
+                  :disabled="!canEditWorkspace"
                   :title="
                     canEditWorkspace
-                      ? 'Start a new session over the current time range'
+                      ? 'Start a new session'
                       : `Your role on this workspace (${workspaceRole}) is read-only.`
                   "
-                  @click="startSessionForWindow"
+                  @click="startEditing?.openNewSession()"
                 >
                   New session
                 </v-btn>
@@ -358,7 +275,7 @@
                   size="small"
                   variant="tonal"
                   prepend-icon="mdi-close"
-                  :disabled="isSavingDraft || isCommitting || isStartingSession"
+                  :disabled="isSavingDraft || isCommitting"
                   @click="requestClose"
                 >
                   Close
@@ -525,6 +442,8 @@
       </v-card>
     </v-dialog>
 </div>
+
+  <StartEditingFlow ref="startEditing" />
 </template>
 
 <script setup lang="ts">
@@ -533,37 +452,29 @@ import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 import EditHistory from '@/components/EditData/EditHistory.vue'
 import OperationPanel from '@/components/EditData/OperationPanel.vue'
 import EditDrawer from '@/components/Navigation/EditDrawer.vue'
+import StartEditingFlow from '@/components/EditData/StartEditingFlow.vue'
 
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useUIStore, DrawerType } from '@/store/userInterface'
-import { computed, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
-import {
-  ResumeSupersededError,
-  useEditSession,
-} from '@/composables/useEditSession'
+import { useEditSession } from '@/composables/useEditSession'
+import { useEditEntry } from '@/composables/useEditEntry'
 import { useUnsavedChangesWarning } from '@/composables/useUnsavedChangesWarning'
 import { useResumeEditSession } from '@/composables/useResumeEditSession'
 import { useQcSessionStore } from '@/store/qcSession'
-import { useQcPreferencesStore } from '@/store/qcPreferences'
-import CreateDatastreamForm from '@/components/EditData/CreateDatastreamForm.vue'
-import StartEditingDialog from '@/components/EditData/StartEditingDialog.vue'
-import {
-  useCreateManagedDatastream,
-  type CreateManagedDatastreamSpec,
-} from '@/composables/useCreateManagedDatastream'
-import {
-  useManagedDatastreams,
-  type ManagedDatastreamOption,
-} from '@/composables/useManagedDatastreams'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
-import { useProcessingLevels } from '@/composables/useProcessingLevels'
-import type { Datastream } from '@hydroserver/client'
 import { Snackbar } from '@uwrl/qc-utils'
-import { collectDeletionChain } from '@/utils/sessionGraph'
 import {
   decodeShareState,
   encodeShareState,
@@ -574,17 +485,13 @@ import { isSnapshotId, parseSnapshotId } from '@/utils/snapshotId'
 import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
-import { useWorkingCopiesStore } from '@/store/workingCopies'
 
 const { resetState } = useDataVisStore()
-const workingCopies = useWorkingCopiesStore()
 const { toggleSnapshot } = useHistorySnapshots()
 const {
   plottedDatastreams,
-  qcDatastream,
+  qcDatastreamId,
   datastreams,
-  managedDatastreamIds,
-  processingLevels,
   things,
   beginDate,
   endDate,
@@ -593,7 +500,7 @@ const {
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
-const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
+const { currentView, selectedDrawer, selectedOperation } =
   storeToRefs(useUIStore())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 const {
@@ -609,22 +516,12 @@ const {
   tooltipsMaxDataPoints,
 } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const {
-  setPlottedDatastreams,
-  adoptManagedDatastream,
-  releaseManagedDatastream,
-  addQcHistory,
-  removeManagedDatastream,
-} = useDataVisStore()
+const { setPlottedDatastreams } = useDataVisStore()
 
 const {
-  beginEditing,
-  startSession,
   saveDraft,
   discardUnsavedEdits,
   commit,
-  needsSession,
-  needsHistory,
   hasUnsavedChanges,
   unsavedEditCount,
   viewSession,
@@ -655,37 +552,44 @@ async function onViewSession(sessionId: string) {
     isViewingSession.value = false
   }
 }
-const qcSessionStore = useQcSessionStore()
-const { isReadOnly, inProgressSession, resumeDatastreamId } =
-  storeToRefs(qcSessionStore)
-const { create: createManaged } = useCreateManagedDatastream()
-const qcPreferences = useQcPreferencesStore()
-const { canEdit, canCreateDatastream, roleName } = useWorkspacePermissions()
-const { createProcessingLevel } = useProcessingLevels()
-const { loadForSource, deleteManaged, deleteSessionChain } =
-  useManagedDatastreams()
+const { isReadOnly, inProgressSession, viewedSession, resumeDatastreamId } =
+  storeToRefs(useQcSessionStore())
+const { canEdit, roleName } = useWorkspacePermissions()
+const { leaveEdit } = useEditEntry()
 
-// Permission gating: QC editing writes to the selected workspace (creates
-// the managed datastream, pushes observations). Gate the editor entry
-// points so a read-only collaborator gets a clear disabled state and an
-// explanation instead of a 403 mid-flow.
+// Gate the editor footer so a read-only collaborator sees a disabled state
+// instead of a 403 mid-flow.
 const canEditWorkspace = computed(() => canEdit())
-const canCreateDatastreamHere = computed(() => canCreateDatastream())
 const workspaceRole = computed(() => roleName())
+
+const startEditing =
+  useTemplateRef<InstanceType<typeof StartEditingFlow>>('startEditing')
+
+// The resume watcher can fire during setup, before the flow's ref is set.
+const flowMounted = new Promise<void>((resolve) => onMounted(resolve))
+
+const route = useRoute()
+const router = useRouter()
+
+// A share link's `ed` becomes the resume pointer. Set it before registering
+// the resume hook, which checks the pointer only once.
+const initialShareState = decodeShareState(route.query as Record<string, unknown>)
+if (initialShareState.editView && initialShareState.editDatastreamId) {
+  resumeDatastreamId.value = initialShareState.editDatastreamId
+}
+
+// Reopens the editor after a page reload; waits for the catalog to land.
+useResumeEditSession(async (id) => {
+  await flowMounted
+  await startEditing.value?.resume(id)
+})
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
 const showCommitConfirm = ref(false)
 const showCloseConfirm = ref(false)
-const showCreateDatastream = ref(false)
 const commitDescription = ref('')
-const showChooser = ref(false)
-const chooserLoading = ref(false)
-const chooserOptions = ref<ManagedDatastreamOption[]>([])
-const chooserSource = ref<Datastream | null>(null)
 const isSavingDraft = ref(false)
 const isCommitting = ref(false)
-const isCreating = ref(false)
-const isStartingSession = ref(false)
 const isDiscarding = ref(false)
 const showDiscardConfirm = ref(false)
 
@@ -787,22 +691,9 @@ const historyPaneStyle = computed(() => {
 })
 
 function exitToSelect() {
-  currentView.value = DrawerType.Select
-  selectedDrawer.value = DrawerType.Select
-  isDrawerOpen.value = true
-  // Leaving the editor deliberately, so a later reload shouldn't reopen it.
-  resumeDatastreamId.value = null
-  // Unsaved edits live only on the working copy; the next preview rebuilds
-  // it from what was saved.
-  if (qcDatastream.value) workingCopies.invalidate(qcDatastream.value.id)
-  // Put the source back in the plot so the catalog table shows the row the
-  // user had selected; the managed datastream it was swapped for is hidden
-  // from that table.
-  void releaseManagedDatastream()
+  void leaveEdit()
 }
 
-// No in-progress session yet: open one over the window already chosen by the
-// time-range controls in the Select view, rather than prompting for it again.
 async function onDiscardUnsaved() {
   showDiscardConfirm.value = false
   isDiscarding.value = true
@@ -816,73 +707,6 @@ async function onDiscardUnsaved() {
     )
   } finally {
     isDiscarding.value = false
-  }
-}
-
-async function startSessionForWindow() {
-  isStartingSession.value = true
-  try {
-    await startSession({
-      phenomenonTimeStart: beginDate.value.toISOString(),
-      phenomenonTimeEnd: endDate.value.toISOString(),
-    })
-    await redraw()
-    Snackbar.success('Edit session started.')
-  } catch (e) {
-    if (e instanceof ResumeSupersededError) abandonSupersededResume(e)
-    else Snackbar.error(e instanceof Error ? e.message : 'Could not start the session.')
-  } finally {
-    isStartingSession.value = false
-  }
-}
-
-// Nothing replayed is wired in and the footer would still offer Save, so
-// leave for Select rather than let edits save over the saved draft.
-function abandonSupersededResume(e: ResumeSupersededError) {
-  exitToSelect()
-  Snackbar.error(e.message)
-}
-
-async function onCreateProcessingLevel(input: {
-  code: string
-  definition?: string
-  explanation?: string
-}) {
-  try {
-    const level = await createProcessingLevel(input)
-    // Add to the catalog so it shows in the picker and is immediately valid.
-    processingLevels.value = [...processingLevels.value, level]
-    Snackbar.success('Processing level added.')
-    return level
-  } catch (e) {
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not add the processing level.'
-    )
-    return null
-  }
-}
-
-async function onCreateDatastream(spec: CreateManagedDatastreamSpec) {
-  showCreateDatastream.value = false
-  qcPreferences.processingLevelId = spec.processingLevelId
-  isCreating.value = true
-  try {
-    const { managedDatastream, history } = await createManaged(spec)
-    // Register the new history + datastream so it's hidden from the catalog
-    // and the chooser can resolve it (by its name, not id) without a reload.
-    addQcHistory(history)
-    datastreams.value = [...datastreams.value, managedDatastream]
-    // Reuse the source's already-loaded series as the managed datastream's
-    // working copy instead of adding a second, empty plotted item.
-    await adoptManagedDatastream(managedDatastream, spec.source.id)
-    Snackbar.success('Managed datastream created.')
-    await enterEdit()
-  } catch (e) {
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not create the datastream.'
-    )
-  } finally {
-    isCreating.value = false
   }
 }
 
@@ -945,21 +769,12 @@ function closeWithoutSaving() {
   exitToSelect()
 }
 
-const route = useRoute()
-const router = useRouter()
-
 // Hydrate state from the URL once datastream metadata is available.
 const hydrateFromUrl = () => {
   const state = decodeShareState(route.query as Record<string, unknown>)
 
-  if (state.editView) {
-    currentView.value = DrawerType.Edit
-    selectedDrawer.value = DrawerType.Edit
-    isDrawerOpen.value = true
-  } else {
-    currentView.value = DrawerType.Select
-    selectedDrawer.value = DrawerType.Select
-  }
+  currentView.value = DrawerType.Select
+  selectedDrawer.value = DrawerType.Select
 
   if (state.tableTab) activeTab.value = 'table'
   else activeTab.value = 'plot'
@@ -978,8 +793,6 @@ const hydrateFromUrl = () => {
   const resolved = ids
     .map((id) => datastreams.value.find((ds) => ds.id === id))
     .filter((ds): ds is NonNullable<typeof ds> => !!ds)
-  // QC target is the first id by convention.
-  const qcId = resolved[0]?.id ?? null
 
   // Set the window BEFORE loading datastreams so the first fetch uses it.
   // A preset resolves against the plotted data during that load. An
@@ -1037,13 +850,35 @@ const hydrateFromUrl = () => {
       }
     : null
 
-  // Snapshots replay against the session store, so they wait for the plot
-  // (and with it the editor's session load) to settle.
-  void setPlottedDatastreams(resolved, qcId).then(async () => {
-    for (const s of state.snapshots ?? []) {
-      await toggleSnapshot(s.sessionId, s.opIndex)
-    }
-  })
+  // `resumeDatastreamId` is already set from `ed` by the early block above,
+  // before the resume hook is registered. Nothing to do here for it.
+  void setPlottedDatastreams(resolved)
+
+  // Snapshots replay against the session store, which the resume hook loads
+  // asynchronously and independently of the plot. Wait for the editor to
+  // actually be open on the `ed` target (an in-progress or viewed session
+  // means `loadSessions` has landed) rather than chaining off
+  // `setPlottedDatastreams`, which only settles the plot.
+  const snapshots = state.snapshots ?? []
+  const editTargetId = state.editView ? state.editDatastreamId : undefined
+  // No `immediate`: resuming the editor always takes at least one await, so
+  // the ready condition cannot already hold when this watch is created.
+  if (snapshots.length && editTargetId) {
+    const stopSnapshotWatch = watch(
+      () =>
+        qcDatastreamId.value === editTargetId &&
+        !!(inProgressSession.value || viewedSession.value),
+      (ready) => {
+        if (!ready) return
+        stopSnapshotWatch()
+        void (async () => {
+          for (const s of snapshots) {
+            await toggleSnapshot(s.sessionId, s.opIndex)
+          }
+        })()
+      }
+    )
+  }
 }
 
 if (datastreams.value.length) {
@@ -1066,14 +901,14 @@ if (datastreams.value.length) {
 // lives in `share.ts` so this watcher reads as a plain assembly of
 // inputs.
 const SHARE_KEYS = [
-  'ws', 'm', 'tab', 'ds', 'snap', 'r', 'from', 'to',
+  'ws', 'm', 'ed', 'tab', 'ds', 'snap', 'r', 'from', 'to',
   't', 'op', 'pl', 'h', 'ya', 'z', 'yz', 'dp', 'th',
 ] as const
 
 watch(
   [
     plottedDatastreams,
-    qcDatastream,
+    qcDatastreamId,
     currentView,
     activeTab,
     beginDate,
@@ -1091,8 +926,8 @@ watch(
     tooltipsMaxDataPoints,
   ],
   () => {
-    // Snapshots travel in their own key; `ids` stays real datastreams so the
-    // QC-target-is-first rule and the visibility bitmasks still line up.
+    // Snapshots travel in their own key; `ds` stays real plotted datastreams
+    // so the visibility bitmasks line up.
     const plotted = plottedDatastreams.value
     const ids = plotted.filter((ds) => !isSnapshotId(ds.id)).map((ds) => ds.id)
     const snapshots = plotted
@@ -1104,6 +939,7 @@ watch(
     const state: ShareState = {
       workspaceId: selectedWorkspaceId.value || null,
       editView: isEdit,
+      editDatastreamId: isEdit ? (qcDatastreamId.value ?? undefined) : undefined,
       tableTab: activeTab.value === 'table',
       datastreamIds: ids,
       snapshots,
@@ -1147,136 +983,6 @@ watch(
 onUnmounted(() => {
   resetState()
 })
-
-// "Start editing" opens a chooser of the source's managed datastreams and
-// their sessions, rather than editing the raw datastream directly.
-async function openEditChooser() {
-  const source = qcDatastream.value
-  if (!source) return
-  // A managed datastream plotted directly is already the thing to edit, so
-  // there is nothing left to choose. It carries its own observations, so no
-  // `adoptManagedDatastream` working copy is needed either.
-  if (managedDatastreamIds.value.has(source.id)) {
-    await enterEdit()
-    return
-  }
-  chooserSource.value = source
-  chooserOptions.value = []
-  chooserLoading.value = true
-  showChooser.value = true
-  try {
-    chooserOptions.value = await loadForSource(source.id)
-  } catch (e) {
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not load QC datastreams.'
-    )
-  } finally {
-    chooserLoading.value = false
-  }
-}
-
-// Edit a chosen managed datastream: reuse the source's loaded series as its
-// working copy, then resume its in-progress session (or start a new one).
-async function editManaged(option: ManagedDatastreamOption) {
-  showChooser.value = false
-  const source = chooserSource.value
-  if (!source) return
-  try {
-    await adoptManagedDatastream(option.managed, source.id)
-    await enterEdit()
-  } catch (e) {
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not open the datastream for editing.'
-    )
-  }
-}
-
-function onChooserCreate() {
-  showChooser.value = false
-  showCreateDatastream.value = true
-}
-
-// Cancelling create returns to the chooser it was opened from.
-function onCreateCancel() {
-  showCreateDatastream.value = false
-  if (chooserSource.value) showChooser.value = true
-}
-
-async function onChooserDelete(option: ManagedDatastreamOption) {
-  try {
-    await deleteManaged(option.historyId, option.managed.id)
-    removeManagedDatastream(option.historyId, option.managed.id)
-    workingCopies.invalidate(option.managed.id)
-    chooserOptions.value = chooserOptions.value.filter(
-      (o) => o.historyId !== option.historyId
-    )
-    Snackbar.success('Managed datastream deleted.')
-  } catch (e) {
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not delete the managed datastream.'
-    )
-  }
-}
-
-// Discard an in-progress session from the chooser, dropping its draft edits.
-// Only that session goes; the managed datastream and its commits remain.
-async function onChooserDeleteSession(
-  option: ManagedDatastreamOption,
-  sessionId: string
-) {
-  try {
-    // Same input the confirmation previewed, so the two cannot disagree.
-    const deleted = await deleteSessionChain(
-      option.historyId,
-      collectDeletionChain(option.sessions, sessionId)
-    )
-    workingCopies.invalidate(option.managed.id)
-    const gone = new Set(deleted)
-    chooserOptions.value = chooserOptions.value.map((o) =>
-      o.historyId === option.historyId
-        ? { ...o, sessions: o.sessions.filter((s) => !gone.has(s.id)) }
-        : o
-    )
-    Snackbar.success(
-      deleted.length === 1
-        ? 'Session deleted.'
-        : `${deleted.length} sessions deleted.`
-    )
-  } catch (e) {
-    // Refresh regardless: a partial cascade leaves the chooser's copy wrong.
-    if (chooserSource.value) {
-      chooserOptions.value = await loadForSource(chooserSource.value.id)
-    }
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not delete the session.'
-    )
-  }
-}
-
-// Enter the editor on the current QC-target managed datastream: resume its
-// in-progress session, or start a new one over the selected time range.
-async function enterEdit() {
-  try {
-    await beginEditing()
-  } catch (e) {
-    if (!(e instanceof ResumeSupersededError)) throw e
-    abandonSupersededResume(e)
-    return
-  }
-  if (needsHistory.value) {
-    Snackbar.error('This datastream is not set up for QC editing.')
-    return
-  }
-  currentView.value = DrawerType.Edit
-  selectedDrawer.value = DrawerType.Edit
-  isDrawerOpen.value = true
-  // Remember the target so a page reload can come back to this session.
-  resumeDatastreamId.value = qcDatastream.value?.id ?? null
-  if (needsSession.value) await startSessionForWindow()
-}
-
-// Reopens the editor after a page reload; waits for the catalog to land.
-useResumeEditSession(enterEdit)
 </script>
 
 <style scoped>

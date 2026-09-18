@@ -27,7 +27,7 @@ function observationsWithPlateau() {
 
 test.describe('filter: persistence', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page, { observations: observationsWithPlateau() })
+    await installMocks(page, { observations: observationsWithPlateau(), qcHistories: true })
     await setupEditView(page)
   })
 

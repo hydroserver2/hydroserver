@@ -11,6 +11,7 @@ import { storeToRefs } from 'pinia'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { handleNewPlot } from './events'
 import { traceXAsNumbers } from './internal'
+import { withLiveShapes } from './shapes'
 import type { AppPlotlyTrace } from './options'
 
 /**
@@ -161,7 +162,10 @@ export const cropXaxisRange = async () => {
 
   setTimeout(async () => {
     try {
-      const layoutUpdates: Partial<Layout> = { ...plotlyOptions.value.layout }
+      const layoutUpdates = withLiveShapes(
+        plotlyOptions.value.layout,
+        plotlyRef.value?.layout
+      )
       const xAxis = layoutUpdates.xaxis as Partial<LayoutAxis> | undefined
       const xRange = xAxis?.range as Array<string | number> | undefined
       // Plotly will rewrite timestamps as datestrings. We need to convert them back to timestamps.

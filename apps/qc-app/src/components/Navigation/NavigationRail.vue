@@ -68,7 +68,7 @@
           </button>
         </template>
         <span v-if="item.title === 'Edit' && !qcDatastream">
-          Edit: select a datastream for quality control before navigating here.
+          Edit a datastream from its row first.
         </span>
         <span v-else>{{ item.title }}</span>
       </v-tooltip>
@@ -190,11 +190,12 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSessionStore } from '@/store/qcSession'
 import { useEditSession } from '@/composables/useEditSession'
+import { useEditEntry } from '@/composables/useEditEntry'
 
 const { onRailItemClicked } = useUIStore()
 const { selectedDrawer, isDrawerOpen, currentView } = storeToRefs(useUIStore())
 const { resetState } = useDataVisStore()
-const { qcDatastream, qcDatastreamId } = storeToRefs(useDataVisStore())
+const { qcDatastream } = storeToRefs(useDataVisStore())
 const { hs } = storeToRefs(useHydroServer())
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace } = storeToRefs(workspaceStore)
@@ -202,11 +203,12 @@ const { redraw } = usePlotlyStore()
 const { inProgressSession } = storeToRefs(useQcSessionStore())
 const { hasUnsavedChanges, unsavedEditCount, saveDraft, discardUnsavedEdits } =
   useEditSession()
+const { leaveEdit } = useEditEntry()
 
 const needsExitConfirm = computed(
   () => currentView.value === DrawerType.Edit && hasUnsavedChanges.value
 )
-// Entering Edit through the rail opens no session, so there is nothing to save to.
+// With no in-progress session there is nothing to save to.
 const canSave = computed(() => !!inProgressSession.value)
 
 const showExitConfirm = ref(false)
@@ -272,12 +274,10 @@ async function discardAndContinue() {
   await continueExit()
 }
 
-function goHome() {
+async function goHome() {
   resetState()
-  qcDatastreamId.value = null
-  currentView.value = DrawerType.Select
-  selectedDrawer.value = DrawerType.Select
-  isDrawerOpen.value = true
+  // Clears the resume pointer, or the reload would reopen the editor.
+  await leaveEdit()
   window.location.assign('/')
 }
 
@@ -288,6 +288,10 @@ const items = ref([
 
 function onMainRailItemClicked(item: DrawerType) {
   if (item === DrawerType.Edit && !qcDatastream.value) return
+  if (item === DrawerType.Select && currentView.value === DrawerType.Edit) {
+    guardExit(() => leaveEdit())
+    return
+  }
   guardExit(() => onRailItemClicked(item))
 }
 
@@ -303,10 +307,7 @@ async function onSwitchWorkspace() {
   // filters to router.replace, racing our push and stranding the user.
   // `switch=1` prevents the Workspaces picker from auto-redirecting back.
   await router.push({ name: 'Workspaces', query: { switch: '1' } })
-  qcDatastreamId.value = null
-  currentView.value = DrawerType.Select
-  selectedDrawer.value = DrawerType.Select
-  isDrawerOpen.value = true
+  await leaveEdit()
 }
 </script>
 

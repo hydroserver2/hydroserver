@@ -3,17 +3,26 @@
  *
  * Two complementary halves:
  *   - **Emit**: drive the UI, then read `window.location.search` and
- *     assert the new compact-shape keys appear (and the legacy ones
- *     are gone).
- *   - **Hydrate**: open a deep-linked URL carrying the new keys, then
+ *     assert the compact-shape keys appear (and the legacy ones are
+ *     gone).
+ *   - **Hydrate**: open a deep-linked URL carrying the keys, then
  *     assert the app lands in the expected state (plotted ids, tab,
  *     edit view, data-points threshold, hidden traces).
  */
 
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import type { Page } from '@playwright/test'
 import { setupEditView } from './support/app'
+import {
+  DATASTREAM_ID,
+  DATASTREAM_ID_B,
+  MANAGED_DATASTREAM_ID,
+  buildObservations,
+  buildTemperatureObservations,
+  FIXTURE_OBS_END_MS,
+  FIXTURE_OBS_START_MS,
+  WORKSPACE_ID,
+} from './support/fixtures'
 
 /**
  * Poll the live plot for: the current X range (as `[loMs, hiMs]`)
@@ -90,19 +99,42 @@ async function clickResetAxes(page: Page) {
     button.click()
   }, selector)
 }
-import {
-  DATASTREAM_ID,
-  DATASTREAM_ID_B,
-  buildObservations,
-  buildTemperatureObservations,
-  FIXTURE_OBS_END_MS,
-  FIXTURE_OBS_START_MS,
-  WORKSPACE_ID,
-} from './support/fixtures'
+
+/** Wait until the live plot draws a trace for every id in `ids`. */
+async function waitForTraces(page: Page, ids: string[]) {
+  await page.waitForFunction(
+    (wanted) => {
+      const gd = document.querySelector('[data-testid="main-plot"]') as
+        | (HTMLElement & { data?: Array<{ id?: string }> })
+        | null
+      const drawn = new Set((gd?.data ?? []).map((t) => t.id))
+      return wanted.every((id) => drawn.has(id))
+    },
+    ids,
+    { timeout: 30_000 }
+  )
+}
+
+/**
+ * Open an Edit-view link on the managed datastream. No session is in
+ * progress in the fixture, so the window step opens; Start begins one.
+ */
+async function openEditLink(page: Page, extraQuery = '') {
+  await page.goto(
+    `/?ws=${WORKSPACE_ID}&m=e&ed=${MANAGED_DATASTREAM_ID}${extraQuery}`
+  )
+  await page.getByTestId('session-window-start').click({ timeout: 30_000 })
+  await expect(page.getByTestId('exit-save-btn')).toBeVisible({
+    timeout: 30_000,
+  })
+  await expect(page.getByText('Filter Data')).toBeVisible()
+}
 
 test.describe('share URL', () => {
   test.beforeEach(async ({ page }) => {
+    test.slow()
     await installMocks(page, {
+      qcHistories: true,
       observationsById: {
         [DATASTREAM_ID]: buildObservations(),
         [DATASTREAM_ID_B]: buildTemperatureObservations(),
@@ -110,9 +142,7 @@ test.describe('share URL', () => {
     })
   })
 
-  test('writer emits the new short keys after plotting + entering Edit', async ({
-    page,
-  }) => {
+  test('writer emits the short keys after entering Edit', async ({ page }) => {
     await setupEditView(page)
     // Snapshot the query string the app has written.
     const search = await page.evaluate(() => window.location.search)
@@ -120,7 +150,9 @@ test.describe('share URL', () => {
 
     expect(params.get('ws')).toBe(WORKSPACE_ID)
     expect(params.get('m')).toBe('e')
-    expect(params.get('ds')).toBe(DATASTREAM_ID)
+    // Nothing was plotted; the edit target travels in `ed`, not `ds`.
+    expect(params.has('ds')).toBe(false)
+    expect(params.get('ed')).toBe(MANAGED_DATASTREAM_ID)
 
     // Legacy keys should be gone.
     expect(params.has('workspace')).toBe(false)
@@ -198,14 +230,10 @@ test.describe('share URL', () => {
     expect(params.has('pl')).toBe(false)
   })
 
-  test('hydrator restores Edit view + datastream + Table tab from URL', async ({
+  test('hydrator restores Edit view + edit target + Table tab from URL', async ({
     page,
   }) => {
-    const url = `/?ws=${WORKSPACE_ID}&m=e&ds=${DATASTREAM_ID}&tab=t`
-    await page.goto(url)
-
-    // The Edit drawer shows "Filter Data" once Edit view is mounted.
-    await expect(page.getByText('Filter Data')).toBeVisible({ timeout: 30_000 })
+    await openEditLink(page, '&tab=t')
 
     // Table tab is the active tab segment. v-btn-toggle marks the
     // chosen child with `v-btn--active`.
@@ -217,9 +245,7 @@ test.describe('share URL', () => {
   test('hydrator applies the data-points threshold from the URL', async ({
     page,
   }) => {
-    const url = `/?ws=${WORKSPACE_ID}&m=e&ds=${DATASTREAM_ID}&th=42000`
-    await page.goto(url)
-    await expect(page.getByText('Filter Data')).toBeVisible({ timeout: 30_000 })
+    await openEditLink(page, '&th=42000')
 
     // The auto-mode counter renders the threshold after the slash.
     const counter = page.getByTestId('tooltips-counter')
@@ -239,9 +265,7 @@ test.describe('share URL', () => {
     const toS36 = (ms: number) => Math.floor(ms / 1000).toString(36)
     const z = `${toS36(xLo)}.${toS36(xHi)}`
 
-    const url = `/?ws=${WORKSPACE_ID}&m=e&ds=${DATASTREAM_ID}&z=${z}`
-    await page.goto(url)
-    await expect(page.getByText('Filter Data')).toBeVisible({ timeout: 30_000 })
+    await openEditLink(page, `&z=${z}`)
 
     // Probe Plotly's live x-axis range. Poll because the rebuild
     // can run a hair after `handleNewPlot` from the mount hook;
@@ -293,22 +317,16 @@ test.describe('share URL', () => {
     page,
   }) => {
     // Two datastreams plotted, with bit 1 of the hidden-trace mask
-    // set → the second (non-QC) trace is hidden. The fix this guards
+    // set → the second trace is hidden. The fix this guards
     // against: `createPlotlyOption` honours `hiddenTraceIds`, so a
     // fresh load that hydrates the set from `h=` produces a plot
     // with the hidden traces already invisible. Pre-fix, the
     // sidebar correctly showed the row as hidden but the plot
     // continued to draw the trace until the user manually toggled
-    // the eye again.
-    await installMocks(page, {
-      observationsById: {
-        [DATASTREAM_ID]: buildObservations(),
-        [DATASTREAM_ID_B]: buildTemperatureObservations(),
-      },
-    })
-    const url = `/?ws=${WORKSPACE_ID}&m=e&ds=${DATASTREAM_ID},${DATASTREAM_ID_B}&h=2`
+    // the eye again. The mask indexes `ds` only, so no Edit view.
+    const url = `/?ws=${WORKSPACE_ID}&ds=${DATASTREAM_ID},${DATASTREAM_ID_B}&h=2`
     await page.goto(url)
-    await expect(page.getByText('Filter Data')).toBeVisible({ timeout: 30_000 })
+    await waitForTraces(page, [DATASTREAM_ID, DATASTREAM_ID_B])
     // Let the rebuild settle.
     await page.waitForTimeout(800)
 
@@ -344,8 +362,8 @@ test.describe('share URL', () => {
 
     expect(visibility.a).not.toBeNull()
     expect(visibility.b).not.toBeNull()
-    // A (QC, bit 0 unset) renders normally. Plotly normalises an
-    // unset `visible` to `true`.
+    // A (bit 0 unset) renders normally. Plotly normalises an unset
+    // `visible` to `true`.
     expect(visibility.a!.visible).not.toBe(false)
     // B (bit 1 set in the URL mask) is hidden on the live plot,
     // along with its gap overlay.
@@ -362,14 +380,14 @@ test.describe('share URL', () => {
     // pins `_rangeInitial0/1` to the URL view — stock Reset bounces
     // back there instead of the data extent. A cold goto to a zoomed
     // URL reproduces the same condition as the user-reported
-    // zoom→reload flow.
+    // zoom→reload flow. Only a plotted datastream is needed.
     const fullSpan = FIXTURE_OBS_END_MS - FIXTURE_OBS_START_MS
     const xHi = FIXTURE_OBS_END_MS - fullSpan * 0.1
     const xLo = xHi - fullSpan * 0.2
     const toS36 = (ms: number) => Math.floor(ms / 1000).toString(36)
     const z = `${toS36(xLo)}.${toS36(xHi)}`
-    await page.goto(`/?ws=${WORKSPACE_ID}&m=e&ds=${DATASTREAM_ID}&z=${z}`)
-    await expect(page.getByText('Filter Data')).toBeVisible({ timeout: 30_000 })
+    await page.goto(`/?ws=${WORKSPACE_ID}&ds=${DATASTREAM_ID}&z=${z}`)
+    await waitForTraces(page, [DATASTREAM_ID])
 
     const afterHydrate = await waitForPlotMeta(page)
     expect(afterHydrate).not.toBeNull()

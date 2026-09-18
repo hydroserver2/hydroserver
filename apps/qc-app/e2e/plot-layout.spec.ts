@@ -1,13 +1,13 @@
 /**
- * The editor plot fills its container once the Edit view opens, whether it
- * was entered through the nav rail or through Start editing. Plotly can lay
- * the plot out while the view is still switching, so the resize observer has
- * to catch up to the container's final size.
+ * The editor plot fills its container once the Edit view opens through the
+ * row Edit flow. Plotly can lay the plot out while the view is still
+ * switching, so the resize observer has to catch up to the container's final
+ * size.
  */
 
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { setupEditView, setupSessionEditView } from './support/app'
+import { setupEditView } from './support/app'
 
 /** Largest gap in px between Plotly's laid-out size and the plot div. */
 function layoutMismatch(page: Page): Promise<number> {
@@ -25,23 +25,10 @@ function layoutMismatch(page: Page): Promise<number> {
 }
 
 test.describe('editor plot layout', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 })
-  })
-
-  test('fills its container after entering through the rail', async ({
-    page,
-  }) => {
-    await installMocks(page)
-    await setupEditView(page)
-    await expect
-      .poll(() => layoutMismatch(page), { timeout: 5_000 })
-      .toBeLessThanOrEqual(1)
-  })
-
   test('fills its container after starting a session', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
     await installMocks(page, { qcHistories: true })
-    await setupSessionEditView(page)
+    await setupEditView(page)
     await expect
       .poll(() => layoutMismatch(page), { timeout: 5_000 })
       .toBeLessThanOrEqual(1)

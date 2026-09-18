@@ -71,7 +71,7 @@ export function useWorkspacePermissions() {
   /**
    * Can run the QC edit workflow in this workspace — needs to create the
    * managed datastream and/or write observations. Used to gate the editor's
-   * Start editing / Save / Commit controls.
+   * row Edit / Save / Commit controls.
    */
   function canEdit(ws?: Workspace | null): boolean {
     return (

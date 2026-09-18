@@ -39,10 +39,11 @@ type QcSessionPostBody = QualityControlSessionContract.PostBody
 
 /**
  * Keep a new session's window within the source datastream's observed extent.
- * The window comes from the display time-range controls, whose end is usually
- * "now" — past the source's last observation — which the backend rejects
- * (`phenomenon_time_end cannot extend past the source datastream's current end
- * time`). Resume ignores the spec, so this only shapes freshly-created sessions.
+ * The window now comes from the session window dialog, so it is normally
+ * already valid; this clamp is a backstop for the backend's end-time rule
+ * (`phenomenon_time_end cannot extend past the source datastream's current
+ * end time`). Resume ignores the spec, so this only shapes freshly-created
+ * sessions.
  */
 function clampSpecToSource(
   spec: QcSessionPostBody,
@@ -57,10 +58,7 @@ function clampSpecToSource(
     end = Math.min(end, new Date(source.phenomenonEndTime).getTime())
   }
   if (!(start < end)) {
-    throw new Error(
-      'The selected time range has no source observations to edit. ' +
-        'Pick a range that overlaps the datastream (try the "All" preset).'
-    )
+    throw new Error('The selected window has no source observations to edit.')
   }
   return {
     ...spec,
@@ -80,9 +78,8 @@ export class ResumeSupersededError extends Error {
 
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
-  const { replaceDatastream } = useDataVisStore()
+  const { replaceDatastream, setEditRecord } = useDataVisStore()
   const { selectedSeries } = storeToRefs(usePlotlyStore())
-  const { redraw } = usePlotlyStore()
   const { hs } = storeToRefs(useHydroServer())
   const { fetchObservationsInRange } = useObservationStore()
   const sessionStore = useQcSessionStore()
@@ -137,7 +134,11 @@ export function useEditSession() {
   ): Promise<void> {
     const built = await workingCopies.rebuild(managed, source, historyId, session)
     if (!built) throw new ResumeSupersededError()
-    if (selectedSeries.value) selectedSeries.value.data = built.record
+    // The edit target may have changed (or been cleared) while the rebuild
+    // was in flight; wiring in a record for a stale target would be silent
+    // and wrong, since `setEditRecord` upserts whatever `qcDatastream` is now.
+    if (qcDatastream.value?.id !== managed.id) throw new ResumeSupersededError()
+    await setEditRecord(built.record)
     // The replayed draft operations are the saved baseline.
     snapshotSavedEdits()
     needsSession.value = false
@@ -165,8 +166,7 @@ export function useEditSession() {
     await sessionStore.loadSessions(history.id)
 
     const inProgress = sessionStore.inProgressSession
-    const record = selectedSeries.value?.data
-    if (inProgress && sourceDatastream.value && record) {
+    if (inProgress && sourceDatastream.value) {
       // A session exists, so a failed resume must never ask to start one.
       needsSession.value = false
       await resumeWorkingCopy(
@@ -175,8 +175,6 @@ export function useEditSession() {
         history.id,
         inProgress
       )
-      // Nothing watches for a swapped-in record, and no caller redraws here.
-      await redraw()
       return true
     } else {
       needsSession.value = true
@@ -190,6 +188,12 @@ export function useEditSession() {
    * in-progress session when given the editable one.
    */
   async function viewSession(sessionId: string): Promise<void> {
+    // Leaving the editor clears the edit target but not the session store,
+    // so `historyId`/`source` can outlive it; check the target itself first.
+    const managed = qcDatastream.value
+    if (!managed) {
+      throw new Error('Load a managed datastream for editing first.')
+    }
     const historyId = sessionStore.historyId
     const source = sourceDatastream.value
     if (!historyId || !source) {
@@ -232,9 +236,9 @@ export function useEditSession() {
         historyId,
         sessionId
       )
-      if (selectedSeries.value) selectedSeries.value.data = record
-      // Nothing watches for a swapped-in record; rebuild the plot explicitly.
-      await redraw()
+      // Same reasoning as the check in `resumeWorkingCopy`.
+      if (qcDatastream.value?.id !== managed.id) throw new ResumeSupersededError()
+      await setEditRecord(record)
       // Viewing is read-only, so there is nothing unsaved to track.
       snapshotSavedEdits()
     } catch (e) {
@@ -272,7 +276,10 @@ export function useEditSession() {
       new Date(session.phenomenonTimeStart),
       new Date(session.phenomenonTimeEnd)
     )
-    if (selectedSeries.value) selectedSeries.value.data = base
+    // The edit target may have changed under this await; same reasoning as
+    // the check in `resumeWorkingCopy`.
+    if (qcDatastream.value?.id !== managed.id) throw new ResumeSupersededError()
+    await setEditRecord(base)
     workingCopies.set(
       managed.id,
       session.id,
@@ -331,8 +338,8 @@ export function useEditSession() {
     }
     await saveDraft()
 
-    // The window was chosen earlier by the time-range controls; the
-    // description is captured here at commit time. Persist it if it changed.
+    // The window was chosen when the session started; the description is
+    // captured here at commit time. Persist it if it changed.
     const trimmed = description?.trim()
     if (trimmed !== undefined && trimmed !== (session.description ?? '')) {
       const res = await hs.value.qualityControlSessions.update(
