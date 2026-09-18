@@ -36,27 +36,35 @@ describe('committedExtent', () => {
 
 describe('defaultSessionWindow', () => {
   it('covers the whole source when nothing is committed', () => {
-    expect(defaultSessionWindow(source, [])).toEqual(
-      win('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')
-    )
-  })
-
-  it('starts at the end of the committed history', () => {
-    const sessions = [committed('2025-01-01T00:00:00Z', '2025-05-01T00:00:00Z')]
-    expect(defaultSessionWindow(source, sessions)).toEqual(
-      win('2025-05-01T00:00:00Z', '2025-12-31T00:00:00Z')
-    )
-  })
-
-  it('covers the whole source when history already reaches its end', () => {
-    const sessions = [committed('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')]
-    expect(defaultSessionWindow(source, sessions)).toEqual(
+    expect(defaultSessionWindow(source)).toEqual(
       win('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')
     )
   })
 
   it('is null when the source has no observations', () => {
-    expect(defaultSessionWindow({}, [])).toBeNull()
+    expect(defaultSessionWindow({})).toBeNull()
+  })
+})
+
+describe('the default window against the rules', () => {
+  it('is valid while committed history sits inside the source', () => {
+    const sessions = [committed('2025-01-01T00:00:00Z', '2025-05-01T00:00:00Z')]
+    const window = defaultSessionWindow(source)!
+    expect(validateSessionWindow(window, source, sessions)).toBeNull()
+  })
+
+  it('is valid when the history already covers the whole source', () => {
+    const sessions = [committed('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')]
+    const window = defaultSessionWindow(source)!
+    expect(validateSessionWindow(window, source, sessions)).toBeNull()
+  })
+
+  // The source extent can shrink away from history committed earlier, and
+  // then even the full extent leaves a gap. The dialog reports it.
+  it('is rejected when the committed history sits outside the source', () => {
+    const sessions = [committed('2026-03-01T00:00:00Z', '2026-04-01T00:00:00Z')]
+    const window = defaultSessionWindow(source)!
+    expect(validateSessionWindow(window, source, sessions)).toMatch(/gap before/)
   })
 })
 

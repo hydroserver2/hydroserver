@@ -5,8 +5,9 @@
         New session on "{{ managedName }}"
       </div>
       <div class="text-body-small text-medium-emphasis mt-1">
-        Pick the period to edit. It can overlap committed sessions but cannot
-        leave a gap before or after them.
+        The window starts out covering the whole source record. Narrow it to
+        the period you want to edit: it can overlap committed sessions but
+        cannot leave a gap before or after them.
       </div>
     </div>
 
@@ -108,7 +109,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
-const initial = defaultSessionWindow(props.source, props.sessions)
+const initial = defaultSessionWindow(props.source)
 const begin = ref<Date | null>(initial?.begin ?? null)
 const end = ref<Date | null>(initial?.end ?? null)
 

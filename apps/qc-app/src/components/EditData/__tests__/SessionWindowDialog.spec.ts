@@ -64,11 +64,12 @@ const pickers = (w: ReturnType<typeof mount>) =>
   w.findAllComponents(DatePickerStub)
 
 describe('SessionWindowDialog', () => {
-  it('prefills the window from the end of the committed history', () => {
+  it('prefills the window with the whole source extent', () => {
     const w = mountDialog()
     const [from, to] = pickers(w)
-    expect((from!.props('modelValue') as Date).toISOString()).toBe('2025-05-01T00:00:00.000Z')
+    expect((from!.props('modelValue') as Date).toISOString()).toBe('2025-01-01T00:00:00.000Z')
     expect((to!.props('modelValue') as Date).toISOString()).toBe('2025-12-31T00:00:00.000Z')
+    expect(w.find('[data-testid="session-window-error"]').exists()).toBe(false)
   })
 
   it('shows the committed history range', () => {
@@ -85,8 +86,22 @@ describe('SessionWindowDialog', () => {
     const w = mountDialog()
     await w.find('[data-testid="session-window-start"]').trigger('click')
     const [window] = w.emitted('confirm')![0] as [{ begin: Date; end: Date }]
-    expect(window.begin.toISOString()).toBe('2025-05-01T00:00:00.000Z')
+    expect(window.begin.toISOString()).toBe('2025-01-01T00:00:00.000Z')
     expect(window.end.toISOString()).toBe('2025-12-31T00:00:00.000Z')
+  })
+
+  it('blocks Start when the committed history sits outside the source', () => {
+    const w = mountDialog({
+      sessions: [
+        {
+          status: 'committed',
+          phenomenonTimeStart: '2026-03-01T00:00:00Z',
+          phenomenonTimeEnd: '2026-04-01T00:00:00Z',
+        },
+      ],
+    })
+    expect(w.find('[data-testid="session-window-error"]').text()).toMatch(/gap before/)
+    expect(w.find('[data-testid="session-window-start"]').attributes('disabled')).toBeDefined()
   })
 
   it('blocks Start and explains a gap after the history', async () => {

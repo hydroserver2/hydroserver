@@ -33,17 +33,10 @@ export function committedExtent(
   return { begin: new Date(begin), end: new Date(end) }
 }
 
-export function defaultSessionWindow(
-  source: SourceExtent,
-  sessions: readonly SessionRange[]
-): TimeWindow | null {
-  const extent = dataExtent([source])
-  if (!extent) return null
-  const history = committedExtent(sessions)
-  if (history && history.end.getTime() < extent.end.getTime()) {
-    return { begin: new Date(history.end), end: extent.end }
-  }
-  return extent
+/** The source's own extent, which the rules above always accept while the
+ *  committed history lies inside it. */
+export function defaultSessionWindow(source: SourceExtent): TimeWindow | null {
+  return dataExtent([source])
 }
 
 export function validateSessionWindow(

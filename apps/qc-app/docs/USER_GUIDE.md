@@ -122,9 +122,9 @@ session window step.
 
 The session window step shows the source's data extent and, if the managed
 datastream already has committed history, that history's extent too. The
-default window starts where the committed history ends (or at the start of
-the source data, if nothing is committed yet) and runs to the end of the
-source data.
+default window is the source's own begin and end datetimes, so a new session
+covers the whole record and overlaps whatever is already committed. Narrow it
+whenever you only want to work on part of the record.
 
 You can adjust the From / To pickers, but two rules apply:
 

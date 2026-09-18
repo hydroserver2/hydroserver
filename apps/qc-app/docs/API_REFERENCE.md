@@ -682,10 +682,10 @@ and their pure resolution:
 Pure validation for the session-window step (`SessionWindowDialog.vue`,
 opened from the row Edit chooser or the editor footer's **New session**):
 
-- `defaultSessionWindow(source, sessions)`. The step's default window:
-  starts where the committed history ends, or at the source's own start if
-  nothing is committed yet; runs to the end of the source data. `null` when
-  the source has no observations.
+- `defaultSessionWindow(source)`. The step's default window: the source's
+  full extent, begin to end. `null` when the source has no observations.
+  The rules below accept it whenever the committed history lies inside that
+  extent; the dialog reports the rare case where it does not.
 - `validateSessionWindow(window, source, sessions)`: `null` when `window`
   is valid, otherwise an error string. The window must lie inside the
   source's extent, and it can't leave a gap before or after the committed
