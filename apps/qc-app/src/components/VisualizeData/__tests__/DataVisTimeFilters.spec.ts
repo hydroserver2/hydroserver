@@ -63,4 +63,19 @@ describe('DataVisTimeFilters.vue', () => {
     expect(w.find('[data-testid="date-preset-1w"]').exists()).toBe(true)
     expect(w.find('[data-testid="date-preset-All"]').exists()).toBe(true)
   })
+
+  it('highlights All for a saved YTD preference with the editor presets, keeping the preference', () => {
+    selectedDateBtnId.value = 3
+    const w = mountIt({ presets: EDITOR_PRESETS })
+    expect(w.find('[data-testid="date-preset-All"]').classes()).toContain('v-chip--variant-tonal')
+    expect(w.find('[data-testid="date-preset-1w"]').classes()).toContain('v-chip--variant-outlined')
+    expect(selectedDateBtnId.value).toBe(3)
+  })
+
+  it('highlights YTD itself where it is offered', () => {
+    selectedDateBtnId.value = 3
+    const w = mountIt()
+    expect(w.find('[data-testid="date-preset-YTD"]').classes()).toContain('v-chip--variant-tonal')
+    expect(w.find('[data-testid="date-preset-All"]').classes()).toContain('v-chip--variant-outlined')
+  })
 })

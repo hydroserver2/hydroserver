@@ -361,7 +361,8 @@ async function onDrop(index: number) {
   if (from === null || from === index || isPinnedAt(index)) return
   if (!reorder(from, index)) return
   updateOptions()
-  await handleNewPlot(undefined, { preserveZoom: true })
+  // With no plot yet, its first draw picks up the new order.
+  if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
 }
 
 function onDragEnd() {

@@ -26,7 +26,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   const currentSessionId = ref<string | null>(null)
   /** The session currently being viewed. */
   const viewedSessionId = ref<string | null>(null)
-  const isLoading = ref(false)
   const isSwitchingSession = ref(false)
   /** Edit history entries (by reference) at the last load or save, the
    *  baseline `useEditSession` compares against for unsaved edits. Kept here
@@ -116,15 +115,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     viewedSessionId.value = inProgress?.id ?? latestCommitted?.id ?? null
   }
 
-  async function loadSessions(id: string): Promise<void> {
-    isLoading.value = true
-    try {
-      applySessions(id, await fetchSessions(id))
-    } finally {
-      isLoading.value = false
-    }
-  }
-
   /** View a session read-only (no-op for an unknown id). */
   function viewSession(sessionId: string): void {
     if (sessions.value.some((s) => s.id === sessionId)) {
@@ -143,7 +133,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     sessions.value = []
     currentSessionId.value = null
     viewedSessionId.value = null
-    isLoading.value = false
     savedEdits.value = []
     savedComments.value = []
   }
@@ -155,7 +144,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     sessions,
     currentSessionId,
     viewedSessionId,
-    isLoading,
     isSwitchingSession,
     savedEdits,
     savedComments,
@@ -165,7 +153,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     viewedSession,
     fetchSessions,
     applySessions,
-    loadSessions,
     viewSession,
     returnToCurrent,
     reset,

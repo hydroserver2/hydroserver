@@ -75,6 +75,7 @@ vi.mock('@/utils/plotting/plotly', () => ({
 }))
 
 import PlottedDatastreams from '@/components/VisualizeData/PlottedDatastreams.vue'
+import { handleNewPlot } from '@/utils/plotting/plotly'
 
 function mountIt() {
   return mount(PlottedDatastreams, {
@@ -423,6 +424,24 @@ describe('PlottedDatastreams row kinds', () => {
 
     expect(plottedIds()).toEqual(['ctx', 'ctx2'])
     expect(updateOptions).not.toHaveBeenCalled()
+  })
+
+  it('redraws a reorder only once a plot exists', async () => {
+    vi.mocked(handleNewPlot).mockClear()
+    plotlyRef.value = null
+    const wrapper = mountIt()
+    await row(wrapper, 'ctx2').trigger('dragstart')
+    await row(wrapper, 'ctx').trigger('drop')
+    await flushPromises()
+    expect(plottedIds()).toEqual(['ctx2', 'ctx'])
+    expect(handleNewPlot).not.toHaveBeenCalled()
+
+    plotlyRef.value = {}
+    await row(wrapper, 'ctx').trigger('dragstart')
+    await row(wrapper, 'ctx2').trigger('drop')
+    await flushPromises()
+    expect(handleNewPlot).toHaveBeenCalledTimes(1)
+    plotlyRef.value = null
   })
 
   it('reorders plotted datastreams in Select', async () => {

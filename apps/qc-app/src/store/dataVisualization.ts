@@ -189,6 +189,19 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   /** True when a box/lasso selection shape is drawn on the plot, even if it captured 0 points. */
   const hasSelectionShape = ref(false)
 
+  /** Plot loads and draws started and not yet finished. */
+  const pendingPlotWork = ref(0)
+
+  /** Run `work` counted as pending plot work, see `isEditorReady`. */
+  async function trackPlotWork(work: () => Promise<void>): Promise<void> {
+    pendingPlotWork.value++
+    try {
+      await work()
+    } finally {
+      pendingPlotWork.value--
+    }
+  }
+
   /** Track the loading status of each datastream to be plotted.
    * Set to true when we get a response from the API. Keyed by datastream id. */
   const loadingStates = ref(new Map<string, boolean>())
@@ -393,20 +406,22 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   /** Put the edit target's record on the plot, adding its series if needed. */
-  async function setEditRecord(record: ObservationRecord) {
-    const edit = qcDatastream.value
-    if (!edit) return
-    const existing = graphSeriesArray.value.find((s) => s.id === edit.id)
-    if (existing) {
-      existing.data = record
-      await usePlotlyStore().redraw()
-      return
-    }
-    graphSeriesArray.value.push(buildGraphSeries(edit, record))
-    orderAndColorSeries()
-    updateOptions()
-    const { plotlyRef } = storeToRefs(usePlotlyStore())
-    if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  function setEditRecord(record: ObservationRecord): Promise<void> {
+    return trackPlotWork(async () => {
+      const edit = qcDatastream.value
+      if (!edit) return
+      const existing = graphSeriesArray.value.find((s) => s.id === edit.id)
+      if (existing) {
+        existing.data = record
+        await usePlotlyStore().redraw()
+        return
+      }
+      graphSeriesArray.value.push(buildGraphSeries(edit, record))
+      orderAndColorSeries()
+      updateOptions()
+      const { plotlyRef } = storeToRefs(usePlotlyStore())
+      if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+    })
   }
 
   /** Stop editing. Plotted datastreams stay as they were. */
@@ -421,67 +436,89 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     await rebuildPlot()
   }
 
-  // Coalescing lock for `rebuildPlot`. Rapid checkbox toggles in the
-  // Select view call `plotDatastream` in quick succession; each call
-  // pushes into `plottedDatastreams` and then awaits `rebuildPlot`.
-  // Without a lock, the rebuilds interleave: two concurrent
-  // `refreshGraphSeriesArray` passes both see the same
-  // `graphSeriesArray` before either has pushed, both enter the
-  // "fetch new series" branch for the same datastream, and each
-  // pushes its own copy — so the downstream `createPlotlyOption`
-  // emits duplicate right-side y-axes. The `handleNewPlot` calls
-  // also race, which can leave stale axis chrome from the earlier
-  // render on top of the latest plot.
-  //
-  // Strategy: serialize rebuilds and coalesce queued ones. While a
-  // rebuild is in flight, extra callers just flip `rebuildQueued`
-  // and await the outcome. When the in-flight rebuild finishes and
-  // there's at least one queued request, we run exactly one more
-  // rebuild with the latest `plottedDatastreams` snapshot. N rapid
-  // clicks therefore settle into at most two rebuilds (in-flight +
-  // final), with no concurrent fetches or concurrent `newPlot`s.
-  let rebuildInFlight: Promise<void> | null = null
-  let rebuildQueued = false
+  // Plot loads (a rebuild, or a reload of the context range) run one at a
+  // time. Concurrent `refreshGraphSeriesArray` passes would both push a series
+  // for the same new datastream (duplicate right-side axes) and race their
+  // draws. A request made while one runs joins the single queued follow-up,
+  // which is a rebuild if any joined request was one, so N rapid clicks settle
+  // into at most two loads. Every caller resolves only once a load that
+  // started after its change has finished.
+  type PlotLoadKind = 'rebuild' | 'range'
+  /** Guard against a range that never settles. */
+  const MAX_RANGE_PASSES = 5
+  let loadInFlight: Promise<void> | null = null
+  let queuedLoad: { kind: PlotLoadKind; promise: Promise<void> } | null = null
+  /** The range the series were last loaded for, as `begin-end` ms. */
+  let loadedRangeKey: string | null = null
 
-  async function rebuildPlot(): Promise<void> {
-    if (rebuildInFlight) {
-      rebuildQueued = true
-      try {
-        await rebuildInFlight
-      } catch {
-        /* swallow — original error already surfaced to its caller */
+  const rangeKey = (begin: Date, end: Date) =>
+    `${begin.getTime()}-${end.getTime()}`
+
+  function queuePlotLoad(kind: PlotLoadKind): Promise<void> {
+    return trackPlotWork(() => nextPlotLoad(kind))
+  }
+
+  function nextPlotLoad(kind: PlotLoadKind): Promise<void> {
+    // Check the queue first: the in-flight load clears `loadInFlight` a couple
+    // of microtasks before its follow-up starts, and a caller landing in that
+    // gap would otherwise start a second concurrent load.
+    if (queuedLoad) {
+      if (kind === 'rebuild') queuedLoad.kind = 'rebuild'
+      return queuedLoad.promise
+    }
+    if (!loadInFlight) return startPlotLoad(kind)
+    const queued = { kind, promise: Promise.resolve() }
+    queued.promise = loadInFlight
+      .catch(() => undefined)
+      .then(() => {
+        queuedLoad = null
+        return startPlotLoad(queued.kind)
+      })
+    queuedLoad = queued
+    return queued.promise
+  }
+
+  function startPlotLoad(kind: PlotLoadKind): Promise<void> {
+    const run: Promise<void> = (
+      kind === 'rebuild' ? doRebuildPlot() : doReloadRange()
+    ).finally(() => {
+      if (loadInFlight === run) loadInFlight = null
+    })
+    loadInFlight = run
+    return run
+  }
+
+  function rebuildPlot(): Promise<void> {
+    return queuePlotLoad('rebuild')
+  }
+
+  /** Load every series for the current range. Responses for a range that
+   *  moved meanwhile are dropped, so load again until it holds still. */
+  async function loadCurrentRange(): Promise<void> {
+    for (let pass = 0; pass < MAX_RANGE_PASSES; pass++) {
+      const begin = beginDate.value
+      const end = endDate.value
+      await refreshGraphSeriesArray()
+      if (isCurrentRange(begin, end)) {
+        loadedRangeKey = rangeKey(begin, end)
+        return
       }
-      // Another queued caller may have already claimed the follow-up
-      // rebuild (and cleared the flag). Only the caller that still
-      // sees the flag kicks off the coalesced final rebuild.
-      if (!rebuildQueued) return
-      rebuildQueued = false
-      return rebuildPlot()
     }
-    rebuildInFlight = doRebuildPlot()
-    try {
-      await rebuildInFlight
-    } finally {
-      rebuildInFlight = null
-    }
-    // A rebuild queued while we were running needs exactly one more
-    // pass to reflect the latest state.
-    if (rebuildQueued) {
-      rebuildQueued = false
-      return rebuildPlot()
-    }
+    console.warn(
+      `Plot range still moving after ${MAX_RANGE_PASSES} loads, drawing anyway.`
+    )
   }
 
   /** Rebuild the plot from scratch: rebuild the graph-series array from
    *  `seriesDatastreams`, regenerate Plotly options, and re-render. Select
    *  drops the zoom; the editor keeps it, since context changes never move
-   *  the user's view of the session. Must run serialized, see the lock in
-   *  `rebuildPlot` above. */
-  async function doRebuildPlot() {
+   *  the user's view of the session. Runs as a plot load, see above. */
+  async function doRebuildPlot(): Promise<void> {
     hasSelectionShape.value = false
     if (!seriesDatastreams.value.length) {
       invalidateUnplottedWorkingCopies()
       clearChartState()
+      loadedRangeKey = null
       return
     }
     const keepZoom = !!qcDatastreamId.value
@@ -492,11 +529,29 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       beginDate.value = presetRange.begin
       endDate.value = presetRange.end
     }
-    await refreshGraphSeriesArray()
+    await loadCurrentRange()
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) {
       await handleNewPlot(undefined, { preserveZoom: keepZoom })
+    }
+  }
+
+  /** Reload the series for a new range and redraw. Skipped when an earlier
+   *  load already caught up with the range. */
+  async function doReloadRange(): Promise<void> {
+    if (!seriesDatastreams.value.length) return
+    if (loadedRangeKey === rangeKey(beginDate.value, endDate.value)) return
+    await loadCurrentRange()
+    const { redraw, clearZoomHistory } = usePlotlyStore()
+    if (qcDatastreamId.value) {
+      // Context reload in the editor: the user's view of the session stays put.
+      await redraw(false, true)
+    } else {
+      // The zoom stack refers to the old range, so drop it and let the new
+      // range apply instead of copying the live range over it.
+      clearZoomHistory()
+      await redraw(false, false)
     }
   }
 
@@ -559,8 +614,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     update = true,
     custom = true,
   }: SetDateRangeParams) => {
-    // No-op when neither bound actually moved. Every sidebar path —
-    // clicking the already-active preset, date-text-field blur,
+    // No-op when neither bound actually moved. Every sidebar path
+    // (clicking the already-active preset, date-text-field blur,
     // time-text-field blur, calendar picker confirming the current
     // day) calls this with fresh Date references whose timestamps
     // often match the current range. Without this guard each of those
@@ -575,28 +630,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     if (end) endDate.value = end
     if (custom) selectedDateBtnId.value = CUSTOM_PRESET_ID
 
-    if (
-      update &&
-      beginDate.value &&
-      endDate.value &&
-      seriesDatastreams.value.length
-    ) {
-      const { redraw, clearZoomHistory } = usePlotlyStore()
-      await refreshGraphSeriesArray()
-      if (qcDatastreamId.value) {
-        // Context reload in the editor: the user's view of the session stays put.
-        await redraw(false, true)
-      } else {
-        // A date-filter change refetches data and drops the zoom window:
-        // the recorded zoom stack refers to the OLD time range and would
-        // be meaningless after redraw, so clear it.
-        clearZoomHistory()
-        // The user explicitly changed the date filter, so they expect the
-        // new window to actually apply, so opt out of the zoom-preserving
-        // path in `redraw` (which otherwise copies the live range over
-        // the fresh layout and the plot would stay on the old window).
-        redraw(false, false)
-      }
+    if (update && seriesDatastreams.value.length) {
+      await queuePlotLoad('range')
     }
   }
 
@@ -617,11 +652,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   // The editor loads its context before the session is known, so re-anchor
   // the preset once the window arrives or changes. Like a Context change, this
-  // reloads context series only and keeps the zoom.
+  // reloads context series only and keeps the zoom. A watch rather than a call
+  // at each session store write: the window follows sessions being applied, a
+  // session viewed, a return to the current one and a failed view reverted.
+  // It queues behind any rebuild, and joins a queued one.
   watch(
     () =>
       editSessionWindow.value &&
-      `${editSessionWindow.value.begin.getTime()}-${editSessionWindow.value.end.getTime()}`,
+      rangeKey(editSessionWindow.value.begin, editSessionWindow.value.end),
     (key) => {
       if (!key) return
       applyActivePreset().catch((error) => {
@@ -631,11 +669,31 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   )
 
+  /** True while editing once the session window is known, the edit record is
+   *  on the plot, no session is opening, and every plot load and draw started
+   *  so far (including the re-anchor around the window) has finished. */
+  const isEditorReady = computed(
+    (): boolean =>
+      pendingPlotWork.value === 0 &&
+      !useQcSessionStore().isSwitchingSession &&
+      !!editSessionWindow.value &&
+      graphSeriesArray.value.some((s) => s.id === qcDatastreamId.value)
+  )
+
+  const isCurrentRange = (start: Date, end: Date) =>
+    start.getTime() === beginDate.value.getTime() &&
+    end.getTime() === endDate.value.getTime()
+
+  /** The latest load per datastream; only it may clear the loading flag. */
+  const latestLoads = new Map<string, object>()
+
   const updateOrFetchGraphSeries = async (
     datastream: Datastream,
     start: Date,
     end: Date
   ) => {
+    const load = {}
+    latestLoads.set(datastream.id, load)
     try {
       // A managed datastream with a session in progress plots its working
       // copy: it spans the session window and is never re-windowed, since a
@@ -663,19 +721,17 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
           console.error('Failed to fetch observations:', error)
           return null
         })
-        if (obsRecord && graphSeriesArray.value[seriesIndex]) {
-          graphSeriesArray.value[seriesIndex].data = obsRecord
-        }
+        // The range moved while fetching: the request for the new range writes.
+        if (!isCurrentRange(start, end)) return
+        // Re-find: the array may have been filtered while fetching.
+        const series = graphSeriesArray.value.find((s) => s.id === datastream.id)
+        if (obsRecord && series) series.data = obsRecord
       } else {
-        // Add new graph series. The await spans a network fetch, so
-        // another caller may have already pushed a series for this
-        // datastream by the time we resume (the `rebuildPlot` lock
-        // prevents the main rapid-click path, but other callers of
-        // `refreshGraphSeriesArray` — edit history, navigation rail —
-        // aren't serialized with it). Re-check before pushing so we
-        // don't stack duplicate series, which would each spawn their
-        // own right-side y-axis in `createPlotlyOption`.
         const newSeries = await fetchGraphSeries(datastream, start, end)
+        if (!isCurrentRange(start, end)) return
+        // Callers of `refreshGraphSeriesArray` outside the plot load queue
+        // (the edit history reload) may have pushed this series meanwhile. A
+        // duplicate would spawn its own right-side y-axis.
         const alreadyPresent = graphSeriesArray.value.some(
           (s) => s.id === datastream.id
         )
@@ -687,7 +743,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
         error
       )
     } finally {
-      loadingStates.value.set(datastream.id, false)
+      if (latestLoads.get(datastream.id) === load) {
+        latestLoads.delete(datastream.id)
+        loadingStates.value.set(datastream.id, false)
+      }
     }
   }
 
@@ -794,6 +853,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     beginDate,
     endDate,
     loadingStates,
+    isEditorReady,
+    trackPlotWork,
     selectedDateBtnId,
     qcDatastream,
     qcDatastreamId,

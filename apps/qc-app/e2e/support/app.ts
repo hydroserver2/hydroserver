@@ -144,16 +144,18 @@ export async function startSessionFromRow(page: Page): Promise<void> {
 }
 
 /**
- * Wait for the Edit view to be open with nothing loading, e.g. after a reload
- * resumes the session. Acting earlier can race the view switch.
+ * Wait for the Edit view to be ready: its session and edit record loaded, and
+ * every plot load and draw finished, including the context reload around the
+ * session window that follows the session load (see `isEditorReady` in the
+ * data visualization store). Acting earlier can race the view switch or that
+ * reload, e.g. after a reload resumes the session.
  */
 export async function waitForEditorReady(page: Page): Promise<void> {
-  await expect(page.getByTestId('exit-save-btn')).toBeVisible({
-    timeout: 30_000,
-  })
-  await expect(page.getByTestId('data-loading-indicator')).toHaveCount(0, {
-    timeout: 30_000,
-  })
+  await expect(page.getByTestId('edit-plot-column')).toHaveAttribute(
+    'data-editor-ready',
+    'true',
+    { timeout: 30_000 }
+  )
 }
 
 /** Open an operation panel in the edit drawer by id (see operations.ts). */

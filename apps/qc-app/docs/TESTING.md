@@ -74,8 +74,8 @@ notable knobs:
 
 - `environment: 'jsdom'` globally; `src/components/**` matches
   `jsdom` again via `environmentMatchGlobs` for symmetry.
-- `setupFiles: ['@vitest/web-worker', './src/utils/test/setup.ts']`
-  — the worker plugin lets `?worker&inline` imports resolve in
+- `setupFiles: ['@vitest/web-worker', './src/utils/test/setup.ts']`:
+  the worker plugin lets `?worker&inline` imports resolve in
   Vitest; `setup.ts` stubs `HTMLCanvasElement.prototype.getContext`
   because jsdom doesn't implement it and Vuetify's mount cycle
   spams "Not implemented" warnings without the stub.
@@ -394,6 +394,16 @@ them so the next contributor doesn't rediscover them.
    sometimes change behavior when the test window is not the
    foreground OS window. If a previously-green spec started
    failing only after you alt-tabbed, that's why.
+
+5. **Wait for the editor to be ready, not just its buttons.** Entering
+   the editor or reloading into it loads the sessions, places the edit
+   record, then reloads the context range around the session window, and
+   the plot draws its first frame after a mount delay. The footer buttons
+   and a hidden loading overlay can both show before that settles.
+   `waitForEditorReady` waits for `edit-plot-column` to carry
+   `data-editor-ready="true"` (`useDataVisStore().isEditorReady`: the
+   session window is known, the edit record is on the plot, no session is
+   opening, and no plot load or tracked draw is pending).
 
 ### Debugging a failure
 

@@ -191,7 +191,7 @@ so members absent from it are unplotted in the same pass.
 Doing it in one pass matters even with nothing to promote: looping
 `plotDatastream` / `unplotDatastream` would trigger a `rebuildPlot` per
 change, where the batched action means exactly one, against the final set.
-The coalescing lock never has to absorb a burst.
+The plot load queue never has to absorb a burst.
 
 Additions are appended in `ids` order, which the dialog builds in display
 order (raw first, then managed). Plotting never singles one out as an edit
@@ -219,7 +219,8 @@ calls it instead of assigning `selectedSeries.value.data` directly.
 ## Context range
 
 The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (with
-`EDITOR_PRESETS`, which leaves out YTD, and the same From / To pickers as
+`EDITOR_PRESETS`, which leaves out YTD and highlights All for a persisted
+YTD through `shownPresetId`, and the same From / To pickers as
 the Select view) bound to the same `beginDate` / `endDate` store range.
 Picking a preset or a custom date calls `setDateRange`, which, while an
 edit target is set, reloads only the context series
@@ -240,7 +241,23 @@ The context loads on `setEditTarget`'s rebuild, before the session is known.
 The store watches the session window, and when it appears or changes it
 re-applies the active preset through `setDateRange`: one context reload,
 no edit-target fetch, zoom kept, and a no-op when the range is unchanged or
-the range is Custom.
+the range is Custom. It is a watch rather than a call from each session
+action because the window follows every session store write (sessions
+applied, a session viewed, returning to the current one, a failed view
+reverted), and a missed call would silently leave the context on the wrong
+range.
+
+Plot loads run one at a time. A rebuild (`rebuildPlot`) and a range reload
+(`setDateRange`) are both plot loads: a request made while one runs waits
+in a single queued follow-up, which becomes a rebuild if any request it
+absorbed was one, since a rebuild resolves the preset itself. So a re-anchor
+that lands while a rebuild is queued joins it instead of loading on its own,
+and a rebuild requested during a range reload waits for it. `setDateRange`
+still moves `beginDate` / `endDate` at once, so a load already running can
+find its range moved: `updateOrFetchGraphSeries` drops every response whose
+range no longer matches, and the load loads the new range before drawing.
+A range reload queued behind it then finds the range already loaded and
+skips.
 
 The session window itself is shaded as a layout shape (`name: 'edit-window'`
 in `options.ts`), drawn from `useQcSessionStore().viewedSession` (falling
@@ -269,6 +286,23 @@ While observations load, `DataVisualization.vue` keeps `Plot` mounted and
 passes its loading overlay through Plot's `body-overlay` slot. The overlay
 covers the plot and table body only; the toolbar stays usable and shows its
 own spinner.
+
+`Plot` draws its first frame when its plot element renders, not on mount.
+The Plot tab's window item renders lazily, so a view that opens on the
+Table tab (a share link with the table tab) has no element until the Plot
+tab first opens; the draw waits for it. Until then `plotlyRef` is null, and
+every caller that redraws an existing plot (`handleNewPlot(undefined)`)
+skips, since that first draw renders the latest options anyway.
+
+## Editor readiness
+
+`useDataVisStore().isEditorReady` says the editor is settled: the session
+window is known, the edit record is on the plot, no session is opening, and
+no plot work is pending. Plot work is counted by `trackPlotWork`: every plot
+load (queued or running), `setEditRecord`'s draw, and `Plot`'s first draw
+from the moment its element appears through the mount delay. The edit view
+binds it to `data-editor-ready` on `edit-plot-column`, which the e2e helper
+`waitForEditorReady` waits on.
 
 ## Why `internal.ts` isn't re-exported
 

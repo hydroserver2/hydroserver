@@ -29,17 +29,50 @@ export const useObservationStore = defineStore(
     //   }
     // }
 
+    /** The last request queued per datastream. */
+    const queued = new Map<
+      string,
+      { begin: number; end: number; promise: Promise<ObservationRecord> }
+    >()
+
     /**
      * Fetches requested observations that aren't currently in the pinia store,
      * updates the store, then returns the corresponding `ObservationRecord`.
+     *
+     * Requests for one datastream run in order: each fills the cache from what
+     * the previous one left, and the record ends on the latest requested
+     * window. A request matching the last queued range shares it.
      */
-    const fetchObservationsInRange = async (
+    const fetchObservationsInRange = (
       datastream: Datastream,
       beginTime: Date,
       endTime: Date
     ): Promise<ObservationRecord> => {
       const id = datastream.id
+      const begin = beginTime.getTime()
+      const end = endTime.getTime()
+      const last = queued.get(id)
+      if (last && last.begin === begin && last.end === end) return last.promise
 
+      const previous = last?.promise.catch(() => undefined) ?? Promise.resolve()
+      const promise = previous.then(() =>
+        loadRange(datastream, beginTime, endTime)
+      )
+      const entry = { begin, end, promise }
+      queued.set(id, entry)
+      const release = () => {
+        if (queued.get(id) === entry) queued.delete(id)
+      }
+      promise.then(release, release)
+      return promise
+    }
+
+    const loadRange = async (
+      datastream: Datastream,
+      beginTime: Date,
+      endTime: Date
+    ): Promise<ObservationRecord> => {
+      const id = datastream.id
 
       let beginDataPromise: Promise<{
         datetimes: number[]

@@ -381,8 +381,13 @@ export function useEditSession() {
       },
     })
     workingCopies.invalidate(managed.id)
-    await sessionStore.loadSessions(historyId)
-    snapshotSavedEdits()
+    const sessions = await sessionStore.fetchSessions(historyId)
+    // The commit went through either way. If another target took over the
+    // editor meanwhile, the session store is its now: leave it alone.
+    if (qcDatastream.value?.id === managed.id) {
+      sessionStore.applySessions(historyId, sessions)
+      snapshotSavedEdits()
+    }
     // The push moved the managed datastream's phenomenon times. Refresh last so
     // a network failure does not abort the commit (session is already locked).
     try {

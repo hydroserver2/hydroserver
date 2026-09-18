@@ -520,6 +520,206 @@ describe('useDataVisStore.setDateRange', () => {
   })
 })
 
+describe('useDataVisStore overlapping plot loads', () => {
+  const deferred = <T>() => {
+    let resolve!: (v: T) => void
+    const promise = new Promise<T>((r) => (resolve = r))
+    return { promise, resolve }
+  }
+  const flush = () => new Promise((r) => setTimeout(r, 0))
+  const FEB = new Date('2025-02-01T00:00:00Z')
+  const MAR = new Date('2025-03-01T00:00:00Z')
+  const APR = new Date('2025-04-01T00:00:00Z')
+  const MAY = new Date('2025-05-01T00:00:00Z')
+
+  it('drops a context response whose range was superseded', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockRedraw.mockClear()
+    const first = deferred<any>()
+    const second = deferred<any>()
+    mockFetchObservationsInRange
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise)
+
+    const older = store.setDateRange({ begin: FEB, end: MAR })
+    const newer = store.setDateRange({ begin: APR, end: MAY })
+    first.resolve({ id: 'feb' })
+    await flush()
+    second.resolve({ id: 'apr' })
+    await Promise.all([older, newer])
+
+    const src = mockGraphSeriesArray.value.find((s) => s.id === 'src')
+    expect(src.data).toEqual({ id: 'apr' })
+    expect(store.loadingStates.get('src')).toBe(false)
+    expect(mockRedraw).toHaveBeenCalledTimes(1)
+  })
+
+  it('a rebuild whose range moves while loading draws the new range once', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    const drawn: unknown[] = []
+    vi.mocked(handleNewPlot).mockImplementationOnce(async () => {
+      drawn.push(mockGraphSeriesArray.value.find((s) => s.id === 'src')?.data)
+    })
+    mockFetchObservationsInRange.mockClear()
+    mockRedraw.mockClear()
+    const first = deferred<any>()
+    const second = deferred<any>()
+    mockFetchObservationsInRange
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise)
+
+    const rebuild = store.rebuildPlot()
+    await flush()
+    const reload = store.setDateRange({ begin: APR, end: MAY })
+    first.resolve({ id: 'old' })
+    await flush()
+    second.resolve({ id: 'new' })
+    await Promise.all([rebuild, reload])
+
+    expect(drawn).toEqual([{ id: 'new' }])
+    expect(mockFetchObservationsInRange.mock.calls.map((c) => c[1])).toEqual([
+      expect.any(Date),
+      APR,
+    ])
+    expect(mockRedraw).not.toHaveBeenCalled()
+  })
+
+  it('a rebuild requested while a context reload loads waits for it', async () => {
+    const { store, other } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockFetchObservationsInRange.mockClear()
+    mockFetchGraphSeries.mockClear()
+    const pending = deferred<any>()
+    mockFetchObservationsInRange.mockImplementationOnce(() => pending.promise)
+
+    const reload = store.setDateRange({ begin: APR, end: MAY })
+    const rebuild = store.plotDatastream(other as any)
+    await flush()
+
+    expect(mockFetchObservationsInRange).toHaveBeenCalledTimes(1)
+    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
+
+    pending.resolve({ id: 'apr' })
+    await Promise.all([reload, rebuild])
+    expect(mockFetchGraphSeries.mock.calls.map((c: any[]) => [c[0].id, c[1]])).toEqual([
+      ['other', APR],
+    ])
+  })
+
+  it('a context reload requested while a rebuild is queued joins it', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockPlotlyRef.value = {}
+    mockRedraw.mockClear()
+    const pending = deferred<any>()
+    mockFetchObservationsInRange.mockClear()
+    mockFetchObservationsInRange.mockImplementationOnce(() => pending.promise)
+
+    const inFlight = store.rebuildPlot()
+    await flush()
+    const queued = store.rebuildPlot()
+    const reload = store.setDateRange({ begin: APR, end: MAY })
+    pending.resolve({ id: 'old' })
+    await Promise.all([inFlight, queued, reload])
+
+    const starts = mockFetchObservationsInRange.mock.calls.map((c) => c[1])
+    expect(starts.filter((d) => d === APR)).toHaveLength(2)
+    expect(starts).toHaveLength(3)
+    expect(mockRedraw).not.toHaveBeenCalled()
+  })
+
+  // A load requested in the microtasks between one finishing and its queued
+  // follow-up starting must join the follow-up, not start a load beside it.
+  // The exact hop count is an implementation detail, so sweep the window.
+  it('does not start a second load when one is requested as a load settles', async () => {
+    const runScenario = async (hops: number) => {
+      const { store } = await managedPair()
+      await store.setEditTarget('mgd')
+      mockPlotlyRef.value = {}
+      let active = 0
+      let maxActive = 0
+      let firstFetch: Promise<unknown> | null = null
+      mockFetchObservationsInRange.mockClear()
+      mockFetchObservationsInRange.mockImplementation(() => {
+        const fetched = (async () => {
+          active++
+          maxActive = Math.max(maxActive, active)
+          await flush()
+          active--
+          return { id: 'x' }
+        })()
+        firstFetch ??= fetched
+        return fetched
+      })
+
+      const inFlight = store.rebuildPlot()
+      await flush()
+      const queued = store.rebuildPlot()
+      // Count hops from the first load's own fetch, so the request lands in
+      // the microtasks where that load is settling.
+      const late = firstFetch!.then(async () => {
+        for (let i = 0; i < hops; i++) await Promise.resolve()
+        return store.rebuildPlot()
+      })
+      await Promise.all([inFlight, queued, late])
+      mockFetchObservationsInRange.mockResolvedValue({ id: 'stub', data: {} })
+      return maxActive
+    }
+
+    for (let hops = 0; hops <= 24; hops++) {
+      expect([hops, await runScenario(hops)]).toEqual([hops, 1])
+    }
+  })
+
+  it('does not add a series from a superseded range', async () => {
+    const { store, other } = await managedPair()
+    const first = deferred<any>()
+    const second = deferred<any>()
+    mockFetchGraphSeries
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise)
+
+    const rebuild = store.plotDatastream(other as any)
+    await flush()
+    const reload = store.setDateRange({ begin: APR, end: MAY })
+    first.resolve({ id: 'other', data: 'old range' })
+    await flush()
+    second.resolve({ id: 'other', data: 'new range' })
+    await Promise.all([rebuild, reload])
+
+    expect(mockGraphSeriesArray.value.map((s) => s.data)).toEqual(['new range'])
+  })
+
+  it('a rebuild requested while another runs resolves only after the follow-up rebuild', async () => {
+    const { store, other } = await managedPair()
+    const extra = makeDs({ id: 'extra', phenomenonBeginTime: '2025-01-01T00:00:00Z', phenomenonEndTime: '2025-12-31T00:00:00Z' })
+    store.datastreams = [...store.datastreams, extra] as any
+    const first = deferred<any>()
+    const second = deferred<any>()
+    mockFetchGraphSeries
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise)
+
+    const inFlight = store.plotDatastream(other as any)
+    await flush()
+    let queuedDone = false
+    const queued = store.plotDatastream(extra as any).then(() => {
+      queuedDone = true
+    })
+    first.resolve({ id: 'other', data: {} })
+    await flush()
+
+    expect(queuedDone).toBe(false)
+    second.resolve({ id: 'extra', data: {} })
+    await Promise.all([inFlight, queued])
+    expect(mockGraphSeriesArray.value.map((s) => s.id)).toEqual(['other', 'extra'])
+  })
+})
+
 describe('useDataVisStore context range around the session window', () => {
   const WIN_START = '2025-06-01T00:00:00Z'
   const WIN_END = '2025-06-10T00:00:00Z'
@@ -535,9 +735,7 @@ describe('useDataVisStore context range around the session window', () => {
     ] as any)
     await nextTick()
   }
-  const settle = async () => {
-    for (let i = 0; i < 10; i++) await Promise.resolve()
-  }
+  const settle = () => new Promise((r) => setTimeout(r, 0))
 
   it('the editor counts presets out from the session window', async () => {
     const { store } = await managedPair()
@@ -602,6 +800,96 @@ describe('useDataVisStore context range around the session window', () => {
     expect(mockRedraw).toHaveBeenCalledTimes(1)
     expect(mockRedraw).toHaveBeenCalledWith(false, true)
     expect(mockClearZoomHistory).not.toHaveBeenCalled()
+  })
+
+  it('reports the editor ready only once the range around the session window has loaded', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    expect(store.isEditorReady).toBe(false)
+    let resolveFetch!: (v: unknown) => void
+    mockFetchObservationsInRange.mockImplementationOnce(
+      () => new Promise((r) => (resolveFetch = r))
+    )
+
+    await loadSession()
+    await settle()
+    expect(store.beginDate.getTime()).toBe(subtractMonths(new Date(WIN_START), 1).getTime())
+    expect(store.isEditorReady).toBe(false)
+
+    resolveFetch({ id: 'stub', data: {} })
+    await settle()
+    expect(store.isEditorReady).toBe(true)
+  })
+
+  it('reports the editor ready when the session window leaves the range unchanged', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    await store.setDateRange({ begin: new Date('2025-03-01T00:00:00Z'), end: new Date('2025-04-01T00:00:00Z') })
+
+    await loadSession()
+    await settle()
+
+    expect(store.isEditorReady).toBe(true)
+  })
+
+  it('does not report the editor ready while a plot load is still drawing', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    await loadSession()
+    await settle()
+    expect(store.isEditorReady).toBe(true)
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    let finishDraw!: () => void
+    vi.mocked(handleNewPlot).mockImplementationOnce(
+      () => new Promise<void>((r) => (finishDraw = r))
+    )
+
+    const rebuild = store.rebuildPlot()
+    await settle()
+    expect(store.isEditorReady).toBe(false)
+
+    finishDraw()
+    await rebuild
+    expect(store.isEditorReady).toBe(true)
+  })
+
+  it('does not report the editor ready until the edit record is drawn', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await loadSession()
+    await settle()
+    expect(store.isEditorReady).toBe(false)
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    let finishDraw!: () => void
+    vi.mocked(handleNewPlot).mockImplementationOnce(
+      () => new Promise<void>((r) => (finishDraw = r))
+    )
+
+    const placing = store.setEditRecord({ dataX: [1], history: [] } as any)
+    await settle()
+    expect(store.isEditorReady).toBe(false)
+
+    finishDraw()
+    await placing
+    expect(store.isEditorReady).toBe(true)
+  })
+
+  it('does not report the editor ready while another session is opening', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    await loadSession()
+    await settle()
+    const { useQcSessionStore } = await import('@/store/qcSession')
+
+    useQcSessionStore().isSwitchingSession = true
+
+    expect(store.isEditorReady).toBe(false)
   })
 
   it('keeps a custom context range when the session window loads', async () => {

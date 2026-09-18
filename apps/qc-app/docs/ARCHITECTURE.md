@@ -427,8 +427,8 @@ COOP/COEP are on by default. `vite.config.ts` sets
 `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp` so `SharedArrayBuffer` is
 available for the qc-utils worker pool. The trade-off is that any
-cross-origin response without `Cross-Origin-Resource-Policy` gets blocked
-— so older HydroServer deployments that don't yet serve CORP headers need
+cross-origin response without `Cross-Origin-Resource-Policy` gets blocked,
+so older HydroServer deployments that don't yet serve CORP headers need
 `VITE_APP_DISABLE_COOP=1` to drop the headers. When SAB is unavailable
 the worker layer falls back to inline kernels, so the app keeps working
 either way (just slower on large edits).

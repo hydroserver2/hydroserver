@@ -98,6 +98,8 @@
     />
 
     <div
+      data-testid="edit-plot-column"
+      :data-editor-ready="isEditorReady"
       class="edit-view__col edit-view__col--plot d-flex flex-column flex-fill pa-3 overflow-hidden"
     >
       <v-card class="fill-height d-flex flex-column" elevation="1">
@@ -491,6 +493,7 @@ const { toggleSnapshot } = useHistorySnapshots()
 const {
   plottedDatastreams,
   qcDatastreamId,
+  isEditorReady,
   datastreams,
   things,
   beginDate,
@@ -857,7 +860,7 @@ const hydrateFromUrl = () => {
   // Snapshots replay against the session store, which the resume hook loads
   // asynchronously and independently of the plot. Wait for the editor to
   // actually be open on the `ed` target (an in-progress or viewed session
-  // means `loadSessions` has landed) rather than chaining off
+  // means its sessions were applied) rather than chaining off
   // `setPlottedDatastreams`, which only settles the plot.
   const snapshots = state.snapshots ?? []
   const editTargetId = state.editView ? state.editDatastreamId : undefined

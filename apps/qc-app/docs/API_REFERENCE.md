@@ -224,9 +224,12 @@ const {
   (append-only reconcile).
 - `discardUnsavedEdits()`: drops edits made since the last save and restores
   edited comments.
-- `commit()` — saves, verifies checksum C, pushes observations
-  (`mode: 'replace'`), then locks the session.
-- `hasUnsavedChanges` / `unsavedEditCount` — the working copy compared with
+- `commit()`: saves, verifies checksum C, pushes observations
+  (`mode: 'replace'`), then locks the session and reloads the sessions. If
+  another target took over the editor while they reloaded, it leaves the
+  session store and the saved-edits baseline alone and still resolves, since
+  the commit itself went through.
+- `hasUnsavedChanges` / `unsavedEditCount`: the working copy compared with
   the saved-edits baseline (`qcSession.savedEdits` / `savedComments`). The
   baseline lives in the store, so every caller agrees: the editor footer and
   the nav rail's exit guard both read it.
@@ -340,13 +343,15 @@ on boot.
 | `selectedQualifier`                 | state    | `string`                                          | Active qualifier in the picker. |
 | `selectedData`                      | state    | `number[] \| null`                                | Index list of the active selection (lasso, box, click). |
 | `hasSelectionShape`                 | state    | `boolean`                                         | True while a box/lasso shape exists, even when it captured zero points. |
-| `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. |
+| `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. Only the latest request for a datastream clears its flag. |
+| `isEditorReady`                     | computed | `boolean`                                         | True while editing once the session window is known, the edit record is on the plot, no session is opening (`isSwitchingSession`), and no plot work is pending: no queued or running plot load (including the context re-anchor around the session window) and no tracked draw. Bound to `data-editor-ready` on the edit view's `edit-plot-column`; e2e `waitForEditorReady` waits on it. |
+| `trackPlotWork`                     | action   | `(work: () => Promise<void>) => Promise<void>`    | Run `work` counted as pending plot work for `isEditorReady`. Plot loads and `setEditRecord` use it, and `Plot.vue` counts its first draw from the moment the plot element appears. |
 | `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it on every plot rebuild: around the edit session's window while one is set (`presetAroundWindow`), otherwise back from the context data's (`seriesDatastreams` minus the edit target) end (`presetWindow`). It also re-resolves when the edit session's window loads or changes. A custom range stays fixed. |
 | `selectedDateBtnId`                 | state    | `number`                                          | Active preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
 | `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
-| `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves. Otherwise refreshes `seriesDatastreams`; while editing this reloads context only and preserves the zoom (`redraw(false, true)`), since the edit target's data isn't fetched here. Otherwise it clears zoom history and applies the new window. |
+| `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves. Otherwise sets the bounds at once and queues a range reload as a plot load (see `rebuildPlot`), which joins a queued rebuild instead of loading on its own and is skipped when an earlier load already caught up with the range. While editing it reloads context only and preserves the zoom (`redraw(false, true)`), since the edit target's data isn't fetched here. Otherwise it clears zoom history and applies the new window. |
 | `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies the window the internal `resolvePresetWindow` gives it: around the edit session's window while editing one, otherwise back from the context data's end. With nothing to anchor to, only the selection changes. |
 | `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `seriesDatastreams` (fetch deltas + reorder + recolor), skipping the edit target (its data is owned by the edit session, not this refresh). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. Invalidates the working copy of any managed datastream no longer in `seriesDatastreams`, except the edit target. |
 | `resetState`                        | action   | `() => void`                                      | Clears filters, the plotted set, and the edit target, and drops every working copy, on a workspace swap; preserves the preset preference. |
@@ -360,9 +365,9 @@ on boot.
 | `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the edit target alone. |
 | `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
 | `setEditTarget`                     | action   | `(managedId: string) => Promise<void>`            | Begin editing `managedId`: drops snapshots, resets the `qcSession` store (not `resumeDatastreamId`) and clears zoom history when the target changes, sets `qcDatastreamId`, rebuilds the plot. Its data arrives later via `setEditRecord`. This action doesn't fetch it. |
-| `setEditRecord`                     | action   | `(record: ObservationRecord) => Promise<void>`    | Put the edit target's record on the plot: updates its graph series in place if one exists, otherwise adds it (`buildGraphSeries`) and redraws. The only path by which the edit target's data reaches the plot. |
+| `setEditRecord`                     | action   | `(record: ObservationRecord) => Promise<void>`    | Put the edit target's record on the plot: updates its graph series in place if one exists, otherwise adds it (`buildGraphSeries`) and redraws. The only path by which the edit target's data reaches the plot. Counted as plot work until drawn. |
 | `clearEditTarget`                   | action   | `() => Promise<void>`                             | Stop editing: drops snapshots, invalidates the edit target's working copy, clears `qcDatastreamId`, removes its graph series, and rebuilds. Plotted datastreams are left exactly as they were. |
-| `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (refresh series, regenerate options, render). Drops zoom history in the Select view; keeps the zoom while an edit target is set. Coalesces concurrent callers. |
+| `rebuildPlot`                       | action   | `() => Promise<void>`                             | Rebuild (refresh series, regenerate options, render) as a plot load. Plot loads (rebuilds and `setDateRange` range reloads) run one at a time; requests made while one runs share one queued follow-up, which is a rebuild if any of them was, and every caller resolves only after a load that started after its change. A load whose range moves while it loads drops those responses and loads again before drawing. Drops zoom history in the Select view; keeps the zoom while an edit target is set. |
 
 ### `useWorkingCopiesStore()` (`src/store/workingCopies.ts`)
 
@@ -460,7 +465,7 @@ Fetches + caches observation windows and inflates them into
 |----------------------------|----------|---------------------------------------------------|-------|
 | `observations`             | state    | `Record<string, ObservationRecord>`               | Per-datastream record; reused across rebuilds. |
 | `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes + `Float32Array` values). |
-| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Extends the cached range minimally; only fetches segments outside the existing window. |
+| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Extends the cached range minimally; only fetches segments outside the existing window. Requests for one datastream run in order, so the record ends on the latest requested window and the cache never merges the same segment twice; a request matching the last queued range shares its promise. |
 
 ### `useWorkspaceStore()` (`src/store/workspaces.ts`)
 
@@ -604,7 +609,6 @@ puts the editor in read-only mode.
 | `sessions`          | state    | `QualityControlSession[]`               | Committed + in-progress sessions for the history. |
 | `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
 | `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
-| `isLoading`         | state    | `boolean`                               | True while `loadSessions` is in flight. |
 | `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
 | `savedEdits`        | state    | `HistoryItem[]`                         | Edit history entries (by reference) at the last load or save. `useEditSession` compares the working copy against it for `hasUnsavedChanges`; kept in the store so the editor footer and the nav rail's exit guard agree. |
 | `savedComments`     | state    | `string[]`                              | Comment text of `savedEdits`, since comments are edited in place. |
@@ -614,7 +618,6 @@ puts the editor in read-only mode.
 | `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
 | `fetchSessions`     | action   | `(historyId: string) => Promise<QualityControlSession[]>` | Fetch a history's sessions with their operations without writing any state, so a caller can drop a result that went stale (see `useEditSession`). |
 | `applySessions`     | action   | `(historyId: string, sessions: QualityControlSession[]) => void` | Adopt fetched sessions; default the view to the in-progress one, else the latest committed. |
-| `loadSessions`      | action   | `(historyId: string) => Promise<void>`  | `fetchSessions` then `applySessions`, with `isLoading` set meanwhile. |
 | `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |
 | `returnToCurrent`   | action   | `() => void`                            | Return to the editable in-progress session. |
 | `reset`             | action   | `() => void`                            | Clear all state. |
@@ -669,6 +672,10 @@ and their pure resolution:
   is `null`); YTD resolves the same as All. `null` for an unknown id.
 - `EDITOR_PRESETS`: the presets the editor's Context menu offers, without
   YTD and titled for the session window.
+- `shownPresetId(selectedId, presets)`: the chip that shows the selection
+  among `presets`. YTD shows as All where it is not offered; `null` for
+  Custom or an unknown id. Display only: `DataVisTimeFilters` highlights it
+  and `selectedDateBtnId` is unchanged.
 
 ### `src/utils/sessionWindow.ts`
 

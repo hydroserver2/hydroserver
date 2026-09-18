@@ -28,12 +28,23 @@ vi.mock('@/store/plotly', () => ({
     reactive({ ...plotly, updateOptions, requestTableScroll }),
 }))
 
+const pendingPlotWork = ref(0)
+async function trackPlotWork(work: () => Promise<void>) {
+  pendingPlotWork.value++
+  try {
+    await work()
+  } finally {
+    pendingPlotWork.value--
+  }
+}
+
 vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () =>
     reactive({
       selectedData: ref(null),
       hasSelectionShape: ref(false),
       qcDatastream: ref(null),
+      trackPlotWork,
     }),
 }))
 
@@ -88,6 +99,7 @@ describe('Plot.vue delayed mount', () => {
     zoomXaxisTo.mockClear()
     plotly.plotlyRef.value = null
     viewedSession.value = null
+    pendingPlotWork.value = 0
   })
 
   afterEach(() => {
@@ -102,6 +114,60 @@ describe('Plot.vue delayed mount', () => {
       wrapper.find('[data-testid="main-plot"]').element
     )
     wrapper.unmount()
+  })
+
+  describe('opening on the Table tab', () => {
+    beforeEach(() => {
+      plotly.activeTab.value = 'table'
+    })
+    afterEach(() => {
+      plotly.activeTab.value = 'plot'
+    })
+
+    it('waits for the plot element instead of drawing into nothing', async () => {
+      const wrapper = mountIt()
+      await vi.advanceTimersByTimeAsync(200)
+      expect(wrapper.find('[data-testid="main-plot"]').exists()).toBe(false)
+      expect(handleNewPlot).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+
+    it('draws once the Plot tab renders the element', async () => {
+      const wrapper = mountIt()
+      await vi.advanceTimersByTimeAsync(200)
+      plotly.activeTab.value = 'plot'
+      await flushPromises()
+      await vi.advanceTimersByTimeAsync(200)
+      expect(handleNewPlot).toHaveBeenCalledTimes(1)
+      expect(handleNewPlot).toHaveBeenCalledWith(
+        wrapper.find('[data-testid="main-plot"]').element
+      )
+      wrapper.unmount()
+    })
+  })
+
+  it('counts the mount draw as plot work from mount until it is drawn', async () => {
+    let finishDraw!: () => void
+    handleNewPlot.mockImplementationOnce(
+      () => new Promise<void>((r) => (finishDraw = r))
+    )
+    const wrapper = mountIt()
+    await flushPromises()
+    expect(pendingPlotWork.value).toBe(1)
+    await vi.advanceTimersByTimeAsync(200)
+    expect(pendingPlotWork.value).toBe(1)
+    finishDraw()
+    await flushPromises()
+    expect(pendingPlotWork.value).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('releases the plot work when unmounted before the delay fires', async () => {
+    const wrapper = mountIt()
+    await flushPromises()
+    wrapper.unmount()
+    await flushPromises()
+    expect(pendingPlotWork.value).toBe(0)
   })
 
   it('does not draw when unmounted before the delay fires', async () => {

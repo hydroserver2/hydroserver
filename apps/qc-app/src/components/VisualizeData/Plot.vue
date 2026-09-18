@@ -446,6 +446,7 @@ const {
 } = storeToRefs(usePlotlyStore())
 const { selectedData, hasSelectionShape, qcDatastream } =
   storeToRefs(useDataVisStore())
+const { trackPlotWork } = useDataVisStore()
 const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
 
 const tooltipsAutoDisabled = computed(
@@ -667,65 +668,91 @@ const keyboardShortcuts = [
 
 let plotResizeObserver: ResizeObserver | null = null
 let pendingResizeFrame: number | null = null
-let mountDrawTimer: ReturnType<typeof setTimeout> | null = null
+let cancelFirstDraw: (() => void) | null = null
 // Deferred work checks this so it never touches a detached plot.
 let isUnmounted = false
 
-onMounted(async () => {
+onMounted(() => {
   // Flip before handleNewPlot so createPlotlyOption emits the
   // preview layout (no qualifier band, no title, tight margins).
   previewMode.value = !!props.preview
   updateOptions()
+})
 
-  // Wait for the view-switch animation to expand the container.
-  mountDrawTimer = setTimeout(async () => {
-    mountDrawTimer = null
+// The plot tab renders its element lazily, so a view that opens on the
+// Table tab has no element at mount. Draw when the element appears.
+watch(
+  plot,
+  (target) => {
+    if (target) scheduleFirstDraw(target)
+  },
+  { flush: 'post' }
+)
+
+// Plot work from the moment the element appears, so the editor is not
+// reported ready before the plot the user sees is drawn.
+function scheduleFirstDraw(target: HTMLDivElement) {
+  cancelFirstDraw?.()
+  const drawn = trackPlotWork(async () => {
+    // Wait for the view-switch animation to expand the container.
+    let cancel!: () => void
+    const due = await new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => resolve(true), 200)
+      cancel = () => {
+        clearTimeout(timer)
+        resolve(false)
+      }
+      cancelFirstDraw = cancel
+    })
+    // A newer schedule owns the flag by now, so only clear our own.
+    if (cancelFirstDraw === cancel) cancelFirstDraw = null
+    if (!due || isUnmounted) return
     updateOptions()
     // A share-URL zoom, if any, is applied and cleared inside
     // handleNewPlot itself, so capture it before that happens: it
     // should win over the session-window zoom below.
     const hadPendingShareZoom = !!pendingShareZoom.value
-    await handleNewPlot(plot.value)
+    await handleNewPlot(target)
     if (isUnmounted) return
     if (!props.preview && !hadPendingShareZoom) zoomToEditWindow()
+    observePlotSize(target)
+  })
+  drawn.catch((e) => console.error('First plot draw failed', e))
+}
 
-    const target = plot.value
-    if (target && typeof ResizeObserver !== 'undefined') {
-      // The plot can be laid out before the container reaches its final
-      // size, so resize whenever the two differ, including on the first
-      // notification.
-      plotResizeObserver = new ResizeObserver(() => {
-        if (pendingResizeFrame != null) return
-        pendingResizeFrame = requestAnimationFrame(() => {
-          pendingResizeFrame = null
-          const gd = plot.value as
-            | (HTMLElement & { _fullLayout?: { width: number; height: number } })
-            | null
-          const layout = gd?._fullLayout
-          // Plotly.Plots.resize rejects a hidden div (Table tab).
-          if (!gd || !layout || !gd.offsetWidth || !gd.offsetHeight) return
-          if (
-            Math.abs(layout.width - gd.offsetWidth) < 1 &&
-            Math.abs(layout.height - gd.offsetHeight) < 1
-          ) {
-            return
-          }
-          void Plotly.Plots.resize(gd as unknown as Plotly.Root)
-        })
-      })
-      plotResizeObserver.observe(target)
-    }
-  }, 200)
-})
+function observePlotSize(target: HTMLDivElement) {
+  if (typeof ResizeObserver === 'undefined') return
+  plotResizeObserver?.disconnect()
+  // The plot can be laid out before the container reaches its final
+  // size, so resize whenever the two differ, including on the first
+  // notification.
+  plotResizeObserver = new ResizeObserver(() => {
+    if (pendingResizeFrame != null) return
+    pendingResizeFrame = requestAnimationFrame(() => {
+      pendingResizeFrame = null
+      const gd = plot.value as
+        | (HTMLElement & { _fullLayout?: { width: number; height: number } })
+        | null
+      const layout = gd?._fullLayout
+      // Plotly.Plots.resize rejects a hidden div (Table tab).
+      if (!gd || !layout || !gd.offsetWidth || !gd.offsetHeight) return
+      if (
+        Math.abs(layout.width - gd.offsetWidth) < 1 &&
+        Math.abs(layout.height - gd.offsetHeight) < 1
+      ) {
+        return
+      }
+      void Plotly.Plots.resize(gd as unknown as Plotly.Root)
+    })
+  })
+  plotResizeObserver.observe(target)
+}
 
 onBeforeUnmount(() => {
   isUnmounted = true
   // Reset so the next Plot mount in Edit view doesn't inherit preview.
   if (previewMode.value) previewMode.value = false
-  if (mountDrawTimer != null) {
-    clearTimeout(mountDrawTimer)
-    mountDrawTimer = null
-  }
+  cancelFirstDraw?.()
   if (pendingResizeFrame != null) {
     cancelAnimationFrame(pendingResizeFrame)
     pendingResizeFrame = null

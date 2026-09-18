@@ -7,6 +7,7 @@ import {
   dataExtent,
   presetAroundWindow,
   presetWindow,
+  shownPresetId,
 } from '@/utils/timeRangePresets'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -190,5 +191,21 @@ describe('presetAroundWindow', () => {
   it('is null for an unknown id', () => {
     expect(presetAroundWindow(999, window, extent)).toBeNull()
     expect(presetAroundWindow(-1, window, extent)).toBeNull()
+  })
+})
+
+describe('shownPresetId', () => {
+  it('shows an offered preset as itself', () => {
+    expect(shownPresetId(3, TIME_RANGE_PRESETS)).toBe(3)
+    expect(shownPresetId(0, EDITOR_PRESETS)).toBe(0)
+  })
+
+  it('shows YTD as All where YTD is not offered', () => {
+    expect(shownPresetId(3, EDITOR_PRESETS)).toBe(ALL_PRESET_ID)
+  })
+
+  it('shows nothing for Custom or an unknown id', () => {
+    expect(shownPresetId(-1, EDITOR_PRESETS)).toBeNull()
+    expect(shownPresetId(99, EDITOR_PRESETS)).toBeNull()
   })
 })

@@ -6,8 +6,8 @@ don't) get out of the box, and how upgrades and migrations work.
 
 ## Shape of a deployment
 
-The QC App builds to a fully static SPA — HTML, JS, CSS, fonts, icons,
-and inline worker bundles. Anything that can serve static files over
+The QC App builds to a fully static SPA (HTML, JS, CSS, fonts, icons,
+and inline worker bundles). Anything that can serve static files over
 HTTPS and add a few response headers can host it. There is **no server
 component, no database, and no background job** to operate alongside the
 app itself; all the moving parts live in the user's browser.

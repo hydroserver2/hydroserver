@@ -608,6 +608,34 @@ describe('useEditSession', () => {
     expect(fetchObservationsInRange).not.toHaveBeenCalled()
   })
 
+  it('commit completes without writing the session store when the target changes while sessions reload', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const refreshed = { id: 'm-1', phenomenonEndTime: '2025-02-01T00:00:00Z' }
+    getItem.mockImplementation(async (id: string) =>
+      id === 'm-1' ? refreshed : { id: 's-1', name: 'Source' }
+    )
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    const list = qc.sessions.list.bind(qc.sessions)
+    vi.spyOn(qc.sessions, 'list').mockImplementationOnce(async (...args) => {
+      const res = await list(...args)
+      takeOver()
+      return res
+    })
+
+    await expect(session.commit()).resolves.toBeUndefined()
+
+    expect(createObservations).toHaveBeenCalled()
+    const store = useQcSessionStore()
+    expect(store.historyId).toBeNull()
+    expect(store.sessions).toEqual([])
+    expect(store.savedEdits).toEqual([])
+    expect(replaceDatastream).toHaveBeenCalledWith(refreshed)
+  })
+
   it('startSession stores its base as the working copy', async () => {
     await seedHistory()
     const { useEditSession } = await import('@/composables/useEditSession')

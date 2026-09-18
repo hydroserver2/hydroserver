@@ -44,7 +44,7 @@ describe('useQcSessionStore', () => {
   it('loads sessions and defaults the view to the in-progress session', async () => {
     const { historyId, inProgressId } = await seed()
     const store = useQcSessionStore()
-    await store.loadSessions(historyId)
+    store.applySessions(historyId, await store.fetchSessions(historyId))
 
     expect(store.historyId).toBe(historyId)
     expect(store.sessions).toHaveLength(2)
@@ -72,7 +72,7 @@ describe('useQcSessionStore', () => {
   it('viewing a committed session is read-only; returnToCurrent restores editing', async () => {
     const { historyId, committedId, inProgressId } = await seed()
     const store = useQcSessionStore()
-    await store.loadSessions(historyId)
+    store.applySessions(historyId, await store.fetchSessions(historyId))
 
     store.viewSession(committedId)
     expect(store.viewedSessionId).toBe(committedId)
@@ -87,7 +87,7 @@ describe('useQcSessionStore', () => {
   it('ignores viewSession for an unknown session id', async () => {
     const { historyId, inProgressId } = await seed()
     const store = useQcSessionStore()
-    await store.loadSessions(historyId)
+    store.applySessions(historyId, await store.fetchSessions(historyId))
     store.viewSession('does-not-exist')
     expect(store.viewedSessionId).toBe(inProgressId)
   })
@@ -109,7 +109,7 @@ describe('useQcSessionStore', () => {
     await qc.sessions.commit(h.id, b.id)
 
     const store = useQcSessionStore()
-    await store.loadSessions(h.id)
+    store.applySessions(h.id, await store.fetchSessions(h.id))
 
     expect(store.currentSessionId).toBeNull()
     expect(store.viewedSessionId).toBe(b.id)
@@ -126,7 +126,7 @@ describe('useQcSessionStore', () => {
     await qc.sessions.create(h.id, win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'))
 
     const store = useQcSessionStore()
-    await store.loadSessions(h.id)
+    store.applySessions(h.id, await store.fetchSessions(h.id))
     store.resumeDatastreamId = 'm-1'
 
     // `reset` clears the live session context (leaving a datastream), but the
@@ -167,7 +167,7 @@ describe('useQcSessionStore', () => {
     } as any
 
     const store = useQcSessionStore()
-    await store.loadSessions(h.id)
+    store.applySessions(h.id, await store.fetchSessions(h.id))
 
     const loaded = store.sessions.find((x) => x.id === s.id) as any
     expect(loaded.operations.map((o: any) => o.operationType)).toEqual([
@@ -197,7 +197,7 @@ describe('useQcSessionStore', () => {
       qualityControlOperations: { ...qc.operations, list: opsList },
     } as any
 
-    await useQcSessionStore().loadSessions(h.id)
+    useQcSessionStore().applySessions(h.id, await useQcSessionStore().fetchSessions(h.id))
     expect(opsList).not.toHaveBeenCalled()
   })
 

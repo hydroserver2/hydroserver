@@ -96,6 +96,17 @@ export const EDITOR_PRESETS: readonly TimeRangePreset[] = TIME_RANGE_PRESETS
   .filter((p) => p.label !== 'YTD')
   .map((p) => ({ ...p, title: EDITOR_TITLES[p.label] ?? p.title }))
 
+/** The chip that shows `selectedId` among `presets`, or null for none. YTD
+ *  shows as All where it is not offered, since it loads like All there. The
+ *  selection itself is unchanged. */
+export function shownPresetId(
+  selectedId: number,
+  presets: readonly TimeRangePreset[]
+): number | null {
+  if (presets.some((p) => p.id === selectedId)) return selectedId
+  return findPreset(selectedId)?.label === 'YTD' ? ALL_PRESET_ID : null
+}
+
 /**
  * The window a preset covers around an edit session's window: the span on
  * each side. All (and YTD, not offered in the editor) is the data extent,

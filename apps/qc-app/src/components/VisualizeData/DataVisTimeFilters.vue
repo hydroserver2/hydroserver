@@ -36,8 +36,8 @@
         v-for="option in presets"
         :key="option.id"
         :data-testid="`date-preset-${option.label}`"
-        :color="selectedDateBtnId === option.id ? 'primary' : undefined"
-        :variant="selectedDateBtnId === option.id ? 'tonal' : 'outlined'"
+        :color="shownId === option.id ? 'primary' : undefined"
+        :variant="shownId === option.id ? 'tonal' : 'outlined'"
         size="small"
         :title="option.title"
         class="time-filters__preset-chip justify-center"
@@ -66,11 +66,13 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import {
   CUSTOM_PRESET_ID,
   TIME_RANGE_PRESETS,
+  shownPresetId,
   type TimeRangePreset,
 } from '@/utils/timeRangePresets'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     description?: string
     /** Preset chips to offer; the editor leaves out YTD. */
@@ -81,6 +83,10 @@ withDefaults(
 
 const { setDateRange, onDateBtnClick } = useDataVisStore()
 const { beginDate, endDate, selectedDateBtnId } = storeToRefs(useDataVisStore())
+
+const shownId = computed(() =>
+  shownPresetId(selectedDateBtnId.value, props.presets)
+)
 </script>
 
 <style scoped>

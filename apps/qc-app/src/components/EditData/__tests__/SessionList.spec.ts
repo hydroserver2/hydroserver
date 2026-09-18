@@ -54,7 +54,7 @@ async function seedAndLoad() {
     await qc.sessions.create(h.id, win('2025-02-01T00:00:00Z', '2025-03-01T00:00:00Z'))
   )
   const store = useQcSessionStore()
-  await store.loadSessions(h.id)
+  store.applySessions(h.id, await store.fetchSessions(h.id))
   return { store, committedId: committed.id, inProgressId: inProgress.id }
 }
 
@@ -108,7 +108,7 @@ describe('SessionList', () => {
     const first = unwrap(await qc.sessions.create(h.id, sameWindow))
     await qc.sessions.commit(h.id, first.id)
     const second = unwrap(await qc.sessions.create(h.id, sameWindow))
-    await useQcSessionStore().loadSessions(h.id)
+    useQcSessionStore().applySessions(h.id, await useQcSessionStore().fetchSessions(h.id))
 
     const wrapper = mountList()
     await flushPromises()
@@ -188,7 +188,7 @@ describe('SessionList', () => {
     ])
     await qc.sessions.commit(h.id, committed.id)
     await qc.sessions.create(h.id, range)
-    await useQcSessionStore().loadSessions(h.id)
+    useQcSessionStore().applySessions(h.id, await useQcSessionStore().fetchSessions(h.id))
 
     const wrapper = mountList()
     await flushPromises()

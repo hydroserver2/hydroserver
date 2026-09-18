@@ -181,7 +181,8 @@ observation: **1w**, **1m**, **6m** and **1y** load that span before the
 session's start and after its end, and **All** loads all of the context
 data (always including the session's window). **YTD** is not offered here.
 If YTD is your active preset from the Select view, the editor loads the
-context as **All** without changing that preference. When a session loads
+context as **All** and highlights the **All** chip, without changing that
+preference. When a session loads
 or you view another session, the active preset re-applies around its
 window; a `Custom` From / To range stays as you set it. Changing the range
 reloads that context data and keeps your current zoom. Your edits are

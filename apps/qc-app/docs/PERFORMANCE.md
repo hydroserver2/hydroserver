@@ -112,6 +112,16 @@ Key fetch optimizations already in place:
   in `rawData` and slices it to the selected `[begin, end]` range via
   `applyWindow`, so the plot, table and counts only ever touch the current
   window.
+- **One plot load at a time.** Rebuilds and context range reloads are
+  serialized in `useDataVisStore`. A range reload that lands while a rebuild
+  is queued joins it, and one that finds its range already loaded skips, so
+  overlapping triggers (a session window arriving during a rebuild) do not
+  fetch the same range twice.
+- **Ordered requests per datastream.** Overlapping requests for one
+  datastream from different callers (a context load and a session base
+  load, for example) run in order, so each fills only what the previous left
+  missing, and a request for the range already queued shares that request
+  instead of fetching again.
 - **Loading state per datastream.** The UI shows a per-stream spinner so
   one slow fetch doesn't block the others.
 
