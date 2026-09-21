@@ -22,7 +22,7 @@ contributor can read the modules in the order the code runs.
 | `interaction.ts`  | DOM-level handlers: throttled mousemove crosshair, wheel-zoom, axis-chip placement, y-axis drag-rect widening.         |
 | `operations.ts`   | Imperative helpers callable from components: `zoomXaxisTo`, `toggleTraceVisibility`, `setSelectedPoints`, etc.         |
 | `staging.ts`      | Visual-only overlays while a Find-Gaps / Fill-Gaps operation is staged. Ghost-fill trace + drag-resizable shape.       |
-| `shapes.ts`       | `composeShapes` / `withLiveShapes`: each `layout.shapes` writer replaces only the shapes it names.                     |
+| `shapes.ts`       | `withLiveShapes`: carries the live stage band onto a fresh layout when the plot is re-created.                         |
 
 The split is not by file size, it's by the Plotly API each module
 talks to. `options.ts` owns trace + layout construction. `events.ts`
@@ -222,8 +222,9 @@ The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (with
 `EDITOR_PRESETS`, which leaves out YTD and highlights All for a persisted
 YTD through `shownPresetId`, and the same From / To pickers as
 the Select view) bound to the same `beginDate` / `endDate` store range. The
-Select view's own Time range drives that same state, so while an edit target
-is set the two are one control.
+Select view's own Time range is hidden while an edit target is set, and each
+remembers its own preset: `activePresetId` is `contextPresetId` while editing
+and `selectedDateBtnId` otherwise, and every range action goes through it.
 Picking a preset or a custom date calls `setDateRange`, which, while an
 edit target is set, reloads only the context series
 (`refreshGraphSeriesArray`, which never fetches the edit target) and
@@ -261,21 +262,53 @@ range no longer matches, and the load loads the new range before drawing.
 A range reload queued behind it then finds the range already loaded and
 skips.
 
-The session window itself is shaded as a layout shape (`name: 'edit-window'`
-in `options.ts`), drawn from `useQcSessionStore().viewedSession` (falling
-back to `inProgressSession`), only while an edit target is set.
+The session window is not drawn as a shape: a shape would sit over the plot,
+and with `edits.shapePosition` on (needed to drag the stage band) Plotly
+makes every shape grab the mouse, which blocks box select. The data shows it
+instead. The edit target is one trace in QC grey (`COLORS[0]`), and its
+working copy spans only the session window. The source is the context around
+it, drawn light grey (`SOURCE_CONTEXT_COLOR`) and only outside
+`editSessionWindow` (the viewed session's window, else the in-progress one).
+`sourceContextDatastream` is that drawn source: null when the Context menu's
+switch is off (`showSourceContext`), or when the user plotted the source
+themselves, which then draws whole as an ordinary series and counts toward
+the 4. `editSourceDatastream` is the edit target's source either way.
 `setEditTarget` resets the session store when the target changes, so the
-previous target's window is never drawn over the new one.
+previous target's window is never applied to the new one.
 
-`layout.shapes` has more than one writer: `createPlotlyOption` owns
-`edit-window` and `staging.ts` owns `stage`. `Plotly.update` and
-`Plotly.relayout` replace the whole array, so partial writes go through
-`utils/plotting/shapes.ts`: `redraw` and `cropXaxisRange` use
-`withLiveShapes` to swap in the fresh `edit-window` and keep the live
-`stage` band, and the staging flush uses `composeShapes` to do the reverse
-(stage stays first so drag events still address `shapes[0]`).
-`handleNewPlot` (`events.ts`) does the same on a re-plot of the live element,
-so an operation's staged band survives a rebuild; a first mount has no live
+- **Pieces**: `splitAroundWindow` cuts the source record into the points
+  before and after the window, as `subarray` views of the same buffers, so
+  nothing is copied. The main trace (which keeps the series `id`) draws the
+  before points; the after points ride on a companion trace tagged
+  `_partOf`, as do the gap overlays, one per piece so no line crosses the
+  window. `_partOf` routes visibility toggles and replot carries to every
+  trace of the series.
+- **Bridge**: `bridgeAcrossWindow` adds one more `_partOf` line joining the
+  source's last point before the window to the edit target's first, and the
+  target's last to the source's first after it. A step wider than the
+  cadence stays open, as it would inside a line. Every source trace always
+  exists (pieces are empty without a window), so the trace count never
+  changes between `redraw`s. `ContextPlot` draws the source with the same
+  gap.
+- **Loading**: the source waits for the window, and its context load passes
+  the window as `exclude` to `fetchObservationsInRange`, so the window's
+  observations are never requested for it. Working copies and snapshots build
+  on `fetchDetachedRecord`, so they never re-window the shared record the
+  plot draws; building a base over the window used to cut the plotted
+  source down to the window, leaving no context.
+- **Axes**: a re-plot (`handleNewPlot`) or `redraw` keeps the live y range
+  only for an axis that had points drawn; an empty axis sits on Plotly's
+  default range, and carrying it would put the new data off the plot. Series
+  sharing an axis (the edit target and its source) share one axis chip. The window watch runs a rebuild,
+  since the source's traces first appear then and only a rebuild adds
+  traces. The window is part of the `loadKey` a range reload checks.
+
+`layout.shapes` belongs to `staging.ts` alone (the `stage` band, always
+`shapes[0]`). `createPlotlyOption` builds layouts without shapes, so
+`Plotly.update` from `redraw` and `cropXaxisRange` leaves the band alone.
+`handleNewPlot` (`events.ts`) re-creates the plot, so on a re-plot of the
+live element it carries the live shapes over with `withLiveShapes`, and an
+operation's staged band survives a rebuild; a first mount has no live
 layout to carry anything from.
 
 Plot rebuilds (`rebuildPlot`, run when plotted datastreams change) keep

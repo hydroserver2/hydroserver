@@ -16,7 +16,6 @@ import {
   SOURCE_CONTEXT_COLOR,
   SOURCE_CONTEXT_LABEL_COLOR,
 } from '@/utils/plotting/plotly'
-import { withLiveShapes } from '@/utils/plotting/shapes'
 import type {
   AppPlotlyHTMLElement,
   AppPlotlyTrace,
@@ -185,6 +184,15 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     () => selectedSeries.value?.data?.history ?? []
   )
 
+  /**
+   * The earlier history step the edit target shows, or null when it shows
+   * the whole history. Previewing only shows a step, so edits wait until
+   * the user is back on the latest one.
+   */
+  const previewIndex = computed<number | null>(
+    () => selectedSeries.value?.data?.previewIndex ?? null
+  )
+
   // Initialize to an empty-trace PlotlyChartOptions so consumers can read
   // `plotlyOptions.value.traces` etc. without null-guards. 
   const plotlyOptions: Ref<PlotlyChartOptions> = ref(createPlotlyOption([]))
@@ -332,9 +340,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
         | undefined)
       : undefined
     if (liveLayout) {
+      // A y axis with no points drawn sits on Plotly's default range, not a
+      // view the user chose, so it autoranges to the new data instead.
+      const drawnAxes = new Set(
+        ((plotlyRef.value?.data ?? []) as AppPlotlyTrace[])
+          .filter((t) => (t.x as ArrayLike<unknown> | undefined)?.length)
+          .map((t) => `yaxis${String(t.yaxis ?? 'y').slice(1)}`)
+      )
       const layoutRecord = opts.layout as Record<string, unknown>
       for (const key of Object.keys(layoutRecord)) {
         if (key !== 'xaxis' && !key.startsWith('yaxis')) continue
+        if (key.startsWith('yaxis') && !drawnAxes.has(key)) continue
         const nextAxis = layoutRecord[key] as Partial<LayoutAxis> | undefined
         const liveAxis = liveLayout[key] as Partial<LayoutAxis> | undefined
         const liveRange = liveAxis?.range as
@@ -358,8 +374,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
         x: opts.traces.map((t) => (t as AppPlotlyTrace).x),
         y: opts.traces.map((t) => (t as AppPlotlyTrace).y),
       } as unknown as Partial<PlotData>,
-      // `Plotly.update` replaces the whole shapes array; keep the stage band.
-      withLiveShapes(opts.layout, plotlyRef.value?.layout)
+      opts.layout
     )
 
     if (recomputeXaxisRange) {
@@ -406,13 +421,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     } as GraphSeries
   }
 
+  /** A series for `datastream`, filled with `fetchAs`'s observations (the
+   *  source context series reads the source's). */
   const fetchGraphSeries = async (
     datastream: Datastream,
     start: Date,
-    end: Date
+    end: Date,
+    exclude?: { begin: Date; end: Date },
+    fetchAs: Datastream = datastream
   ): Promise<GraphSeries> => {
     const { fetchObservationsInRange } = useObservationStore()
-    const data = await fetchObservationsInRange(datastream, start, end)
+    const data = await fetchObservationsInRange(fetchAs, start, end, exclude)
     if (!data.dataset.source.x) {
       await data.reload()
     }
@@ -534,6 +553,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     selectedSeriesIndex,
     selectedSeries,
     editHistory,
+    previewIndex,
     suppressedEchoSelection,
     updateOptions,
     redraw,

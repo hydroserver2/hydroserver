@@ -89,9 +89,12 @@ call `reload()` once construction is done to initialize.
 | `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<void>` | Run one filter op. Produces a selection.                                             |
 | `undo()`                                     | `Promise<void>`  | Pop the last history entry; replay the rest from a fresh `reload()`.                       |
 | `redo()`                                     | `Promise<void>`  | Replay the most recently undone entry.                                                     |
-| `applyWindow(begin, end)`                    | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. Clears history on a real change; no-op when the window is unchanged. |
+| `applyWindow(begin, end, rawData?)`          | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. A passed `rawData` replaces the full series first (e.g. after a cache filled a gap). Clears history on a real change; no-op when neither the window nor the data changed. |
 | `reload()`                                   | `Promise<void>`  | Re-initialize the typed arrays from `rawData`, sliced to the current window; clear history. |
-| `reloadHistory()`                            | `Promise<void>`  | Replay current history against a fresh `reload()`.                                         |
+| `previewHistory(index)`                      | `Promise<number[]>` | Show the data as of step `index` (`-1` for the starting state) and keep every later step listed, unapplied. Sets `previewIndex`; edits throw `HistoryPreviewError` until `exitPreview`. Previewing the last step is `exitPreview`. Returns the shown step's selection. |
+| `exitPreview()`                              | `Promise<number[]>` | Replay the whole history after a preview. A no-op when nothing is previewed. |
+| `truncateHistory(index)`                     | `Promise<number[]>` | Drop every step after `index` for good (discarding unsaved edits), clear the redo stack and replay the rest. |
+| `previewIndex`                               | `number \| null`    | The step being previewed, or null when the data reflects the whole history. `undo` ends a preview; `redo` ends it first, then redoes. |
 | `removeHistoryItem(index: number)`           | `Promise<void>`  | Drop a specific entry; replay the rest.                                                    |
 
 The op handlers themselves are private — dispatch by enum.

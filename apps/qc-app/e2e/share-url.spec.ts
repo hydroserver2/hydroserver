@@ -116,30 +116,40 @@ async function plotXRange(page: Page): Promise<[number, number] | null> {
   })
 }
 
-/**
- * Whether the plot is showing the session-window band the editor draws, which
- * is what "the editor opened on its session window" looks like from outside.
- */
-async function zoomedToSessionWindow(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const gd = document.querySelector('[data-testid="main-plot"]') as
-      | (HTMLElement & {
-          _fullLayout?: { xaxis?: { range?: [number | string, number | string] } }
-          layout?: { shapes?: { name?: string; x0?: unknown; x1?: unknown }[] }
-        })
-      | null
-    const range = gd?._fullLayout?.xaxis?.range
-    const band = (gd?.layout?.shapes ?? []).find((s) => s.name === 'edit-window')
-    if (!range) return 'no plot'
-    if (!band) return 'no session band'
-    const toMs = (v: unknown) =>
-      typeof v === 'number' ? v : Date.parse(String(v))
-    const near = (a: number, b: number) => Math.abs(a - b) <= 2000
-    return near(toMs(range[0]), toMs(band.x0)) &&
-      near(toMs(range[1]), toMs(band.x1))
-      ? 'session window'
-      : 'another range'
-  })
+type SessionWindow = { begin: number; end: number }
+
+/** Resolves with the window of the next session the app creates. */
+function nextSessionWindow(page: Page): Promise<SessionWindow> {
+  return page
+    .waitForResponse(
+      (r) =>
+        r.request().method() === 'POST' &&
+        /\/quality-control\/histories\/[^/]+\/sessions$/.test(
+          new URL(r.url()).pathname
+        )
+    )
+    .then(async (r) => {
+      const { data: s } = (await r.json()) as {
+        data: { phenomenonTimeStart: string; phenomenonTimeEnd: string }
+      }
+      return {
+        begin: Date.parse(s.phenomenonTimeStart),
+        end: Date.parse(s.phenomenonTimeEnd),
+      }
+    })
+}
+
+/** Whether the plot's x range is the session window. */
+async function zoomedToSessionWindow(
+  page: Page,
+  w: SessionWindow
+): Promise<string> {
+  const range = await plotXRange(page)
+  if (!range) return 'no plot'
+  const near = (a: number, b: number) => Math.abs(a - b) <= 2000
+  return near(range[0], w.begin) && near(range[1], w.end)
+    ? 'session window'
+    : 'another range'
 }
 
 /** Wait until the live plot draws a trace for every id in `ids`. */
@@ -379,10 +389,14 @@ test.describe('share URL', () => {
       })
       .toBeCloseTo(xLo, -4)
 
+    const created = nextSessionWindow(page)
     await startSessionFromRow(page)
+    const sessionWindow = await created
 
     await expect
-      .poll(() => zoomedToSessionWindow(page), { timeout: 30_000 })
+      .poll(() => zoomedToSessionWindow(page, sessionWindow), {
+        timeout: 30_000,
+      })
       .toBe('session window')
   })
 
@@ -410,7 +424,7 @@ test.describe('share URL', () => {
               data?: Array<{
                 id?: string
                 visible?: boolean | 'legendonly' | undefined
-                _gapOverlayFor?: string
+                _partOf?: string
               }>
             })
           | null
@@ -422,7 +436,7 @@ test.describe('share URL', () => {
         const reportFor = (id: string): State | null => {
           const main = traces.find((t) => t.id === id)
           if (!main) return null
-          const overlay = traces.find((t) => t._gapOverlayFor === id)
+          const overlay = traces.find((t) => t._partOf === id)
           return {
             visible: main.visible,
             overlayHidden: overlay ? overlay.visible === false : true,

@@ -46,7 +46,7 @@
         {{ option.label }}
       </v-chip>
       <v-chip
-        v-if="selectedDateBtnId === CUSTOM_PRESET_ID"
+        v-if="activePresetId === CUSTOM_PRESET_ID"
         data-testid="date-preset-custom"
         color="secondary"
         variant="tonal"
@@ -82,10 +82,10 @@ const props = withDefaults(
 )
 
 const { setDateRange, onDateBtnClick } = useDataVisStore()
-const { beginDate, endDate, selectedDateBtnId } = storeToRefs(useDataVisStore())
+const { beginDate, endDate, activePresetId } = storeToRefs(useDataVisStore())
 
 const shownId = computed(() =>
-  shownPresetId(selectedDateBtnId.value, props.presets)
+  shownPresetId(activePresetId.value, props.presets)
 )
 </script>
 

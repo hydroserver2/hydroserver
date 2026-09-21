@@ -3,10 +3,53 @@ import { ref } from 'vue'
 import { fetchObservationsSync } from '@/utils/observations'
 import { ObservationRecord } from "@uwrl/qc-utils"
 import { Datastream } from '@hydroserver/client'
+import {
+  mergeIntervals,
+  subtractIntervals,
+  type Interval,
+} from '@/utils/timeIntervals'
 
 export type ObservationData = {
   datetimes: Float64Array<ArrayBuffer>
   dataValues: Float32Array<ArrayBuffer>
+}
+
+type FetchedChunk = { datetimes: number[]; dataValues: number[] }
+
+/**
+ * The cache with the fetched `chunks` merged in, in time order. Chunks come
+ * from disjoint ranges in ascending order; a timestamp the cache already
+ * holds (a range endpoint fetched twice) keeps the cached value.
+ */
+function mergeObservations(
+  cached: ObservationData,
+  chunks: FetchedChunk[]
+): ObservationData {
+  const addedX = chunks.flatMap((c) => c.datetimes)
+  const addedY = chunks.flatMap((c) => c.dataValues)
+  const oldX = cached.datetimes
+  const oldY = cached.dataValues
+  const x = new Float64Array(oldX.length + addedX.length)
+  const y = new Float32Array(oldY.length + addedY.length)
+  let i = 0
+  let j = 0
+  let n = 0
+  while (i < oldX.length || j < addedX.length) {
+    const takeOld =
+      j >= addedX.length ||
+      (i < oldX.length && (oldX[i] as number) <= (addedX[j] as number))
+    if (takeOld) {
+      if (j < addedX.length && oldX[i] === addedX[j]) j++
+      x[n] = oldX[i] as number
+      y[n++] = oldY[i++] as number
+    } else {
+      x[n] = addedX[j] as number
+      y[n++] = addedY[j++] as number
+    }
+  }
+  return n === x.length
+    ? { datetimes: x, dataValues: y }
+    : { datetimes: x.slice(0, n), dataValues: y.slice(0, n) }
 }
 
 export const useObservationStore = defineStore(
@@ -30,35 +73,30 @@ export const useObservationStore = defineStore(
     // }
 
     /** The last request queued per datastream. */
-    const queued = new Map<
-      string,
-      { begin: number; end: number; promise: Promise<ObservationRecord> }
-    >()
+    const queued = new Map<string, { key: string; promise: Promise<unknown> }>()
+
+    /** The ranges already asked of the server per datastream, found or not. */
+    const covered = new Map<string, Interval[]>()
+
+    type Exclude = { begin: Date; end: Date }
 
     /**
-     * Fetches requested observations that aren't currently in the pinia store,
-     * updates the store, then returns the corresponding `ObservationRecord`.
-     *
-     * Requests for one datastream run in order: each fills the cache from what
-     * the previous one left, and the record ends on the latest requested
-     * window. A request matching the last queued range shares it.
+     * Run `task` after every request already queued for the datastream, so
+     * each fills the cache from what the previous one left and the shared
+     * record ends on the latest requested window. A request matching the
+     * last queued one (same `key`) shares it.
      */
-    const fetchObservationsInRange = (
-      datastream: Datastream,
-      beginTime: Date,
-      endTime: Date
-    ): Promise<ObservationRecord> => {
-      const id = datastream.id
-      const begin = beginTime.getTime()
-      const end = endTime.getTime()
+    const enqueue = <T>(
+      id: string,
+      key: string,
+      task: () => Promise<T>
+    ): Promise<T> => {
       const last = queued.get(id)
-      if (last && last.begin === begin && last.end === end) return last.promise
+      if (last?.key === key) return last.promise as Promise<T>
 
       const previous = last?.promise.catch(() => undefined) ?? Promise.resolve()
-      const promise = previous.then(() =>
-        loadRange(datastream, beginTime, endTime)
-      )
-      const entry = { begin, end, promise }
+      const promise = previous.then(task)
+      const entry = { key, promise }
       queued.set(id, entry)
       const release = () => {
         if (queued.get(id) === entry) queued.delete(id)
@@ -67,126 +105,106 @@ export const useObservationStore = defineStore(
       return promise
     }
 
-    const loadRange = async (
+    const requestKey = (
+      kind: string,
+      beginTime: Date,
+      endTime: Date,
+      exclude?: Exclude
+    ) =>
+      [
+        kind,
+        beginTime.getTime(),
+        endTime.getTime(),
+        exclude?.begin.getTime(),
+        exclude?.end.getTime(),
+      ].join(':')
+
+    /** Fill the cache for `[beginTime, endTime]`, never requesting `exclude`,
+     *  and resolve with the whole cache. */
+    const loadMissing = async (
+      datastream: Datastream,
+      beginTime: Date,
+      endTime: Date,
+      exclude?: Exclude
+    ): Promise<ObservationData> => {
+      const id = datastream.id
+      const wanted = subtractIntervals(
+        [[beginTime.getTime(), endTime.getTime()]],
+        exclude ? [[exclude.begin.getTime(), exclude.end.getTime()]] : []
+      )
+      const missing = subtractIntervals(wanted, covered.get(id) ?? [])
+      const chunks = await Promise.all(
+        missing.map(([start, end]) =>
+          fetchObservationsSync(datastream, new Date(start), new Date(end))
+        )
+      )
+      covered.set(id, mergeIntervals([...(covered.get(id) ?? []), ...missing]))
+
+      const cached = observationsRaw.value[id] ?? {
+        datetimes: new Float64Array(0),
+        dataValues: new Float32Array(0),
+      }
+      observationsRaw.value[id] = chunks.some((c) => c.dataValues.length)
+        ? mergeObservations(cached, chunks)
+        : cached
+      return observationsRaw.value[id]
+    }
+
+    /**
+     * The shared record for a datastream, windowed to `[beginTime, endTime]`.
+     * The plot draws it, so windowing it moves what the plot shows. `exclude`
+     * is a stretch inside the window not to fetch; whatever the cache already
+     * holds there stays in the record.
+     */
+    const fetchObservationsInRange = (
+      datastream: Datastream,
+      beginTime: Date,
+      endTime: Date,
+      exclude?: Exclude
+    ): Promise<ObservationRecord> => {
+      const id = datastream.id
+      return enqueue(
+        id,
+        requestKey('shared', beginTime, endTime, exclude),
+        async () => {
+          const raw = await loadMissing(datastream, beginTime, endTime, exclude)
+          if (!observations.value[id]) {
+            observations.value[id] = new ObservationRecord(raw)
+          }
+          const obsRecord = observations.value[id] as ObservationRecord
+          // A no-op when neither the window nor the cache changed, so
+          // unrelated replots keep their edits/history.
+          await obsRecord.applyWindow(beginTime.getTime(), endTime.getTime(), raw)
+          return obsRecord
+        }
+      )
+    }
+
+    /**
+     * A record of its own over `[beginTime, endTime]`, filled from the shared
+     * cache. For work that builds on the data (a working copy, a snapshot):
+     * it never re-windows the shared record the plot draws.
+     */
+    const fetchDetachedRecord = async (
       datastream: Datastream,
       beginTime: Date,
       endTime: Date
     ): Promise<ObservationRecord> => {
-      const id = datastream.id
-
-      let beginDataPromise: Promise<{
-        datetimes: number[]
-        dataValues: number[]
-      }> = Promise.resolve({ datetimes: [], dataValues: [] })
-      let endDataPromise: Promise<{
-        datetimes: number[]
-        dataValues: number[]
-      }> = Promise.resolve({ datetimes: [], dataValues: [] })
-
-      if (observationsRaw.value[id]?.dataValues.length) {
-        const rawBeginDatetime = new Date(
-          observationsRaw.value[id].datetimes[0] as number
-        )
-
-        // Strict `<`: skip the request entirely when the requested
-        // begin is at or inside the cached window. `<=` used to fire a
-        // 1-second range request on exact matches (e.g. re-clicking
-        // the same preset), which is pure waste.
-        if (beginTime < rawBeginDatetime) {
-          // Results in range will be inclusive, so we need to offset by 1
-          rawBeginDatetime.setSeconds(rawBeginDatetime.getSeconds() - 1)
-          beginDataPromise = fetchObservationsSync(
-            datastream,
-            beginTime,
-            rawBeginDatetime
-          )
-        }
-
-        const rawEndDatetime = new Date(
-          observationsRaw.value[id].datetimes[
-          observationsRaw.value[id].datetimes.length - 1
-          ] as number
-        )
-
-        // Same note as above: only fetch the trailing segment when the
-        // requested end is *past* what we've already cached.
-        if (endTime > rawEndDatetime) {
-          rawEndDatetime.setSeconds(rawEndDatetime.getSeconds() + 1)
-          endDataPromise = fetchObservationsSync(
-            datastream,
-            rawEndDatetime,
-            endTime
-          )
-        }
-      } else {
-        beginDataPromise = fetchObservationsSync(datastream, beginTime, endTime)
-      }
-
-      const [beginData, endData] = await Promise.all([
-        beginDataPromise,
-        endDataPromise,
-      ])
-
-      if (!observationsRaw.value[id]) {
-        observationsRaw.value[id] = {
-          datetimes: new Float64Array(0),
-          dataValues: new Float32Array(0),
-        }
-      }
-
-      if (beginData.dataValues.length > 0 || endData.dataValues.length > 0) {
-        const newLength =
-          beginData.dataValues.length +
-          endData.dataValues.length +
-          observationsRaw.value[id].dataValues.length
-        const newBufferX = new ArrayBuffer(
-          newLength * Float64Array.BYTES_PER_ELEMENT
-        )
-        const newBufferY = new ArrayBuffer(
-          newLength * Float32Array.BYTES_PER_ELEMENT
-        )
-
-        const newArrayX = new Float64Array(newBufferX)
-        const newArrayY = new Float32Array(newBufferY)
-
-        // Begin data
-        let offset = 0
-        newArrayX.set(beginData.datetimes, offset)
-        newArrayY.set(beginData.dataValues, offset)
-
-        // Previous data
-        offset += beginData.datetimes.length
-        newArrayX.set(observationsRaw.value[id].datetimes, offset)
-        newArrayY.set(observationsRaw.value[id].dataValues, offset)
-
-        // End data
-        offset += endData.datetimes.length
-        newArrayX.set(endData.datetimes, offset)
-        newArrayY.set(endData.dataValues, offset)
-
-        observationsRaw.value[id].datetimes = newArrayX
-        observationsRaw.value[id].dataValues = newArrayY
-      }
-
-      // If nothing is stored yet, create a new record
-      if (!observations.value[id] && observationsRaw.value[datastream.id]) {
-        observations.value[id] = new ObservationRecord(observationsRaw.value[datastream.id] as ObservationData)
-      }
-
-      const obsRecord = observations.value[id] as ObservationRecord
-      // `rawData` is the full accumulated cache; the record slices it to the
-      // selected window (`applyWindow` no-ops when the window is unchanged,
-      // so unrelated replots keep their edits/history).
-      obsRecord.rawData = observationsRaw.value[id]
-      await obsRecord.applyWindow(beginTime.getTime(), endTime.getTime())
-
-      return obsRecord
+      const raw = await enqueue(
+        datastream.id,
+        requestKey('detached', beginTime, endTime),
+        () => loadMissing(datastream, beginTime, endTime)
+      )
+      const record = new ObservationRecord(raw)
+      await record.applyWindow(beginTime.getTime(), endTime.getTime())
+      return record
     }
 
     return {
       observations,
       observationsRaw,
       fetchObservationsInRange,
+      fetchDetachedRecord,
     }
   },
   {

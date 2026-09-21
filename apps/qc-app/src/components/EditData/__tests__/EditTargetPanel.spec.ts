@@ -79,7 +79,7 @@ describe('EditTargetPanel', () => {
 
   it('goes back to the editor without touching the session', async () => {
     const wrapper = mountPanel()
-    await wrapper.find('[data-testid="back-to-editor-btn"]').trigger('click')
+    await wrapper.find('[data-testid="open-editor-btn"]').trigger('click')
     expect(openEditor).toHaveBeenCalledTimes(1)
   })
 

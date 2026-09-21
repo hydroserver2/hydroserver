@@ -1,5 +1,5 @@
 import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
-import { ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { createTestVuetify } from '@/utils/test/vuetify'
@@ -20,9 +20,30 @@ const isUpdating = ref(false)
 const redraw = vi.fn().mockResolvedValue(undefined)
 const refreshGraphSeriesArray = vi.fn().mockResolvedValue(undefined)
 
+const previewIndex = computed(() => selectedSeries.value?.data?.previewIndex ?? null)
+
+// Reactive like a real store, so `storeToRefs` unwraps the computed.
 vi.mock('@/store/plotly', () => ({
-  usePlotlyStore: () => ({ editHistory, selectedSeries, isUpdating, redraw }),
+  usePlotlyStore: () =>
+    reactive({
+      editHistory,
+      selectedSeries,
+      isUpdating,
+      redraw,
+      previewIndex,
+    }),
 }))
+
+/**
+ * Stands in for `ObservationRecord.previewHistory`: shows step `index`
+ * without dropping the later ones, and previewing the last step returns to
+ * the whole history. Called on the record, so `this` is the series data.
+ */
+const previewing = (selection: number[] = []) =>
+  vi.fn(async function (this: any, index: number) {
+    this.previewIndex = index >= this.history.length - 1 ? null : index
+    return selection
+  })
 
 const qcDatastream = ref<any>(null)
 vi.mock('@/store/dataVisualization', () => ({
@@ -110,7 +131,7 @@ function makeSeries(overrides: Partial<any> = {}) {
       undo: vi.fn().mockResolvedValue([1, 2]),
       redo: vi.fn().mockResolvedValue([]),
       reload: vi.fn().mockResolvedValue(undefined),
-      reloadHistory: vi.fn().mockResolvedValue([3]),
+      previewHistory: previewing([3]),
       ...overrides,
     },
   }
@@ -330,10 +351,10 @@ describe('EditHistory.vue actions', () => {
     vi.useRealTimers()
   })
 
-  it('clicking a step row calls reloadHistory with its index', async () => {
+  it('clicking a step row previews it', async () => {
     vi.useFakeTimers()
     editHistory.value = [makeEntry('ADD_POINTS')]
-    selectedSeries.value.data.reloadHistory = vi.fn().mockResolvedValue([9])
+    selectedSeries.value.data.previewHistory = vi.fn().mockResolvedValue([9])
     const wrapper = createWrapper()
     await flushPromises()
     const entry = wrapper.find('[data-testid="history-item-0"]')
@@ -341,7 +362,7 @@ describe('EditHistory.vue actions', () => {
     expect(reloadBtn).toBeTruthy()
     await reloadBtn!.trigger('click')
     await vi.runAllTimersAsync()
-    expect(selectedSeries.value.data.reloadHistory).toHaveBeenCalledWith(0)
+    expect(selectedSeries.value.data.previewHistory).toHaveBeenCalledWith(0)
     expect(setPlotSelection).toHaveBeenCalledWith([9])
     vi.useRealTimers()
   })
@@ -446,25 +467,25 @@ describe('EditHistory.vue actions', () => {
     }
 
     /**
-     * Stands in for the real `reloadHistory`: truncate to `0..index` and
-     * replace the survivors with freshly dispatched entries carrying the
-     * timings the replay just measured. Splices through the ref's proxy;
-     * mutating the raw array wouldn't trigger reactivity.
+     * Stands in for the real `previewHistory`: replace the steps up to
+     * `index` with freshly dispatched entries carrying the timings the replay
+     * just measured, and keep the later ones. Splices through the ref's
+     * proxy; mutating the raw array wouldn't trigger reactivity.
      */
-    const replayingReloadHistory = () =>
-      vi.fn(async (index: number) => {
+    const replayingPreview = () =>
+      vi.fn(async function (this: any, index: number) {
         const fresh = editHistory.value.slice(0, index + 1).map((h, i) => ({
           method: h.method,
           args: h.args,
           execution: { inFlight: false, status: 'success', durationMs: 900 + i },
         }))
-        editHistory.value.splice(0, editHistory.value.length, ...fresh)
+        editHistory.value.splice(0, index + 1, ...fresh)
+        this.previewIndex = index
         return []
       })
 
-    // The committed-session path restores the full operation list after the
-    // replay so the user can keep stepping through it. That restore must not
-    // drag the pre-replay timings back with it.
+    // A preview keeps the later steps listed; they must not show the timings
+    // of a run that no longer holds in this view.
     it('shows the timings the replay produced, not the originals', async () => {
       const history = [
         makeEntry('SELECTION', [], { durationMs: 10 }),
@@ -476,7 +497,7 @@ describe('EditHistory.vue actions', () => {
         data: {
           history: editHistory.value,
           redoStack: [],
-          reloadHistory: replayingReloadHistory(),
+          previewHistory: replayingPreview(),
         },
       }
       const w = createWrapper()
@@ -486,8 +507,7 @@ describe('EditHistory.vue actions', () => {
       await w
         .find('[data-testid="history-item-1"] .edit-history__row')
         .trigger('click')
-      // `loadedStepIndex` moves synchronously, so waiting on the marker
-      // would race the replay. Wait for the dispatch itself to settle.
+      // Wait for the preview itself to settle.
       await vi.waitFor(() => expect(isUpdating.value).toBe(false))
       await flushPromises()
 
@@ -540,35 +560,56 @@ describe('EditHistory.vue actions', () => {
       expect(btn.attributes('disabled')).toBeUndefined()
     })
 
-    it('keeps the entries below when reloading from a step', async () => {
-      const history = [
-        { method: 'SELECTION', args: [], execution: {} },
-        { method: 'DELETE_POINTS', args: [], execution: {} },
-        { method: 'INTERPOLATE', args: [], execution: {} },
-      ]
-      editHistory.value = history
-      // Stand in for the engine: truncate to `0..index`, as qc-utils does.
-      const reloadHistory = vi.fn(async (index: number) => {
-        history.splice(index + 1)
-        return []
-      })
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+  })
 
+  describe('previewing a step', () => {
+    const threeSteps = () => [
+      { method: 'SELECTION', args: [], execution: {} },
+      { method: 'DELETE_POINTS', args: [], execution: {} },
+      { method: 'INTERPOLATE', args: [], execution: {} },
+    ]
+
+    it('keeps every step listed and offers the way back', async () => {
+      const history = threeSteps()
+      editHistory.value = history
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
       const w = createWrapper()
-      await readOnly()
       await flushPromises()
+      expect(w.find('[data-testid="history-preview-banner"]').exists()).toBe(false)
 
       await w.find('[data-testid="history-item-0"] .edit-history__row').trigger('click')
-      await vi.waitFor(() => expect(reloadHistory).toHaveBeenCalledWith(0))
-
-      // Data stepped back, but the record of what the session did survives.
-      // Polled: the restore runs after an await inside the handler's timeout.
       await vi.waitFor(() =>
-        expect(history.map((h) => h.method)).toEqual([
-          'SELECTION',
-          'DELETE_POINTS',
-          'INTERPOLATE',
-        ])
+        expect(w.find('[data-testid="history-preview-banner"]').exists()).toBe(true)
+      )
+      expect(previewHistory).toHaveBeenCalledWith(0)
+      expect(w.findAll('[data-testid^="history-item-"]').length).toBe(3)
+      expect(w.find('[data-testid="history-preview-banner"]').text()).toContain(
+        'step 1 of 3'
+      )
+
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      await w.find('[data-testid="history-back-to-latest-btn"]').trigger('click')
+      await vi.waitFor(() => expect(previewHistory).toHaveBeenLastCalledWith(2))
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-preview-banner"]').exists()).toBe(false)
+      )
+    })
+
+    it('names the starting state when previewing it', async () => {
+      const history = threeSteps()
+      editHistory.value = history
+      selectedSeries.value = {
+        data: { history, redoStack: [], previewHistory: previewing() },
+      }
+      const w = createWrapper()
+      await flushPromises()
+
+      await w.find('[data-testid="history-reload-step-baseline"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-preview-banner"]').text()).toContain(
+          'the starting state'
+        )
       )
     })
   })
@@ -580,9 +621,12 @@ describe('EditHistory.vue actions', () => {
         { method: 'DELETE_POINTS', args: [], execution: {} },
       ]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      const undo = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory, undo } }
+      const previewHistory = previewing()
+      const undo = vi.fn(async function (this: any) {
+        this.previewIndex = null
+        return []
+      })
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory, undo } }
 
       const w = createWrapper()
       await flushPromises()
@@ -606,8 +650,8 @@ describe('EditHistory.vue actions', () => {
         expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
       )
       expect(w.find('[data-testid="history-loaded-1"]').exists()).toBe(true)
-      // The marker clears before undo's deferred replay runs. Drain it here or
-      // it fires in the next test against a series with no `undo`.
+      // Drain undo's deferred replay here or it fires in the next test
+      // against a series with no `undo`.
       await vi.waitFor(() => expect(isUpdating.value).toBe(false))
       expect(undo).toHaveBeenCalled()
     })
@@ -620,8 +664,8 @@ describe('EditHistory.vue actions', () => {
         makeEntry('DELETE_POINTS', [], { durationMs: 20 }),
       ]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
 
       const w = createWrapper()
       await flushPromises()
@@ -631,7 +675,7 @@ describe('EditHistory.vue actions', () => {
       await vi.waitFor(() => expect(isUpdating.value).toBe(false))
       await flushPromises()
 
-      expect(reloadHistory).toHaveBeenCalledWith(-1)
+      expect(previewHistory).toHaveBeenCalledWith(-1)
       // Nothing is applied at the baseline, so no row reports a run.
       expect(w.find('[data-testid="history-duration-0"]').exists()).toBe(false)
       expect(w.find('[data-testid="history-duration-1"]').exists()).toBe(false)
@@ -640,8 +684,8 @@ describe('EditHistory.vue actions', () => {
     it('marks the Data loaded row as the one being shown', async () => {
       const history = [makeEntry('SELECTION', [], { durationMs: 10 })]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
 
       const w = createWrapper()
       await flushPromises()
@@ -658,8 +702,8 @@ describe('EditHistory.vue actions', () => {
 
     it('makes no row clickable when there is nothing to step back from', async () => {
       editHistory.value = []
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = makeSeries({ reloadHistory })
+      const previewHistory = previewing()
+      selectedSeries.value = makeSeries({ previewHistory })
 
       const w = createWrapper()
       await flushPromises()
@@ -670,7 +714,7 @@ describe('EditHistory.vue actions', () => {
         w.find('[data-testid="history-step-btn-baseline"]').attributes('disabled')
       ).toBeDefined()
       await baseline.trigger('click')
-      expect(reloadHistory).not.toHaveBeenCalled()
+      expect(previewHistory).not.toHaveBeenCalled()
     })
 
     // Reloading from a step un-applies everything below it. A committed
@@ -683,8 +727,8 @@ describe('EditHistory.vue actions', () => {
         makeEntry('INTERPOLATE', [], { durationMs: 30 }),
       ]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
 
       const w = createWrapper()
       await flushPromises()
@@ -787,8 +831,8 @@ describe('EditHistory.vue actions', () => {
         { method: 'INTERPOLATE', args: [], execution: {} },
       ]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
       const w = createWrapper()
       await flushPromises()
 
@@ -828,16 +872,16 @@ describe('EditHistory.vue actions', () => {
     it('replays to its step once', async () => {
       const history = [makeEntry('SELECTION'), makeEntry('DELETE_POINTS')]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
       const w = createWrapper()
       await flushPromises()
 
       await w.find('[data-testid="history-step-btn-0"]').trigger('click')
       await vi.waitFor(() => expect(isUpdating.value).toBe(false))
       await flushPromises()
-      expect(reloadHistory).toHaveBeenCalledTimes(1)
-      expect(reloadHistory).toHaveBeenCalledWith(0)
+      expect(previewHistory).toHaveBeenCalledTimes(1)
+      expect(previewHistory).toHaveBeenCalledWith(0)
     })
 
     it('is disabled while a dispatch is running', async () => {
@@ -859,8 +903,8 @@ describe('EditHistory.vue actions', () => {
     it('expanding the args drawer does not step back', async () => {
       const history = [makeEntry('SELECTION'), makeEntry('DELETE_POINTS')]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
       const w = createWrapper()
       await flushPromises()
 
@@ -868,30 +912,30 @@ describe('EditHistory.vue actions', () => {
         .find('[data-testid="history-item-0"] .edit-history__expand')
         .trigger('click')
       expect(w.text()).toContain('Arguments')
-      expect(reloadHistory).not.toHaveBeenCalled()
+      expect(previewHistory).not.toHaveBeenCalled()
     })
 
     it('plotting a comparison line does not step back', async () => {
       const history = [makeEntry('SELECTION'), makeEntry('DELETE_POINTS')]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = previewing()
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
       const w = createWrapper()
       await flushPromises()
 
       await w.find('[data-testid="history-snapshot-0"]').trigger('click')
-      expect(reloadHistory).not.toHaveBeenCalled()
+      expect(previewHistory).not.toHaveBeenCalled()
     })
 
     it('reload-from-server does not step back', async () => {
       const history = [makeEntry('SELECTION')]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
+      const previewHistory = previewing()
       selectedSeries.value = {
         data: {
           history,
           redoStack: [],
-          reloadHistory,
+          previewHistory,
           reload: vi.fn().mockResolvedValue(undefined),
         },
       }
@@ -904,7 +948,7 @@ describe('EditHistory.vue actions', () => {
       await w.find('[data-testid="history-reload-btn"]').trigger('click')
       await vi.runAllTimersAsync()
       vi.useRealTimers()
-      expect(reloadHistory).not.toHaveBeenCalled()
+      expect(previewHistory).not.toHaveBeenCalled()
     })
   })
 
@@ -916,9 +960,9 @@ describe('EditHistory.vue actions', () => {
         { method: 'INTERPOLATE', args: [], execution: {} },
       ]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => [])
+      const previewHistory = previewing()
       selectedSeries.value = {
-        data: { history, redoStack: [], reloadHistory },
+        data: { history, redoStack: [], previewHistory },
       }
       return history
     }
@@ -996,13 +1040,13 @@ describe('EditHistory.vue actions', () => {
         { method: 'DELETE_POINTS', args: [], execution: {} },
       ]
       editHistory.value = history
-      const reloadHistory = vi.fn(async () => returned as any)
-      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const previewHistory = vi.fn(async () => returned as any)
+      selectedSeries.value = { data: { history, redoStack: [], previewHistory } }
       const w = createWrapper()
       await flushPromises()
       // Item 0 isn't the trailing entry, so its buttons are expand + reload.
       await w.find('[data-testid="history-item-0"] .edit-history__row').trigger('click')
-      await vi.waitFor(() => expect(reloadHistory).toHaveBeenCalledWith(0))
+      await vi.waitFor(() => expect(previewHistory).toHaveBeenCalledWith(0))
       await vi.waitFor(() => expect(isUpdating.value).toBe(false))
       await flushPromises()
     }

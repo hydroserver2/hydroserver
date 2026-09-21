@@ -107,12 +107,15 @@ because the row format times out on ~35k-point ranges (see comments in
 Key fetch optimizations already in place:
 
 - **Cache-aware ranging.** `useObservationStore.fetchObservationsInRange`
-  only requests segments outside the existing cached window (strict
-  `<` / `>` comparison, see comments around `observations.ts:62`). The full
-  fetched history stays in `observationsRaw`; the `ObservationRecord` keeps it
-  in `rawData` and slices it to the selected `[begin, end]` range via
-  `applyWindow`, so the plot, table and counts only ever touch the current
-  window.
+  tracks the ranges already asked of the server per datastream (found or
+  not) and requests only the missing parts (`utils/timeIntervals.ts`). An
+  optional `exclude` stretch is never requested: the source's context skips
+  the session window this way. Fetched chunks are merged into
+  `observationsRaw` in one linear pass. The `ObservationRecord` keeps the
+  cache in `rawData` and slices it to the selected `[begin, end]` range via
+  `applyWindow(begin, end, rawData)`, which re-slices when either the window
+  or the cache changed, so the plot, table and counts only ever touch the
+  current window.
 - **One plot load at a time.** Rebuilds and context range reloads are
   serialized in `useDataVisStore`. A range reload that lands while a rebuild
   is queued joins it, and one that finds its range already loaded skips, so

@@ -272,7 +272,7 @@ const makeStub = (overrides?: {
       marker: { opacity: number }
       hoverinfo: string
       _isGapOverlay: boolean
-      _gapOverlayFor: string
+      _partOf: string
     }>
   >
 }) => ({
@@ -426,7 +426,7 @@ describe('handleRelayout', () => {
           marker: { opacity: 1 },
           hoverinfo: 'skip',
           _isGapOverlay: true,
-          _gapOverlayFor: 'qc-target',
+          _partOf: 'qc-target',
         },
       ],
     })

@@ -12,7 +12,9 @@ const mockGraphSeriesArray = shallowRef<any[]>([])
 const mockUpdateOptions = vi.fn()
 const mockClearChartState = vi.fn()
 const mockClearZoomHistory = vi.fn()
-const mockFetchGraphSeries = vi.fn(async (ds: any) => ({ id: ds.id, name: ds.name, data: {} }))
+const mockFetchGraphSeries = vi.fn(
+  async (ds: any, _start?: Date, _end?: Date, _exclude?: unknown, _fetchAs?: any) => ({ id: ds.id, name: ds.name, data: {} })
+)
 const mockBuildGraphSeries = vi.fn((ds: any, data: any) => ({ id: ds.id, name: ds.name, data }))
 const mockAssignSeriesColors = vi.fn()
 const mockRedraw = vi.fn()
@@ -263,6 +265,33 @@ const managedPair = async () => {
   return { store, source, managed, other }
 }
 
+const WIN_START = '2025-06-01T00:00:00Z'
+const WIN_END = '2025-06-10T00:00:00Z'
+const WINDOW = { begin: new Date(WIN_START), end: new Date(WIN_END) }
+
+/** Load an in-progress session over `WINDOW` for the edit target. */
+async function loadSession() {
+  const { useQcSessionStore } = await import('@/store/qcSession')
+  useQcSessionStore().applySessions('h1', [
+    {
+      id: 's1',
+      status: 'in_progress',
+      phenomenonTimeStart: WIN_START,
+      phenomenonTimeEnd: WIN_END,
+    },
+  ] as any)
+  await nextTick()
+}
+
+const settle = () => new Promise((r) => setTimeout(r, 0))
+
+/** Edit `mgd` with its session window known and the context loaded. */
+async function editWithWindow(store: any) {
+  await store.setEditTarget('mgd')
+  await loadSession()
+  await settle()
+}
+
 describe('useDataVisStore edit target', () => {
   it('plotting never picks an edit target', async () => {
     const { store, other } = await managedPair()
@@ -282,23 +311,62 @@ describe('useDataVisStore edit target', () => {
     const { store, other } = await managedPair()
     await store.plotDatastream(other as any)
     await store.setEditTarget('mgd')
-    expect(store.sourceContextDatastream?.id).toBe('src')
-    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'src', 'other'])
+    // The grey context has an id of its own; it reads the source's data.
+    expect(store.sourceContextDatastream?.id).toBe('ctx:src')
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'ctx:src', 'other'])
   })
 
-  it('does not duplicate a source the user already plotted', async () => {
+  it('keeps the grey context beside a source the user plotted', async () => {
     const { store, source, other } = await managedPair()
     await store.plotDatastream(other as any)
     await store.plotDatastream(source as any)
     await store.setEditTarget('mgd')
-    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'src', 'other'])
+    expect(store.editSourceDatastream?.id).toBe('src')
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual([
+      'mgd',
+      'ctx:src',
+      'other',
+      'src',
+    ])
+  })
+
+  it('fills the context series with the source data', async () => {
+    const { store } = await managedPair()
+    await editWithWindow(store)
+    const call = mockFetchGraphSeries.mock.calls.find((c) => c[0].id === 'ctx:src')
+    expect(call?.[4]?.id).toBe('src')
+  })
+
+  it('drops the source context when it is switched off', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    await store.setShowSourceContext(false)
+    expect(store.sourceContextDatastream).toBeNull()
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd'])
+    await store.setShowSourceContext(true)
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'ctx:src'])
+  })
+
+  it('fetches a source the user plotted whole, without waiting for the window', async () => {
+    const { store, source } = await managedPair()
+    await store.plotDatastream(source as any)
+    mockFetchGraphSeries.mockClear()
+    mockFetchObservationsInRange.mockClear()
+    await store.setEditTarget('mgd')
+    await store.refreshGraphSeriesArray()
+    const calls = [
+      ...mockFetchGraphSeries.mock.calls,
+      ...mockFetchObservationsInRange.mock.calls,
+    ].filter((c) => c[0].id === 'src')
+    expect(calls.length).toBeGreaterThan(0)
+    expect(calls.every((c) => c[3] === undefined)).toBe(true)
   })
 
   it('never fetches the edit target when refreshing', async () => {
     const { store } = await managedPair()
-    await store.setEditTarget('mgd')
-    // `setEditTarget` already loaded `src` as context, so this refresh
-    // updates it in place via `fetchObservationsInRange`, not a fresh fetch.
+    await editWithWindow(store)
+    // The source is already loaded as context, so this refresh updates it
+    // in place via `fetchObservationsInRange`, not a fresh fetch.
     mockFetchGraphSeries.mockClear()
     mockFetchObservationsInRange.mockClear()
     await store.refreshGraphSeriesArray()
@@ -306,10 +374,35 @@ describe('useDataVisStore edit target', () => {
     expect(mockFetchGraphSeries).not.toHaveBeenCalled()
   })
 
-  it('setEditTarget with nothing plotted still fetches the source as context', async () => {
+  it('waits for the session window before fetching the source', async () => {
     const { store } = await managedPair()
     await store.setEditTarget('mgd')
-    expect(mockFetchGraphSeries.mock.calls.map((c) => c[0].id)).toEqual(['src'])
+    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
+
+    await loadSession()
+    await settle()
+
+    expect(
+      mockFetchGraphSeries.mock.calls.map((c) => [c[0].id, c[3], c[4]?.id])
+    ).toEqual([['ctx:src', WINDOW, 'src']])
+  })
+
+  it('never fetches the session window for the source', async () => {
+    const { store } = await managedPair()
+    await editWithWindow(store)
+    mockFetchObservationsInRange.mockClear()
+    await store.refreshGraphSeriesArray()
+    expect(mockFetchObservationsInRange.mock.calls[0]?.[3]).toEqual(WINDOW)
+  })
+
+  it('fetches other plotted datastreams whole', async () => {
+    const { store, other } = await managedPair()
+    await store.plotDatastream(other as any)
+    await editWithWindow(store)
+    mockFetchObservationsInRange.mockClear()
+    await store.refreshGraphSeriesArray()
+    const call = mockFetchObservationsInRange.mock.calls.find((c) => c[0].id === 'other')
+    expect(call?.[3]).toBeUndefined()
   })
 
   it('unplotting the last plotted datastream while editing keeps the edit series', async () => {
@@ -502,9 +595,9 @@ describe('useDataVisStore.setDateRange', () => {
 
   it('refreshes context when only the edit target is set, nothing plotted', async () => {
     const { store } = await managedPair()
-    await store.setEditTarget('mgd')
-    // `setEditTarget` already loaded `src` as context, so the date change
-    // updates it in place via `fetchObservationsInRange`.
+    await editWithWindow(store)
+    // The source is already loaded as context, so the date change updates
+    // it in place via `fetchObservationsInRange`.
     mockFetchObservationsInRange.mockClear()
     mockRedraw.mockClear()
     mockClearZoomHistory.mockClear()
@@ -534,7 +627,7 @@ describe('useDataVisStore overlapping plot loads', () => {
 
   it('drops a context response whose range was superseded', async () => {
     const { store } = await managedPair()
-    await store.setEditTarget('mgd')
+    await editWithWindow(store)
     mockRedraw.mockClear()
     const first = deferred<any>()
     const second = deferred<any>()
@@ -549,20 +642,20 @@ describe('useDataVisStore overlapping plot loads', () => {
     second.resolve({ id: 'apr' })
     await Promise.all([older, newer])
 
-    const src = mockGraphSeriesArray.value.find((s) => s.id === 'src')
+    const src = mockGraphSeriesArray.value.find((s) => s.id === 'ctx:src')
     expect(src.data).toEqual({ id: 'apr' })
-    expect(store.loadingStates.get('src')).toBe(false)
+    expect(store.loadingStates.get('ctx:src')).toBe(false)
     expect(mockRedraw).toHaveBeenCalledTimes(1)
   })
 
   it('a rebuild whose range moves while loading draws the new range once', async () => {
     const { store } = await managedPair()
-    await store.setEditTarget('mgd')
+    await editWithWindow(store)
     mockPlotlyRef.value = {}
     const { handleNewPlot } = await import('@/utils/plotting/plotly')
     const drawn: unknown[] = []
     vi.mocked(handleNewPlot).mockImplementationOnce(async () => {
-      drawn.push(mockGraphSeriesArray.value.find((s) => s.id === 'src')?.data)
+      drawn.push(mockGraphSeriesArray.value.find((s) => s.id === 'ctx:src')?.data)
     })
     mockFetchObservationsInRange.mockClear()
     mockRedraw.mockClear()
@@ -590,7 +683,7 @@ describe('useDataVisStore overlapping plot loads', () => {
 
   it('a rebuild requested while a context reload loads waits for it', async () => {
     const { store, other } = await managedPair()
-    await store.setEditTarget('mgd')
+    await editWithWindow(store)
     mockFetchObservationsInRange.mockClear()
     mockFetchGraphSeries.mockClear()
     const pending = deferred<any>()
@@ -612,7 +705,7 @@ describe('useDataVisStore overlapping plot loads', () => {
 
   it('a context reload requested while a rebuild is queued joins it', async () => {
     const { store } = await managedPair()
-    await store.setEditTarget('mgd')
+    await editWithWindow(store)
     mockPlotlyRef.value = {}
     mockRedraw.mockClear()
     const pending = deferred<any>()
@@ -638,7 +731,7 @@ describe('useDataVisStore overlapping plot loads', () => {
   it('does not start a second load when one is requested as a load settles', async () => {
     const runScenario = async (hops: number) => {
       const { store } = await managedPair()
-      await store.setEditTarget('mgd')
+      await editWithWindow(store)
       mockPlotlyRef.value = {}
       let active = 0
       let maxActive = 0
@@ -721,21 +814,30 @@ describe('useDataVisStore overlapping plot loads', () => {
 })
 
 describe('useDataVisStore context range around the session window', () => {
-  const WIN_START = '2025-06-01T00:00:00Z'
-  const WIN_END = '2025-06-10T00:00:00Z'
-  const loadSession = async () => {
-    const { useQcSessionStore } = await import('@/store/qcSession')
-    useQcSessionStore().applySessions('h1', [
-      {
-        id: 's1',
-        status: 'in_progress',
-        phenomenonTimeStart: WIN_START,
-        phenomenonTimeEnd: WIN_END,
-      },
-    ] as any)
-    await nextTick()
-  }
-  const settle = () => new Promise((r) => setTimeout(r, 0))
+
+  it('keeps the Context preset apart from the Select view Time range', async () => {
+    const { store } = await managedPair()
+    store.selectedDateBtnId = 2
+    await store.setEditTarget('mgd')
+    await loadSession()
+    await settle()
+
+    await store.onDateBtnClick(0)
+    expect(store.contextPresetId).toBe(0)
+    expect(store.selectedDateBtnId).toBe(2)
+
+    await store.clearEditTarget()
+    expect(store.activePresetId).toBe(2)
+  })
+
+  it('records a custom range on the preset in use', async () => {
+    const { store } = await managedPair()
+    store.selectedDateBtnId = 2
+    await store.setEditTarget('mgd')
+    await store.setDateRange({ begin: new Date('2025-02-01T00:00:00Z'), end: new Date('2025-03-01T00:00:00Z') })
+    expect(store.contextPresetId).toBe(-1)
+    expect(store.selectedDateBtnId).toBe(2)
+  })
 
   it('the editor counts presets out from the session window', async () => {
     const { store } = await managedPair()
@@ -785,9 +887,10 @@ describe('useDataVisStore context range around the session window', () => {
     const { store } = await managedPair()
     await store.setEditTarget('mgd')
     expect(store.endDate.toISOString()).toBe('2025-12-31T00:00:00.000Z')
-    mockFetchObservationsInRange.mockClear()
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    vi.mocked(handleNewPlot).mockClear()
     mockFetchGraphSeries.mockClear()
-    mockRedraw.mockClear()
     mockClearZoomHistory.mockClear()
 
     await loadSession()
@@ -795,10 +898,10 @@ describe('useDataVisStore context range around the session window', () => {
 
     expect(store.beginDate.getTime()).toBe(subtractMonths(new Date(WIN_START), 1).getTime())
     expect(store.endDate.getTime()).toBe(subtractMonths(new Date(WIN_END), -1).getTime())
-    expect(mockFetchObservationsInRange.mock.calls.map((c) => c[0].id)).toEqual(['src'])
-    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
-    expect(mockRedraw).toHaveBeenCalledTimes(1)
-    expect(mockRedraw).toHaveBeenCalledWith(false, true)
+    // The source's traces first appear now, so it is a rebuild.
+    expect(mockFetchGraphSeries.mock.calls.map((c) => c[0].id)).toEqual(['ctx:src'])
+    expect(handleNewPlot).toHaveBeenCalledTimes(1)
+    expect(handleNewPlot).toHaveBeenCalledWith(undefined, { preserveZoom: true })
     expect(mockClearZoomHistory).not.toHaveBeenCalled()
   })
 
@@ -808,8 +911,8 @@ describe('useDataVisStore context range around the session window', () => {
     await store.setEditRecord({ dataX: [1], history: [] } as any)
     expect(store.isEditorReady).toBe(false)
     let resolveFetch!: (v: unknown) => void
-    mockFetchObservationsInRange.mockImplementationOnce(
-      () => new Promise((r) => (resolveFetch = r))
+    mockFetchGraphSeries.mockImplementationOnce(
+      () => new Promise((r) => (resolveFetch = r)) as any
     )
 
     await loadSession()
@@ -817,7 +920,7 @@ describe('useDataVisStore context range around the session window', () => {
     expect(store.beginDate.getTime()).toBe(subtractMonths(new Date(WIN_START), 1).getTime())
     expect(store.isEditorReady).toBe(false)
 
-    resolveFetch({ id: 'stub', data: {} })
+    resolveFetch({ id: 'src', data: {} })
     await settle()
     expect(store.isEditorReady).toBe(true)
   })
@@ -1028,7 +1131,9 @@ describe('useDataVisStore time range presets', () => {
     expect(mockFetchGraphSeries).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'old' }),
       store.beginDate,
-      store.endDate
+      store.endDate,
+      undefined,
+      expect.objectContaining({ id: 'old' })
     )
   })
 
@@ -1370,7 +1475,9 @@ describe('useDataVisStore managed datastream working copy', () => {
     expect(mockFetchGraphSeries).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'mgd' }),
       expect.any(Date),
-      expect.any(Date)
+      expect.any(Date),
+      undefined,
+      expect.objectContaining({ id: 'mgd' })
     )
   })
 

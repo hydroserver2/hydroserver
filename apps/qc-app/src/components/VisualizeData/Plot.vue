@@ -30,20 +30,30 @@
           class="ml-1"
         />
 
-        <v-chip
+        <div
           v-if="(selectedData?.length || hasSelectionShape) && !isPlotPreview"
-          class="plot-toolbar__selection flex-grow-0 flex-shrink-0"
-          size="small"
-          color="red"
-          variant="tonal"
-          prepend-icon="mdi-selection-drag"
-          closable
-          close-icon="mdi-close"
-          @click:close="clearSelected()"
+          class="plot-toolbar__selection d-inline-flex align-stretch rounded-lg ml-1"
         >
-          <b class="mr-1">{{ selectedData?.length ?? 0 }}</b>
-          point{{ (selectedData?.length ?? 0) === 1 ? '' : 's' }} selected
-        </v-chip>
+          <div
+            class="plot-toolbar__selection-count d-inline-flex align-center ga-1"
+            aria-live="polite"
+          >
+            <v-icon icon="mdi-selection-drag" size="16" />
+            <b>{{ selectedCount.toLocaleString() }}</b>
+            <span>point{{ selectedCount === 1 ? '' : 's' }} selected</span>
+          </div>
+          <span class="plot-toolbar__selection-divider" aria-hidden="true" />
+          <button
+            type="button"
+            data-testid="clear-selection-btn"
+            class="plot-toolbar__selection-clear d-inline-flex align-center ga-1 cursor-pointer"
+            title="Clear selection"
+            @click="clearSelected()"
+          >
+            <v-icon icon="mdi-close" size="14" />
+            Clear
+          </button>
+        </div>
 
         <v-spacer />
 
@@ -276,15 +286,43 @@
             <v-btn
               v-bind="menuProps"
               size="small"
-              variant="text"
-              prepend-icon="mdi-calendar-range"
+              :variant="showSourceContext ? 'tonal' : 'text'"
+              :color="showSourceContext ? 'primary' : undefined"
+              :prepend-icon="
+                showSourceContext ? 'mdi-calendar-range' : 'mdi-eye-off-outline'
+              "
               data-testid="context-range-btn"
-              title="Context range"
+              :data-context-on="showSourceContext"
+              :title="
+                showSourceContext
+                  ? `Context range: ${contextRangeLabel} around the session`
+                  : `Context range: ${contextRangeLabel} around the session. The grey source context is hidden.`
+              "
             >
-              Context
+              Context &middot; {{ contextRangeLabel }}
             </v-btn>
           </template>
           <v-card width="300" class="pa-3" data-testid="context-range-menu">
+            <v-switch
+              data-testid="context-toggle"
+              :model-value="showSourceContext"
+              color="primary"
+              density="compact"
+              hide-details
+              inset
+              class="mb-2"
+              @update:model-value="setShowSourceContext(!!$event)"
+            >
+              <template #label>
+                <span class="d-inline-flex align-center ga-2">
+                  <span
+                    class="context-swatch"
+                    :style="{ backgroundColor: SOURCE_CONTEXT_COLOR }"
+                  />
+                  Show source context
+                </span>
+              </template>
+            </v-switch>
             <DataVisTimeFilters
               :presets="EDITOR_PRESETS"
               description="How much of the source and plotted datastreams to show before and after the session window. Your edits are not reloaded."
@@ -412,7 +450,12 @@ import {
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
 import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
-import { EDITOR_PRESETS } from '@/utils/timeRangePresets'
+import {
+  CUSTOM_PRESET_ID,
+  EDITOR_PRESETS,
+  findPreset,
+} from '@/utils/timeRangePresets'
+import { SOURCE_CONTEXT_COLOR } from '@/utils/plotting/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
@@ -440,13 +483,26 @@ const {
   pendingShareZoom,
   shareZoomEditTarget,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, hasSelectionShape, qcDatastream } =
-  storeToRefs(useDataVisStore())
-const { trackPlotWork } = useDataVisStore()
+const {
+  selectedData,
+  hasSelectionShape,
+  qcDatastream,
+  contextPresetId,
+  showSourceContext,
+} = storeToRefs(useDataVisStore())
+const { trackPlotWork, setShowSourceContext } = useDataVisStore()
+
+const contextRangeLabel = computed(() =>
+  contextPresetId.value === CUSTOM_PRESET_ID
+    ? 'Custom'
+    : (findPreset(contextPresetId.value)?.label ?? 'Custom')
+)
 const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
 // The Select view previews the plot only when nothing is being edited; an
 // open session keeps the full chrome in both views.
 const { isPlotPreview } = storeToRefs(useUIStore())
+
+const selectedCount = computed(() => selectedData.value?.length ?? 0)
 
 const tooltipsAutoDisabled = computed(
   () =>
@@ -777,6 +833,13 @@ const onTabChange = () => {
 </script>
 
 <style scoped>
+.context-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
 .plot-root {
   min-height: 0;
 }
@@ -821,8 +884,51 @@ const onTabChange = () => {
   color: rgb(var(--v-theme-on-surface));
 }
 
+/* Same chrome as the data-points combo so the toolbar reads as one set. */
 .plot-toolbar__selection {
+  height: 28px;
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  color: rgb(var(--v-theme-error));
+  background-color: rgba(var(--v-theme-error), 0.08);
+  border: 1px solid rgba(var(--v-theme-error), 0.24);
+}
+
+.plot-toolbar__selection-count {
+  padding: 0 10px 0 8px;
+}
+
+.plot-toolbar__selection-count b {
+  font-weight: 600;
+}
+
+.plot-toolbar__selection-divider {
+  width: 1px;
+  align-self: stretch;
+  background-color: rgba(var(--v-theme-error), 0.24);
+}
+
+.plot-toolbar__selection-clear {
+  padding: 0 10px 0 8px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  border-top-right-radius: 7px;
+  border-bottom-right-radius: 7px;
+  transition: background-color 120ms ease;
+}
+
+.plot-toolbar__selection-clear:hover {
+  background-color: rgba(var(--v-theme-error), 0.14);
+}
+
+.plot-toolbar__selection-clear:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-error));
+  outline-offset: -2px;
 }
 
 /* Axis-title chips. CSS vars set per-element on the chip. Default

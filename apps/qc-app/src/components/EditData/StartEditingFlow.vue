@@ -75,10 +75,11 @@ import { useDatastreamMetadata } from '@/composables/useDatastreamMetadata'
 import { useProcessingLevels } from '@/composables/useProcessingLevels'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import type { TimeWindow } from '@/utils/timeRangePresets'
-import type { View } from '@/store/userInterface'
+import { DrawerType, type View } from '@/store/userInterface'
 
-// 'entering': the editor is not open yet. 'resume': it opened with no session.
-// 'footer': it is open on committed history.
+// 'entering': picked from a row, so it opens in the Select view's preview.
+// 'resume': the editor opened with no session. 'footer': it is open on
+// committed history.
 type WindowOrigin = 'entering' | 'resume' | 'footer'
 
 interface WindowTarget {
@@ -139,13 +140,12 @@ const showWindow = computed({
 })
 
 /**
- * A created managed datastream is always a new edit target, so an open
- * session is certainly abandoned. Ask and end it before anything reaches the
- * server, rather than after a create the user might not want. False means the
- * session was kept and the create step must not open.
+ * Picking another target abandons the open session. Ask and end it right
+ * away, before the window step or a create reaches the server. False means
+ * the session was kept and the next step must not open.
  */
-async function leaveOpenSession(): Promise<boolean> {
-  if (!qcDatastream.value) return true
+async function leaveOpenSession(nextId?: string): Promise<boolean> {
+  if (!qcDatastream.value || qcDatastream.value.id === nextId) return true
   return closeEditor()
 }
 
@@ -172,8 +172,15 @@ async function onChooserEdit(option: ManagedDatastreamOption) {
   showChooser.value = false
   const source = chooserSource.value
   if (!source) return
+  // Keeping the session returns to the chooser.
+  if (!(await leaveOpenSession(option.managed.id))) {
+    showChooser.value = true
+    return
+  }
+  // Picked from a row: preview it in the Select view to set up its context
+  // first; the side panel opens the editor.
   if (option.sessions.some((s) => s.status === 'in_progress')) {
-    await runEnter(option.managed.id)
+    await runEnter(option.managed.id, undefined, DrawerType.Select)
     return
   }
   openWindow({
@@ -236,7 +243,7 @@ async function onWindowConfirm(window: TimeWindow) {
   let pickAgain = false
   try {
     if (target.origin === 'entering') {
-      await runEnter(target.managedId, window)
+      await runEnter(target.managedId, window, DrawerType.Select)
     } else {
       const started = await startSessionOver(window)
       // A plain failure keeps the editor on this target; a superseded one left.

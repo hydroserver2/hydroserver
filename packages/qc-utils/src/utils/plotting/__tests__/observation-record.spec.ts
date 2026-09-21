@@ -16,7 +16,11 @@ vi.mock('../value-threshold.worker?worker&inline', () => import('./workerMocks')
 vi.mock('../change-values.worker?worker&inline', () => import('./workerMocks').then(m => ({ default: m.MockChangeValuesWorker })));
 
 import { mockDatastream } from './mock';
-import { ObservationRecord, INCREASE_AMOUNT } from '../observation-record';
+import {
+  ObservationRecord,
+  INCREASE_AMOUNT,
+  HistoryPreviewError,
+} from '../observation-record';
 import {
   EnumEditOperations,
   EnumFilterOperations,
@@ -159,6 +163,24 @@ describe('ObservationRecord', () => {
       await rec.applyWindow(t(2), t(8)); // same window
       expect(rec.dataX.length).toBe(lenAfterEdit);
       expect(rec.history.length).toBe(histLen);
+    });
+
+    it('re-materializes an unchanged window over new rawData', async () => {
+      const rec = makeRec();
+      await rec.applyWindow(t(0), t(9));
+      const full = {
+        datetimes: Float64Array.from(grid.datetimes),
+        dataValues: Float32Array.from(grid.dataValues),
+      };
+      const gapped = {
+        datetimes: full.datetimes.filter((_, i) => i < 3 || i > 6),
+        dataValues: full.dataValues.filter((_, i) => i < 3 || i > 6),
+      };
+      await rec.applyWindow(t(0), t(9), gapped);
+      expect(rec.dataX.length).toBe(6);
+      await rec.applyWindow(t(0), t(9), full);
+      expect(rec.dataX.length).toBe(10);
+      expect(rec.rawData).toBe(full);
     });
 
     it('reload() restores the windowed baseline, not the full series', async () => {
@@ -745,22 +767,109 @@ describe('ObservationRecord', () => {
       expect(rec.history).toEqual([]);
     });
 
-    it('reloadHistory replays entries up to a given index', async () => {
-      await rec.dispatch([
-        [EnumFilterOperations.SELECTION, [0, 1]],
-        [EnumEditOperations.DELETE_POINTS],
-        [EnumFilterOperations.SELECTION, [0]],
-        [EnumEditOperations.DELETE_POINTS],
-      ]);
-      const lenAfterTwo = rec.dataX.length;
+    describe('previewHistory', () => {
+      const twoDeletes = () =>
+        rec.dispatch([
+          [EnumFilterOperations.SELECTION, [0, 1]],
+          [EnumEditOperations.DELETE_POINTS],
+          [EnumFilterOperations.SELECTION, [0]],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
 
-      // Replay only up through the first SELECTION + DELETE pair (entries 0 + 1).
-      await rec.reloadHistory(1);
-      expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 2);
-      expect(rec.dataX.length).toBeGreaterThan(lenAfterTwo);
+      it('shows an earlier step and keeps the later ones listed', async () => {
+        await twoDeletes();
+        const later = rec.history.slice(2);
+
+        // Only the first SELECTION + DELETE pair (entries 0 + 1) applies.
+        await rec.previewHistory(1);
+
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 2);
+        expect(rec.history).toHaveLength(4);
+        expect(rec.history.slice(2)).toEqual(later);
+        expect(rec.previewIndex).toBe(1);
+      });
+
+      it('previews the untouched data at -1', async () => {
+        await twoDeletes();
+        await rec.previewHistory(-1);
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length);
+        expect(rec.history).toHaveLength(4);
+        expect(rec.previewIndex).toBe(-1);
+      });
+
+      it('returns to the whole history', async () => {
+        await twoDeletes();
+        const len = rec.dataX.length;
+        await rec.previewHistory(1);
+
+        await rec.exitPreview();
+
+        expect(rec.dataX.length).toBe(len);
+        expect(rec.history).toHaveLength(4);
+        expect(rec.previewIndex).toBeNull();
+      });
+
+      it('treats previewing the last step as returning', async () => {
+        await twoDeletes();
+        await rec.previewHistory(1);
+        await rec.previewHistory(3);
+        expect(rec.previewIndex).toBeNull();
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 3);
+      });
+
+      it('refuses edits while previewing', async () => {
+        await twoDeletes();
+        await rec.previewHistory(1);
+        await expect(
+          rec.dispatch(EnumFilterOperations.SELECTION, [0])
+        ).rejects.toBeInstanceOf(HistoryPreviewError);
+        await expect(
+          rec.dispatch(EnumEditOperations.ADD_POINTS, [[1, 1]])
+        ).rejects.toBeInstanceOf(HistoryPreviewError);
+        expect(rec.history).toHaveLength(4);
+      });
+
+      it('undoes the last step of the whole history, ending the preview', async () => {
+        await twoDeletes();
+        await rec.previewHistory(0);
+
+        await rec.undo();
+
+        expect(rec.previewIndex).toBeNull();
+        expect(rec.history).toHaveLength(3);
+        expect(rec.redoStack).toHaveLength(1);
+      });
+
+      it('redoes on top of the whole history, ending the preview', async () => {
+        await twoDeletes();
+        await rec.undo();
+        await rec.previewHistory(-1);
+
+        await rec.redo();
+
+        expect(rec.previewIndex).toBeNull();
+        expect(rec.history).toHaveLength(4);
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 3);
+      });
+
+      it('keeps the redo stack while previewing', async () => {
+        await twoDeletes();
+        await rec.undo();
+        await rec.previewHistory(0);
+        expect(rec.redoStack).toHaveLength(1);
+        await rec.exitPreview();
+        expect(rec.redoStack).toHaveLength(1);
+      });
+
+      it('ends on a reload', async () => {
+        await twoDeletes();
+        await rec.previewHistory(1);
+        await rec.reload();
+        expect(rec.previewIndex).toBeNull();
+      });
     });
 
-    it('keeps comment and attribution across a step reload', async () => {
+    it('keeps comment and attribution across a step preview', async () => {
       await rec.dispatch([
         [EnumFilterOperations.SELECTION, [0, 1]],
         [EnumEditOperations.DELETE_POINTS],
@@ -771,7 +880,7 @@ describe('ObservationRecord', () => {
       rec.history[0]!.comment = 'Dropped the spike';
       rec.history[1]!.performedBy = 'Grace Hopper';
 
-      await rec.reloadHistory(1);
+      await rec.previewHistory(1);
 
       expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
       expect(rec.history[0]!.comment).toBe('Dropped the spike');
@@ -786,7 +895,8 @@ describe('ObservationRecord', () => {
       rec.history[0]!.performedBy = 'Ada Lovelace';
       rec.history[0]!.execution!.durationMs = 9999;
 
-      await rec.reloadHistory(1);
+      // Step 0 is replayed; previewing the last step would replay nothing.
+      await rec.previewHistory(0);
 
       expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
       // The timing describes the run that just happened, not the old one.

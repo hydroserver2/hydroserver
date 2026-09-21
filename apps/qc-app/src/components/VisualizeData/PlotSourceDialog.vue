@@ -43,8 +43,19 @@
                   size="18"
                 />
                 <div class="d-flex flex-column" style="min-width: 0">
-                  <span class="text-body-medium font-weight-medium">
+                  <span class="text-body-medium font-weight-medium d-flex align-center ga-1">
                     {{ row.name }}
+                    <v-chip
+                      v-if="isEditing(row.id)"
+                      size="x-small"
+                      color="primary"
+                      variant="flat"
+                      label
+                      prepend-icon="mdi-pencil"
+                      :data-testid="`plot-option-editing-${row.id}`"
+                    >
+                      Editing
+                    </v-chip>
                   </span>
                   <span class="text-body-small text-medium-emphasis">
                     {{ row.summary }}
@@ -97,6 +108,8 @@ const props = defineProps<{
   loading?: boolean
   /** Free slots under the 4-datastream plot cap, ignoring this source's group. */
   slotsLeft: number
+  /** The datastream being edited: already on the plot, so not offered. */
+  editingId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -141,8 +154,10 @@ const rows = computed<Row[]>(() => [
 
 const slotsLeftForNew = computed(() => props.slotsLeft - checked.value.length)
 
+const isEditing = (id: string) => !!props.editingId && id === props.editingId
+
 const isDisabled = (id: string) =>
-  !checked.value.includes(id) && slotsLeftForNew.value <= 0
+  isEditing(id) || (!checked.value.includes(id) && slotsLeftForNew.value <= 0)
 
 function toggle(id: string) {
   if (checked.value.includes(id)) {

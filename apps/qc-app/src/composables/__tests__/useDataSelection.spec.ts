@@ -23,6 +23,7 @@ vi.mock('@/store/plotly', () => {
       plotlyRef,
       selectedSeries,
       suppressedEchoSelection,
+      previewIndex: ref(null),
       graphSeriesArray,
       updateOptions: vi.fn(),
       clearChartState: vi.fn(),

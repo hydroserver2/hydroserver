@@ -38,7 +38,7 @@ vi.mock('@/store/observations', () => ({
 }))
 
 // Inline constants to break circular dep: options.ts → usePlotlyStore → plotly barrel.
-const SOURCE_CONTEXT_COLOR = '#9e9e9e'
+const SOURCE_CONTEXT_COLOR = '#cfcfcf'
 const SOURCE_CONTEXT_LABEL_COLOR = '#616161'
 
 vi.mock('@/utils/plotting/plotly', () => ({
@@ -589,7 +589,7 @@ describe('usePlotlyStore.editHistory', () => {
   })
 })
 
-describe('usePlotlyStore.redraw shapes', () => {
+describe('usePlotlyStore.redraw', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -597,38 +597,15 @@ describe('usePlotlyStore.redraw shapes', () => {
     sourceId.value = null
   })
 
-  it('keeps a live stage shape and replaces the edit-window shape', async () => {
+  it('leaves the live shapes alone', async () => {
     const mod = await import('@/utils/plotting/plotly')
-    const freshWindow = { name: 'edit-window', x0: 300, x1: 400 }
     const { usePlotlyStore } = await import('@/store/plotly')
     const store = usePlotlyStore()
-    ;(mod.createPlotlyOption as any).mockReturnValueOnce({
-      traces: [],
-      layout: { shapes: [freshWindow] },
-    })
-    const stage = { name: 'stage', x0: 10, x1: 20 }
-    store.plotlyRef = {
-      layout: { shapes: [stage, { name: 'edit-window', x0: 100, x1: 200 }] },
-    } as any
+    store.plotlyRef = { layout: { shapes: [{ name: 'stage' }] } } as any
 
     await store.redraw()
 
     const layout = (mod.applyTraceUpdate as any).mock.calls.at(-1)[2]
-    expect(layout.shapes).toEqual([stage, freshWindow])
-  })
-
-  it('drops a stale edit-window shape once the layout has none', async () => {
-    const mod = await import('@/utils/plotting/plotly')
-    const { usePlotlyStore } = await import('@/store/plotly')
-    const store = usePlotlyStore()
-    const stage = { name: 'stage', x0: 10, x1: 20 }
-    store.plotlyRef = {
-      layout: { shapes: [stage, { name: 'edit-window', x0: 100, x1: 200 }] },
-    } as any
-
-    await store.redraw()
-
-    const layout = (mod.applyTraceUpdate as any).mock.calls.at(-1)[2]
-    expect(layout.shapes).toEqual([stage])
+    expect(layout).not.toHaveProperty('shapes')
   })
 })

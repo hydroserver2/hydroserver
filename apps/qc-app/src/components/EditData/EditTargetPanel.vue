@@ -40,19 +40,19 @@
       </div>
 
       <div class="text-body-small text-medium-emphasis">
-        Plot other datastreams around this session, then go back to edit it.
+        Plot other datastreams around this session, then open the editor.
       </div>
 
       <v-btn
-        data-testid="back-to-editor-btn"
+        data-testid="open-editor-btn"
         size="small"
         variant="flat"
         color="primary"
-        prepend-icon="mdi-arrow-left"
+        prepend-icon="mdi-pencil"
         block
         @click="openEditor"
       >
-        Back to editor
+        Open editor
       </v-btn>
     </div>
   </div>
@@ -62,7 +62,8 @@
 /**
  * What the Select view says about an open edit session: the managed
  * datastream, its session window, whether anything is unsaved, and the way
- * back. Editing itself stays in the editor.
+ * into the editor. Picking a datastream to edit lands here first, so its
+ * context can be set up before editing.
  */
 
 import { computed } from 'vue'

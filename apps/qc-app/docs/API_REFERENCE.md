@@ -146,7 +146,8 @@ below), and share-link hydration (the `ed` query param).
   **Start new session** and the editor footer's **New session**.
 - `openEditor()`: shows the Edit layout for the current target. Pure
   navigation, used by the nav rail's Edit button and the Select view's
-  **Back to editor**.
+  **Open editor**. A datastream picked from a row enters with
+  `view = DrawerType.Select`, so it lands on that preview first.
 - `leaveEdit()`: returns to the Select view, clears the resume pointer and
   the edit target (`clearEditTarget`). The user has already been asked by
   then, or there was nothing to ask about. Switching views is not an exit and
@@ -199,8 +200,9 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
 - `forgetSession()`: drop the resume pointer only. For exits that unmount the
   editor, where clearing the edit target would have the editor's URL writer
   replace the route mid-navigation.
-- `leavePrompt` / `leaveWork`: what the dialog renders, and which answer is
-  currently running.
+- `leavePrompt` / `leaveWork`: what the dialog renders (the case, the name of
+  the datastream being left, the unsaved count and whether saving is
+  possible), and which answer is currently running.
 
 ### `useResumeEditSession()`
 
@@ -429,7 +431,7 @@ on boot.
 | `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 4 streams the user chose to plot. Editing never adds to or removes from it (snapshots are the exception, dropped on leave); the 4-stream cap doesn't count the edit target or its source, so the plot holds at most 6 series while editing. |
 | `qcDatastreamId`                    | state    | `string \| null`                                  | The edit target's id. Set only by the edit flow (`setEditTarget` / `clearEditTarget`); null in the Select view. |
 | `qcDatastream`                      | computed | `Datastream \| null`                              | Live catalog lookup of `qcDatastreamId` in `datastreams`, not `plottedDatastreams`, since the edit target isn't a plotted entry. |
-| `sourceContextDatastream`           | computed | `Datastream \| null`                              | The edit target's catalog source, resolved through `qcHistories`; null without an edit target. Drawn behind the edit target as context. |
+| `sourceContextDatastream`           | computed | `Datastream \| null`                              | The source drawn around the edit target as context (light grey, cut around the session window). Null without an edit target, with context switched off, or when the user plotted the source, which then draws as an ordinary series. |
 | `seriesDatastreams`                 | computed | `Datastream[]`                                    | What the plot actually draws, in order: `[edit target, its source, ...plotted minus those]` while editing, otherwise `plottedDatastreams` unchanged. Refresh, colour assignment, series ordering, working-copy invalidation, `PlottedDatastreams`, the share watcher, and snapshots all iterate this instead of `plottedDatastreams`. |
 | `qualifierSet`                      | state    | `Set<string>`                                     | Qualifier codes seen on the edit target's loaded points. |
 | `selectedQualifier`                 | state    | `string`                                          | Active qualifier in the picker. |
@@ -439,7 +441,13 @@ on boot.
 | `isEditorReady`                     | computed | `boolean`                                         | True while editing once the session window is known, the edit record is on the plot, no session is opening (`isSwitchingSession`), and no plot work is pending: no queued or running plot load (including the context re-anchor around the session window) and no tracked draw. Bound to `data-editor-ready` on the edit view's `edit-plot-column`; e2e `waitForEditorReady` waits on it. |
 | `trackPlotWork`                     | action   | `(work: () => Promise<void>) => Promise<void>`    | Run `work` counted as pending plot work for `isEditorReady`. Plot loads and `setEditRecord` use it, and `Plot.vue` counts its first draw from the moment the plot element appears. |
 | `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it on every plot rebuild: around the edit session's window while one is set (`presetAroundWindow`), otherwise back from the context data's (`seriesDatastreams` minus the edit target) end (`presetWindow`). It also re-resolves when the edit session's window loads or changes. A custom range stays fixed. |
-| `selectedDateBtnId`                 | state    | `number`                                          | Active preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
+| `selectedDateBtnId`                 | state    | `number`                                          | The Select view's Time range preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
+| `contextPresetId`                   | state    | `number`                                          | The editor's Context range preset id, remembered apart from `selectedDateBtnId` so neither moves the other. Persisted. |
+| `activePresetId`                    | computed | `number` (writable)                               | The preset the loaded range follows: `contextPresetId` while an edit target is set, else `selectedDateBtnId`. `onDateBtnClick` and a custom `setDateRange` write it. |
+| `editSessionWindow`                 | computed | `TimeWindow \| null`                             | The viewed session's window, else the in-progress one's; null without an edit target. |
+| `editSourceDatastream`              | computed | `Datastream \| null`                             | The edit target's source datastream, however it is drawn. |
+| `showSourceContext`                 | state    | `boolean`                                         | Whether the edit target's source is drawn around it as context (default `true`). Persisted with `selectedDateBtnId`. |
+| `setShowSourceContext`              | action   | `(show: boolean) => Promise<void>`                | Turn the source context on or off from the Context menu; rebuilds the plot while editing. |
 | `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
@@ -511,6 +519,7 @@ handles, live chart caches).
 | `selectedSeriesIndex`      | computed | `number`                                          | Index of the edit target in `graphSeriesArray` (`-1` when none). |
 | `selectedSeries`           | computed | `GraphSeries`                                     | Convenience for `graphSeriesArray[selectedSeriesIndex]`. |
 | `editHistory`              | state    | `HistoryItem[]`                                   | Mirrors `selectedSeries.data.history` (mutated in place; never reassign). |
+| `previewIndex`             | computed | `number \| null`                                  | The earlier history step the edit target shows (`-1` for the starting state), or null for the whole history. While set, edits wait: operations, plot selections and table saves are held. |
 | `suppressedEchoSelection`  | state    | `number[] \| null`                                | Sentinel armed by programmatic Plotly writes to suppress the echo SELECTION dispatch. |
 | `isUpdating`               | state    | `boolean`                                         | Surfaced in the nav rail while a redraw runs. |
 | `showLegend`               | state    | `boolean`                                         | Drives Plotly's legend visibility. |
@@ -538,7 +547,7 @@ handles, live chart caches).
 | `canRedoZoom`              | computed | `boolean`                                         | `zoomRedoStack.length > 0`. |
 | `currentZoom`              | computed | `ZoomState \| null`                               | Top of the undo stack; what the share URL writer subscribes to. |
 | `updateOptions`            | action   | `() => void`                                      | Rebuild `plotlyOptions` from `graphSeriesArray`. |
-| `redraw`                   | action   | `(recomputeXaxisRange?: boolean, preserveZoom?: boolean) => Promise<void>` | Push typed-array updates + restyle; preserves the user's zoom by default. Keeps shapes other writers own (the staging band) and replaces `edit-window`. |
+| `redraw`                   | action   | `(recomputeXaxisRange?: boolean, preserveZoom?: boolean) => Promise<void>` | Push typed-array updates + restyle; preserves the user's zoom by default, except on a y axis that had no points drawn. Leaves `layout.shapes` (the staging band) alone. |
 | `clearChartState`          | action   | `() => void`                                      | Drop all series + zoom history (used on workspace swap). |
 | `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Fetch observations for `ds` over `[start, end]` and build a `GraphSeries` via `buildGraphSeries`. |
 | `buildGraphSeries`         | action   | `(ds: Datastream, data: ObservationRecord) => GraphSeries` | Build a `GraphSeries` from an already-loaded record, no fetch. Used directly for a managed datastream's working copy. |
@@ -557,7 +566,8 @@ Fetches + caches observation windows and inflates them into
 |----------------------------|----------|---------------------------------------------------|-------|
 | `observations`             | state    | `Record<string, ObservationRecord>`               | Per-datastream record; reused across rebuilds. |
 | `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes + `Float32Array` values). |
-| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Extends the cached range minimally; only fetches segments outside the existing window. Requests for one datastream run in order, so the record ends on the latest requested window and the cache never merges the same segment twice; a request matching the last queued range shares its promise. |
+| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date, exclude?: { begin: Date; end: Date }) => Promise<ObservationRecord>` | Fetches only the parts of `[b, e]` never asked for before, skipping `exclude`, and returns the shared record windowed to `[b, e]`. Requests for one datastream run in order, so the record ends on the latest requested window; a request matching the last queued one shares its promise. |
+| `fetchDetachedRecord`      | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Fills the same cache through the same per-datastream queue, but returns a record of its own windowed to `[b, e]`. For working copies and snapshots: never re-windows the shared record the plot draws. |
 
 ### `useWorkspaceStore()` (`src/store/workspaces.ts`)
 

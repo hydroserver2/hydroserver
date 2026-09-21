@@ -391,6 +391,7 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
   const graphWidth = (gd as HTMLElement).clientWidth
   let leftIdx = 0
   let rightIdx = 0
+  const seenAxes = new Set<string>()
   // Iterate `graphSeriesArray`: it's the authoritative sidebar
   // order; `gd.data` gets reversed so traces paint top-over-bottom
   // (see `createPlotlyOption`), which would flip the stacked chips.
@@ -404,6 +405,9 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
     // on `y2`/`y3`/...
     const isPrimary = axisRef === 'y'
     const axisKey = isPrimary ? 'yaxis' : `yaxis${axisRef.slice(1)}`
+    // Series sharing an axis (the edit target and its source) share its chip.
+    if (seenAxes.has(axisKey)) continue
+    seenAxes.add(axisKey)
     const ax = fl[axisKey] as
       | { visible?: boolean; _mainLinePosition?: number; _shift?: number }
       | undefined

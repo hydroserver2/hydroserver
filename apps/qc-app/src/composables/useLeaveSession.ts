@@ -37,6 +37,8 @@ export type LeaveCase =
 
 export interface LeavePrompt {
   kind: Exclude<LeaveCase, 'none'>
+  /** The datastream being left, so the prompt never reads as the next one. */
+  datastreamName: string
   /** Edits made since the last save. */
   unsavedCount: number
   /** False when no session is open, so there is nowhere to save to. */
@@ -68,6 +70,7 @@ function leaveCase(): LeaveCase {
 function show(kind: Exclude<LeaveCase, 'none'>): void {
   leavePrompt.value = {
     kind,
+    datastreamName: useDataVisStore().qcDatastream?.name ?? '',
     unsavedCount: useEditSession().unsavedEditCount.value,
     canSave: !!useQcSessionStore().inProgressSession,
   }

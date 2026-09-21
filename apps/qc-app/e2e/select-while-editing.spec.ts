@@ -129,7 +129,7 @@ test.describe('Select while editing', () => {
     // The edit target is still drawn, so the user sees what they changed.
     expect(await plottedTraceIds(page)).toContain(MANAGED_DATASTREAM_ID)
 
-    await page.getByTestId('back-to-editor-btn').click()
+    await page.getByTestId('open-editor-btn').click()
     await waitForEditorReady(page)
     await expectHistoryContains(page, 'Change Values')
   })
@@ -179,13 +179,14 @@ test.describe('Select while editing', () => {
     expect(ids).toContain(DATASTREAM_ID_B)
     expect(ids).toContain(MANAGED_DATASTREAM_ID)
 
-    // The edit target and its source are pinned in the plotted list.
+    // The edit target is pinned in the plotted list. Its source is drawn as
+    // context, which the Context menu switches, so it gets no row.
     await expect(
       sidePanel(page).getByTestId(`plotted-item-${MANAGED_DATASTREAM_ID}`)
     ).toBeVisible()
     await expect(
       sidePanel(page).getByTestId(`plotted-item-${DATASTREAM_ID}`)
-    ).toBeVisible()
+    ).toHaveCount(0)
   })
 
   test('keeps ed in the share URL and restores Select on reload', async ({
@@ -211,17 +212,64 @@ test.describe('Select while editing', () => {
     )
   })
 
-  test('the row Edit button returns to the session being edited', async ({
+  test('the edited row offers Close, which ends the session', async ({
     page,
   }) => {
     await gotoHome(page)
     await startSessionFromRow(page)
     await goToSelect(page)
 
-    await page.getByTestId(`edit-datastream-${DATASTREAM_ID}`).click()
-    // The session id is generated, so match the Continue button by prefix.
-    await page.locator('[data-testid^="continue-session-"]').click()
-    await waitForEditorReady(page)
-    await expect(page.getByText('Filter Data')).toBeVisible()
+    await expect(page.getByTestId(`edit-datastream-${DATASTREAM_ID}`)).toHaveCount(0)
+    await expect(page.getByTestId('editing-chip')).toBeVisible()
+    await page.getByTestId(`close-datastream-${DATASTREAM_ID}`).click()
+    // The fresh session holds no edits, so leaving asks what to do with it.
+    await page.getByTestId('leave-keep-btn').click()
+    await expect(page.getByTestId('editing-chip')).toHaveCount(0)
+    await expect(page.getByTestId(`edit-datastream-${DATASTREAM_ID}`)).toBeVisible()
+  })
+
+  test('plotting the raw source keeps the grey context beside it', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await startSessionFromRow(page)
+    await goToSelect(page)
+
+    await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
+    await expect(page.getByTestId('plot-source-dialog')).toBeVisible()
+    // The edit target is already on the plot, so it is not offered.
+    await expect(
+      page.getByTestId(`plot-option-editing-${MANAGED_DATASTREAM_ID}`)
+    ).toBeVisible()
+    await page.getByTestId(`plot-option-${DATASTREAM_ID}`).locator('input').check()
+    await page.getByTestId('plot-source-apply').click()
+
+    await expect
+      .poll(() => plottedTraceIds(page))
+      .toEqual(expect.arrayContaining([DATASTREAM_ID, `ctx:${DATASTREAM_ID}`]))
+    // The plotted source is an ordinary row; the grey context gets none.
+    await expect(
+      sidePanel(page).getByTestId(`plotted-item-${DATASTREAM_ID}`)
+    ).toBeVisible()
+  })
+
+  test('Clear plot closes the edited datastream and unplots everything', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await startSessionFromRow(page)
+    await goToSelect(page)
+    await page.getByTestId(`plot-checkbox-${DATASTREAM_ID_B}`).click()
+    await expect
+      .poll(() => plottedTraceIds(page))
+      .toEqual(expect.arrayContaining([DATASTREAM_ID_B]))
+
+    await page.getByTestId('clear-plot-btn').click()
+    // The fresh session holds no edits, so closing asks what to do with it.
+    await page.getByTestId('leave-keep-btn').click()
+
+    await expect(page.getByTestId('editing-chip')).toHaveCount(0)
+    await expect(page.getByTestId('clear-plot-btn')).toHaveCount(0)
+    await expect(page.getByText('No datastream plotted')).toBeVisible()
   })
 })

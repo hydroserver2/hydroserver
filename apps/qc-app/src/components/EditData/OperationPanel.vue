@@ -37,7 +37,19 @@
     <v-divider />
 
     <div
-      v-if="op.requiresSelection && !selectedData?.length"
+      v-if="previewIndex !== null"
+      class="px-3 py-4 d-flex flex-column align-center text-center"
+      data-testid="operation-preview-blocked"
+    >
+      <v-icon icon="mdi-eye-outline" size="28" color="primary" class="mb-2" />
+      <div class="text-body-small text-medium-emphasis">
+        An earlier history step is being previewed. Go back to the latest
+        step in the edit history to continue editing.
+      </div>
+    </div>
+
+    <div
+      v-else-if="op.requiresSelection && !selectedData?.length"
       class="px-3 py-4 d-flex flex-column align-center text-center"
     >
       <v-icon
@@ -106,6 +118,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePlotlyStore } from '@/store/plotly'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/store/userInterface'
@@ -115,6 +128,7 @@ import FilterRangePanel from '@/components/FilterPoints/FilterRangePanel.vue'
 
 const { selectedOperation, filterRangeActive } = storeToRefs(useUIStore())
 const { selectedData } = storeToRefs(useDataVisStore())
+const { previewIndex } = storeToRefs(usePlotlyStore())
 
 const op = computed(() =>
   selectedOperation.value ? operationsById[selectedOperation.value] : null

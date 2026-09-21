@@ -16,6 +16,16 @@ vi.mock('@uwrl/qc-utils', () => ({
     }
     return lo
   },
+  findLastLessOrEqual: (arr: number[], target: number) => {
+    let lo = 0
+    let hi = arr.length
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1
+      if (arr[mid] > target) hi = mid
+      else lo = mid + 1
+    }
+    return lo - 1
+  },
   EnumFilterOperations: { SELECTION: 'SELECTION' },
 }))
 
@@ -24,6 +34,7 @@ const sourceContextDatastream = ref<{ id: string } | null>(null)
 const beginDate = ref<Date | null>(null)
 const endDate = ref<Date | null>(null)
 const selectedData = ref<number[] | null>(null)
+const editSessionWindow = ref<{ begin: Date; end: Date } | null>(null)
 
 // `vi.fn()`-wrapped so individual tests can override the return value for
 // one call (`mockReturnValueOnce`) to simulate `createPlotlyOption` being
@@ -36,16 +47,7 @@ vi.mock('@/store/dataVisualization', () => ({
     beginDate,
     endDate,
     selectedData,
-  })),
-}))
-
-const viewedSession = ref<{ phenomenonTimeStart: string; phenomenonTimeEnd: string } | null>(null)
-const inProgressSession = ref<{ phenomenonTimeStart: string; phenomenonTimeEnd: string } | null>(null)
-
-vi.mock('@/store/qcSession', () => ({
-  useQcSessionStore: vi.fn(() => ({
-    viewedSession,
-    inProgressSession,
+    editSessionWindow,
   })),
 }))
 
@@ -99,9 +101,10 @@ import {
   createPlotlyOption,
   findGapIndices,
   insertGapBreaks,
+  splitAroundWindow,
+  bridgeAcrossWindow,
 } from '../options'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useQcSessionStore } from '@/store/qcSession'
 
 const makeSeries = (overrides: Partial<Record<string, unknown>> = {}) => {
   const x = new Float64Array([1, 2, 3, 4, 5])
@@ -192,8 +195,7 @@ describe('createPlotlyOption', () => {
     setActivePinia(createPinia())
     qcDatastream.value = null
     sourceContextDatastream.value = null
-    viewedSession.value = null
-    inProgressSession.value = null
+    editSessionWindow.value = null
     beginDate.value = null
     endDate.value = null
     isPlotPreview.value = false
@@ -255,12 +257,11 @@ describe('createPlotlyOption', () => {
     // overlay's x/y match the main trace verbatim, but the trace
     // pair is still emitted so the line-drawing path is exercised
     // regardless of whether real gaps are present.
-    qcDatastream.value = { id: 'qc' }
     const qc = makeSeries({ id: 'qc', intendedSpacingMs: 1.5 })
     const opts = createPlotlyOption([qc])
     const main = opts.traces.find((t: any) => t.id === 'qc') as any
     const overlay = opts.traces.find(
-      (t: any) => t._gapOverlayFor === 'qc'
+      (t: any) => t._partOf === 'qc'
     ) as any
     expect(main.mode).toBe('markers')
     expect(overlay).toBeDefined()
@@ -274,7 +275,6 @@ describe('createPlotlyOption', () => {
   })
 
   it('inserts NaN-y break points in the overlay where gaps exceed the spacing', () => {
-    qcDatastream.value = { id: 'qc' }
     const x = new Float64Array([0, 10, 20, 200, 210])
     const y = new Float64Array([1, 2, 3, 4, 5])
     const qc = makeSeries({
@@ -284,7 +284,7 @@ describe('createPlotlyOption', () => {
     })
     const opts = createPlotlyOption([qc])
     const overlay = opts.traces.find(
-      (t: any) => t._gapOverlayFor === 'qc'
+      (t: any) => t._partOf === 'qc'
     ) as any
     const oy = Array.from(overlay.y as Float64Array)
     // Exactly one gap (20 → 200), so exactly one NaN injected.
@@ -383,43 +383,70 @@ describe('createPlotlyOption', () => {
     expect(ids.indexOf('src')).toBeLessThan(ids.indexOf('qc'))
   })
 
-  it('shades the session window while editing', () => {
+  it('draws the edit target as one piece in the QC colour', () => {
     qcDatastream.value = { id: 'qc' }
-    inProgressSession.value = {
-      phenomenonTimeStart: '2025-02-01T00:00:00Z',
-      phenomenonTimeEnd: '2025-03-01T00:00:00Z',
-    }
-    const opts = createPlotlyOption([makeSeries({ id: 'qc' })])
-    const shape = ((opts.layout as any).shapes ?? []).find((s: any) => s.name === 'edit-window')
-    expect(shape.x0).toBe(Date.parse('2025-02-01T00:00:00Z'))
-    expect(shape.x1).toBe(Date.parse('2025-03-01T00:00:00Z'))
-    expect(shape.yref).toBe('paper')
+    editSessionWindow.value = { begin: new Date(2), end: new Date(4) }
+    const opts = createPlotlyOption([makeSeries({ id: 'qc', intendedSpacingMs: 1.5 })])
+    const main = opts.traces.find((t: any) => t.id === 'qc') as any
+    const overlays = opts.traces.filter((t: any) => t._partOf === 'qc') as any[]
+    expect(main.marker.color).toBe(COLORS[0])
+    expect(Array.from(main.x)).toEqual([1, 2, 3, 4, 5])
+    expect(overlays.map((t) => t.line.color)).toEqual([COLORS[0]])
   })
 
-  it('prefers the viewed session window over the in-progress one', () => {
+  it('draws the source around the session window, leaving a gap', () => {
     qcDatastream.value = { id: 'qc' }
-    inProgressSession.value = { phenomenonTimeStart: '2025-02-01T00:00:00Z', phenomenonTimeEnd: '2025-03-01T00:00:00Z' }
-    viewedSession.value = { phenomenonTimeStart: '2025-01-01T00:00:00Z', phenomenonTimeEnd: '2025-01-15T00:00:00Z' }
+    sourceContextDatastream.value = { id: 'src' }
+    editSessionWindow.value = { begin: new Date(2), end: new Date(4) }
+    const src = makeSeries({ id: 'src', intendedSpacingMs: 1.5 })
+    const opts = createPlotlyOption([makeSeries({ id: 'qc' }), src])
+    const main = opts.traces.find((t: any) => t.id === 'src') as any
+    const parts = opts.traces.filter((t: any) => t._partOf === 'src') as any[]
+    const points = parts.filter((t) => !t._isGapOverlay)
+    const lines = parts.filter((t) => t._isGapOverlay)
+
+    expect(Array.from(main.x)).toEqual([1])
+    expect(points.map((t) => Array.from(t.x))).toEqual([[5]])
+    expect(points[0].id).toBeUndefined()
+    expect(points[0].marker.color).toBe(SOURCE_CONTEXT_COLOR)
+    // Reversed: the bridge to the edit target (whose points 1..5 sit a
+    // step from each piece), then the after and before pieces.
+    expect(lines.map((t) => Array.from(t.x))).toEqual([[1, 1, 3, 5, 5], [5], [1]])
+    expect(lines.every((t) => t.line.color === SOURCE_CONTEXT_COLOR)).toBe(true)
+    // Views of the record, not copies.
+    expect(main.x.buffer).toBe(src.data.dataX.buffer)
+    expect(points[0].y.buffer).toBe(src.data.dataY.buffer)
+  })
+
+  it('keeps the source trace count when there is no window yet', () => {
+    qcDatastream.value = { id: 'qc' }
+    sourceContextDatastream.value = { id: 'src' }
+    const opts = createPlotlyOption([
+      makeSeries({ id: 'qc' }),
+      makeSeries({ id: 'src', intendedSpacingMs: 1.5 }),
+    ])
+    const main = opts.traces.find((t: any) => t.id === 'src') as any
+    const parts = opts.traces.filter((t: any) => t._partOf === 'src') as any[]
+    expect(Array.from(main.x)).toEqual([1, 2, 3, 4, 5])
+    // Bridge, after line, before line, after points.
+    expect(parts.map((t) => t.x.length)).toEqual([2, 0, 5, 0])
+  })
+
+  it('draws no shapes', () => {
+    qcDatastream.value = { id: 'qc' }
+    editSessionWindow.value = { begin: new Date(2), end: new Date(4) }
     const opts = createPlotlyOption([makeSeries({ id: 'qc' })])
-    const shape = (opts.layout as any).shapes.find((s: any) => s.name === 'edit-window')
-    expect(shape.x0).toBe(Date.parse('2025-01-01T00:00:00Z'))
+    expect((opts.layout as any).shapes).toBeUndefined()
   })
 
-  it('draws no window without an edit target', () => {
-    inProgressSession.value = { phenomenonTimeStart: '2025-02-01T00:00:00Z', phenomenonTimeEnd: '2025-03-01T00:00:00Z' }
-    const opts = createPlotlyOption([makeSeries({ id: 'a' })])
-    expect(((opts.layout as any).shapes ?? []).some((s: any) => s.name === 'edit-window')).toBe(false)
-  })
-
-  it('does not throw when called during store setup, before the data-vis and qcSession refs exist', () => {
+  it('does not throw when called during store setup, before the data-vis refs exist', () => {
     // Regression: `usePlotlyStore` seeds `plotlyOptions` with
     // `createPlotlyOption([])` while its own store setup runs, at which
-    // point `useDataVisStore()` (and `useQcSessionStore()`) can still be
-    // under construction. `storeToRefs` on that in-progress store yields
-    // an object with no properties, so every destructured ref is
-    // `undefined` rather than a ref holding `null`.
+    // point `useDataVisStore()` can still be under construction.
+    // `storeToRefs` on that in-progress store yields an object with no
+    // properties, so every destructured ref is `undefined` rather than a
+    // ref holding `null`.
     vi.mocked(useDataVisStore).mockReturnValueOnce({} as any)
-    vi.mocked(useQcSessionStore).mockReturnValueOnce({} as any)
 
     let opts: ReturnType<typeof createPlotlyOption> | undefined
     expect(() => {
@@ -429,9 +456,6 @@ describe('createPlotlyOption', () => {
     expect(opts!.traces).toEqual([])
     expect(opts!.layout).toBeDefined()
     expect(opts!.config).toBeDefined()
-    expect(
-      ((opts!.layout as any).shapes ?? []).some((s: any) => s.name === 'edit-window')
-    ).toBe(false)
   })
 })
 
@@ -551,5 +575,66 @@ describe('insertGapBreaks', () => {
     // Two NaN-y break points, one per gap.
     const ys = Array.from(out.y as Float64Array)
     expect(ys.filter((v) => Number.isNaN(v)).length).toBe(2)
+  })
+})
+
+describe('splitAroundWindow', () => {
+  const line = {
+    x: new Float64Array([1, 2, 3, 4, 5]),
+    y: new Float64Array([10, 20, 30, 40, 50]),
+  }
+  const xs = (l: { x: ArrayLike<number> }) => Array.from(l.x)
+
+  it('drops the points inside the window, bounds included', () => {
+    const { before, after } = splitAroundWindow(line, { begin: 2, end: 4 })
+    expect([xs(before), xs(after)]).toEqual([[1], [5]])
+  })
+
+  it('leaves before empty when the window starts the data', () => {
+    const { before, after } = splitAroundWindow(line, { begin: 0, end: 3 })
+    expect([xs(before), xs(after)]).toEqual([[], [4, 5]])
+  })
+
+  it('leaves after empty when the window ends the data', () => {
+    const { before, after } = splitAroundWindow(line, { begin: 3, end: 9 })
+    expect([xs(before), xs(after)]).toEqual([[1, 2], []])
+  })
+
+  it('keeps every point around a window that holds none', () => {
+    const { before, after } = splitAroundWindow(line, { begin: 3.2, end: 3.8 })
+    expect([xs(before), xs(after)]).toEqual([[1, 2, 3], [4, 5]])
+  })
+
+  it('keeps the whole line in before without a window', () => {
+    const { before, after } = splitAroundWindow(line, null)
+    expect([xs(before), xs(after)]).toEqual([[1, 2, 3, 4, 5], []])
+  })
+
+  it('slices plain arrays too', () => {
+    const { after } = splitAroundWindow({ x: [1, 2, 3], y: [4, 5, 6] }, { begin: 1, end: 2 })
+    expect(Array.from(after.y)).toEqual([6])
+  })
+})
+
+describe('bridgeAcrossWindow', () => {
+  const before = { x: [1, 2], y: [10, 20] }
+  const after = { x: [8, 9], y: [80, 90] }
+  const target = { x: [3, 7], y: [31, 71] }
+
+  it('joins the context to the edit target at both window edges', () => {
+    const { x, y } = bridgeAcrossWindow(before, after, target, 1)
+    expect(x).toEqual([2, 3, 5, 7, 8])
+    expect(y.slice(0, 2)).toEqual([20, 31])
+    expect(Number.isNaN(y[2])).toBe(true)
+    expect(y.slice(3)).toEqual([71, 80])
+  })
+
+  it('leaves a step wider than the cadence open', () => {
+    expect(bridgeAcrossWindow(before, after, { x: [5, 7], y: [0, 0] }, 1).x).toEqual([7, 8])
+  })
+
+  it('draws nothing without an edit target or context', () => {
+    expect(bridgeAcrossWindow(before, after, { x: [], y: [] }, 1).x).toEqual([])
+    expect(bridgeAcrossWindow({ x: [], y: [] }, { x: [], y: [] }, target, 1).x).toEqual([])
   })
 })

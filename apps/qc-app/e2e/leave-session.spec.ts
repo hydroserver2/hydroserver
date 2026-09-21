@@ -69,7 +69,7 @@ test.describe('leaving a session', () => {
     page,
   }) => {
     await page.getByTestId('exit-close-btn').click()
-    await expect(leaveDialog(page)).toContainText('This session has no edits')
+    await expect(leaveDialog(page)).toContainText('has no edits')
 
     await page.getByTestId('leave-cancel-btn').click()
     await expect(leaveDialog(page)).toHaveCount(0)
@@ -118,7 +118,7 @@ test.describe('leaving a session', () => {
     await page.getByTestId('leave-discard-edits-btn').click()
 
     // Nothing was ever saved, so the session is empty now.
-    await expect(leaveDialog(page)).toContainText('This session has no edits')
+    await expect(leaveDialog(page)).toContainText('has no edits')
     await page.getByTestId('leave-keep-btn').click()
 
     await expectClosed(page)
@@ -131,7 +131,7 @@ test.describe('leaving a session', () => {
     await expect(page.getByText('Draft saved.')).toBeVisible()
 
     await page.getByTestId('exit-close-btn').click()
-    await expect(leaveDialog(page)).toContainText('Close this session?')
+    await expect(leaveDialog(page)).toContainText('Close your session on')
     await expect(leaveDialog(page)).toContainText('stays in progress')
     await page.getByTestId('leave-close-btn').click()
 

@@ -6,7 +6,7 @@ import { createTestVuetify } from '@/utils/test/vuetify'
 
 const beginDate = ref<string | null>(null)
 const endDate = ref<string | null>(null)
-const selectedDateBtnId = ref<number | null>(null)
+const activePresetId = ref<number | null>(null)
 const setDateRange = () => {}
 const onDateBtnClick = () => {}
 
@@ -14,7 +14,7 @@ vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () => ({
     beginDate,
     endDate,
-    selectedDateBtnId,
+    activePresetId,
     setDateRange,
     onDateBtnClick,
   }),
@@ -65,15 +65,15 @@ describe('DataVisTimeFilters.vue', () => {
   })
 
   it('highlights All for a saved YTD preference with the editor presets, keeping the preference', () => {
-    selectedDateBtnId.value = 3
+    activePresetId.value = 3
     const w = mountIt({ presets: EDITOR_PRESETS })
     expect(w.find('[data-testid="date-preset-All"]').classes()).toContain('v-chip--variant-tonal')
     expect(w.find('[data-testid="date-preset-1w"]').classes()).toContain('v-chip--variant-outlined')
-    expect(selectedDateBtnId.value).toBe(3)
+    expect(activePresetId.value).toBe(3)
   })
 
   it('highlights YTD itself where it is offered', () => {
-    selectedDateBtnId.value = 3
+    activePresetId.value = 3
     const w = mountIt()
     expect(w.find('[data-testid="date-preset-YTD"]').classes()).toContain('v-chip--variant-tonal')
     expect(w.find('[data-testid="date-preset-All"]').classes()).toContain('v-chip--variant-outlined')

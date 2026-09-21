@@ -37,41 +37,29 @@ const applyRelayout = (root: any, update: any) => {
   return Promise.resolve()
 }
 
-describe('staging shape merging', () => {
+describe('staging shapes', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     plotlyMock.relayout.mockImplementation(applyRelayout)
     stagePanMode.value = true
-    plotlyRef.value = {
-      layout: {
-        dragmode: 'pan',
-        shapes: [{ name: 'edit-window', x0: 100, x1: 200, yref: 'paper' }],
-      },
-    }
+    plotlyRef.value = { layout: { dragmode: 'pan' } }
   })
 
-  it('keeps the edit-window shape alongside the stage shape when showing the stage band', async () => {
+  it('writes the stage band as the only shape', async () => {
     await setStageShape(10, 20)
 
     const lastCall = plotlyMock.relayout.mock.calls.at(-1)
     const shapes = lastCall![1].shapes as any[]
-    expect(shapes.some((s) => s.name === 'edit-window')).toBe(true)
-    expect(shapes.some((s) => s.name === 'stage')).toBe(true)
-    // Untouched by the merge.
-    const editWindow = shapes.find((s) => s.name === 'edit-window')
-    expect(editWindow.x0).toBe(100)
-    expect(editWindow.x1).toBe(200)
+    expect(shapes.map((s) => s.name)).toEqual(['stage'])
   })
 
-  it('keeps the edit-window shape after clearing the stage shape', async () => {
+  it('clears the shapes when the stage band is removed', async () => {
     await setStageShape(10, 20)
     await clearStageShape()
 
     const lastCall = plotlyMock.relayout.mock.calls.at(-1)
-    const shapes = lastCall![1].shapes as any[]
-    expect(shapes.some((s) => s.name === 'edit-window')).toBe(true)
-    expect(shapes.some((s) => s.name === 'stage')).toBe(false)
+    expect(lastCall![1].shapes).toEqual([])
   })
 
   it('does not duplicate the stage shape across repeated setStageShape calls', async () => {

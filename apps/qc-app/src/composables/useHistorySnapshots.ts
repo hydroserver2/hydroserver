@@ -5,11 +5,11 @@
 
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ObservationRecord, Snackbar, applyHistory } from '@uwrl/qc-utils'
-import type { Datastream, QualityControlSession } from '@hydroserver/client'
+import { Snackbar, applyHistory } from '@uwrl/qc-utils'
+import type { QualityControlSession } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useObservationStore, type ObservationData } from '@/store/observations'
+import { useObservationStore } from '@/store/observations'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSessionStore } from '@/store/qcSession'
 import { buildSnapshotRecord } from '@/services/qualityControl/buildSnapshot'
@@ -30,23 +30,8 @@ export function useHistorySnapshots() {
   const { plottedDatastreams } = storeToRefs(dataVis)
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { hs } = storeToRefs(useHydroServer())
-  const { observationsRaw } = storeToRefs(useObservationStore())
-  const { fetchObservationsInRange } = useObservationStore()
-
-  /**
-   * The observation store hands back one shared record per datastream, and the
-   * replay mutates whatever it is given, so build on an independent record.
-   */
-  const fetchDetached = async (ds: Datastream, start: Date, end: Date) => {
-    await fetchObservationsInRange(ds, start, end)
-    const raw: ObservationData = observationsRaw.value[ds.id] ?? {
-      datetimes: new Float64Array(0),
-      dataValues: new Float32Array(0),
-    }
-    const record = new ObservationRecord(raw)
-    await record.applyWindow(start.getTime(), end.getTime())
-    return record
-  }
+  // The replay mutates whatever it is given, so build on a record of its own.
+  const { fetchDetachedRecord } = useObservationStore()
 
   const isSnapshotPlotted = (sessionId: string, opIndex: number): boolean => {
     const id = makeSnapshotId(sessionId, opIndex)
@@ -81,7 +66,7 @@ export function useHistorySnapshots() {
         {
           qcSessions: hs.value.qualityControlSessions,
           qcOperations: hs.value.qualityControlOperations,
-          fetchInRange: fetchDetached,
+          fetchInRange: fetchDetachedRecord,
           applyHistory,
         },
         { historyId, session, source, managed, opIndex, liveHistory }

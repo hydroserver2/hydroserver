@@ -25,6 +25,8 @@ const lonely = { id: 'solo', name: 'Solo', valueCount: 5, thing: { id: 't-1' } }
 
 const filteredDatastreams = ref<any[]>([raw, lonely])
 const plottedDatastreams = ref<any[]>([])
+const qcDatastream = ref<any>(null)
+const editSourceDatastream = ref<any>(null)
 const historiesBySource = ref(
   new Map<string, any[]>([
     ['src', [{ id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' }]],
@@ -41,6 +43,8 @@ vi.mock('@/store/dataVisualization', () => ({
     filteredDatastreams,
     plottedDatastreams,
     historiesBySource,
+    qcDatastream,
+    editSourceDatastream,
     toggleDatastream,
     clearPlottedDatastreams,
     sourceGroupIds,
@@ -65,6 +69,11 @@ vi.mock('@/composables/useManagedDatastreams', () => ({
   useManagedDatastreams: () => ({ loadForSource }),
 }))
 
+const closeEditor = vi.fn().mockResolvedValue(true)
+vi.mock('@/composables/useEditEntry', () => ({
+  useEditEntry: () => ({ closeEditor }),
+}))
+
 vi.mock('@/utils/csvExport', () => ({
   downloadDatastreamsCsvZip: vi.fn().mockResolvedValue(undefined),
 }))
@@ -79,6 +88,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   canEdit.mockReturnValue(true)
   plottedDatastreams.value = []
+  qcDatastream.value = null
+  editSourceDatastream.value = null
 })
 
 const mountTable = async () => {
@@ -245,5 +256,40 @@ describe('DataVisDatasetsTable edit button', () => {
     expect(wrapper.find('.qc-pill').exists()).toBe(false)
     expect(wrapper.find('.datasets-table__row--qc').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('QC target')
+  })
+})
+
+describe('DataVisDatasetsTable editing indicator', () => {
+  const rowOf = (wrapper: any, id: string) =>
+    wrapper.find(`[data-testid="plot-checkbox-${id}"]`).element.closest('tr')
+
+  it('marks the source row of the datastream being edited', async () => {
+    qcDatastream.value = { id: 'mgd', name: 'Raw (QC)' }
+    editSourceDatastream.value = raw
+    const wrapper = await mountTable()
+
+    const chips = wrapper.findAll('[data-testid="editing-chip"]')
+    expect(chips).toHaveLength(1)
+    expect(chips[0].attributes('title')).toBe('Editing Raw (QC)')
+    expect(rowOf(wrapper, 'src').classList).toContain('datasets-table__row--editing')
+    expect(rowOf(wrapper, 'solo').classList).not.toContain(
+      'datasets-table__row--editing'
+    )
+  })
+
+  it('swaps Edit for Close on the edited row, which ends the session', async () => {
+    qcDatastream.value = { id: 'mgd', name: 'Raw (QC)' }
+    editSourceDatastream.value = raw
+    const wrapper = await mountTable()
+
+    expect(wrapper.find('[data-testid="edit-datastream-src"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="edit-datastream-solo"]').exists()).toBe(true)
+    await wrapper.find('[data-testid="close-datastream-src"]').trigger('click')
+    expect(closeEditor).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks nothing when not editing', async () => {
+    const wrapper = await mountTable()
+    expect(wrapper.findAll('[data-testid="editing-chip"]')).toHaveLength(0)
   })
 })

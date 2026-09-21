@@ -7,9 +7,9 @@ import { unwrap } from '@/services/qualityControl/unwrap'
 const hs = ref<any>(null)
 vi.mock('@/store/hydroserver', () => ({ useHydroServer: () => ({ hs }) }))
 
-const fetchObservationsInRange = vi.fn()
+const fetchDetachedRecord = vi.fn()
 vi.mock('@/store/observations', () => ({
-  useObservationStore: () => ({ fetchObservationsInRange }),
+  useObservationStore: () => ({ fetchDetachedRecord }),
 }))
 
 const applyHistory = vi.fn(async () => ({ applied: 0, failed: [] }))
@@ -41,7 +41,7 @@ function deferred<T>() {
 }
 
 /**
- * Gates every `fetchObservationsInRange` call behind `gate`, and resolves
+ * Gates every `fetchDetachedRecord` call behind `gate`, and resolves
  * `started` the first time a call is made, so a test can wait for a
  * build to have actually begun (past its generation bump) before racing
  * another store call against it.
@@ -49,7 +49,7 @@ function deferred<T>() {
 function gateFetch() {
   const gate = deferred<void>()
   const started = deferred<void>()
-  fetchObservationsInRange.mockImplementation(async (ds: any) => {
+  fetchDetachedRecord.mockImplementation(async (ds: any) => {
     started.resolve()
     await gate.promise
     return ds.id === 'm-1' ? rec([]) : rec([1, 2, 3])
@@ -83,7 +83,7 @@ beforeEach(async () => {
     await qc.histories.create({ managedDatastreamId: 'm-1', sourceDatastreamId: 's-1' })
   ).id
   // Managed datastream empty, source has data.
-  fetchObservationsInRange.mockImplementation(async (ds: any) =>
+  fetchDetachedRecord.mockImplementation(async (ds: any) =>
     ds.id === 'm-1' ? rec([]) : rec([1, 2, 3])
   )
 })

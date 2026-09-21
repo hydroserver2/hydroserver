@@ -33,6 +33,7 @@ vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
     isUpdating,
     selectedSeries,
+    previewIndex: ref(null),
     redraw,
     tableScrollRequest,
   }),

@@ -1,29 +1,34 @@
 <template>
   <div class="plotted-wrapper d-flex flex-column">
     <div
-      v-if="!qcDatastream"
+      v-if="clearable"
       class="plotted-toolbar d-flex align-center px-3 py-2"
     >
       <v-spacer></v-spacer>
       <v-btn
-        :disabled="!plottedDatastreams.length"
+        data-testid="clear-plot-btn"
+        :disabled="!plottedDatastreams.length && !qcDatastream"
         size="x-small"
         variant="text"
         prepend-icon="mdi-close-circle-outline"
-        @click="clearAll"
+        :title="
+          qcDatastream
+            ? 'Close the datastream being edited and unplot everything'
+            : 'Unplot everything'
+        "
+        @click="clearPlot"
       >
-        Unplot all
+        Clear plot
       </v-btn>
     </div>
     <v-divider />
     <ul class="plotted-list pa-0 ma-0">
       <li
-        v-for="(datastream, index) of seriesDatastreams"
+        v-for="(datastream, index) of listedDatastreams"
         :key="datastream.id"
         class="plotted-item"
         :class="{
           'plotted-item--qc': isEdit(datastream),
-          'plotted-item--source': isSource(datastream),
           'plotted-item--hidden': visibleDict[datastream.id] === false,
           'plotted-item--drop-before':
             dragIndex !== null &&
@@ -123,15 +128,6 @@
             />
             <span>{{ datastream.name }}</span>
             <v-chip
-              v-if="isSource(datastream)"
-              size="x-small"
-              variant="tonal"
-              label
-              class="flex-shrink-0"
-            >
-              raw source
-            </v-chip>
-            <v-chip
               v-if="snapshotFor(datastream.id)"
               size="x-small"
               variant="tonal"
@@ -207,6 +203,12 @@ import { usePlotlyStore } from '@/store/plotly'
 import { ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 import { formatDayStamp } from '@/utils/time'
+import { useEditEntry } from '@/composables/useEditEntry'
+
+/** `clearable`: show the Clear plot toolbar (the Select view's list). */
+defineProps<{ clearable?: boolean }>()
+
+const { closeEditor } = useEditEntry()
 
 const { updateOptions, labelColorForDatastream } = usePlotlyStore()
 const {
@@ -233,6 +235,11 @@ const isSource = (ds: Datastream) =>
 const isPinned = (ds: Datastream) => isEdit(ds) || isSource(ds)
 const isPrimary = (ds: Datastream, index: number) =>
   isPinned(ds) || (!qcDatastream.value && index === 0)
+
+// The source is context, switched on and off from the Context menu.
+const listedDatastreams = computed(() =>
+  seriesDatastreams.value.filter((ds) => !isSource(ds))
+)
 
 const contextCount = computed(
   () => seriesDatastreams.value.filter((ds) => !isPinned(ds)).length
@@ -293,7 +300,9 @@ const snapshotSubtitle = (id: string): string => {
   return parts.join(' - ')
 }
 
-async function clearAll() {
+// Ending the edit session asks first; staying keeps the plot as it is.
+async function clearPlot() {
+  if (qcDatastream.value && !(await closeEditor())) return
   hiddenTraceIds.value = new Set()
   await clearPlottedDatastreams()
 }
@@ -317,23 +326,24 @@ const toggleVisibility = async (datastream: Datastream) => {
   else next.add(datastream.id)
   hiddenTraceIds.value = next
 
-  // Gap overlays carry only `_gapOverlayFor`; toggle alongside the main
+  // Gap overlays carry only `_partOf`; toggle alongside the main
   // trace so hiding a datastream removes both its line and its markers.
   for (let i = 0; i < traces.length; i++) {
     const t = traces[i] as AppPlotlyTrace
-    if (i === mainIndex || t._gapOverlayFor === datastream.id) {
+    if (i === mainIndex || t._partOf === datastream.id) {
       await toggleTraceVisibility(plotlyRef.value, i, nextVisible)
     }
   }
 }
 
-// Drag indices are row positions in `seriesDatastreams`. Firefox needs
+// Drag indices are row positions in `listedDatastreams`. Firefox needs
 // `setData` for a drag to actually start, hence the payload.
 const dragIndex = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 
+// Row indices count the listed rows, which leave the source out.
 const isPinnedAt = (index: number) => {
-  const ds = seriesDatastreams.value[index]
+  const ds = listedDatastreams.value[index]
   return !ds || isPinned(ds)
 }
 
@@ -374,8 +384,8 @@ function onDragEnd() {
 // then re-sorts `graphSeriesArray` so trace order (and the colours derived
 // from it) follows `seriesDatastreams`.
 function reorder(from: number, to: number): boolean {
-  const movedId = seriesDatastreams.value[from]?.id
-  const targetId = seriesDatastreams.value[to]?.id
+  const movedId = listedDatastreams.value[from]?.id
+  const targetId = listedDatastreams.value[to]?.id
   const list = plottedDatastreams.value
   const fromPos = list.findIndex((d) => d.id === movedId)
   const toPos = list.findIndex((d) => d.id === targetId)

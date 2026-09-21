@@ -178,7 +178,22 @@
         </template>
 
         <template #item.edit="{ item }">
+          <!-- The row being edited ends its session here instead. -->
+          <span v-if="isEditing(item)" @click.stop>
+            <v-btn
+              prepend-icon="mdi-close"
+              size="small"
+              variant="tonal"
+              density="comfortable"
+              :data-testid="`close-datastream-${item.id}`"
+              :aria-label="`Close ${qcDatastream?.name ?? item.name}`"
+              @click.stop="closeEditor()"
+            >
+              Close
+            </v-btn>
+          </span>
           <v-tooltip
+            v-else
             location="top"
             :text="
               canEditWorkspace
@@ -208,7 +223,22 @@
         </template>
 
         <template #item.name="{ item }">
-          <span class="name-cell" :title="item.name">{{ item.name || '-' }}</span>
+          <div class="d-flex align-center ga-2" style="min-width: 0">
+            <v-chip
+              v-if="isEditing(item)"
+              data-testid="editing-chip"
+              size="x-small"
+              color="primary"
+              variant="flat"
+              label
+              prepend-icon="mdi-pencil"
+              class="flex-shrink-0"
+              :title="`Editing ${qcDatastream?.name ?? item.name}`"
+            >
+              Editing
+            </v-chip>
+            <span class="name-cell" :title="item.name">{{ item.name || '-' }}</span>
+          </div>
         </template>
 
         <template #item.siteCodeName="{ item }">
@@ -272,6 +302,7 @@
         :plotted-ids="plotDialogSelected"
         :loading="plotDialogLoading"
         :slots-left="plotDialogSlots"
+        :editing-id="qcDatastream?.id"
         @apply="onPlotApply"
         @cancel="plotDialogSource = null"
       />
@@ -294,6 +325,7 @@ import {
 } from '@/composables/useManagedDatastreams'
 import { Snackbar } from '@uwrl/qc-utils'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { useEditEntry } from '@/composables/useEditEntry'
 
 /** Datastreams the user can check. The fifth plot slot is kept for the
  *  datastream being edited. */
@@ -307,8 +339,13 @@ const { canEdit, roleName } = useWorkspacePermissions()
 const canEditWorkspace = computed(() => canEdit())
 const workspaceRole = computed(() => roleName())
 
-const { filteredDatastreams, plottedDatastreams, historiesBySource } =
-  storeToRefs(useDataVisStore())
+const {
+  filteredDatastreams,
+  plottedDatastreams,
+  historiesBySource,
+  qcDatastream,
+  editSourceDatastream,
+} = storeToRefs(useDataVisStore())
 const {
   toggleDatastream,
   clearPlottedDatastreams,
@@ -316,6 +353,7 @@ const {
   plotSourceSelection,
 } = useDataVisStore()
 const { loadForSource } = useManagedDatastreams()
+const { closeEditor } = useEditEntry()
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -421,6 +459,12 @@ const isPartial = (item: Datastream) =>
 const managedCount = (item: Datastream) =>
   historiesBySource.value.get(item.id)?.length ?? 0
 
+// Rows are sources, so the edit target shows on the row it derives from.
+const isEditing = (item: Datastream) =>
+  !!qcDatastream.value &&
+  (item.id === editSourceDatastream.value?.id ||
+    item.id === qcDatastream.value.id)
+
 const isAtCap = (item: Datastream) =>
   plottedDatastreams.value.length >= PLOT_CAP && !isChecked(item)
 
@@ -484,6 +528,7 @@ const getRowProps = ({ item }: { item: Datastream }) => ({
   class: {
     'datasets-table__row--at-cap': isAtCap(item),
     'datasets-table__row--plotted': isChecked(item),
+    'datasets-table__row--editing': isEditing(item),
   },
 })
 
@@ -572,6 +617,10 @@ const resetSort = () => {
 
 :deep(tbody tr.datasets-table__row--plotted > td:first-child) {
   box-shadow: inset 3px 0 0 rgba(var(--v-theme-primary), 0.45);
+}
+
+:deep(tbody tr.datasets-table__row--editing > td:first-child) {
+  box-shadow: inset 4px 0 0 rgb(var(--v-theme-primary));
 }
 
 :deep(tbody tr:hover > td) {

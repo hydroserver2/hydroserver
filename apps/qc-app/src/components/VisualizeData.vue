@@ -47,12 +47,9 @@
             class="select-view__side d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden"
           >
             <EditTargetPanel v-if="qcDatastream" />
-            <v-divider v-if="qcDatastream && plottedDatastreams.length" />
-            <div
-              v-if="plottedDatastreams.length"
-              class="select-view__plotted-body flex-grow-1 overflow-y-auto"
-            >
-              <PlottedDatastreams />
+            <v-divider v-if="qcDatastream" />
+            <div class="select-view__plotted-body flex-grow-1 overflow-y-auto">
+              <PlottedDatastreams clearable />
             </div>
           </div>
         </template>
@@ -488,6 +485,8 @@ const {
   beginDate,
   endDate,
   selectedDateBtnId,
+  contextPresetId,
+  activePresetId,
   selectedThings,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
@@ -789,10 +788,12 @@ const hydrateFromUrl = () => {
   // A preset resolves against the plotted data during that load. An
   // unknown id (a share link built by a newer version, or hand-edited)
   // is not accepted as a preset.
+  // A link with an edit target carries the editor's Context range.
+  const presetId = state.editDatastreamId ? contextPresetId : selectedDateBtnId
   if (state.datePresetId != null && findPreset(state.datePresetId)) {
-    selectedDateBtnId.value = state.datePresetId
+    presetId.value = state.datePresetId
   } else if (state.beginMs != null || state.endMs != null) {
-    selectedDateBtnId.value = CUSTOM_PRESET_ID
+    presetId.value = CUSTOM_PRESET_ID
     if (state.beginMs != null) beginDate.value = new Date(state.beginMs)
     if (state.endMs != null) endDate.value = new Date(state.endMs)
   }
@@ -908,7 +909,7 @@ watch(
     activeTab,
     beginDate,
     endDate,
-    selectedDateBtnId,
+    activePresetId,
     selectedThings,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
@@ -939,8 +940,8 @@ watch(
       tableTab: activeTab.value === 'table',
       datastreamIds: ids,
       snapshots,
-      datePresetId: Number.isFinite(selectedDateBtnId.value)
-        ? selectedDateBtnId.value
+      datePresetId: Number.isFinite(activePresetId.value)
+        ? activePresetId.value
         : null,
       beginMs: beginDate.value ? beginDate.value.getTime() : null,
       endMs: endDate.value ? endDate.value.getTime() : null,

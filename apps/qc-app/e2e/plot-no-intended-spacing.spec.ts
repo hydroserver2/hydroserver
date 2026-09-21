@@ -3,7 +3,7 @@
  *
  * Two related guarantees, both covered here:
  *   1. The main trace renders as a pure scatter: `mode: 'markers'` with
- *      no companion `_gapOverlayFor` lines trace pushed alongside it.
+ *      no companion `_partOf` lines trace pushed alongside it.
  *   2. The "data points" toggle (manual mode + click off) does not hide
  *      the markers of such a series. Without a line fallback, honouring
  *      the toggle would leave the series invisible, so the relayout
@@ -31,7 +31,7 @@ type RoutedTrace = {
   mode?: string
   marker?: { opacity?: number }
   _isGapOverlay?: boolean
-  _gapOverlayFor?: string
+  _partOf?: string
 }
 
 /**
@@ -129,16 +129,16 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
         | null
       const traces = gd?.data ?? []
       const main = traces.find((t) => t.id === id) ?? null
-      const overlay = traces.find((t) => t._gapOverlayFor === id) ?? null
+      const overlay = traces.find((t) => t._partOf === id) ?? null
       return {
         mainMode: main?.mode ?? null,
         mainMarkerOpacity: main?.marker?.opacity ?? null,
         overlayExists: !!overlay,
         // Sanity: there should also be no `mode: 'lines'` trace
         // pointing at this series via the gap-overlay channel. The
-        // app reserves `_gapOverlayFor` exclusively for that role,
+        // app reserves `_partOf` exclusively for that role,
         // so its absence is the precise signal.
-        anyGapOverlay: traces.some((t) => t._gapOverlayFor === id),
+        anyGapOverlay: traces.some((t) => t._partOf === id),
       }
     }, MANAGED_DATASTREAM_ID)
 

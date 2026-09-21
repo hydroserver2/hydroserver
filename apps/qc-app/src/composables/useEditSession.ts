@@ -81,7 +81,9 @@ export function useEditSession() {
   const { replaceDatastream, setEditRecord } = useDataVisStore()
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { hs } = storeToRefs(useHydroServer())
-  const { fetchObservationsInRange } = useObservationStore()
+  // Working copies build on records of their own, so the plotted source
+  // keeps its context window.
+  const { fetchDetachedRecord } = useObservationStore()
   const sessionStore = useQcSessionStore()
   const workingCopies = useWorkingCopiesStore()
 
@@ -240,7 +242,7 @@ export function useEditSession() {
         {
           qcSessions: hs.value.qualityControlSessions,
           qcOperations: hs.value.qualityControlOperations,
-          fetchInRange: fetchObservationsInRange,
+          fetchInRange: fetchDetachedRecord,
           applyHistory,
         },
         source,
@@ -284,7 +286,7 @@ export function useEditSession() {
     // Start from the latest committed state (the managed datastream), or the
     // raw source when nothing has been committed yet.
     const base = await loadLatestBase(
-      fetchObservationsInRange,
+      fetchDetachedRecord,
       managed,
       source,
       new Date(session.phenomenonTimeStart),
@@ -314,7 +316,7 @@ export function useEditSession() {
   async function discardUnsavedEdits(): Promise<number[] | undefined> {
     const record = selectedSeries.value?.data as ObservationRecord | undefined
     if (!record) return
-    const selection = await record.reloadHistory(savedEdits.value.length - 1)
+    const selection = await record.truncateHistory(savedEdits.value.length - 1)
     record.history.forEach((item, i) => {
       item.comment = savedComments.value[i] || undefined
     })

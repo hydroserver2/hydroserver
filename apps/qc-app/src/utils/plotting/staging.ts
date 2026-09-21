@@ -6,9 +6,8 @@
  * helper tolerates being called when the plot isn't mounted yet so
  * callers can fire-and-forget from setup/unmount hooks.
  *
- * The stage band is the only shape this module owns. Every flush
- * rebuilds the live `layout.shapes` through `composeShapes`, so shapes
- * other writers own (the session window band) are carried through.
+ * The stage band is the only shape on the plot, so every flush writes
+ * `layout.shapes` whole.
  *
  * Gap bands used to live here as secondary red rectangles marking
  * detected gaps. They were removed because `edits.shapePosition:
@@ -25,7 +24,7 @@ import type { Layout } from 'plotly.js-dist'
 import { ref } from 'vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
-import { composeShapes, STAGE_SHAPE_NAME, type PlotlyShape } from './shapes'
+import { STAGE_SHAPE_NAME, type PlotlyShape } from './shapes'
 
 const GHOST_TRACE_NAME = 'qc-ghost-fills'
 
@@ -51,14 +50,9 @@ function getRoot(): HTMLElement | null {
 async function flushShapes() {
   const root = getRoot()
   if (!root) return
-  const live = (root as unknown as { layout?: { shapes?: PlotlyShape[] } })
-    .layout?.shapes
   // Drop the stage shape outside pan mode so zoom / select / lasso
-  // gestures aren't captured by the shape-edit hit-tester. Stage stays
-  // at index 0 when present so `onStageDrag`'s `shapes[0].*` event keys
-  // keep pointing at it.
-  const own = stageShape && stagePanMode.value ? [stageShape] : []
-  const shapes = composeShapes(live, STAGE_SHAPE_NAME, own, { first: true })
+  // gestures aren't captured by the shape-edit hit-tester.
+  const shapes = stageShape && stagePanMode.value ? [stageShape] : []
   await Plotly.relayout(root, { shapes } as unknown as Partial<Layout>)
 }
 
@@ -219,14 +213,11 @@ export function onStageDrag(
       return
     }
 
-    // The stage shape is always prepended first in `flushShapes`, so
-    // its index in the layout shapes array is always 0 regardless of
-    // how many other shapes (e.g. the edit-window band) are present.
-    const stageIdx = 0
-    const x0Key = `shapes[${stageIdx}].x0`
-    const x1Key = `shapes[${stageIdx}].x1`
-    const y0Key = `shapes[${stageIdx}].y0`
-    const y1Key = `shapes[${stageIdx}].y1`
+    // The stage band is the only shape, so it is always `shapes[0]`.
+    const x0Key = 'shapes[0].x0'
+    const x1Key = 'shapes[0].x1'
+    const y0Key = 'shapes[0].y0'
+    const y1Key = 'shapes[0].y1'
     const touchedX0 = Object.prototype.hasOwnProperty.call(evt, x0Key)
     const touchedX1 = Object.prototype.hasOwnProperty.call(evt, x1Key)
     const touchedY0 = Object.prototype.hasOwnProperty.call(evt, y0Key)

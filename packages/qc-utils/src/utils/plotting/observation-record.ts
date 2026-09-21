@@ -145,6 +145,15 @@ function consumesPrecedingSelection(
   }
 }
 
+/** Thrown by an edit dispatched while an earlier history step is previewed.
+ *  Previewing only shows a step; return to the latest step to edit. */
+export class HistoryPreviewError extends Error {
+  constructor() {
+    super("An earlier step is being previewed. Return to the latest step to edit.");
+    this.name = "HistoryPreviewError";
+  }
+}
+
 export class ObservationRecord {
   /** The generated dataset to be used for plotting */
   dataset: {
@@ -183,6 +192,14 @@ export class ObservationRecord {
    * dispatch, so the stack survives the internal replay.
    */
   private _isReplaying: boolean = false;
+  /**
+   * The history step the data currently shows, when it is an earlier one
+   * than the last. `history` still lists every step; those after this one
+   * are not applied. Null when the data reflects the whole history. Set by
+   * `previewHistory`, cleared by `exitPreview`, `undo`, `redo` and any
+   * reload of the data.
+   */
+  previewIndex: number | null = null;
   /**
    * Set by each operation handler (or any of its subroutines) to record
    * whether a worker was actually spawned during this dispatch. Sticky-
@@ -239,17 +256,31 @@ export class ObservationRecord {
     this.loadingTime = measurement.duration;
 
     this.history.length = 0;
+    this.previewIndex = null;
     this.isLoading = false;
   }
 
   /**
    * Materialize the inclusive epoch-ms window `[begin, end]` of `rawData`
-   * into `dataset.source`. A real window change clears history — the new
-   * window is a fresh QC baseline. An unchanged window is a no-op so an
-   * unrelated reload doesn't discard in-flight edits.
+   * into `dataset.source`. Passing `rawData` replaces the full series first,
+   * e.g. after a cache filled a gap. A real window or data change clears
+   * history, since it is a fresh QC baseline. An unchanged window over the
+   * same data is a no-op so an unrelated reload doesn't discard in-flight
+   * edits.
    */
-  async applyWindow(begin: number, end: number) {
-    if (begin === this.windowBegin && end === this.windowEnd) return;
+  async applyWindow(
+    begin: number,
+    end: number,
+    rawData: ObservationRecord["rawData"] = this.rawData,
+  ) {
+    if (
+      begin === this.windowBegin &&
+      end === this.windowEnd &&
+      rawData === this.rawData
+    ) {
+      return;
+    }
+    this.rawData = rawData;
     this.windowBegin = begin;
     this.windowEnd = end;
     await this.loadData(this._windowedRaw());
@@ -359,14 +390,10 @@ export class ObservationRecord {
     this.loadingTime = null;
     this.isLoading = true;
     this.history.length = 0;
+    this.previewIndex = null;
     await this.loadData(this._windowedRaw());
   }
 
-  /**
-   * Truncate history at `index` (inclusive), reload from raw, and
-   * replay the surviving entries. Used by the "Reload from this step"
-   * button in EditHistory.
-   */
   /**
    * Re-stamp the metadata a replay cannot reproduce. `dispatch` rebuilds
    * each entry from `[method, ...args]` alone, so the operator's comment
@@ -389,21 +416,65 @@ export class ObservationRecord {
     }
   }
 
-  async reloadHistory(index: number): Promise<number[]> {
-    const newHistory = this.history.slice(0, index + 1);
-    this.redoStack.length = 0;
+  /** Reload from raw and replay `steps`, keeping the redo stack. */
+  private async _replay(steps: HistoryItem[]): Promise<number[]> {
     await this.reload();
+    this._isReplaying = true;
+    try {
+      const selection = await this.dispatch(
+        steps.map((h) => [h.method, ...(h.args || [])]),
+      );
+      this._restoreReplayedMeta(steps);
+      return selection;
+    } finally {
+      this._isReplaying = false;
+    }
+  }
 
-    const selection = await this.dispatch(
-      newHistory.map((h) => [h.method, ...(h.args || [])]),
-    );
-    this._restoreReplayedMeta(newHistory);
+  /**
+   * Show the data as of history step `index` (-1 for the untouched data)
+   * without dropping the steps after it: they stay listed in `history`,
+   * unapplied, until `exitPreview`. Edits are refused meanwhile. Previewing
+   * the last step is the same as `exitPreview`. Returns the selection the
+   * shown step leaves.
+   */
+  async previewHistory(index: number): Promise<number[]> {
+    const steps = [...this.history];
+    if (index >= steps.length - 1) return this.exitPreview();
+    const shown = steps.slice(0, index + 1);
+    const selection = await this._replay(shown);
+    const tail = steps.slice(index + 1);
+    this.history.push(...tail);
+    this.previewIndex = this.history.length - tail.length - 1;
     return selection;
+  }
+
+  /**
+   * Drop every step after `index` for good (discarding unsaved edits):
+   * reload from raw and replay the steps kept. Clears the redo stack and
+   * ends a preview. To look at an earlier step, use `previewHistory`.
+   */
+  async truncateHistory(index: number): Promise<number[]> {
+    const kept = this.history.slice(0, index + 1);
+    this.redoStack.length = 0;
+    return this._replay(kept);
+  }
+
+  /** Apply the whole history again after `previewHistory`. A no-op
+   *  returning no selection when nothing is previewed. */
+  async exitPreview(): Promise<number[]> {
+    if (this.previewIndex === null) return [];
+    return this._replay([...this.history]);
+  }
+
+  private _refuseWhilePreviewing() {
+    if (this.previewIndex !== null) throw new HistoryPreviewError();
   }
 
   /** Splice the history entry at `index`, reload from raw, and replay
    *  the survivors. */
   async removeHistoryItem(index: number): Promise<number[]> {
+    this._refuseWhilePreviewing();
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
     this.redoStack.length = 0;
@@ -418,24 +489,15 @@ export class ObservationRecord {
   /**
    * Undo the most recent history entry. Pushes it onto `redoStack` so a
    * subsequent `redo()` can re-apply it, then reloads from the raw
-   * dataset and replays the remaining history in order.
+   * dataset and replays the remaining history in order. Ends a preview:
+   * it acts on the whole history, not on the step shown.
    */
   async undo(): Promise<number[]> {
     if (!this.history.length) return [];
     const popped = this.history[this.history.length - 1];
     const newHistory = this.history.slice(0, -1);
-    await this.reload();
     this.redoStack.push(popped);
-    this._isReplaying = true;
-    try {
-      const selection = await this.dispatch(
-        newHistory.map((h) => [h.method, ...(h.args || [])]),
-      );
-      this._restoreReplayedMeta(newHistory);
-      return selection;
-    } finally {
-      this._isReplaying = false;
-    }
+    return this._replay(newHistory);
   }
 
   /**
@@ -446,6 +508,8 @@ export class ObservationRecord {
    */
   async redo(): Promise<number[]> {
     if (!this.redoStack.length) return [];
+    // Redo builds on the whole history, so a preview ends first.
+    await this.exitPreview();
     const item = this.redoStack.pop()!;
     this._isReplaying = true;
     try {
@@ -491,6 +555,7 @@ export class ObservationRecord {
    * can pass locally-computed indices without going through history.
    */
   async dispatchAction(action: EnumEditOperations, ...args: any) {
+    this._refuseWhilePreviewing();
     const actions: EnumDictionary<EnumEditOperations, Function> = {
       [EnumEditOperations.ADD_POINTS]: this._addDataPoints,
       [EnumEditOperations.CHANGE_VALUES]: this._changeValues,
@@ -641,6 +706,7 @@ export class ObservationRecord {
 
   /** Filter operations do not transform the data and return a selection */
   async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
+    this._refuseWhilePreviewing();
     const filters: EnumDictionary<EnumFilterOperations, Function> = {
       [EnumFilterOperations.FIND_GAPS]: this._findGaps,
       [EnumFilterOperations.VALUE_THRESHOLD]: this._valueThreshold,

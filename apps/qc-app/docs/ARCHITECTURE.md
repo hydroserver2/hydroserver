@@ -416,10 +416,11 @@ Three constraints shape the implementation:
   base window misaligns the replay. A snapshot is therefore frozen at
   creation and never refetched.
 - **Record isolation.** `useObservationStore.fetchObservationsInRange` hands
-  back one shared `ObservationRecord` per datastream, and the replay mutates
-  whatever it is given. Snapshots inject a *detached* fetcher that warms the
-  raw cache and then constructs its own `ObservationRecord`, so a build never
-  disturbs the plot's series or a previous snapshot.
+  back one shared `ObservationRecord` per datastream, the one the plot draws,
+  and the replay mutates whatever it is given. Snapshots and working copies
+  build on `fetchDetachedRecord`, which fills the same cache through the same
+  queue but constructs a record of its own, so a build never disturbs the
+  plot's series or a previous snapshot.
 - **Identity.** Snapshots ride in `plottedDatastreams` under the synthetic id
   `snap:<sessionId>:<opIndex>` so legend rendering, colour assignment,
   visibility and reorder work unchanged. `isSnapshotId()` guards the paths
@@ -467,11 +468,13 @@ operations plus anything saved since. Neither is a guess about the UI.
 Every exit routes through it: the editor footer's **Close** and the nav rail's
 Home and Log out via `useEditEntry.closeEditor()`, the row Edit button on
 another datastream via `enterEdit`, and in-app navigation (including the
-workspace switch) via `leaveSessionGuard`. When that row Edit button leads to
-a create step, `StartEditingFlow` asks through `closeEditor()` before the
-create rather than waiting for `enterEdit`: a new managed datastream is always
-a new target, so cancelling later would have left an orphan datastream and its
-QC history on the server. While an answer is being carried out, a second exit
+workspace switch) via `leaveSessionGuard`. When the row Edit flow picks a
+different target, `StartEditingFlow` asks through `closeEditor()` right at the
+pick, before the window step or a create step opens, rather than waiting for
+`enterEdit`. Asking later reads as a question about the new session, and a
+create cancelled late would leave an orphan datastream and its QC history on
+the server. Keeping the session returns to the chooser. The prompt names the
+datastream being left (`LeavePrompt.datastreamName`). While an answer is being carried out, a second exit
 request is refused rather than resolved by work the user did not answer for.
 Cancelling leaves the user exactly where they were, zoom, staged band and
 unsaved edits intact. The native `beforeunload` prompt still covers a reload

@@ -89,12 +89,12 @@ export const useWorkingCopiesStore = defineStore('workingCopies', () => {
     generation: number
   ): Promise<WorkingCopy | null> {
     const { hs } = storeToRefs(useHydroServer())
-    const { fetchObservationsInRange } = useObservationStore()
+    const { fetchDetachedRecord } = useObservationStore()
     const { record } = await reconstructSession(
       {
         qcSessions: hs.value.qualityControlSessions,
         qcOperations: hs.value.qualityControlOperations,
-        fetchInRange: fetchObservationsInRange,
+        fetchInRange: fetchDetachedRecord,
         applyHistory,
       },
       managed,

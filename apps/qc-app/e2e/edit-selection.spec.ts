@@ -6,7 +6,9 @@
  *   - the window step offers presets and a one-click fix
  *   - the editor draws the edit target, its source, and plotted datastreams
  *   - closing the editor keeps the plotted datastreams
- *   - the session window band survives staging shapes
+ *   - the source is drawn only around the session window, with no shape
+ *   - box select works over the session window, and Clear drops it
+ *   - the stage band survives a redraw
  *   - the editor opens zoomed to the session window
  *   - changing the Context range keeps the user zoom
  *   - Context presets count out from the session window
@@ -16,6 +18,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import {
   gotoHome,
+  openEditor,
   openOp,
   plotDatastreamById,
   setupEditView,
@@ -43,6 +46,41 @@ function shapeNames(page: Page): Promise<string[]> {
     const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
     return (gd?.layout?.shapes ?? []).map((s) => s.name ?? '')
   })
+}
+
+// `COLORS[0]` and `SOURCE_CONTEXT_COLOR` in `src/utils/plotting/options.ts`.
+const QC_COLOR = '#3f3f3f'
+const SOURCE_COLOR = '#cfcfcf'
+
+type DrawnTrace = {
+  id?: string
+  _partOf?: string
+  x?: ArrayLike<number | string>
+  line?: { color?: string }
+  marker?: { color?: string }
+  _isGapOverlay?: boolean
+}
+
+/** Every trace drawn for datastream `id`: its colour and x extent. */
+function tracesOf(page: Page, id: string) {
+  return page.evaluate((id) => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as
+      | (HTMLElement & { data?: DrawnTrace[] })
+      | null
+    const ms = (v: number | string) =>
+      typeof v === 'number' ? v : Date.parse(v)
+    return (gd?.data ?? [])
+      .filter((t) => t.id === id || t._partOf === id)
+      .map((t) => {
+        const xs = Array.from(t.x ?? [], ms).filter(Number.isFinite)
+        return {
+          line: !!t._isGapOverlay,
+          color: t._isGapOverlay ? t.line?.color : t.marker?.color,
+          count: xs.length,
+          max: xs.length ? Math.max(...xs) : null,
+        }
+      })
+  }, id)
 }
 
 type ReloadProbe = { __contextStart: number; __afterplots: number[] }
@@ -204,7 +242,7 @@ test.describe('edit selection', () => {
       .toEqual(
         expect.arrayContaining([
           MANAGED_DATASTREAM_ID,
-          DATASTREAM_ID,
+          `ctx:${DATASTREAM_ID}`,
           DATASTREAM_ID_B,
         ])
       )
@@ -235,14 +273,65 @@ test.describe('edit selection', () => {
     ).toHaveAttribute('aria-pressed', 'false')
   })
 
-  test('the session window band survives staging shapes', async ({ page }) => {
+  test('the source is drawn only around the session window, with no shape', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    // Start the session halfway through the source, so the source has
+    // context before it and nothing after.
+    const mid = new Date((FIXTURE_OBS_START_MS + FIXTURE_OBS_END_MS) / 2)
+    mid.setSeconds(0, 0)
+    await openWindowStep(page)
+    await typeDateTime(page.getByTestId('session-window-from'), mid)
+    await page.getByTestId('session-window-start').click()
+    await openEditor(page)
+
+    await expect
+      .poll(async () => (await tracesOf(page, `ctx:${DATASTREAM_ID}`)).length)
+      .toBeGreaterThan(0)
+    const source = await tracesOf(page, `ctx:${DATASTREAM_ID}`)
+    expect(source.every((t) => t.color === SOURCE_COLOR)).toBe(true)
+    expect(source.some((t) => t.count > 0)).toBe(true)
+    // Points only: the bridge line reaches the edit target's first point.
+    expect(
+      source
+        .filter((t) => !t.line)
+        .every((t) => t.max === null || t.max < mid.getTime())
+    ).toBe(true)
+
+    const edit = await tracesOf(page, MANAGED_DATASTREAM_ID)
+    expect(edit.every((t) => t.color === QC_COLOR)).toBe(true)
+    expect(await shapeNames(page)).toEqual([])
+  })
+
+  test('box select works over the session window, and Clear drops it', async ({
+    page,
+  }) => {
     await setupEditView(page)
-    await expect.poll(() => shapeNames(page)).toContain('edit-window')
+    await page.locator('.modebar-btn[data-title="Box Select"]').first().click()
+    const box = (await page
+      .locator('[data-testid="main-plot"] .nsewdrag')
+      .first()
+      .boundingBox())!
+    await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.05)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.95, {
+      steps: 10,
+    })
+    await page.mouse.up()
+
+    const clear = page.getByTestId('clear-selection-btn')
+    await expect(clear).toBeVisible()
+    await clear.click()
+    await expect(clear).toHaveCount(0)
+  })
+
+  test('the stage band survives a redraw', async ({ page }) => {
+    await setupEditView(page)
 
     await openOp(page, 'gaps')
     await page.getByTestId('filter-range-enable-btn').click()
     await expect.poll(() => shapeNames(page)).toContain('stage')
-    expect(await shapeNames(page)).toContain('edit-window')
 
     // A context reload redraws the plot; the stage band must survive it.
     await page.evaluate(() => {
@@ -262,13 +351,10 @@ test.describe('edit selection', () => {
       () => (window as unknown as { __updates: number }).__updates > 0
     )
     await page.keyboard.press('Escape')
-    expect(await shapeNames(page)).toEqual(
-      expect.arrayContaining(['stage', 'edit-window'])
-    )
+    expect(await shapeNames(page)).toEqual(['stage'])
 
     await page.getByTestId('filter-range-disable-btn').click()
-    await expect.poll(() => shapeNames(page)).not.toContain('stage')
-    expect(await shapeNames(page)).toContain('edit-window')
+    await expect.poll(() => shapeNames(page)).toEqual([])
   })
 
   test('the editor opens zoomed to the session window', async ({ page }) => {
@@ -284,9 +370,7 @@ test.describe('edit selection', () => {
     await typeDateTime(page.getByTestId('session-window-from'), mid)
     await expect(page.getByTestId('session-window-start')).toBeEnabled()
     await page.getByTestId('session-window-start').click()
-    await expect(page.getByTestId('exit-save-btn')).toBeVisible({
-      timeout: 30_000,
-    })
+    await openEditor(page)
 
     const tolerance = 60_000
     await expect
@@ -336,16 +420,6 @@ test.describe('edit selection', () => {
       w.__afterplots = []
       gd.on('plotly_afterplot', () => w.__afterplots.push(performance.now()))
     })
-    // The reload refetches the source and plotted datastreams, never the edit target.
-    const reloaded = Promise.all(
-      [DATASTREAM_ID, DATASTREAM_ID_B].map((id) =>
-        page.waitForResponse(
-          (r) =>
-            r.url().includes(`/api/data/datastreams/${id}/observations`) &&
-            r.request().method() === 'GET'
-        )
-      )
-    )
     // 1w, not All: All is already the context, so picking it changes nothing.
     await menu.getByTestId('date-preset-1w').click()
     await expect(menu.getByTestId('date-preset-1w')).toHaveClass(
@@ -354,26 +428,23 @@ test.describe('edit selection', () => {
     await expect(menu.getByTestId('date-preset-All')).not.toHaveClass(
       /v-chip--variant-tonal/
     )
-    await reloaded
-
-    // Redrawn after both refetches landed: a plotly_afterplot later than the
-    // last observations response in the page's resource timeline.
-    await page.waitForFunction((ids) => {
+    // The reload redraws the context. All was loaded already, so the cache
+    // answers it without a request, and the edit target is never refetched.
+    await page.waitForFunction(
+      () => (window as unknown as ReloadProbe).__afterplots.length > 0
+    )
+    await expect(page.getByTestId('data-loading-indicator')).toHaveCount(0)
+    const editFetched = await page.evaluate((id) => {
       const w = window as unknown as ReloadProbe
-      const fetched = performance
+      return performance
         .getEntriesByType('resource')
-        .filter((e) => e.startTime >= w.__contextStart)
-      const ends = ids.map((id) =>
-        Math.max(
-          ...fetched
-            .filter((e) => e.name.includes(`/datastreams/${id}/observations`))
-            .map((e) => (e as PerformanceResourceTiming).responseEnd)
+        .some(
+          (e) =>
+            e.startTime >= w.__contextStart &&
+            e.name.includes(`/datastreams/${id}/observations`)
         )
-      )
-      if (ends.some((t) => !Number.isFinite(t))) return false
-      const landed = Math.max(...ends)
-      return w.__afterplots.some((t) => t > landed)
-    }, [DATASTREAM_ID, DATASTREAM_ID_B])
+    }, MANAGED_DATASTREAM_ID)
+    expect(editFetched).toBe(false)
     expect(await traceIds(page)).toContain(MANAGED_DATASTREAM_ID)
 
     // Sample the range over several frames so a late redraw would show up.
@@ -410,7 +481,7 @@ test.describe('edit selection', () => {
     await typeDateTime(page.getByTestId('session-window-from'), mid)
     await expect(page.getByTestId('session-window-start')).toBeEnabled()
     await page.getByTestId('session-window-start').click()
-    await waitForEditorReady(page)
+    await openEditor(page)
 
     await page.getByTestId('context-range-btn').click()
     const menu = page.getByTestId('context-range-menu')
@@ -435,17 +506,16 @@ test.describe('edit selection', () => {
     await expect.poll(() => fieldText('date-range-from')).toEqual(pickerText(expectedFrom))
     await expect.poll(() => fieldText('date-range-to')).toEqual(pickerText(expectedTo))
 
-    // The grey source covers the whole window, from the data start (the
-    // week before the window, clamped to the fixture).
+    // The grey source runs from the data start (the week before the window,
+    // clamped to the fixture) and stops at the window.
     const tolerance = 60_000
     await expect
       .poll(async () => {
-        const x = await traceXExtent(page, DATASTREAM_ID)
+        const x = await traceXExtent(page, `ctx:${DATASTREAM_ID}`)
         return (
           !!x &&
           Math.abs(x[0] - FIXTURE_OBS_START_MS) <= tolerance &&
-          x[0] <= mid.getTime() &&
-          x[1] >= FIXTURE_OBS_END_MS - tolerance
+          x[1] < mid.getTime()
         )
       })
       .toBe(true)

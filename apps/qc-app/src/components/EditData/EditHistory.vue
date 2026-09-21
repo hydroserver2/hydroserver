@@ -131,7 +131,7 @@
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
         :class="{ 'edit-history__row--clickable': canStepTo }"
         data-testid="history-reload-step-baseline"
-        :title="canStepTo ? `Reload the session's starting state` : undefined"
+        :title="canStepTo ? `Preview the session's starting state` : undefined"
         @click="onRowReload(SNAPSHOT_BASELINE_INDEX)"
       >
         <v-icon
@@ -149,7 +149,7 @@
           class="edit-history__step text-body-small font-weight-medium flex-grow-1 text-truncate"
           data-testid="history-step-btn-baseline"
           :disabled="!canStepTo"
-          :title="canStepTo ? `Reload the session's starting state` : undefined"
+          :title="canStepTo ? `Preview the session's starting state` : undefined"
           @click.stop="onRowReload(SNAPSHOT_BASELINE_INDEX)"
         >
           {{ selectedSeries?.data.isLoading ? 'Loading data…' : 'Data loaded' }}
@@ -233,6 +233,32 @@
       </div>
 
       <v-divider />
+
+      <div
+        v-if="previewIndex !== null && !isSwitchingSession"
+        class="edit-history__preview d-flex align-center ga-2 px-3 py-2"
+        data-testid="history-preview-banner"
+      >
+        <v-icon icon="mdi-eye-outline" size="16" color="primary" />
+        <span class="text-body-small flex-grow-1">
+          Previewing
+          {{
+            previewIndex < 0
+              ? 'the starting state'
+              : `step ${previewIndex + 1} of ${editCount}`
+          }}. Editing waits until you are back on the latest step.
+        </span>
+        <v-btn
+          data-testid="history-back-to-latest-btn"
+          size="small"
+          variant="flat"
+          color="primary"
+          :disabled="isUpdating"
+          @click.stop="onBackToLatest"
+        >
+          Back to latest
+        </v-btn>
+      </div>
 
       <!-- Or the outgoing session's operations linger as if they were these. -->
       <div
@@ -578,7 +604,7 @@ const onHeaderClick = (e: MouseEvent) => {
   toggleCollapsed()
 }
 
-const { editHistory, selectedSeries, isUpdating } =
+const { editHistory, selectedSeries, isUpdating, previewIndex } =
   storeToRefs(usePlotlyStore())
 const { selectedOperation } = storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
@@ -588,15 +614,11 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const openIndex = ref<number | null>(null)
 
-/** Invalidated by any mutation of the history. */
-const loadedStepIndex = ref<number | null>(null)
-
-/** The step the plot reflects: the explicit choice, else the last entry. */
+/** The step the plot reflects: the one previewed, else the last entry. */
 const shownStepIndex = computed<number | null>(() => {
   const last = editHistory.value.length - 1
   if (last < 0) return null
-  const chosen = loadedStepIndex.value
-  return chosen !== null && chosen <= last ? chosen : last
+  return previewIndex.value ?? last
 })
 
 // Committed sessions are immutable server-side, so their comments are shown
@@ -634,7 +656,7 @@ const canRedo = computed(
 /** Stepping needs something to replay and a settled dispatch. */
 const canStepTo = computed(() => !isUpdating.value && editCount.value > 0)
 
-/** Row click / Enter / Space: replay to that step. */
+/** Row click / Enter / Space: preview that step. */
 const onRowReload = (index: number) => {
   if (!canStepTo.value) return
   if (index >= 0 && editHistory.value[index]?.execution?.inFlight) return
@@ -652,8 +674,8 @@ const isApplied = (index: number) =>
 
 const stepTitle = (index: number) =>
   isApplied(index)
-    ? 'Reload from this step'
-    : 'Not applied in the step currently shown. Click to reload from here.'
+    ? 'Preview this step'
+    : 'Not applied in the step currently shown. Click to preview it.'
 
 function formatMethod(method: string) {
   if (!method) return ''
@@ -685,7 +707,6 @@ function formatArg(arg: unknown): string {
 }
 
 const onReload = async () => {
-  loadedStepIndex.value = null
   if (isReadOnly.value || isUpdating.value) return
   isUpdating.value = true
   closeStaleStagingPanel()
@@ -709,29 +730,26 @@ const onReload = async () => {
   })
 }
 
+// Previewing only shows a step: every step stays in the history, and only
+// undo and redo change it. The last step is the whole history again.
 const onReloadHistory = async (index: number) => {
-  if (index < editHistory.value.length) {
-    isUpdating.value = true
-    closeStaleStagingPanel()
-    // `reloadHistory` truncates to `0..index`; a committed session's
-    // operations must survive stepping through them.
-    const record = selectedSeries.value?.data
-    const preserved = isReadOnly.value ? [...(record?.history ?? [])] : null
-    loadedStepIndex.value = index
-    setTimeout(async () => {
-      const newSelection = await record?.reloadHistory(index)
-      if (preserved && record) {
-        // Append only what the replay dropped. Restoring `preserved`
-        // wholesale would put the pre-replay timings back.
-        const tail = preserved.slice(index + 1)
-        record.history.push(...tail)
-        loadedStepIndex.value = record.history.length - tail.length - 1
-      }
-
+  if (index >= editHistory.value.length) return
+  const record = selectedSeries.value?.data
+  if (!record) return
+  isUpdating.value = true
+  closeStaleStagingPanel()
+  setTimeout(async () => {
+    try {
+      await applyReplayedSelection(await record.previewHistory(index))
+    } finally {
       isUpdating.value = false
-      await applyReplayedSelection(newSelection)
-    })
-  }
+    }
+  })
+}
+
+const onBackToLatest = () => {
+  const last = editHistory.value.length - 1
+  if (last >= 0) void onReloadHistory(last)
 }
 
 const onSaveHistory = async () => {
@@ -799,7 +817,6 @@ const closeStaleStagingPanel = () => {
 }
 
 const onUndo = async () => {
-  loadedStepIndex.value = null
   // Also guards the Ctrl+Z shortcut, which bypasses the disabled button.
   if (isReadOnly.value || !canUndo.value || isUpdating.value) return
   isUpdating.value = true
@@ -815,7 +832,6 @@ const onUndo = async () => {
 }
 
 const onRedo = async () => {
-  loadedStepIndex.value = null
   if (isReadOnly.value || !canRedo.value || isUpdating.value) return
   isUpdating.value = true
   closeStaleStagingPanel()
@@ -923,6 +939,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 /* Steps past the one on screen were not replayed, so they are dimmed to
    separate what the plot reflects from what is merely recorded. */
+.edit-history__preview {
+  background-color: rgba(var(--v-theme-primary), 0.06);
+}
+
 .edit-history__row--unapplied {
   opacity: 0.45;
 }

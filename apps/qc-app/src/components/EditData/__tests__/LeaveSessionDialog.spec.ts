@@ -83,7 +83,12 @@ describe('LeaveSessionDialog', () => {
   })
 
   it('offers save, discard and cancel for unsaved edits', async () => {
-    leavePrompt.value = { kind: 'unsaved', unsavedCount: 2, canSave: true }
+    leavePrompt.value = {
+      datastreamName: 'Temp (QC)',
+      kind: 'unsaved',
+      unsavedCount: 2,
+      canSave: true,
+    }
     const wrapper = mountDialog()
     await wrapper.vm.$nextTick()
 
@@ -103,7 +108,12 @@ describe('LeaveSessionDialog', () => {
   })
 
   it('disables saving when no session is open', async () => {
-    leavePrompt.value = { kind: 'unsaved', unsavedCount: 1, canSave: false }
+    leavePrompt.value = {
+      datastreamName: 'Temp (QC)',
+      kind: 'unsaved',
+      unsavedCount: 1,
+      canSave: false,
+    }
     const wrapper = mountDialog()
     await wrapper.vm.$nextTick()
 
@@ -112,11 +122,16 @@ describe('LeaveSessionDialog', () => {
   })
 
   it('offers keep or discard for a session with no edits', async () => {
-    leavePrompt.value = { kind: 'empty', unsavedCount: 0, canSave: true }
+    leavePrompt.value = {
+      datastreamName: 'Temp (QC)',
+      kind: 'empty',
+      unsavedCount: 0,
+      canSave: true,
+    }
     const wrapper = mountDialog()
     await wrapper.vm.$nextTick()
 
-    expect(dialogText()).toContain('no edits')
+    expect(dialogText()).toContain('Your session on Temp (QC) has no edits')
     expect(button('leave-save-btn')).toBeNull()
 
     button('leave-keep-btn')?.click()
@@ -126,7 +141,12 @@ describe('LeaveSessionDialog', () => {
   })
 
   it('says the session stays in progress when everything is saved', async () => {
-    leavePrompt.value = { kind: 'saved', unsavedCount: 0, canSave: true }
+    leavePrompt.value = {
+      datastreamName: 'Temp (QC)',
+      kind: 'saved',
+      unsavedCount: 0,
+      canSave: true,
+    }
     const wrapper = mountDialog()
     await wrapper.vm.$nextTick()
 
@@ -138,7 +158,12 @@ describe('LeaveSessionDialog', () => {
   })
 
   it('locks the choices while one is running', async () => {
-    leavePrompt.value = { kind: 'unsaved', unsavedCount: 1, canSave: true }
+    leavePrompt.value = {
+      datastreamName: 'Temp (QC)',
+      kind: 'unsaved',
+      unsavedCount: 1,
+      canSave: true,
+    }
     leaveWork.value = 'save'
     const wrapper = mountDialog()
     await wrapper.vm.$nextTick()

@@ -197,8 +197,10 @@ const present = (testId: string) =>
   !!document.querySelector(`[data-testid="${testId}"]`)
 
 // Dialog order: chooser, create form, session window.
-const dialogOpen = (wrapper: ReturnType<typeof mountFlow>['wrapper'], i: number) =>
-  wrapper.findAllComponents(VDialog)[i].props('modelValue')
+const dialogOpen = (
+  wrapper: ReturnType<typeof mountFlow>['wrapper'],
+  i: number
+) => wrapper.findAllComponents(VDialog)[i].props('modelValue')
 
 enableAutoUnmount(afterEach)
 afterEach(() => {
@@ -247,7 +249,8 @@ describe('StartEditingFlow', () => {
     wrapper.findComponent(ChooserStub).vm.$emit('edit', option)
     await flushPromises()
     expect(enterEdit).toHaveBeenCalledTimes(1)
-    expect(enterEdit.mock.calls[0]).toEqual(['mgd', undefined, undefined])
+    // Picked from a row, so it opens in the Select view's preview.
+    expect(enterEdit.mock.calls[0]).toEqual(['mgd', undefined, 'Select'])
     expect(present('window-stub')).toBe(false)
   })
 
@@ -264,7 +267,7 @@ describe('StartEditingFlow', () => {
 
     wrapper.findComponent(WindowStub).vm.$emit('confirm', window)
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalledWith('mgd', window, undefined)
+    expect(enterEdit).toHaveBeenCalledWith('mgd', window, 'Select')
     expect(present('window-stub')).toBe(false)
   })
 
@@ -465,6 +468,47 @@ describe('StartEditingFlow', () => {
     expect(dialogOpen(wrapper, 0)).toBe(true)
   })
 
+  it('asks about the open session when another datastream is picked, before the window step', async () => {
+    const option = optionWith([committed])
+    loadForSource.mockResolvedValue([option])
+    qcDatastream.value = { id: 'other', name: 'Other (QC)' }
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    wrapper.findComponent(ChooserStub).vm.$emit('edit', option)
+    await flushPromises()
+    expect(closeEditor).toHaveBeenCalled()
+    expect(present('window-stub')).toBe(true)
+  })
+
+  it('returns to the chooser when a pick keeps the open session', async () => {
+    const option = optionWith([committed])
+    loadForSource.mockResolvedValue([option])
+    closeEditor.mockResolvedValue(false)
+    qcDatastream.value = { id: 'other', name: 'Other (QC)' }
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    wrapper.findComponent(ChooserStub).vm.$emit('edit', option)
+    await flushPromises()
+    expect(present('window-stub')).toBe(false)
+    expect(enterEdit).not.toHaveBeenCalled()
+    expect(dialogOpen(wrapper, 0)).toBe(true)
+  })
+
+  it('does not ask when the open datastream is picked again', async () => {
+    const option = optionWith([inProgress])
+    loadForSource.mockResolvedValue([option])
+    qcDatastream.value = { id: option.managed.id, name: option.managed.name }
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    wrapper.findComponent(ChooserStub).vm.$emit('edit', option)
+    await flushPromises()
+    expect(closeEditor).not.toHaveBeenCalled()
+    expect(enterEdit).toHaveBeenCalled()
+  })
+
   it('does not ask when nothing is being edited', async () => {
     loadForSource.mockResolvedValue([])
     const { flow } = mountFlow()
@@ -484,14 +528,12 @@ describe('StartEditingFlow', () => {
     const { wrapper, flow } = mountFlow()
     await flow.openFor(source)
     await flushPromises()
-    wrapper
-      .findComponent(CreateStub)
-      .vm.$emit('confirm', {
-        source,
-        processingLevelId: 'pl',
-        description: 'Cleaned series',
-        sensorId: 'sn-1',
-      })
+    wrapper.findComponent(CreateStub).vm.$emit('confirm', {
+      source,
+      processingLevelId: 'pl',
+      description: 'Cleaned series',
+      sensorId: 'sn-1',
+    })
     await flushPromises()
 
     expect(addQcHistory).toHaveBeenCalledWith({ id: 'h-new' })
@@ -503,6 +545,6 @@ describe('StartEditingFlow', () => {
 
     wrapper.findComponent(WindowStub).vm.$emit('confirm', window)
     await flushPromises()
-    expect(enterEdit).toHaveBeenCalledWith('mgd-new', window, undefined)
+    expect(enterEdit).toHaveBeenCalledWith('mgd-new', window, 'Select')
   })
 })

@@ -121,12 +121,13 @@ const RESUME = "Resume it any time from the datastream's Edit button."
 
 const copy = computed(() => {
   const prompt = leavePrompt.value
+  const on = prompt?.datastreamName ? ` on ${prompt.datastreamName}` : ''
   if (prompt?.kind === 'unsaved') {
     const count = prompt.unsavedCount
     return {
       color: 'warning',
       icon: 'mdi-content-save-alert-outline',
-      title: 'Unsaved edits',
+      title: `Unsaved edits${on}`,
       subtitle: count
         ? `${count} edit${count === 1 ? '' : 's'} not yet saved to the session`
         : 'You have changes that are not in the session',
@@ -139,7 +140,7 @@ const copy = computed(() => {
     return {
       color: 'error',
       icon: 'mdi-help-circle-outline',
-      title: 'This session has no edits',
+      title: `Your session${on} has no edits`,
       subtitle: 'Nothing saved, nothing unsaved',
       body: `Keep it and it stays in progress. ${RESUME} Discard it and it is deleted from the server.`,
     }
@@ -147,7 +148,7 @@ const copy = computed(() => {
   return {
     color: 'primary',
     icon: 'mdi-pause-circle-outline',
-    title: 'Close this session?',
+    title: `Close your session${on}?`,
     subtitle: 'Every edit is saved to the session',
     body: `Your work stays where it is. The session stays in progress. ${RESUME}`,
   }

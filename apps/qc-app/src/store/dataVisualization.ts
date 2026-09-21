@@ -15,6 +15,7 @@ import {
   type TimeWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
+import { isContextId, makeContextId } from '@/utils/contextSeriesId'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
 import { useQcSessionStore } from '@/store/qcSession'
 import type { SnapshotMeta } from '@/types'
@@ -161,14 +162,36 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       : null
   )
 
-  /** The edit target's source, drawn behind it as context. */
-  const sourceContextDatastream = computed(() =>
+  /** The edit target's source datastream. */
+  const editSourceDatastream = computed(() =>
     qcDatastreamId.value
       ? (managedContext(qcDatastreamId.value)?.source ?? null)
       : null
   )
 
-  /** What the plot draws, in order: edit target, its source, then plotted. */
+  /** Whether the edit target's source is drawn around it as context. A
+   *  user preference, like the context range. */
+  const showSourceContext = ref(true)
+
+  /** Turn the source context on or off, redrawing when editing. */
+  async function setShowSourceContext(show: boolean) {
+    if (show === showSourceContext.value) return
+    showSourceContext.value = show
+    if (qcDatastreamId.value) await rebuildPlot()
+  }
+
+  /** The grey source context drawn around the edit target, cut around the
+   *  session window: the source under a context id of its own (see
+   *  `makeContextId`), so the user can also plot the source itself as an
+   *  ordinary series. Both read the source's data. Null when context is off. */
+  const sourceContextDatastream = computed<Datastream | null>(() => {
+    const source = editSourceDatastream.value
+    if (!source || !showSourceContext.value) return null
+    return { ...source, id: makeContextId(source.id) } as Datastream
+  })
+
+  /** What the plot draws, in order: edit target, its source context, then
+   *  plotted. */
   const seriesDatastreams = computed<Datastream[]>(() => {
     const edit = qcDatastream.value
     if (!edit) return plottedDatastreams.value
@@ -210,7 +233,21 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // data to anchor a preset to, so the window is a placeholder.
   const endDate = ref<Date>(new Date())
   const beginDate = ref<Date>(subtractMonths(endDate.value, 1))
+  /** The Select view's Time range preset. */
   const selectedDateBtnId = ref(DEFAULT_PRESET_ID)
+  /** The editor's Context range preset, remembered apart from the Select
+   *  view's so neither moves the other. */
+  const contextPresetId = ref(DEFAULT_PRESET_ID)
+  /** The preset the loaded range follows: Context while an edit target is
+   *  set, else the Select view's Time range. */
+  const activePresetId = computed({
+    get: () =>
+      qcDatastreamId.value ? contextPresetId.value : selectedDateBtnId.value,
+    set: (id: number) => {
+      if (qcDatastreamId.value) contextPresetId.value = id
+      else selectedDateBtnId.value = id
+    },
+  })
 
   /** The edit session's window, while an edit target has one. */
   const editSessionWindow = computed<TimeWindow | null>(() => {
@@ -230,7 +267,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    *  the session window while editing one, otherwise back from the context
    *  data's end. */
   function resolvePresetWindow() {
-    if (selectedDateBtnId.value === CUSTOM_PRESET_ID) return null
+    if (activePresetId.value === CUSTOM_PRESET_ID) return null
     const workingCopies = useWorkingCopiesStore()
     const context = seriesDatastreams.value.filter(
       (d) => d.id !== qcDatastreamId.value && !isSnapshotId(d.id)
@@ -241,9 +278,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     ])
     const sessionWindow = editSessionWindow.value
     if (sessionWindow) {
-      return presetAroundWindow(selectedDateBtnId.value, sessionWindow, extent)
+      return presetAroundWindow(activePresetId.value, sessionWindow, extent)
     }
-    return extent ? presetWindow(selectedDateBtnId.value, extent) : null
+    return extent ? presetWindow(activePresetId.value, extent) : null
   }
 
   function resetState() {
@@ -448,11 +485,21 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const MAX_RANGE_PASSES = 5
   let loadInFlight: Promise<void> | null = null
   let queuedLoad: { kind: PlotLoadKind; promise: Promise<void> } | null = null
-  /** The range the series were last loaded for, as `begin-end` ms. */
+  /** The `loadKey` the series were last loaded for. */
   let loadedRangeKey: string | null = null
 
   const rangeKey = (begin: Date, end: Date) =>
     `${begin.getTime()}-${end.getTime()}`
+
+  /** What a load covers: the range, plus the session window the source's
+   *  context is cut around. */
+  const loadKey = () => {
+    const w = editSessionWindow.value
+    return (
+      rangeKey(beginDate.value, endDate.value) +
+      (w ? `|${rangeKey(w.begin, w.end)}` : '')
+    )
+  }
 
   function queuePlotLoad(kind: PlotLoadKind): Promise<void> {
     return trackPlotWork(() => nextPlotLoad(kind))
@@ -498,9 +545,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     for (let pass = 0; pass < MAX_RANGE_PASSES; pass++) {
       const begin = beginDate.value
       const end = endDate.value
+      const key = loadKey()
       await refreshGraphSeriesArray()
       if (isCurrentRange(begin, end)) {
-        loadedRangeKey = rangeKey(begin, end)
+        loadedRangeKey = key
         return
       }
     }
@@ -541,7 +589,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    *  load already caught up with the range. */
   async function doReloadRange(): Promise<void> {
     if (!seriesDatastreams.value.length) return
-    if (loadedRangeKey === rangeKey(beginDate.value, endDate.value)) return
+    if (loadedRangeKey === loadKey()) return
     await loadCurrentRange()
     const { redraw, clearZoomHistory } = usePlotlyStore()
     if (qcDatastreamId.value) {
@@ -628,7 +676,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
     if (begin) beginDate.value = begin
     if (end) endDate.value = end
-    if (custom) selectedDateBtnId.value = CUSTOM_PRESET_ID
+    if (custom) activePresetId.value = CUSTOM_PRESET_ID
 
     if (update && seriesDatastreams.value.length) {
       await queuePlotLoad('range')
@@ -646,23 +694,25 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   const onDateBtnClick = async (selectedId: number) => {
     if (!findPreset(selectedId)) return
-    selectedDateBtnId.value = selectedId
+    activePresetId.value = selectedId
     await applyActivePreset()
   }
 
   // The editor loads its context before the session is known, so re-anchor
-  // the preset once the window arrives or changes. Like a Context change, this
-  // reloads context series only and keeps the zoom. A watch rather than a call
-  // at each session store write: the window follows sessions being applied, a
-  // session viewed, a return to the current one and a failed view reverted.
-  // It queues behind any rebuild, and joins a queued one.
+  // the preset once the window arrives or changes. The source waits for the
+  // window (its context is cut around it), so its series can appear here, and
+  // only a rebuild adds traces. The rebuild resolves the preset itself, never
+  // fetches the edit target, keeps the zoom, and reloads only what the cache
+  // lacks. A watch rather than a call at each session store write: the window
+  // follows sessions being applied, a session viewed, a return to the current
+  // one and a failed view reverted. It queues behind any load.
   watch(
     () =>
       editSessionWindow.value &&
       rangeKey(editSessionWindow.value.begin, editSessionWindow.value.end),
     (key) => {
       if (!key) return
-      applyActivePreset().catch((error) => {
+      rebuildPlot().catch((error) => {
         console.error('Failed to reload the context range:', error)
         Snackbar.error('Could not reload the context range')
       })
@@ -690,10 +740,15 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const updateOrFetchGraphSeries = async (
     datastream: Datastream,
     start: Date,
-    end: Date
+    end: Date,
+    exclude?: TimeWindow
   ) => {
     const load = {}
     latestLoads.set(datastream.id, load)
+    // The source context series reads the source's own data.
+    const fetchDs = isContextId(datastream.id)
+      ? (editSourceDatastream.value ?? datastream)
+      : datastream
     try {
       // A managed datastream with a session in progress plots its working
       // copy: it spans the session window and is never re-windowed, since a
@@ -713,9 +768,10 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       if (seriesIndex >= 0) {
         // Update the existing graph series with new data
         const obsRecord = await fetchObservationsInRange(
-          datastream,
+          fetchDs,
           start,
-          end
+          end,
+          exclude
         ).catch((error) => {
           Snackbar.error('Failed to fetch observations')
           console.error('Failed to fetch observations:', error)
@@ -727,7 +783,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
         const series = graphSeriesArray.value.find((s) => s.id === datastream.id)
         if (obsRecord && series) series.data = obsRecord
       } else {
-        const newSeries = await fetchGraphSeries(datastream, start, end)
+        const newSeries = await fetchGraphSeries(
+          datastream,
+          start,
+          end,
+          exclude,
+          fetchDs
+        )
         if (!isCurrentRange(start, end)) return
         // Callers of `refreshGraphSeriesArray` outside the plot load queue
         // (the edit history reload) may have pushed this series meanwhile. A
@@ -774,12 +836,22 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       currentIds.has(s.id)
     )
 
+    // The source is drawn only around the session window, so it waits for
+    // the window and never fetches what lies inside it.
+    const sourceId = sourceContextDatastream.value?.id
+    const sessionWindow = editSessionWindow.value
     const updateOrFetchPromises = seriesDatastreams.value
       // Snapshots have no server datastream; the edit target's data belongs to the session.
       .filter((ds) => !isSnapshotId(ds.id) && ds.id !== qcDatastreamId.value)
+      .filter((ds) => ds.id !== sourceId || !!sessionWindow)
       .map(async (ds) => {
         loadingStates.value.set(ds.id, true)
-        return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
+        return updateOrFetchGraphSeries(
+          ds,
+          beginDate.value,
+          endDate.value,
+          ds.id === sourceId ? (sessionWindow ?? undefined) : undefined
+        )
       })
 
     const results = await Promise.all(updateOrFetchPromises)
@@ -856,8 +928,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     isEditorReady,
     trackPlotWork,
     selectedDateBtnId,
+    contextPresetId,
+    activePresetId,
+    editSessionWindow,
+    showSourceContext,
+    setShowSourceContext,
     qcDatastream,
     qcDatastreamId,
+    editSourceDatastream,
     sourceContextDatastream,
     seriesDatastreams,
     qualifierSet,
@@ -890,14 +968,20 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // Persist only the user's preset choice. Catalogs, loading maps and
   // filters refetch cleanly on every load; the window resolves from the data.
   persist: {
-    pick: ['selectedDateBtnId'],
+    pick: ['selectedDateBtnId', 'contextPresetId', 'showSourceContext'],
     // A persisted Custom id (or a stale/unknown one) comes back with no
     // window to resolve against, so the placeholder range would apply
     // instead. Only a real preset survives hydration.
     afterHydrate: (ctx) => {
-      const store = ctx.store as unknown as { selectedDateBtnId: number }
+      const store = ctx.store as unknown as {
+        selectedDateBtnId: number
+        contextPresetId: number
+      }
       if (!findPreset(store.selectedDateBtnId)) {
         store.selectedDateBtnId = DEFAULT_PRESET_ID
+      }
+      if (!findPreset(store.contextPresetId)) {
+        store.contextPresetId = DEFAULT_PRESET_ID
       }
     },
   },

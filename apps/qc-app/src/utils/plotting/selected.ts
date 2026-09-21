@@ -32,8 +32,13 @@ export const handleSelected = async (
   eventData?: PlotMouseEvent | PlotRelayoutEvent | PlotSelectionEvent | null,
   opts: { fromRelayout?: boolean } = {}
 ) => {
-  const { plotlyRef, selectedSeries, isUpdating, suppressedEchoSelection } =
-    storeToRefs(usePlotlyStore())
+  const {
+    plotlyRef,
+    selectedSeries,
+    isUpdating,
+    suppressedEchoSelection,
+    previewIndex,
+  } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -79,7 +84,8 @@ export const handleSelected = async (
     const current = selectedData.value ?? []
     if (sameSelection(expected, current)) return
   }
-  if (eventData && !isUpdating.value) {
+  // A previewed step only shows data: the selection highlights, unrecorded.
+  if (eventData && !isUpdating.value && previewIndex.value === null) {
     await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.SELECTION,
       selectedData.value ?? []

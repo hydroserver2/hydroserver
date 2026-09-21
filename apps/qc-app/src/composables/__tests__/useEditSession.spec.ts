@@ -30,9 +30,9 @@ vi.mock('@/store/hydroserver', () => ({
   useHydroServer: () => ({ hs }),
 }))
 
-const fetchObservationsInRange = vi.fn()
+const fetchDetachedRecord = vi.fn()
 vi.mock('@/store/observations', () => ({
-  useObservationStore: () => ({ fetchObservationsInRange }),
+  useObservationStore: () => ({ fetchDetachedRecord }),
 }))
 
 const wcRebuild = vi.fn()
@@ -61,7 +61,7 @@ const { snackbarWarn, ObservationRecordDouble } = vi.hoisted(() => {
     reload = vi.fn(async () => {})
     // `discardUnsavedEdits` calls this on the working copy; mirror the
     // truncate-in-place semantics the other test double in this file uses.
-    reloadHistory = vi.fn(async function (this: ObservationRecordDouble, index: number) {
+    truncateHistory = vi.fn(async function (this: ObservationRecordDouble, index: number) {
       this.history.splice(index + 1)
       return []
     })
@@ -108,7 +108,7 @@ const makeRecord = (history: any[] = []) => ({
   dataY: [10],
   reload: vi.fn(async () => {}),
   // Stands in for qc-utils: truncate to `0..index` and hand back a selection.
-  reloadHistory: vi.fn(async function (this: any, index: number) {
+  truncateHistory: vi.fn(async function (this: any, index: number) {
     history.splice(index + 1)
     return []
   }),
@@ -134,7 +134,7 @@ beforeEach(() => {
   selectedSeries.value = { data: makeRecord() }
   getItem.mockResolvedValue({ id: 's-1', name: 'Source' })
   createObservations.mockResolvedValue(undefined)
-  fetchObservationsInRange.mockResolvedValue(makeRecord())
+  fetchDetachedRecord.mockResolvedValue(makeRecord())
   wcRebuild.mockResolvedValue({
     sessionId: 'x',
     record: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]),
@@ -353,7 +353,7 @@ describe('useEditSession', () => {
   it('startSession loads the managed datastream as the working base', async () => {
     await seedHistory()
     const managedBase = makeRecord()
-    fetchObservationsInRange.mockResolvedValue(managedBase)
+    fetchDetachedRecord.mockResolvedValue(managedBase)
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
     await session.beginEditing()
@@ -361,7 +361,7 @@ describe('useEditSession', () => {
     expect(session.needsSession.value).toBe(false)
     expect(useQcSessionStore().inProgressSession?.description).toBe('Jan')
     // Working copy comes from the managed datastream (latest committed state).
-    expect(fetchObservationsInRange.mock.calls[0]?.[0].id).toBe('m-1')
+    expect(fetchDetachedRecord.mock.calls[0]?.[0].id).toBe('m-1')
     expect(Array.from(selectedSeries.value.data.dataX)).toEqual(
       Array.from(managedBase.dataX)
     )
@@ -559,7 +559,7 @@ describe('useEditSession', () => {
       })
     )
     await qc.sessions.create(h.id, WIN)
-    fetchObservationsInRange.mockResolvedValue(
+    fetchDetachedRecord.mockResolvedValue(
       makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
     )
     const { useEditSession } = await import('@/composables/useEditSession')
@@ -605,7 +605,7 @@ describe('useEditSession', () => {
     const store = useQcSessionStore()
     expect(store.historyId).toBeNull()
     expect(store.sessions).toEqual([])
-    expect(fetchObservationsInRange).not.toHaveBeenCalled()
+    expect(fetchDetachedRecord).not.toHaveBeenCalled()
   })
 
   it('commit completes without writing the session store when the target changes while sessions reload', async () => {
@@ -807,7 +807,7 @@ describe('useEditSession.viewSession', () => {
     await qc.sessions.create(h.id, WIN)
 
     const viewed = makeRecord([])
-    fetchObservationsInRange.mockResolvedValue(viewed)
+    fetchDetachedRecord.mockResolvedValue(viewed)
 
     const { useEditSession } = await import('@/composables/useEditSession')
     const store = useQcSessionStore()
@@ -843,7 +843,7 @@ describe('useEditSession.viewSession', () => {
     await session.beginEditing()
 
     const seen: Array<{ viewed: string | null; switching: boolean }> = []
-    fetchObservationsInRange.mockImplementation(async () => {
+    fetchDetachedRecord.mockImplementation(async () => {
       seen.push({
         viewed: store.viewedSessionId,
         switching: store.isSwitchingSession,
@@ -875,7 +875,7 @@ describe('useEditSession.viewSession', () => {
     await session.beginEditing()
     expect(store.viewedSessionId).toBe(inProgress.id)
 
-    fetchObservationsInRange.mockRejectedValueOnce(new Error('network'))
+    fetchDetachedRecord.mockRejectedValueOnce(new Error('network'))
     await expect(session.viewSession(committed.id)).rejects.toThrow('network')
 
     expect(store.viewedSessionId).toBe(inProgress.id)
@@ -902,7 +902,7 @@ describe('useEditSession.viewSession', () => {
 
     // View the committed session read-only.
     const viewed = makeRecord([])
-    fetchObservationsInRange.mockResolvedValue(viewed)
+    fetchDetachedRecord.mockResolvedValue(viewed)
     await session.viewSession(committed.id)
     expect(store.viewedSessionId).toBe(committed.id)
     expect(store.isReadOnly).toBe(true)
@@ -943,7 +943,7 @@ describe('useEditSession.viewSession', () => {
     setEditRecord.mockClear()
 
     // The user leaves and enters another target mid-reconstruction.
-    fetchObservationsInRange.mockImplementationOnce(async () => {
+    fetchDetachedRecord.mockImplementationOnce(async () => {
       qcDatastream.value = { id: 'm-2' }
       return makeRecord([])
     })

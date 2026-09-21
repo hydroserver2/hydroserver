@@ -74,11 +74,17 @@ vi.mock('@/utils/plotting/plotly', () => ({
   toggleTraceVisibility: vi.fn().mockResolvedValue(undefined),
 }))
 
+const closeEditor = vi.fn().mockResolvedValue(true)
+vi.mock('@/composables/useEditEntry', () => ({
+  useEditEntry: () => ({ closeEditor }),
+}))
+
 import PlottedDatastreams from '@/components/VisualizeData/PlottedDatastreams.vue'
 import { handleNewPlot } from '@/utils/plotting/plotly'
 
-function mountIt() {
+function mountIt(props: { clearable?: boolean } = {}) {
   return mount(PlottedDatastreams, {
+    props,
     global: {
       plugins: [createTestPinia(), createTestVuetify()],
     },
@@ -224,7 +230,7 @@ describe('PlottedDatastreams.vue: load status', () => {
     plotlyOptions.value = {
       traces: [
         { id: datastreamA.id, x: new Array(6) },
-        { _isGapOverlay: true, _gapOverlayFor: datastreamA.id, x: new Array(50) },
+        { _isGapOverlay: true, _partOf: datastreamA.id, x: new Array(50) },
       ],
     }
     const wrapper = mountIt()
@@ -329,29 +335,31 @@ describe('PlottedDatastreams row kinds', () => {
     wrapper.find(`[data-testid="plotted-item-${id}"]`)
   const plottedIds = () => plottedDatastreams.value.map((d) => d.id)
 
-  it('lists the edit target, its source, then the plotted context', () => {
+  it('lists the edit target, then the plotted context, leaving the source context out', () => {
     startEditing()
     const wrapper = mountIt()
     const ids = wrapper
       .findAll('.plotted-item')
       .map((r) => r.attributes('data-testid'))
 
+    // The source context is switched from the Context menu, not listed.
     expect(ids).toEqual([
       'plotted-item-mgd',
-      'plotted-item-src',
       'plotted-item-ctx',
       'plotted-item-ctx2',
     ])
   })
 
-  it('gives the source row no remove and no axis toggle', () => {
-    startEditing()
+  it('lists a source the user plotted as an ordinary row', () => {
+    qcDatastream.value = edit
+    // Plotted by the user, so the store draws it whole, not as context.
+    sourceContextDatastream.value = null
+    plottedDatastreams.value = [source, ctx]
     const r = row(mountIt(), 'src')
 
-    expect(r.classes()).toContain('plotted-item--source')
-    expect(r.text()).toContain('raw source')
-    expect(r.find('.plotted-item__close').exists()).toBe(false)
-    expect(r.find('.plotted-item__axis-toggle').exists()).toBe(false)
+    expect(r.exists()).toBe(true)
+    expect(r.find('.plotted-item__close').exists()).toBe(true)
+    expect(r.attributes('draggable')).toBe('true')
   })
 
   it('gives the edit row no remove and no axis toggle', () => {
@@ -387,10 +395,29 @@ describe('PlottedDatastreams row kinds', () => {
     expect(mountIt().find('.plotted-item__dot').exists()).toBe(false)
   })
 
-  it('shows Unplot all only when nothing is being edited', () => {
-    expect(mountIt().text()).toContain('Unplot all')
+  it('shows Clear plot only where asked, editing or not', () => {
+    expect(mountIt().find('[data-testid="clear-plot-btn"]').exists()).toBe(false)
+    expect(mountIt({ clearable: true }).find('[data-testid="clear-plot-btn"]').exists()).toBe(true)
     startEditing()
-    expect(mountIt().text()).not.toContain('Unplot all')
+    expect(mountIt({ clearable: true }).find('[data-testid="clear-plot-btn"]').exists()).toBe(true)
+  })
+
+  it('closes the edited datastream before clearing the plot', async () => {
+    startEditing()
+    const wrapper = mountIt({ clearable: true })
+    await wrapper.find('[data-testid="clear-plot-btn"]').trigger('click')
+    await flushPromises()
+    expect(closeEditor).toHaveBeenCalledTimes(1)
+    expect(clearPlottedDatastreams).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the plot when the user stays in the session', async () => {
+    startEditing()
+    closeEditor.mockResolvedValueOnce(false)
+    const wrapper = mountIt({ clearable: true })
+    await wrapper.find('[data-testid="clear-plot-btn"]').trigger('click')
+    await flushPromises()
+    expect(clearPlottedDatastreams).not.toHaveBeenCalled()
   })
 
   it('makes only context rows draggable', () => {
@@ -398,7 +425,6 @@ describe('PlottedDatastreams row kinds', () => {
     const wrapper = mountIt()
 
     expect(row(wrapper, 'mgd').attributes('draggable')).toBe('false')
-    expect(row(wrapper, 'src').attributes('draggable')).toBe('false')
     expect(row(wrapper, 'ctx').attributes('draggable')).toBe('true')
   })
 

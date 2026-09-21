@@ -31,7 +31,7 @@ Everything runs in your web browser. The backend never sees your edit history un
 | **Datastream** | A single time-series at a site: one variable, one sensor, one processing level. |
 | **Observation** | A single (timestamp, value) measurement. |
 | **Edit target** | The datastream you are editing, chosen with a row's Edit button. |
-| **Context traces** | The raw source and any plotted datastreams shown around it. |
+| **Context traces** | The raw source, drawn around the session window, and any plotted datastreams shown around it. |
 | **History** | The ordered list of filters + selections + edits you've applied in the current edit session. Undo / redo / save / load all operate on this list. |
 | **Selection** | The set of point indices a filter (or your click / lasso) produced. Edits operate on the current selection. |
 | **QC history** | A JSON file holding your editing history for a datastream. This is the canonical save format. |
@@ -81,7 +81,7 @@ The select view is the default landing surface after picking a workspace. The le
 
 The filter drawer has two collapsible sections:
 
-- **Time range**: the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. In the Edit view the same preference drives the **Context** menu, where presets count out from the edit session's window instead.
+- **Time range**: the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. While you are editing, this section is hidden: the **Context** menu above the plot sets the range instead, with presets that count out from the edit session's window. The two remember their own preset, so neither changes the other.
 
 - **Datastream filters**: These filters allow you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
 
@@ -105,18 +105,31 @@ What changes:
 
 - An **Editing** panel appears in the top card's right pane: the managed
   datastream's name, the session's time window, whether anything is unsaved,
-  and a **Back to editor** button. Editing operations stay in the editor.
-- The preview plot draws the same series the editor does, the edit target and
-  its raw source included, with the session window shaded.
-- The row check boxes add and remove **context** datastreams. The edit target
-  and its source stay on the plot and cannot be removed here.
-- The filter drawer's **Time range** is the editor's Context range: the same
-  window the Context menu sets, with presets counting out from the session
-  window. Your edits are never reloaded by it.
-- The rail's **Edit** button and the panel's **Back to editor** button both
-  return to the editor with the session, your zoom and any staged range intact.
-- The row **Edit** button on the datastream you are already editing returns to
-  the editor too. On a different datastream it starts the usual entry flow.
+  and an **Open editor** button. Editing operations stay in the editor.
+- Picking a datastream with a row's **Edit** button lands here first, in this
+  preview, so you can set up its context before editing. **Open editor** takes
+  you in.
+- The preview plot draws the same series the editor does: the edit target,
+  and its raw source around the session window.
+- **Clear plot**, above the plotted list in the right pane, empties the
+  plot. While a datastream is being edited it closes it first, with the
+  usual question about its session; choosing to stay keeps everything as it
+  was.
+- The row you are editing shows an **Editing** chip and a **Close** button in
+  place of **Edit**. **Close** ends the session the same way the editor's
+  **Close** does.
+- The row check boxes add and remove **context** datastreams, up to 4. That
+  includes the edit target's own source and its other quality-controlled
+  versions: a source you plot this way draws in full, in its own colour, like
+  any plotted datastream. The edit target itself is marked **Editing** in the
+  chooser and cannot be picked, since it is already on the plot.
+- The filter drawer's **Time range** is hidden. The **Context** menu above the
+  plot sets the range around the session, with presets counting out from the
+  session window. Your edits are never reloaded by it.
+- The rail's **Edit** button and the panel's **Open editor** button both
+  open the editor with the session, your zoom and any staged range intact.
+- The row **Edit** button on a different datastream starts the usual entry
+  flow.
 
 A link copied from here carries the edit target, so opening it reopens the
 session behind the Select view.
@@ -187,17 +200,20 @@ window is invalid.
 
 ### Edit view
 
-The Edit View opens once you finish the row Edit button's chooser and session
-window step (see [Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions)
+The Edit View opens from the Select view's **Editing** panel (**Open editor**)
+once you finish the row Edit button's chooser and session window step (see
+[Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions)
 above), or when you click the pencil icon in the navigation rail to return to
 a session already open.
 
 ![Edit view (full layout)](./images/edit-view.png)
 
-On the plot, the datastream you're editing draws in black on the primary
-axis; its raw source draws underneath in grey as read-only context. Any
+On the plot, the datastream you're editing draws in dark grey on the primary
+axis. Its raw source draws in light grey as read-only context, only before
+and after the session window, and joins the edited data at the window's
+edges. Nothing covers the plot, so box and lasso select work anywhere. Any
 other plotted datastreams render on their own axes to the right, same as the
-Select view. The edit session's time window is shaded.
+Select view.
 
 The Edit View consists of three columns, each independently resizable / collapsible:
 
@@ -220,17 +236,21 @@ See the [Pan and zoom across axes](#pan-and-zoom-across-axes) section below for 
 
 Hover any toolbar icon to see its name. The left side of the toolbar flips between **Plot** and **Table** views (see below); the right side carries the **data points toggle**, a share-link button, and the `?` help menu.
 
-Between the help menu and the right edge is the **Context** menu. It holds
+Between the help menu and the right edge is the **Context** button. It reads
+**Context · 1m** (the active range) while the source context is shown, and
+**Context off** when it is not. Its menu starts with a **Show source
+context** switch: off, the raw source leaves the plot entirely. Below it are
 preset chips and From / To pickers like the Select view's Time range
 filter, but here they control how much of the raw source and any plotted
-datastreams load around your edit, not what you're editing. The presets
+datastreams load around your edit, not what you're editing. The raw source
+is never loaded inside the session window. The presets
 count out from the edit session's window instead of back from the last
 observation: **1w**, **1m**, **6m** and **1y** load that span before the
 session's start and after its end, and **All** loads all of the context
 data (always including the session's window). **YTD** is not offered here.
-If YTD is your active preset from the Select view, the editor loads the
-context as **All** and highlights the **All** chip, without changing that
-preference. When a session loads
+The Context menu remembers its own preset, apart from the Select view's Time
+range. A remembered **YTD** loads the context as **All** and highlights the
+**All** chip, without changing that preference. When a session loads
 or you view another session, the active preset re-applies around its
 window; a `Custom` From / To range stays as you set it. Changing the range
 reloads that context data and keeps your current zoom. Your edits are
@@ -300,10 +320,10 @@ URL only on the Select view, because they drive the datastreams table rather tha
 
 The right-hand list (visible on both Select and Edit views) is the roster of everything currently on the plot. Each row carries:
 
-- A drag handle to reorder the list (the line colors track the order). While editing, the **edit target** and its **raw source** are pinned at the top and can't be reordered or unplotted; only the other plotted datastreams can be dragged.
+- A drag handle to reorder the list (the line colors track the order). While editing, the **edit target** is pinned at the top and can't be reordered or unplotted; only the plotted datastreams can be dragged. The raw source context is not listed: it is switched from the **Context** menu.
 - An **eye** toggle that hides the trace from the plot without unplotting it. Hidden rows render with a strikethrough.
 - A **Y-axis** toggle (non-primary rows only) that collapses that datastream's secondary axis to provide more horizontal space for the plot. The edit target and its source share the primary axis, so neither row has this toggle.
-- The datastream name and a subtitle showing the number of points loaded **in the current time window**, e.g. `1,248 pts loaded`. While the fetch is still in flight, the subtitle reads `loading…`. The source row carries a `raw source` chip.
+- The datastream name and a subtitle showing the number of points loaded **in the current time window**, e.g. `1,248 pts loaded`. While the fetch is still in flight, the subtitle reads `loading…`.
 - An `×` button to unplot the row. The edit target and its source can't be unplotted this way. Leave the editor to drop them.
 
 If a plotted datastream has no observations in the current window (either because the dataset is empty there or because the chosen time range doesn't cover its data), the row title shows a small warning-tinted database icon. Hover it for the tooltip "No observations in the current time window". Widening the time range (or clicking **All** in the Time range / Context section) usually clears it.
@@ -314,13 +334,13 @@ While editing, the edit target's row shows the session's working data: committed
 
 ### Plotting multiple datastreams
 
-You can check up to **4 datastreams at a time**. The fifth plot slot is kept for the datastream you edit, so there is always room for it. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/4 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source are shown in addition to the 4 plotted datastreams. They don't count against the cap.
+You can check up to **4 datastreams at a time**. The fifth plot slot is kept for the datastream you edit, so there is always room for it. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/4 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source context are shown in addition to the 4 plotted datastreams. They don't count against the cap; a source you plot yourself does.
 
 ![Two datastreams on independent y-axes](./images/home-multi-datastreams.png)
 
 When more than one datastream is on the plot:
 
-- In the Select view, the **first** datastream you plot uses the primary (left) Y axis; in the Edit view, the edit target and its raw source share it instead. In the Select view that line keeps its own series colour; in the Edit view the edit target draws in black with a point marker on every observation, and the raw source draws underneath it in grey.
+- In the Select view, the **first** datastream you plot uses the primary (left) Y axis; in the Edit view, the edit target and its raw source share it instead. In the Select view that line keeps its own series colour; in the Edit view the edit target draws in dark grey with a point marker on every observation, and the raw source draws in light grey around the session window.
 - Every other datastream gets its **own Y axis** on the right side of the plot. The chip at the top of each axis carries the datastream's display name plus its unit (e.g. `Water Temperature (°C)`). Up to four secondary axes stack side by side.
 - Axis chips are colored to match their line so you can tell at a glance which trace goes with which axis.
 
@@ -532,17 +552,18 @@ The body shows:
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
   - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
-  - Clicking the row itself replays history up to that step. Steps after the one on screen are dimmed, since they were not replayed and so are recorded but not reflected in the plot. Replaying re-measures each step's duration but keeps its comment and attribution.
-  - An **undo** button on the trailing entry only (older entries are undone via Reload-from-this-step).
+  - Clicking the row previews the data as it was at that step; a selection step also selects its points on the plot. Every step stays in the history: steps after the one on screen are dimmed, since they are recorded but not reflected in the plot. A banner reads **Previewing step N of M** with a **Back to latest** button (clicking the last step works too). While previewing, editing waits: operation panels, plot selections and table saves hold until you are back on the latest step. Replaying re-measures each step's duration but keeps its comment and attribution.
+  - An **undo** button on the trailing entry only. Undo and redo are the only ways to change the history; from a preview, undo acts on the whole history and ends the preview.
 - A chevron toggles an inline "Arguments" drawer that shows the raw qc-utils call arguments.
 
-### Reload from this step vs. reload from server
+### Preview a step vs. reload from server
 
 These two look like siblings on the **Data loaded** row and mostly produce the
 same picture, but they are not the same operation:
 
-- **Reload from this step** replays the raw observations already held in the
-  browser. No network, and it can only ever restore what you loaded.
+- **Previewing a step** (or the **Data loaded** row, the starting state)
+  replays the raw observations already held in the browser and keeps the
+  history. No network, and it can only ever restore what you loaded.
 - **Discard edits and reload from server** (cloud icon) re-fetches the
   observations and throws the history away.
 
@@ -666,9 +687,11 @@ The dialog lets you add an optional session description. Once you confirm:
 You never leave an edit session by accident. Anything that ends it, the
 editor's **Close** button, the HydroServer logo, the workspace switch, Log
 out, the browser's Back button, or editing a different datastream, asks the
-same question first and tells you what happens to your work. If that other
-datastream has no QC datastream yet, the question comes before the create
-form, so cancelling leaves nothing new behind.
+same question first and tells you what happens to your work. The question
+names the datastream you are leaving. When you edit a different datastream, it
+comes as soon as you pick that datastream, before the session window or the
+create form, so cancelling leaves nothing new behind and puts you back in the
+chooser.
 
 Which question depends on where the session stands:
 
@@ -743,7 +766,7 @@ Click **Workspaces** in the nav rail and **Select** another, or **Continue** to 
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
 | Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in Time range. |
 | The Edit rail item is greyed out | You are not editing. | Click a row's Edit button. |
-| The Select view shows an "Editing" panel | A session is still open. | That is expected: click **Back to editor** to return to it, or **Close** in the editor to end it. |
+| The Select view shows an "Editing" panel | A session is open, or you just picked a datastream to edit. | That is expected: click **Open editor** to edit it, or **Close** on its row (or in the editor) to end it. |
 | I closed the editor and cannot find my session | It is still in progress, just not open. | Click the Edit button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |

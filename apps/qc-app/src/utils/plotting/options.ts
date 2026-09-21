@@ -8,18 +8,15 @@ import type {
   LayoutAxis,
   PlotData,
   PlotlyHTMLElement,
-  Shape,
 } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useQcSessionStore } from '@/store/qcSession'
 import { useQualifierStore } from '@/store/qualifiers'
 import { useUIStore } from '@/store/userInterface'
-import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
+import { findFirstGreaterOrEqual, findLastLessOrEqual } from '@uwrl/qc-utils'
 import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
 import { undoZoom, redoZoom } from './zoom'
 import { fitXaxisToVisible, fitYaxisToVisible } from './operations'
-import { EDIT_WINDOW_SHAPE_NAME } from './shapes'
 
 /**
  * Return type of `createPlotlyOption`. Plan 03-03 will reuse this shape
@@ -55,11 +52,12 @@ export type AppPlotlyTrace = Partial<PlotData> & {
    */
   _isGapOverlay?: boolean
   /**
-   * Datastream id of the main trace this gap overlay belongs to. Lets
-   * visibility toggles and replot-state carries route to both traces
-   * even though only the main trace exposes the public `id`.
+   * Datastream id of the series a companion trace belongs to: a gap
+   * overlay, or the points of the source's piece after the session window.
+   * Lets visibility toggles and replot-state carries route to every trace
+   * of the series even though only the main trace exposes the public `id`.
    */
-  _gapOverlayFor?: string
+  _partOf?: string
 }
 
 /**
@@ -114,9 +112,88 @@ export const LABEL_COLORS = [
   '#117a85', // cyan
 ]
 
-// Read-only raw-source context drawn behind the edit target while editing.
-export const SOURCE_CONTEXT_COLOR = '#9e9e9e'
+// Read-only raw-source context drawn around the edit target while editing.
+export const SOURCE_CONTEXT_COLOR = '#cfcfcf'
 export const SOURCE_CONTEXT_LABEL_COLOR = '#616161'
+
+export type EditWindow = { begin: number; end: number }
+
+export const toEditWindow = (
+  w: { begin: Date; end: Date } | null | undefined
+): EditWindow | null =>
+  w ? { begin: w.begin.getTime(), end: w.end.getTime() } : null
+
+export type Line = { x: ArrayLike<number>; y: ArrayLike<number> }
+
+const view = (a: ArrayLike<number>, start: number, stop: number) =>
+  ArrayBuffer.isView(a)
+    ? (a as Float64Array).subarray(start, stop)
+    : Array.prototype.slice.call(a, start, stop)
+
+/**
+ * The parts of a sorted line before and after the window, as views of the
+ * same buffers, leaving a gap where the window is. With no window `before`
+ * is the whole line and `after` is empty.
+ */
+export const splitAroundWindow = (
+  line: Line,
+  w: EditWindow | null
+): { before: Line; after: Line } => {
+  const n = line.x.length
+  const xs = line.x as number[]
+  const start = w ? findFirstGreaterOrEqual(xs, w.begin) : n
+  const stop = w ? findLastLessOrEqual(xs, w.end) + 1 : n
+  const slice = (from: number, to: number): Line => ({
+    x: view(line.x, from, to),
+    y: view(line.y, from, to),
+  })
+  return { before: slice(0, start), after: slice(Math.max(stop, start), n) }
+}
+
+/**
+ * The segments joining the source's context to the edit target across the
+ * window edges: before's last point to the target's first, and the target's
+ * last to after's first. A step wider than `maxGapMs` is a real gap and
+ * stays open, as it does inside the lines. NaN-y breaks keep the two
+ * segments apart.
+ */
+export const bridgeAcrossWindow = (
+  before: Line,
+  after: Line,
+  target: Line,
+  maxGapMs: number
+): { x: number[]; y: number[] } => {
+  const x: number[] = []
+  const y: number[] = []
+  const n = target.x.length
+  const join = (x0: number, y0: number, x1: number, y1: number) => {
+    if (x1 - x0 > maxGapMs) return
+    if (x.length) {
+      x.push((x[x.length - 1]! + x0) / 2)
+      y.push(NaN)
+    }
+    x.push(x0, x1)
+    y.push(y0, y1)
+  }
+  const b = before.x.length - 1
+  if (b >= 0 && n) {
+    join(
+      before.x[b] as number,
+      before.y[b] as number,
+      target.x[0] as number,
+      target.y[0] as number
+    )
+  }
+  if (after.x.length && n) {
+    join(
+      target.x[n - 1] as number,
+      target.y[n - 1] as number,
+      after.x[0] as number,
+      after.y[0] as number
+    )
+  }
+  return { x, y }
+}
 
 /** Companion text colour for a `COLORS[i]` line; falls back to QC grey. */
 export const labelColorFor = (lineColor: string): string => {
@@ -409,12 +486,16 @@ export { buildQualifierBand }
 export const createPlotlyOption = (
   seriesArray: GraphSeries[]
 ): PlotlyChartOptions => {
-  const { qcDatastream, sourceContextDatastream, beginDate, endDate } =
-    storeToRefs(useDataVisStore())
+  const {
+    qcDatastream,
+    sourceContextDatastream,
+    beginDate,
+    endDate,
+    editSessionWindow,
+  } = storeToRefs(useDataVisStore())
   const { hiddenAxisIds, hiddenTraceIds, plotlyRef } = storeToRefs(
     usePlotlyStore()
   )
-  const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
   const { isPlotPreview } = storeToRefs(useUIStore())
   const isPreview = isPlotPreview?.value ?? false
   const hiddenAxes = hiddenAxisIds?.value ?? new Set<string>()
@@ -440,6 +521,8 @@ export const createPlotlyOption = (
     : Number(endDate?.value?.getTime?.())
   const densityRangeValid =
     Number.isFinite(densityStart) && Number.isFinite(densityEnd)
+
+  const editWindow = toEditWindow(editSessionWindow?.value)
 
   const traces: AppPlotlyTrace[] = []
   const yaxis: Partial<Layout> = {}
@@ -506,10 +589,18 @@ export const createPlotlyOption = (
     // with NaN-y breaks at gaps; otherwise the series renders as a pure
     // scatter plot. Either way the main trace owns selection and point
     // indices, so its `line` attribute would be dead config, so it is omitted.
+    // The source is drawn only around the session window: its points
+    // before and after it, as views of the record, with a gap in between.
+    // Every other series is one piece.
+    const whole = { x: xData ?? [], y: yData ?? [] } as Line
+    const pieces: Line[] = isSource
+      ? Object.values(splitAroundWindow(whole, editWindow))
+      : [whole]
+
     const trace: AppPlotlyTrace = {
       id: s.id,
-      x: xData,
-      y: yData,
+      x: (isSource ? pieces[0]!.x : xData) as PlotData['x'],
+      y: (isSource ? pieces[0]!.y : yData) as PlotData['y'],
       yaxis: axisRef,
       type: 'scattergl',
       mode: 'markers',
@@ -534,8 +625,8 @@ export const createPlotlyOption = (
       )
 
     } else if (isSource) {
-      // Read-only raw-source context: grey, shares the edit target's axis,
-      // never gets its own axis entry or selection styling.
+      // Read-only raw-source context: light grey, shares the edit target's
+      // axis, never gets its own axis entry or selection styling.
       trace.marker = { ...(trace.marker ?? {}), color: SOURCE_CONTEXT_COLOR }
       trace.unselected = { marker: { opacity: markerOpacity } }
 
@@ -598,6 +689,17 @@ export const createPlotlyOption = (
     }
 
     traces.push(trace)
+    // The pieces after the first draw their points as companions of the
+    // main trace, which keeps the series id.
+    for (const piece of pieces.slice(1)) {
+      const { id: _id, ...rest } = trace
+      traces.push({
+        ...rest,
+        x: piece.x as PlotData['x'],
+        y: piece.y as PlotData['y'],
+        _partOf: s.id,
+      })
+    }
 
     // Gap-aware line rendering. When the source datastream declares an
     // intended cadence, a sibling overlay trace draws the connecting
@@ -608,30 +710,49 @@ export const createPlotlyOption = (
     // an overlay is enough. The overlay carries no `id`, so
     // selection/lookup logic that finds traces by datastream id keeps
     // targeting the main trace and its stable point indices.
+    // One overlay per piece, so no line crosses the source's window gap.
+    // Pieces without a gap stay views of the record.
     if (hasLineFallback && spacingMs && xData?.length && yData?.length) {
-      const gaps = findGapIndices(xData as ArrayLike<number>, spacingMs)
-      const broken = insertGapBreaks(
-        xData as ArrayLike<number>,
-        yData as ArrayLike<number>,
-        gaps
+      const lineColor = isQc
+        ? COLORS[0]
+        : isSource
+          ? SOURCE_CONTEXT_COLOR
+          : color
+      // The source also joins the edit target at the window edges, so the
+      // line runs on into it. Always present so the trace count holds.
+      const edit = seriesArray.find((e) => e.id === editId)?.data
+      const lines: Line[] = pieces.map((piece) =>
+        insertGapBreaks(piece.x, piece.y, findGapIndices(piece.x, spacingMs))
       )
-      const overlay: AppPlotlyTrace = {
-        x: broken.x as unknown as PlotData['x'],
-        y: broken.y as unknown as PlotData['y'],
-        yaxis: axisRef,
-        type: 'scattergl',
-        mode: 'lines',
-        hoverinfo: 'skip',
-        showLegend: false,
-        line: { color: isQc ? COLORS[0] : isSource ? SOURCE_CONTEXT_COLOR : color },
-        _isGapOverlay: true,
-        _gapOverlayFor: s.id,
+      if (isSource) {
+        lines.push(
+          bridgeAcrossWindow(
+            pieces[0]!,
+            pieces[1]!,
+            { x: edit?.dataX ?? [], y: edit?.dataY ?? [] } as Line,
+            spacingMs
+          )
+        )
       }
-      // The eye toggle hides marker + gap overlay together; mirror
-      // the main trace's visibility flag on the overlay so a hidden
-      // series doesn't leak its connecting line through.
-      if (!isTraceVisible) overlay.visible = false
-      traces.push(overlay)
+      for (const line of lines) {
+        const overlay: AppPlotlyTrace = {
+          x: line.x as unknown as PlotData['x'],
+          y: line.y as unknown as PlotData['y'],
+          yaxis: axisRef,
+          type: 'scattergl',
+          mode: 'lines',
+          hoverinfo: 'skip',
+          showLegend: false,
+          line: { color: lineColor },
+          _isGapOverlay: true,
+          _partOf: s.id,
+        }
+        // The eye toggle hides marker + gap overlay together; mirror
+        // the main trace's visibility flag on the overlay so a hidden
+        // series doesn't leak its connecting line through.
+        if (!isTraceVisible) overlay.visible = false
+        traces.push(overlay)
+      }
     }
   })
 
@@ -695,31 +816,6 @@ export const createPlotlyOption = (
       ? { l: 24, r: 24, t: 28, b: 64, pad: 0 }
       : { l: 24, r: 24, t: 32, b: 64, pad: 0 },
     showlegend: false,
-  }
-
-  // Shade the session window while editing: the viewed session takes
-  // precedence over the in-progress one (viewing history overrides the
-  // live session's own window).
-  const editWindow = qcDatastream?.value
-    ? (viewedSession?.value ?? inProgressSession?.value)
-    : null
-  if (editWindow) {
-    layout.shapes = [
-      {
-        name: EDIT_WINDOW_SHAPE_NAME,
-        type: 'rect',
-        xref: 'x',
-        yref: 'paper',
-        x0: Date.parse(editWindow.phenomenonTimeStart),
-        x1: Date.parse(editWindow.phenomenonTimeEnd),
-        y0: 0,
-        y1: 1,
-        fillcolor: 'rgba(25, 118, 210, 0.07)',
-        line: { width: 0 },
-        layer: 'below',
-        editable: false,
-      } as Partial<Shape>,
-    ]
   }
 
   // Modebar buttons. `isPreview` drops select/lasso and the Fit buttons.

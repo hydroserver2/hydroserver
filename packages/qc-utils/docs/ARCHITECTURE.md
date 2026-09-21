@@ -89,8 +89,9 @@ unit tests.
 
 The record holds the full series in `rawData`, but `dataX` / `dataY` (the
 operation surface) carry only the active **window**. `applyWindow(begin,
-end)` slices `rawData` into `dataX` / `dataY`; `reload()` restores that
-windowed baseline. A window change clears history — operations only ever see
+end, rawData?)` slices `rawData` into `dataX` / `dataY`, optionally taking
+new `rawData` first (a cache that grew); `reload()` restores that windowed
+baseline. A window or data change clears history — operations only ever see
 data inside the current window, so a new window starts from a fresh QC
 baseline.
 

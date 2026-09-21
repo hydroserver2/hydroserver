@@ -83,11 +83,11 @@ export const handleNewPlot = async (
     }
     for (const trace of plotlyOptions.value.traces) {
       const t = trace as AppPlotlyTrace
-      // Gap overlays expose `_gapOverlayFor` instead of `id` so the
+      // Gap overlays expose `_partOf` instead of `id` so the
       // selection-by-id lookup keeps targeting the main trace; we still
       // want them to inherit the user's hide/show choice so the line
       // disappears with the markers it shadows.
-      const lookupId = t.id ?? t._gapOverlayFor
+      const lookupId = t.id ?? t._partOf
       if (!lookupId) continue
       const carried = visibleBySeriesId[lookupId]
       if (carried !== undefined) {
@@ -119,7 +119,9 @@ export const handleNewPlot = async (
     const yRangesBySeriesId: Record<string, Array<string | number>> = {}
     for (const trace of plotlyRef.value.data) {
       const t = trace as AppPlotlyTrace
-      if (!t.id) continue
+      // An empty trace's axis sits on Plotly's default range, not a view the
+      // user chose; carrying it would push the new data off the plot.
+      if (!t.id || !(t.x as ArrayLike<unknown> | undefined)?.length) continue
       const key = yAxisKey(t.yaxis as string | undefined)
       const range = (oldLayout[key] as Partial<LayoutAxis> | undefined)
         ?.range as Array<string | number> | undefined
@@ -140,9 +142,8 @@ export const handleNewPlot = async (
     }
   }
 
-  // A re-plot keeps the shapes other writers own (the staged range band);
-  // `createPlotlyOption` only rebuilds the session window band. A first
-  // mount has no live plot to read them from.
+  // A re-plot keeps the live staged range band, which `createPlotlyOption`
+  // doesn't build. A first mount has no live plot to read it from.
   const layout = element
     ? plotlyOptions.value.layout
     : withLiveShapes(plotlyOptions.value.layout, plotlyRef.value?.layout)

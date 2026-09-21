@@ -80,39 +80,26 @@ describe('handleNewPlot', () => {
     expect(typeof handleNewPlot).toBe('function')
   })
 
-  it('carries other writers shapes through a re-plot', async () => {
+  it('carries the live stage band through a re-plot', async () => {
     const { handleNewPlot } = await import('@/utils/plotting/events')
     plotlyRef.value = fakeGraphDiv({
-      shapes: [
-        { name: 'stage', type: 'rect' },
-        { name: 'edit-window', type: 'rect', x0: 1 },
-      ],
+      shapes: [{ name: 'stage', type: 'rect' }],
     })
-    plotlyOptions.value = {
-      traces: [],
-      layout: { shapes: [{ name: 'edit-window', type: 'rect', x0: 2 }] },
-      config: {},
-    }
+    plotlyOptions.value = { traces: [], layout: {}, config: {} }
 
     await handleNewPlot()
 
     const layout = newPlot.mock.calls[0]?.[2] as { shapes: any[] }
-    // The stage band survives; the window band is replaced by the fresh one.
-    expect(layout.shapes.map((s) => s.name)).toEqual(['stage', 'edit-window'])
-    expect(layout.shapes.find((s) => s.name === 'edit-window').x0).toBe(2)
+    expect(layout.shapes.map((s) => s.name)).toEqual(['stage'])
   })
 
   it('draws a first mount with the layout it was given', async () => {
     const { handleNewPlot } = await import('@/utils/plotting/events')
-    plotlyOptions.value = {
-      traces: [],
-      layout: { shapes: [{ name: 'edit-window', type: 'rect' }] },
-      config: {},
-    }
+    const layout = { dragmode: 'pan' }
+    plotlyOptions.value = { traces: [], layout, config: {} }
 
     await handleNewPlot(fakeGraphDiv({}) as unknown as HTMLElement)
 
-    const layout = newPlot.mock.calls[0]?.[2] as { shapes: any[] }
-    expect(layout.shapes.map((s) => s.name)).toEqual(['edit-window'])
+    expect(newPlot.mock.calls[0]?.[2]).toStrictEqual(layout)
   })
 })

@@ -35,6 +35,8 @@
 
       <v-divider />
 
+      <!-- While editing, the Context menu above the plot sets the range. -->
+      <template v-if="!qcDatastream">
       <div
         class="select-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
         role="button"
@@ -55,6 +57,7 @@
       </div>
 
       <v-divider />
+      </template>
 
       <div
         class="select-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
@@ -93,6 +96,10 @@
 import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
 import DatastreamFilters from '@/components/VisualizeData/DatastreamFilters.vue'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
+import { storeToRefs } from 'pinia'
+import { useDataVisStore } from '@/store/dataVisualization'
+
+const { qcDatastream } = storeToRefs(useDataVisStore())
 
 const { size: drawerWidth, onStart: startDrag, dragging } = useResizable({
   initial: 320,

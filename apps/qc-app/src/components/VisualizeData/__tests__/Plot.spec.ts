@@ -47,6 +47,9 @@ vi.mock('@/store/dataVisualization', () => ({
       hasSelectionShape: ref(false),
       qcDatastream,
       trackPlotWork,
+      contextPresetId: ref(1),
+      showSourceContext: ref(true),
+      setShowSourceContext: vi.fn(),
     }),
 }))
 

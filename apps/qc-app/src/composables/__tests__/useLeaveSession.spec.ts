@@ -22,11 +22,11 @@ const {
 } = vi.hoisted(() => {
   const { ref: r } = require('vue') as typeof import('vue')
   return {
-    qcDatastream: r<{ id: string } | null>(null),
+    qcDatastream: r<{ id: string; name?: string } | null>(null),
     resumeDatastreamId: r<string | null>(null),
     historyId: r<string | null>('h-1'),
     sessions: r<Array<{ id: string; dependencyIds?: string[] }>>([]),
-    inProgressSession: r<{ id: string } | null>(null),
+    inProgressSession: r<{ id: string; name?: string } | null>(null),
     isReadOnly: r(false),
     hasSessionOperations: r(false),
     hasUnsavedChanges: r(false),
@@ -92,7 +92,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 /** Nothing saved, nothing unsaved: an untouched in-progress session. */
 function emptySession() {
-  qcDatastream.value = { id: 'mgd-1' }
+  qcDatastream.value = { id: 'mgd-1', name: 'Temp (QC)' }
   inProgressSession.value = { id: 'qcs-1' }
   sessions.value = [{ id: 'qcs-1' }]
   hasSessionOperations.value = false
@@ -102,7 +102,7 @@ function emptySession() {
 beforeEach(() => {
   createTestPinia()
   vi.clearAllMocks()
-  qcDatastream.value = { id: 'mgd-1' }
+  qcDatastream.value = { id: 'mgd-1', name: 'Temp (QC)' }
   resumeDatastreamId.value = 'mgd-1'
   historyId.value = 'h-1'
   sessions.value = []
@@ -166,6 +166,7 @@ describe('requestLeave', () => {
 
     expect(leavePrompt.value).toEqual({
       kind: 'unsaved',
+      datastreamName: 'Temp (QC)',
       unsavedCount: 3,
       canSave: true,
     })
