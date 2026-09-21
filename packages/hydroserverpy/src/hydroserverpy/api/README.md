@@ -516,7 +516,7 @@ result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-0000
 ```python
 # Create a new result qualifier on HydroServer
 new_result_qualifier = hs_api.resultqualifiers.create(
-    code='PF',
+    name='PF',
     description='Power Failure',
     workspace='00000000-0000-0000-0000-000000000000'
 )
@@ -530,7 +530,7 @@ Each of the methods above will return one or more ResultQualifier objects. The e
 result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Update one or more properties of the result qualifier.
-result_qualifier.code = 'Updated Result Qualifier Code'
+result_qualifier.name = 'Updated Result Qualifier Name'
 
 # Save the changes back to HydroServer.
 result_qualifier.save()

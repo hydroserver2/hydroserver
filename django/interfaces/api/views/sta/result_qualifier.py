@@ -8,13 +8,15 @@ from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ResultQualifierAPIService
 from interfaces.api.schemas import (
     ResultQualifierResponse,
-    ResultQualifierQueryParameters,
-    ResultQualifierItemQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
     PaginatedResponse,
     ItemResponse,
     CreatedResponse,
+)
+from interfaces.api.schemas.sta.controlled_vocabulary import (
+    ControlledVocabularyQueryParameters,
+    ControlledVocabularyItemQueryParameters,
 )
 
 result_qualifier_router = Router(tags=["Result Qualifiers"])
@@ -33,7 +35,7 @@ result_qualifier_service = ResultQualifierAPIService()
 )
 def get_result_qualifiers(
     request: HydroServerHttpRequest,
-    query: Query[ResultQualifierQueryParameters],
+    query: Query[ControlledVocabularyQueryParameters],
 ):
     """
     Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.
@@ -89,7 +91,7 @@ def create_result_qualifier(
 def get_result_qualifier(
     request: HydroServerHttpRequest,
     result_qualifier_id: Path[uuid.UUID],
-    query: Query[ResultQualifierItemQueryParameters],
+    query: Query[ControlledVocabularyItemQueryParameters],
 ):
     """
     Get a Result Qualifier.

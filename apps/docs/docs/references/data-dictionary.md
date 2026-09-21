@@ -131,10 +131,11 @@ Data qualifying comments added to individual data values to qualify their interp
 | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the ResultQualifier.                                                                         | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ResultQualifier. If omitted, the ResultQualifier is shared system-wide. | UUID      |
-| M        | code         | A brief text code identifying the ResultQualifier.                                                                               | String    |
+| M        | name         | A brief text name identifying the ResultQualifier.                                                                               | String    |
 | M        | description  | A longer text description or explanation of the ResultQualifier.                                                                 | Text      |
+| M        | is_active    | Whether the ResultQualifier is active and available for use.                                                                     | Boolean   |
 
-**NOTE**: The database enforces a unique constraint on `(code, workspace_id)`, including the system-wide `NULL` workspace scope.
+**NOTE**: The database enforces a unique constraint on `(name, workspace_id)`, including the system-wide `NULL` workspace scope.
 
 ## Method
 

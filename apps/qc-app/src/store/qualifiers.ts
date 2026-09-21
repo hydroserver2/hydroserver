@@ -6,7 +6,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 
 export interface Qualifier {
   id: string
-  code: string
+  name: string
   description: string
   /** Server-side workspace scope. Present on records loaded from
    *  `hs.resultQualifiers.list`; empty on the (rare) unsaved local
@@ -58,7 +58,7 @@ export const useQualifierStore = defineStore(
         const list = (response.ok ? response.data : []) as ResultQualifier[]
         qualifiers.value = list.map((q) => ({
           id: q.id,
-          code: q.code,
+          name: q.name,
           description: q.description,
           workspaceId: q.workspaceId,
         }))
@@ -101,11 +101,11 @@ export const useQualifierStore = defineStore(
      * should wait until a workspace is active.
      */
     async function createQualifier(
-      code: string,
+      name: string,
       description: string
     ): Promise<Qualifier> {
       const existing = qualifiers.value.find(
-        (q) => q.code.toLowerCase() === code.toLowerCase()
+        (q) => q.name.toLowerCase() === name.toLowerCase()
       )
       if (existing) return existing
 
@@ -114,7 +114,7 @@ export const useQualifierStore = defineStore(
       if (hs.value && selectedWorkspaceId.value) {
         try {
           const body = new ResultQualifier()
-          body.code = code.trim()
+          body.name = name.trim()
           body.description = description.trim()
           body.workspaceId = selectedWorkspaceId.value
           const response = await hs.value.resultQualifiers.create(body)
@@ -124,7 +124,7 @@ export const useQualifierStore = defineStore(
           if (saved?.id) {
             const q: Qualifier = {
               id: saved.id,
-              code: saved.code,
+              name: saved.name,
               description: saved.description,
               workspaceId: saved.workspaceId,
             }
@@ -140,7 +140,7 @@ export const useQualifierStore = defineStore(
       // server call failed or no workspace was active.
       const fallback: Qualifier = {
         id: `local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-        code: code.trim(),
+        name: name.trim(),
         description: description.trim(),
       }
       qualifiers.value.push(fallback)

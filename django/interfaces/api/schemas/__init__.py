@@ -75,8 +75,6 @@ from interfaces.api.schemas.sta.processing_level import (
 )
 from interfaces.api.schemas.sta.result_qualifier import (
     ResultQualifierResponse,
-    ResultQualifierQueryParameters,
-    ResultQualifierItemQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )

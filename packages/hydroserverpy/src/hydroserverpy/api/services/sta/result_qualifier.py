@@ -34,8 +34,9 @@ class ResultQualifierService(HydroServerBaseService):
 
     def create(
         self,
-        code: str,
+        name: str,
         description: Optional[str] = None,
+        is_active: Optional[bool] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "ResultQualifier":
@@ -43,8 +44,9 @@ class ResultQualifierService(HydroServerBaseService):
 
         body = {
             "id": normalize_uuid(uid),
-            "code": code,
+            "name": name,
             "description": description,
+            "isActive": is_active,
             "workspaceId": normalize_uuid(workspace),
         }
 
@@ -53,14 +55,16 @@ class ResultQualifierService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
-        code: str = ...,
+        name: str = ...,
         description: str = ...,
+        is_active: bool = ...,
     ) -> "ResultQualifier":
         """Update a result qualifier."""
 
         body = {
-            "code": code,
+            "name": name,
             "description": description,
+            "isActive": is_active,
         }
 
         return super().update(uid=str(uid), **body)

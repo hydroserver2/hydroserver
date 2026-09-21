@@ -336,15 +336,16 @@ hs_api.processinglevels.create(code, name, description, definition=None, workspa
 | Property | Type | Editable |
 |---|---|---|
 | `uid` | `UUID` | No |
-| `code` | `str` | Yes |
+| `name` | `str` | Yes |
 | `description` | `str` | Yes |
+| `is_active` | `bool` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
 hs_api.resultqualifiers.list(workspace=None) -> HydroServerCollection[ResultQualifier]
 hs_api.resultqualifiers.get(uid) -> ResultQualifier
-hs_api.resultqualifiers.create(workspace, code, description, uid=None) -> ResultQualifier
+hs_api.resultqualifiers.create(name, description=None, is_active=None, workspace=None, uid=None) -> ResultQualifier
 ```
 
 ---

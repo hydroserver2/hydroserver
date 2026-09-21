@@ -18,18 +18,19 @@ class ResultQualifier(models.Model):
         blank=True,
         null=True,
     )
-    code = models.CharField(max_length=255)
-    description = models.TextField()
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
     search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):
-        return f"{self.code} — {self.id}"
+        return f"{self.name} — {self.id}"
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["code", "workspace_id"],
-                name="unique_scoped_result_qualifier_code",
+                fields=["name", "workspace_id"],
+                name="unique_scoped_result_qualifier_name",
                 nulls_distinct=False,
             ),
         ]

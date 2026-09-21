@@ -65,7 +65,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         }),
         hs.methods.listAllItems({ sortby: ['name'], ...workspaceFilter }),
         hs.resultQualifiers.listAllItems({
-          sortby: ['code'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
       ])

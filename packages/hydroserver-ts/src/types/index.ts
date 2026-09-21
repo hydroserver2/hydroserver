@@ -270,14 +270,16 @@ export class ProcessingLevel {
 export class ResultQualifier {
   id: string
   workspaceId: string
-  code: string
+  name: string
   description: string
+  isActive: boolean
 
   constructor() {
     this.id = ''
     this.workspaceId = ''
-    this.code = ''
+    this.name = ''
     this.description = ''
+    this.isActive = true
   }
 }
 

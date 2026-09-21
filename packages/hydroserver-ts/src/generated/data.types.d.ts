@@ -6294,102 +6294,53 @@ export interface components {
                 number
             ][];
         };
-        /** ResultQualifierItemQueryParameters */
-        ResultQualifierItemQueryParameters: {
-            /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: "workspace"[];
-            /**
-             * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
-             */
-            properties?: ("id" | "workspaceId" | "code" | "description")[];
-        };
         /** ResultQualifierPatchBody */
         ResultQualifierPatchBody: {
-            /** Code */
-            code?: string;
             /** Description */
             description?: string;
+            /** Isactive */
+            isActive?: boolean;
+            /** Name */
+            name?: string;
         };
         /** ResultQualifierPostBody */
         ResultQualifierPostBody: {
-            /** Code */
-            code: string;
-            /** Description */
+            /**
+             * Description
+             * @default
+             */
             description: string;
             /** Id */
             id?: string | null;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId?: string | null;
         };
-        /** ResultQualifierQueryParameters */
-        ResultQualifierQueryParameters: {
-            /**
-             * Datastream Id
-             * @description Filter result qualifiers by datastream ID.
-             * @default []
-             */
-            datastream_id: (string | "null")[];
-            /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: "workspace"[];
-            /**
-             * Limit
-             * @description The maximum number of items to return.
-             * @default 100
-             */
-            limit: number | null;
-            /**
-             * Monitoring Site Id
-             * @description Filter result qualifiers by monitoring_site ID.
-             * @default []
-             */
-            monitoring_site_id: (string | "null")[];
-            /**
-             * Offset
-             * @description Number of items to skip.
-             * @default 0
-             */
-            offset: number | null;
-            /**
-             * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
-             */
-            properties?: ("id" | "workspaceId" | "code" | "description")[];
-            /**
-             * Q
-             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
-             */
-            q?: string | null;
-            /**
-             * Sortby
-             * @description Select one or more fields to sort the response by.
-             * @default []
-             */
-            sortby: ("code" | "-code")[] | null;
-            /**
-             * Workspace Id
-             * @description Filter result qualifiers by workspace ID.
-             * @default []
-             */
-            workspace_id: (string | "null")[];
-        };
         /** ResultQualifierResponse */
         ResultQualifierResponse: {
-            /** Code */
-            code: string;
-            /** Description */
+            /**
+             * Description
+             * @default
+             */
             description: string;
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            /**
+             * Isactive
+             * @default true
+             */
+            isActive: boolean;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId: string | null;
         };
@@ -14504,7 +14455,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "code" | "description")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
@@ -14512,15 +14463,13 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("code" | "-code")[] | null;
+                sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter result qualifiers by workspace ID. */
+                /** @description Filter terms by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter result qualifiers by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
-                /** @description Filter result qualifiers by datastream ID. */
-                datastream_id?: (string | "null")[];
+                /** @description Filter terms by active status. */
+                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -14603,7 +14552,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "code" | "description")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
             };

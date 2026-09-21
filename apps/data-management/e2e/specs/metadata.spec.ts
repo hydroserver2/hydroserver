@@ -136,7 +136,7 @@ test.describe('metadata management', () => {
     await expect(deleteButton).toBeVisible()
 
     await editButton.click()
-    await page.getByLabel('Code').fill(renamedCode)
+    await page.getByLabel('Name').fill(renamedCode)
     await page.getByRole('button', { name: 'Update', exact: true }).click()
 
     const renamedRow = allTable.locator('tr').filter({ hasText: renamedCode })
@@ -421,7 +421,7 @@ test.describe('metadata management', () => {
       .getByRole('button', { name: /Add new result qualifier/i })
       .click()
 
-    await page.getByLabel('Code').fill(qualifierCode)
+    await page.getByLabel('Name').fill(qualifierCode)
     await page
       .getByLabel('Description')
       .fill(
@@ -438,7 +438,7 @@ test.describe('metadata management', () => {
     await qualifierRow
       .getByRole('button', { name: 'Edit metadata item', exact: true })
       .click()
-    await page.getByLabel('Code').fill(renamedCode)
+    await page.getByLabel('Name').fill(renamedCode)
     await page.getByRole('button', { name: 'Update' }).click()
 
     const renamedRow = page

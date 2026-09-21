@@ -12107,50 +12107,19 @@
         "title": "RatingCurveResponse",
         "type": "object"
       },
-      "ResultQualifierItemQueryParameters": {
-        "properties": {
-          "include": {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "workspace"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Include",
-            "type": "array"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "code",
-                "description"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
-          }
-        },
-        "title": "ResultQualifierItemQueryParameters",
-        "type": "object"
-      },
       "ResultQualifierPatchBody": {
         "properties": {
-          "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
-          },
           "description": {
             "title": "Description",
+            "type": "string"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           }
         },
@@ -12159,12 +12128,8 @@
       },
       "ResultQualifierPostBody": {
         "properties": {
-          "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
-          },
           "description": {
+            "default": "",
             "title": "Description",
             "type": "string"
           },
@@ -12180,6 +12145,16 @@
             ],
             "title": "Id"
           },
+          "isActive": {
+            "default": true,
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -12194,170 +12169,15 @@
           }
         },
         "required": [
-          "code",
-          "description"
+          "name"
         ],
         "title": "ResultQualifierPostBody",
         "type": "object"
       },
-      "ResultQualifierQueryParameters": {
-        "properties": {
-          "datastream_id": {
-            "default": [],
-            "description": "Filter result qualifiers by datastream ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Datastream Id",
-            "type": "array"
-          },
-          "include": {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "workspace"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Include",
-            "type": "array"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
-          },
-          "monitoring_site_id": {
-            "default": [],
-            "description": "Filter result qualifiers by monitoring_site ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Monitoring Site Id",
-            "type": "array"
-          },
-          "offset": {
-            "anyOf": [
-              {
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 0,
-            "description": "Number of items to skip.",
-            "title": "Offset"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "code",
-                "description"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
-          },
-          "q": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
-            "title": "Q"
-          },
-          "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "code",
-                    "-code"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
-          },
-          "workspace_id": {
-            "default": [],
-            "description": "Filter result qualifiers by workspace ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Workspace Id",
-            "type": "array"
-          }
-        },
-        "title": "ResultQualifierQueryParameters",
-        "type": "object"
-      },
       "ResultQualifierResponse": {
         "properties": {
-          "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
-          },
           "description": {
+            "default": "",
             "title": "Description",
             "type": "string"
           },
@@ -12366,6 +12186,16 @@
             "title": "Id",
             "type": "string"
           },
+          "isActive": {
+            "default": true,
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -12380,8 +12210,7 @@
           }
         },
         "required": [
-          "code",
-          "description",
+          "name",
           "id",
           "workspaceId"
         ],
@@ -32590,8 +32419,9 @@
                 "enum": [
                   "id",
                   "workspaceId",
-                  "code",
-                  "description"
+                  "name",
+                  "description",
+                  "isActive"
                 ],
                 "type": "string"
               },
@@ -32670,8 +32500,8 @@
                 {
                   "items": {
                     "enum": [
-                      "code",
-                      "-code"
+                      "name",
+                      "-name"
                     ],
                     "type": "string"
                   },
@@ -32705,13 +32535,13 @@
             }
           },
           {
-            "description": "Filter result qualifiers by workspace ID.",
+            "description": "Filter terms by workspace ID.",
             "in": "query",
             "name": "workspace_id",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter result qualifiers by workspace ID.",
+              "description": "Filter terms by workspace ID.",
               "items": {
                 "anyOf": [
                   {
@@ -32729,51 +32559,21 @@
             }
           },
           {
-            "description": "Filter result qualifiers by monitoring_site ID.",
+            "description": "Filter terms by active status.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "is_active",
             "required": false,
             "schema": {
-              "default": [],
-              "description": "Filter result qualifiers by monitoring_site ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Monitoring Site Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter result qualifiers by datastream ID.",
-            "in": "query",
-            "name": "datastream_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter result qualifiers by datastream ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Datastream Id",
-              "type": "array"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter terms by active status.",
+              "title": "Is Active"
             }
           }
         ],
@@ -32986,8 +32786,9 @@
                 "enum": [
                   "id",
                   "workspaceId",
-                  "code",
-                  "description"
+                  "name",
+                  "description",
+                  "isActive"
                 ],
                 "type": "string"
               },

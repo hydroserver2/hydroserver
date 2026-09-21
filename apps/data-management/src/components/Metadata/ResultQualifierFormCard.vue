@@ -15,10 +15,10 @@
     >
       <v-card-text>
         <v-text-field
-          v-model="item.code"
+          v-model="item.name"
           class="required-label"
-          label="Code"
-          :rules="rules.requiredCode"
+          label="Name"
+          :rules="rules.requiredAndMaxLength255"
         ></v-text-field>
 
         <v-textarea
