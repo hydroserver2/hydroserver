@@ -58,7 +58,7 @@ def _dt(s):
 def _loaded_timestamps(client):
     """Return the timestamps from the most recent load_observations call."""
     chunk = client.datastreams.load_observations.call_args.kwargs["observations"]
-    return list(chunk["timestamp"])
+    return list(chunk["phenomenon_time"])
 
 
 # ---------------------------------------------------------------------------
