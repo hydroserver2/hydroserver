@@ -19,10 +19,10 @@ class Method(models.Model):
         null=True,
     )
     name = models.CharField(max_length=255)
-    code = models.CharField(max_length=50, blank=True, null=True)
+    code = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=100)
     description = models.TextField()
-    definition = models.CharField(max_length=500, blank=True, null=True)
+    definition = models.URLField(max_length=2000, blank=True, null=True)
     sensor_model = models.CharField(max_length=255, null=True, blank=True)
     sensor_model_manufacturer = models.CharField(
         max_length=255, null=True, blank=True

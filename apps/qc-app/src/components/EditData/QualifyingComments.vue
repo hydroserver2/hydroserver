@@ -47,13 +47,13 @@
         </div>
         <div class="d-flex flex-wrap ga-1">
           <v-chip
-            v-for="code in existingAtSelection"
-            :key="code"
+            v-for="name in existingAtSelection"
+            :key="name"
             size="x-small"
             color="primary"
             variant="tonal"
           >
-            {{ code }}
+            {{ name }}
           </v-chip>
         </div>
       </div>
@@ -78,17 +78,17 @@
       <v-divider />
       <v-card-text>
         <v-text-field
-          v-model="newCode"
-          label="Code"
-          density="comfortable"
-          variant="outlined"
-          :rules="[(v: string) => !!v?.trim() || 'Code is required']"
+          v-model="newName"
+          label="Name"
+          class="required-label"
+          maxlength="255"
+          :rules="[(v: string) => !!v?.trim() || 'Name is required']"
         />
         <v-text-field
           v-model="newDescription"
           label="Description"
-          density="comfortable"
-          variant="outlined"
+          class="required-label"
+          :rules="[(v: string) => !!v?.trim() || 'Description is required']"
         />
       </v-card-text>
       <v-card-actions>
@@ -96,7 +96,7 @@
         <v-btn-cancel @click="closeNewQualifier">Cancel</v-btn-cancel>
         <v-btn
           color="primary"
-          :disabled="!newCode.trim()"
+          :disabled="!newName.trim() || newName.trim().length > 255 || !newDescription.trim()"
           @click="onCreateQualifier"
         >Create</v-btn>
       </v-card-actions>
@@ -127,27 +127,27 @@ const { user } = storeToRefs(useUserStore())
 
 const selectedQualifierIds = ref<string[]>([])
 const openNewQualifier = ref(false)
-const newCode = ref('')
+const newName = ref('')
 const newDescription = ref('')
 
 const qualifierItems = computed(() =>
   qualifiers.value.map((q) => ({
     id: q.id,
-    label: q.description ? `${q.code} - ${q.description}` : q.code,
+    label: q.description ? `${q.name} - ${q.description}` : q.name,
   }))
 )
 
 const existingAtSelection = computed(() => {
   if (!qcDatastream.value?.id || !selectedData.value?.length) return []
-  const codes = new Set<string>()
+  const names = new Set<string>()
   for (const i of selectedData.value) {
     const apps = qualifierStore.getApplicationsAtIndex(qcDatastream.value.id, i)
     for (const a of apps) {
       const q = qualifierStore.qualifierById[a.qualifierId]
-      if (q) codes.add(q.code)
+      if (q) names.add(q.name)
     }
   }
-  return Array.from(codes).sort()
+  return Array.from(names).sort()
 })
 
 const canApply = computed(
@@ -165,14 +165,14 @@ const appliedByLabel = computed(() => {
 
 function closeNewQualifier() {
   openNewQualifier.value = false
-  newCode.value = ''
+  newName.value = ''
   newDescription.value = ''
 }
 
 async function onCreateQualifier() {
-  const code = newCode.value.trim()
-  if (!code) return
-  const q = await qualifierStore.createQualifier(code, newDescription.value)
+  const name = newName.value.trim()
+  if (!name || name.length > 255 || !newDescription.value.trim()) return
+  const q = await qualifierStore.createQualifier(name, newDescription.value)
   if (!selectedQualifierIds.value.includes(q.id)) {
     selectedQualifierIds.value = [...selectedQualifierIds.value, q.id]
   }

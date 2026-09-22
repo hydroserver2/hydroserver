@@ -19,10 +19,10 @@ from interfaces.api.schemas import (
 
 class MethodFields(Schema):
     name: str = Field(..., max_length=255)
-    code: Optional[str] = Field(None, max_length=50)
+    code: Optional[str] = Field(None, max_length=255)
     type: str = Field(..., max_length=100)
     description: str
-    definition: Optional[str] = Field(None, max_length=500)
+    definition: Optional[str] = Field(None, max_length=2000)
     sensor_model: Optional[str] = Field(None, max_length=255)
     sensor_model_manufacturer: Optional[str] = Field(None, max_length=255)
     sensor_model_definition: Optional[str] = Field(None, max_length=500)

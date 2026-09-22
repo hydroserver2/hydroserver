@@ -952,9 +952,8 @@ const visibleDatastreams = computed(() => {
 
       const mapped = {
         ...d,
-        OPName: op ? `${op.name} (${op.code})` : '',
+        OPName: op?.name ?? '',
         observedPropertyName: op?.name ?? '',
-        processingLevelCode: pl?.code ?? '',
         processingLevelName: pl?.name ?? '',
         methodName: method?.name ?? '',
         unitName: unit?.name ?? '',

@@ -4824,7 +4824,7 @@
           "code": {
             "anyOf": [
               {
-                "maxLength": 50,
+                "maxLength": 255,
                 "type": "string"
               },
               {
@@ -4836,7 +4836,7 @@
           "definition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -4904,7 +4904,7 @@
           "code": {
             "anyOf": [
               {
-                "maxLength": 50,
+                "maxLength": 255,
                 "type": "string"
               },
               {
@@ -4916,7 +4916,7 @@
           "definition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5208,7 +5208,7 @@
           "code": {
             "anyOf": [
               {
-                "maxLength": 50,
+                "maxLength": 255,
                 "type": "string"
               },
               {
@@ -5220,7 +5220,7 @@
           "definition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -7742,13 +7742,21 @@
       "ObservedPropertyPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 500,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -7778,13 +7786,21 @@
       "ObservedPropertyPostBody": {
         "properties": {
           "code": {
-            "maxLength": 500,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -7836,7 +7852,6 @@
           "name",
           "description",
           "type",
-          "code",
           "workspaceId"
         ],
         "title": "ObservedPropertyPostBody",
@@ -8011,13 +8026,21 @@
       "ObservedPropertyResponse": {
         "properties": {
           "code": {
-            "maxLength": 500,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -8062,7 +8085,6 @@
           "name",
           "description",
           "type",
-          "code",
           "id"
         ],
         "title": "ObservedPropertyResponse",
@@ -9263,13 +9285,21 @@
       "ProcessingLevelPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -9294,13 +9324,21 @@
       "ProcessingLevelPostBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -9344,7 +9382,6 @@
           }
         },
         "required": [
-          "code",
           "name",
           "description"
         ],
@@ -9508,13 +9545,21 @@
       "ProcessingLevelResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -9551,7 +9596,6 @@
           }
         },
         "required": [
-          "code",
           "name",
           "description",
           "id",
@@ -10837,6 +10881,7 @@
               "enum": [
                 "id",
                 "workspaceId",
+                "name",
                 "code",
                 "description"
               ],
@@ -10853,12 +10898,24 @@
       "ResultQualifierPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "description": {
             "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           }
         },
@@ -10868,9 +10925,16 @@
       "ResultQualifierPostBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "description": {
             "title": "Description",
@@ -10888,6 +10952,11 @@
             ],
             "title": "Id"
           },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -10902,7 +10971,7 @@
           }
         },
         "required": [
-          "code",
+          "name",
           "description"
         ],
         "title": "ResultQualifierPostBody",
@@ -10995,6 +11064,7 @@
               "enum": [
                 "id",
                 "workspaceId",
+                "name",
                 "code",
                 "description"
               ],
@@ -11022,7 +11092,9 @@
                 "items": {
                   "enum": [
                     "code",
-                    "-code"
+                    "name",
+                    "-code",
+                    "-name"
                   ],
                   "type": "string"
                 },
@@ -11061,9 +11133,16 @@
       "ResultQualifierResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "description": {
             "title": "Description",
@@ -11072,6 +11151,11 @@
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
             "type": "string"
           },
           "workspaceId": {
@@ -11088,7 +11172,7 @@
           }
         },
         "required": [
-          "code",
+          "name",
           "description",
           "id",
           "workspaceId"
@@ -12172,6 +12256,7 @@
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -12204,6 +12289,7 @@
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -12430,6 +12516,7 @@
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -12748,9 +12835,16 @@
       "VisualizationObservedPropertyResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "id": {
             "format": "uuid",
@@ -12765,8 +12859,7 @@
         },
         "required": [
           "id",
-          "name",
-          "code"
+          "name"
         ],
         "title": "VisualizationObservedPropertyResponse",
         "type": "object"
@@ -28804,6 +28897,7 @@
                 "enum": [
                   "id",
                   "workspaceId",
+                  "name",
                   "code",
                   "description"
                 ],
@@ -28885,7 +28979,9 @@
                   "items": {
                     "enum": [
                       "code",
-                      "-code"
+                      "name",
+                      "-code",
+                      "-name"
                     ],
                     "type": "string"
                   },
@@ -29200,6 +29296,7 @@
                 "enum": [
                   "id",
                   "workspaceId",
+                  "name",
                   "code",
                   "description"
                 ],

@@ -190,7 +190,7 @@ export class Unit {
   workspaceId: string
   name: string
   symbol: string
-  definition: string
+  definition: string | null
   type: string
 
   constructor() {
@@ -208,9 +208,9 @@ export class Method {
   workspaceId: string
   name: string
   description: string
-  code: string
+  code: string | null
   type: string
-  definition: string
+  definition: string | null
   sensorModel: string
   sensorModelManufacturer: string
   sensorModelDefinition: string
@@ -233,10 +233,10 @@ export class ObservedProperty {
   id: string
   workspaceId: string
   name: string
-  definition: string
+  definition: string | null
   description: string
   type: string
-  code: string
+  code: string | null
 
   constructor() {
     this.id = ''
@@ -252,10 +252,10 @@ export class ObservedProperty {
 export class ProcessingLevel {
   id: string
   workspaceId: string
-  code: string
+  code: string | null
   name: string
   description: string
-  definition: string
+  definition: string | null
 
   constructor() {
     this.id = ''
@@ -268,12 +268,14 @@ export class ProcessingLevel {
 }
 
 export class ResultQualifier {
+  name: string
   id: string
   workspaceId: string
-  code: string
+  code: string | null
   description: string
 
   constructor() {
+    this.name = ''
     this.id = ''
     this.workspaceId = ''
     this.code = ''

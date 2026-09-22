@@ -149,9 +149,7 @@ const detailTitleId = useId()
 const selectedItem = computed(() =>
   props.items.find((item) => item.id === selectedId.value)
 )
-const titleKey = computed(() =>
-  props.kind === 'resultQualifier' ? 'code' : 'name'
-)
+const titleKey = 'name'
 const kindLabel = computed(
   () =>
     ({
@@ -164,8 +162,7 @@ const kindLabel = computed(
 )
 const fields = computed<Field[]>(() => {
   const result: Field[] = []
-  if (props.kind !== 'resultQualifier')
-    result.push({ key: 'name', label: 'Name' })
+  result.push({ key: 'name', label: 'Name' })
   if (['method', 'observedProperty', 'unit'].includes(props.kind)) {
     result.push({ key: 'type', label: 'Type' })
   }
@@ -194,7 +191,7 @@ const fields = computed<Field[]>(() => {
   return result
 })
 const headers = computed(() => [
-  { title: kindLabel.value, key: titleKey.value },
+  { title: kindLabel.value, key: titleKey },
   {
     title: 'Actions',
     key: 'actions',
@@ -202,7 +199,7 @@ const headers = computed(() => [
     align: 'end' as const,
   },
 ])
-const itemTitle = (item: T) => item[titleKey.value] || kindLabel.value
+const itemTitle = (item: T) => item[titleKey] || kindLabel.value
 const itemScope = (item: T) => item._scope ?? props.defaultScope
 const summaryFields: Record<MetadataKind, FieldKey[]> = {
   method: ['type', 'code'],
@@ -232,7 +229,7 @@ const filteredItems = computed(() => {
   )
 })
 
-function safeLink(value: string | undefined) {
+function safeLink(value: string | null | undefined) {
   if (!value) return undefined
   try {
     const url = new URL(value)

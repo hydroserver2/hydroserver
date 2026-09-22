@@ -95,6 +95,15 @@ afterEach(() => {
 })
 
 describe('metadata table UUIDs and read-only details', () => {
+  it('uses the qualifier name as its title without a definition field', async () => {
+    const wrapper = render(MetadataItemTable, { kind: 'resultQualifier' })
+    expect(wrapper.get('.hs-table-summary__title').text()).toBe(record.name)
+    await wrapper.get(`[data-testid="view-metadata-${record.id}"]`).trigger('click')
+    await flushPromises()
+    const definition = document.querySelector(`a[href="${record.definition}"]`)
+    expect(definition).toBeNull()
+  })
+
   it.each([
     ['methods', MethodTable],
     ['observedProperties', ObservedPropertyTable],

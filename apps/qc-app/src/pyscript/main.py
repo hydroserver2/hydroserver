@@ -64,7 +64,7 @@ class edit_service_wrapper():
         p[0], ISO_FORMAT)
       
       # extract qualifier codes
-      points[i][2] = [q.code for q in p[2]['resultQualifiers']]
+      points[i][2] = [q.name for q in p[2]['resultQualifiers']]
 
     return self.edit_service.add_points(points)
 

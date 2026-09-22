@@ -66,7 +66,7 @@ Once the datastream is created, it will be displayed in the list of datastreams 
 
 When an item does not exist in the dropdown list for method, observed property, unit, or processing level, it must be created before it can be used. This can be done by clicking on the green '+' next to those attributes. Each one has a metadata entry form that will pop up.
 
-It's helpful to consult the HydroServer data model and data dictionary documentation for help in better understanding the required and optional metadata for methods, observed properties, units, and processing levels.
+Every linked metadata item has a required **name** (up to 255 characters), which is the label shown in the frontend. Methods, observed properties, processing levels, and result qualifiers also require a free-text **description** and allow an optional **code** (up to 255 characters) for an external or organizational identifier. Units have neither description nor code. Methods, observed properties, processing levels, and units allow an optional **definition** URL (up to 2,000 characters) pointing to a vocabulary term, standard, or manual. Result qualifiers have no definition field. See the [data dictionary](/references/data-dictionary#metadata-field-conventions) for these conventions and the distinction between definition, link, and attachment URL.
 
 **NOTE**: Linked metadata can also be created via the Data Management --> Metadata management page in HydroServer. On the 'Manage metadata' page, you can set up all of your methods, observed properties, processing levels, and units before creating datastreams to make it easier and to enable choosing existing linked metadata from the drop down lists.
 

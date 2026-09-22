@@ -26,14 +26,14 @@
         <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="item.definition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-textarea
           v-model="item.description"
           class="required-label"
           label="Description"
-          :rules="rules.requiredDescription"
+          :rules="rules.required"
         ></v-textarea>
 
         <v-combobox
@@ -46,9 +46,8 @@
 
         <v-text-field
           v-model="item.code"
-          class="required-label"
-          label="Variable Code"
-          :rules="rules.requiredAndMaxLength500"
+          label="Code"
+          :rules="rules.maxLength(255)"
         />
       </v-card-text>
 

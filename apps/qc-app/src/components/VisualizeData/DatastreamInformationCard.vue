@@ -60,7 +60,7 @@
           :title="`Filter table by processing level: ${datastream.processingLevel.name}`"
           @click="filterByProcessingLevel"
         >
-          {{ datastream.processingLevel.code || '–' }}
+          {{ datastream.processingLevel.name || '–' }}
         </v-chip>
         <v-chip
           size="small"

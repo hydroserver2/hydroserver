@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class Unit(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     symbol: str = Field(..., max_length=255)
-    definition: Optional[str] = None
+    definition: Optional[str] = Field(None, max_length=2000)
     type: str = Field(..., max_length=255)
     workspace_id: Optional[uuid.UUID] = None
 

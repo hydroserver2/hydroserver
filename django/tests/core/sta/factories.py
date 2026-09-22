@@ -106,6 +106,7 @@ class ResultQualifierFactory(DjangoModelFactory):
         def __new__(cls, *args, **kwargs) -> ResultQualifier: ...
 
     workspace = factory.SubFactory(WorkspaceFactory)
+    name = factory.Sequence(lambda seq: f"Qualifier {seq}")
     code = factory.Sequence(lambda seq: f"RQ-{seq}")
     description = factory.Faker("sentence")
 

@@ -27,7 +27,7 @@
         <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="item.definition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
         <v-text-field
           v-model="item.type"

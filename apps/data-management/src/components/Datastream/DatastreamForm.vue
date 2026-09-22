@@ -706,7 +706,7 @@ const generateDefaultDescription = () => {
   )?.name
   const PL = processingLevels.value.find(
     (pl) => pl.id === datastream.value.processingLevelId
-  )?.code
+  )?.name
   const methodName = methods.value.find(
     (pl) => pl.id === datastream.value.methodId
   )?.name

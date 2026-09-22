@@ -182,7 +182,7 @@ class DatastreamLinkedResourceAdmin(admin.ModelAdmin):
 
 
 class ResultQualifierAdmin(admin.ModelAdmin):
-    list_display = ("id", "code", "workspace__name")
+    list_display = ("id", "name", "code", "workspace__name")
 
 
 class SiteTypeAdmin(admin.ModelAdmin, VocabularyAdmin):

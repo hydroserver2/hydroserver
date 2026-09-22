@@ -161,7 +161,7 @@ def _metadata(workspace, marker, scope):
             workspace=workspace,
             name=_name(f"{scope} Assigned Unit", marker),
             symbol=f"{scope[:1]}{marker[-4:]}",
-            definition=f"E2E scenario unit {marker}",
+            definition=f"https://example.com/units/{marker}",
             type=f"{scope} Unit",
         ),
     }
@@ -193,11 +193,12 @@ def _additional_workspace_metadata(workspace, marker, scope):
         workspace=workspace,
         name=_name(f"{scope} Unit", marker),
         symbol=f"{scope[:1]}A{marker[-3:]}",
-        definition=f"E2E scenario unit {marker}",
+        definition=f"https://example.com/units/{marker}",
         type=f"{scope} Unit",
     )
     ResultQualifierFactory(
         workspace=workspace,
+        name=f"{scope}ResultQualifier-{marker}",
         code=f"{scope}ResultQualifier-{marker}",
         description=f"E2E scenario result qualifier {marker}",
     )
@@ -369,11 +370,13 @@ def create_scenario(scenario_key):
     _additional_workspace_metadata(private_workspace, marker, "Private")
     system_qualifier = ResultQualifierFactory(
         workspace=None,
+        name=f"SystemResultQualifier-{marker}",
         code=f"SystemResultQualifier-{marker}",
         description=f"E2E scenario result qualifier {marker}",
     )
     editable_system_qualifier = ResultQualifierFactory(
         workspace=None,
+        name=f"EditableSystemResultQualifier-{marker}",
         code=f"EditableSystemResultQualifier-{marker}",
         description=f"Editable E2E system result qualifier {marker}",
     )
@@ -423,7 +426,7 @@ def create_scenario(scenario_key):
             phenomenon_time=end,
             result=values[1],
             quality_code="E2E",
-            result_qualifiers=[system_qualifier.code]
+            result_qualifiers=[system_qualifier.name]
             if datastream == public_datastream
             else [],
         )
@@ -572,7 +575,7 @@ def create_scenario(scenario_key):
                 },
                 "publicAssignedProcessingLevel": {
                     "id": str(public_metadata["processing_level"].id),
-                    "name": public_metadata["processing_level"].code,
+                    "name": public_metadata["processing_level"].name,
                 },
                 "publicAssignedUnit": {
                     "id": str(public_metadata["unit"].id),
@@ -584,7 +587,7 @@ def create_scenario(scenario_key):
                 },
                 "editableSystemResultQualifier": {
                     "id": str(editable_system_qualifier.id),
-                    "name": editable_system_qualifier.code,
+                    "name": editable_system_qualifier.name,
                 },
             },
             "orchestration": {

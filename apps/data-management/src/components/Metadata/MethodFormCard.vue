@@ -30,20 +30,20 @@
           :rules="rules.requiredAndMaxLength255"
         />
 
-        <v-text-field v-model="item.code" label="Code" :rules="rules.name" />
+        <v-text-field v-model="item.code" label="Code" :rules="rules.maxLength(255)" />
 
         <v-textarea
           v-model="item.description"
           class="required-label"
           label="Description"
           rows="1"
-          :rules="rules.requiredDescription"
+          :rules="rules.required"
         />
 
         <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="item.definition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-text-field

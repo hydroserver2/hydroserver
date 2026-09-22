@@ -106,9 +106,9 @@ class ObservationAPIService(APIService):
             principal.filter_by_permission(
                 ResultQualifier.objects.filter(
                     Q(workspace_id=workspace_id) | Q(workspace__isnull=True)
-                ).filter(code__in=codes),
+                ).filter(name__in=codes),
                 "can_view",
-            ).values_list("code", flat=True)
+            ).values_list("name", flat=True)
         )
         invalid_codes = set(codes) - valid_codes
         if invalid_codes:

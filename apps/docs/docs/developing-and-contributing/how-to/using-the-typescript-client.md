@@ -448,13 +448,13 @@ import { ResultQualifier } from "@hydroserver/client";
 
 const resultQualifier = new ResultQualifier();
 resultQualifier.workspaceId = "00000000-0000-0000-0000-000000000000";
-resultQualifier.code = "PF";
+resultQualifier.name = "PF";
 resultQualifier.description = "Power Failure";
 
 const created = await hs.resultQualifiers.createItem(resultQualifier);
 if (!created) throw new Error("Unable to create result qualifier");
 
-created.code = "PF2";
+created.description = "Power failure affected the measurement";
 await hs.resultQualifiers.update(created);
 ```
 

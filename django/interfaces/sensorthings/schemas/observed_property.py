@@ -5,7 +5,7 @@ from .workspace import WorkspaceProperties
 
 
 class ObservedPropertyProperties(BaseModel):
-    variable_code: str
+    variable_code: Optional[str]
     variable_type: str
     workspace: Optional[WorkspaceProperties] = None
 
