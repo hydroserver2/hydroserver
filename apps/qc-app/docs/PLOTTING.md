@@ -218,12 +218,14 @@ calls it instead of assigning `selectedSeries.value.data` directly.
 
 ## Context range
 
-The editor toolbar's **Context** menu reuses `DataVisTimeFilters` (with
-`EDITOR_PRESETS`, which leaves out YTD and highlights All for a persisted
-YTD through `shownPresetId`, and the same From / To pickers as
-the Select view) bound to the same `beginDate` / `endDate` store range. The
-Select view's own Time range is hidden while an edit target is set, and each
-remembers its own preset: `activePresetId` is `contextPresetId` while editing
+The plot toolbar's `TimeRangeMenu` is the one range control. With no edit
+target it is the Select view's **Time range** (every preset); with one it is
+the **Context** menu, which adds the source context switch and passes
+`DataVisTimeFilters` the `EDITOR_PRESETS` (YTD left out, All highlighted for
+a persisted YTD through `shownPresetId`). Both bind the same `beginDate` /
+`endDate` store range. When the plot is not mounted (nothing plotted, or no
+observations in the range), `DataVisualization` shows the menu in a toolbar
+row of its own, so a window can be set before any data is pulled. Each mode remembers its own preset: `activePresetId` is `contextPresetId` while editing
 and `selectedDateBtnId` otherwise, and every range action goes through it.
 Picking a preset or a custom date calls `setDateRange`, which, while an
 edit target is set, reloads only the context series

@@ -26,94 +26,104 @@
     </template>
   </Plot>
 
-  <div
-    v-else-if="seriesDatastreams.length"
-    class="data-vis-state fill-height d-flex flex-column align-center justify-center pa-6 text-center"
-  >
-    <v-icon
-      icon="mdi-calendar-remove-outline"
-      size="56"
-      color="warning"
-      class="mb-3"
-    />
-    <div class="text-title-medium font-weight-bold mb-1">
-      No observations in this range
+  <!-- Nothing drawn yet: keep the range control where the plot toolbar puts
+       it, so a window can be set before any data is pulled. -->
+  <div v-else class="fill-height d-flex flex-column">
+    <div class="data-vis-toolbar d-flex align-center px-3 py-1">
+      <v-spacer />
+      <TimeRangeMenu />
     </div>
-    <div class="text-body-medium text-medium-emphasis" style="max-width: 360px">
-      The selected datastream{{ seriesDatastreams.length === 1 ? '' : 's' }}
-      returned no data for the current time window. Try a different range from
-      the drawer on the left.
+    <v-divider />
+
+    <div
+      v-if="seriesDatastreams.length"
+      class="data-vis-state flex-grow-1 d-flex flex-column align-center justify-center pa-6 text-center"
+    >
+      <v-icon
+        icon="mdi-calendar-remove-outline"
+        size="56"
+        color="warning"
+        class="mb-3"
+      />
+      <div class="text-title-medium font-weight-bold mb-1">
+        No observations in this range
+      </div>
+      <div class="text-body-medium text-medium-emphasis" style="max-width: 360px">
+        The selected datastream{{ seriesDatastreams.length === 1 ? '' : 's' }}
+        returned no data for the current time window. Try a different range
+        from the <b>Time range</b> menu above.
+      </div>
     </div>
-  </div>
 
-  <div
-    v-else
-    class="data-vis-state fill-height d-flex flex-column justify-center align-center pa-6"
-  >
-    <div class="data-vis-state__steps">
-      <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">1</div>
-        <v-icon
-          icon="mdi-filter-variant"
-          size="24"
-          color="primary"
-          class="data-vis-state__step-icon"
-        />
-        <div class="data-vis-state__step-body">
-          <div class="text-title-small font-weight-bold">Find a datastream</div>
-          <div class="text-body-small text-medium-emphasis">
-            Use the filters on the left drawer and the search bar at the top of
-            the table to narrow the list.
+    <div
+      v-else
+      class="data-vis-state flex-grow-1 d-flex flex-column justify-center align-center pa-6"
+    >
+      <div class="data-vis-state__steps">
+        <div class="data-vis-state__step">
+          <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">1</div>
+          <v-icon
+            icon="mdi-filter-variant"
+            size="24"
+            color="primary"
+            class="data-vis-state__step-icon"
+          />
+          <div class="data-vis-state__step-body">
+            <div class="text-title-small font-weight-bold">Find a datastream</div>
+            <div class="text-body-small text-medium-emphasis">
+              Use the filters on the left drawer and the search bar at the top of
+              the table to narrow the list.
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">2</div>
-        <v-icon
-          icon="mdi-checkbox-marked-outline"
-          size="24"
-          color="primary"
-          class="data-vis-state__step-icon"
-        />
-        <div class="data-vis-state__step-body">
-          <div class="text-title-small font-weight-bold">Plot datastreams</div>
-          <div class="text-body-small text-medium-emphasis">
-            Click the <b>Plot</b> checkbox on rows to preview them together.
+        <div class="data-vis-state__step">
+          <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">2</div>
+          <v-icon
+            icon="mdi-checkbox-marked-outline"
+            size="24"
+            color="primary"
+            class="data-vis-state__step-icon"
+          />
+          <div class="data-vis-state__step-body">
+            <div class="text-title-small font-weight-bold">Plot datastreams</div>
+            <div class="text-body-small text-medium-emphasis">
+              Click the <b>Plot</b> checkbox on rows to preview them together.
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">3</div>
-        <v-icon
-          icon="mdi-calendar-range"
-          size="24"
-          color="primary"
-          class="data-vis-state__step-icon"
-        />
-        <div class="data-vis-state__step-body">
-          <div class="text-title-small font-weight-bold">Set the time range</div>
-          <div class="text-body-small text-medium-emphasis">
-            Adjust <b>Time filters</b> from the left drawer to cover the period
-            you want to inspect.
+        <div class="data-vis-state__step">
+          <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">3</div>
+          <v-icon
+            icon="mdi-calendar-range"
+            size="24"
+            color="primary"
+            class="data-vis-state__step-icon"
+          />
+          <div class="data-vis-state__step-body">
+            <div class="text-title-small font-weight-bold">Set the time range</div>
+            <div class="text-body-small text-medium-emphasis">
+              Pick the period to inspect from the <b>Time range</b> menu
+              above, before or after plotting.
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">4</div>
-        <v-icon
-          icon="mdi-pencil"
-          size="24"
-          color="primary"
-          class="data-vis-state__step-icon"
-        />
-        <div class="data-vis-state__step-body">
-          <div class="text-title-small font-weight-bold">Edit one</div>
-          <div class="text-body-small text-medium-emphasis">
-            Click the <b>pencil</b> on a row to pick or create its QC datastream
-            and start a session.
+        <div class="data-vis-state__step">
+          <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">4</div>
+          <v-icon
+            icon="mdi-pencil"
+            size="24"
+            color="primary"
+            class="data-vis-state__step-icon"
+          />
+          <div class="data-vis-state__step-body">
+            <div class="text-title-small font-weight-bold">Edit one</div>
+            <div class="text-body-small text-medium-emphasis">
+              Click the <b>pencil</b> on a row to pick or create its QC datastream
+              and start a session.
+            </div>
           </div>
         </div>
       </div>
@@ -127,6 +137,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
 import Plot from '@/components/VisualizeData/Plot.vue'
+import TimeRangeMenu from '@/components/VisualizeData/TimeRangeMenu.vue'
 
 const { plotlyOptions } = storeToRefs(usePlotlyStore())
 
@@ -149,6 +160,11 @@ const isDataAvailable = computed(() => {
   inset: 0;
   z-index: 1;
   background-color: rgba(var(--v-theme-surface), 0.75);
+}
+
+.data-vis-toolbar {
+  background-color: rgba(var(--v-theme-primary), 0.02);
+  min-height: 40px;
 }
 
 .data-vis-state {

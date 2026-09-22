@@ -247,9 +247,9 @@ test.describe('edit selection', () => {
         ])
       )
 
-    await page.getByTestId('context-range-btn').click()
+    await page.getByTestId('time-range-btn').click()
     await page
-      .getByTestId('context-range-menu')
+      .getByTestId('time-range-menu')
       .getByTestId('date-preset-All')
       .click()
     await expect(page.getByTestId('exit-save-btn')).toBeVisible()
@@ -341,8 +341,8 @@ test.describe('edit selection', () => {
       w.__updates = 0
       gd.on('plotly_update', () => w.__updates++)
     })
-    await page.getByTestId('context-range-btn').click()
-    const menu = page.getByTestId('context-range-menu')
+    await page.getByTestId('time-range-btn').click()
+    const menu = page.getByTestId('time-range-menu')
     const allActive = /v-chip--variant-tonal/.test(
       (await menu.getByTestId('date-preset-All').getAttribute('class')) ?? ''
     )
@@ -360,7 +360,9 @@ test.describe('edit selection', () => {
   test('the editor opens zoomed to the session window', async ({ page }) => {
     await gotoHome(page)
     await plotDatastreamById(page, DATASTREAM_ID_B)
-    await page.getByTestId('date-preset-All').click()
+    await page.getByTestId('time-range-btn').click()
+    await page.getByTestId('time-range-menu').getByTestId('date-preset-All').click()
+    await page.keyboard.press('Escape')
 
     // Start the session halfway through the source, so the window is
     // narrower than the context around it.
@@ -388,7 +390,9 @@ test.describe('edit selection', () => {
   test('changing the Context range keeps the user zoom', async ({ page }) => {
     await gotoHome(page)
     await plotDatastreamById(page, DATASTREAM_ID_B)
-    await page.getByTestId('date-preset-All').click()
+    await page.getByTestId('time-range-btn').click()
+    await page.getByTestId('time-range-menu').getByTestId('date-preset-All').click()
+    await page.keyboard.press('Escape')
     await startSessionFromRow(page)
     await expect.poll(() => xRange(page)).not.toBeNull()
     const opened = (await xRange(page))!
@@ -405,8 +409,8 @@ test.describe('edit selection', () => {
       .toBe(true)
     const zoomed = (await xRange(page))!
 
-    await page.getByTestId('context-range-btn').click()
-    const menu = page.getByTestId('context-range-menu')
+    await page.getByTestId('time-range-btn').click()
+    const menu = page.getByTestId('time-range-menu')
 
     // Record every redraw from here on, in page time, so none is missed.
     await page.evaluate(() => {
@@ -483,8 +487,8 @@ test.describe('edit selection', () => {
     await page.getByTestId('session-window-start').click()
     await openEditor(page)
 
-    await page.getByTestId('context-range-btn').click()
-    const menu = page.getByTestId('context-range-menu')
+    await page.getByTestId('time-range-btn').click()
+    const menu = page.getByTestId('time-range-menu')
     await expect(menu.getByTestId('date-preset-YTD')).toHaveCount(0)
     await menu.getByTestId('date-preset-1w').click()
     await expect(menu.getByTestId('date-preset-1w')).toHaveClass(

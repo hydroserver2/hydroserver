@@ -79,15 +79,14 @@ The select view is the default landing surface after picking a workspace. The le
 
 ![Select view (Home)](./images/home-select.png)
 
-The filter drawer has two collapsible sections:
-
-- **Time range**: the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. While you are editing, this section is hidden: the **Context** menu above the plot sets the range instead, with presets that count out from the edit session's window. The two remember their own preset, so neither changes the other.
-
-- **Datastream filters**: These filters allow you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
+The filter drawer holds the **Datastream filters**. They let you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
 
 The main area to the right of the window is split top/bottom:
 
 - **Top card** carries the preview plot and a header showing how many datastreams are plotted ("N datastreams plotted" or "No datastream plotted"). The right pane of the card lists currently plotted datastreams, and, while you are editing, an **Editing** panel above it.
+
+  The plot toolbar's **Time range** button (reading **Time range · 1m**, the active preset) opens the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. The button is there before anything is plotted too, so you can set the window before pulling data: dates you pick are kept as a `Custom` window when the data loads, and a preset applies as soon as there is data to count back from. It also stays when the window holds no observations, so you can widen it. While you are editing, the same button becomes the **Context** menu, with presets that count out from the edit session's window. The two remember their own preset, so neither changes the other.
+
 - **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row has a **Plot** toggle (check box) and an **Edit** column (Edit button). See [Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions) below for what the Edit button does.
 
 ![Select view with one datastream plotted](./images/home-plotted.png)
@@ -123,9 +122,9 @@ What changes:
   versions: a source you plot this way draws in full, in its own colour, like
   any plotted datastream. The edit target itself is marked **Editing** in the
   chooser and cannot be picked, since it is already on the plot.
-- The filter drawer's **Time range** is hidden. The **Context** menu above the
-  plot sets the range around the session, with presets counting out from the
-  session window. Your edits are never reloaded by it.
+- The plot's **Time range** button becomes the **Context** menu, which sets
+  the range around the session, with presets counting out from the session
+  window. Your edits are never reloaded by it.
 - The rail's **Edit** button and the panel's **Open editor** button both
   open the editor with the session, your zoom and any staged range intact.
 - The row **Edit** button on a different datastream starts the usual entry
@@ -241,7 +240,7 @@ Between the help menu and the right edge is the **Context** button. It reads
 **Context off** when it is not. Its menu starts with a **Show source
 context** switch: off, the raw source leaves the plot entirely. Below it are
 preset chips and From / To pickers like the Select view's Time range
-filter, but here they control how much of the raw source and any plotted
+menu, but here they control how much of the raw source and any plotted
 datastreams load around your edit, not what you're editing. The raw source
 is never loaded inside the session window. The presets
 count out from the edit session's window instead of back from the last
@@ -326,7 +325,7 @@ The right-hand list (visible on both Select and Edit views) is the roster of eve
 - The datastream name and a subtitle showing the number of points loaded **in the current time window**, e.g. `1,248 pts loaded`. While the fetch is still in flight, the subtitle reads `loading…`.
 - An `×` button to unplot the row. The edit target and its source can't be unplotted this way. Leave the editor to drop them.
 
-If a plotted datastream has no observations in the current window (either because the dataset is empty there or because the chosen time range doesn't cover its data), the row title shows a small warning-tinted database icon. Hover it for the tooltip "No observations in the current time window". Widening the time range (or clicking **All** in the Time range / Context section) usually clears it.
+If a plotted datastream has no observations in the current window (either because the dataset is empty there or because the chosen time range doesn't cover its data), the row title shows a small warning-tinted database icon. Hover it for the tooltip "No observations in the current time window". Widening the time range (or clicking **All** in the Time range / Context menu) usually clears it.
 
 While editing, the edit target's row shows the session's working data: committed data where it exists, otherwise the raw datastream, over the session's window, with saved draft edits applied. Its line always covers the whole session window.
 
@@ -764,7 +763,7 @@ Click **Workspaces** in the nav rail and **Select** another, or **Continue** to 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
-| Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in Time range. |
+| Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in the plot's Time range menu. |
 | The Edit rail item is greyed out | You are not editing. | Click a row's Edit button. |
 | The Select view shows an "Editing" panel | A session is open, or you just picked a datastream to edit. | That is expected: click **Open editor** to edit it, or **Close** on its row (or in the editor) to end it. |
 | I closed the editor and cannot find my session | It is still in progress, just not open. | Click the Edit button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |

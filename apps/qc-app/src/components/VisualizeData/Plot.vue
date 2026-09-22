@@ -275,60 +275,7 @@
           </v-card>
         </v-menu>
 
-        <v-menu
-          v-if="!isPlotPreview"
-          v-model="contextRangeOpen"
-          :close-on-content-click="false"
-          location="bottom end"
-          offset="6"
-        >
-          <template #activator="{ props: menuProps }">
-            <v-btn
-              v-bind="menuProps"
-              size="small"
-              :variant="showSourceContext ? 'tonal' : 'text'"
-              :color="showSourceContext ? 'primary' : undefined"
-              :prepend-icon="
-                showSourceContext ? 'mdi-calendar-range' : 'mdi-eye-off-outline'
-              "
-              data-testid="context-range-btn"
-              :data-context-on="showSourceContext"
-              :title="
-                showSourceContext
-                  ? `Context range: ${contextRangeLabel} around the session`
-                  : `Context range: ${contextRangeLabel} around the session. The grey source context is hidden.`
-              "
-            >
-              Context &middot; {{ contextRangeLabel }}
-            </v-btn>
-          </template>
-          <v-card width="300" class="pa-3" data-testid="context-range-menu">
-            <v-switch
-              data-testid="context-toggle"
-              :model-value="showSourceContext"
-              color="primary"
-              density="compact"
-              hide-details
-              inset
-              class="mb-2"
-              @update:model-value="setShowSourceContext(!!$event)"
-            >
-              <template #label>
-                <span class="d-inline-flex align-center ga-2">
-                  <span
-                    class="context-swatch"
-                    :style="{ backgroundColor: SOURCE_CONTEXT_COLOR }"
-                  />
-                  Show source context
-                </span>
-              </template>
-            </v-switch>
-            <DataVisTimeFilters
-              :presets="EDITOR_PRESETS"
-              description="How much of the source and plotted datastreams to show before and after the session window. Your edits are not reloaded."
-            />
-          </v-card>
-        </v-menu>
+        <TimeRangeMenu />
       </div>
     </div>
 
@@ -449,13 +396,7 @@ import {
 } from '@/utils/plotting/plotly'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
-import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
-import {
-  CUSTOM_PRESET_ID,
-  EDITOR_PRESETS,
-  findPreset,
-} from '@/utils/timeRangePresets'
-import { SOURCE_CONTEXT_COLOR } from '@/utils/plotting/plotly'
+import TimeRangeMenu from '@/components/VisualizeData/TimeRangeMenu.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
@@ -483,20 +424,10 @@ const {
   pendingShareZoom,
   shareZoomEditTarget,
 } = storeToRefs(usePlotlyStore())
-const {
-  selectedData,
-  hasSelectionShape,
-  qcDatastream,
-  contextPresetId,
-  showSourceContext,
-} = storeToRefs(useDataVisStore())
-const { trackPlotWork, setShowSourceContext } = useDataVisStore()
-
-const contextRangeLabel = computed(() =>
-  contextPresetId.value === CUSTOM_PRESET_ID
-    ? 'Custom'
-    : (findPreset(contextPresetId.value)?.label ?? 'Custom')
+const { selectedData, hasSelectionShape, qcDatastream } = storeToRefs(
+  useDataVisStore()
 )
+const { trackPlotWork } = useDataVisStore()
 const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
 // The Select view previews the plot only when nothing is being edited; an
 // open session keeps the full chrome in both views.
@@ -622,8 +553,6 @@ async function copyShareableLink() {
     Snackbar.error('Could not copy link; copy the address bar manually')
   }
 }
-
-const contextRangeOpen = ref(false)
 
 const editWindow = computed(() => {
   const s = viewedSession.value ?? inProgressSession.value
@@ -833,13 +762,6 @@ const onTabChange = () => {
 </script>
 
 <style scoped>
-.context-swatch {
-  display: inline-block;
-  width: 14px;
-  height: 3px;
-  border-radius: 2px;
-}
-
 .plot-root {
   min-height: 0;
 }

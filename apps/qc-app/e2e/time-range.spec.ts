@@ -41,19 +41,54 @@ test.describe('time range presets', () => {
     await expect(page.locator('.plotted-item__subtitle').first()).toHaveText(
       `${FIXTURE_OBS_COUNT} pts loaded`
     )
-    await expect(page.getByTestId('date-preset-1m')).toHaveClass(
+    await expect(page.getByTestId('time-range-btn')).toContainText('1m')
+    await page.getByTestId('time-range-btn').click()
+    const menu = page.getByTestId('time-range-menu')
+    await expect(menu.getByTestId('date-preset-1m')).toHaveClass(
       /v-chip--variant-tonal/
     )
-    await expect(page.getByTestId('date-preset-custom')).toHaveCount(0)
+    await expect(menu.getByTestId('date-preset-custom')).toHaveCount(0)
   })
 
   test('leaving a date field untouched keeps the preset', async ({ page }) => {
     await plotFirstDatastream(page)
-    await page.getByTestId('date-range-from').locator('input').first().click()
+    await page.getByTestId('time-range-btn').click()
+    const menu = page.getByTestId('time-range-menu')
+    await menu.getByTestId('date-range-from').locator('input').first().click()
     await page.keyboard.press('Tab')
-    await expect(page.getByTestId('date-preset-custom')).toHaveCount(0)
-    await expect(page.getByTestId('date-preset-1m')).toHaveClass(
+    await expect(menu.getByTestId('date-preset-custom')).toHaveCount(0)
+    await expect(menu.getByTestId('date-preset-1m')).toHaveClass(
       /v-chip--variant-tonal/
     )
+  })
+
+  test('the Select view sets the range from the plot toolbar', async ({
+    page,
+  }) => {
+    await plotFirstDatastream(page)
+    await page.getByTestId('time-range-btn').click()
+    await page
+      .getByTestId('time-range-menu')
+      .getByTestId('date-preset-All')
+      .click()
+    await expect(page.getByTestId('time-range-btn')).toContainText('All')
+    await expect(page.getByTestId('context-toggle')).toHaveCount(0)
+  })
+
+  test('a range can be set before anything is plotted', async ({ page }) => {
+    await expect(page.getByText('Find a datastream')).toBeVisible()
+    await page.getByTestId('time-range-btn').click()
+    await page
+      .getByTestId('time-range-menu')
+      .getByTestId('date-preset-All')
+      .click()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('time-range-btn')).toContainText('All')
+
+    await plotFirstDatastream(page)
+    await expect(page.locator('.plotted-item__subtitle').first()).toHaveText(
+      `${FIXTURE_OBS_COUNT} pts loaded`
+    )
+    await expect(page.getByTestId('time-range-btn')).toContainText('All')
   })
 })

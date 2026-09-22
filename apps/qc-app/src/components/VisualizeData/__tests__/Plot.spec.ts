@@ -47,9 +47,6 @@ vi.mock('@/store/dataVisualization', () => ({
       hasSelectionShape: ref(false),
       qcDatastream,
       trackPlotWork,
-      contextPresetId: ref(1),
-      showSourceContext: ref(true),
-      setShowSourceContext: vi.fn(),
     }),
 }))
 
@@ -98,7 +95,7 @@ function mountIt(preview = true, slots: Record<string, string> = {}) {
     slots,
     global: {
       plugins: [createTestPinia(), createTestVuetify()],
-      stubs: { ContextPlot: true, DataTable: true, DataVisTimeFilters: true },
+      stubs: { ContextPlot: true, DataTable: true, TimeRangeMenu: true },
     },
   })
 }

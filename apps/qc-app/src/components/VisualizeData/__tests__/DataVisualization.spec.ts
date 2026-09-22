@@ -46,6 +46,10 @@ vi.mock('@/components/VisualizeData/Plot.vue', () => ({
   }),
 }))
 
+vi.mock('@/components/VisualizeData/TimeRangeMenu.vue', () => ({
+  default: { name: 'TimeRangeMenu', render: () => null },
+}))
+
 import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 
 function mountIt() {
@@ -131,6 +135,7 @@ describe('DataVisualization.vue', () => {
     const wrapper = mountIt()
     expect(wrapper.text()).toContain('No observations in this range')
     expect(wrapper.findComponent({ name: 'PlotStub' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'TimeRangeMenu' }).exists()).toBe(true)
   })
 
   it('shows the getting-started steps when nothing is plotted', () => {
@@ -139,5 +144,7 @@ describe('DataVisualization.vue', () => {
     const wrapper = mountIt()
     expect(wrapper.text()).toContain('Find a datastream')
     expect(wrapper.findComponent({ name: 'PlotStub' }).exists()).toBe(false)
+    // A window can be set before anything is plotted.
+    expect(wrapper.findComponent({ name: 'TimeRangeMenu' }).exists()).toBe(true)
   })
 })
