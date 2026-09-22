@@ -65,9 +65,11 @@ vi.mock('@/composables/useDataSelection', () => ({
 }))
 
 const isPlotPreview = ref(true)
+const currentView = ref<'Edit' | 'Select'>('Select')
 
-vi.mock('@/store/userInterface', () => ({
-  useUIStore: () => reactive({ isPlotPreview }),
+vi.mock('@/store/userInterface', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/store/userInterface')>()),
+  useUIStore: () => reactive({ isPlotPreview, currentView }),
 }))
 
 vi.mock('@/composables/useResizable', () => ({
@@ -273,6 +275,25 @@ describe('Plot.vue delayed mount', () => {
       viewedSession.value = windowB
       await flushPromises()
       expect(zoomXaxisTo).toHaveBeenCalledTimes(1)
+      wrapper.unmount()
+    })
+  })
+
+  describe('the overview strip', () => {
+    afterEach(() => {
+      currentView.value = 'Select'
+    })
+
+    it('shows in the Edit view', () => {
+      currentView.value = 'Edit'
+      const wrapper = mountIt(false)
+      expect(wrapper.find('.plot-context-strip').exists()).toBe(true)
+      wrapper.unmount()
+    })
+
+    it('stays out of the Select view, even with a session open', () => {
+      const wrapper = mountIt(false)
+      expect(wrapper.find('.plot-context-strip').exists()).toBe(false)
       wrapper.unmount()
     })
   })

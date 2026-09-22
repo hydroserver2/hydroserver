@@ -291,7 +291,7 @@
               class="flex-fill"
               style="min-height: 0"
             ></div>
-            <template v-if="!isPlotPreview">
+            <template v-if="showOverview">
               <div
                 class="plot-context-strip d-flex align-center justify-center cursor-pointer user-select-none"
                 :title="
@@ -403,7 +403,7 @@ import { usePersistedFlag } from '@/composables/useResizable'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
-import { useUIStore } from '@/store/userInterface'
+import { DrawerType, useUIStore } from '@/store/userInterface'
 
 const { setPlotSelection, clearSelected } = useDataSelection()
 const { updateOptions, requestTableScroll } = usePlotlyStore()
@@ -431,7 +431,9 @@ const { trackPlotWork } = useDataVisStore()
 const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
 // The Select view previews the plot only when nothing is being edited; an
 // open session keeps the full chrome in both views.
-const { isPlotPreview } = storeToRefs(useUIStore())
+const { isPlotPreview, currentView } = storeToRefs(useUIStore())
+// The overview strip belongs to the editor alone.
+const showOverview = computed(() => currentView.value === DrawerType.Edit)
 
 const selectedCount = computed(() => selectedData.value?.length ?? 0)
 
@@ -611,7 +613,7 @@ const applyThreshold = () => {
   }
 }
 
-const gestures = [
+const allGestures = [
   {
     icon: 'mdi-cursor-default-click-outline',
     title: 'Click a point to toggle it',
@@ -636,6 +638,7 @@ const gestures = [
     icon: 'mdi-chart-areaspline',
     title: 'Use the overview strip',
     desc: 'Drag the band on the bottom mini-plot to set the visible time window.',
+    overview: true,
   },
   {
     icon: 'mdi-cursor-move',
@@ -643,6 +646,10 @@ const gestures = [
     desc: 'Lines up the cursor across X and Y axes, even when tooltips are off.',
   },
 ]
+
+const gestures = computed(() =>
+  allGestures.filter((g) => !g.overview || showOverview.value)
+)
 
 const keyboardShortcuts = [
   {

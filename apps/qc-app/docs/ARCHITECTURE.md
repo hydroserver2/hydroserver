@@ -211,6 +211,7 @@ Consequences of that split:
 - `isPlotPreview` (Select view, nothing being edited) drives the plot's
   preview chrome. An edit target keeps the full plot in both views, so the
   Select view shows the same series, the session band and the Context control.
+  The overview strip is the one piece kept to the Edit view.
   The flag only flips together with a rebuild (`setEditTarget` /
   `clearEditTarget`), so no extra redraw is needed for it.
 

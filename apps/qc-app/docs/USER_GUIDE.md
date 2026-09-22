@@ -110,6 +110,7 @@ What changes:
   you in.
 - The preview plot draws the same series the editor does: the edit target,
   and its raw source around the session window.
+  The overview strip under the plot stays in the editor.
 - **Clear plot**, above the plotted list in the right pane, empties the
   plot. While a datastream is being edited it closes it first, with the
   usual question about its session; choosing to stay keeps everything as it
@@ -355,7 +356,7 @@ Once a datastream is on the plot, the **plotted datastreams list** on the right 
 The Plotly toolbar at the top of the chart drives the X-axis gestures (Zoom, Pan, Reset). For Y axes, the gestures are slightly different and worth knowing about when you're juggling several datastreams:
 
 - **X-axis zoom**: drag a horizontal box on the time grid (Zoom tool), or scroll over the plot. Every axis stays time-synchronized.
-- **X-axis pan**: enable Pan in the toolbar, then drag the plot body. The context plot at the bottom is also draggable. It acts as an overview thumbnail.
+- **X-axis pan**: enable Pan in the toolbar, then drag the plot body. In the Edit view, the overview strip at the bottom is also draggable. It acts as a thumbnail of the loaded range.
 - **Per-axis zoom**: hover near the ends of any axis and drag. Only that axis rescales. Sibling axes keep their current view. This is how you "compare units": drop the temperature axis to a tight window without touching streamflow.
 - **Per-axis pan**: hover the middle of an axis and drag.
 - **Reset**: the home icon on the Plotly toolbar returns to the default zoom (does not change the begin/end dates in the

@@ -164,6 +164,29 @@ test.describe('Select while editing', () => {
     await expect(fromField).toHaveValue(stagedFrom)
   })
 
+  test('keeps the overview strip to the editor', async ({ page }) => {
+    await setupEditView(page)
+    const overview = page.locator('.plot-context')
+    await expect(overview).toBeVisible()
+
+    await goToSelect(page)
+    await expect(overview).toHaveCount(0)
+
+    // Remounted on the way back, it draws from the series already loaded.
+    await goToEditor(page)
+    await expect(overview).toBeVisible()
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const gd = document.querySelector('.plot-context__plot') as
+            | (HTMLElement & { data?: unknown[] })
+            | null
+          return gd?.data?.length ?? 0
+        })
+      )
+      .toBeGreaterThan(0)
+  })
+
   test('plots context around the edit target from the table', async ({
     page,
   }) => {

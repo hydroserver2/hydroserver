@@ -325,7 +325,9 @@ trip moves the Plotly graph div instead of rebuilding it: the zoom, the live
 `layout.shapes` and the WebGL traces all stay. `userInterface.isPlotPreview`
 (Select view, nothing being edited) drives the preview chrome; with an edit
 target the full plot shows in both views, and the flag only flips alongside a
-rebuild (`setEditTarget` / `clearEditTarget`).
+rebuild (`setEditTarget` / `clearEditTarget`). The overview strip
+(`ContextPlot`) is the exception: it mounts only in the Edit view, and
+draws from the current series when it does.
 
 A share link's zoom (`pendingShareZoom`) is an explicit viewport, so it beats
 the editor's default "open on the session window" for the session that link
