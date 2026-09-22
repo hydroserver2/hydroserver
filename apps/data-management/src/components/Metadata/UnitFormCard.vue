@@ -74,14 +74,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
     console.error('Error uploading unit', error)
+    return
   }
   emit('close')
 }

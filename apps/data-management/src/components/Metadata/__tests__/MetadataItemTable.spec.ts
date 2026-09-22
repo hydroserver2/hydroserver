@@ -222,9 +222,9 @@ describe('metadata table UUIDs and read-only details', () => {
   it.each([
     ['method', ['Hydrology', 'TEMP']],
     ['observedProperty', ['Hydrology', 'TEMP']],
-    ['processingLevel', ['TEMP', record.description]],
+    ['processingLevel', ['TEMP']],
     ['unit', ['Hydrology', '°C']],
-    ['resultQualifier', ['TEMP', record.description]],
+    ['resultQualifier', ['TEMP']],
   ] as const)(
     'orders %s summary fields and shows scope last only in the all view',
     async (kind, details) => {
@@ -251,24 +251,35 @@ describe('metadata table UUIDs and read-only details', () => {
   )
 
   it.each([
-    ['method', ['Type not provided', 'Code not provided']],
-    ['observedProperty', ['Type not provided', 'Code not provided']],
-    ['processingLevel', ['Code not provided', 'Description not provided']],
+    ['method', ['Type not provided']],
+    ['observedProperty', ['Type not provided']],
+    ['processingLevel', []],
     ['unit', ['Type not provided', 'Symbol not provided']],
-    ['resultQualifier', ['Code not provided', 'Description not provided']],
+    ['resultQualifier', []],
   ] as const)(
-    'keeps all three %s secondary fields when data is missing',
-    (kind, details) => {
+    'omits absent codes from %s summaries and preserves other details',
+    async (kind, details) => {
       const wrapper = render(MetadataItemTable, {
         kind,
         items: [{ id: record.id, type: ' ', code: '' }],
         showScope: true,
       })
-      expect(
-        wrapper
-          .findAll('.hs-table-summary__details > li')
-          .map((detail) => detail.text())
-      ).toEqual([...details, 'Workspace'])
+      for (const code of [undefined, null, '', '   ']) {
+        for (const showScope of [true, false]) {
+          await wrapper.setProps({
+            items: [{ id: record.id, type: ' ', code }],
+            showScope,
+          })
+          expect(
+            wrapper
+              .findAll('.hs-table-summary__details > li')
+              .map((detail) => detail.text())
+          ).toEqual([...details, ...(showScope ? ['Workspace'] : [])])
+          expect(wrapper.find('.hs-table-summary__details').exists()).toBe(
+            showScope || details.length > 0
+          )
+        }
+      }
     }
   )
 
