@@ -10,6 +10,8 @@ import ObservedPropertyTable from '../ObservedPropertyTable.vue'
 import ProcessingLevelTable from '../ProcessingLevelTable.vue'
 import UnitTable from '../UnitTable.vue'
 import ResultQualifierTable from '../ResultQualifierTable.vue'
+import MetadataTable from '../MetadataTable.vue'
+import { useMetadata } from '@/store/metadata'
 
 vi.mock('@hydroserver/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hydroserver/client')>()
@@ -95,6 +97,51 @@ afterEach(() => {
 })
 
 describe('metadata table UUIDs and read-only details', () => {
+  it.each([
+    ['methods', MethodTable, 0],
+    ['observedProperties', ObservedPropertyTable, 1],
+    ['processingLevels', ProcessingLevelTable, 2],
+    ['units', UnitTable, 3],
+    ['resultQualifiers', ResultQualifierTable, 4],
+  ] as const)(
+    'switches %s scopes without remounting, refetching, or flashing a skeleton',
+    async (service, component, tab) => {
+      let resolveWorkspace!: (items: any[]) => void
+      const workspaceItems = new Promise<any[]>((resolve) => {
+        resolveWorkspace = resolve
+      })
+      const systemRecord = { ...record, id: 'system-item', name: 'System metadata' }
+      const fetch = vi.spyOn(hs[service], 'listAllItems').mockImplementation(
+        async (params: any) => params.workspace_id[0] === 'null'
+          ? [systemRecord] as any
+          : workspaceItems
+      )
+      const pinia = createPinia()
+      useMetadata(pinia).tab = tab
+      const wrapper = mount(MetadataTable, {
+        props: { workspace: { id: 'workspace-1' } as any },
+        global: { plugins: [vuetify, pinia] },
+      })
+      mounted.push(wrapper)
+      await flushPromises()
+      expect(wrapper.find('.metadata-table-loading-skeleton').exists()).toBe(true)
+      resolveWorkspace([{ ...record }])
+      await flushPromises()
+      const tableId = wrapper.findComponent(component as any).vm.$.uid
+
+      for (const scope of ['workspace', 'system', 'all'] as const) {
+        await wrapper.get(`[data-testid="metadata-scope-${scope}"]`).trigger('click')
+        expect(wrapper.find('.metadata-table-loading-skeleton').exists()).toBe(false)
+        expect(wrapper.findComponent(component as any).vm.$.uid).toBe(tableId)
+        expect(wrapper.find(`[data-testid="view-metadata-${record.id}"]`).exists())
+          .toBe(scope !== 'system')
+        expect(wrapper.find('[data-testid="view-metadata-system-item"]').exists())
+          .toBe(scope !== 'workspace')
+        expect(fetch).toHaveBeenCalledTimes(2)
+      }
+    }
+  )
+
   it('uses the qualifier name as its title without a definition field', async () => {
     const wrapper = render(MetadataItemTable, { kind: 'resultQualifier' })
     expect(wrapper.get('.hs-table-summary__title').text()).toBe(record.name)
@@ -113,7 +160,9 @@ describe('metadata table UUIDs and read-only details', () => {
   ] as const)(
     'supports copying and viewing %s with no edit permission',
     async (service, component) => {
-      vi.spyOn(hs[service], 'listAllItems').mockResolvedValue([record] as any)
+      vi.spyOn(hs[service], 'listAllItems').mockImplementation(async (params: any) =>
+        params.workspace_id[0] === 'null' ? [] : [{ ...record }] as any
+      )
       const wrapper = render(component, {
         search: '',
         workspaceId: 'workspace-1',

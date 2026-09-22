@@ -97,7 +97,6 @@ import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyForm
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { ObservedProperty } from '@hydroserver/client'
-import { useTableLogic } from '@/composables/useTableLogic'
 import { toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
 import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
@@ -128,26 +127,19 @@ const {
   onUpdate,
   onDelete,
 } =
-  props.scope === 'all'
+  props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
           await hs.observedProperties.listAllItems({ workspace_id: [wsId] }),
         () => hs.observedProperties.listAllItems({ workspace_id: ['null'] }),
         hs.observedProperties.delete,
         ObservedProperty,
-        toRef(props, 'workspaceId')
+        toRef(props, 'workspaceId'),
+        toRef(() => props.scope ?? 'workspace')
       )
-    : props.workspaceId
-      ? useTableLogic(
-          async (wsId: string) =>
-            await hs.observedProperties.listAllItems({ workspace_id: [wsId] }),
-          hs.observedProperties.delete,
-          ObservedProperty,
-          toRef(props, 'workspaceId')
-        )
-      : useSystemTableLogic(
-          () => hs.observedProperties.listAllItems({ workspace_id: ['null'] }),
-          (id: string) => hs.observedProperties.delete(id),
-          ObservedProperty
-        )
+    : useSystemTableLogic(
+        () => hs.observedProperties.listAllItems({ workspace_id: ['null'] }),
+        (id: string) => hs.observedProperties.delete(id),
+        ObservedProperty
+      )
 </script>
