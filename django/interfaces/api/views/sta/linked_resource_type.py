@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import LinkedResourceTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.linked_resource_type import (
     LinkedResourceTypeResponse,
@@ -33,10 +33,10 @@ linked_resource_type_service = LinkedResourceTypeAPIService()
 )
 def get_linked_resource_types(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Linked Resource Types and Linked Resource Types associated with the authenticated user.
+    Get Linked Resource Types.
     """
 
     return 200, linked_resource_type_service.list(
@@ -45,7 +45,6 @@ def get_linked_resource_types(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_linked_resource_type(
 def get_linked_resource_type(
     request: HydroServerHttpRequest,
     linked_resource_type_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get a Linked Resource Type.
@@ -98,7 +97,6 @@ def get_linked_resource_type(
     return 200, linked_resource_type_service.get(
         principal=request.principal,
         uid=linked_resource_type_id,
-        include=query.include,
     )
 
 

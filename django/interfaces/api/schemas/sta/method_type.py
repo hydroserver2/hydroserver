@@ -1,17 +1,17 @@
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyResponse,
-    ControlledVocabularyPostBody,
-    ControlledVocabularyPatchBody,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyResponse,
+    VocabularyPostBody,
+    VocabularyPatchBody,
 )
 
 
-class MethodTypeResponse(ControlledVocabularyResponse):
+class MethodTypeResponse(VocabularyResponse):
     pass
 
 
-class MethodTypePostBody(ControlledVocabularyPostBody):
+class MethodTypePostBody(VocabularyPostBody):
     pass
 
 
-class MethodTypePatchBody(ControlledVocabularyPatchBody):
+class MethodTypePatchBody(VocabularyPatchBody):
     pass

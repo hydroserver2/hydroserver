@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Get Aggregation Statistics
-         * @description Get public Aggregation Statistics and Aggregation Statistics associated with the authenticated user.
+         * @description Get Aggregation Statistics.
          */
         get: operations["interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics"];
         put?: never;
@@ -281,7 +281,7 @@ export interface paths {
         };
         /**
          * Get Datastream Statuses
-         * @description Get public Datastream Statuses and Datastream Statuses associated with the authenticated user.
+         * @description Get Datastream Statuses.
          */
         get: operations["interfaces_api_views_sta_datastream_status_get_datastream_statuses"];
         put?: never;
@@ -710,7 +710,7 @@ export interface paths {
         };
         /**
          * Get Linked Resource Types
-         * @description Get public Linked Resource Types and Linked Resource Types associated with the authenticated user.
+         * @description Get Linked Resource Types.
          */
         get: operations["interfaces_api_views_sta_linked_resource_type_get_linked_resource_types"];
         put?: never;
@@ -762,7 +762,7 @@ export interface paths {
         };
         /**
          * Get Method Types
-         * @description Get public Method Types and Method Types associated with the authenticated user.
+         * @description Get Method Types.
          */
         get: operations["interfaces_api_views_sta_method_type_get_method_types"];
         put?: never;
@@ -918,7 +918,7 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Types
-         * @description Get public Monitoring Site Types and Monitoring Site Types associated with the authenticated user.
+         * @description Get Monitoring Site Types.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types"];
         put?: never;
@@ -1423,7 +1423,7 @@ export interface paths {
         };
         /**
          * Get Observed Property Types
-         * @description Get public Observed Property Types and Observed Property Types associated with the authenticated user.
+         * @description Get Observed Property Types.
          */
         get: operations["interfaces_api_views_sta_observed_property_type_get_observed_property_types"];
         put?: never;
@@ -1791,7 +1791,7 @@ export interface paths {
         };
         /**
          * Get Sampled Mediums
-         * @description Get public Sampled Mediums and Sampled Mediums associated with the authenticated user.
+         * @description Get Sampled Mediums.
          */
         get: operations["interfaces_api_views_sta_sampled_medium_get_sampled_mediums"];
         put?: never;
@@ -1843,7 +1843,7 @@ export interface paths {
         };
         /**
          * Get Unit Types
-         * @description Get public Unit Types and Unit Types associated with the authenticated user.
+         * @description Get Unit Types.
          */
         get: operations["interfaces_api_views_sta_unit_type_get_unit_types"];
         put?: never;
@@ -2130,8 +2130,6 @@ export interface components {
         AggregationStatisticPatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -2144,15 +2142,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** AggregationStatisticResponse */
         AggregationStatisticResponse: {
@@ -2166,15 +2157,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {
@@ -2285,66 +2269,6 @@ export interface components {
             serviceAccountEmail?: string | null;
             /** Useremail */
             userEmail?: string | null;
-        };
-        /** ControlledVocabularyItemQueryParameters */
-        ControlledVocabularyItemQueryParameters: {
-            /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: "workspace"[];
-            /**
-             * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
-             */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-        };
-        /** ControlledVocabularyQueryParameters */
-        ControlledVocabularyQueryParameters: {
-            /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: "workspace"[];
-            /**
-             * Is Active
-             * @description Filter terms by active status.
-             */
-            is_active?: boolean | null;
-            /**
-             * Limit
-             * @description The maximum number of items to return.
-             * @default 100
-             */
-            limit: number | null;
-            /**
-             * Offset
-             * @description Number of items to skip.
-             * @default 0
-             */
-            offset: number | null;
-            /**
-             * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
-             */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-            /**
-             * Q
-             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
-             */
-            q?: string | null;
-            /**
-             * Sortby
-             * @description Select one or more fields to sort the response by.
-             * @default []
-             */
-            sortby: ("name" | "-name")[] | null;
-            /**
-             * Workspace Id
-             * @description Filter terms by workspace ID.
-             * @default []
-             */
-            workspace_id: (string | "null")[];
         };
         /** CreatedResponse */
         CreatedResponse: {
@@ -3331,8 +3255,6 @@ export interface components {
         DatastreamStatusPatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -3345,15 +3267,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** DatastreamStatusResponse */
         DatastreamStatusResponse: {
@@ -3367,15 +3282,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** DatastreamVisualizationBootstrapQueryParameters */
         DatastreamVisualizationBootstrapQueryParameters: {
@@ -4000,8 +3908,6 @@ export interface components {
         LinkedResourceTypePatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -4014,15 +3920,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** LinkedResourceTypeResponse */
         LinkedResourceTypeResponse: {
@@ -4036,15 +3935,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** MethodItemQueryParameters */
         MethodItemQueryParameters: {
@@ -4203,8 +4095,6 @@ export interface components {
         MethodTypePatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -4217,15 +4107,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** MethodTypeResponse */
         MethodTypeResponse: {
@@ -4239,15 +4122,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** MonitoringRuleItemQueryParameters */
         MonitoringRuleItemQueryParameters: {
@@ -4748,8 +4624,6 @@ export interface components {
         MonitoringSiteTypePatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -4762,15 +4636,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** MonitoringSiteTypeResponse */
         MonitoringSiteTypeResponse: {
@@ -4784,15 +4651,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** MonitoringTaskItemQueryParameters */
         MonitoringTaskItemQueryParameters: {
@@ -5292,8 +5152,6 @@ export interface components {
         ObservedPropertyTypePatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -5306,15 +5164,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** ObservedPropertyTypeResponse */
         ObservedPropertyTypeResponse: {
@@ -5328,15 +5179,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** PaginatedResponse[AggregationStatisticResponse] */
         PaginatedResponse_AggregationStatisticResponse_: {
@@ -6294,12 +6138,23 @@ export interface components {
                 number
             ][];
         };
+        /** ResultQualifierItemQueryParameters */
+        ResultQualifierItemQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "description")[];
+        };
         /** ResultQualifierPatchBody */
         ResultQualifierPatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -6312,15 +6167,52 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
             /** Workspaceid */
             workspaceId?: string | null;
+        };
+        /** ResultQualifierQueryParameters */
+        ResultQualifierQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: "workspace"[];
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "name" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "-name")[] | null;
+            /**
+             * Workspace Id
+             * @description Filter terms by workspace ID.
+             * @default []
+             */
+            workspace_id: (string | "null")[];
         };
         /** ResultQualifierResponse */
         ResultQualifierResponse: {
@@ -6334,11 +6226,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
             /** Workspaceid */
@@ -6409,8 +6296,6 @@ export interface components {
         SampledMediumPatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -6423,15 +6308,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** SampledMediumResponse */
         SampledMediumResponse: {
@@ -6445,15 +6323,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** SchedulePatchBody */
         SchedulePatchBody: {
@@ -6845,8 +6716,6 @@ export interface components {
         UnitTypePatchBody: {
             /** Description */
             description?: string;
-            /** Isactive */
-            isActive?: boolean;
             /** Name */
             name?: string;
         };
@@ -6859,15 +6728,8 @@ export interface components {
             description: string;
             /** Id */
             id?: string | null;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
         };
         /** UnitTypeResponse */
         UnitTypeResponse: {
@@ -6881,15 +6743,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Isactive
-             * @default true
-             */
-            isActive: boolean;
             /** Name */
             name: string;
-            /** Workspaceid */
-            workspaceId: string | null;
         };
         /** UserContactResponse */
         UserContactResponse: {
@@ -7012,6 +6867,50 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** VocabularyItemQueryParameters */
+        VocabularyItemQueryParameters: {
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "name" | "description")[];
+        };
+        /** VocabularyQueryParameters */
+        VocabularyQueryParameters: {
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: string | null;
+            /**
+             * Limit
+             * @description The maximum number of items to return.
+             * @default 100
+             */
+            limit: number | null;
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "name" | "description")[];
+            /**
+             * Q
+             * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
+             */
+            q?: string | null;
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("name" | "-name")[] | null;
+        };
         /** WorkspaceItemQueryParameters */
         WorkspaceItemQueryParameters: {
             /**
@@ -7126,9 +7025,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -7137,10 +7036,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7223,9 +7118,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -8359,9 +8252,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -8370,10 +8263,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -8456,9 +8345,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -10213,9 +10100,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -10224,10 +10111,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -10310,9 +10193,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -10444,9 +10325,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -10455,10 +10336,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -10541,9 +10418,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -11228,9 +11103,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -11239,10 +11114,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -11325,9 +11196,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -13111,9 +12980,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -13122,10 +12991,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -13208,9 +13073,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -14455,7 +14318,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "workspaceId" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
@@ -14468,8 +14331,6 @@ export interface operations {
                 q?: string | null;
                 /** @description Filter terms by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -14552,7 +14413,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "workspaceId" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
             };
@@ -14771,9 +14632,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -14782,10 +14643,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -14868,9 +14725,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {
@@ -15002,9 +14857,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
+                properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -15013,10 +14868,6 @@ export interface operations {
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter terms by active status. */
-                is_active?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -15099,9 +14950,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "isActive")[];
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                properties?: ("id" | "name" | "description")[];
             };
             header?: never;
             path: {

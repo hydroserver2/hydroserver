@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MethodTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.method_type import (
     MethodTypeResponse,
@@ -33,10 +33,10 @@ method_type_service = MethodTypeAPIService()
 )
 def get_method_types(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Method Types and Method Types associated with the authenticated user.
+    Get Method Types.
     """
 
     return 200, method_type_service.list(
@@ -45,7 +45,6 @@ def get_method_types(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_method_type(
 def get_method_type(
     request: HydroServerHttpRequest,
     method_type_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get a Method Type.
@@ -98,7 +97,6 @@ def get_method_type(
     return 200, method_type_service.get(
         principal=request.principal,
         uid=method_type_id,
-        include=query.include,
     )
 
 

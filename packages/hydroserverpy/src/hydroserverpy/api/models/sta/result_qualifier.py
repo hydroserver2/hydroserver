@@ -11,10 +11,9 @@ if TYPE_CHECKING:
 class ResultQualifier(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     description: str
-    is_active: bool = True
     workspace_id: Optional[uuid.UUID] = None
 
-    _editable_fields: ClassVar[set[str]] = {"name", "description", "is_active"}
+    _editable_fields: ClassVar[set[str]] = {"name", "description"}
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.resultqualifiers, **data)

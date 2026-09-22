@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import UnitTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.unit_type import (
     UnitTypeResponse,
@@ -33,10 +33,10 @@ unit_type_service = UnitTypeAPIService()
 )
 def get_unit_types(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Unit Types and Unit Types associated with the authenticated user.
+    Get Unit Types.
     """
 
     return 200, unit_type_service.list(
@@ -45,7 +45,6 @@ def get_unit_types(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_unit_type(
 def get_unit_type(
     request: HydroServerHttpRequest,
     unit_type_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get a Unit Type.
@@ -98,7 +97,6 @@ def get_unit_type(
     return 200, unit_type_service.get(
         principal=request.principal,
         uid=unit_type_id,
-        include=query.include,
     )
 
 

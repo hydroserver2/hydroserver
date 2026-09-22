@@ -10,7 +10,7 @@ export namespace SampledMediumContract {
   export type PostBody        = Data.components['schemas']['SampledMediumPostBody']
   export type PatchBody       = Data.components['schemas']['SampledMediumPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["description","isActive","name"] as const
+  export const writableKeys = ["description","name"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

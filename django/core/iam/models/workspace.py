@@ -28,7 +28,7 @@ class WorkspaceQuerySet(models.QuerySet):
         return super().delete()
 
 
-@register_resource_type(workspace_field=None, privacy_chain=["is_private"])
+@register_resource_type(workspace_field=..., privacy_chain=["is_private"])
 class Workspace(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)

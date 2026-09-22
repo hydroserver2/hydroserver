@@ -182,11 +182,11 @@ class DatastreamLinkedResourceAdmin(admin.ModelAdmin):
 
 
 class ResultQualifierAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name", "workspace__name")
 
 
 class MonitoringSiteTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/monitoringsitetype/change_list.html"
 
     def get_urls(self):
@@ -209,7 +209,7 @@ class MonitoringSiteTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class MethodTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/methodtype/change_list.html"
 
     def get_urls(self):
@@ -232,7 +232,7 @@ class MethodTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class ObservedPropertyTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/observedpropertytype/change_list.html"
 
     def get_urls(self):
@@ -255,7 +255,7 @@ class ObservedPropertyTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class UnitTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/unittype/change_list.html"
 
     def get_urls(self):
@@ -278,7 +278,7 @@ class UnitTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class AggregationStatisticAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/aggregationstatistic/change_list.html"
 
     def get_urls(self):
@@ -301,7 +301,7 @@ class AggregationStatisticAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class DatastreamStatusAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/datastreamstatus/change_list.html"
 
     def get_urls(self):
@@ -324,7 +324,7 @@ class DatastreamStatusAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class SampledMediumAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/sampledmedium/change_list.html"
 
     def get_urls(self):
@@ -347,7 +347,7 @@ class SampledMediumAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class LinkedResourceTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "workspace__name", "is_active")
+    list_display = ("id", "name")
     change_list_template = "admin/sta/linkedresourcetype/change_list.html"
 
     def get_urls(self):

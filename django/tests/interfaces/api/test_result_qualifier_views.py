@@ -97,7 +97,7 @@ def test_get_result_qualifiers_without_properties_returns_every_field(client):
 
     assert response.status_code == 200
     item = response.json()["data"][0]
-    assert set(item.keys()) == {"id", "name", "description", "isActive", "workspaceId"}
+    assert set(item.keys()) == {"id", "name", "description", "workspaceId"}
 
 
 def test_get_result_qualifiers_has_no_included_key_without_include_param(client):
@@ -172,17 +172,6 @@ def test_get_result_qualifiers_sortby_name_descending(client):
     assert names.index("Beta") < names.index("Alpha")
 
 
-def test_get_result_qualifiers_is_active_filter(client):
-    ResultQualifierFactory(global_=True, name="Active term", is_active=True)
-    ResultQualifierFactory(global_=True, name="Inactive term", is_active=False)
-
-    response = client.get(RESULT_QUALIFIERS_URL, {"is_active": "true"})
-
-    assert response.status_code == 200
-    names = [item["name"] for item in response.json()["data"]]
-    assert names == ["Active term"]
-
-
 # --- create_result_qualifier ------------------------------------------------------------
 
 
@@ -203,7 +192,6 @@ def test_create_result_qualifier_succeeds_for_workspace_owner(client):
 
     detail = client.get(_detail_url(result_qualifier_id))
     assert detail.json()["data"]["name"] == "New Qualifier"
-    assert detail.json()["data"]["isActive"] is True
 
 
 def test_create_result_qualifier_returns_401_when_unauthenticated(client):
@@ -236,23 +224,6 @@ def test_create_result_qualifier_returns_400_for_duplicate_name_in_workspace(cli
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     ResultQualifierFactory(workspace=workspace, name="Duplicate")
-    client.force_login(owner)
-
-    response = client.post(
-        RESULT_QUALIFIERS_URL,
-        data=_result_qualifier_body(workspaceId=str(workspace.id), name="Duplicate"),
-        content_type="application/json",
-    )
-
-    assert response.status_code == 400
-
-
-def test_create_result_qualifier_returns_400_for_duplicate_name_even_when_existing_is_inactive(
-    client,
-):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    ResultQualifierFactory(workspace=workspace, name="Duplicate", is_active=False)
     client.force_login(owner)
 
     response = client.post(
@@ -365,25 +336,6 @@ def test_update_result_qualifier_succeeds_for_workspace_owner(client):
 
     detail = client.get(_detail_url(result_qualifier.id))
     assert detail.json()["data"]["name"] == "Updated Name"
-
-
-def test_update_result_qualifier_can_deprecate_a_term(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    result_qualifier = ResultQualifierFactory(workspace=workspace, is_active=True)
-    client.force_login(owner)
-
-    response = client.patch(
-        _detail_url(result_qualifier.id),
-        data={"isActive": False},
-        content_type="application/json",
-    )
-
-    assert response.status_code == 204
-
-    detail = client.get(_detail_url(result_qualifier.id))
-    assert detail.json()["data"]["isActive"] is False
-    assert detail.json()["data"]["name"] == result_qualifier.name
 
 
 def test_update_result_qualifier_returns_403_for_viewer_collaborator(client):

@@ -10,7 +10,7 @@ export namespace UnitTypeContract {
   export type PostBody        = Data.components['schemas']['UnitTypePostBody']
   export type PatchBody       = Data.components['schemas']['UnitTypePatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["description","isActive","name"] as const
+  export const writableKeys = ["description","name"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

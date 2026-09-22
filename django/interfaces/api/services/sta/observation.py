@@ -106,7 +106,7 @@ class ObservationAPIService(APIService):
             principal.filter_by_permission(
                 ResultQualifier.objects.filter(
                     Q(workspace_id=workspace_id) | Q(workspace__isnull=True)
-                ).filter(name__in=codes, is_active=True),
+                ).filter(name__in=codes),
                 "can_view",
             ).values_list("name", flat=True)
         )

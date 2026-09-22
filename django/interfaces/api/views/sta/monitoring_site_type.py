@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MonitoringSiteTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.monitoring_site_type import (
     MonitoringSiteTypeResponse,
@@ -33,10 +33,10 @@ monitoring_site_type_service = MonitoringSiteTypeAPIService()
 )
 def get_monitoring_site_types(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Monitoring Site Types and Monitoring Site Types associated with the authenticated user.
+    Get Monitoring Site Types.
     """
 
     return 200, monitoring_site_type_service.list(
@@ -45,7 +45,6 @@ def get_monitoring_site_types(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_monitoring_site_type(
 def get_monitoring_site_type(
     request: HydroServerHttpRequest,
     monitoring_site_type_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get a Monitoring Site Type.
@@ -98,7 +97,6 @@ def get_monitoring_site_type(
     return 200, monitoring_site_type_service.get(
         principal=request.principal,
         uid=monitoring_site_type_id,
-        include=query.include,
     )
 
 

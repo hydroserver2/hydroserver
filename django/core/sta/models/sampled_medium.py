@@ -4,23 +4,14 @@ from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 
-from core.iam.models import Workspace
 from core.iam.permissions.registry import register_resource_type
 
 
-@register_resource_type(privacy_chain=["workspace__is_private"])
+@register_resource_type(workspace_field=None)
 class SampledMedium(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
-    workspace = models.ForeignKey(
-        Workspace,
-        related_name="sampled_mediums",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-    )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
-    is_active = models.BooleanField(default=True)
     search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):
@@ -29,9 +20,8 @@ class SampledMedium(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "workspace_id"],
-                name="unique_scoped_sampled_medium_name",
-                nulls_distinct=False,
+                fields=["name"],
+                name="unique_sampled_medium_name",
             ),
         ]
         indexes = [

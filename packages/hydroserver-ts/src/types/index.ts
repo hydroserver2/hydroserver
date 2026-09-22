@@ -272,142 +272,108 @@ export class ResultQualifier {
   workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
     this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class SampledMedium {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class AggregationStatistic {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class DatastreamStatus {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class MethodType {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class UnitType {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class ObservedPropertyType {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class MonitoringSiteType {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 
 export class LinkedResourceType {
   id: string
-  workspaceId: string
   name: string
   description: string
-  isActive: boolean
 
   constructor() {
     this.id = ''
-    this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.isActive = true
   }
 }
 

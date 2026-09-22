@@ -133,7 +133,6 @@ Data qualifying comments added to individual data values to qualify their interp
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ResultQualifier. If omitted, the ResultQualifier is shared system-wide. | UUID      |
 | M        | name         | A brief text name identifying the ResultQualifier.                                                                               | String    |
 | M        | description  | A longer text description or explanation of the ResultQualifier.                                                                 | Text      |
-| M        | is_active    | Whether the ResultQualifier is active and available for use.                                                                     | Boolean   |
 
 **NOTE**: The database enforces a unique constraint on `(name, workspace_id)`, including the system-wide `NULL` workspace scope.
 

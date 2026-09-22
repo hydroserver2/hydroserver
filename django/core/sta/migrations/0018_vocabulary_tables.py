@@ -131,28 +131,33 @@ def _backfill_linked_resource_type_uuids(apps, schema_editor):
 
 class Migration(migrations.Migration):
     """
-    Promotes every bare `name`-only controlled-vocabulary lookup table in the sta app to
-    the shared shape: UUID id, nullable `workspace` FK, `name`/`description`/`is_active`,
-    `search_vector`, and a `UniqueConstraint(fields=["name", "workspace_id"], nulls_distinct=False)`.
+    Promotes every bare `name`-only vocabulary lookup table in the sta app to a shared
+    shape: UUID id, `name`/`description`, `search_vector`, and a
+    `UniqueConstraint(fields=["name"])`. These 8 tables have no workspace concept at all
+    (registered with `workspace_field=None` — see core/iam/permissions/registry.py) and
+    are publicly viewable, superuser-only to create/edit/delete. `ResultQualifier` is
+    folded into this same migration (it's already on this shape, minus the `name` field
+    being called `code`) since neither it nor these 8 tables ever shipped with
+    `is_active` — that field was added and removed again within this same undeployed
+    branch, so it never appears in migration history at all. Unlike the 8, it keeps its
+    existing nullable `workspace` FK and a scoped `UniqueConstraint(fields=["name",
+    "workspace_id"])` — it's the only one of these tables that's ever user/workspace
+    managed, so create/edit/delete for it goes through normal workspace-permission checks
+    rather than being superuser-only.
 
     Three tables are renamed as part of this pass: `DatastreamAggregation` ->
     `AggregationStatistic`, `VariableType` -> `ObservedPropertyType`, `SiteType` ->
     `MonitoringSiteType`. `DatastreamStatus`, `MethodType`, `UnitType`, and
-    `LinkedResourceType` keep their names.
+    `LinkedResourceType` keep their names. `ResultQualifier`'s `code` field is renamed to
+    `name` to match every other table here.
 
-    Each table's block follows the same order: add a nullable UUID column, backfill a
-    distinct uuid7 per existing row, enforce non-null/unique on it, drop the old bare
-    `unique=True` on `name`, swap the primary key from the old BigAutoField `id` to the
-    UUID column (renaming the table/model here too, for the three renamed tables) via
-    raw SQL (not expressible as ordinary field operations), *then* add the `workspace`
-    FK/`description`/`is_active` fields, the scoped `UniqueConstraint`, and the
+    Each of the 8 non-`ResultQualifier` tables' block follows the same order: add a
+    nullable UUID column, backfill a distinct uuid7 per existing row, enforce
+    non-null/unique on it, drop the old bare `unique=True` on `name`, swap the primary key
+    from the old BigAutoField `id` to the UUID column (renaming the table/model here too,
+    for the three renamed tables) via raw SQL (not expressible as ordinary field
+    operations), *then* add `description`, the bare `UniqueConstraint`, and the
     `search_vector` field/trigger/index.
-
-    The `workspace` FK is added only after the primary-key swap (and table/model rename)
-    is complete: Postgres's auto-generated index for a new FK column is deferred by
-    Django's schema editor until the migration's schema_editor block exits, so adding it
-    before a table rename would leave that deferred `CREATE INDEX` pointing at the
-    pre-rename table name.
 
     `LinkedResourceType`'s actual PK constraint is named `sta_fileattachmenttype_pkey`,
     not `sta_linkedresourcetype_pkey`: this table was itself renamed from
@@ -207,28 +212,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='sampledmedium',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='sampled_mediums', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='sampledmedium',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='sampledmedium',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='sampledmedium',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_sampled_medium_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_sampled_medium_name',
             ),
         ),
         migrations.AddField(
@@ -287,28 +278,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='aggregationstatistic',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='aggregation_statistics', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='aggregationstatistic',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='aggregationstatistic',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='aggregationstatistic',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_aggregation_statistic_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_aggregation_statistic_name',
             ),
         ),
         migrations.AddField(
@@ -365,28 +342,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='datastreamstatus',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='datastream_statuses', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='datastreamstatus',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='datastreamstatus',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='datastreamstatus',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_datastream_status_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_datastream_status_name',
             ),
         ),
         migrations.AddField(
@@ -443,28 +406,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='methodtype',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='method_types', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='methodtype',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='methodtype',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='methodtype',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_method_type_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_method_type_name',
             ),
         ),
         migrations.AddField(
@@ -521,28 +470,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='unittype',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='unit_types', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='unittype',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='unittype',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='unittype',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_unit_type_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_unit_type_name',
             ),
         ),
         migrations.AddField(
@@ -601,28 +536,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='observedpropertytype',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='observed_property_types', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='observedpropertytype',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='observedpropertytype',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='observedpropertytype',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_observed_property_type_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_observed_property_type_name',
             ),
         ),
         migrations.AddField(
@@ -685,28 +606,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='monitoringsitetype',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='monitoring_site_types', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='monitoringsitetype',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='monitoringsitetype',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='monitoringsitetype',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_monitoring_site_type_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_monitoring_site_type_name',
             ),
         ),
         migrations.AddField(
@@ -763,28 +670,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='linkedresourcetype',
-            name='workspace',
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                related_name='linked_resource_types', to='iam.workspace',
-            ),
-        ),
-        migrations.AddField(
-            model_name='linkedresourcetype',
             name='description',
             field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='linkedresourcetype',
-            name='is_active',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddConstraint(
             model_name='linkedresourcetype',
             constraint=models.UniqueConstraint(
-                fields=('name', 'workspace_id'),
-                name='unique_scoped_linked_resource_type_name',
-                nulls_distinct=False,
+                fields=('name',),
+                name='unique_linked_resource_type_name',
             ),
         ),
         migrations.AddField(
@@ -798,5 +691,32 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='linkedresourcetype',
             index=django.contrib.postgres.indexes.GinIndex(fields=['search_vector'], name='sta_linkedrestype_search_gin'),
+        ),
+    
+        # --- ResultQualifier (code -> name; keeps its existing workspace FK) -----------
+        migrations.RemoveConstraint(
+            model_name='resultqualifier',
+            name='unique_scoped_result_qualifier_code',
+        ),
+        migrations.RenameField(
+            model_name='resultqualifier',
+            old_name='code',
+            new_name='name',
+        ),
+        migrations.AlterField(
+            model_name='resultqualifier',
+            name='description',
+            field=models.TextField(blank=True, default=''),
+        ),
+        migrations.AddConstraint(
+            model_name='resultqualifier',
+            constraint=models.UniqueConstraint(
+                fields=('name', 'workspace_id'),
+                name='unique_scoped_result_qualifier_name',
+                nulls_distinct=False,
+            ),
+        ),
+        *_search_vector_trigger_sql(
+            "sta_resultqualifier", {"description": "A", "name": "C"}
         ),
     ]

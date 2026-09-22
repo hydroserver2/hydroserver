@@ -1,5 +1,5 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
-                   VocabularyQueryParameters, PaginationMeta, PaginatedResponse,
+                   PaginationMeta, PaginatedResponse,
                    CreatedResponse, ItemResponse, split_comma_separated, comma_array_schema)
 from interfaces.api.schemas.iam.user import UserContactResponse
 from interfaces.api.schemas.iam.role import (RoleResponse, RoleQueryParameters,

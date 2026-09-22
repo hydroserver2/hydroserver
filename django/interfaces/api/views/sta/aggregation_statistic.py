@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import AggregationStatisticAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.aggregation_statistic import (
     AggregationStatisticResponse,
@@ -33,10 +33,10 @@ aggregation_statistic_service = AggregationStatisticAPIService()
 )
 def get_aggregation_statistics(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Aggregation Statistics and Aggregation Statistics associated with the authenticated user.
+    Get Aggregation Statistics.
     """
 
     return 200, aggregation_statistic_service.list(
@@ -45,7 +45,6 @@ def get_aggregation_statistics(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_aggregation_statistic(
 def get_aggregation_statistic(
     request: HydroServerHttpRequest,
     aggregation_statistic_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get an Aggregation Statistic.
@@ -98,7 +97,6 @@ def get_aggregation_statistic(
     return 200, aggregation_statistic_service.get(
         principal=request.principal,
         uid=aggregation_statistic_id,
-        include=query.include,
     )
 
 

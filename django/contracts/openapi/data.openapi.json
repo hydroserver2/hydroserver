@@ -7,10 +7,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -39,27 +35,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -80,33 +59,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "AggregationStatisticResponse",
         "type": "object"
@@ -431,169 +392,6 @@
           "roleId"
         ],
         "title": "CollaboratorResponse",
-        "type": "object"
-      },
-      "ControlledVocabularyItemQueryParameters": {
-        "properties": {
-          "include": {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "workspace"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Include",
-            "type": "array"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "name",
-                "description",
-                "isActive"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
-          }
-        },
-        "title": "ControlledVocabularyItemQueryParameters",
-        "type": "object"
-      },
-      "ControlledVocabularyQueryParameters": {
-        "properties": {
-          "include": {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "workspace"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Include",
-            "type": "array"
-          },
-          "is_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Filter terms by active status.",
-            "title": "Is Active"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
-          },
-          "offset": {
-            "anyOf": [
-              {
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 0,
-            "description": "Number of items to skip.",
-            "title": "Offset"
-          },
-          "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
-            "items": {
-              "enum": [
-                "id",
-                "workspaceId",
-                "name",
-                "description",
-                "isActive"
-              ],
-              "type": "string"
-            },
-            "style": "form",
-            "title": "Properties",
-            "type": "array"
-          },
-          "q": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
-            "title": "Q"
-          },
-          "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "-name"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
-          },
-          "workspace_id": {
-            "default": [],
-            "description": "Filter terms by workspace ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Workspace Id",
-            "type": "array"
-          }
-        },
-        "title": "ControlledVocabularyQueryParameters",
         "type": "object"
       },
       "CreatedResponse": {
@@ -3531,10 +3329,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -3563,27 +3357,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -3604,33 +3381,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "DatastreamStatusResponse",
         "type": "object"
@@ -5383,10 +5142,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -5415,27 +5170,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -5456,33 +5194,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "LinkedResourceTypeResponse",
         "type": "object"
@@ -6022,10 +5742,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -6054,27 +5770,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -6095,33 +5794,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "MethodTypeResponse",
         "type": "object"
@@ -7503,10 +7184,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -7535,27 +7212,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -7576,33 +7236,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "MonitoringSiteTypeResponse",
         "type": "object"
@@ -9003,10 +8645,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -9035,27 +8673,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -9076,33 +8697,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "ObservedPropertyTypeResponse",
         "type": "object"
@@ -12107,15 +11710,46 @@
         "title": "RatingCurveResponse",
         "type": "object"
       },
+      "ResultQualifierItemQueryParameters": {
+        "properties": {
+          "include": {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "workspace"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Include",
+            "type": "array"
+          },
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          }
+        },
+        "title": "ResultQualifierItemQueryParameters",
+        "type": "object"
+      },
       "ResultQualifierPatchBody": {
         "properties": {
           "description": {
             "title": "Description",
             "type": "string"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
           },
           "name": {
             "maxLength": 255,
@@ -12145,11 +11779,6 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -12174,6 +11803,120 @@
         "title": "ResultQualifierPostBody",
         "type": "object"
       },
+      "ResultQualifierQueryParameters": {
+        "properties": {
+          "include": {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "workspace"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Include",
+            "type": "array"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "-name"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
+          },
+          "workspace_id": {
+            "default": [],
+            "description": "Filter terms by workspace ID.",
+            "items": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Workspace Id",
+            "type": "array"
+          }
+        },
+        "title": "ResultQualifierQueryParameters",
+        "type": "object"
+      },
       "ResultQualifierResponse": {
         "properties": {
           "description": {
@@ -12185,11 +11928,6 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
-          },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
           },
           "name": {
             "maxLength": 255,
@@ -12400,10 +12138,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -12432,27 +12166,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -12473,33 +12190,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "SampledMediumResponse",
         "type": "object"
@@ -13718,10 +13417,6 @@
             "title": "Description",
             "type": "string"
           },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
@@ -13750,27 +13445,10 @@
             ],
             "title": "Id"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
@@ -13791,33 +13469,15 @@
             "title": "Id",
             "type": "string"
           },
-          "isActive": {
-            "default": true,
-            "title": "Isactive",
-            "type": "boolean"
-          },
           "name": {
             "maxLength": 255,
             "title": "Name",
             "type": "string"
-          },
-          "workspaceId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspaceid"
           }
         },
         "required": [
           "name",
-          "id",
-          "workspaceId"
+          "id"
         ],
         "title": "UnitTypeResponse",
         "type": "object"
@@ -14132,6 +13792,121 @@
         "title": "VisualizationProcessingLevelResponse",
         "type": "object"
       },
+      "VocabularyItemQueryParameters": {
+        "properties": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          }
+        },
+        "title": "VocabularyItemQueryParameters",
+        "type": "object"
+      },
+      "VocabularyQueryParameters": {
+        "properties": {
+          "include": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Comma-separated list of related resources to include in the response.",
+            "title": "Include"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The maximum number of items to return.",
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
+          },
+          "sortby": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "-name"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
+          }
+        },
+        "title": "VocabularyQueryParameters",
+        "type": "object"
+      },
       "WorkspaceItemQueryParameters": {
         "properties": {
           "include": {
@@ -14440,7 +14215,7 @@
   "paths": {
     "/api/data/aggregation-statistics": {
       "get": {
-        "description": "Get public Aggregation Statistics and Aggregation Statistics associated with the authenticated user.",
+        "description": "Get Aggregation Statistics.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics",
         "parameters": [
           {
@@ -14454,10 +14229,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -14472,17 +14245,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -14568,48 +14340,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -14821,34 +14551,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -17413,7 +17122,7 @@
     },
     "/api/data/datastream-statuses": {
       "get": {
-        "description": "Get public Datastream Statuses and Datastream Statuses associated with the authenticated user.",
+        "description": "Get Datastream Statuses.",
         "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_statuses",
         "parameters": [
           {
@@ -17427,10 +17136,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -17445,17 +17152,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -17541,48 +17247,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -17794,34 +17458,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -22193,7 +21836,7 @@
     },
     "/api/data/linked-resource-types": {
       "get": {
-        "description": "Get public Linked Resource Types and Linked Resource Types associated with the authenticated user.",
+        "description": "Get Linked Resource Types.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_types",
         "parameters": [
           {
@@ -22207,10 +21850,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -22225,17 +21866,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -22321,48 +21961,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -22574,34 +22172,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -22744,7 +22321,7 @@
     },
     "/api/data/method-types": {
       "get": {
-        "description": "Get public Method Types and Method Types associated with the authenticated user.",
+        "description": "Get Method Types.",
         "operationId": "interfaces_api_views_sta_method_type_get_method_types",
         "parameters": [
           {
@@ -22758,10 +22335,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -22776,17 +22351,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -22872,48 +22446,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -23125,34 +22657,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -24608,7 +24119,7 @@
     },
     "/api/data/monitoring-site-types": {
       "get": {
-        "description": "Get public Monitoring Site Types and Monitoring Site Types associated with the authenticated user.",
+        "description": "Get Monitoring Site Types.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types",
         "parameters": [
           {
@@ -24622,10 +24133,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -24640,17 +24149,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -24736,48 +24244,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -24989,34 +24455,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -29278,7 +28723,7 @@
     },
     "/api/data/observed-property-types": {
       "get": {
-        "description": "Get public Observed Property Types and Observed Property Types associated with the authenticated user.",
+        "description": "Get Observed Property Types.",
         "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_types",
         "parameters": [
           {
@@ -29292,10 +28737,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -29310,17 +28753,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -29406,48 +28848,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -29659,34 +29059,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -32420,8 +31799,7 @@
                   "id",
                   "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -32556,24 +31934,6 @@
               },
               "title": "Workspace Id",
               "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -32787,8 +32147,7 @@
                   "id",
                   "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -33229,7 +32588,7 @@
     },
     "/api/data/sampled-mediums": {
       "get": {
-        "description": "Get public Sampled Mediums and Sampled Mediums associated with the authenticated user.",
+        "description": "Get Sampled Mediums.",
         "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_mediums",
         "parameters": [
           {
@@ -33243,10 +32602,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -33261,17 +32618,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -33357,48 +32713,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -33610,34 +32924,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }
@@ -33780,7 +33073,7 @@
     },
     "/api/data/unit-types": {
       "get": {
-        "description": "Get public Unit Types and Unit Types associated with the authenticated user.",
+        "description": "Get Unit Types.",
         "operationId": "interfaces_api_views_sta_unit_type_get_unit_types",
         "parameters": [
           {
@@ -33794,10 +33087,8 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
@@ -33812,17 +33103,16 @@
             "name": "include",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
-              "type": "array"
+              "title": "Include"
             }
           },
           {
@@ -33908,48 +33198,6 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
-            }
-          },
-          {
-            "description": "Filter terms by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter terms by workspace ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter terms by active status.",
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter terms by active status.",
-              "title": "Is Active"
             }
           }
         ],
@@ -34161,34 +33409,13 @@
               "items": {
                 "enum": [
                   "id",
-                  "workspaceId",
                   "name",
-                  "description",
-                  "isActive"
+                  "description"
                 ],
                 "type": "string"
               },
               "style": "form",
               "title": "Properties",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
-              "items": {
-                "enum": [
-                  "workspace"
-                ],
-                "type": "string"
-              },
-              "style": "form",
-              "title": "Include",
               "type": "array"
             }
           }

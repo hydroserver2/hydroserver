@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import SampledMediumAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.sampled_medium import (
     SampledMediumResponse,
@@ -33,10 +33,10 @@ sampled_medium_service = SampledMediumAPIService()
 )
 def get_sampled_mediums(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Sampled Mediums and Sampled Mediums associated with the authenticated user.
+    Get Sampled Mediums.
     """
 
     return 200, sampled_medium_service.list(
@@ -45,7 +45,6 @@ def get_sampled_mediums(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_sampled_medium(
 def get_sampled_medium(
     request: HydroServerHttpRequest,
     sampled_medium_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get a Sampled Medium.
@@ -98,7 +97,6 @@ def get_sampled_medium(
     return 200, sampled_medium_service.get(
         principal=request.principal,
         uid=sampled_medium_id,
-        include=query.include,
     )
 
 

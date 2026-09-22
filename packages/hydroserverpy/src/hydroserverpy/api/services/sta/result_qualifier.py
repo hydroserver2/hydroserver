@@ -36,7 +36,6 @@ class ResultQualifierService(HydroServerBaseService):
         self,
         name: str,
         description: Optional[str] = None,
-        is_active: Optional[bool] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "ResultQualifier":
@@ -46,7 +45,6 @@ class ResultQualifierService(HydroServerBaseService):
             "id": normalize_uuid(uid),
             "name": name,
             "description": description,
-            "isActive": is_active,
             "workspaceId": normalize_uuid(workspace),
         }
 
@@ -57,14 +55,12 @@ class ResultQualifierService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str = ...,
         description: str = ...,
-        is_active: bool = ...,
     ) -> "ResultQualifier":
         """Update a result qualifier."""
 
         body = {
             "name": name,
             "description": description,
-            "isActive": is_active,
         }
 
         return super().update(uid=str(uid), **body)

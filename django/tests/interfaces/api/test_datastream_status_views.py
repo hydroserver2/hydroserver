@@ -1,15 +1,6 @@
 import pytest
 
-from django.test.utils import CaptureQueriesContext
-from django.db import connection
-
-from tests.core.iam.factories import (
-    CollaboratorFactory,
-    PermissionFactory,
-    RoleFactory,
-    UserFactory,
-    WorkspaceFactory,
-)
+from tests.core.iam.factories import UserFactory
 from tests.core.sta.factories import DatastreamStatusFactory
 
 pytestmark = pytest.mark.django_db
@@ -21,49 +12,20 @@ def _detail_url(datastream_status_id):
     return f"{DATASTREAM_STATUSES_URL}/{datastream_status_id}"
 
 
-def _collaborator_with_permission(workspace, **permissions):
-    role = RoleFactory(workspace=workspace)
-    PermissionFactory(role=role, resource_type="DatastreamStatus", **permissions)
-    return CollaboratorFactory(workspace=workspace, role=role)
-
-
 def _datastream_status_body(**overrides):
     body = {
-        "name": "New Term",
+        "name": "New Status",
         "description": "A new datastream status.",
     }
     body.update(overrides)
     return body
 
 
-# --- get_datastream_statuss -------------------------------------------------------
+# --- get_datastream_statuses --------------------------------------------------------------
 
 
-def test_get_datastream_statuss_includes_global_terms_for_anonymous(client):
-    datastream_status = DatastreamStatusFactory(global_=True)
-
-    response = client.get(DATASTREAM_STATUSES_URL)
-
-    assert response.status_code == 200
-    assert str(datastream_status.id) in [r["id"] for r in response.json()["data"]]
-
-
-def test_get_datastream_statuss_excludes_private_workspace_terms_for_outsider(client):
-    workspace = WorkspaceFactory(is_private=True)
-    DatastreamStatusFactory(workspace=workspace)
-    outsider = UserFactory()
-    client.force_login(outsider)
-
-    response = client.get(DATASTREAM_STATUSES_URL)
-
-    assert response.json()["data"] == []
-
-
-def test_get_datastream_statuss_includes_workspace_terms_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    client.force_login(owner)
+def test_get_datastream_statuses_visible_to_anonymous(client):
+    datastream_status = DatastreamStatusFactory()
 
     response = client.get(DATASTREAM_STATUSES_URL)
 
@@ -71,61 +33,60 @@ def test_get_datastream_statuss_includes_workspace_terms_for_workspace_owner(cli
     assert str(datastream_status.id) in [r["id"] for r in response.json()["data"]]
 
 
-def test_get_datastream_statuss_without_properties_returns_every_field(client):
-    DatastreamStatusFactory(global_=True, name="A")
+def test_get_datastream_statuses_visible_to_any_authenticated_user(client):
+    datastream_status = DatastreamStatusFactory()
+    client.force_login(UserFactory())
+
+    response = client.get(DATASTREAM_STATUSES_URL)
+
+    assert response.status_code == 200
+    assert str(datastream_status.id) in [r["id"] for r in response.json()["data"]]
+
+
+def test_get_datastream_statuses_properties_filters_every_item_in_the_list(client):
+    DatastreamStatusFactory(name="A")
+    DatastreamStatusFactory(name="B")
+
+    response = client.get(DATASTREAM_STATUSES_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert len(items) == 2
+    for item in items:
+        assert set(item.keys()) == {"id", "name"}
+
+
+def test_get_datastream_statuses_properties_rejects_unknown_property(client):
+    response = client.get(DATASTREAM_STATUSES_URL, {"properties": "id,bogus"})
+
+    assert response.status_code == 400
+
+
+def test_get_datastream_statuses_without_properties_returns_every_field(client):
+    DatastreamStatusFactory(name="A")
 
     response = client.get(DATASTREAM_STATUSES_URL)
 
     assert response.status_code == 200
     item = response.json()["data"][0]
-    assert set(item.keys()) == {"id", "name", "description", "isActive", "workspaceId"}
+    assert set(item.keys()) == {"id", "name", "description"}
 
 
-def test_get_datastream_statuss_has_no_included_key_without_include_param(client):
-    DatastreamStatusFactory(global_=True)
+def test_get_datastream_statuses_q_searches_name_and_description(client):
+    DatastreamStatusFactory(name="Alpha term", description="")
+    DatastreamStatusFactory(name="Beta term", description="")
 
-    response = client.get(DATASTREAM_STATUSES_URL)
-
-    assert response.status_code == 200
-    assert "included" not in response.json()
-
-
-def test_get_datastream_statuss_include_workspace_deduplicates_across_items(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    DatastreamStatusFactory(workspace=workspace, name="A")
-    DatastreamStatusFactory(workspace=workspace, name="B")
-    client.force_login(owner)
-
-    response = client.get(DATASTREAM_STATUSES_URL, {"include": "workspace"})
-
-    assert response.status_code == 200
-    body = response.json()
-    assert len(body["data"]) == 2
-    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
-
-
-def test_get_datastream_statuss_include_rejects_unknown_relation(client):
-    response = client.get(DATASTREAM_STATUSES_URL, {"include": "bogus"})
-
-    assert response.status_code == 400
-
-
-def test_get_datastream_statuss_q_searches_name_and_description(client):
-    DatastreamStatusFactory(global_=True, name="Average", description="")
-    DatastreamStatusFactory(global_=True, name="Maximum", description="")
-
-    response = client.get(DATASTREAM_STATUSES_URL, {"q": "average"})
+    response = client.get(DATASTREAM_STATUSES_URL, {"q": "alpha"})
 
     assert response.status_code == 200
     items = response.json()["data"]
     assert len(items) == 1
-    assert items[0]["name"] == "Average"
+    assert items[0]["name"] == "Alpha term"
 
 
-def test_get_datastream_statuss_sortby_name_descending(client):
-    DatastreamStatusFactory(global_=True, name="Alpha")
-    DatastreamStatusFactory(global_=True, name="Beta")
+def test_get_datastream_statuses_sortby_name_descending(client):
+    DatastreamStatusFactory(name="Alpha")
+    DatastreamStatusFactory(name="Beta")
 
     response = client.get(DATASTREAM_STATUSES_URL, {"sortby": "-name"})
 
@@ -134,28 +95,16 @@ def test_get_datastream_statuss_sortby_name_descending(client):
     assert names.index("Beta") < names.index("Alpha")
 
 
-def test_get_datastream_statuss_is_active_filter(client):
-    DatastreamStatusFactory(global_=True, name="Active term", is_active=True)
-    DatastreamStatusFactory(global_=True, name="Inactive term", is_active=False)
-
-    response = client.get(DATASTREAM_STATUSES_URL, {"is_active": "true"})
-
-    assert response.status_code == 200
-    names = [item["name"] for item in response.json()["data"]]
-    assert names == ["Active term"]
+# --- create_datastream_status ------------------------------------------------------------
 
 
-# --- create_datastream_status ------------------------------------------------------
-
-
-def test_create_datastream_status_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    client.force_login(owner)
+def test_create_datastream_status_succeeds_for_superuser(client):
+    superuser = UserFactory(is_superuser=True)
+    client.force_login(superuser)
 
     response = client.post(
         DATASTREAM_STATUSES_URL,
-        data=_datastream_status_body(workspaceId=str(workspace.id)),
+        data=_datastream_status_body(),
         content_type="application/json",
     )
 
@@ -164,85 +113,55 @@ def test_create_datastream_status_succeeds_for_workspace_owner(client):
     datastream_status_id = response.json()["id"]
 
     detail = client.get(_detail_url(datastream_status_id))
-    assert detail.json()["data"]["name"] == "New Term"
-    assert detail.json()["data"]["isActive"] is True
+    assert detail.json()["data"]["name"] == "New Status"
 
 
 def test_create_datastream_status_returns_401_when_unauthenticated(client):
-    workspace = WorkspaceFactory()
-
     response = client.post(
         DATASTREAM_STATUSES_URL,
-        data=_datastream_status_body(workspaceId=str(workspace.id)),
+        data=_datastream_status_body(),
         content_type="application/json",
     )
 
     assert response.status_code == 401
 
 
-def test_create_datastream_status_returns_403_without_create_permission(client):
-    workspace = WorkspaceFactory()
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
+def test_create_datastream_status_returns_403_for_non_superuser(client):
+    client.force_login(UserFactory())
 
     response = client.post(
         DATASTREAM_STATUSES_URL,
-        data=_datastream_status_body(workspaceId=str(workspace.id)),
+        data=_datastream_status_body(),
         content_type="application/json",
     )
 
     assert response.status_code == 403
 
 
-def test_create_datastream_status_returns_400_for_duplicate_name_in_workspace(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    DatastreamStatusFactory(workspace=workspace, name="Duplicate")
-    client.force_login(owner)
+def test_create_datastream_status_returns_400_for_duplicate_name(client):
+    DatastreamStatusFactory(name="Duplicate")
+    superuser = UserFactory(is_superuser=True)
+    client.force_login(superuser)
 
     response = client.post(
         DATASTREAM_STATUSES_URL,
-        data=_datastream_status_body(workspaceId=str(workspace.id), name="Duplicate"),
+        data=_datastream_status_body(name="Duplicate"),
         content_type="application/json",
     )
 
     assert response.status_code == 400
 
 
-# --- get_datastream_status ----------------------------------------------------------
+# --- get_datastream_status ----------------------------------------------------------------
 
 
-def test_get_datastream_status_returns_global_term_for_anonymous(client):
-    datastream_status = DatastreamStatusFactory(global_=True)
+def test_get_datastream_status_returns_200_for_anonymous(client):
+    datastream_status = DatastreamStatusFactory()
 
     response = client.get(_detail_url(datastream_status.id))
 
     assert response.status_code == 200
     assert response.json()["data"]["id"] == str(datastream_status.id)
-
-
-def test_get_datastream_status_returns_404_for_private_workspace_term_when_unrelated(
-    client,
-):
-    workspace = WorkspaceFactory(is_private=True)
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    outsider = UserFactory()
-    client.force_login(outsider)
-
-    response = client.get(_detail_url(datastream_status.id))
-
-    assert response.status_code == 404
-
-
-def test_get_datastream_status_returns_200_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    client.force_login(owner)
-
-    response = client.get(_detail_url(datastream_status.id))
-
-    assert response.status_code == 200
 
 
 def test_get_datastream_status_returns_404_for_nonexistent_term(client):
@@ -251,49 +170,21 @@ def test_get_datastream_status_returns_404_for_nonexistent_term(client):
     assert response.status_code == 404
 
 
-def test_get_datastream_status_include_workspace_sideloads_it(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    client.force_login(owner)
+def test_get_datastream_status_properties_rejects_unknown_property(client):
+    datastream_status = DatastreamStatusFactory()
 
-    response = client.get(_detail_url(datastream_status.id), {"include": "workspace"})
+    response = client.get(_detail_url(datastream_status.id), {"properties": "bogus"})
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["data"]["id"] == str(datastream_status.id)
-    assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+    assert response.status_code == 400
 
 
-def test_get_datastream_status_include_workspace_does_not_scale_queries_with_count(
-    client,
-):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    for i in range(5):
-        DatastreamStatusFactory(workspace=workspace, name=f"A{i}")
-    client.force_login(owner)
-
-    with CaptureQueriesContext(connection) as small:
-        client.get(DATASTREAM_STATUSES_URL, {"include": "workspace"})
-
-    for i in range(5):
-        DatastreamStatusFactory(workspace=workspace, name=f"B{i}")
-
-    with CaptureQueriesContext(connection) as large:
-        client.get(DATASTREAM_STATUSES_URL, {"include": "workspace"})
-
-    assert len(large.captured_queries) == len(small.captured_queries)
+# --- update_datastream_status -------------------------------------------------------------
 
 
-# --- update_datastream_status -------------------------------------------------------
-
-
-def test_update_datastream_status_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream_status = DatastreamStatusFactory(workspace=workspace, name="Original Name")
-    client.force_login(owner)
+def test_update_datastream_status_succeeds_for_superuser(client):
+    datastream_status = DatastreamStatusFactory(name="Original Name")
+    superuser = UserFactory(is_superuser=True)
+    client.force_login(superuser)
 
     response = client.patch(
         _detail_url(datastream_status.id),
@@ -308,29 +199,21 @@ def test_update_datastream_status_succeeds_for_workspace_owner(client):
     assert detail.json()["data"]["name"] == "Updated Name"
 
 
-def test_update_datastream_status_can_deprecate_a_term(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream_status = DatastreamStatusFactory(workspace=workspace, is_active=True)
-    client.force_login(owner)
+def test_update_datastream_status_returns_401_when_unauthenticated(client):
+    datastream_status = DatastreamStatusFactory()
 
     response = client.patch(
         _detail_url(datastream_status.id),
-        data={"isActive": False},
+        data={"name": "Updated Name"},
         content_type="application/json",
     )
 
-    assert response.status_code == 204
-
-    detail = client.get(_detail_url(datastream_status.id))
-    assert detail.json()["data"]["isActive"] is False
+    assert response.status_code == 401
 
 
-def test_update_datastream_status_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
+def test_update_datastream_status_returns_403_for_non_superuser(client):
+    datastream_status = DatastreamStatusFactory()
+    client.force_login(UserFactory())
 
     response = client.patch(
         _detail_url(datastream_status.id),
@@ -341,14 +224,13 @@ def test_update_datastream_status_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
-# --- delete_datastream_status -------------------------------------------------------
+# --- delete_datastream_status -------------------------------------------------------------
 
 
-def test_delete_datastream_status_succeeds_for_workspace_owner(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    client.force_login(owner)
+def test_delete_datastream_status_succeeds_for_superuser(client):
+    datastream_status = DatastreamStatusFactory()
+    superuser = UserFactory(is_superuser=True)
+    client.force_login(superuser)
 
     response = client.delete(_detail_url(datastream_status.id))
 
@@ -356,11 +238,9 @@ def test_delete_datastream_status_succeeds_for_workspace_owner(client):
     assert client.get(_detail_url(datastream_status.id)).status_code == 404
 
 
-def test_delete_datastream_status_returns_403_for_viewer_collaborator(client):
-    workspace = WorkspaceFactory()
-    datastream_status = DatastreamStatusFactory(workspace=workspace)
-    collaborator = _collaborator_with_permission(workspace, can_view=True)
-    client.force_login(collaborator.user)
+def test_delete_datastream_status_returns_403_for_non_superuser(client):
+    datastream_status = DatastreamStatusFactory()
+    client.force_login(UserFactory())
 
     response = client.delete(_detail_url(datastream_status.id))
 

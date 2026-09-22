@@ -129,12 +129,8 @@ class SampledMediumFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> SampledMedium: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Sampled Medium {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class AggregationStatisticFactory(DjangoModelFactory):
@@ -145,12 +141,8 @@ class AggregationStatisticFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> AggregationStatistic: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Aggregation Statistic {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class DatastreamStatusFactory(DjangoModelFactory):
@@ -161,12 +153,8 @@ class DatastreamStatusFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> DatastreamStatus: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Datastream Status {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class MethodTypeFactory(DjangoModelFactory):
@@ -177,12 +165,8 @@ class MethodTypeFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> MethodType: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Method Type {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class UnitTypeFactory(DjangoModelFactory):
@@ -193,12 +177,8 @@ class UnitTypeFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> UnitType: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Unit Type {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class ObservedPropertyTypeFactory(DjangoModelFactory):
@@ -209,12 +189,8 @@ class ObservedPropertyTypeFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> ObservedPropertyType: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Observed Property Type {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class MonitoringSiteTypeFactory(DjangoModelFactory):
@@ -225,12 +201,8 @@ class MonitoringSiteTypeFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> MonitoringSiteType: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Monitoring Site Type {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class LinkedResourceTypeFactory(DjangoModelFactory):
@@ -241,12 +213,8 @@ class LinkedResourceTypeFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> LinkedResourceType: ...
 
-    workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Linked Resource Type {seq}")
     description = factory.Faker("sentence")
-
-    class Params:
-        global_ = factory.Trait(workspace=None)
 
 
 class UnitFactory(DjangoModelFactory):

@@ -7,9 +7,9 @@ from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import DatastreamStatusAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
-from interfaces.api.schemas.sta.controlled_vocabulary import (
-    ControlledVocabularyQueryParameters,
-    ControlledVocabularyItemQueryParameters,
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
 )
 from interfaces.api.schemas.sta.datastream_status import (
     DatastreamStatusResponse,
@@ -33,10 +33,10 @@ datastream_status_service = DatastreamStatusAPIService()
 )
 def get_datastream_statuses(
     request: HydroServerHttpRequest,
-    query: Query[ControlledVocabularyQueryParameters],
+    query: Query[VocabularyQueryParameters],
 ):
     """
-    Get public Datastream Statuses and Datastream Statuses associated with the authenticated user.
+    Get Datastream Statuses.
     """
 
     return 200, datastream_status_service.list(
@@ -45,7 +45,6 @@ def get_datastream_statuses(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        include=query.include,
     )
 
 
@@ -89,7 +88,7 @@ def create_datastream_status(
 def get_datastream_status(
     request: HydroServerHttpRequest,
     datastream_status_id: Path[uuid.UUID],
-    query: Query[ControlledVocabularyItemQueryParameters],
+    query: Query[VocabularyItemQueryParameters],
 ):
     """
     Get a Datastream Status.
@@ -98,7 +97,6 @@ def get_datastream_status(
     return 200, datastream_status_service.get(
         principal=request.principal,
         uid=datastream_status_id,
-        include=query.include,
     )
 
 
