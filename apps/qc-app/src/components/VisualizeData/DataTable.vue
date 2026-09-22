@@ -136,7 +136,7 @@
               color="primary"
               :title="qualifierTooltip(a)"
             >
-              {{ qualifierName(a.qualifierId) }}
+              {{ qualifierCode(a.qualifierId) }}
             </v-chip>
           </div>
         </template>
@@ -257,8 +257,8 @@ const qualifierApplicationsAt = (index: number) => {
   return applied.value[id]?.[index] ?? []
 }
 
-const qualifierName = (qualifierId: string) =>
-  qualifierById.value[qualifierId]?.name ?? ''
+const qualifierCode = (qualifierId: string) =>
+  qualifierById.value[qualifierId]?.code ?? ''
 
 const qualifierTooltip = (a: {
   qualifierId: string
@@ -268,7 +268,7 @@ const qualifierTooltip = (a: {
   const q = qualifierById.value[a.qualifierId]
   if (!q) return ''
   const who = a.appliedBy ? ` (${a.appliedBy})` : ''
-  return `${q.name}: ${q.description}${who}`
+  return `${q.code}: ${q.description}${who}`
 }
 
 const rowCount = computed(() => selectedSeries?.value?.data.dataX.length ?? 0)

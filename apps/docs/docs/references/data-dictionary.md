@@ -20,8 +20,6 @@ Method, ObservedProperty, ProcessingLevel, Unit, and ResultQualifier share these
 
 Elsewhere in the data model, `link` is a person's or organization's website. An attachment's `url` identifies an external link or an uploaded file.
 
-During the metadata migration, processing-level names are populated from the previous description, truncated to 255 characters; the full description and code are retained. Result-qualifier names are copied from the previous code, and the code is retained as an optional external identifier. Existing external identifiers or definition URLs that exceed the new length limits must be shortened before the migration can run; the migration reports the affected field.
-
 ## Datastream
 
 A Datastream groups a collection of Observations measuring the same ObservedProperty and produced by the same Method. Each instance of a Datastream represents the properties for a time series of Observations.
@@ -82,7 +80,7 @@ An ObservedProperty specifies the phenomenon of an Observation, such as flow, te
 | M | name | The label displayed by every frontend. | String (255) |
 | O | definition | A URL defining or documenting the item. | URL (2,000) |
 | M | description | Free-text comments from the user. | Text |
-| M        | type                   | The type of ObservedProperty.                                                                                                      | String    |
+| M | type | The type of ObservedProperty. | String (255) |
 | O | code | An external or organizational identifier. | String (255) |
 
 ## Organization
@@ -162,12 +160,12 @@ A Method describes how a Datastream's Observations are produced, whether by an i
 | O        | workspace_id             | A foreign key identifier for the Workspace that owns the Method. If omitted, the Method is shared system-wide. | UUID      |
 | M | name | The label displayed by every frontend. | String (255) |
 | O | code | An external or organizational identifier. | String (255) |
-| M        | type                     | A controlled-vocabulary value identifying the kind of Method.                                                  | String    |
+| M | type | A controlled-vocabulary value identifying the kind of Method. | String (255) |
 | M | description | Free-text comments from the user. | Text |
 | O | definition | A URL defining or documenting the item. | URL (2,000) |
 | O        | sensor_model             | The model name when the Method represents an instrument.                                                       | String    |
 | O        | sensor_model_manufacturer | The model manufacturer when the Method represents an instrument.                                               | String    |
-| O        | sensor_model_definition  | A URI pointing to documentation for the sensor model.                                                          | String    |
+| O | sensor_model_definition | A URL pointing to documentation for the sensor model. | URL (2,000) |
 
 The SensorThings API continues to expose these records as Sensor entities for standards compatibility.
 
@@ -222,7 +220,7 @@ The unit of measure associated with the Observations within a Datastream.
 | M | name | The label displayed by every frontend. | String (255) |
 | M        | symbol       | An abbreviation or symbol used for the Unit.                                                               | String    |
 | O | definition | A URL defining or documenting the item. | URL (2,000) |
-| M        | type         | The type of Unit.                                                                                          | String    |
+| M | type | The type of Unit. | String (255) |
 
 ## Workspace
 

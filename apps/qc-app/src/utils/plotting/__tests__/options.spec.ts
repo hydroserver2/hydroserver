@@ -48,7 +48,7 @@ vi.mock('@/store/plotly', () => ({
 }))
 
 const applications: Array<{ qualifierId: string; index: number; appliedAt: string; appliedBy: string }> = []
-const qualifierById: Record<string, { name: string; description: string }> = {}
+const qualifierById: Record<string, { code: string; description: string }> = {}
 
 vi.mock('@/store/qualifiers', () => ({
   useQualifierStore: () => ({
@@ -150,9 +150,9 @@ describe('buildQualifierBand', () => {
     expect(result).toBeNull()
   })
 
-  it('returns N traces for N distinct qualifier names and uses yaxis{N} axisKey', () => {
-    qualifierById['q1'] = { name: 'A', description: 'alpha' }
-    qualifierById['q2'] = { name: 'B', description: 'beta' }
+  it('returns N traces for N distinct qualifier codes and uses yaxis{N} axisKey', () => {
+    qualifierById['q1'] = { code: 'A', description: 'alpha' }
+    qualifierById['q2'] = { code: 'B', description: 'beta' }
     applications.push(
       { qualifierId: 'q1', index: 0, appliedAt: new Date().toISOString(), appliedBy: 'user' },
       { qualifierId: 'q2', index: 1, appliedAt: new Date().toISOString(), appliedBy: 'user' }

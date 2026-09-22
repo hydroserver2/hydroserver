@@ -256,7 +256,7 @@ def test_create_observed_property_allows_omitting_definition(client):
     assert detail.json()["data"]["definition"] is None
 
 
-@pytest.mark.parametrize("field,length", [("type", 500), ("code", 255)])
+@pytest.mark.parametrize("field,length", [("type", 255), ("code", 255)])
 def test_create_observed_property_allows_type_and_code_at_max_length(client, field, length):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)

@@ -4869,7 +4869,7 @@
           "sensorModelDefinition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -4891,7 +4891,7 @@
             "title": "Sensormodelmanufacturer"
           },
           "type": {
-            "maxLength": 100,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           }
@@ -4961,7 +4961,7 @@
           "sensorModelDefinition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -4983,7 +4983,7 @@
             "title": "Sensormodelmanufacturer"
           },
           "type": {
-            "maxLength": 100,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -5258,7 +5258,7 @@
           "sensorModelDefinition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5280,7 +5280,7 @@
             "title": "Sensormodelmanufacturer"
           },
           "type": {
-            "maxLength": 100,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -7775,7 +7775,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 500,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           }
@@ -7831,7 +7831,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 500,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -8064,7 +8064,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 500,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },

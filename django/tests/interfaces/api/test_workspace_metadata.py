@@ -45,6 +45,10 @@ def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, 
     changes = {} if resource == "result-qualifiers" else {"definition": definition}
     if resource != "units":
         changes.update(code="C" * 255, description="D" * 5000)
+    if "type" in fields:
+        changes["type"] = "T" * 255
+    if resource == "methods":
+        changes["sensorModelDefinition"] = definition
     response = client.patch(detail_url, data=changes, content_type="application/json")
     assert response.status_code == 204, response.content
     if resource != "result-qualifiers":
@@ -55,11 +59,21 @@ def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, 
         invalid.extend([{"definition": "not a URL"}, {"definition": definition + "x"}])
     if resource != "units":
         invalid.extend([{"code": "C" * 256}, {"description": ""}, {"description": None}])
+    if "type" in fields:
+        invalid.append({"type": "T" * 256})
+    if resource == "methods":
+        invalid.extend([
+            {"sensorModelDefinition": "not a URL"},
+            {"sensorModelDefinition": definition + "x"},
+        ])
+        assert client.get(detail_url).json()["data"]["sensorModelDefinition"] == definition
     for change in invalid:
         response = client.patch(detail_url, data=change, content_type="application/json")
         assert response.status_code == 400, (change, response.content)
 
     cleared = {} if resource == "result-qualifiers" else {"definition": None}
+    if resource == "methods":
+        cleared["sensorModelDefinition"] = None
     if resource != "units":
         cleared["code"] = None
     assert client.patch(detail_url, data=cleared, content_type="application/json").status_code == 204

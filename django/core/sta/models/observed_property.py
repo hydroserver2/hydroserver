@@ -21,7 +21,7 @@ class ObservedProperty(models.Model):
     name = models.CharField(max_length=255)
     definition = models.URLField(max_length=2000, blank=True, null=True)
     description = models.TextField()
-    type = models.CharField(max_length=500)
+    type = models.CharField(max_length=255)
     code = models.CharField(max_length=255, blank=True, null=True)
     search_vector = SearchVectorField(null=True, editable=False)
 

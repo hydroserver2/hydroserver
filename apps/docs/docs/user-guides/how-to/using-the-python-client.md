@@ -326,8 +326,10 @@ hs_api.units.create(name, symbol, type, definition=None, workspace=None, uid=Non
 ```python
 hs_api.processinglevels.list(workspace=None) -> HydroServerCollection[ProcessingLevel]
 hs_api.processinglevels.get(uid) -> ProcessingLevel
-hs_api.processinglevels.create(name, description, code=None, definition=None, workspace=None, uid=None) -> ProcessingLevel
+hs_api.processinglevels.create(name, description, *, code=None, definition=None, workspace=None, uid=None) -> ProcessingLevel
 ```
+
+Processing-level creation accepts `name` and `description` by position or by keyword. Optional arguments must be named, for example `create("Raw", "Unprocessed data", code="0")`. The old `create("0", "Raw", "Unprocessed data")` call raises Python's built-in `TypeError`; move the old first argument to `code=`. Processing-level updates retain their existing argument order: `update(uid, code, name, description, definition)`.
 
 ### Result Qualifiers
 
@@ -345,8 +347,10 @@ hs_api.processinglevels.create(name, description, code=None, definition=None, wo
 ```python
 hs_api.resultqualifiers.list(workspace=None) -> HydroServerCollection[ResultQualifier]
 hs_api.resultqualifiers.get(uid) -> ResultQualifier
-hs_api.resultqualifiers.create(name, description, code=None, workspace=None, uid=None) -> ResultQualifier
+hs_api.resultqualifiers.create(name, description, *, code=None, workspace=None, uid=None) -> ResultQualifier
 ```
+
+Result-qualifier creation accepts `name` and `description` by position or by keyword. Optional arguments must be named, for example `create("ICE", "Ice affected", code="EXT")`. The former qualifier code is now `name`, so `create("ICE", "Ice affected")` remains valid; change an old `code=` keyword to `name=`. Updates follow `update(uid, name, description, code)`, with all fields after `uid` optional.
 
 ---
 

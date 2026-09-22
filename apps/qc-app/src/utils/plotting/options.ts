@@ -268,7 +268,7 @@ const iconReset = {
 
 /**
  * Collects qualifier applications for the QC datastream and emits a dedicated
- * band of scatter traces (one per unique qualifier name) at the bottom of the
+ * band of scatter traces (one per unique qualifier code) at the bottom of the
  * plot. Returns null when there is nothing to render.
  */
 function buildQualifierBand(
@@ -294,26 +294,26 @@ function buildQualifierBand(
   const applications = qualifierStore.getApplicationsForDatastream(qcDatastreamId)
   if (!applications.length) return null
 
-  // Group applications by qualifier name.
-  const byName = new Map<
+  // Group applications by qualifier code.
+  const byCode = new Map<
     string,
     Array<{ index: number; appliedAt: string; appliedBy: string; description: string }>
   >()
   for (const a of applications) {
     const q = qualifierStore.qualifierById[a.qualifierId]
     if (!q) continue
-    const arr = byName.get(q.name) ?? []
+    const arr = byCode.get(q.code) ?? []
     arr.push({
       index: a.index,
       appliedAt: a.appliedAt,
       appliedBy: a.appliedBy,
       description: q.description,
     })
-    byName.set(q.name, arr)
+    byCode.set(q.code, arr)
   }
-  if (!byName.size) return null
+  if (!byCode.size) return null
 
-  const names = Array.from(byName.keys()).sort()
+  const codes = Array.from(byCode.keys()).sort()
   const qualAxisNum =
     typeof qcAxisSuffix === 'number'
       ? qcAxisSuffix + 1
@@ -326,8 +326,8 @@ function buildQualifierBand(
   const bandTop = 0.1
   const mainAxisBottom = 0.14
 
-  const traces: AppPlotlyTrace[] = names.map((name, row) => {
-    const entries = byName.get(name)!
+  const traces: AppPlotlyTrace[] = codes.map((code, row) => {
+    const entries = byCode.get(code)!
     const xs: number[] = []
     const ys: number[] = []
     const texts: string[] = []
@@ -339,7 +339,7 @@ function buildQualifierBand(
       const ts = new Date(e.appliedAt)
       const when = isNaN(ts.getTime()) ? e.appliedAt : ts.toLocaleString()
       texts.push(
-        `<b>${name}</b>${e.description ? ' — ' + e.description : ''}` +
+        `<b>${code}</b>${e.description ? ' — ' + e.description : ''}` +
         `<br>Applied: ${when}` +
         `<br>By: ${e.appliedBy}`
       )
@@ -351,7 +351,7 @@ function buildQualifierBand(
       yaxis: qualAxisName,
       type: 'scatter',
       mode: 'markers',
-      name: name,
+      name: code,
       showLegend: false,
       marker: {
         color,
@@ -365,10 +365,10 @@ function buildQualifierBand(
 
   const axis: Partial<LayoutAxis> = {
     domain: [0, bandTop],
-    range: [-0.5, names.length - 0.5],
+    range: [-0.5, codes.length - 0.5],
     tickmode: 'array',
-    tickvals: names.map((_, i) => i),
-    ticktext: names,
+    tickvals: codes.map((_, i) => i),
+    ticktext: codes,
     tickfont: { size: 10 },
     showgrid: false,
     zeroline: false,

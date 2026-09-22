@@ -41,7 +41,7 @@
           v-model="item.type"
           class="required-label"
           label="Variable Type"
-          :rules="rules.requiredAndMaxLength500"
+          :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field

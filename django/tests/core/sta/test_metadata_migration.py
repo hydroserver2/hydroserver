@@ -10,6 +10,7 @@ def test_standardize_metadata_preserves_legacy_values():
     previous = [("sta", "0017_datastream_search_vector_method_search_vector_and_more")]
     latest = [("sta", "0018_standardize_workspace_metadata")]
     executor = MigrationExecutor(connection)
+    leaf_nodes = executor.loader.graph.leaf_nodes("sta")
     executor.migrate(previous)
     try:
         old_apps = executor.loader.project_state(previous).apps
@@ -43,5 +44,40 @@ def test_standardize_metadata_preserves_legacy_values():
         observation.refresh_from_db()
         assert observation.result_qualifiers == ["ICE"]
         assert apps.get_model("sta", "ResultQualifier").objects.filter(search_vector="ICE").exists()
+    finally:
+        MigrationExecutor(connection).migrate(leaf_nodes)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_metadata_type_migration_preserves_values_and_search():
+    previous = [("sta", "0018_standardize_workspace_metadata")]
+    latest = [("sta", "0019_standardize_metadata_types_and_sensor_definition")]
+    executor = MigrationExecutor(connection)
+    executor.migrate(previous)
+    try:
+        old_apps = executor.loader.project_state(previous).apps
+        property_model = old_apps.get_model("sta", "ObservedProperty")
+        prop = property_model.objects.create(
+            name="Temperature", description="Comments", type="T" * 256,
+        )
+        method = old_apps.get_model("sta", "Method").objects.create(
+            name="Thermometer", description="Comments", type="Instrument",
+            sensor_model_definition="https://example.com/sensor",
+        )
+        with pytest.raises(ValueError, match="ObservedProperty.type"):
+            MigrationExecutor(connection).migrate(latest)
+        prop.refresh_from_db()
+        assert prop.type == "T" * 256
+        prop.type = "T" * 255
+        prop.save()
+        executor = MigrationExecutor(connection)
+        executor.migrate(latest)
+        apps = executor.loader.project_state(latest).apps
+        migrated_method = apps.get_model("sta", "Method").objects.get(pk=method.pk)
+        assert migrated_method.sensor_model_definition == method.sensor_model_definition
+        assert apps.get_model("sta", "ObservedProperty").objects.get(pk=prop.pk).type == prop.type
+        migrated_method.name = "Calibration"
+        migrated_method.save()
+        assert apps.get_model("sta", "Method").objects.filter(search_vector="Calibration").exists()
     finally:
         MigrationExecutor(connection).migrate(latest)

@@ -18,7 +18,7 @@
           label="Type"
           hide-details
           density="comfortable"
-          :rules="rules.required"
+          :rules="rules.requiredAndMaxLength255"
           class="mb-4 required-label"
         />
 
@@ -66,7 +66,7 @@
           v-if="isInstrument"
           v-model="item.sensorModelDefinition"
           label="Sensor Model Definition"
-          :rules="item.sensorModelDefinition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.sensorModelDefinition ? rules.urlFormat : [])]"
         />
 
         <v-divider />

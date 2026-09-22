@@ -30,7 +30,7 @@ const { selectedWorkspaceId, hsRef, mockList, mockCreate } = vi.hoisted(() => {
 
 vi.mock('@hydroserver/client', () => ({
   ResultQualifier: class {
-    name = ''
+    code = ''
     description = ''
     workspaceId = ''
   },
@@ -193,11 +193,11 @@ describe('useQualifierStore.qualifierById', () => {
     const { useQualifierStore } = await import('@/store/qualifiers')
     const store = useQualifierStore()
     store.qualifiers = [
-      { id: 'q-1', name: 'A', description: 'a' },
-      { id: 'q-2', name: 'B', description: 'b' },
+      { id: 'q-1', code: 'A', description: 'a' },
+      { id: 'q-2', code: 'B', description: 'b' },
     ]
-    expect(store.qualifierById['q-1'].name).toBe('A')
-    expect(store.qualifierById['q-2'].name).toBe('B')
+    expect(store.qualifierById['q-1'].code).toBe('A')
+    expect(store.qualifierById['q-2'].code).toBe('B')
   })
 
   it('returns undefined for unknown id', async () => {
@@ -216,7 +216,7 @@ describe('useQualifierStore.loadQualifiers', () => {
     selectedWorkspaceId.value = null
     const { useQualifierStore } = await import('@/store/qualifiers')
     const store = useQualifierStore()
-    store.qualifiers = [{ id: 'x', name: 'X', description: '' }]
+    store.qualifiers = [{ id: 'x', code: 'X', description: '' }]
     await store.loadQualifiers()
     expect(store.qualifiers).toEqual([])
   })
@@ -225,8 +225,8 @@ describe('useQualifierStore.loadQualifiers', () => {
     mockList.fn = () =>
       Promise.resolve({
         data: [
-          { id: 'q-1', name: 'A', description: 'a', workspaceId: 'ws-1' },
-          { id: 'q-2', name: 'B', description: 'b', workspaceId: 'ws-1' },
+          { id: 'q-1', code: 'A', description: 'a', workspaceId: 'ws-1' },
+          { id: 'q-2', code: 'B', description: 'b', workspaceId: 'ws-1' },
         ],
       })
     selectedWorkspaceId.value = 'ws-1'
@@ -254,10 +254,10 @@ describe('useQualifierStore.createQualifier', () => {
   beforeEach(() => { consoleErrSpy = vi.spyOn(console, 'error').mockImplementation(() => {}) })
   afterEach(() => { consoleErrSpy.mockRestore() })
 
-  it('returns existing qualifier by case-insensitive name match', async () => {
+  it('returns existing qualifier by case-insensitive code match', async () => {
     const { useQualifierStore } = await import('@/store/qualifiers')
     const store = useQualifierStore()
-    store.qualifiers = [{ id: 'q-1', name: 'Foo', description: 'existing' }]
+    store.qualifiers = [{ id: 'q-1', code: 'Foo', description: 'existing' }]
     const result = await store.createQualifier('FOO', 'new desc')
     expect(result.id).toBe('q-1')
     expect(store.qualifiers).toHaveLength(1)
@@ -268,7 +268,7 @@ describe('useQualifierStore.createQualifier', () => {
       Promise.resolve({
         data: {
           id: 'q-new',
-          name: 'NEW',
+          code: 'NEW',
           description: 'd',
           workspaceId: 'ws-1',
         },
@@ -286,9 +286,9 @@ describe('useQualifierStore.createQualifier', () => {
     const { useQualifierStore } = await import('@/store/qualifiers')
     const store = useQualifierStore()
     const result = await store.createQualifier('LOCAL', 'desc')
-    expect(result.name).toBe('LOCAL')
+    expect(result.code).toBe('LOCAL')
     expect(result.id).toMatch(/^local-/)
-    expect(store.qualifiers.find((q: any) => q.name === 'LOCAL')).toBeTruthy()
+    expect(store.qualifiers.find((q: any) => q.code === 'LOCAL')).toBeTruthy()
   })
 
   it('falls back to local record when server throws', async () => {
@@ -298,6 +298,6 @@ describe('useQualifierStore.createQualifier', () => {
     const store = useQualifierStore()
     const result = await store.createQualifier('LOCALERR', 'desc')
     expect(result.id).toMatch(/^local-/)
-    expect(result.name).toBe('LOCALERR')
+    expect(result.code).toBe('LOCALERR')
   })
 })

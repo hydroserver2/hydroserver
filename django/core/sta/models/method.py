@@ -20,15 +20,15 @@ class Method(models.Model):
     )
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=255, blank=True, null=True)
-    type = models.CharField(max_length=100)
+    type = models.CharField(max_length=255)
     description = models.TextField()
     definition = models.URLField(max_length=2000, blank=True, null=True)
     sensor_model = models.CharField(max_length=255, null=True, blank=True)
     sensor_model_manufacturer = models.CharField(
         max_length=255, null=True, blank=True
     )
-    sensor_model_definition = models.CharField(
-        max_length=500, null=True, blank=True
+    sensor_model_definition = models.URLField(
+        max_length=2000, null=True, blank=True
     )
     search_vector = SearchVectorField(null=True, editable=False)
 

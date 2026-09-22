@@ -30,7 +30,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
     observedProperties.value
       .map((op) => ({
         ...op,
-        title: op.name,
+        title: `${op.name}, ${op.type}`,
       }))
       .sort((a, b) => a.title.localeCompare(b.title))
   )
