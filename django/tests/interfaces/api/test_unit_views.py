@@ -10,7 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, UnitFactory
+from tests.core.sta.factories import DatastreamFactory, UnitFactory, UnitTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -153,6 +153,20 @@ def test_get_units_include_workspace_skips_global_units_without_error(client):
 
     assert response.status_code == 200
     assert "included" not in response.json()
+
+
+def test_get_units_include_type_sideloads_unit_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    unit_type = UnitTypeFactory(name="Dimensionless")
+    UnitFactory(workspace=workspace, type=unit_type.name)
+    client.force_login(owner)
+
+    response = client.get(UNITS_URL, {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["unitTypes"]} == {str(unit_type.id)}
 
 
 def test_get_units_include_rejects_unknown_relation(client):

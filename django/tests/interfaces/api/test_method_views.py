@@ -10,7 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, MethodFactory
+from tests.core.sta.factories import DatastreamFactory, MethodFactory, MethodTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -155,6 +155,20 @@ def test_get_methods_include_rejects_unknown_relation(client):
     response = client.get(METHODS_URL, {"include": "bogus"})
 
     assert response.status_code == 400
+
+
+def test_get_methods_include_type_sideloads_method_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    method_type = MethodTypeFactory(name="Instrument Deployment")
+    MethodFactory(workspace=workspace, type=method_type.name)
+    client.force_login(owner)
+
+    response = client.get(METHODS_URL, {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["methodTypes"]} == {str(method_type.id)}
 
 
 def test_get_methods_properties_does_not_filter_included_resources(client):

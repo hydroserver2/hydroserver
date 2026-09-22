@@ -10,7 +10,11 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ObservedPropertyFactory
+from tests.core.sta.factories import (
+    DatastreamFactory,
+    ObservedPropertyFactory,
+    ObservedPropertyTypeFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -157,6 +161,22 @@ def test_get_observed_properties_include_workspace_deduplicates_across_items(cli
     body = response.json()
     assert len(body["data"]) == 2
     assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
+
+
+def test_get_observed_properties_include_type_sideloads_observed_property_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    observed_property_type = ObservedPropertyTypeFactory(name="Hydrology")
+    ObservedPropertyFactory(workspace=workspace, type=observed_property_type.name)
+    client.force_login(owner)
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["observedPropertyTypes"]} == {
+        str(observed_property_type.id)
+    }
 
 
 def test_get_observed_properties_include_rejects_unknown_relation(client):

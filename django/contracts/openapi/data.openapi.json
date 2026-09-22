@@ -2163,7 +2163,10 @@
                 "method",
                 "observedProperty",
                 "processingLevel",
-                "unit"
+                "unit",
+                "sampledMedium",
+                "aggregationStatistic",
+                "status"
               ],
               "type": "string"
             },
@@ -2675,7 +2678,10 @@
                 "method",
                 "observedProperty",
                 "processingLevel",
-                "unit"
+                "unit",
+                "sampledMedium",
+                "aggregationStatistic",
+                "status"
               ],
               "type": "string"
             },
@@ -5214,7 +5220,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -5462,7 +5469,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -6231,7 +6239,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -6797,7 +6806,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -7927,7 +7937,8 @@
             "items": {
               "enum": [
                 "datastream",
-                "workspace"
+                "workspace",
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -8044,7 +8055,8 @@
             "items": {
               "enum": [
                 "datastream",
-                "workspace"
+                "workspace",
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -8279,7 +8291,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -8438,7 +8451,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -13067,7 +13081,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -13215,7 +13230,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -17671,7 +17687,10 @@
                   "method",
                   "observedProperty",
                   "processingLevel",
-                  "unit"
+                  "unit",
+                  "sampledMedium",
+                  "aggregationStatistic",
+                  "status"
                 ],
                 "type": "string"
               },
@@ -18620,7 +18639,10 @@
                   "method",
                   "observedProperty",
                   "processingLevel",
-                  "unit"
+                  "unit",
+                  "sampledMedium",
+                  "aggregationStatistic",
+                  "status"
                 ],
                 "type": "string"
               },
@@ -22847,7 +22869,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -23328,7 +23351,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -24652,7 +24676,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -25506,7 +25531,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -27399,7 +27425,8 @@
               "items": {
                 "enum": [
                   "datastream",
-                  "workspace"
+                  "workspace",
+                  "resultQualifiers"
                 ],
                 "type": "string"
               },
@@ -28020,7 +28047,8 @@
               "items": {
                 "enum": [
                   "datastream",
-                  "workspace"
+                  "workspace",
+                  "resultQualifiers"
                 ],
                 "type": "string"
               },
@@ -28124,7 +28152,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -28564,7 +28593,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -33595,7 +33625,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -34023,7 +34054,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },

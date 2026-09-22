@@ -2830,7 +2830,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
+            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -3000,7 +3000,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
+            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
             /**
              * Is Private
              * @description Controls whether the datastreams should be private or public.
@@ -3944,7 +3944,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -4005,7 +4005,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Limit
              * @description The maximum number of items to return.
@@ -4271,7 +4271,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -4472,7 +4472,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Is Private
              * @description Controls whether the returned monitoring sites should be private or public.
@@ -4895,7 +4895,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
              */
-            include?: ("datastream" | "workspace")[];
+            include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
@@ -4938,7 +4938,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
              */
-            include?: ("datastream" | "workspace")[];
+            include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
              * Limit
              * @description The maximum number of items to return.
@@ -5031,7 +5031,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -5080,7 +5080,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Limit
              * @description The maximum number of items to return.
@@ -6601,7 +6601,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -6646,7 +6646,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: "workspace"[];
+            include?: ("workspace" | "type")[];
             /**
              * Limit
              * @description The maximum number of items to return.
@@ -8479,7 +8479,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
+                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -8684,7 +8684,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit")[];
+                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
             };
             header?: never;
             path: {
@@ -10552,7 +10552,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -10666,7 +10666,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
             };
             header?: never;
             path: {
@@ -11330,7 +11330,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -11588,7 +11588,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
             };
             header?: never;
             path: {
@@ -12417,7 +12417,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
                 /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
-                include?: ("datastream" | "workspace")[];
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -12628,7 +12628,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
                 /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
-                include?: ("datastream" | "workspace")[];
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
             };
             header?: never;
             path: {
@@ -12720,7 +12720,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -12830,7 +12830,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
             };
             header?: never;
             path: {
@@ -15084,7 +15084,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. */
@@ -15185,7 +15185,7 @@ export interface operations {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: "workspace"[];
+                include?: ("workspace" | "type")[];
             };
             header?: never;
             path: {

@@ -167,16 +167,13 @@ class APIService:
 
         for name in requested:
             config = registry[name]
-            related_by_pk = {}
 
-            for obj in objects:
-                related = obj
-                for part in config["path"].split("__"):
-                    related = getattr(related, part, None)
-                    if related is None:
-                        break
-                if related is not None:
-                    related_by_pk[related.pk] = related
+            if "vocabulary_model" in config:
+                related_by_pk = APIService.resolve_vocabulary_include(objects, config)
+            elif "scoped_vocabulary_model" in config:
+                related_by_pk = APIService.resolve_scoped_vocabulary_include(objects, config)
+            else:
+                related_by_pk = APIService.resolve_relation_include(objects, config)
 
             if related_by_pk:
                 included[config["bucket"]] = [
@@ -185,6 +182,91 @@ class APIService:
                 ]
 
         return included
+
+    @staticmethod
+    def walk_attribute_path(obj: object, path: str) -> Any:
+        resolved = obj
+        for part in path.split("__"):
+            resolved = getattr(resolved, part, None)
+            if resolved is None:
+                break
+
+        return resolved
+
+    @staticmethod
+    def resolve_relation_include(objects: list, config: dict) -> dict:
+        related_by_pk = {}
+        for obj in objects:
+            related = APIService.walk_attribute_path(obj, config["path"])
+            if related is not None:
+                related_by_pk[related.pk] = related
+
+        return related_by_pk
+
+    @staticmethod
+    def resolve_vocabulary_include(objects: list, config: dict) -> dict:
+        value_field = config["value_field"]
+
+        values = {
+            value
+            for obj in objects
+            if (value := getattr(obj, value_field, None)) is not None
+        }
+        if not values:
+            return {}
+
+        rows = config["vocabulary_model"].objects.filter(name__in=values)
+
+        return {row.pk: row for row in rows}
+
+    @staticmethod
+    def resolve_scoped_vocabulary_include(objects: list, config: dict) -> dict:
+        value_field = config["value_field"]
+        workspace_path = config["workspace_path"]
+
+        contributing_objects = [
+            obj for obj in objects if getattr(obj, value_field, None)
+        ]
+        if not contributing_objects:
+            return {}
+
+        needed_names = set()
+        needed_workspace_ids = set()
+        for obj in contributing_objects:
+            needed_names.update(getattr(obj, value_field))
+            workspace_id = APIService.walk_attribute_path(obj, workspace_path)
+            if workspace_id is not None:
+                needed_workspace_ids.add(workspace_id)
+
+        candidates = config["scoped_vocabulary_model"].objects.filter(
+            Q(workspace_id__in=needed_workspace_ids) | Q(workspace__isnull=True),
+            name__in=needed_names,
+        )
+        by_key = {(row.name, row.workspace_id): row for row in candidates}
+
+        related_by_pk = {}
+        for obj in contributing_objects:
+            workspace_id = APIService.walk_attribute_path(obj, workspace_path)
+            for name in getattr(obj, value_field):
+                row = by_key.get((name, workspace_id)) or by_key.get((name, None))
+                if row is not None:
+                    related_by_pk[row.pk] = row
+
+        return related_by_pk
+
+    @staticmethod
+    def resolve_select_related_paths(requested: set[str], registry: dict) -> list[str]:
+        paths = []
+        for name in requested:
+            config = registry[name]
+            if "path" in config:
+                paths.append(config["path"])
+            elif "workspace_path" in config:
+                prefix = "__".join(config["workspace_path"].split("__")[:-1])
+                if prefix:
+                    paths.append(prefix)
+
+        return paths
 
     @staticmethod
     def build_pagination_meta(

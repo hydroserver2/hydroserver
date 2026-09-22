@@ -86,9 +86,9 @@ class MethodAPIService(APIService):
         )
 
         if requested_includes:
-            select_paths = [
-                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-            ]
+            select_paths = self.resolve_select_related_paths(
+                requested_includes, self.INCLUDE_RELATIONS
+            )
             queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -110,9 +110,9 @@ class MethodAPIService(APIService):
         include: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
-        select_paths = [
-            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-        ]
+        select_paths = self.resolve_select_related_paths(
+            requested_includes, self.INCLUDE_RELATIONS
+        )
         method = self.get_method_for_action(
             principal=principal, uid=uid, action="view", select_related=select_paths
         )

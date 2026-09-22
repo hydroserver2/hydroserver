@@ -75,9 +75,9 @@ class DatastreamAPIService(APIService):
     def _include_query_hints(
         cls, requested_includes: set[str]
     ) -> tuple[list[str], list[str]]:
-        select_paths = [
-            cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-        ]
+        select_paths = cls.resolve_select_related_paths(
+            requested_includes, cls.INCLUDE_RELATIONS
+        )
         prefetch_paths = []
 
         if "workspace" in requested_includes:

@@ -23,6 +23,8 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from core.sta.models import SampledMedium, AggregationStatistic, DatastreamStatus
 
 
 class DatastreamFields(Schema):
@@ -87,6 +89,24 @@ DATASTREAM_INCLUDE_RELATIONS = {
         "path": "unit",
         "bucket": "units",
         "response_schema": UnitResponse,
+    },
+    "sampledMedium": {
+        "bucket": "sampledMediums",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": SampledMedium,
+        "value_field": "sampled_medium",
+    },
+    "aggregationStatistic": {
+        "bucket": "aggregationStatistics",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": AggregationStatistic,
+        "value_field": "aggregation_statistic",
+    },
+    "status": {
+        "bucket": "datastreamStatuses",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": DatastreamStatus,
+        "value_field": "status",
     },
 }
 DatastreamIncludeRelation = Literal[*DATASTREAM_INCLUDE_RELATIONS.keys()]

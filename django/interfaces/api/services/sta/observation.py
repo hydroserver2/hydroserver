@@ -73,7 +73,9 @@ class ObservationAPIService(APIService):
 
     @classmethod
     def _include_query_hints(cls, requested_includes: set[str]) -> list[str]:
-        select_paths = [cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes]
+        select_paths = cls.resolve_select_related_paths(
+            requested_includes, cls.INCLUDE_RELATIONS
+        )
         if "workspace" in requested_includes:
             select_paths.append("datastream__monitoring_site__workspace__owner")
 

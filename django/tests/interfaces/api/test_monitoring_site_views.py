@@ -11,7 +11,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MonitoringSiteFactory
+from tests.core.sta.factories import MonitoringSiteFactory, MonitoringSiteTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -881,6 +881,22 @@ def test_get_monitoring_site_include_sideloads_workspace(client):
     body = response.json()
     assert body["data"]["id"] == str(monitoring_site.id)
     assert {row["id"] for row in body["included"]["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_monitoring_site_include_type_sideloads_monitoring_site_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site_type = MonitoringSiteTypeFactory(name="Stream")
+    monitoring_site = MonitoringSiteFactory(workspace=workspace, type=monitoring_site_type.name)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(monitoring_site.id), {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["monitoringSiteTypes"]} == {
+        str(monitoring_site_type.id)
+    }
 
 
 def test_get_monitoring_site_without_include_omits_included_bucket(client):
