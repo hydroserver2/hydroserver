@@ -1,6 +1,6 @@
 {
   "name": "@hydroserver/client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "HydroServer TypeScript client",
   "type": "module",
   "main": "dist/@hydroserver-client.umd.cjs",
@@ -8,9 +8,14 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/@hydroserver-client.js",
-      "require": "./dist/@hydroserver-client.umd.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/@hydroserver-client.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/@hydroserver-client.umd.cjs"
+      }
     }
   },
   "files": [
@@ -23,7 +28,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && rollup --config rollup.config.mjs",
     "test": "vitest",
     "coverage": "vitest run --coverage --environment jsdom",
     "gen:schemas": "DEBUG=True DEPLOYMENT_BACKEND=dev PROXY_BASE_URL=http://127.0.0.1:8000 python3.11 ../../django/manage.py export_openapi_contracts",
@@ -34,7 +39,9 @@
     "gen:auth-contracts": "tsx ./scripts/generate-contracts.auth.ts",
     "gen:contracts": "npm run gen:data-contracts && npm run gen:auth-contracts",
     "gen": "npm run gen:schemas && npm run gen:types && npm run gen:contracts",
-    "check:contract": "npm run gen && git diff --exit-code -- ../../django/contracts/openapi ./src/generated"
+    "check:contract": "npm run gen && git diff --exit-code -- ../../django/contracts/openapi ./src/generated",
+    "prepack": "npm run build",
+    "test:package": "node scripts/test-package.mjs"
   },
   "repository": {
     "type": "git",
@@ -51,6 +58,8 @@
     "jsdom": "^22.1.0",
     "openapi-zod-client": "^1.18.3",
     "p-limit": "^6.2.0",
+    "rollup": "^4.61.0",
+    "rollup-plugin-dts": "^6.5.1",
     "tsx": "^4.16.2",
     "typescript": "^5.8.3",
     "vite": "^7.3.1",

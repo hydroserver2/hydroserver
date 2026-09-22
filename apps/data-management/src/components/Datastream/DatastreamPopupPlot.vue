@@ -118,7 +118,9 @@ const endDate = ref<Date>(
 )
 const oneMonthBack = (end: Date) =>
   new Date(end.getFullYear(), end.getMonth() - 1, end.getDate())
-const beginDate = ref<Date>(oneMonthBack(endDate.value))
+const oneWeekBack = (end: Date) =>
+  new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7)
+const beginDate = ref<Date>(oneWeekBack(endDate.value))
 const selectedDateBtnId = ref(0)
 const plotContainer = ref<HTMLDivElement | null>(null)
 const plotlyRef = ref<(HTMLDivElement & { [key: string]: any }) | null>(null)
@@ -336,33 +338,38 @@ const debouncedPopupRelayout = debounce((eventData: any) => {
 const dateOptions = [
   {
     id: 0,
+    label: '1w',
+    calculateBeginDate: (end: Date) => oneWeekBack(end),
+  },
+  {
+    id: 1,
     label: '1m',
     calculateBeginDate: (end: Date) => oneMonthBack(end),
   },
   {
-    id: 1,
+    id: 2,
     label: '6m',
     calculateBeginDate: (end: Date) =>
       new Date(end.getFullYear(), end.getMonth() - 6, end.getDate()),
   },
   {
-    id: 2,
+    id: 3,
     label: 'YTD',
     calculateBeginDate: (end: Date) => new Date(end.getFullYear(), 0, 1),
   },
   {
-    id: 3,
+    id: 4,
     label: '1y',
     calculateBeginDate: (end: Date) =>
       new Date(end.getFullYear() - 1, end.getMonth(), end.getDate()),
   },
   {
-    id: 4,
+    id: 5,
     label: 'all',
     calculateBeginDate: () =>
       props.datastream.phenomenonBeginTime
         ? new Date(props.datastream.phenomenonBeginTime)
-        : oneMonthBack(endDate.value),
+        : oneWeekBack(endDate.value),
   },
 ]
 

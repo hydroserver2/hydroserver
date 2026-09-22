@@ -132,9 +132,11 @@ class HydroServerLoader(Loader):
                     )
                     continue
 
+            upload_df = target_df.rename(columns={"timestamp": "phenomenon_time", "value": "result"})
+
             for start_idx in range(0, observations_to_load, self.chunk_size):
                 end_idx = min(start_idx + self.chunk_size, observations_to_load)
-                chunk = target_df.iloc[start_idx:end_idx]
+                chunk = upload_df.iloc[start_idx:end_idx]
 
                 try:
                     self.client.datastreams.load_observations(
