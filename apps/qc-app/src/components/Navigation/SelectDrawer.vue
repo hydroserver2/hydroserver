@@ -39,27 +39,6 @@
         class="select-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
         role="button"
         tabindex="0"
-        @click="timeCollapsed = !timeCollapsed"
-        @keydown.enter.prevent="timeCollapsed = !timeCollapsed"
-        @keydown.space.prevent="timeCollapsed = !timeCollapsed"
-      >
-        <v-icon
-          size="16"
-          :icon="timeCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
-        />
-        <v-icon icon="mdi-calendar-range" color="primary" size="16" />
-        <span class="text-body-small font-weight-medium">Time range</span>
-      </div>
-      <div v-show="!timeCollapsed" class="px-3 pt-2 pb-3" style="min-width: 0">
-        <DataVisTimeFilters />
-      </div>
-
-      <v-divider />
-
-      <div
-        class="select-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
-        role="button"
-        tabindex="0"
         @click="filtersCollapsed = !filtersCollapsed"
         @keydown.enter.prevent="filtersCollapsed = !filtersCollapsed"
         @keydown.space.prevent="filtersCollapsed = !filtersCollapsed"
@@ -90,7 +69,6 @@
 </template>
 
 <script setup lang="ts">
-import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
 import DatastreamFilters from '@/components/VisualizeData/DatastreamFilters.vue'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
 
@@ -102,10 +80,6 @@ const { size: drawerWidth, onStart: startDrag, dragging } = useResizable({
 })
 const drawerCollapsed = usePersistedFlag(
   'qc:selectLayout:drawerCollapsed',
-  false
-)
-const timeCollapsed = usePersistedFlag(
-  'qc:selectLayout:timeCollapsed',
   false
 )
 const filtersCollapsed = usePersistedFlag(

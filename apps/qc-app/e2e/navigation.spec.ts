@@ -3,23 +3,44 @@
  *   - fresh browser redirects to /workspaces
  *   - picking a workspace navigates to Home
  *   - the nav-rail workspace-switch button offers to revisit the picker
- *   - the edit rail item is disabled until a datastream is plotted
- *   - unsaved-edits dialog appears when leaving Edit with history
+ *   - the edit rail item is enabled only while an edit target is set
+ *   - leaving the workspace runs the leave flow (see leave-session.spec.ts)
+ *   - switching to the Select view keeps the session and asks nothing
  */
 
-import { expect, test } from '@playwright/test'
-import { installMocks } from './support/mocks'
+import { expect, test, type Page } from '@playwright/test'
+import { installMocks, type MockQcSession } from './support/mocks'
 import {
   gotoHome,
   openOp,
-  plotFirstDatastream,
+  plotDatastreamById,
   setupEditView,
+  startSessionFromRow,
 } from './support/app'
-import { selectAllPoints } from './support/ops'
+import { expectHistoryContains, selectAllPoints } from './support/ops'
+import { DATASTREAM_ID_B, WORKSPACE_ID } from './support/fixtures'
+
+async function applyChangeValues(page: Page) {
+  await selectAllPoints(page)
+  await openOp(page, 'changeValues')
+  await page.getByLabel('Value').fill('1')
+  await page.getByRole('button', { name: 'Apply' }).click()
+  await expectHistoryContains(page, 'Change Values')
+}
+
+function leaveDialog(page: Page) {
+  return page.getByTestId('leave-session-dialog')
+}
+
+function expectWorkspacePicker(page: Page) {
+  return expect(page.getByTestId(`workspace-pick-${WORKSPACE_ID}`)).toBeVisible({
+    timeout: 30_000,
+  })
+}
 
 test.describe('navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
   })
 
   test('fresh browser redirects to the workspace picker', async ({ page }) => {
@@ -34,7 +55,7 @@ test.describe('navigation', () => {
   })
 
   test('picking a workspace lands the user on Home', async ({ page }) => {
-    // Don't use `gotoHome` here — it pre-seeds localStorage and skips
+    // Don't use `gotoHome` here: it pre-seeds localStorage and skips
     // the picker. We want to exercise the actual pick flow.
     await page.goto('/')
     const pickButton = page
@@ -51,30 +72,99 @@ test.describe('navigation', () => {
     })
   })
 
-  test('Edit rail item is disabled until a datastream is plotted', async ({
+  test('the current workspace offers Continue back to Home', async ({
     page,
   }) => {
     await gotoHome(page)
-    const editRail = page.getByTestId('nav-rail-item-edit')
-    await expect(editRail).toHaveAttribute('aria-disabled', 'true')
-    await plotFirstDatastream(page)
-    await expect(editRail).toHaveAttribute('aria-disabled', 'false')
+    await page.getByTestId('nav-rail-workspaces').click()
+    await expect(page.getByTestId('workspace-current-hint')).toContainText(
+      'E2E Test Workspace'
+    )
+    const button = page.getByTestId(`workspace-pick-${WORKSPACE_ID}`)
+    await expect(button).toHaveText(/Continue/)
+    await button.click({ force: true })
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
   })
 
-  test('unsaved-edits dialog warns before navigating away from Edit', async ({
+  test('Edit rail item is disabled outside the editor', async ({ page }) => {
+    test.slow()
+    await gotoHome(page)
+    const editRail = page.getByTestId('nav-rail-item-edit')
+    await expect(editRail).toHaveAttribute('aria-disabled', 'true')
+    // Plotting never picks an edit target.
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await expect(editRail).toHaveAttribute('aria-disabled', 'true')
+    await startSessionFromRow(page)
+    await expect(editRail).toHaveAttribute('aria-disabled', 'false')
+  })
+})
+
+test.describe('navigation: leaving a QC session', () => {
+  let submissions: Array<{ mode: string | null; body: any }>
+  let sessions: MockQcSession[]
+
+  test.beforeEach(async ({ page }) => {
+    // Entering through the row Edit flow and starting a session is slow
+    // enough to outrun the default budget when these run in parallel.
+    test.slow()
+    submissions = []
+    sessions = []
+    await installMocks(page, {
+      qcHistories: true,
+      submissions,
+      qcSessionState: sessions,
+    })
+    await setupEditView(page)
+  })
+
+  test('the workspace switch saves the draft on the way out', async ({
     page,
   }) => {
-    await setupEditView(page)
-    await selectAllPoints(page)
-    await openOp(page, 'changeValues')
-    await page.getByLabel('Value').fill('1')
-    await page.getByRole('button', { name: 'Apply' }).click()
+    await applyChangeValues(page)
 
-    // Click back to the select view via the nav-rail Select item.
+    await page.getByTestId('nav-rail-workspaces').click()
+    const dialog = leaveDialog(page)
+    await expect(dialog).toContainText('Unsaved edits')
+    await page.getByTestId('leave-save-btn').click()
+
+    await expectWorkspacePicker(page)
+    const session = sessions.find((s) => s.status === 'in_progress')
+    expect(session!.operations.map((o) => o.operationType)).toContain(
+      'CHANGE_VALUES'
+    )
+    expect(submissions).toHaveLength(0)
+  })
+
+  test('cancelling the workspace switch cancels the navigation', async ({
+    page,
+  }) => {
+    await applyChangeValues(page)
+
+    await page.getByTestId('nav-rail-workspaces').click()
+    await expect(leaveDialog(page)).toBeVisible()
+    await page.getByTestId('leave-cancel-btn').click()
+
+    await expect(leaveDialog(page)).toHaveCount(0)
+    await expect(page.getByTestId('edit-plot-column')).toBeVisible()
+    await expectHistoryContains(page, 'Change Values')
+    expect(submissions).toHaveLength(0)
+  })
+
+  // Switching views is not an exit, so it never asks.
+  test('the Select view keeps the session with unsaved edits', async ({
+    page,
+  }) => {
+    await applyChangeValues(page)
+
     await page.getByTestId('nav-rail-item-select').click()
-    await expect(page.getByText(/unsaved edits/i)).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: /discard/i })
-    ).toBeVisible()
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(leaveDialog(page)).toHaveCount(0)
+    await expect(page.getByTestId('edit-target-panel')).toBeVisible()
+    const session = sessions.find((s) => s.status === 'in_progress')
+    expect(session!.operations).toHaveLength(0)
   })
 })

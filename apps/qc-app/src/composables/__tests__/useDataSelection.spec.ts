@@ -23,6 +23,7 @@ vi.mock('@/store/plotly', () => {
       plotlyRef,
       selectedSeries,
       suppressedEchoSelection,
+      previewIndex: ref(null),
       graphSeriesArray,
       updateOptions: vi.fn(),
       clearChartState: vi.fn(),
@@ -196,7 +197,7 @@ describe('useDataSelection date-range helpers', () => {
 
     // formatDate is stubbed to ISO in the module mock above, so the
     // ternary `startDate.value ? formatDate(...) : ''` should emit an
-    // ISO string — the non-empty branch.
+    // ISO string (the non-empty branch).
     expect(startDateString.value).toBe('2025-01-01T00:00:00.000Z')
     expect(endDateString.value).toBe('2025-01-01T03:00:00.000Z')
   })
@@ -225,7 +226,7 @@ describe('useDataSelection date-range helpers', () => {
     const { setSelectedPoints } = await import('@/utils/plotting/plotly')
 
     const { selectDateRange } = useDataSelection()
-    // `to` earlier than `from` — startIdx > endIdx, should no-op.
+    // `to` earlier than `from`: startIdx > endIdx, should no-op.
     await selectDateRange(
       new Date('2025-01-01T03:00:00Z'),
       new Date('2025-01-01T00:30:00Z')

@@ -44,22 +44,22 @@ console, it's almost always one of:
 
 1. Hitting `localhost:` instead of `127.0.0.1:`.
 2. The backend doesn't serve `Cross-Origin-Resource-Policy` and COOP/COEP
-   is on — try `VITE_APP_DISABLE_COOP=1`.
+   is on. Try `VITE_APP_DISABLE_COOP=1`.
 
 ## Project tour, in reading order
 
 Read these files in order:
 
-1. `README.md` — what the app does + config.
-2. `docs/ARCHITECTURE.md` — stack, source layout, data flow.
-3. `src/App.vue` and `src/main.ts` — entry point, plugin wiring.
-4. `src/pages/Home.vue` and `src/components/VisualizeData.vue` — the
+1. `README.md`: what the app does + config.
+2. `docs/ARCHITECTURE.md`: stack, source layout, data flow.
+3. `src/App.vue` and `src/main.ts`: entry point, plugin wiring.
+4. `src/pages/Home.vue` and `src/components/VisualizeData.vue`: the
    landing experience.
-5. `src/store/dataVisualization.ts` and `src/store/plotly.ts` — the two
+5. `src/store/dataVisualization.ts` and `src/store/plotly.ts`: the two
    stores that hold "what the user sees on the plot."
-6. `src/composables/useFilterDispatch.ts` and `useQcSubmission.ts` —
+6. `src/composables/useFilterDispatch.ts` and `useEditSession.ts`:
    the two end-to-end flows worth tracing.
-7. `packages/qc-utils/src/utils/plotting/observation-record.ts` — the QC engine's
+7. `packages/qc-utils/src/utils/plotting/observation-record.ts`: the QC engine's
    dispatch surface. You don't need to read the kernels; the dispatcher
    is the contract.
 
@@ -84,7 +84,7 @@ cd ../../apps/qc-app
 npm run build
 ```
 
-Run `npm run coverage` before you push — that's what CI gates on.
+Run `npm run coverage` before you push; that's what CI gates on.
 
 ### Working with qc-utils changes
 
@@ -107,17 +107,17 @@ you need to verify the published package artifacts.
 - Pinia stores for cross-component state; component-local state stays in
   `ref` / `reactive` inside the component.
 - Comments only for the non-obvious _why_. Don't restate the code.
-- Commit format: `{type}({scope}): {description}` — `feat`, `fix`,
+- Commit format: `{type}({scope}): {description}`: `feat`, `fix`,
   `test`, `refactor`, `perf`, `docs`, `style`, `chore`.
 
 ## Documentation gaps
 
 1. **Result qualifiers are partial.** The `QualifyingComments` op panel
-   exists and writes to the in-memory history, but the submit path
-   (`useQcSubmission.ts`) currently serializes only `phenomenonTime` and
-   `result` — qualifier codes are deferred pending the HydroServer API
-   adding a workable columnar response. There's a TODO in
-   `useQcSubmission.ts:42` that points at this.
+   exists and writes to the in-memory history, but the commit path
+   (`services/qualityControl/observationsBody.ts`) currently serializes only
+   `phenomenonTime` and `result`; qualifier codes are deferred pending the
+   HydroServer API adding a workable columnar response. The note in
+   `observationsBody.ts` points at this.
 2. **No load-testing artifacts.** "How big a datastream can you QC in
    one session?" is answered empirically per browser via the calibration
    pass, but there is no published "this is the supported envelope"
@@ -126,11 +126,11 @@ you need to verify the published package artifacts.
 
 ## Where to ask for help
 
-- [Issue tracker](https://github.com/hydroserver2/hydroserver/issues) —
+- [Issue tracker](https://github.com/hydroserver2/hydroserver/issues):
   bugs and feature requests for the HydroServer project as a whole.
 - The qc-utils repo's issues for QC engine bugs.
 - The HydroServer documentation site at
-  <https://hydroserver2.github.io/hydroserver/> — the operator-facing
+  <https://hydroserver2.github.io/hydroserver/>: the operator-facing
   HydroServer docs cover the backend the app talks to.
 
 ## See also

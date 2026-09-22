@@ -14,11 +14,11 @@ This web app facilitates QC/QA for time series observations stored in a HydroSer
 
 The app is the operator's view of HydroServer's QC pipeline:
 
-1. **Browse** — pick a workspace, filter datastreams by site / observed property / processing level, and plot up to five at once on a synchronized multi-axis chart.
-2. **QC one stream at a time** — the first plotted stream is the QC target. The other plotted traces are read-only context.
-3. **Filter / edit / add** — every operation (Value Threshold, Find Gaps, Persistence, Interpolate, Drift Correction, Fill Gaps, Add Points, etc.) commits a `HistoryItem` to a replayable edit history backed by [`@uwrl/qc-utils`](https://www.npmjs.com/package/@uwrl/qc-utils).
-4. **Save / load a QC History** — export the history as a JSON document, replay it on the same datastream a week later, or templatize across stations.
-5. **Submit** — push the quality-controlled observations back to HydroServer in `replace` mode.
+1. **Browse**: pick a workspace, filter datastreams by site / observed property / processing level, and plot up to five at once on a synchronized multi-axis chart.
+2. **QC one stream at a time**: the pencil button on a datastream row picks what to edit, separately from the plot checkboxes. The editor draws that stream over its raw source, with the plotted datastreams as read-only context.
+3. **Filter / edit / add**: every operation (Value Threshold, Find Gaps, Persistence, Interpolate, Drift Correction, Fill Gaps, Add Points, etc.) commits a `HistoryItem` to a replayable edit history backed by [`@uwrl/qc-utils`](https://www.npmjs.com/package/@uwrl/qc-utils).
+4. **Save / load a QC History**: export the history as a JSON document, replay it on the same datastream a week later, or templatize across stations.
+5. **Save and commit**: save the edits to a QC session as a draft, then commit the session to push the quality-controlled observations to its managed datastream in `replace` mode.
 
 The heavy lifting (worker-parallelized typed-array kernels, calibration, history replay, save / load wire format) lives in `@uwrl/qc-utils`. This repo is the Vue / Vuetify / Pinia / Plotly UI plus the orchestration around it.
 
@@ -39,7 +39,7 @@ During normal HydroServer development, open QC through the Data Management app a
 
 | Var                              | Required | Purpose                                                                 |
 |----------------------------------|----------|-------------------------------------------------------------------------|
-| `VITE_APP_DISABLE_COOP`          | no       | Drop the `Cross-Origin-Opener-Policy` + `Cross-Origin-Embedder-Policy` headers. Use only when the backend you're hitting doesn't serve `Cross-Origin-Resource-Policy` (older HydroServer deployments). The `qc-utils` worker layer falls back to inline kernels when SAB isn't available, so the app still works — just slower on large edits. |
+| `VITE_APP_DISABLE_COOP`          | no       | Drop the `Cross-Origin-Opener-Policy` + `Cross-Origin-Embedder-Policy` headers. Use only when the backend you're hitting doesn't serve `Cross-Origin-Resource-Policy` (older HydroServer deployments). The `qc-utils` worker layer falls back to inline kernels when SAB isn't available, so the app still works (just slower on large edits). |
 | `VITE_APP_E2E_HOOKS`             | no       | Set to `1` to expose `window.__vbwTestHooks` for Playwright. CI sets this automatically. |
 
 Cross-origin isolation is on by default (`vite.config.ts` sends `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp`) so `SharedArrayBuffer` is available to the qc-utils worker pool.
@@ -66,7 +66,7 @@ src/
 ├─ utils/plotting/
 │  ├─ events.ts                 plotly_click / plotly_relayout / mousemove handlers.
 │  ├─ relayout.ts               Debounced viewport recomputation, tick alignment.
-│  ├─ selected.ts               handleSelected — translates Plotly selection into a SELECTION dispatch.
+│  ├─ selected.ts               handleSelected: translates Plotly selection into a SELECTION dispatch.
 │  ├─ staging.ts                Ghost-fill markers + drag-resizable stage shape.
 │  └─ plotly.ts                 Trace builders + low-level setSelectedPoints / clearSelection.
 └─ router/                      vue-router 5 setup with workspace + auth guards.
@@ -100,7 +100,7 @@ Specs live next to source under `src/**/__tests__/`. Plotly is mocked at the mod
 
 ### End-to-end tests (Playwright)
 
-End-to-end specs cover the QC golden path: load a datastream, apply a filter, apply an edit, submit. Browser matrix: **chromium** and **firefox**. WebKit is intentionally excluded — `SharedArrayBuffer` + COOP / COEP behaviour differs in Safari and needs separate validation.
+End-to-end specs cover the QC golden path: load a datastream, apply a filter, apply an edit, save and commit the session. Browser matrix: **chromium** and **firefox**. WebKit is intentionally excluded: `SharedArrayBuffer` + COOP / COEP behaviour differs in Safari and needs separate validation.
 
 One-time setup:
 
@@ -111,14 +111,14 @@ npx playwright install chromium firefox
 Run modes:
 
 ```bash
-npm run e2e                   # headless — Chromium + Firefox (CI mode, fast for local)
+npm run e2e                   # headless: Chromium + Firefox (CI mode, fast for local)
 npm run e2e:live              # same-origin smoke via Data Management
 ```
 
 For interactive debugging, append Playwright flags, e.g. `npm run e2e -- --ui` or
 `npm run e2e -- --headed`.
 
-The Playwright config in `playwright.config.ts` auto-starts the QC Vite dev server at `http://127.0.0.1:15173` and reuses an existing one outside CI. The dev server is what serves the COOP / COEP headers `SharedArrayBuffer` needs — running e2e against a static `file://` build won't work.
+The Playwright config in `playwright.config.ts` auto-starts the QC Vite dev server at `http://127.0.0.1:15173` and reuses an existing one outside CI. The dev server is what serves the COOP / COEP headers `SharedArrayBuffer` needs; running e2e against a static `file://` build won't work.
 
 The mocked specs intercept HydroServer routes via `page.route()` and serve fixture JSON, so most runs need no backend. The live golden-path spec expects both frontends to be running and enters QC through `http://127.0.0.1:1203/qc/`.
 

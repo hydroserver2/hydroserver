@@ -158,7 +158,7 @@
                   the algorithm, not the machine, so it's shipped with qc-utils,
                   not measured at runtime. Recalibration only re-measures the
                   three device primitives above; weights stay fixed. The
-                  dispatch formula is <code>weight Ã— N / throughput</code>, so
+                  dispatch formula is <code>weight × N / throughput</code>, so
                   one universal weight per op plus your per-device throughputs
                   covers the full operation catalog.
                 </p>

@@ -53,7 +53,7 @@ export default defineConfig(({ command, mode }) => {
       },
       // COOP/COEP headers enable SharedArrayBuffer-backed workers (fast
       // shared-memory data ops) but also block cross-origin responses
-      // that don't carry CORP — including the `playground.hydroserver.org`
+      // that don't carry CORP, including the `playground.hydroserver.org`
       // API. On by default; set `VITE_APP_DISABLE_COOP=1` to drop them
       // when you need to talk to a backend that doesn't serve CORP headers.
       // The worker layer gracefully falls back to inline execution when
@@ -142,11 +142,11 @@ export default defineConfig(({ command, mode }) => {
           '**/src/utils/plotting/events.ts',
           '**/src/utils/plotting/interaction.ts',
           '**/src/utils/plotting/operations.ts',
-          // Plotly DOM-staging seam — same shape as `events.ts` /
+          // Plotly DOM-staging seam, same shape as `events.ts` /
           // `interaction.ts`. Mostly Plotly relayout calls + drag-
           // gesture wiring that resists meaningful unit testing.
           '**/src/utils/plotting/staging.ts',
-          // Barrel re-export — no logic to cover, but appears in the
+          // Barrel re-export: no logic to cover, but appears in the
           // coverage report at 0% because nothing imports it directly
           // from a test (everything goes through the source modules).
           '**/src/utils/plotting/plotly.ts',
@@ -160,8 +160,8 @@ export default defineConfig(({ command, mode }) => {
           functions: 80,
           // Branches sits a couple points below the others because the
           // last few uncovered branches live in the qualifier-band path
-          // of `options.ts` and the relayout-echo path of `selected.ts`
-          // — both require heavy Plotly-DOM fixture setup for marginal
+          // of `options.ts` and the relayout-echo path of `selected.ts`.
+          // Both require heavy Plotly-DOM fixture setup for marginal
           // signal. Raise back to 80 once those are covered.
           branches: 78,
         },

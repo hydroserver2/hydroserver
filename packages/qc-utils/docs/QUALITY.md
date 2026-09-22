@@ -126,8 +126,10 @@ is the obvious next step if/when a non-browser consumer appears.
 ## Where the code is solid
 
 - The dispatch surface is small (`dispatch`, `dispatchAction`,
-  `dispatchFilter`, `undo`, `redo`, `reload`, `reloadHistory`,
-  `removeHistoryItem`) and consistently the only mutation path. No
+  `dispatchFilter`, `undo`, `redo`, `reload`, `truncateHistory`,
+  `removeHistoryItem`) and consistently the only mutation path.
+  `previewHistory` / `exitPreview` only replay; edits are refused while a
+  step is previewed. No
   sneaky escape hatches.
 - The two-flavor kernel pattern is consistent across every op. Reading
   one is enough to understand all of them.

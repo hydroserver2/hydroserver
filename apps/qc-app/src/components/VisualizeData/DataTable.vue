@@ -52,7 +52,12 @@
         </v-btn>
 
         <v-btn
-          :disabled="!pendingEditCount || isUpdating"
+          :disabled="!pendingEditCount || isUpdating || previewIndex !== null"
+          :title="
+            previewIndex !== null
+              ? 'Go back to the latest history step to save'
+              : undefined
+          "
           :loading="isSaving"
           color="primary"
           variant="flat"
@@ -168,7 +173,7 @@ import { useDataSelection } from '@/composables/useDataSelection'
 import { useQualifierStore } from '@/store/qualifiers'
 import EditableCell from '@/components/VisualizeData/EditableCell.vue'
 
-const { isUpdating, selectedSeries, tableScrollRequest } = storeToRefs(
+const { isUpdating, selectedSeries, tableScrollRequest, previewIndex } = storeToRefs(
   usePlotlyStore()
 )
 const { redraw } = usePlotlyStore()
@@ -201,8 +206,8 @@ onMounted(() => {
     if (h && h !== bodyHeight.value) bodyHeight.value = h
   })
   resizeObserver.observe(bodyEl.value)
-  // Honor a zoom-to-range scroll requested while the table was unmounted
-  // (e.g. the preset was picked on the plot tab before switching here).
+  // Honor a scroll requested while the table was unmounted (e.g. the editor
+  // opened zoomed to the session window on the plot tab).
   if (tableScrollRequest.value) scrollToTime(tableScrollRequest.value.time)
 })
 

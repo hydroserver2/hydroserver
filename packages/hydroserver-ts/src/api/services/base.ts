@@ -92,11 +92,24 @@ export abstract class HydroServerBaseService<
     return res.ok ? res.data : null
   }
 
-  create = async (body: M): Promise<ApiResponse<M>> =>
-    apiMethods.post<M>(this._route, this.serialize(body))
+  create = async (
+    body: M,
+    params?: {
+      expand_related: boolean
+    }
+  ): Promise<ApiResponse<M>> =>
+    apiMethods.post<M>(
+      this.withQuery(this._route, params),
+      this.serialize(body)
+    )
 
-  createItem = async (body: M): Promise<M | null> => {
-    const res = await apiMethods.post<M>(this._route, this.serialize(body))
+  createItem = async (
+    body: M,
+    params?: {
+      expand_related: boolean
+    }
+  ): Promise<M | null> => {
+    const res = await this.create(body, params)
     return res.ok ? res.data : null
   }
 

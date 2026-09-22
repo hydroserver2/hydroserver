@@ -147,7 +147,13 @@ before it.
 |-------------|---------|----------|--------------------------------------------------------------------|
 | `method`    | string  | yes      | `EnumEditOperations` or `EnumFilterOperations` value (e.g. `"VALUE_THRESHOLD"`, `"FILL_GAPS"`). |
 | `args`      | any[]   | yes      | Positional args forwarded to the operation handler. Per-method shape rules below. |
+| `comment`   | string  | no       | Operator's note explaining why the operation was applied. Never read by the engine. Serialized trimmed and omitted when blank; a non-string value is rejected on load. |
+| `performedBy` | string | no      | Display name of whoever applied the operation. Provenance assigned by the consumer (from its own backend), never by the engine. Serialized trimmed and omitted when blank; a non-string value is rejected on load. |
 | `execution` | object  | no       | Per-dispatch audit record (timing, mode, dataset shape, status). See below. Omitted in pre-v0.1.x histories and may be absent on hand-written JSON; the loader accepts both shapes. |
+
+Unlike `execution`, which is audit-only and re-stamped per dispatch,
+`comment` and `performedBy` belong to the operation itself, so
+`applyHistory` carries both onto the replayed `HistoryItem`.
 
 The shape mirrors `ObservationRecord.dispatch`'s tuple form:
 `[method, ...args]`. A loaded history is replayed via

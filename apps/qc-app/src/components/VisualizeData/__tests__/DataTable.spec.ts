@@ -33,6 +33,7 @@ vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
     isUpdating,
     selectedSeries,
+    previewIndex: ref(null),
     redraw,
     tableScrollRequest,
   }),
@@ -613,7 +614,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const checkboxes = wrapper.findAllComponents({ name: 'VCheckbox' })
-    // toggle row 2 first, then row 0 — result should be sorted [0, 2]
+    // toggle row 2 first, then row 0; result should be sorted [0, 2]
     await checkboxes[2].vm.$emit('update:modelValue', true)
     await checkboxes[0].vm.$emit('update:modelValue', true)
     await flushPromises()
@@ -697,7 +698,7 @@ describe('DataTable.vue ResizeObserver integration', () => {
 
   it('uses bodyEl.clientHeight when non-zero and updates on resize', async () => {
     // The cast tells TS the class-constructor assignment widens the
-    // value back to the callable type — without it the analyzer pins
+    // value back to the callable type. Without it the analyzer pins
     // the variable to `null` after the literal initialiser.
     let capturedCallback = null as ((entries: any) => void) | null
     class CapturingRO {
@@ -884,11 +885,11 @@ describe('DataTable.vue onSaveChanges', () => {
   })
 })
 
-// Drives the "zoom to range" scroll: a request on the plotly store should
+// Drives `requestTableScroll`: a request on the plotly store should
 // scroll the virtual list so the first in-range row lands on top. The stub
 // exposes v-data-table-virtual's `scrollToIndex` so we can capture the index
 // the component asks to scroll to.
-describe('DataTable.vue zoom-to-range scroll', () => {
+describe('DataTable.vue scroll requests', () => {
   let scrollToIndexCalls: number[]
 
   beforeEach(() => {

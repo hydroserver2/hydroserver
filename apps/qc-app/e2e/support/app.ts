@@ -2,13 +2,17 @@
  * Flow helpers shared by every mocked e2e spec.
  *
  * Specs should usually go through these so the "boot → pick workspace
- * → plot datastream → open edit view" preamble doesn't get copy-pasted
+ * → Edit a row → start a session" preamble doesn't get copy-pasted
  * across 15 files. The helpers assume `installMocks()` has been
  * called; they do not install mocks themselves.
  */
 
 import { expect, type Page } from '@playwright/test'
-import { DATASTREAM_ID, WORKSPACE_ID } from './fixtures'
+import {
+  DATASTREAM_ID,
+  MANAGED_DATASTREAM_ID,
+  WORKSPACE_ID,
+} from './fixtures'
 
 /** Wait for the datastreams table to become visible on Home. */
 export async function waitForHomeReady(page: Page): Promise<void> {
@@ -23,7 +27,7 @@ export async function waitForHomeReady(page: Page): Promise<void> {
  * entirely. Relying on the UI to click the Select button is fragile
  * cross-browser (Firefox in particular sometimes swallows the click
  * when the v-list-item row and its nested Select button both register
- * click handlers). Seeding storage sidesteps the picker entirely —
+ * click handlers). Seeding storage sidesteps the picker entirely,
  * equivalent to a user who already chose a workspace in a previous
  * session.
  *
@@ -50,7 +54,7 @@ export async function seedWorkspaceSelection(page: Page): Promise<void> {
           JSON.stringify({ selectedWorkspace: ws })
         )
       } catch {
-        // storage disabled — fall back to UI flow
+        // storage disabled: fall back to UI flow
       }
     },
     { ws: workspace }
@@ -117,15 +121,48 @@ export async function plotDatastreamById(
 }
 
 /**
- * Full "ready to edit" preamble: home → plot → switch to edit view.
- * After this returns the EditDrawer is visible and operation panels
- * can be opened via `op-<id>` testids.
+ * Enter the editor the way a user does: the row's Edit button, the managed
+ * datastream's "Start new session", then Start in the window step. Needs
+ * `installMocks(page, { qcHistories: true })`.
  */
 export async function setupEditView(page: Page): Promise<void> {
   await gotoHome(page)
-  await plotFirstDatastream(page)
-  await page.getByTestId('nav-rail-item-edit').click()
+  await startSessionFromRow(page)
   await expect(page.getByText('Filter Data')).toBeVisible()
+}
+
+/**
+ * From Home: the source row's Edit button, "Start new session" on the managed
+ * datastream, then Start with the default window. That lands on the Select
+ * view's preview; `openEditor` then opens the editor. Waits for it to be
+ * ready.
+ */
+export async function startSessionFromRow(page: Page): Promise<void> {
+  await page.getByTestId(`edit-datastream-${DATASTREAM_ID}`).click()
+  await page.getByTestId(`edit-managed-${MANAGED_DATASTREAM_ID}`).click()
+  await page.getByTestId('session-window-start').click()
+  await openEditor(page)
+}
+
+/** From the Select view's preview of an edit target, open the editor. */
+export async function openEditor(page: Page): Promise<void> {
+  await page.getByTestId('open-editor-btn').click({ timeout: 30_000 })
+  await waitForEditorReady(page)
+}
+
+/**
+ * Wait for the Edit view to be ready: its session and edit record loaded, and
+ * every plot load and draw finished, including the context reload around the
+ * session window that follows the session load (see `isEditorReady` in the
+ * data visualization store). Acting earlier can race the view switch or that
+ * reload, e.g. after a reload resumes the session.
+ */
+export async function waitForEditorReady(page: Page): Promise<void> {
+  await expect(page.getByTestId('edit-plot-column')).toHaveAttribute(
+    'data-editor-ready',
+    'true',
+    { timeout: 30_000 }
+  )
 }
 
 /** Open an operation panel in the edit drawer by id (see operations.ts). */

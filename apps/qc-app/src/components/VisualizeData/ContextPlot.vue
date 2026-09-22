@@ -40,7 +40,13 @@ import Plotly from 'plotly.js-dist'
 import type { Layout, LayoutAxis, PlotlyHTMLElement } from 'plotly.js-dist'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { COLORS, type AppPlotlyTrace } from '@/utils/plotting/plotly'
+import {
+  COLORS,
+  SOURCE_CONTEXT_COLOR,
+  splitAroundWindow,
+  toEditWindow,
+  type AppPlotlyTrace,
+} from '@/utils/plotting/plotly'
 import type { GraphSeries } from '@/types'
 
 const TARGET_POINTS = 2000
@@ -55,7 +61,8 @@ type PlotlyEventEmitter = {
 
 const { plotlyRef, graphSeriesArray, mainPlotEpoch } =
   storeToRefs(usePlotlyStore())
-const { qcDatastream } = storeToRefs(useDataVisStore())
+const { qcDatastream, sourceContextDatastream, editSessionWindow } =
+  storeToRefs(useDataVisStore())
 
 const rootEl = ref<HTMLDivElement>()
 const plotEl = ref<HTMLDivElement>()
@@ -119,6 +126,8 @@ function buildContextTraces(series: GraphSeries[]): {
   extent: [number, number] | null
 } {
   const qcId = qcDatastream.value?.id
+  const sourceId = sourceContextDatastream.value?.id
+  const editWindow = toEditWindow(editSessionWindow.value)
   const traces: AppPlotlyTrace[] = []
   let xMin = Infinity
   let xMax = -Infinity
@@ -133,16 +142,29 @@ function buildContextTraces(series: GraphSeries[]): {
     const sampled = strideSample(xs, ys, TARGET_POINTS)
     const yNorm = normalize(sampled.y)
     const isQc = !!qcId && s.id === qcId
-    const color = isQc ? COLORS[0] : (s.color ?? COLORS[1])
-    traces.push({
-      x: sampled.x,
-      y: yNorm,
-      type: 'scattergl',
-      mode: 'lines',
-      line: { color, width: 1 },
-      hoverinfo: 'skip',
-      showlegend: false,
-    })
+    const isSource = !!sourceId && s.id === sourceId
+    const pushLine = (
+      line: { x: ArrayLike<number>; y: ArrayLike<number> },
+      color: string | undefined
+    ) =>
+      traces.push({
+        x: line.x as number[],
+        y: line.y as number[],
+        type: 'scattergl',
+        mode: 'lines',
+        line: { color, width: 1 },
+        hoverinfo: 'skip',
+        showlegend: false,
+      })
+    const line = { x: sampled.x, y: yNorm }
+    if (isSource) {
+      // Same gap over the session window as the main plot.
+      const { before, after } = splitAroundWindow(line, editWindow)
+      pushLine(before, SOURCE_CONTEXT_COLOR)
+      pushLine(after, SOURCE_CONTEXT_COLOR)
+    } else {
+      pushLine(line, isQc ? COLORS[0] : (s.color ?? COLORS[1]))
+    }
   }
 
   // Mirror main plot draw order: seriesArray[0] paints on top.
@@ -413,15 +435,18 @@ async function buildOrUpdate() {
   syncBrushFromMain()
 }
 
-// Refresh only on series identity / length / color / QC target shifts so
-// per-cell y-edits stay cheap; overall shape barely changes anyway.
+// Refresh only on series identity / length / color / QC target / session
+// window shifts so per-cell y-edits stay cheap; overall shape barely
+// changes anyway.
 const rebuildSignature = computed(() => {
-  const qid = qcDatastream.value?.id ?? ''
+  const w = toEditWindow(editSessionWindow.value)
+  const qid = (qcDatastream.value?.id ?? '') + (w ? `@${w.begin}-${w.end}` : '')
+  const sid = sourceContextDatastream.value?.id ?? ''
   const parts = graphSeriesArray.value.map(
     (s) => `${s.id}:${s.data?.dataX?.length ?? 0}:${s.color}`
   )
   const hidden = [...hiddenIds.value].sort().join(',')
-  return parts.join('|') + '#' + qid + '!' + hidden
+  return parts.join('|') + '#' + qid + '~' + sid + '!' + hidden
 })
 
 watch(rebuildSignature, () => {

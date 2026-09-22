@@ -16,11 +16,11 @@ import { expectHistoryContains, selectAllPoints } from './support/ops'
 
 test.describe('edit history toolbar', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     await selectAllPoints(page)
     await openOp(page, 'changeValues')
-    // Press Enter on the field instead of clicking Apply — same reason
+    // Press Enter on the field instead of clicking Apply, for the same reason
     // as the selectAllPoints helper: Firefox occasionally fires the
     // Apply click before Vuetify's v-text-field commits, which leaves
     // the button's `:disabled` guard tripped and silently swallows the
@@ -38,7 +38,7 @@ test.describe('edit history toolbar', () => {
     // Snapshot the post-edit row count. Edit ops emit a trailing
     // SELECTION through `recordPostActionSelection` (see
     // useFilterDispatch), so the exact count depends on whether that
-    // marker landed — we just want round-trip invariance, not a fixed
+    // marker landed. We just want round-trip invariance, not a fixed
     // integer.
     const rows = page.locator('[data-testid^="history-item-"]')
     const initial = await rows.count()
@@ -55,7 +55,9 @@ test.describe('edit history toolbar', () => {
     page,
   }) => {
     const row = page.getByTestId('history-item-1')
-    await row.getByRole('button', { name: /expand arguments/i }).click()
+    await row
+      .getByRole('button', { name: 'Expand arguments', exact: true })
+      .click()
     await expect(row.getByText('Arguments')).toBeVisible()
   })
 

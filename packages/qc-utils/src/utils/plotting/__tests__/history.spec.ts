@@ -62,6 +62,28 @@ describe('serializeHistory', () => {
     expect(history.operations[0].args).toEqual([{ 'Greater than': 5 }]);
   });
 
+  it('persists an operator comment, trimmed', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    rec.history[0].comment = '  sensor fouling  ';
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(history.operations[0].comment).toBe('sensor fouling');
+  });
+
+  it('omits the comment field when absent or blank', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].comment).toBeUndefined();
+    rec.history[0].comment = '   ';
+    expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].comment).toBeUndefined();
+  });
+
+  it('persists who performed the operation, trimmed', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    rec.history[0].performedBy = '  Ada Lovelace  ';
+    expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].performedBy).toBe(
+      'Ada Lovelace'
+    );
+  });
+
   it('strips runtime-only fields (isLoading, duration, executionMode, selected, icon)', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -168,6 +190,60 @@ describe('parseHistory', () => {
     const history = parseHistory(json);
     expect(history.operations).toHaveLength(1);
     expect(history.window).toEqual(SAMPLE_WINDOW);
+  });
+
+  it('round-trips a per-op comment and tolerates its absence', () => {
+    const base = {
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+    };
+    const withComment = parseHistory({
+      ...base,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], comment: 'sensor fouling' },
+      ],
+    });
+    expect(withComment.operations[0].comment).toBe('sensor fouling');
+
+    const without = parseHistory({
+      ...base,
+      operations: [{ method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }] }],
+    });
+    expect(without.operations[0].comment).toBeUndefined();
+  });
+
+  it('round-trips performedBy and rejects a non-string one', () => {
+    const base = {
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+    };
+    const parsed = parseHistory({
+      ...base,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [], performedBy: 'Ada Lovelace' },
+      ],
+    });
+    expect(parsed.operations[0].performedBy).toBe('Ada Lovelace');
+
+    expect(() =>
+      parseHistory({
+        ...base,
+        operations: [{ method: 'VALUE_THRESHOLD', args: [], performedBy: 7 }],
+      })
+    ).toThrow(/`performedBy` must be a string/);
+  });
+
+  it('rejects a non-string comment', () => {
+    expect(() =>
+      parseHistory({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [{ method: 'VALUE_THRESHOLD', args: [], comment: 42 }],
+      })
+    ).toThrow(/`comment` must be a string/);
   });
 
   it('rejects an unknown version', () => {
@@ -390,6 +466,30 @@ describe('applyHistory — round-trip', () => {
     expect(fresh.history.length).toBe(before);
     expect(fresh.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
     expect(fresh.history[0].args).toEqual([{ 'Greater than': 10 }]);
+  });
+
+  it('carries comments onto the replayed entries', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    rec.history[0].comment = 'sensor fouling';
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    await applyHistory(fresh, history);
+
+    expect(fresh.history[0].comment).toBe('sensor fouling');
+  });
+
+  it('carries performedBy onto the replayed entries', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    rec.history[0].performedBy = 'Ada Lovelace';
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    await applyHistory(fresh, history);
+
+    expect(fresh.history[0].performedBy).toBe('Ada Lovelace');
   });
 
   it('round-trips a SELECTION → DELETE_POINTS pair (selection-coupled)', async () => {

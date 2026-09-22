@@ -7,8 +7,8 @@ import { useHydroServer } from '@/store/hydroserver'
  * Central state for HydroServer workspace context.
  *
  * The QC app inherits HydroServer's role-based access control at the
- * workspace level. Every CRUD-ish interaction — things, datastreams,
- * observations, qualifiers — is scoped to a workspace the signed-in
+ * workspace level. Every CRUD-ish interaction (things, datastreams,
+ * observations, qualifiers) is scoped to a workspace the signed-in
  * user has been granted a role on. `hs.workspaces.list()` already
  * filters server-side to workspaces the user can see; we trust that
  * listing and let the user pick one before any data is fetched.
@@ -42,7 +42,7 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
   const canEditSelected = computed(() => {
     const ws = selectedWorkspace.value
     if (!ws) return false
-    // Owner: `collaboratorRole` is null on owned workspaces — the role
+    // Owner: `collaboratorRole` is null on owned workspaces; the role
     // machinery only applies to invited collaborators.
     if (!ws.collaboratorRole) return true
     const perms = ws.collaboratorRole.permissions ?? []
@@ -102,7 +102,7 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
    * Apply a workspace selection by id, falling back to a placeholder
    * `{ id }` object when the full Workspace isn't in
    * `availableWorkspaces` yet. Used by shared-link hydration in
-   * `main.ts` and the matching router guard — those can fire before
+   * `main.ts` and the matching router guard. Those can fire before
    * `loadWorkspaces` has populated the list (e.g. cross-origin dev
    * setups where the session endpoint 401s silently, or a fresh boot
    * where the list fetch is still in flight). The downstream catalog

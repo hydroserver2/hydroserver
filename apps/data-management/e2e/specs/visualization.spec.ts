@@ -13,9 +13,22 @@ test.describe("visualization", () => {
     const workspaceFilter = page
       .getByRole("combobox", { name: "Workspaces" })
       .first();
+    const viewport = page.viewportSize();
+    const box = await workspaceFilter.boundingBox();
+    const isWithinViewport =
+      !!box &&
+      !!viewport &&
+      box.width > 0 &&
+      box.height > 0 &&
+      box.x + box.width > 0 &&
+      box.y + box.height > 0 &&
+      box.x < viewport.width &&
+      box.y < viewport.height;
+
     if (
       (await workspaceFilter.count()) > 0 &&
-      (await workspaceFilter.isVisible())
+      (await workspaceFilter.isVisible()) &&
+      isWithinViewport
     ) {
       return;
     }

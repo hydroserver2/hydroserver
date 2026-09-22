@@ -22,18 +22,23 @@ import type { AppPlotlyTrace } from './options'
  * `suppressedEchoSelection` with the indices their write will land
  * on. When the next `plotly_relayout`-induced `handleSelected` call
  * fires (`fromRelayout: true`) we compare the trace's actual
- * `selectedpoints` against that expected payload — equal means the
+ * `selectedpoints` against that expected payload: equal means the
  * echo (skip dispatch); different means a user gesture (box / lasso
  * select) raced through the same debounce window, so dispatch
  * normally. The click-induced path (`fromRelayout` falsy, default)
- * ignores the sentinel entirely — user clicks always dispatch.
+ * ignores the sentinel entirely; user clicks always dispatch.
  */
 export const handleSelected = async (
   eventData?: PlotMouseEvent | PlotRelayoutEvent | PlotSelectionEvent | null,
   opts: { fromRelayout?: boolean } = {}
 ) => {
-  const { plotlyRef, selectedSeries, isUpdating, suppressedEchoSelection } =
-    storeToRefs(usePlotlyStore())
+  const {
+    plotlyRef,
+    selectedSeries,
+    isUpdating,
+    suppressedEchoSelection,
+    previewIndex,
+  } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -63,23 +68,24 @@ export const handleSelected = async (
   // Only dispatch the SELECTION filter on user gestures. Two
   // suppression signals layer here:
   //
-  //  1. `isUpdating` — set by undo/redo and dispatch-helper composables
+  //  1. `isUpdating`: set by undo/redo and dispatch-helper composables
   //     so a programmatic re-render doesn't echo back as a SELECTION
   //     and clobber the redo stack.
-  //  2. `suppressedEchoSelection` — payload-keyed sentinel armed by
+  //  2. `suppressedEchoSelection`: payload-keyed sentinel armed by
   //     `setPlotSelection` / `clearSelected`. We always clear it (one-
   //     shot), but only suppress when the current selection MATCHES
   //     what the echo should carry. A mismatch means a real user
   //     gesture overlapped the programmatic write's debounce window,
   //     and dropping it would be the bug we're guarding against.
-  //     Click and direct-call paths bypass — they're real gestures.
+  //     Click and direct-call paths bypass; they're real gestures.
   if (opts.fromRelayout && suppressedEchoSelection.value != null) {
     const expected = suppressedEchoSelection.value
     suppressedEchoSelection.value = null
     const current = selectedData.value ?? []
     if (sameSelection(expected, current)) return
   }
-  if (eventData && !isUpdating.value) {
+  // A previewed step only shows data: the selection highlights, unrecorded.
+  if (eventData && !isUpdating.value && previewIndex.value === null) {
     await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.SELECTION,
       selectedData.value ?? []
@@ -89,7 +95,7 @@ export const handleSelected = async (
 
 /** Order-preserving equality for selection payloads. Selection
  *  arrays are produced sorted by both Plotly and our setters, so a
- *  positional compare is enough — no need to allocate a Set. */
+ *  positional compare is enough, no need to allocate a Set. */
 const sameSelection = (a: number[], b: number[]): boolean => {
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {

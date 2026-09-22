@@ -101,7 +101,7 @@ export const recordZoomIfSettled = (
   store.pushZoomState(snap)
 }
 
-/** 350 ms debounce — slightly longer than the relayout handler so a single
+/** 350 ms debounce, slightly longer than the relayout handler so a single
  * drag gesture collapses to one entry even when the user pauses briefly
  * mid-gesture. Module-private: wire via `installZoomTracking` instead. */
 const recordZoomDebounced = debounce(

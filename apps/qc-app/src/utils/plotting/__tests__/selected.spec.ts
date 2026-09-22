@@ -12,6 +12,7 @@ const selectedSeries = ref<any>(null)
 const isUpdating = ref(false)
 const suppressedEchoSelection = ref<number[] | null>(null)
 
+const previewIndex = ref<number | null>(null)
 vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
     plotlyRef,
@@ -19,6 +20,7 @@ vi.mock('@/store/plotly', () => ({
     isUpdating,
     editHistory: ref([]),
     suppressedEchoSelection,
+    previewIndex,
   }),
 }))
 
@@ -126,7 +128,7 @@ describe('handleSelected', () => {
     selectedSeries.value = { data: { dispatchFilter } }
     plotlyRef.value = makePlot('qc', [4, 5])
     // Programmatic write expected [9, 10], user gesture landed [4, 5]
-    // — mismatch should fall through to dispatch.
+    // so the mismatch should fall through to dispatch.
     suppressedEchoSelection.value = [9, 10]
     await handleSelected({} as any, { fromRelayout: true })
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [4, 5])
@@ -149,4 +151,19 @@ describe('handleSelected', () => {
     await handleSelected({ points: [] } as any)
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [102])
   })
+
+describe('handleSelected while previewing a history step', () => {
+  it('highlights without recording a SELECTION', async () => {
+    previewIndex.value = 1
+    try {
+      const { handleSelected } = await import('../selected')
+      const dispatchFilter = vi.fn()
+      selectedSeries.value = { data: { dispatchFilter } } as any
+      await handleSelected({ points: [{ pointIndex: 1, curveNumber: 0 }] } as any)
+      expect(dispatchFilter).not.toHaveBeenCalled()
+    } finally {
+      previewIndex.value = null
+    }
+  })
+})
 })

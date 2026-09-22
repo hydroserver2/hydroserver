@@ -23,8 +23,8 @@ import { useUIStore } from '@/store/userInterface'
  * + try/finally + `clearSelected`/`setPlotSelection` boilerplate that
  * drifted between panels (some called `clearSelected` first, some
  * didn't; some forgot `isUpdating`). Centralizing here keeps the
- * sequence — including the echo-suppression hand-off in
- * `setPlotSelection` — consistent.
+ * sequence (including the echo-suppression hand-off in
+ * `setPlotSelection`) consistent.
  *
  * Returns the indices the filter produced so callers can run extra
  * UI side-effects (e.g. updating local state) without re-fetching.
@@ -88,11 +88,11 @@ export function useFilterDispatch() {
   /**
    * Log a SELECTION history entry at the end of an edit / add
    * operation and visually highlight the same indices on the plot.
-   * Lets the user trace where points landed — useful for ADD_POINTS
+   * Lets the user trace where points landed, useful for ADD_POINTS
    * (newly-inserted indices), CHANGE_VALUES / INTERPOLATE /
    * DRIFT_CORRECTION (same indices, fresh marker), SHIFT_DATETIMES
    * (re-located indices), and FILL_GAPS (newly-inserted indices).
-   * No-ops on an empty array — qc-utils' empty-SELECTION rule would
+   * No-ops on an empty array: qc-utils' empty-SELECTION rule would
    * otherwise pop a preceding edit op whose `selected` was non-empty.
    */
   const recordPostActionSelection = async (indices: number[]) => {

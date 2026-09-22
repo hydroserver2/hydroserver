@@ -24,7 +24,13 @@ import {
   buildObservations,
   datastreams,
   observedProperties,
+  managedDatastream,
   processingLevels,
+  QC_SESSION_AUTHOR,
+  QC_SOURCE_CHECKSUM,
+  datastreamStatuses,
+  qcHistories,
+  qcSessions,
   resultQualifiers,
   sensors,
   session,
@@ -52,13 +58,59 @@ export interface MockOptions {
     { phenomenonTime: string[]; result: number[] }
   >
   /**
+   * Field overrides for catalog datastreams, keyed by id. Lets a spec move a
+   * datastream's phenomenon times to match a custom observation series.
+   */
+  catalogOverrides?: Record<string, Record<string, unknown>>
+  /**
    * Accumulates every bulk-create submission the app makes while the
    * mocks are active. Consumers can assert on request ordering /
    * payload contents without installing a second route handler.
    */
   submissions?: Array<{ mode: string | null; body: any }>
+  /**
+   * Accumulates every datastream create body the app posts, so a spec can
+   * assert on what the create-datastream form sent.
+   */
+  datastreamCreates?: Array<Record<string, any>>
+  /**
+   * Serve the QC history fixture, so `DATASTREAM_ID` has a managed
+   * datastream derived from it. Off by default: most specs want a catalog
+   * where every row plots straight from its check box.
+   */
+  qcHistories?: boolean
+  /**
+   * Live QC session state, seeded from the session fixtures when
+   * `qcHistories` is on. The handlers create, save, and commit sessions in
+   * it, so pass an array to assert on what the app persisted.
+   */
+  qcSessionState?: MockQcSession[]
   /** Set to false to mark the session as unauthenticated. */
   authenticated?: boolean
+}
+
+export interface MockQcOperation {
+  id: string
+  operationType: string
+  arguments: unknown
+  comment?: string | null
+  order: number
+  createdAt: string
+}
+
+export interface MockQcSession {
+  id: string
+  historyId: string
+  status: 'in_progress' | 'committed'
+  description: string | null
+  phenomenonTimeStart: string
+  phenomenonTimeEnd: string
+  sourceChecksum: string
+  createdAt: string
+  committedAt: string | null
+  createdBy: { name: string; email: string }
+  dependencyIds: string[]
+  operations: MockQcOperation[]
 }
 
 function corsHeaders(route: Route): Record<string, string> {
@@ -105,9 +157,20 @@ export async function installMocks(
   const observations = options.observations ?? buildObservations()
   const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
+  const datastreamCreates = options.datastreamCreates ?? []
+  const withQcHistories = options.qcHistories ?? false
+  const sessionState = options.qcSessionState ?? []
+  if (withQcHistories) {
+    sessionState.push(...qcSessions.map((s) => ({ ...s, operations: [] })))
+  }
+  // The managed datastream only exists for specs that opted into histories.
+  const overrides = options.catalogOverrides ?? {}
+  const catalog = (
+    withQcHistories ? [...datastreams, managedDatastream] : datastreams
+  ).map((ds) => ({ ...ds, ...overrides[ds.id] }))
 
   // Match only real HydroServer API calls by pathname. A bare `**/api/**`
-  // glob also catches the dev server's own source modules — the QC app
+  // glob also catches the dev server's own source modules. The QC app
   // aliases `@hydroserver/client` to `packages/hydroserver-ts/src`, whose
   // files live under `.../src/api/...` and are served from
   // `/qc/@fs/.../src/api/runtime.ts`. Those URLs contain `/api/` but their
@@ -116,7 +179,7 @@ export async function installMocks(
   // requests always have a pathname that starts with `/api/`.
   const isApiRequest = (url: URL): boolean => url.pathname.startsWith('/api/')
 
-  // Preflights for anything — the real server serves OPTIONS via
+  // Preflights for anything: the real server serves OPTIONS via
   // middleware; swallowing them here keeps the mocks happy.
   await page.route(isApiRequest, async (route) => {
     const request = route.request()
@@ -140,7 +203,7 @@ export async function installMocks(
       })
     }
     if (path.includes('/api/auth/')) {
-      // Any other auth endpoint (providers, redirects) — return OK.
+      // Any other auth endpoint (providers, redirects): return OK.
       return json(route, { status: 200, data: {}, meta: { is_authenticated: authenticated } })
     }
 
@@ -165,7 +228,7 @@ export async function installMocks(
       // cache-extension logic in `fetchObservationsInRange` (which
       // re-fetches the segment outside its cached window every time
       // the range moves) would receive the full fixture series on
-      // each call and stack duplicates into the ObservationRecord —
+      // each call and stack duplicates into the ObservationRecord,
       // visible as wrong point counts and a long phantom line
       // connecting the first and last observations.
       const tMin = parseISOorNull(params.get('phenomenon_time_min'))
@@ -194,12 +257,64 @@ export async function installMocks(
       return json(route, { data: workspaces })
     }
 
+    // --- Quality-control histories / sessions / operations ---
+    // Served ahead of the datastream routes: the history paths sit under
+    // the same `/api/data` prefix and would otherwise fall to the
+    // empty-list catch-all.
+    const qcSessionRoute = path.match(
+      /\/api\/data\/quality-control\/histories\/([^/]+)\/sessions(?:\/([^/]+)(?:\/(commit|operations)(?:\/([^/]+))?)?)?$/
+    )
+    if (qcSessionRoute) {
+      return handleQcSessions(route, sessionState, qcSessionRoute)
+    }
+    if (path.endsWith('/api/data/quality-control/histories')) {
+      if (method === 'POST') {
+        const body = await safeJson(request)
+        return json(
+          route,
+          { data: { id: 'qch-e2e-new', ...body } },
+          201
+        )
+      }
+      return json(route, { data: withQcHistories ? qcHistories : [] })
+    }
+
     // --- Things / datastreams / processing levels / observed properties ---
     if (path.endsWith('/api/data/things') && method === 'GET') {
       return json(route, { data: things })
     }
-    if (path.endsWith('/api/data/datastreams') && method === 'GET') {
-      return json(route, { data: datastreams })
+    if (path.endsWith('/api/data/datastreams')) {
+      if (method === 'POST') {
+        const body = await safeJson(request)
+        datastreamCreates.push(body)
+        // Echo the body back the way the server does, with an assigned id
+        // and the nested relations `expand_related: true` asks for.
+        const created = { ...body, id: 'ds-qc-e2e-created' }
+        return json(
+          route,
+          {
+            data: {
+              ...created,
+              thing: things.find((t) => t.id === created.thingId),
+              unit: units.find((u) => u.id === created.unitId),
+              sensor: sensors.find((s) => s.id === created.sensorId),
+              observedProperty: observedProperties.find(
+                (o) => o.id === created.observedPropertyId
+              ),
+              processingLevel: processingLevels.find(
+                (p) => p.id === created.processingLevelId
+              ),
+            },
+          },
+          201
+        )
+      }
+      return json(route, { data: catalog })
+    }
+    // Ahead of the single-datastream route, which would otherwise treat
+    // "statuses" as a datastream id.
+    if (path.endsWith('/api/data/datastreams/statuses') && method === 'GET') {
+      return json(route, { data: datastreamStatuses })
     }
     if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
       return json(route, { data: processingLevels })
@@ -218,12 +333,12 @@ export async function installMocks(
     const dsGet = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
-      const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]
+      const ds = catalog.find((d) => d.id === id) ?? catalog[0]
       return json(route, { data: ds })
     }
 
     // --- Tags / attachments / other sub-resources the app may touch
-    //     in DatastreamInformationCard — return empty arrays so the
+    //     in DatastreamInformationCard: return empty arrays so the
     //     UI renders without errors.
     if (path.includes('/tags') || path.includes('/attachments')) {
       return json(route, { data: [] })
@@ -233,6 +348,108 @@ export async function installMocks(
     // 404 and trigger console noise that masks real failures.
     return json(route, { data: [] })
   })
+}
+
+/**
+ * Stateful stand-in for the QC session and operation endpoints, covering
+ * what the editor calls to start, save, commit, and delete a session.
+ */
+async function handleQcSessions(
+  route: Route,
+  state: MockQcSession[],
+  [, historyId, sessionId, action, operationId]: RegExpMatchArray
+): Promise<void> {
+  const request = route.request()
+  const method = request.method()
+  const now = new Date().toISOString()
+  const noContent = () =>
+    route.fulfill({ status: 204, headers: corsHeaders(route) })
+
+  if (!sessionId) {
+    if (method === 'GET') {
+      const status = new URL(request.url()).searchParams.get('status')
+      return json(route, {
+        data: state.filter(
+          (s) => s.historyId === historyId && (!status || s.status === status)
+        ),
+      })
+    }
+    if (method === 'POST') {
+      const body = await safeJson(request)
+      const session: MockQcSession = {
+        id: `qcs-e2e-new-${state.length + 1}`,
+        historyId: historyId!,
+        status: 'in_progress',
+        description: body?.description ?? null,
+        phenomenonTimeStart: body?.phenomenonTimeStart,
+        phenomenonTimeEnd: body?.phenomenonTimeEnd,
+        sourceChecksum: QC_SOURCE_CHECKSUM,
+        createdAt: now,
+        committedAt: null,
+        createdBy: QC_SESSION_AUTHOR,
+        dependencyIds: [],
+        operations: [],
+      }
+      state.push(session)
+      return json(route, { data: session }, 201)
+    }
+  }
+
+  const session = state.find(
+    (s) => s.id === sessionId && s.historyId === historyId
+  )
+  if (!session) return json(route, { detail: 'Session not found.' }, 404)
+
+  if (action === 'commit' && method === 'POST') {
+    session.status = 'committed'
+    session.committedAt = now
+    return json(route, { data: session })
+  }
+
+  if (action === 'operations' && !operationId) {
+    if (method === 'GET') return json(route, { data: session.operations })
+    if (method === 'POST') {
+      const bodies = ((await safeJson(request)) ?? []) as Array<
+        Omit<MockQcOperation, 'id' | 'createdAt'>
+      >
+      const created = bodies.map((b) => ({
+        ...b,
+        id: `${session.id}-op-${b.order}`,
+        createdAt: now,
+      }))
+      session.operations.push(...created)
+      return json(route, { data: created }, 201)
+    }
+  }
+
+  if (action === 'operations' && operationId) {
+    const index = session.operations.findIndex((o) => o.id === operationId)
+    if (index < 0) return json(route, { detail: 'Operation not found.' }, 404)
+    if (method === 'PATCH') {
+      const body = await safeJson(request)
+      session.operations[index]!.comment = body?.comment ?? null
+      return json(route, { data: session.operations[index] })
+    }
+    if (method === 'DELETE') {
+      session.operations.splice(index, 1)
+      return noContent()
+    }
+  }
+
+  if (!action) {
+    if (method === 'GET') return json(route, { data: session })
+    if (method === 'PATCH') {
+      const body = await safeJson(request)
+      if (body && 'description' in body) session.description = body.description
+      return json(route, { data: session })
+    }
+    if (method === 'DELETE') {
+      state.splice(state.indexOf(session), 1)
+      return noContent()
+    }
+  }
+
+  return json(route, { detail: `Unmocked ${method} ${pathOf(request.url())}` }, 405)
 }
 
 async function safeJson(request: ReturnType<Page['request']> | any): Promise<any> {

@@ -221,26 +221,26 @@ export const handleRelayout = async (
       // markers fade past the density threshold so the lines stay
       // readable. `areTooltipsEnabled` already encodes the mode
       // policy (manual override vs. threshold-driven auto), so the
-      // threshold isn't checked again here — doing so would make a
+      // threshold isn't checked again here; doing so would make a
       // user's manual "on" silently flip off past the cap.
       //
       // Scatter-only series (datastreams without a declared
       // `intendedTimeSpacing`) ship no gap-overlay line, so fading
       // their markers would leave nothing on screen. Identify them
-      // by the absence of a companion `_gapOverlayFor` trace and
-      // pin their opacity at 1.
+      // by the absence of a gap overlay `_partOf` them and pin their
+      // opacity at 1. Companion point traces count as their series.
       const tooltipsWillRun = areTooltipsEnabled.value
       const { qcDatastream } = storeToRefs(useDataVisStore())
       const qcId = qcDatastream.value?.id
       const traces = liveTraces
       const lineBackedIds = new Set<string>()
       for (const t of traces) {
-        if (t._gapOverlayFor) lineBackedIds.add(t._gapOverlayFor)
+        if (t._isGapOverlay && t._partOf) lineBackedIds.add(t._partOf)
       }
       const perTraceOpacity = perTraceVisible.map((n, i) => {
         if (tooltipsWillRun) return 1
         const trace = traces[i] as AppPlotlyTrace | undefined
-        const id = trace?.id
+        const id = trace?.id ?? trace?._partOf
         if (id && !trace?._isGapOverlay && !lineBackedIds.has(id)) return 1
         if (tooltipsMode.value === 'manual') return 0
         return n > DENSITY_HIDE_MARKERS ? 0 : 1
@@ -260,7 +260,7 @@ export const handleRelayout = async (
         // density-driven `marker.opacity` for non-QC traces so they
         // stay opted out of Plotly's global selection-fade no matter
         // what density bucket they land in. Pass `null` for the QC
-        // trace to leave its `selected.marker` config untouched —
+        // trace to leave its `selected.marker` config untouched.
         // Plotly's restyle skips entries whose array slot is null.
         const perTraceUnselectedOpacity = perTraceOpacity.map((o, i) => {
           const isQc = qcId != null && traces[i]?.id === qcId

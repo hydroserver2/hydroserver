@@ -1,8 +1,9 @@
 ﻿<template>
   <div class="plot-root d-flex flex-column">
-    <div v-if="!preview" class="plot-header">
+    <div class="plot-header">
       <div class="plot-toolbar d-flex align-center flex-wrap ga-1 px-3 py-1">
         <v-btn-toggle
+          v-if="!isPlotPreview"
           v-model="tab"
           density="compact"
           color="primary"
@@ -29,25 +30,35 @@
           class="ml-1"
         />
 
-        <v-chip
-          v-if="selectedData?.length || hasSelectionShape"
-          class="plot-toolbar__selection flex-grow-0 flex-shrink-0"
-          size="small"
-          color="red"
-          variant="tonal"
-          prepend-icon="mdi-selection-drag"
-          closable
-          close-icon="mdi-close"
-          @click:close="clearSelected()"
+        <div
+          v-if="(selectedData?.length || hasSelectionShape) && !isPlotPreview"
+          class="plot-toolbar__selection d-inline-flex align-stretch rounded-lg ml-1"
         >
-          <b class="mr-1">{{ selectedData?.length ?? 0 }}</b>
-          point{{ (selectedData?.length ?? 0) === 1 ? '' : 's' }} selected
-        </v-chip>
+          <div
+            class="plot-toolbar__selection-count d-inline-flex align-center ga-1"
+            aria-live="polite"
+          >
+            <v-icon icon="mdi-selection-drag" size="16" />
+            <b>{{ selectedCount.toLocaleString() }}</b>
+            <span>point{{ selectedCount === 1 ? '' : 's' }} selected</span>
+          </div>
+          <span class="plot-toolbar__selection-divider" aria-hidden="true" />
+          <button
+            type="button"
+            data-testid="clear-selection-btn"
+            class="plot-toolbar__selection-clear d-inline-flex align-center ga-1 cursor-pointer"
+            title="Clear selection"
+            @click="clearSelected()"
+          >
+            <v-icon icon="mdi-close" size="14" />
+            Clear
+          </button>
+        </div>
 
         <v-spacer />
 
         <div
-          v-if="tab === 'plot'"
+          v-if="isPlotPreview || tab === 'plot'"
           class="plot-toolbar__points-combo d-inline-flex align-stretch rounded-lg"
           :class="{
             'plot-toolbar__points-combo--on': areTooltipsEnabled,
@@ -183,7 +194,7 @@
         </div>
 
         <v-btn
-          v-if="tab === 'plot'"
+          v-if="tab === 'plot' && !isPlotPreview"
           size="small"
           variant="text"
           icon="mdi-share-variant-outline"
@@ -194,7 +205,7 @@
 
         <v-menu
           v-model="showHelp"
-          v-if="tab === 'plot'"
+          v-if="tab === 'plot' && !isPlotPreview"
           :close-on-content-click="false"
           location="bottom end"
           offset="6"
@@ -264,42 +275,14 @@
           </v-card>
         </v-menu>
 
-        <v-speed-dial
-          v-model="rangeDialOpen"
-          location="bottom center"
-          transition="fade-transition"
-        >
-          <template #activator="{ props: activatorProps }">
-            <v-btn
-              v-bind="activatorProps"
-              size="small"
-              variant="text"
-              icon="mdi-magnify-scan"
-              title="Zoom to range (does not reload data)"
-              aria-label="Zoom to range"
-            />
-          </template>
-
-          <v-btn
-            v-for="option in editorDateOptions"
-            :key="option.id"
-            color="surface"
-            variant="flat"
-            size="small"
-            :title="option.editorLabel"
-            class="text-none text-body-small font-weight-medium border elevation-2"
-            @click="selectRangePreset(option.id)"
-          >
-            {{ option.label }}
-          </v-btn>
-        </v-speed-dial>
+        <TimeRangeMenu />
       </div>
     </div>
 
-    <v-divider v-if="!preview"></v-divider>
+    <v-divider></v-divider>
 
-    <div class="d-flex flex-row flex-grow-1">
-      <v-tabs-window v-model="tab" class="flex-grow-1">
+    <div class="plot-body position-relative d-flex flex-row flex-grow-1">
+      <v-tabs-window v-model="tab" class="plot-body__content flex-grow-1">
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="fill-height position-relative d-flex flex-column">
             <div
@@ -308,7 +291,7 @@
               class="flex-fill"
               style="min-height: 0"
             ></div>
-            <template v-if="!preview">
+            <template v-if="showOverview">
               <div
                 class="plot-context-strip d-flex align-center justify-center cursor-pointer user-select-none"
                 :title="
@@ -391,9 +374,11 @@
 
         <v-tabs-window-item value="table" class="fill-height">
           <!-- Don't keep DataTable mounted when not on the table tab. -->
-          <DataTable v-if="tab === 'table' && !preview" class="fill-height"
+          <DataTable v-if="tab === 'table' && !isPlotPreview" class="fill-height"
         /></v-tabs-window-item>
       </v-tabs-window>
+      <!-- Covers the plot and table only, so the toolbar stays usable. -->
+      <slot name="body-overlay" />
     </div>
   </div>
 </template>
@@ -409,19 +394,16 @@ import {
   handleRelayout,
   zoomXaxisTo,
 } from '@/utils/plotting/plotly'
-import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
+import TimeRangeMenu from '@/components/VisualizeData/TimeRangeMenu.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
-
-// Preview strips the in-plot chrome for the Select view.
-const props = defineProps<{
-  preview?: boolean
-}>()
+import { useQcSessionStore } from '@/store/qcSession'
+import { DrawerType, useUIStore } from '@/store/userInterface'
 
 const { setPlotSelection, clearSelected } = useDataSelection()
 const { updateOptions, requestTableScroll } = usePlotlyStore()
@@ -437,16 +419,23 @@ const {
   showCoordinates,
   crosshair,
   axisChips,
-  previewMode,
   plotlyRef,
   activeTab,
+  pendingShareZoom,
+  shareZoomEditTarget,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, hasSelectionShape, qcDatastream, dateOptions } =
-  storeToRefs(useDataVisStore())
-
-const allPresetId = computed(
-  () => dateOptions.value.find((o) => o.label === 'All')?.id ?? null
+const { selectedData, hasSelectionShape, qcDatastream } = storeToRefs(
+  useDataVisStore()
 )
+const { trackPlotWork } = useDataVisStore()
+const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
+// The Select view previews the plot only when nothing is being edited; an
+// open session keeps the full chrome in both views.
+const { isPlotPreview, currentView } = storeToRefs(useUIStore())
+// The overview strip belongs to the editor alone.
+const showOverview = computed(() => currentView.value === DrawerType.Edit)
+
+const selectedCount = computed(() => selectedData.value?.length ?? 0)
 
 const tooltipsAutoDisabled = computed(
   () =>
@@ -509,8 +498,6 @@ const yReadoutUnit = computed(() => {
   return symbol ? ` ${symbol}` : ''
 })
 
-const { graphSeriesArray } = storeToRefs(usePlotlyStore())
-
 // Default left placement; promote to right when the measured chip
 // fits between the axis line and the plot's right edge.
 const chipEls = new Map<string, HTMLElement>()
@@ -569,97 +556,39 @@ async function copyShareableLink() {
   }
 }
 
-const earliestDataX = computed<number | null>(() => {
-  let min = Infinity
-  for (const s of graphSeriesArray.value) {
-    const xs = s.data?.dataX
-    if (!xs?.length) continue
-    const first = xs[0] as number
-    if (first < min) min = first
-  }
-  return Number.isFinite(min) ? min : null
+const editWindow = computed(() => {
+  const s = viewedSession.value ?? inProgressSession.value
+  return s
+    ? {
+        begin: Date.parse(s.phenomenonTimeStart),
+        end: Date.parse(s.phenomenonTimeEnd),
+      }
+    : null
 })
 
-const latestDataX = computed<number | null>(() => {
-  let max = -Infinity
-  for (const s of graphSeriesArray.value) {
-    const xs = s.data?.dataX
-    if (!xs?.length) continue
-    const last = xs[xs.length - 1] as number
-    if (last > max) max = last
-  }
-  return Number.isFinite(max) ? max : null
-})
-
-const EDITOR_LABELS: Record<string, string> = {
-  '1w': 'Last week of data',
-  '1m': 'Last month of data',
-  '6m': 'Last 6 months of data',
-  '1y': 'Last year of data',
-  All: 'All data',
+// The editor opens on the session window; context stays a zoom-out away.
+function zoomToEditWindow() {
+  const w = editWindow.value
+  if (!w || !plotlyRef.value) return
+  zoomXaxisTo(plotlyRef.value, w.begin, w.end)
+  requestTableScroll(w.begin)
 }
 
-const editorDateOptions = computed(() =>
-  dateOptions.value
-    .filter((o) => o.label !== 'YTD')
-    .map((o) => ({ ...o, editorLabel: EDITOR_LABELS[o.label] ?? o.label }))
+// A share link's zoom is an explicit viewport, so it wins over that default
+// for the session the link itself opened. Any other window zooms as usual and
+// drops the pointer, so the link cannot reach a later editing session.
+watch(
+  () => editWindow.value && `${editWindow.value.begin}-${editWindow.value.end}`,
+  () => {
+    if (isPlotPreview.value) return
+    const shareTarget = shareZoomEditTarget.value
+    if (shareTarget) {
+      shareZoomEditTarget.value = null
+      if (shareTarget === qcDatastream.value?.id) return
+    }
+    zoomToEditWindow()
+  }
 )
-
-const rangeDialOpen = ref(false)
-
-function selectRangePreset(id: number) {
-  onEditorDatePreset(id)
-  rangeDialOpen.value = false
-}
-
-// Editor presets are a pure x-axis zoom (no refetch) so they don't
-// blow away the edit history. Relative presets (1w/1m/6m/1y) anchor
-// to the loaded data's end. "All" snaps to the data extent.
-function onEditorDatePreset(id: number) {
-  const option = dateOptions.value.find((o) => o.id === id)
-  if (!option) return
-
-  const dataEndMs = latestDataX.value
-  const dataEnd = dataEndMs != null ? new Date(dataEndMs) : null
-
-  let begin: Date | null = null
-  let end: Date | null = null
-
-  switch (option.label) {
-    case '1w':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractDays(dataEnd, 7)
-      break
-    case '1m':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractMonths(dataEnd, 1)
-      break
-    case '6m':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractMonths(dataEnd, 6)
-      break
-    case '1y':
-      if (!dataEnd) return
-      end = dataEnd
-      begin = subtractYears(dataEnd, 1)
-      break
-    case 'All':
-      if (earliestDataX.value == null || dataEndMs == null) return
-      begin = new Date(earliestDataX.value)
-      end = new Date(dataEndMs)
-      break
-    default:
-      return
-  }
-
-  if (!begin || !end) return
-  zoomXaxisTo(plotlyRef.value, begin.getTime(), end.getTime())
-  // Keep the table in sync: scroll it so the range's first row is on top.
-  requestTableScroll(begin.getTime())
-}
 
 function toggleTooltips() {
   // Manual override; switching back to auto must go through the
@@ -684,7 +613,7 @@ const applyThreshold = () => {
   }
 }
 
-const gestures = [
+const allGestures = [
   {
     icon: 'mdi-cursor-default-click-outline',
     title: 'Click a point to toggle it',
@@ -709,6 +638,7 @@ const gestures = [
     icon: 'mdi-chart-areaspline',
     title: 'Use the overview strip',
     desc: 'Drag the band on the bottom mini-plot to set the visible time window.',
+    overview: true,
   },
   {
     icon: 'mdi-cursor-move',
@@ -716,6 +646,10 @@ const gestures = [
     desc: 'Lines up the cursor across X and Y axes, even when tooltips are off.',
   },
 ]
+
+const gestures = computed(() =>
+  allGestures.filter((g) => !g.overview || showOverview.value)
+)
 
 const keyboardShortcuts = [
   {
@@ -734,51 +668,86 @@ const keyboardShortcuts = [
 
 let plotResizeObserver: ResizeObserver | null = null
 let pendingResizeFrame: number | null = null
+let cancelFirstDraw: (() => void) | null = null
+// Deferred work checks this so it never touches a detached plot.
+let isUnmounted = false
 
-onMounted(async () => {
-  // Flip before handleNewPlot so createPlotlyOption emits the
-  // preview layout (no qualifier band, no title, tight margins).
-  previewMode.value = !!props.preview
+onMounted(() => {
   updateOptions()
-
-  // Wait for the view-switch animation to expand the container.
-  setTimeout(() => {
-    updateOptions()
-    handleNewPlot(plot.value)
-    if (!props.preview && allPresetId.value != null) {
-      onEditorDatePreset(allPresetId.value)
-    }
-
-    const target = plot.value
-    if (target && typeof ResizeObserver !== 'undefined') {
-      // Skip the initial "observe started" notification so we don't
-      // resize on top of the freshly-built plot.
-      let initialFired = false
-      plotResizeObserver = new ResizeObserver(() => {
-        if (!initialFired) {
-          initialFired = true
-          return
-        }
-        if (pendingResizeFrame != null) return
-        pendingResizeFrame = requestAnimationFrame(() => {
-          pendingResizeFrame = null
-          const gd = plot.value
-          if (!gd) return
-          // Plotly.Plots.resize throws when gd has no _fullLayout
-          // (observer can fire before handleNewPlot finishes).
-          const anyGd = gd as unknown as { _fullLayout?: unknown }
-          if (!anyGd._fullLayout) return
-          void Plotly.Plots.resize(gd as unknown as Plotly.Root)
-        })
-      })
-      plotResizeObserver.observe(target)
-    }
-  }, 200)
 })
 
+// The plot tab renders its element lazily, so a view that opens on the
+// Table tab has no element at mount. Draw when the element appears.
+watch(
+  plot,
+  (target) => {
+    if (target) scheduleFirstDraw(target)
+  },
+  { flush: 'post' }
+)
+
+// Plot work from the moment the element appears, so the editor is not
+// reported ready before the plot the user sees is drawn.
+function scheduleFirstDraw(target: HTMLDivElement) {
+  cancelFirstDraw?.()
+  const drawn = trackPlotWork(async () => {
+    // Wait for the view-switch animation to expand the container.
+    let cancel!: () => void
+    const due = await new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => resolve(true), 200)
+      cancel = () => {
+        clearTimeout(timer)
+        resolve(false)
+      }
+      cancelFirstDraw = cancel
+    })
+    // A newer schedule owns the flag by now, so only clear our own.
+    if (cancelFirstDraw === cancel) cancelFirstDraw = null
+    if (!due || isUnmounted) return
+    updateOptions()
+    // A share-URL zoom, if any, is applied and cleared inside
+    // handleNewPlot itself, so capture it before that happens: it
+    // should win over the session-window zoom below.
+    const hadPendingShareZoom = !!pendingShareZoom.value
+    await handleNewPlot(target)
+    if (isUnmounted) return
+    if (!isPlotPreview.value && !hadPendingShareZoom) zoomToEditWindow()
+    observePlotSize(target)
+  })
+  drawn.catch((e) => console.error('First plot draw failed', e))
+}
+
+function observePlotSize(target: HTMLDivElement) {
+  if (typeof ResizeObserver === 'undefined') return
+  plotResizeObserver?.disconnect()
+  // The plot can be laid out before the container reaches its final
+  // size, so resize whenever the two differ, including on the first
+  // notification.
+  plotResizeObserver = new ResizeObserver(() => {
+    if (pendingResizeFrame != null) return
+    pendingResizeFrame = requestAnimationFrame(() => {
+      pendingResizeFrame = null
+      const gd = plot.value as
+        | (HTMLElement & { _fullLayout?: { width: number; height: number } })
+        | null
+      const layout = gd?._fullLayout
+      // Plotly.Plots.resize rejects a hidden div (Table tab).
+      if (!gd || !layout || !gd.offsetWidth || !gd.offsetHeight) return
+      if (
+        Math.abs(layout.width - gd.offsetWidth) < 1 &&
+        Math.abs(layout.height - gd.offsetHeight) < 1
+      ) {
+        return
+      }
+      void Plotly.Plots.resize(gd as unknown as Plotly.Root)
+    })
+  })
+  plotResizeObserver.observe(target)
+}
+
 onBeforeUnmount(() => {
-  // Reset so the next Plot mount in Edit view doesn't inherit preview.
-  if (previewMode.value) previewMode.value = false
+  isUnmounted = true
+  cancelFirstDraw?.()
   if (pendingResizeFrame != null) {
     cancelAnimationFrame(pendingResizeFrame)
     pendingResizeFrame = null
@@ -792,6 +761,7 @@ onBeforeUnmount(() => {
 const onTabChange = () => {
   if (tab.value === 'plot') {
     setTimeout(() => {
+      if (isUnmounted) return
       setPlotSelection(selectedData.value || [])
     })
   }
@@ -801,6 +771,11 @@ const onTabChange = () => {
 <style scoped>
 .plot-root {
   min-height: 0;
+}
+
+/* Contains Plotly's own z-indexes so a body overlay covers them. */
+.plot-body__content {
+  isolation: isolate;
 }
 
 .plot-header {
@@ -838,8 +813,51 @@ const onTabChange = () => {
   color: rgb(var(--v-theme-on-surface));
 }
 
+/* Same chrome as the data-points combo so the toolbar reads as one set. */
 .plot-toolbar__selection {
+  height: 28px;
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  color: rgb(var(--v-theme-error));
+  background-color: rgba(var(--v-theme-error), 0.08);
+  border: 1px solid rgba(var(--v-theme-error), 0.24);
+}
+
+.plot-toolbar__selection-count {
+  padding: 0 10px 0 8px;
+}
+
+.plot-toolbar__selection-count b {
+  font-weight: 600;
+}
+
+.plot-toolbar__selection-divider {
+  width: 1px;
+  align-self: stretch;
+  background-color: rgba(var(--v-theme-error), 0.24);
+}
+
+.plot-toolbar__selection-clear {
+  padding: 0 10px 0 8px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  border-top-right-radius: 7px;
+  border-bottom-right-radius: 7px;
+  transition: background-color 120ms ease;
+}
+
+.plot-toolbar__selection-clear:hover {
+  background-color: rgba(var(--v-theme-error), 0.14);
+}
+
+.plot-toolbar__selection-clear:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-error));
+  outline-offset: -2px;
 }
 
 /* Axis-title chips. CSS vars set per-element on the chip. Default

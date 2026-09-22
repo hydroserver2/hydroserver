@@ -199,7 +199,7 @@ import {
   mdiMenuDown,
   mdiMenuOpen,
   mdiShieldCheckOutline,
-  // mdiShieldEditOutline,
+  mdiShieldEditOutline,
   mdiTransitConnectionVariant,
 } from '@mdi/js'
 
@@ -257,14 +257,13 @@ const paths: NavItem[] = [
         label: 'Job orchestration',
         icon: mdiTransitConnectionVariant,
       },
-      // Re-enable for the v1.12 release.
-      // {
-      //   label: 'Quality Control',
-      //   icon: mdiShieldEditOutline,
-      //   onClick: () => {
-      //     window.location.href = '/qc/'
-      //   },
-      // },
+      {
+        label: 'Quality Control',
+        icon: mdiShieldEditOutline,
+        onClick: () => {
+          window.location.href = '/qc/'
+        },
+      },
     ],
   },
   {

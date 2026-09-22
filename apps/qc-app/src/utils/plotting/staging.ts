@@ -6,12 +6,8 @@
  * helper tolerates being called when the plot isn't mounted yet so
  * callers can fire-and-forget from setup/unmount hooks.
  *
- * We own the shape state in module-local refs rather than
- * round-tripping through `gd.layout.shapes` between writes: Plotly
- * canonicalises layout reads (e.g. date `x0` values come back as ISO
- * strings, unknown fields like `name` get stripped) which made the
- * older "read, filter by name, write" pattern lose track of its own
- * shapes on the second call.
+ * The stage band is the only shape on the plot, so every flush writes
+ * `layout.shapes` whole.
  *
  * Gap bands used to live here as secondary red rectangles marking
  * detected gaps. They were removed because `edits.shapePosition:
@@ -28,23 +24,20 @@ import type { Layout } from 'plotly.js-dist'
 import { ref } from 'vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
+import { STAGE_SHAPE_NAME, type PlotlyShape } from './shapes'
 
 const GHOST_TRACE_NAME = 'qc-ghost-fills'
-
-type PlotlyShape = Partial<NonNullable<Layout['shapes']>[number]> & {
-  editable?: boolean
-}
 
 let stageShape: PlotlyShape | null = null
 /** True when the plot is in pan mode, meaning the editable stage
  *  shape should be rendered. In zoom / select / lasso modes we drop
  *  the shape from the flushed array entirely so it can't swallow
- *  the mouse-down gesture or keep its grab cursor over the band —
- *  setting `editable: false` alone doesn't fully back out Plotly's
- *  shape-edit hit-testing when `edits.shapePosition` is on.
+ *  the mouse-down gesture or keep its grab cursor over the band,
+ *  since setting `editable: false` alone doesn't fully back out
+ *  Plotly's shape-edit hit-testing when `edits.shapePosition` is on.
  *
  *  Reactive so RangeStager can show a hint ("Range hidden in zoom
- *  mode — switch back to pan to resize") when the band goes away.
+ *  mode, switch back to pan to resize") when the band goes away.
  */
 export const stagePanMode = ref(true)
 
@@ -57,11 +50,9 @@ function getRoot(): HTMLElement | null {
 async function flushShapes() {
   const root = getRoot()
   if (!root) return
-  // The stage shape is the only shape we own. Drop it outside pan
-  // mode so zoom / select / lasso gestures aren't captured by the
-  // shape-edit hit-tester.
-  const shapes: PlotlyShape[] =
-    stageShape && stagePanMode.value ? [stageShape] : []
+  // Drop the stage shape outside pan mode so zoom / select / lasso
+  // gestures aren't captured by the shape-edit hit-tester.
+  const shapes = stageShape && stagePanMode.value ? [stageShape] : []
   await Plotly.relayout(root, { shapes } as unknown as Partial<Layout>)
 }
 
@@ -80,7 +71,7 @@ function currentDragmode(): string {
 /**
  * Force the plot back into pan mode. Called by the staging-based
  * operation panels (Find Gaps / Fill Gaps) when they open so the
- * range overlay is immediately interactive — otherwise a user who
+ * range overlay is immediately interactive. Otherwise a user who
  * was last in zoom/select/lasso mode would open the panel to a
  * hidden band (we drop it outside pan mode to keep those tools
  * unobstructed) and have to switch tools themselves to resize it.
@@ -96,13 +87,14 @@ export async function enterPanMode(): Promise<void> {
  * Add (or replace) the single editable range shape that represents
  * the operation's staged date window. The shape spans the full
  * y-axis so the user can grab it anywhere vertically. It only
- * actually renders in pan mode (see `flushShapes`) — zoom /
+ * actually renders in pan mode (see `flushShapes`); zoom /
  * select / lasso modes drop it entirely to keep their box-drag
  * gestures unobstructed.
  */
 export async function setStageShape(fromTs: number, toTs: number) {
   stagePanMode.value = currentDragmode() === 'pan'
   stageShape = {
+    name: STAGE_SHAPE_NAME,
     type: 'rect',
     xref: 'x',
     yref: 'paper',
@@ -221,13 +213,11 @@ export function onStageDrag(
       return
     }
 
-    // Stage shape is the only shape we flush, so its index is
-    // always 0 in the layout shapes array.
-    const stageIdx = 0
-    const x0Key = `shapes[${stageIdx}].x0`
-    const x1Key = `shapes[${stageIdx}].x1`
-    const y0Key = `shapes[${stageIdx}].y0`
-    const y1Key = `shapes[${stageIdx}].y1`
+    // The stage band is the only shape, so it is always `shapes[0]`.
+    const x0Key = 'shapes[0].x0'
+    const x1Key = 'shapes[0].x1'
+    const y0Key = 'shapes[0].y0'
+    const y1Key = 'shapes[0].y1'
     const touchedX0 = Object.prototype.hasOwnProperty.call(evt, x0Key)
     const touchedX1 = Object.prototype.hasOwnProperty.call(evt, x1Key)
     const touchedY0 = Object.prototype.hasOwnProperty.call(evt, y0Key)
@@ -246,7 +236,7 @@ export function onStageDrag(
     // Rebuild the shape with the horizontal update applied and y
     // pinned to the full paper span. Pushing the whole shape (not
     // a dotted-path y0/y1 relayout) overrides Plotly's in-progress
-    // drag state in a single write — the earlier split approach
+    // drag state in a single write. The earlier split approach
     // (x via the parent's watcher, y via a separate relayout) was
     // racing, leaving vertical edits visible and horizontal edits
     // dropped.

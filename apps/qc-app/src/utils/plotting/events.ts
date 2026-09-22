@@ -22,6 +22,7 @@ import {
   updateAxisChips,
 } from './interaction'
 import type { AppPlotlyTrace } from './options'
+import { withLiveShapes } from './shapes'
 
 const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -82,11 +83,11 @@ export const handleNewPlot = async (
     }
     for (const trace of plotlyOptions.value.traces) {
       const t = trace as AppPlotlyTrace
-      // Gap overlays expose `_gapOverlayFor` instead of `id` so the
+      // Gap overlays expose `_partOf` instead of `id` so the
       // selection-by-id lookup keeps targeting the main trace; we still
       // want them to inherit the user's hide/show choice so the line
       // disappears with the markers it shadows.
-      const lookupId = t.id ?? t._gapOverlayFor
+      const lookupId = t.id ?? t._partOf
       if (!lookupId) continue
       const carried = visibleBySeriesId[lookupId]
       if (carried !== undefined) {
@@ -118,7 +119,9 @@ export const handleNewPlot = async (
     const yRangesBySeriesId: Record<string, Array<string | number>> = {}
     for (const trace of plotlyRef.value.data) {
       const t = trace as AppPlotlyTrace
-      if (!t.id) continue
+      // An empty trace's axis sits on Plotly's default range, not a view the
+      // user chose; carrying it would push the new data off the plot.
+      if (!t.id || !(t.x as ArrayLike<unknown> | undefined)?.length) continue
       const key = yAxisKey(t.yaxis as string | undefined)
       const range = (oldLayout[key] as Partial<LayoutAxis> | undefined)
         ?.range as Array<string | number> | undefined
@@ -139,12 +142,18 @@ export const handleNewPlot = async (
     }
   }
 
+  // A re-plot keeps the live staged range band, which `createPlotlyOption`
+  // doesn't build. A first mount has no live plot to read it from.
+  const layout = element
+    ? plotlyOptions.value.layout
+    : withLiveShapes(plotlyOptions.value.layout, plotlyRef.value?.layout)
+
   // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
   // `plotlyRef` is now typed as `PlotlyHTMLElement | null`
   const newElement = await Plotly.newPlot(
     element || plotlyRef.value as Plotly.Root,
     plotlyOptions.value.traces,
-    plotlyOptions.value.layout,
+    layout,
     plotlyOptions.value.config
   )
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value
@@ -157,7 +166,7 @@ export const handleNewPlot = async (
   // real data.
   //
   // Note: this does NOT need to preserve Plotly's `_rangeInitial0/1`
-  // for Reset Axes — the custom Reset button in `options.ts`
+  // for Reset Axes: the custom Reset button in `options.ts`
   // computes the data extent directly from `trace.x` rather than
   // relying on Plotly's internal anchors.
   if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
@@ -184,7 +193,7 @@ export const handleNewPlot = async (
   // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
   // identity is unchanged and Vue's ref watchers don't refire. It does
   // wipe externally-attached listeners (the ContextPlot's brush sync,
-  // etc.) — bump an epoch so those subscribers know to re-attach.
+  // etc.), so bump an epoch so those subscribers know to re-attach.
   mainPlotEpoch.value++
 
   // Debounce long enough that a rapid scroll-wheel burst collapses
@@ -196,7 +205,7 @@ export const handleNewPlot = async (
   handleRelayout(null)
 
   // Only listen to `plotly_relayout`. We used to also wire
-  // `plotly_redraw`, which fires on every Plotly re-paint — so each
+  // `plotly_redraw`, which fires on every Plotly re-paint, so each
   // scroll tick routed through BOTH debouncers (one per event
   // type) and handleRelayout ran twice per gesture, each heavy pass
   // competing with the user's in-progress zoom. The relayout event
@@ -206,7 +215,7 @@ export const handleNewPlot = async (
     'plotly_relayout',
     debounce(handleRelayout, debounceDelay)
   )
-  // Zoom-history recorder — runs on its own 350 ms debouncer so a single
+  // Zoom-history recorder: runs on its own 350 ms debouncer so a single
   // drag/scroll gesture collapses to one entry. Kept independent of the
   // relayout handler above, which does tooltip/visible-point work.
   installZoomTracking(plotlyRef.value)

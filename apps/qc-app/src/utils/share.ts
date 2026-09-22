@@ -2,25 +2,30 @@
  * Encode / decode the QC app's share URL.
  *
  * The URL keeps every plot-relevant piece of state the sender sees so
- * a recipient lands on an identical view: plotted datastreams, QC
- * target, time range, current view (Select / Edit), Plot/Table tab,
- * per-trace visibility, per-Y-axis visibility, X/Y zoom, and the data-
- * points (markers) mode and threshold. Sidebar filters are kept only
- * on the Select view, since they drive the datastreams table — not
- * the plot.
+ * a recipient lands on an identical view: plotted datastreams (`ds`),
+ * the datastream being edited (`ed`), time range,
+ * current view (`m`, Select / Edit), Plot/Table tab, per-trace visibility,
+ * per-Y-axis visibility, X/Y zoom, and the data-points (markers) mode
+ * and threshold. Sidebar filters are kept only on the Select view,
+ * since they drive the datastreams table, not the plot.
+ *
+ * `ds` holds only plotted datastreams; the edit target and its source
+ * row are never part of it. The visibility bitmasks (`h`, `ya`) are
+ * positions into `ds`, so they share that exclusion. The zoom Y-axis
+ * index (`yz`) is the Plotly axis number instead (`0` is `y`, the edit
+ * target's axis while editing), not a position in `ds`.
  *
  * Compaction tactics used (none of them lossy):
- *   - Short query keys (`ds`, `b`, `e`, `r`, …) instead of verbose
- *     ones.
- *   - QC target is implicit (first id in `ds`); no separate `qc` key.
+ *   - Short query keys (`ds`, `ed`, `b`, `e`, `r`, …) instead of
+ *     verbose ones.
  *   - When a date preset is active (`r=0..5`), the begin/end pair is
- *     elided — recipients recompute it from "now" on load, matching
+ *     elided, recipients recompute it from "now" on load, matching
  *     the preset semantics the sender chose.
  *   - Timestamps go through `tsToBase36Seconds` (≈ 7 chars instead
  *     of 24).
  *   - Visibility state is a hex bitmask over the `ds` order rather
  *     than a list of ids.
- *   - Zoom Y axes are indexed by position in `ds`; axes at their
+ *   - Zoom Y axes are indexed by Plotly axis number; axes at their
  *     default fit are omitted entirely.
  *   - Optional bits (tab, data-points mode/threshold, zoom) are
  *     emitted only when they differ from the default.
@@ -40,14 +45,19 @@ export interface ShareState {
   workspaceId?: string | null
   /** Edit view active when true. Select view is the default. */
   editView?: boolean
+  /** The datastream being edited. Travels in both views: the Select view
+   *  keeps the session open, so a link from it reopens the same session. */
+  editDatastreamId?: string
   /** Table tab active when true. Plot tab is the default. */
   tableTab?: boolean
-  /** Ordered list of plotted datastream ids. The first id is the QC
-   *  target. */
+  /** Ordered list of plotted datastream ids. */
   datastreamIds?: string[]
+  /** History snapshots plotted as comparison lines. Kept out of `ds` so the
+   *  `h` / `ya` bitmask indices still hold. */
+  snapshots?: { sessionId: string; opIndex: number }[]
   /** Date range preset id (`0..5`). When set, `begin`/`end` are
-   *  omitted from the URL and the receiver recomputes the window
-   *  from "now". */
+   *  omitted from the URL and the receiver resolves the window
+   *  from the plotted data. */
   datePresetId?: number | null
   /** Custom-window begin (epoch ms). Only emitted when no preset is
    *  active. */
@@ -55,19 +65,21 @@ export interface ShareState {
   /** Custom-window end (epoch ms). Only emitted when no preset is
    *  active. */
   endMs?: number | null
-  /** Sidebar filters — only emitted when the recipient lands on the
+  /** Sidebar filters. Only emitted when the recipient lands on the
    *  Select view (they don't affect the plot). */
   thingIds?: string[]
   observedPropertyNames?: string[]
   processingLevelNames?: string[]
   /** Eye-toggle state: `true` means visible, `false` means hidden.
-   *  Indexed by position in `datastreamIds`. */
+   *  Indexed by position in `datastreamIds` (`ds`), which holds only
+   *  plotted datastreams. The edit target and its source row are not
+   *  part of `ds`, so they're not part of this mask either. */
   traceVisibility?: boolean[]
-  /** Y-axis-toggle state for non-QC datastreams (`true` means the
-   *  axis is shown). Indexed by position in `datastreamIds` starting
-   *  at 1 (the QC stream's primary axis can't be hidden). */
+  /** Y-axis-toggle state (`true` means the axis is shown). Indexed by
+   *  position in `datastreamIds` (`ds`), same exclusions as
+   *  `traceVisibility`. */
   axisVisibility?: boolean[]
-  /** Plot zoom — both x and per-axis y. */
+  /** Plot zoom: both x and per-axis y. */
   zoom?: ShareableZoom
   /** Data-points marker mode. Default is `auto`. */
   dataPointsMode?: 'auto' | 'manualOn' | 'manualOff'
@@ -125,16 +137,19 @@ export function encodeShareState(state: ShareState): Record<string, string> {
 
   if (state.workspaceId) q.ws = state.workspaceId
   if (state.editView) q.m = 'e'
+  if (state.editDatastreamId) q.ed = state.editDatastreamId
   if (state.tableTab) q.tab = 't'
 
   if (state.datastreamIds?.length) {
     q.ds = state.datastreamIds.join(',')
   }
 
-  // Preset wins over begin/end. If a preset is active, dropping the
-  // explicit dates lets the recipient pick up the same preset window
-  // anchored to *their* "now" — which is the sender's intent when
-  // they clicked the preset.
+  if (state.snapshots?.length) {
+    q.snap = state.snapshots.map((s) => `${s.sessionId}:${s.opIndex}`).join(',')
+  }
+
+  // Preset wins over begin/end: the recipient resolves the same preset
+  // against the plotted data, which is what the sender clicked.
   if (
     state.datePresetId != null &&
     Number.isFinite(state.datePresetId) &&
@@ -161,7 +176,7 @@ export function encodeShareState(state: ShareState): Record<string, string> {
     q.pl = state.processingLevelNames.join(',')
   }
 
-  // Visibility — only serialise when at least one trace is hidden
+  // Visibility: only serialise when at least one trace is hidden
   // (false). Empty/all-visible → omit.
   if (state.traceVisibility?.some((v) => v === false)) {
     const hidden = state.traceVisibility.map((v) => v === false)
@@ -180,10 +195,9 @@ export function encodeShareState(state: ShareState): Record<string, string> {
       q.z = `${tsToBase36Seconds(lo)}.${tsToBase36Seconds(hi)}`
     }
     const yEntries: string[] = []
-    const ids = state.datastreamIds ?? []
     for (const [axisName, range] of Object.entries(state.zoom.yRanges)) {
-      const idx = axisIndexFromName(axisName, ids.length)
-      if (idx < 0 || idx >= ids.length) continue
+      const idx = axisIndexFromName(axisName)
+      if (idx < 0) continue
       yEntries.push(`${idx}:${compactFloat(range[0])}~${compactFloat(range[1])}`)
     }
     if (yEntries.length) q.yz = yEntries.join(';')
@@ -213,10 +227,24 @@ export function decodeShareState(query: Record<string, unknown>): ShareState {
   if (ws) out.workspaceId = ws
 
   if (str('m') === 'e') out.editView = true
+  const ed = str('ed')
+  if (ed) out.editDatastreamId = ed
   if (str('tab') === 't') out.tableTab = true
 
   const ds = splitCsv(str('ds'))
   if (ds.length) out.datastreamIds = ds
+
+  // A malformed entry is dropped rather than failing the whole link.
+  const snapshots: { sessionId: string; opIndex: number }[] = []
+  for (const piece of splitCsv(str('snap'))) {
+    const sep = piece.lastIndexOf(':')
+    if (sep <= 0) continue
+    const sessionId = piece.slice(0, sep)
+    const opIndex = Number(piece.slice(sep + 1))
+    if (!sessionId || !Number.isInteger(opIndex) || opIndex < -1) continue
+    snapshots.push({ sessionId, opIndex })
+  }
+  if (snapshots.length) out.snapshots = snapshots
 
   const rRaw = str('r')
   if (rRaw) {
@@ -286,13 +314,13 @@ export function decodeShareState(query: Record<string, unknown>): ShareState {
   return out
 }
 
-/** Position-in-`ds` → Plotly axis name (`0` → `y`, `1` → `y2`, …). */
+/** Axis index → Plotly axis name (`0` → `y`, `1` → `y2`, …). */
 export function axisNameFromIndex(idx: number): string {
   return idx === 0 ? 'y' : `y${idx + 1}`
 }
 
-/** Plotly axis name → position-in-`ds`. `-1` for unrecognised inputs. */
-export function axisIndexFromName(name: string, _datastreamCount: number): number {
+/** Plotly axis name → axis index. `-1` for unrecognised inputs. */
+export function axisIndexFromName(name: string): number {
   if (name === 'y') return 0
   const m = name.match(/^y(\d+)$/)
   if (!m) return -1

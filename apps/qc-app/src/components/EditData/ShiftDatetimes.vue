@@ -104,7 +104,7 @@ const snapChips = computed<SnapChip[]>(() => {
   return [0.5, 1, 2].map((m) => {
     const amount = n * m
     return {
-      label: `${m}Ã— intended (${amount} ${unitKey.toLowerCase()})`,
+      label: `${m}× intended (${amount} ${unitKey.toLowerCase()})`,
       amount,
       unit: unitKey,
       active:

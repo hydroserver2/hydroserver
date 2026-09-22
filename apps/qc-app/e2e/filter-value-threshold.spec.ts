@@ -4,7 +4,7 @@
  *   - "Add filter" dispatches VALUE_THRESHOLD, populates selectedData,
  *     and adds a single replaceable filter history row
  *   - a second "Add filter" call REPLACES the filter entry (doesn't
- *     stack) — the app's dispatch collapses adjacent filter entries
+ *     stack), since the app's dispatch collapses adjacent filter entries
  */
 
 import { expect, test } from '@playwright/test'
@@ -13,7 +13,7 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 
 test.describe('filter: value threshold', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 
@@ -50,7 +50,7 @@ test.describe('filter: value threshold', () => {
     await page.getByLabel('Value').fill('9')
     await page.getByRole('button', { name: /add filter/i }).click()
 
-    // Only a single filter row should remain in history — the second
+    // Only a single filter row should remain in history: the second
     // add-filter replaces the first in-place rather than stacking.
     // Accept either "Value Threshold" or a rolled-up "Selection"
     // label (both represent a single filter-class entry).

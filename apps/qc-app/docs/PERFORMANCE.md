@@ -10,13 +10,13 @@ This document answers two questions:
 It is design-review + measured-behavior, not a marketing benchmark. The
 numbers are calibrated per-device by the qc-utils calibration layer, so
 your envelope on a 2018 laptop is different from your envelope on a 2024
-desktop — that's the whole point of the calibration mechanism.
+desktop. That's the whole point of the calibration mechanism.
 
 ## Where the work happens
 
 The app is a static SPA, so "performance" almost entirely means
 **in-browser computation and memory**. The HydroServer backend handles
-metadata, auth, and observation transport — the QC App does not
+metadata, auth, and observation transport; the QC App does not
 introduce its own server-side bottleneck.
 
 | Tier                          | Bottleneck                                                                |
@@ -47,8 +47,9 @@ Order-of-magnitude envelope:
 | 5 million obs     | ~60 MB            | Still feasible on a modern desktop. Initial fetch is the long pole.    |
 | 50 million obs    | ~600 MB           | Browser tab approaching its memory budget. Avoid plotting more than 1 stream. Performance becomes dominated by Plotly redraw, not qc-utils. |
 
-The architecture caps the plot at **5 concurrent streams** in the UI to
-keep the multi-axis chart readable and the memory envelope predictable.
+The architecture caps the plot at **4 checked streams** in the UI, plus the
+datastream being edited and its source, to keep the multi-axis chart readable
+and the memory envelope predictable.
 
 ## Worker pool and calibration
 
@@ -67,8 +68,8 @@ shouldUseWorker(EnumEditOperations.FILL_GAPS, {
 // → { useWorker: false, predictedInlineMs: 12.4, predictedWorkerMs: 53.0, ... }
 ```
 
-Spawn overhead varies hugely across devices — Windows Chrome can take
-~100 ms, macOS ~10 ms — so static thresholds baked into the library are
+Spawn overhead varies hugely across devices (Windows Chrome can take
+~100 ms, macOS ~10 ms), so static thresholds baked into the library are
 wrong for most users. The calibration layer measures three primitives
 once per device (cached in `localStorage` for 30 days):
 
@@ -92,7 +93,7 @@ serve `Cross-Origin-Opener-Policy: same-origin` +
 the demo deployment both set those headers; if your CDN doesn't, the
 worker layer falls back transparently to inline kernels.
 
-The fallback is correct but slower on large edits — expect a 2-5×
+The fallback is correct but slower on large edits: expect a 2-5×
 slowdown on multi-hundred-thousand-point operations, and a noticeable
 UI freeze on operations that take >300 ms inline.
 
@@ -106,12 +107,25 @@ because the row format times out on ~35k-point ranges (see comments in
 Key fetch optimizations already in place:
 
 - **Cache-aware ranging.** `useObservationStore.fetchObservationsInRange`
-  only requests segments outside the existing cached window (strict
-  `<` / `>` comparison, see comments around `observations.ts:62`). The full
-  fetched history stays in `observationsRaw`; the `ObservationRecord` keeps it
-  in `rawData` and slices it to the selected `[begin, end]` range via
-  `applyWindow`, so the plot, table and counts only ever touch the current
-  window.
+  tracks the ranges already asked of the server per datastream (found or
+  not) and requests only the missing parts (`utils/timeIntervals.ts`). An
+  optional `exclude` stretch is never requested: the source's context skips
+  the session window this way. Fetched chunks are merged into
+  `observationsRaw` in one linear pass. The `ObservationRecord` keeps the
+  cache in `rawData` and slices it to the selected `[begin, end]` range via
+  `applyWindow(begin, end, rawData)`, which re-slices when either the window
+  or the cache changed, so the plot, table and counts only ever touch the
+  current window.
+- **One plot load at a time.** Rebuilds and context range reloads are
+  serialized in `useDataVisStore`. A range reload that lands while a rebuild
+  is queued joins it, and one that finds its range already loaded skips, so
+  overlapping triggers (a session window arriving during a rebuild) do not
+  fetch the same range twice.
+- **Ordered requests per datastream.** Overlapping requests for one
+  datastream from different callers (a context load and a session base
+  load, for example) run in order, so each fills only what the previous left
+  missing, and a request for the range already queued shares that request
+  instead of fetching again.
 - **Loading state per datastream.** The UI shows a per-stream spinner so
   one slow fetch doesn't block the others.
 
@@ -128,8 +142,8 @@ Plotly handles downsampling internally on zoom, but multi-axis
 synchronized plotting at high point density is the dominant interactive
 cost. Practical guidance:
 
-- **One QC target + one or two context streams** is the sweet spot.
-  Five plotted streams is the hard cap; in practice three is comfortable
+- **One edit target, its source, and one or two context streams** is the sweet spot.
+  Four checked streams is the hard cap; in practice two is comfortable
   at multi-hundred-thousand points.
 - **Tick alignment and viewport recompute are debounced.** See
   `src/utils/plotting/relayout.ts`.
@@ -155,7 +169,7 @@ deployment because:
 
 It is **less well-shaped** when:
 
-- **You need centrally orchestrated QC** — automated runs on a schedule,
+- **You need centrally orchestrated QC**: automated runs on a schedule,
   a queue of datastreams to process. The app is a single-operator GUI;
   for batch QC, drive `@uwrl/qc-utils` directly from a Node or Python
   (Pyodide) process and bypass the app.
@@ -176,7 +190,7 @@ its envelope, the things to watch:
    bundle.
 4. **The calibration widget** on representative user devices. If
    `predictedInlineMs` is much higher than reality, the calibration is
-   stale — re-benchmark.
+   stale. Re-benchmark.
 
 Today there is no automated reporter that aggregates these numbers off
 the user's machine (see [DEPLOYMENT.md "Operational observability"](./DEPLOYMENT.md#operational-observability));
@@ -191,7 +205,7 @@ windows in the hundreds-of-thousands range). The
 
 There is no published large-scale benchmark suite. If you're evaluating
 the app for a >1M-operator-monthly workload, treat that as an open
-question — the architecture has nothing structurally preventing it
+question. The architecture has nothing structurally preventing it
 (every user has their own browser), but bandwidth and HydroServer
 backend capacity are the constraints, not the QC App itself.
 

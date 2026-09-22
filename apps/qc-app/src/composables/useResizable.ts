@@ -29,7 +29,7 @@ export interface UseResizableOptions {
   /**
    * Getter for the container dimension the size is expressed as a
    * fraction of. Used when `size` is a percentage (e.g. the
-   * History / OperationPanel vertical split) — without this the
+   * History / OperationPanel vertical split). Without this the
    * raw pixel delta would be added directly to the percent value,
    * making a 30 px drag look like a 30 % swing. We capture the
    * container dimension at drag start and convert pixel delta to
@@ -42,7 +42,7 @@ export interface UseResizableReturn {
   size: Ref<number>
   /** Bind to the resize handle's `mousedown`. */
   onStart: (event: MouseEvent) => void
-  /** True while a drag is in flight — handy for styling the handle
+  /** True while a drag is in flight; handy for styling the handle
    *  (persistent hover) or pausing other work. */
   dragging: Ref<boolean>
 }
@@ -52,7 +52,7 @@ export interface UseResizableReturn {
  * a `mousedown` handler to attach to a resize-grip element.
  * Listeners are attached to `window` for the duration of the drag
  * so the gesture keeps tracking even if the cursor leaves the
- * grip — mirrors how native resize handles behave. `user-select`
+ * grip, mirroring how native resize handles behave. `user-select`
  * and `cursor` on `document.body` are toggled for the drag so text
  * doesn't get selected while the user pulls.
  */
@@ -116,7 +116,7 @@ export function useResizable(
   return { size, onStart, dragging }
 }
 
-/** Persisted boolean flag — mirrors `useResizable`'s storage story
+/** Persisted boolean flag. Mirrors `useResizable`'s storage story
  *  for the collapse toggles so they survive reloads alongside the
  *  sibling widths. */
 export function usePersistedFlag(

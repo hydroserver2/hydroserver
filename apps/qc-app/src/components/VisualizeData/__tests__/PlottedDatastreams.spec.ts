@@ -1,12 +1,12 @@
 /**
- * Unit tests for PlottedDatastreams.vue — focused on the per-row load
+ * Unit tests for PlottedDatastreams.vue, focused on the per-row load
  * status (subtitle text + empty-window indicator). Mocks the two
  * stores the component reads so the rendered text reflects whatever
  * we drop into `graphSeriesArray` for each case.
  */
 
-import { mount } from '@vue/test-utils'
-import { ref } from 'vue'
+import { mount, flushPromises } from '@vue/test-utils'
+import { computed, reactive, ref } from 'vue'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { createTestVuetify } from '@/utils/test/vuetify'
@@ -16,6 +16,18 @@ const datastreamB = { id: 'ds-b', name: 'Beta Stream', valueCount: 9999 }
 
 const plottedDatastreams = ref<any[]>([])
 const qcDatastream = ref<any>(null)
+const sourceContextDatastream = ref<any>(null)
+// Mirrors the store: edit target, its source, then the rest of plotted.
+const seriesDatastreams = computed(() => {
+  const edit = qcDatastream.value
+  if (!edit) return plottedDatastreams.value
+  const pinned = [edit, sourceContextDatastream.value].filter(Boolean)
+  const pinnedIds = new Set(pinned.map((d) => d.id))
+  return [
+    ...pinned,
+    ...plottedDatastreams.value.filter((d) => !pinnedIds.has(d.id)),
+  ]
+})
 const loadingStates = ref(new Map<string, boolean>())
 const graphSeriesArray = ref<any[]>([])
 const plotlyRef = ref<any>(null)
@@ -24,21 +36,23 @@ const hiddenAxisIds = ref<Set<string>>(new Set())
 const hiddenTraceIds = ref<Set<string>>(new Set())
 
 const toggleDatastream = vi.fn().mockResolvedValue(undefined)
-const setQcInStore = vi.fn().mockResolvedValue(undefined)
 const clearPlottedDatastreams = vi.fn().mockResolvedValue(undefined)
 const updateOptions = vi.fn()
 const colorForDatastream = vi.fn(() => '#000')
 const labelColorForDatastream = vi.fn(() => '#000')
 
+// Reactive so `storeToRefs` unwraps the computed as it does for a real store.
 vi.mock('@/store/dataVisualization', () => ({
-  useDataVisStore: () => ({
+  useDataVisStore: () =>
+    reactive({
     plottedDatastreams,
     qcDatastream,
+    sourceContextDatastream,
+    seriesDatastreams,
     loadingStates,
     toggleDatastream,
-    setQcDatastream: setQcInStore,
     clearPlottedDatastreams,
-  }),
+    }),
 }))
 
 vi.mock('@/store/plotly', () => ({
@@ -60,10 +74,17 @@ vi.mock('@/utils/plotting/plotly', () => ({
   toggleTraceVisibility: vi.fn().mockResolvedValue(undefined),
 }))
 
-import PlottedDatastreams from '@/components/VisualizeData/PlottedDatastreams.vue'
+const closeEditor = vi.fn().mockResolvedValue(true)
+vi.mock('@/composables/useEditEntry', () => ({
+  useEditEntry: () => ({ closeEditor }),
+}))
 
-function mountIt() {
+import PlottedDatastreams from '@/components/VisualizeData/PlottedDatastreams.vue'
+import { handleNewPlot } from '@/utils/plotting/plotly'
+
+function mountIt(props: { clearable?: boolean } = {}) {
   return mount(PlottedDatastreams, {
+    props,
     global: {
       plugins: [createTestPinia(), createTestVuetify()],
     },
@@ -93,7 +114,7 @@ function seedSeries(
   }
 }
 
-describe('PlottedDatastreams.vue — load status', () => {
+describe('PlottedDatastreams.vue: load status', () => {
   beforeEach(() => {
     plottedDatastreams.value = [datastreamA]
     qcDatastream.value = datastreamA
@@ -209,10 +230,253 @@ describe('PlottedDatastreams.vue — load status', () => {
     plotlyOptions.value = {
       traces: [
         { id: datastreamA.id, x: new Array(6) },
-        { _isGapOverlay: true, _gapOverlayFor: datastreamA.id, x: new Array(50) },
+        { _isGapOverlay: true, _partOf: datastreamA.id, x: new Array(50) },
       ],
     }
     const wrapper = mountIt()
     expect(wrapper.find('.plotted-item__subtitle').text()).toBe('6 pts loaded')
+  })
+})
+
+describe('PlottedDatastreams snapshot rows', () => {
+  const snapMeta = {
+    sessionId: 'sess-1',
+    sessionLabel: 'March backfill',
+    opIndex: 2,
+    opCount: 7,
+    opName: 'Fill Gaps',
+    performedBy: 'Alice',
+    createdAt: '2026-03-14T00:00:00',
+  }
+
+  beforeEach(() => {
+    plottedDatastreams.value = [
+      datastreamA,
+      { id: 'snap:sess-1:2', name: 'March backfill' },
+    ]
+    graphSeriesArray.value = [
+      { id: datastreamA.id, data: { isLoading: false } },
+      {
+        id: 'snap:sess-1:2',
+        name: 'March backfill',
+        data: { isLoading: false },
+        snapshot: snapMeta,
+      },
+    ]
+    plotlyOptions.value = { traces: [] }
+    qcDatastream.value = datastreamA
+    hiddenAxisIds.value = new Set()
+    hiddenTraceIds.value = new Set()
+  })
+
+  it('renders the provenance line and a snapshot chip', () => {
+    const text = mountIt().text()
+
+    expect(text).toContain('March backfill')
+    expect(text).toContain('snapshot')
+    expect(text).toContain('step 3 of 7: Fill Gaps')
+    expect(text).toContain('by Alice')
+    expect(text).toContain('Mar 14, 2026')
+  })
+
+  it('labels a baseline snapshot as the session start', () => {
+    graphSeriesArray.value[1].snapshot = {
+      ...snapMeta,
+      opIndex: -1,
+      opName: '',
+    }
+
+    const text = mountIt().text()
+
+    expect(text).toContain('session start')
+    expect(text).not.toContain('step 0 of 7')
+  })
+
+  // Snapshots are outside the loaded window by design, so the empty-window
+  // warning would fire on every one of them.
+  it('does not flag a snapshot as an empty window', () => {
+    const wrapper = mountIt()
+    const rows = wrapper.findAll('.plotted-item')
+
+    expect(rows[1]!.find('.plotted-item__empty-flag').exists()).toBe(false)
+  })
+
+  it('keeps the axis toggle so the snapshot can be shifted', () => {
+    const wrapper = mountIt()
+    const rows = wrapper.findAll('.plotted-item')
+
+    expect(rows[1]!.find('.plotted-item__axis-toggle').exists()).toBe(true)
+  })
+})
+
+describe('PlottedDatastreams row kinds', () => {
+  const edit = { id: 'mgd', name: 'Edit Stream' }
+  const source = { id: 'src', name: 'Raw Stream' }
+  const ctx = { id: 'ctx', name: 'Context Stream' }
+  const ctx2 = { id: 'ctx2', name: 'Other Stream' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    qcDatastream.value = null
+    sourceContextDatastream.value = null
+    plottedDatastreams.value = [ctx, ctx2]
+    graphSeriesArray.value = []
+    plotlyOptions.value = { traces: [] }
+    hiddenAxisIds.value = new Set()
+    hiddenTraceIds.value = new Set()
+  })
+
+  function startEditing() {
+    qcDatastream.value = edit
+    sourceContextDatastream.value = source
+  }
+
+  const row = (wrapper: ReturnType<typeof mountIt>, id: string) =>
+    wrapper.find(`[data-testid="plotted-item-${id}"]`)
+  const plottedIds = () => plottedDatastreams.value.map((d) => d.id)
+
+  it('lists the edit target, then the plotted context, leaving the source context out', () => {
+    startEditing()
+    const wrapper = mountIt()
+    const ids = wrapper
+      .findAll('.plotted-item')
+      .map((r) => r.attributes('data-testid'))
+
+    // The source context is switched from the Context menu, not listed.
+    expect(ids).toEqual([
+      'plotted-item-mgd',
+      'plotted-item-ctx',
+      'plotted-item-ctx2',
+    ])
+  })
+
+  it('lists a source the user plotted as an ordinary row', () => {
+    qcDatastream.value = edit
+    // Plotted by the user, so the store draws it whole, not as context.
+    sourceContextDatastream.value = null
+    plottedDatastreams.value = [source, ctx]
+    const r = row(mountIt(), 'src')
+
+    expect(r.exists()).toBe(true)
+    expect(r.find('.plotted-item__close').exists()).toBe(true)
+    expect(r.attributes('draggable')).toBe('true')
+  })
+
+  it('gives the edit row no remove and no axis toggle', () => {
+    startEditing()
+    const r = row(mountIt(), 'mgd')
+
+    expect(r.classes()).toContain('plotted-item--qc')
+    expect(r.find('.plotted-item__close').exists()).toBe(false)
+    expect(r.find('.plotted-item__axis-toggle').exists()).toBe(false)
+  })
+
+  it('keeps remove and axis toggle on context rows while editing', () => {
+    startEditing()
+    const r = row(mountIt(), 'ctx')
+
+    expect(r.find('.plotted-item__close').exists()).toBe(true)
+    expect(r.find('.plotted-item__axis-toggle').exists()).toBe(true)
+  })
+
+  it('hides the axis toggle on the first row in Select only', () => {
+    const wrapper = mountIt()
+
+    expect(row(wrapper, 'ctx').find('.plotted-item__axis-toggle').exists()).toBe(
+      false
+    )
+    expect(row(wrapper, 'ctx').find('.plotted-item__close').exists()).toBe(true)
+    expect(
+      row(wrapper, 'ctx2').find('.plotted-item__axis-toggle').exists()
+    ).toBe(true)
+  })
+
+  it('has no QC target radio', () => {
+    expect(mountIt().find('.plotted-item__dot').exists()).toBe(false)
+  })
+
+  it('shows Clear plot only where asked, editing or not', () => {
+    expect(mountIt().find('[data-testid="clear-plot-btn"]').exists()).toBe(false)
+    expect(mountIt({ clearable: true }).find('[data-testid="clear-plot-btn"]').exists()).toBe(true)
+    startEditing()
+    expect(mountIt({ clearable: true }).find('[data-testid="clear-plot-btn"]').exists()).toBe(true)
+  })
+
+  it('closes the edited datastream before clearing the plot', async () => {
+    startEditing()
+    const wrapper = mountIt({ clearable: true })
+    await wrapper.find('[data-testid="clear-plot-btn"]').trigger('click')
+    await flushPromises()
+    expect(closeEditor).toHaveBeenCalledTimes(1)
+    expect(clearPlottedDatastreams).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the plot when the user stays in the session', async () => {
+    startEditing()
+    closeEditor.mockResolvedValueOnce(false)
+    const wrapper = mountIt({ clearable: true })
+    await wrapper.find('[data-testid="clear-plot-btn"]').trigger('click')
+    await flushPromises()
+    expect(clearPlottedDatastreams).not.toHaveBeenCalled()
+  })
+
+  it('makes only context rows draggable', () => {
+    startEditing()
+    const wrapper = mountIt()
+
+    expect(row(wrapper, 'mgd').attributes('draggable')).toBe('false')
+    expect(row(wrapper, 'ctx').attributes('draggable')).toBe('true')
+  })
+
+  it('reorders plotted datastreams when a context row is dropped while editing', async () => {
+    startEditing()
+    const wrapper = mountIt()
+    await row(wrapper, 'ctx2').trigger('dragstart')
+    await row(wrapper, 'ctx').trigger('dragover')
+    await row(wrapper, 'ctx').trigger('drop')
+    await flushPromises()
+
+    expect(plottedIds()).toEqual(['ctx2', 'ctx'])
+    expect(updateOptions).toHaveBeenCalled()
+  })
+
+  it('ignores a drop onto a pinned row', async () => {
+    startEditing()
+    const wrapper = mountIt()
+    await row(wrapper, 'ctx2').trigger('dragstart')
+    await row(wrapper, 'mgd').trigger('dragover')
+    await row(wrapper, 'mgd').trigger('drop')
+    await flushPromises()
+
+    expect(plottedIds()).toEqual(['ctx', 'ctx2'])
+    expect(updateOptions).not.toHaveBeenCalled()
+  })
+
+  it('redraws a reorder only once a plot exists', async () => {
+    vi.mocked(handleNewPlot).mockClear()
+    plotlyRef.value = null
+    const wrapper = mountIt()
+    await row(wrapper, 'ctx2').trigger('dragstart')
+    await row(wrapper, 'ctx').trigger('drop')
+    await flushPromises()
+    expect(plottedIds()).toEqual(['ctx2', 'ctx'])
+    expect(handleNewPlot).not.toHaveBeenCalled()
+
+    plotlyRef.value = {}
+    await row(wrapper, 'ctx').trigger('dragstart')
+    await row(wrapper, 'ctx2').trigger('drop')
+    await flushPromises()
+    expect(handleNewPlot).toHaveBeenCalledTimes(1)
+    plotlyRef.value = null
+  })
+
+  it('reorders plotted datastreams in Select', async () => {
+    const wrapper = mountIt()
+    await row(wrapper, 'ctx2').trigger('dragstart')
+    await row(wrapper, 'ctx').trigger('dragover')
+    await row(wrapper, 'ctx').trigger('drop')
+    await flushPromises()
+
+    expect(plottedIds()).toEqual(['ctx2', 'ctx'])
   })
 })

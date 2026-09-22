@@ -1,17 +1,17 @@
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useLeaveSession } from '@/composables/useLeaveSession'
 import hs from '@hydroserver/client'
 import {
-  NavigationGuardNext,
   RouteLocationNormalized,
   RouteLocationRaw,
 } from 'vue-router'
+import { nextLocation } from './nextLocation'
 
 type RouteGuardResult = RouteLocationRaw | false | null | undefined | void
 
 export type RouteGuard = (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
-  next: NavigationGuardNext
+  from: RouteLocationNormalized
 ) => RouteGuardResult | Promise<RouteGuardResult>
 
 const getQcReturnPath = (to: RouteLocationNormalized) => {
@@ -20,14 +20,39 @@ const getQcReturnPath = (to: RouteLocationNormalized) => {
 }
 
 const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
-  const loginUrl = new URL('/login', window.location.origin)
+  // In production the QC app is served by data-management under the same
+  // origin, so /login resolves there. In dev the two apps run on separate
+  // ports, so VITE_APP_DATA_MANAGEMENT_URL points at the data-management
+  // origin (e.g. http://127.0.0.1:1203); it falls back to the current origin.
+  const dataManagementOrigin =
+    import.meta.env.VITE_APP_DATA_MANAGEMENT_URL || window.location.origin
+  const loginUrl = new URL('/login', dataManagementOrigin)
   loginUrl.searchParams.set('next', getQcReturnPath(to))
   window.location.assign(loginUrl.toString())
   return false as const
 }
 
+/**
+ * Navigating to another page ends an open edit session, so it goes through
+ * the leave flow first. Staying on the page (the editor rewrites its own URL
+ * as the user works) is not an exit.
+ *
+ * Only the resume pointer is cleared here. The page being left unmounts the
+ * editor, which resets the rest; clearing the edit target now would have the
+ * editor's URL writer replace the route in the middle of this navigation.
+ */
+export const leaveSessionGuard: RouteGuard = async (to, from) => {
+  if (!from.name || to.name === from.name) return null
+  const { requestLeave, forgetSession } = useLeaveSession()
+  if (!(await requestLeave())) return false
+  forgetSession()
+  return null
+}
+
 /** Guards are executed in the order they appear in this array */
 export const guards: RouteGuard[] = [
+  leaveSessionGuard,
+
   (to) => {
     if (!to.meta?.hasAuthGuard) return null
     if (hs.session?.isAuthenticated) return null
@@ -48,7 +73,7 @@ export const guards: RouteGuard[] = [
     return null
   },
 
-  // Workspaces picker shortcut — if the user already has a selection
+  // Workspaces picker shortcut: if the user already has a selection
   // (typical reload / deep-link case), skip the picker synchronously
   // so it never flashes on the way to the intended page. The nav
   // rail's "Switch workspace" action sets `?switch=1` to opt into
@@ -58,15 +83,14 @@ export const guards: RouteGuard[] = [
     if (to.query.switch === '1') return null
     const { hasSelection } = useWorkspaceStore()
     if (!hasSelection) return null
-    const next = typeof to.query.next === 'string' ? to.query.next : 'Home'
-    return next.startsWith('/') ? { path: next } : { name: next }
+    return nextLocation(to.query.next)
   },
 
-  // hasWorkspaceGuard — every data-bearing route needs an active
+  // hasWorkspaceGuard: every data-bearing route needs an active
   // HydroServer workspace context. If none is selected, bounce to the
   // picker and carry a `next` hint so we can come back here once the
   // user commits to a workspace.
-  (to, _from, _next) => {
+  (to) => {
     if (!to.meta?.hasWorkspaceGuard) return null
     const { hasSelection } = useWorkspaceStore()
     if (hasSelection) return null
@@ -78,7 +102,7 @@ export const guards: RouteGuard[] = [
 
   // https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head
   // Append head tags and update page title
-  (to, from, _next) => {
+  (to, from) => {
     // This goes through the matched routes from last to first, finding the closest route with a title.
     // e.g., if we have `/some/deep/nested/route` and `/some`, `/deep`, and `/nested` have titles,
     // `/nested`'s will be chosen.

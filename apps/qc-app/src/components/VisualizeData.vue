@@ -1,6 +1,6 @@
 ﻿<template>
   <div
-    v-if="currentView === DrawerType.Select"
+    v-if="!isEditLayout"
     class="select-view fill-height d-flex flex-column pa-4"
   >
     <v-card class="select-view__card d-flex flex-column mb-3">
@@ -9,68 +9,47 @@
       >
         <v-icon icon="mdi-chart-line" color="primary" size="24" class="mr-1" />
         <div class="d-flex flex-column flex-1-1-auto" style="min-width: 0">
-          <span v-if="qcDatastream" class="text-title-medium font-weight-bold">
-            {{ qcDatastream.name }}
-          </span>
-          <span v-else class="text-title-medium font-weight-bold">
-            No datastream plotted
+          <span class="text-title-medium font-weight-bold">
+            <template v-if="plottedDatastreams.length">
+              {{ plottedDatastreams.length }}
+              datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
+              plotted
+            </template>
+            <template v-else>No datastream plotted</template>
           </span>
           <span class="text-body-small text-medium-emphasis">
             <template v-if="qcDatastream">
-              Quality-control target: preview ready
+              Choose what to plot around the session you are editing
+            </template>
+            <template v-else-if="plottedDatastreams.length">
+              Use the pencil button on a row to edit a datastream
             </template>
             <template v-else>
-              Select one from the table below to preview its data here
+              Select datastreams from the table below to preview their data
             </template>
           </span>
         </div>
-
-        <v-tooltip
-          v-if="!qcDatastream"
-          location="start"
-          text="Pick a datastream below (radio button) to enable editing"
-        >
-          <template #activator="{ props: tooltipProps }">
-            <div v-bind="tooltipProps" class="ml-auto">
-              <v-btn
-                color="primary"
-                variant="flat"
-                prepend-icon="mdi-pencil"
-                append-icon="mdi-arrow-right"
-                disabled
-              >
-                Start editing
-              </v-btn>
-            </div>
-          </template>
-        </v-tooltip>
-
-        <v-btn
-          v-else
-          class="ml-auto"
-          color="primary"
-          variant="flat"
-          prepend-icon="mdi-pencil"
-          append-icon="mdi-arrow-right"
-          @click="goToEdit"
-        >
-          Start editing
-        </v-btn>
       </div>
 
       <v-divider />
 
       <div class="select-view__card-body d-flex flex-grow-1">
-        <div class="select-view__plot-body flex-grow-1 pa-2">
-          <DataVisualization preview />
-        </div>
+        <div
+          id="qc-plot-host-select"
+          class="select-view__plot-body flex-grow-1 pa-2"
+        ></div>
 
-        <template v-if="plottedDatastreams.length">
+        <template v-if="plottedDatastreams.length || qcDatastream">
           <v-divider vertical class="select-view__divider-vertical" />
           <v-divider class="select-view__divider-horizontal" />
-          <div class="select-view__plotted d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden">
+          <div
+            data-testid="select-side-panel"
+            class="select-view__side d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden"
+          >
+            <EditTargetPanel v-if="qcDatastream" />
+            <v-divider v-if="qcDatastream" />
             <div class="select-view__plotted-body flex-grow-1 overflow-y-auto">
-              <PlottedDatastreams />
+              <PlottedDatastreams clearable />
             </div>
           </div>
         </template>
@@ -78,12 +57,19 @@
     </v-card>
 
     <v-card class="select-view__table d-flex flex-column flex-1-1-0 overflow-hidden">
-      <DataVisDatasetsTable class="fill-height" />
+      <DataVisDatasetsTable
+        class="fill-height"
+        @edit="startEditing?.openFor($event)"
+      />
     </v-card>
   </div>
 
+  <!-- Kept mounted while an edit target is set, even in the Select view: the
+       open operation, its staged range and the panels' own state survive the
+       round trip because nothing here is torn down. -->
   <div
-    v-else-if="currentView === DrawerType.Edit"
+    v-if="qcDatastream"
+    v-show="isEditLayout"
     class="edit-view d-flex bg-background"
   >
     <aside
@@ -125,12 +111,16 @@
     />
 
     <div
+      data-testid="edit-plot-column"
+      :data-editor-ready="isEditorReady"
       class="edit-view__col edit-view__col--plot d-flex flex-column flex-fill pa-3 overflow-hidden"
     >
       <v-card class="fill-height d-flex flex-column" elevation="1">
-        <div class="flex-grow-1 pa-2" style="min-height: 0">
-          <DataVisualization />
-        </div>
+        <div
+          id="qc-plot-host-edit"
+          class="flex-grow-1 pa-2"
+          style="min-height: 0"
+        ></div>
       </v-card>
     </div>
 
@@ -164,7 +154,7 @@
 
       <template v-else>
         <div
-          class="d-flex align-center flex-wrap px-3 py-2 border-b"
+          class="edit-view__sidebar-bar d-flex align-center px-1 py-1 border-b"
         >
           <v-btn
             size="x-small"
@@ -172,45 +162,9 @@
             density="comfortable"
             icon="mdi-chevron-right"
             title="Collapse panel"
-            class="mr-1"
             @click="auxCollapsed = true"
           />
-          <v-btn
-            data-testid="exit-save-btn"
-            size="small"
-            variant="flat"
-            color="primary"
-            prepend-icon="mdi-content-save-outline"
-            :disabled="!editCount || isUpdating || isSubmitting"
-            :loading="isSubmitting && exitIntent === 'save'"
-            @click="requestSave"
-          >
-            Save
-          </v-btn>
-          <v-btn
-            data-testid="exit-save-close-btn"
-            class="ml-1"
-            size="small"
-            variant="tonal"
-            color="primary"
-            prepend-icon="mdi-content-save-move-outline"
-            :disabled="!editCount || isUpdating || isSubmitting"
-            :loading="isSubmitting && exitIntent === 'save-close'"
-            @click="requestSaveAndClose"
-          >
-            Save &amp; Close
-          </v-btn>
           <v-spacer />
-          <v-btn
-            data-testid="exit-close-btn"
-            size="small"
-            variant="text"
-            prepend-icon="mdi-close"
-            :disabled="isSubmitting"
-            @click="requestClose"
-          >
-            Close
-          </v-btn>
         </div>
 
         <section class="bg-surface">
@@ -239,7 +193,7 @@
             :style="{ height: plottedHeight + 'px' }"
           >
             <div class="rounded border bg-surface overflow-hidden">
-              <PlottedDatastreams lock-qc />
+              <PlottedDatastreams />
             </div>
           </div>
         </section>
@@ -271,7 +225,80 @@
             <EditHistory
               v-model:collapsed="historyCollapsed"
               @pop-out="historyModalOpen = true"
-            />
+              @view-session="onViewSession"
+            >
+              <template #footer>
+                <!-- Committing ends the session, so the footer swaps Save and
+                     Commit for the one action left: opening the next one. -->
+                <template v-if="inProgressSession">
+                  <v-btn
+                    data-testid="exit-save-btn"
+                    size="small"
+                    variant="flat"
+                    color="primary"
+                    prepend-icon="mdi-content-save-outline"
+                    :disabled="saveDisabled"
+                    :loading="isSavingDraft"
+                    @click="onSaveDraft"
+                  >
+                    Save
+                  </v-btn>
+                  <v-btn
+                    data-testid="exit-discard-btn"
+                    size="small"
+                    variant="tonal"
+                    color="error"
+                    prepend-icon="mdi-backup-restore"
+                    :disabled="!hasUnsavedChanges || isUpdating || isSavingDraft || isCommitting"
+                    :loading="isDiscarding"
+                    title="Drop every edit made since the last save"
+                    @click="showDiscardConfirm = true"
+                  >
+                    Discard
+                  </v-btn>
+                  <v-btn
+                    data-testid="exit-commit-btn"
+                    size="small"
+                    variant="flat"
+                    color="success"
+                    prepend-icon="mdi-cloud-check-outline"
+                    :disabled="commitDisabled"
+                    :loading="isCommitting"
+                    @click="openCommit"
+                  >
+                    Commit
+                  </v-btn>
+                </template>
+                <v-btn
+                  v-else
+                  data-testid="exit-new-session-btn"
+                  size="small"
+                  variant="flat"
+                  color="primary"
+                  prepend-icon="mdi-plus"
+                  :disabled="!canEditWorkspace"
+                  :title="
+                    canEditWorkspace
+                      ? 'Start a new session'
+                      : `Your role on this workspace (${workspaceRole}) is read-only.`
+                  "
+                  @click="startEditing?.openNewSession()"
+                >
+                  New session
+                </v-btn>
+                <v-spacer />
+                <v-btn
+                  data-testid="exit-close-btn"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-close"
+                  :disabled="isSavingDraft || isCommitting"
+                  @click="requestClose"
+                >
+                  Close
+                </v-btn>
+              </template>
+            </EditHistory>
           </div>
 
           <!-- Only show the split grip when BOTH sides are actually
@@ -303,78 +330,106 @@
          ask to open the modal we're already in. -->
     <v-dialog v-model="historyModalOpen" max-width="720">
       <v-card class="d-flex flex-column" style="max-height: 80vh">
-        <EditHistory :collapsible="false" :pop-out-enabled="false" />
+        <EditHistory
+          :collapsible="false"
+          :pop-out-enabled="false"
+          @view-session="onViewSession"
+        />
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showSaveConfirm" max-width="520">
+    <v-dialog v-model="showCommitConfirm" max-width="520">
       <v-card rounded="lg">
         <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
-          <v-avatar color="primary" variant="tonal" size="40">
-            <v-icon icon="mdi-cloud-upload-outline" size="22" />
+          <v-avatar color="success" variant="tonal" size="40">
+            <v-icon icon="mdi-cloud-check-outline" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
-            <div class="text-title-large font-weight-bold">Submit QC observations?</div>
+            <div class="text-title-large font-weight-bold">Commit session to datastream?</div>
             <div class="text-body-small text-medium-emphasis">
-              {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} pending
+              Materializes this session into the managed datastream
             </div>
           </div>
         </div>
         <v-card-text class="text-body-medium pt-2 pb-4 px-6">
-          This will
-          <strong>overwrite existing server observations</strong> in the
-          submitted time range (replace mode). This action cannot be undone.
+          If the source data hasn't changed since you started, your edits
+          <strong>replace</strong> the managed datastream over this session's
+          range. The session then becomes read-only.
         </v-card-text>
+        <div class="px-6 pb-2">
+          <v-textarea
+            v-model="commitDescription"
+            data-testid="commit-description"
+            label="Session description (optional)"
+            rows="2"
+            auto-grow
+            density="compact"
+            hide-details="auto"
+          />
+        </div>
         <v-divider />
         <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
-          <v-btn variant="text" @click="showSaveConfirm = false">Cancel</v-btn>
+          <v-btn variant="text" @click="showCommitConfirm = false">Cancel</v-btn>
           <v-spacer />
           <v-btn
-            color="primary"
+            color="success"
             variant="flat"
-            prepend-icon="mdi-cloud-upload-outline"
-            :loading="isSubmitting"
-            @click="confirmSave"
+            prepend-icon="mdi-cloud-check-outline"
+            :loading="isCommitting"
+            @click="onCommit"
           >
-            Submit
+            Commit
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showCloseConfirm" max-width="520">
+    <v-dialog v-model="showDiscardConfirm" max-width="520">
       <v-card rounded="lg">
         <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
           <v-avatar color="error" variant="tonal" size="40">
-            <v-icon icon="mdi-alert-outline" size="22" />
+            <v-icon icon="mdi-backup-restore" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
             <div class="text-title-large font-weight-bold">Discard unsaved edits?</div>
             <div class="text-body-small text-medium-emphasis">
-              {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} will be lost
+              {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
+              since the last save
             </div>
           </div>
         </div>
         <v-card-text class="text-body-medium pt-2 pb-4 px-6">
-          Closing will leave the editor without submitting your changes.
-          Discarded edits cannot be recovered.
+          The session returns to its last saved state. Edits already saved to
+          the session stay. This cannot be undone.
         </v-card-text>
         <v-divider />
         <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
-          <v-btn variant="text" @click="showCloseConfirm = false">Cancel</v-btn>
+          <v-btn variant="text" @click="showDiscardConfirm = false">Cancel</v-btn>
           <v-spacer />
           <v-btn
             color="error"
             variant="flat"
-            prepend-icon="mdi-delete-outline"
-            @click="confirmClose"
+            prepend-icon="mdi-backup-restore"
+            data-testid="confirm-discard-btn"
+            :loading="isDiscarding"
+            @click="onDiscardUnsaved"
           >
-            Discard &amp; close
+            Discard edits
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </div>
+</div>
+
+  <!-- One plot for both layouts. Moving it instead of rebuilding it is what
+       keeps the zoom, the session band and a staged range across a view
+       switch. The hosts only exist once this component is in the document,
+       hence the mounted gate. -->
+  <Teleport v-if="isMounted" :to="plotHost">
+    <DataVisualization />
+  </Teleport>
+
+  <StartEditingFlow ref="startEditing" />
 </template>
 
 <script setup lang="ts">
@@ -383,64 +438,192 @@ import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 import EditHistory from '@/components/EditData/EditHistory.vue'
 import OperationPanel from '@/components/EditData/OperationPanel.vue'
 import EditDrawer from '@/components/Navigation/EditDrawer.vue'
+import StartEditingFlow from '@/components/EditData/StartEditingFlow.vue'
+import EditTargetPanel from '@/components/EditData/EditTargetPanel.vue'
 
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useUIStore, DrawerType } from '@/store/userInterface'
-import { computed, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
-import { useQcSubmission } from '@/composables/useQcSubmission'
+import { useEditSession } from '@/composables/useEditSession'
+import { useEditEntry } from '@/composables/useEditEntry'
+import { useUnsavedChangesWarning } from '@/composables/useUnsavedChangesWarning'
+import { useResumeEditSession } from '@/composables/useResumeEditSession'
+import { useQcSessionStore } from '@/store/qcSession'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { Snackbar } from '@uwrl/qc-utils'
 import {
   decodeShareState,
   encodeShareState,
   type ShareState,
 } from '@/utils/share'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { CUSTOM_PRESET_ID, findPreset } from '@/utils/timeRangePresets'
+import { isSnapshotId, parseSnapshotId } from '@/utils/snapshotId'
+import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
 
 const { resetState } = useDataVisStore()
+const { toggleSnapshot } = useHistorySnapshots()
 const {
   plottedDatastreams,
   qcDatastream,
+  qcDatastreamId,
+  isEditorReady,
   datastreams,
   things,
   beginDate,
   endDate,
   selectedDateBtnId,
-  dateOptions,
+  contextPresetId,
+  activePresetId,
   selectedThings,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
-const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
+const { currentView, selectedDrawer, selectedOperation } =
   storeToRefs(useUIStore())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 const {
   editHistory,
   isUpdating,
-  isSubmitting,
-  selectedSeries,
   activeTab,
   hiddenTraceIds,
   hiddenAxisIds,
   currentZoom,
   pendingShareZoom,
+  shareZoomEditTarget,
   tooltipsMode,
   tooltipsManualEnabled,
   tooltipsMaxDataPoints,
 } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { refreshGraphSeriesArray, setPlottedDatastreams } = useDataVisStore()
-const { clearSelected } = useDataSelection()
-const { submitQcEdits } = useQcSubmission()
+const { setPlottedDatastreams } = useDataVisStore()
+
+const {
+  saveDraft,
+  discardUnsavedEdits,
+  commit,
+  hasUnsavedChanges,
+  unsavedEditCount,
+  viewSession,
+} = useEditSession()
+useUnsavedChangesWarning(hasUnsavedChanges)
+
+// Selecting a session in the list loads the data as that session left it,
+// plus its own operations. Guarded so unsaved edits aren't dropped silently.
+const isViewingSession = ref(false)
+async function onViewSession(sessionId: string) {
+  if (isViewingSession.value) return
+  if (
+    hasUnsavedChanges.value &&
+    !window.confirm(
+      'You have unsaved edits. Viewing another session will discard them. Continue?'
+    )
+  ) {
+    return
+  }
+  isViewingSession.value = true
+  try {
+    await viewSession(sessionId)
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not load that session.'
+    )
+  } finally {
+    isViewingSession.value = false
+  }
+}
+const { isReadOnly, inProgressSession, viewedSession, resumeDatastreamId } =
+  storeToRefs(useQcSessionStore())
+const { canEdit, roleName } = useWorkspacePermissions()
+const { closeEditor } = useEditEntry()
+
+// Gate the editor footer so a read-only collaborator sees a disabled state
+// instead of a 403 mid-flow.
+const canEditWorkspace = computed(() => canEdit())
+const workspaceRole = computed(() => roleName())
+
+// The Edit layout needs a resolved target to render; without one the Select
+// layout shows, so exactly one plot host is in the DOM at any time.
+const isEditLayout = computed(
+  () => currentView.value === DrawerType.Edit && !!qcDatastream.value
+)
+
+// Teleport resolves its target with `document.querySelector`, and this
+// component's own DOM is still detached while it first mounts.
+const isMounted = ref(false)
+onMounted(() => {
+  isMounted.value = true
+})
+const plotHost = computed(() =>
+  isEditLayout.value ? '#qc-plot-host-edit' : '#qc-plot-host-select'
+)
+
+const startEditing =
+  useTemplateRef<InstanceType<typeof StartEditingFlow>>('startEditing')
+
+// The resume watcher can fire during setup, before the flow's ref is set.
+const flowMounted = new Promise<void>((resolve) => onMounted(resolve))
+
+const route = useRoute()
+const router = useRouter()
+
+// A share link's `ed` becomes the resume pointer. Set it before registering
+// the resume hook, which checks the pointer only once.
+const initialShareState = decodeShareState(route.query as Record<string, unknown>)
+if (initialShareState.editDatastreamId) {
+  resumeDatastreamId.value = initialShareState.editDatastreamId
+}
+// `m` says which layout the link was made from. Without it the session is
+// reopened behind the Select view, exactly as the sender left it.
+const initialView = initialShareState.editView
+  ? DrawerType.Edit
+  : DrawerType.Select
+
+// Reopens the session after a page reload; waits for the catalog to land.
+useResumeEditSession(async (id) => {
+  await flowMounted
+  await startEditing.value?.resume(id, initialView)
+})
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
-const showSaveConfirm = ref(false)
-const showCloseConfirm = ref(false)
-const exitIntent = ref<'save' | 'save-close' | null>(null)
+const showCommitConfirm = ref(false)
+const commitDescription = ref('')
+const isSavingDraft = ref(false)
+const isCommitting = ref(false)
+const isDiscarding = ref(false)
+const showDiscardConfirm = ref(false)
+
+const saveDisabled = computed(
+  () =>
+    !canEditWorkspace.value ||
+    isReadOnly.value ||
+    !inProgressSession.value ||
+    !editCount.value ||
+    isUpdating.value ||
+    isSavingDraft.value ||
+    isCommitting.value
+)
+const commitDisabled = computed(
+  () =>
+    !canEditWorkspace.value ||
+    isReadOnly.value ||
+    !inProgressSession.value ||
+    isUpdating.value ||
+    isSavingDraft.value ||
+    isCommitting.value
+)
 
 // --- Editor layout: sidebar sizes + collapse flags ------------------
 // Persisted to localStorage so the user's preferred layout survives
@@ -519,75 +702,69 @@ const historyPaneStyle = computed(() => {
   return { flex: '1 1 auto' }
 })
 
-function exitToSelect() {
-  currentView.value = DrawerType.Select
-  selectedDrawer.value = DrawerType.Select
-  isDrawerOpen.value = true
-}
-
-function requestSave() {
-  exitIntent.value = 'save'
-  showSaveConfirm.value = true
-}
-
-function requestSaveAndClose() {
-  exitIntent.value = 'save-close'
-  showSaveConfirm.value = true
-}
-
-async function confirmSave() {
-  const intent = exitIntent.value
-  showSaveConfirm.value = false
-  await submitQcEdits()
-  if (intent === 'save-close') exitToSelect()
-  exitIntent.value = null
-}
-
-function requestClose() {
-  if (editCount.value > 0) {
-    showCloseConfirm.value = true
-  } else {
-    exitToSelect()
-  }
-}
-
-async function discardEdits() {
-  if (!editCount.value) return
-  isUpdating.value = true
+async function onDiscardUnsaved() {
+  showDiscardConfirm.value = false
+  isDiscarding.value = true
   try {
-    // In-place clear so the `editHistory` ref keeps tracking the
-    // same array (reassigning `history = []` detaches it).
-    if (selectedSeries.value) selectedSeries.value.data.history.length = 0
-    await refreshGraphSeriesArray()
-    await selectedSeries.value?.data.reload()
-    await clearSelected({ recordHistory: false })
+    await discardUnsavedEdits()
     await redraw()
+    Snackbar.success('Unsaved edits discarded.')
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not discard the edits.'
+    )
   } finally {
-    isUpdating.value = false
+    isDiscarding.value = false
   }
 }
 
-async function confirmClose() {
-  showCloseConfirm.value = false
-  await discardEdits()
-  exitToSelect()
+async function onSaveDraft(): Promise<boolean> {
+  isSavingDraft.value = true
+  try {
+    await saveDraft()
+    Snackbar.success('Draft saved.')
+    return true
+  } catch (e) {
+    Snackbar.error(e instanceof Error ? e.message : 'Could not save the draft.')
+    return false
+  } finally {
+    isSavingDraft.value = false
+  }
 }
 
-const route = useRoute()
-const router = useRouter()
+// Prefill the description with the session's current one so committing
+// preserves/edits it rather than blanking it.
+function openCommit() {
+  commitDescription.value = inProgressSession.value?.description ?? ''
+  showCommitConfirm.value = true
+}
+
+async function onCommit() {
+  showCommitConfirm.value = false
+  isCommitting.value = true
+  try {
+    await commit(commitDescription.value)
+    await redraw()
+    Snackbar.success('Session committed.')
+  } catch (e) {
+    Snackbar.error(e instanceof Error ? e.message : 'Could not commit the session.')
+  } finally {
+    isCommitting.value = false
+  }
+}
+
+// Closing goes through the one leave flow, which decides what happens to the
+// session and says so before anything is lost.
+function requestClose() {
+  void closeEditor()
+}
 
 // Hydrate state from the URL once datastream metadata is available.
 const hydrateFromUrl = () => {
   const state = decodeShareState(route.query as Record<string, unknown>)
 
-  if (state.editView) {
-    currentView.value = DrawerType.Edit
-    selectedDrawer.value = DrawerType.Edit
-    isDrawerOpen.value = true
-  } else {
-    currentView.value = DrawerType.Select
-    selectedDrawer.value = DrawerType.Select
-  }
+  currentView.value = DrawerType.Select
+  selectedDrawer.value = DrawerType.Select
 
   if (state.tableTab) activeTab.value = 'table'
   else activeTab.value = 'plot'
@@ -606,20 +783,17 @@ const hydrateFromUrl = () => {
   const resolved = ids
     .map((id) => datastreams.value.find((ds) => ds.id === id))
     .filter((ds): ds is NonNullable<typeof ds> => !!ds)
-  // QC target is the first id by convention.
-  const qcId = resolved[0]?.id ?? null
 
-  // Apply the date window BEFORE loading datastreams so the first
-  // fetch uses the correct range.
-  if (state.datePresetId != null && state.datePresetId >= 0) {
-    selectedDateBtnId.value = state.datePresetId
-    const option = dateOptions.value.find((o) => o.id === state.datePresetId)
-    if (option) {
-      endDate.value = new Date()
-      beginDate.value = option.calculateBeginDate()
-    }
+  // Set the window BEFORE loading datastreams so the first fetch uses it.
+  // A preset resolves against the plotted data during that load. An
+  // unknown id (a share link built by a newer version, or hand-edited)
+  // is not accepted as a preset.
+  // A link with an edit target carries the editor's Context range.
+  const presetId = state.editDatastreamId ? contextPresetId : selectedDateBtnId
+  if (state.datePresetId != null && findPreset(state.datePresetId)) {
+    presetId.value = state.datePresetId
   } else if (state.beginMs != null || state.endMs != null) {
-    selectedDateBtnId.value = -1
+    presetId.value = CUSTOM_PRESET_ID
     if (state.beginMs != null) beginDate.value = new Date(state.beginMs)
     if (state.endMs != null) endDate.value = new Date(state.endMs)
   }
@@ -667,8 +841,40 @@ const hydrateFromUrl = () => {
         source: 'user',
       }
     : null
+  // It only outranks the session window when the link opens a session at all.
+  shareZoomEditTarget.value = state.zoom
+    ? (state.editDatastreamId ?? null)
+    : null
 
-  void setPlottedDatastreams(resolved, qcId)
+  // `resumeDatastreamId` is already set from `ed` by the early block above,
+  // before the resume hook is registered. Nothing to do here for it.
+  void setPlottedDatastreams(resolved)
+
+  // Snapshots replay against the session store, which the resume hook loads
+  // asynchronously and independently of the plot. Wait for the editor to
+  // actually be open on the `ed` target (an in-progress or viewed session
+  // means its sessions were applied) rather than chaining off
+  // `setPlottedDatastreams`, which only settles the plot.
+  const snapshots = state.snapshots ?? []
+  const editTargetId = state.editDatastreamId
+  // No `immediate`: resuming the editor always takes at least one await, so
+  // the ready condition cannot already hold when this watch is created.
+  if (snapshots.length && editTargetId) {
+    const stopSnapshotWatch = watch(
+      () =>
+        qcDatastreamId.value === editTargetId &&
+        !!(inProgressSession.value || viewedSession.value),
+      (ready) => {
+        if (!ready) return
+        stopSnapshotWatch()
+        void (async () => {
+          for (const s of snapshots) {
+            await toggleSnapshot(s.sessionId, s.opIndex)
+          }
+        })()
+      }
+    )
+  }
 }
 
 if (datastreams.value.length) {
@@ -691,19 +897,19 @@ if (datastreams.value.length) {
 // lives in `share.ts` so this watcher reads as a plain assembly of
 // inputs.
 const SHARE_KEYS = [
-  'ws', 'm', 'tab', 'ds', 'r', 'from', 'to',
+  'ws', 'm', 'ed', 'tab', 'ds', 'snap', 'r', 'from', 'to',
   't', 'op', 'pl', 'h', 'ya', 'z', 'yz', 'dp', 'th',
 ] as const
 
 watch(
   [
     plottedDatastreams,
-    qcDatastream,
+    qcDatastreamId,
     currentView,
     activeTab,
     beginDate,
     endDate,
-    selectedDateBtnId,
+    activePresetId,
     selectedThings,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
@@ -716,16 +922,26 @@ watch(
     tooltipsMaxDataPoints,
   ],
   () => {
-    const ids = plottedDatastreams.value.map((ds) => ds.id)
+    // Snapshots travel in their own key; `ds` stays real plotted datastreams
+    // so the visibility bitmasks line up.
+    const plotted = plottedDatastreams.value
+    const ids = plotted.filter((ds) => !isSnapshotId(ds.id)).map((ds) => ds.id)
+    const snapshots = plotted
+      .filter((ds) => isSnapshotId(ds.id))
+      .map((ds) => parseSnapshotId(ds.id))
+      .filter((s): s is NonNullable<typeof s> => !!s)
     const isEdit = currentView.value === DrawerType.Edit
 
     const state: ShareState = {
       workspaceId: selectedWorkspaceId.value || null,
       editView: isEdit,
+      // The Select view keeps the session open, so the target travels too.
+      editDatastreamId: qcDatastreamId.value ?? undefined,
       tableTab: activeTab.value === 'table',
       datastreamIds: ids,
-      datePresetId: Number.isFinite(selectedDateBtnId.value)
-        ? selectedDateBtnId.value
+      snapshots,
+      datePresetId: Number.isFinite(activePresetId.value)
+        ? activePresetId.value
         : null,
       beginMs: beginDate.value ? beginDate.value.getTime() : null,
       endMs: endDate.value ? endDate.value.getTime() : null,
@@ -764,12 +980,6 @@ watch(
 onUnmounted(() => {
   resetState()
 })
-
-function goToEdit() {
-  currentView.value = DrawerType.Edit
-  selectedDrawer.value = DrawerType.Edit
-  isDrawerOpen.value = true
-}
 </script>
 
 <style scoped>
@@ -788,13 +998,13 @@ function goToEdit() {
 
 .select-view__card-body,
 .select-view__plot-body,
-.select-view__plotted,
+.select-view__side,
 .select-view__table {
   min-height: 0;
 }
 
 .select-view__card-body {
-  /* Inner row: plot + vertical divider + plotted list. */
+  /* Inner row: plot + vertical divider + side panels. */
   overflow: hidden;
 }
 
@@ -806,7 +1016,7 @@ function goToEdit() {
   display: none;
 }
 
-.select-view__plotted {
+.select-view__side {
   width: 280px;
 }
 
@@ -825,7 +1035,7 @@ function goToEdit() {
   .select-view__card-body {
     flex-direction: column;
   }
-  .select-view__plotted {
+  .select-view__side {
     width: 100%;
     max-height: 240px;
   }
@@ -928,10 +1138,12 @@ function goToEdit() {
 
 .edit-view__plotted-body,
 .edit-view__aux-body,
-.edit-view__history,
 .edit-view__op-panel {
   min-height: 0;
 }
+
+/* .edit-view__history omits min-height: 0 so its automatic minimum floors
+   the pane at the history header + footer while the split is dragged. */
 
 @media (max-width: 960px) {
   .edit-view {

@@ -10,7 +10,7 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 
 test.describe('filter: rate of change', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 
@@ -23,7 +23,7 @@ test.describe('filter: rate of change', () => {
     await waitForSelection(page, 1)
 
     // Filter entry may be collapsed to a rolled-up "Selection" row after
-    // dispatchSelection fires — accept either as proof the filter ran.
+    // dispatchSelection fires; accept either as proof the filter ran.
     const row = page
       .locator('[data-testid^="history-item-"]')
       .filter({ hasText: /Rate Of Change|Selection/ })

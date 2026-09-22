@@ -144,6 +144,18 @@ export type HistoryItem = {
   args?: any[];
   selected?: number[];
   /**
+   * Free-text note explaining why this operation was applied. Authored
+   * by the operator, round-tripped through save/load, and never read by
+   * the engine.
+   */
+  comment?: string;
+  /**
+   * Who applied this operation, for display. Server-assigned provenance
+   * rather than authored input: the consumer stamps it when replaying a
+   * stored history, and it is never sent back as part of an operation.
+   */
+  performedBy?: string;
+  /**
    * Per-dispatch runtime information. Always present; some fields
    * populate at push time, others fill in after the handler resolves.
    * See `HistoryExecution` for the two-phase population rules.
@@ -194,6 +206,10 @@ export type QcHistoryExecution = {
 export type QcHistoryOperation = {
   method: EnumEditOperations | EnumFilterOperations;
   args: any[];
+  /** Operator's note for this operation; absent when none was written. */
+  comment?: string;
+  /** Display name of whoever applied it. Audit only, like `execution`. */
+  performedBy?: string;
   execution?: QcHistoryExecution;
 };
 

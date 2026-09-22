@@ -5,7 +5,7 @@ import { downloadBlob } from '@/utils/download'
 /**
  * App-side CSV export delivery.
  *
- * The client exposes a single data-only primitive — `fetchCsvBlob` — that
+ * The client exposes a single data-only primitive, `fetchCsvBlob`, that
  * follows the Result model and never touches the DOM. Everything
  * environment-specific lives here: batching, ZIP bundling, and the browser
  * anchor-click download. These helpers throw on failure so existing try/catch

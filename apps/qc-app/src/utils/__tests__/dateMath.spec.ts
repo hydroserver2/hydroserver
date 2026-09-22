@@ -5,7 +5,7 @@ import {
   subtractYears,
 } from '@/utils/dateMath'
 
-// The helpers clone their input — these tests double as immutability
+// The helpers clone their input, so these tests double as immutability
 // assertions so callers don't need to defensively copy.
 
 describe('dateMath.subtractDays', () => {
@@ -51,7 +51,7 @@ describe('dateMath.subtractMonths', () => {
   })
 
   it('clamps day-of-month when target month is shorter (Aug 31 - 6M → Feb 28)', () => {
-    // The reason this helper exists — JS's native setMonth overflows
+    // The reason this helper exists: JS's native setMonth overflows
     // Feb 31 into March 3, which silently misrouted the 6-month preset.
     const result = subtractMonths(new Date(2025, 7, 31), 6) // Aug 31 - 6M
     expect(result.getFullYear()).toBe(2025)

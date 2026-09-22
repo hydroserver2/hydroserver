@@ -1,5 +1,5 @@
 /**
- * QC History — round-trip e2e.
+ * QC History: round-trip e2e.
  *
  * Apply two operations (a value-threshold filter + a delete edit
  * that consumes its selection), use the EditHistory header's
@@ -19,7 +19,7 @@ import { expectHistoryContains, selectAllPoints } from './support/ops'
 
 test.describe('QC history: save / load round-trip', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 
@@ -37,7 +37,7 @@ test.describe('QC history: save / load round-trip', () => {
 
     // History should now have the filter + edit pair (the
     // VALUE_THRESHOLD filter, the implicit SELECTION it produced,
-    // and the DELETE_POINTS edit — selection-coupled ops keep the
+    // and the DELETE_POINTS edit; selection-coupled ops keep the
     // SELECTION between them).
     await expectHistoryContains(page, 'Delete Points')
     const beforeRows = page.locator('[data-testid^="history-item-"]')

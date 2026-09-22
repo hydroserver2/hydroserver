@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="datasets-table d-flex flex-column">
     <v-toolbar flat density="compact" class="datasets-table__toolbar px-2">
       <div class="d-flex align-center ga-2" style="min-width: 0">
@@ -10,7 +10,7 @@
           :variant="plottedDatastreams.length ? 'tonal' : 'outlined'"
           label
         >
-          {{ plottedDatastreams.length }}/5 plotted
+          {{ plottedDatastreams.length }}/{{ PLOT_CAP }} plotted
         </v-chip>
       </div>
 
@@ -100,17 +100,6 @@
 
     <v-divider />
 
-    <div
-      v-if="!plottedDatastreams.length"
-      class="datasets-table__hint d-flex align-center px-3 py-1"
-    >
-      <v-icon icon="mdi-information-outline" size="14" class="mr-2" />
-      <span class="text-body-small">
-        First plotted datastream becomes the
-        <b>QC target</b>. Click a row to see its details.
-      </span>
-    </div>
-
     <div class="datasets-table__body flex-grow-1 d-flex flex-column">
       <v-data-table-virtual
         data-testid="datastreams-table"
@@ -136,15 +125,15 @@
           />
         </template>
 
+        <template #header.edit>
+          <span class="text-body-small">Edit</span>
+        </template>
+
         <template v-slot:item.plot="{ item }">
           <v-tooltip
-            :disabled="!isAtCap(item) && !isQc(item)"
+            :disabled="!isAtCap(item)"
             location="top"
-            :text="
-              isQc(item)
-                ? 'QC target: first plotted datastream'
-                : 'Maximum of 5 datastreams plotted; remove one to add another'
-            "
+            :text="`Maximum of ${PLOT_CAP} datastreams plotted, one slot is kept for the datastream you edit; remove one to add another`"
           >
             <template #activator="{ props: tooltipProps }">
               <div class="d-flex align-center" v-bind="tooltipProps">
@@ -161,26 +150,95 @@
                   :aria-label="
                     isChecked(item) ? 'Remove from plot' : 'Add to plot'
                   "
-                  @click.stop="!isAtCap(item) && toggleDatastream(item)"
+                  @click.stop="!isAtCap(item) && onPlotClick(item)"
                 >
                   <v-icon
                     :icon="
-                      isChecked(item)
-                        ? 'mdi-checkbox-marked'
-                        : 'mdi-checkbox-blank-outline'
+                      isPartial(item)
+                        ? 'mdi-checkbox-intermediate'
+                        : isChecked(item)
+                          ? 'mdi-checkbox-marked'
+                          : 'mdi-checkbox-blank-outline'
                     "
                     size="20"
                   />
                 </button>
                 <span
-                  v-if="isQc(item)"
-                  class="qc-pill ml-1 d-inline-flex align-center justify-center text-white"
+                  v-if="managedCount(item) > 0"
+                  class="managed-count ml-1 d-inline-flex align-center justify-center"
+                  :title="`${managedCount(item)} managed (QC) datastream${
+                    managedCount(item) === 1 ? '' : 's'
+                  } from this source`"
                 >
-                  QC
+                  {{ managedCount(item) }}
                 </span>
               </div>
             </template>
           </v-tooltip>
+        </template>
+
+        <template #item.edit="{ item }">
+          <!-- The row being edited ends its session here instead. -->
+          <span v-if="isEditing(item)" @click.stop>
+            <v-btn
+              prepend-icon="mdi-close"
+              size="small"
+              variant="tonal"
+              density="comfortable"
+              :data-testid="`close-datastream-${item.id}`"
+              :aria-label="`Close ${qcDatastream?.name ?? item.name}`"
+              @click.stop="closeEditor()"
+            >
+              Close
+            </v-btn>
+          </span>
+          <v-tooltip
+            v-else
+            location="top"
+            :text="
+              canEditWorkspace
+                ? 'Edit'
+                : `Your role on this workspace (${workspaceRole}) is read-only`
+            "
+          >
+            <template #activator="{ props: tooltipProps }">
+              <!-- A disabled button passes clicks to this wrapper; keep them off the row. -->
+              <span v-bind="tooltipProps" @click.stop>
+                <v-btn
+                  prepend-icon="mdi-pencil"
+                  size="small"
+                  variant="tonal"
+                  color="primary"
+                  density="comfortable"
+                  :data-testid="`edit-datastream-${item.id}`"
+                  :aria-label="`Edit ${item.name}`"
+                  :disabled="!canEditWorkspace"
+                  @click.stop="emit('edit', item)"
+                >
+                  Edit
+                </v-btn>
+              </span>
+            </template>
+          </v-tooltip>
+        </template>
+
+        <template #item.name="{ item }">
+          <div class="d-flex align-center ga-2" style="min-width: 0">
+            <v-chip
+              v-if="isEditing(item)"
+              data-testid="editing-chip"
+              size="x-small"
+              color="primary"
+              variant="flat"
+              label
+              prepend-icon="mdi-pencil"
+              class="flex-shrink-0"
+              :title="`Editing ${qcDatastream?.name ?? item.name}`"
+            >
+              Editing
+            </v-chip>
+            <span class="name-cell" :title="item.name">{{ item.name || '-' }}</span>
+          </div>
         </template>
 
         <template #item.siteCodeName="{ item }">
@@ -231,6 +289,24 @@
         @close="openInfoCard = false"
       />
     </v-dialog>
+
+    <!-- Width in px, not rem/vw: Vuetify coerces these dimension props
+         through `convertToUnit`, which turns "34rem" into 34px and collapses
+         the dialog to a one-character column. Vuetify's own
+         `max-width: calc(100% - 48px)` keeps it on screen when narrow. -->
+    <v-dialog v-model="plotDialogOpen" width="560">
+      <PlotSourceDialog
+        v-if="plotDialogSource"
+        :source="plotDialogSource"
+        :options="plotDialogOptions"
+        :plotted-ids="plotDialogSelected"
+        :loading="plotDialogLoading"
+        :slots-left="plotDialogSlots"
+        :editing-id="qcDatastream?.id"
+        @apply="onPlotApply"
+        @cancel="plotDialogSource = null"
+      />
+    </v-dialog>
   </div>
 </template>
 
@@ -239,13 +315,45 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
+import PlotSourceDialog from './PlotSourceDialog.vue'
 import { Datastream } from '@hydroserver/client'
 import type { DatastreamExtended } from '@hydroserver/client'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
+import {
+  useManagedDatastreams,
+  type ManagedDatastreamOption,
+} from '@/composables/useManagedDatastreams'
+import { Snackbar } from '@uwrl/qc-utils'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { useEditEntry } from '@/composables/useEditEntry'
 
-const { filteredDatastreams, plottedDatastreams, qcDatastream } =
-  storeToRefs(useDataVisStore())
-const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
+/** Datastreams the user can check. The fifth plot slot is kept for the
+ *  datastream being edited. */
+const PLOT_CAP = 4
+
+const emit = defineEmits<{
+  (e: 'edit', datastream: Datastream & DatastreamExtended): void
+}>()
+
+const { canEdit, roleName } = useWorkspacePermissions()
+const canEditWorkspace = computed(() => canEdit())
+const workspaceRole = computed(() => roleName())
+
+const {
+  filteredDatastreams,
+  plottedDatastreams,
+  historiesBySource,
+  qcDatastream,
+  editSourceDatastream,
+} = storeToRefs(useDataVisStore())
+const {
+  toggleDatastream,
+  clearPlottedDatastreams,
+  sourceGroupIds,
+  plotSourceSelection,
+} = useDataVisStore()
+const { loadForSource } = useManagedDatastreams()
+const { closeEditor } = useEditEntry()
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -333,25 +441,106 @@ const clearSelected = () => {
   void clearPlottedDatastreams()
 }
 
-const isChecked = (item: Datastream) =>
-  plottedDatastreams.value.some((sds) => sds.id === item.id)
+const plottedIds = computed(
+  () => new Set(plottedDatastreams.value.map((d) => d.id))
+)
 
-const isQc = (item: Datastream) => qcDatastream.value?.id === item.id
+// A source row reads as checked when the raw datastream or any managed
+// datastream derived from it is plotted.
+const isChecked = (item: Datastream) =>
+  sourceGroupIds(item.id).some((id) => plottedIds.value.has(id))
+
+// Only managed series from this source are plotted, not the raw one, so the
+// row shouldn't claim the raw line is on the plot.
+const isPartial = (item: Datastream) =>
+  !plottedIds.value.has(item.id) && isChecked(item)
+
+// How many managed (QC) datastreams exist for this source datastream.
+const managedCount = (item: Datastream) =>
+  historiesBySource.value.get(item.id)?.length ?? 0
+
+// Rows are sources, so the edit target shows on the row it derives from.
+const isEditing = (item: Datastream) =>
+  !!qcDatastream.value &&
+  (item.id === editSourceDatastream.value?.id ||
+    item.id === qcDatastream.value.id)
 
 const isAtCap = (item: Datastream) =>
-  plottedDatastreams.value.length >= 5 && !isChecked(item)
+  plottedDatastreams.value.length >= PLOT_CAP && !isChecked(item)
+
+// --- Plot selection ---------------------------------------------------------
+// Sources with managed datastreams can't be a single toggle: the click opens
+// a chooser instead, both to plot the first time and to change the selection.
+const plotDialogSource = ref<(Datastream & DatastreamExtended) | null>(null)
+const plotDialogOptions = ref<ManagedDatastreamOption[]>([])
+const plotDialogLoading = ref(false)
+
+const plotDialogOpen = computed({
+  get: () => !!plotDialogSource.value,
+  set: (open: boolean) => {
+    if (!open) plotDialogSource.value = null
+  },
+})
+
+const plotDialogSelected = computed(() => {
+  const source = plotDialogSource.value
+  if (!source) return []
+  return sourceGroupIds(source.id).filter((id) => plottedIds.value.has(id))
+})
+
+// Slots this source's group may occupy: the cap minus what other sources
+// already hold, so the dialog can swap freely within its own group.
+const plotDialogSlots = computed(() => {
+  const source = plotDialogSource.value
+  if (!source) return 0
+  const group = new Set(sourceGroupIds(source.id))
+  const others = plottedDatastreams.value.filter((d) => !group.has(d.id)).length
+  return Math.max(PLOT_CAP - others, 0)
+})
+
+async function onPlotClick(item: Datastream & DatastreamExtended) {
+  if (!managedCount(item)) {
+    await toggleDatastream(item)
+    return
+  }
+  plotDialogSource.value = item
+  plotDialogOptions.value = []
+  plotDialogLoading.value = true
+  try {
+    plotDialogOptions.value = await loadForSource(item.id)
+  } catch (e) {
+    // The raw option stays selectable, so the click isn't a dead end.
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not load QC datastreams.'
+    )
+  } finally {
+    plotDialogLoading.value = false
+  }
+}
+
+async function onPlotApply(ids: string[]) {
+  const source = plotDialogSource.value
+  plotDialogSource.value = null
+  if (source) await plotSourceSelection(source.id, ids)
+}
 
 const getRowProps = ({ item }: { item: Datastream }) => ({
   class: {
     'datasets-table__row--at-cap': isAtCap(item),
     'datasets-table__row--plotted': isChecked(item),
-    'datasets-table__row--qc': isQc(item),
+    'datasets-table__row--editing': isEditing(item),
   },
 })
 
 const search = ref()
 const headers = reactive([
-  { title: 'Plot', key: 'plot', visible: true, width: 64, sortable: false },
+  { title: 'Plot', key: 'plot', visible: true, width: 96, sortable: false },
+  { title: 'Edit', key: 'edit', visible: true, width: 96, sortable: false },
+  {
+    title: 'Name',
+    key: 'name',
+    visible: true,
+  },
   {
     title: 'Site',
     key: 'siteCodeName',
@@ -384,7 +573,7 @@ const headers = reactive([
 const visibleHeaders = computed(() => headers.filter((h) => h.visible))
 
 const selectableHeaders = computed(() =>
-  headers.filter((h) => !['plot'].includes(h.key))
+  headers.filter((h) => !['plot', 'edit'].includes(h.key))
 )
 
 // Single-sort default. Multi-sort was previously enabled but the
@@ -416,21 +605,12 @@ const resetSort = () => {
   min-height: 0;
 }
 
-/* Inline tip strip below the toolbar; only rendered while no
-   datastreams are plotted (see template). Quiet primary tint so it
-   reads as guidance, not an alert. */
-.datasets-table__hint {
-  background-color: rgba(var(--v-theme-primary), 0.06);
-  color: rgba(var(--v-theme-on-surface), 0.75);
-  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.12);
-}
-
 :deep(.v-table .v-data-table__tr:nth-child(even) td) {
   background: #f7f7f7;
 }
 
 /* Tint + primary leading bar so a plotted row reads even when the
-   checkbox column is scrolled away. QC row gets a saturated bar. */
+   checkbox column is scrolled away. */
 :deep(tbody tr.datasets-table__row--plotted > td) {
   background-color: rgba(var(--v-theme-primary), 0.05);
 }
@@ -439,12 +619,8 @@ const resetSort = () => {
   box-shadow: inset 3px 0 0 rgba(var(--v-theme-primary), 0.45);
 }
 
-:deep(tbody tr.datasets-table__row--qc > td) {
-  background-color: rgba(var(--v-theme-primary), 0.09);
-}
-
-:deep(tbody tr.datasets-table__row--qc > td:first-child) {
-  box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary));
+:deep(tbody tr.datasets-table__row--editing > td:first-child) {
+  box-shadow: inset 4px 0 0 rgb(var(--v-theme-primary));
 }
 
 :deep(tbody tr:hover > td) {
@@ -496,6 +672,15 @@ const resetSort = () => {
   white-space: nowrap;
 }
 
+.name-cell {
+  display: inline-block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .num-cell {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -537,15 +722,16 @@ const resetSort = () => {
   cursor: not-allowed !important;
 }
 
-/* Compact "QC" pill rendered next to the plot checkbox on the QC row.
-   Marks the quality-control target without occupying its own column. */
-.qc-pill {
+/* Count badge next to the plot checkbox showing how many managed (QC)
+   datastreams exist for that source datastream. */
+.managed-count {
   height: 18px;
-  padding: 0 6px;
+  min-width: 18px;
+  padding: 0 5px;
   font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  background-color: rgb(var(--v-theme-primary));
-  border-radius: 4px;
+  color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.14);
+  border-radius: 9px;
 }
 </style>
