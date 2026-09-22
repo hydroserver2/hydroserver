@@ -68,7 +68,7 @@ describe('metadata definition URL validation', () => {
       await flushPromises()
       expect(update).not.toHaveBeenCalled()
       expect(wrapper.emitted('close')).toBeUndefined()
-      expect(wrapper.text()).toContain('Enter a full URL starting with http:// or https://.')
+      expect(definition.text()).toContain('Enter a URL starting with http:// or https://.')
 
       // A server rejection must also preserve the form for correction.
       update.mockResolvedValueOnce({ ok: false } as any)
