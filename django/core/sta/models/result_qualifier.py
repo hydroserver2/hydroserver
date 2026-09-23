@@ -19,8 +19,7 @@ class ResultQualifier(models.Model):
         null=True,
     )
     name = models.CharField(max_length=255)
-    code = models.CharField(max_length=255, blank=True, null=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, default="")
     search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):

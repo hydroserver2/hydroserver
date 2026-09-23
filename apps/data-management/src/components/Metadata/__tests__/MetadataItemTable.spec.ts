@@ -273,7 +273,7 @@ describe('metadata table UUIDs and read-only details', () => {
     ['observedProperty', ['Hydrology', 'TEMP']],
     ['processingLevel', ['TEMP']],
     ['unit', ['Hydrology', '°C']],
-    ['resultQualifier', ['TEMP']],
+    ['resultQualifier', [record.description]],
   ] as const)(
     'orders %s summary fields and shows scope last only in the all view',
     async (kind, details) => {
@@ -304,7 +304,7 @@ describe('metadata table UUIDs and read-only details', () => {
     ['observedProperty', ['Type not provided']],
     ['processingLevel', []],
     ['unit', ['Type not provided', 'Symbol not provided']],
-    ['resultQualifier', []],
+    ['resultQualifier', ['Description not provided']],
   ] as const)(
     'omits absent codes from %s summaries and preserves other details',
     async (kind, details) => {

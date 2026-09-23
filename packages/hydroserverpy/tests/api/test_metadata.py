@@ -24,7 +24,7 @@ def test_create_metadata_without_optional_fields(service_class, fields):
     payload = {"id": uid, "name": "Name", **fields}
     if service_class != ResultQualifierService:
         payload["definition"] = None
-    if service_class != UnitService:
+    if service_class not in (UnitService, ResultQualifierService):
         payload["code"] = None
     client.request.side_effect = [
         MagicMock(json=lambda: {"id": uid}),
@@ -36,40 +36,15 @@ def test_create_metadata_without_optional_fields(service_class, fields):
         assert "definition" not in created.model_dump()
     else:
         assert created.definition is None
-    if service_class != UnitService:
+    if service_class not in (UnitService, ResultQualifierService):
         assert created.code is None
-
-
-def test_qualifier_name_can_be_saved_independently_of_code():
-    client = MagicMock(base_route="api/data")
-    service = ResultQualifierService(client)
-    client.resultqualifiers = service
-    uid = str(uuid4())
-    original = {"id": uid, "name": "Estimated", "description": "Comments", "code": "EXT"}
-    updated = {**original, "name": "Provisional"}
-    client.request.side_effect = [
-        MagicMock(json=lambda: {"data": original.copy()}),
-        MagicMock(),
-        MagicMock(json=lambda: {"data": updated.copy()}),
-    ]
-    qualifier = service.get(uid)
-    qualifier.name = updated["name"]
-    qualifier.save()
-    patch_body = json.loads(client.request.call_args_list[1].kwargs["data"])
-    assert patch_body == {"name": updated["name"]}
-    assert qualifier.code == "EXT"
-    assert qualifier.unsaved_changes == {}
 
 
 @pytest.mark.parametrize("service_class,args,kwargs,expected", [
     (ResultQualifierService, ("ICE", "Ice affected"), {},
-     {"name": "ICE", "description": "Ice affected", "code": None}),
+     {"name": "ICE", "description": "Ice affected"}),
     (ResultQualifierService, ("ICE",), {"description": "Ice affected"},
-     {"name": "ICE", "description": "Ice affected", "code": None}),
-    (ResultQualifierService, ("ICE", "Ice affected"), {"code": "EXT"},
-     {"name": "ICE", "description": "Ice affected", "code": "EXT"}),
-    (ResultQualifierService, (), {"name": "ICE", "description": "Ice affected", "code": "EXT"},
-     {"name": "ICE", "description": "Ice affected", "code": "EXT"}),
+     {"name": "ICE", "description": "Ice affected"}),
     (ProcessingLevelService, ("Raw", "Unprocessed"), {},
      {"name": "Raw", "description": "Unprocessed", "code": None}),
     (ProcessingLevelService, ("Raw", "Unprocessed"), {"code": "0"},
@@ -94,15 +69,14 @@ def test_metadata_create_argument_mapping(service_class, args, kwargs, expected)
     assert sent["id"] == uid
     assert created.name == expected["name"]
     assert created.description == expected["description"]
-    assert created.code == expected["code"]
+    if "code" in expected:
+        assert created.code == expected["code"]
 
 
 @pytest.mark.parametrize("service_class,args,kwargs,error", [
     (ProcessingLevelService, ("0", "Raw", "Unprocessed"), {}, "positional"),
     (ProcessingLevelService, ("0",), {"name": "Raw", "description": "Unprocessed"}, "name"),
-    (ResultQualifierService, ("ICE",), {}, "description"),
-    (ResultQualifierService, ("ICE", "Ice affected", str(uuid4())), {}, "positional"),
-    (ResultQualifierService, (), {"code": "ICE", "description": "Ice affected"}, "name"),
+    (ResultQualifierService, (), {"description": "Ice affected"}, "name"),
 ])
 def test_invalid_metadata_create_calls_fail_before_sending_data(service_class, args, kwargs, error):
     client = MagicMock(base_route="api/data")
@@ -114,10 +88,6 @@ def test_invalid_metadata_create_calls_fail_before_sending_data(service_class, a
 @pytest.mark.parametrize("service_class,args,kwargs,expected", [
     (ResultQualifierService, ("ICE", "Ice affected"), {},
      {"name": "ICE", "description": "Ice affected"}),
-    (ResultQualifierService, ("ICE", "Ice affected", "EXT"), {},
-     {"name": "ICE", "description": "Ice affected", "code": "EXT"}),
-    (ResultQualifierService, (), {"name": "ICE", "description": "Ice affected", "code": None},
-     {"name": "ICE", "description": "Ice affected", "code": None}),
     (ProcessingLevelService, ("0", "Raw", "Unprocessed", "https://example.com/raw"), {},
      {"code": "0", "name": "Raw", "description": "Unprocessed", "definition": "https://example.com/raw"}),
 ])

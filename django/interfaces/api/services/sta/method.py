@@ -7,7 +7,7 @@ from django.db import IntegrityError
 
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Method, MethodType
+from core.sta.models import Method
 from interfaces.api.service import APIService
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.schemas import (
@@ -86,9 +86,9 @@ class MethodAPIService(APIService):
         )
 
         if requested_includes:
-            select_paths = [
-                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-            ]
+            select_paths = self.resolve_select_related_paths(
+                requested_includes, self.INCLUDE_RELATIONS
+            )
             queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -110,9 +110,9 @@ class MethodAPIService(APIService):
         include: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
-        select_paths = [
-            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-        ]
+        select_paths = self.resolve_select_related_paths(
+            requested_includes, self.INCLUDE_RELATIONS
+        )
         method = self.get_method_for_action(
             principal=principal, uid=uid, action="view", select_related=select_paths
         )
@@ -189,14 +189,3 @@ class MethodAPIService(APIService):
             raise ConflictError("Method in use by one or more datastreams")
 
         return "Method deleted"
-
-    def list_types(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = MethodType.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

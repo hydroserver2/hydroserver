@@ -12,11 +12,19 @@ from interfaces.api.views import (
     workspace_router,
     role_router,
     monitoring_site_router,
+    monitoring_site_type_router,
+    linked_resource_type_router,
     observed_property_router,
+    observed_property_type_router,
     processing_level_router,
     result_qualifier_router,
+    sampled_medium_router,
+    aggregation_statistic_router,
+    datastream_status_router,
     method_router,
+    method_type_router,
     unit_router,
+    unit_type_router,
     datastream_router,
     observation_router,
     data_connection_router,
@@ -51,13 +59,21 @@ api.add_router("workspaces", workspace_router)
 api.add_router("roles", role_router)
 
 api.add_router("monitoring-sites", monitoring_site_router)
+api.add_router("monitoring-site-types", monitoring_site_type_router)
+api.add_router("linked-resource-types", linked_resource_type_router)
 api.add_router("datastreams", datastream_router)
+api.add_router("datastream-statuses", datastream_status_router)
+api.add_router("aggregation-statistics", aggregation_statistic_router)
 api.add_router("observations", observation_router)
 api.add_router("observed-properties", observed_property_router)
+api.add_router("observed-property-types", observed_property_type_router)
 api.add_router("units", unit_router)
+api.add_router("unit-types", unit_type_router)
 api.add_router("methods", method_router)
+api.add_router("method-types", method_type_router)
 api.add_router("processing-levels", processing_level_router)
 api.add_router("result-qualifiers", result_qualifier_router)
+api.add_router("sampled-mediums", sampled_medium_router)
 
 api.add_router("etl-data-connections", data_connection_router)
 api.add_router("etl-tasks", etl_task_router)

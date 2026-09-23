@@ -454,7 +454,7 @@ resultQualifier.description = "Power Failure";
 const created = await hs.resultQualifiers.createItem(resultQualifier);
 if (!created) throw new Error("Unable to create result qualifier");
 
-created.description = "Power failure affected the measurement";
+created.name = "PF2";
 await hs.resultQualifiers.update(created);
 ```
 

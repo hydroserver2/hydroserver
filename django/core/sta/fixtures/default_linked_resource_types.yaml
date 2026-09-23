@@ -1,5 +1,5 @@
 ---
 - model: sta.linkedresourcetype
-  pk: 1
+  pk: 01a0b67f-d61c-7386-aefa-a5c653240af7
   fields:
     name: Photo

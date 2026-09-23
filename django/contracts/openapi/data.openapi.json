@@ -1,6 +1,77 @@
 {
   "components": {
     "schemas": {
+      "AggregationStatisticPatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "AggregationStatisticPatchBody",
+        "type": "object"
+      },
+      "AggregationStatisticPostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "AggregationStatisticPostBody",
+        "type": "object"
+      },
+      "AggregationStatisticResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "AggregationStatisticResponse",
+        "type": "object"
+      },
       "CSVPayloadPostBody": {
         "properties": {
           "dataIngestionWindow": {
@@ -2092,7 +2163,10 @@
                 "method",
                 "observedProperty",
                 "processingLevel",
-                "unit"
+                "unit",
+                "sampledMedium",
+                "aggregationStatistic",
+                "status"
               ],
               "type": "string"
             },
@@ -2604,7 +2678,10 @@
                 "method",
                 "observedProperty",
                 "processingLevel",
-                "unit"
+                "unit",
+                "sampledMedium",
+                "aggregationStatistic",
+                "status"
               ],
               "type": "string"
             },
@@ -3250,6 +3327,77 @@
           "linkedResources"
         ],
         "title": "DatastreamResponse",
+        "type": "object"
+      },
+      "DatastreamStatusPatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "DatastreamStatusPatchBody",
+        "type": "object"
+      },
+      "DatastreamStatusPostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "DatastreamStatusPostBody",
+        "type": "object"
+      },
+      "DatastreamStatusResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "DatastreamStatusResponse",
         "type": "object"
       },
       "DatastreamVisualizationBootstrapQueryParameters": {
@@ -3980,6 +4128,33 @@
         "title": "EtlTaskResponse",
         "type": "object"
       },
+      "ItemResponse_AggregationStatisticResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AggregationStatisticResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[AggregationStatisticResponse]",
+        "type": "object"
+      },
       "ItemResponse_DataConnectionResponse_": {
         "properties": {
           "data": {
@@ -4088,6 +4263,33 @@
         "title": "ItemResponse[DatastreamResponse]",
         "type": "object"
       },
+      "ItemResponse_DatastreamStatusResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DatastreamStatusResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[DatastreamStatusResponse]",
+        "type": "object"
+      },
       "ItemResponse_EtlMappingResponse_": {
         "properties": {
           "data": {
@@ -4142,6 +4344,33 @@
         "title": "ItemResponse[EtlTaskResponse]",
         "type": "object"
       },
+      "ItemResponse_LinkedResourceTypeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LinkedResourceTypeResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[LinkedResourceTypeResponse]",
+        "type": "object"
+      },
       "ItemResponse_MethodResponse_": {
         "properties": {
           "data": {
@@ -4167,6 +4396,33 @@
           "data"
         ],
         "title": "ItemResponse[MethodResponse]",
+        "type": "object"
+      },
+      "ItemResponse_MethodTypeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MethodTypeResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[MethodTypeResponse]",
         "type": "object"
       },
       "ItemResponse_MonitoringRuleResponse_": {
@@ -4221,6 +4477,33 @@
           "data"
         ],
         "title": "ItemResponse[MonitoringSiteResponse]",
+        "type": "object"
+      },
+      "ItemResponse_MonitoringSiteTypeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MonitoringSiteTypeResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[MonitoringSiteTypeResponse]",
         "type": "object"
       },
       "ItemResponse_MonitoringTaskResponse_": {
@@ -4302,6 +4585,33 @@
           "data"
         ],
         "title": "ItemResponse[ObservedPropertyResponse]",
+        "type": "object"
+      },
+      "ItemResponse_ObservedPropertyTypeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ObservedPropertyTypeResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[ObservedPropertyTypeResponse]",
         "type": "object"
       },
       "ItemResponse_ProcessingLevelResponse_": {
@@ -4493,6 +4803,33 @@
         "title": "ItemResponse[RoleResponse]",
         "type": "object"
       },
+      "ItemResponse_SampledMediumResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SampledMediumResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[SampledMediumResponse]",
+        "type": "object"
+      },
       "ItemResponse_ServiceAccountResponse_": {
         "properties": {
           "data": {
@@ -4545,6 +4882,33 @@
           "data"
         ],
         "title": "ItemResponse[UnitResponse]",
+        "type": "object"
+      },
+      "ItemResponse_UnitTypeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UnitTypeResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[UnitTypeResponse]",
         "type": "object"
       },
       "ItemResponse_WorkspaceResponse_": {
@@ -4778,6 +5142,77 @@
         "title": "LinkedResourceQueryParameters",
         "type": "object"
       },
+      "LinkedResourceTypePatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "LinkedResourceTypePatchBody",
+        "type": "object"
+      },
+      "LinkedResourceTypePostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "LinkedResourceTypePostBody",
+        "type": "object"
+      },
+      "LinkedResourceTypeResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "LinkedResourceTypeResponse",
+        "type": "object"
+      },
       "MethodItemQueryParameters": {
         "properties": {
           "include": {
@@ -4785,7 +5220,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -5033,7 +5469,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -5305,6 +5742,77 @@
           "workspaceId"
         ],
         "title": "MethodResponse",
+        "type": "object"
+      },
+      "MethodTypePatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "MethodTypePatchBody",
+        "type": "object"
+      },
+      "MethodTypePostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "MethodTypePostBody",
+        "type": "object"
+      },
+      "MethodTypeResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "MethodTypeResponse",
         "type": "object"
       },
       "MonitoringRuleItemQueryParameters": {
@@ -5731,7 +6239,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -6297,7 +6806,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -6676,6 +7186,77 @@
           "type"
         ],
         "title": "MonitoringSiteTaskSummaryResponse",
+        "type": "object"
+      },
+      "MonitoringSiteTypePatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "MonitoringSiteTypePatchBody",
+        "type": "object"
+      },
+      "MonitoringSiteTypePostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "MonitoringSiteTypePostBody",
+        "type": "object"
+      },
+      "MonitoringSiteTypeResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "MonitoringSiteTypeResponse",
         "type": "object"
       },
       "MonitoringTaskItemQueryParameters": {
@@ -7356,7 +7937,8 @@
             "items": {
               "enum": [
                 "datastream",
-                "workspace"
+                "workspace",
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -7473,7 +8055,8 @@
             "items": {
               "enum": [
                 "datastream",
-                "workspace"
+                "workspace",
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -7708,7 +8291,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -7882,7 +8466,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -8090,6 +8675,112 @@
         "title": "ObservedPropertyResponse",
         "type": "object"
       },
+      "ObservedPropertyTypePatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "ObservedPropertyTypePatchBody",
+        "type": "object"
+      },
+      "ObservedPropertyTypePostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ObservedPropertyTypePostBody",
+        "type": "object"
+      },
+      "ObservedPropertyTypeResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "ObservedPropertyTypeResponse",
+        "type": "object"
+      },
+      "PaginatedResponse_AggregationStatisticResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AggregationStatisticResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[AggregationStatisticResponse]",
+        "type": "object"
+      },
       "PaginatedResponse_CollaboratorResponse_": {
         "properties": {
           "data": {
@@ -8265,6 +8956,41 @@
         "title": "PaginatedResponse[DatastreamResponse]",
         "type": "object"
       },
+      "PaginatedResponse_DatastreamStatusResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DatastreamStatusResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[DatastreamStatusResponse]",
+        "type": "object"
+      },
       "PaginatedResponse_EtlMappingResponse_": {
         "properties": {
           "data": {
@@ -8335,6 +9061,41 @@
         "title": "PaginatedResponse[EtlTaskResponse]",
         "type": "object"
       },
+      "PaginatedResponse_LinkedResourceTypeResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceTypeResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[LinkedResourceTypeResponse]",
+        "type": "object"
+      },
       "PaginatedResponse_MethodResponse_": {
         "properties": {
           "data": {
@@ -8368,6 +9129,41 @@
           "meta"
         ],
         "title": "PaginatedResponse[MethodResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MethodTypeResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MethodTypeResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MethodTypeResponse]",
         "type": "object"
       },
       "PaginatedResponse_MonitoringRuleResponse_": {
@@ -8438,6 +9234,41 @@
           "meta"
         ],
         "title": "PaginatedResponse[MonitoringSiteResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_MonitoringSiteTypeResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringSiteTypeResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[MonitoringSiteTypeResponse]",
         "type": "object"
       },
       "PaginatedResponse_MonitoringTaskResponse_": {
@@ -8543,6 +9374,41 @@
           "meta"
         ],
         "title": "PaginatedResponse[ObservedPropertyResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ObservedPropertyTypeResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservedPropertyTypeResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservedPropertyTypeResponse]",
         "type": "object"
       },
       "PaginatedResponse_ProcessingLevelResponse_": {
@@ -8790,6 +9656,41 @@
         "title": "PaginatedResponse[RoleResponse]",
         "type": "object"
       },
+      "PaginatedResponse_SampledMediumResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SampledMediumResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[SampledMediumResponse]",
+        "type": "object"
+      },
       "PaginatedResponse_ServiceAccountResponse_": {
         "properties": {
           "data": {
@@ -8895,6 +9796,41 @@
         "title": "PaginatedResponse[UnitResponse]",
         "type": "object"
       },
+      "PaginatedResponse_UnitTypeResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/UnitTypeResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[UnitTypeResponse]",
+        "type": "object"
+      },
       "PaginatedResponse_WorkspaceResponse_": {
         "properties": {
           "data": {
@@ -8928,41 +9864,6 @@
           "meta"
         ],
         "title": "PaginatedResponse[WorkspaceResponse]",
-        "type": "object"
-      },
-      "PaginatedResponse_str_": {
-        "properties": {
-          "data": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Data",
-            "type": "array"
-          },
-          "included": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "items": {},
-                  "type": "array"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Included"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/PaginationMeta"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
-        ],
-        "title": "PaginatedResponse[str]",
         "type": "object"
       },
       "PaginationMeta": {
@@ -9114,11 +10015,19 @@
               "ServiceAccount",
               "Collaborator",
               "MonitoringSite",
+              "MonitoringSiteType",
+              "LinkedResourceType",
               "ObservedProperty",
+              "ObservedPropertyType",
               "ProcessingLevel",
               "ResultQualifier",
               "Method",
+              "MethodType",
               "Unit",
+              "UnitType",
+              "SampledMedium",
+              "AggregationStatistic",
+              "DatastreamStatus",
               "Datastream",
               "Observation",
               "DataConnection",
@@ -10882,7 +11791,6 @@
                 "id",
                 "workspaceId",
                 "name",
-                "code",
                 "description"
               ],
               "type": "string"
@@ -10897,18 +11805,6 @@
       },
       "ResultQualifierPatchBody": {
         "properties": {
-          "code": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Code"
-          },
           "description": {
             "title": "Description",
             "type": "string"
@@ -10924,19 +11820,8 @@
       },
       "ResultQualifierPostBody": {
         "properties": {
-          "code": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Code"
-          },
           "description": {
+            "default": "",
             "title": "Description",
             "type": "string"
           },
@@ -10971,32 +11856,13 @@
           }
         },
         "required": [
-          "name",
-          "description"
+          "name"
         ],
         "title": "ResultQualifierPostBody",
         "type": "object"
       },
       "ResultQualifierQueryParameters": {
         "properties": {
-          "datastream_id": {
-            "default": [],
-            "description": "Filter result qualifiers by datastream ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Datastream Id",
-            "type": "array"
-          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "explode": false,
@@ -11025,24 +11891,6 @@
             "description": "The maximum number of items to return.",
             "title": "Limit"
           },
-          "monitoring_site_id": {
-            "default": [],
-            "description": "Filter result qualifiers by monitoring_site ID.",
-            "items": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "const": "null",
-                  "type": "string"
-                }
-              ]
-            },
-            "title": "Monitoring Site Id",
-            "type": "array"
-          },
           "offset": {
             "anyOf": [
               {
@@ -11065,7 +11913,6 @@
                 "id",
                 "workspaceId",
                 "name",
-                "code",
                 "description"
               ],
               "type": "string"
@@ -11091,9 +11938,7 @@
               {
                 "items": {
                   "enum": [
-                    "code",
                     "name",
-                    "-code",
                     "-name"
                   ],
                   "type": "string"
@@ -11110,7 +11955,7 @@
           },
           "workspace_id": {
             "default": [],
-            "description": "Filter result qualifiers by workspace ID.",
+            "description": "Filter terms by workspace ID.",
             "items": {
               "anyOf": [
                 {
@@ -11132,19 +11977,8 @@
       },
       "ResultQualifierResponse": {
         "properties": {
-          "code": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Code"
-          },
           "description": {
+            "default": "",
             "title": "Description",
             "type": "string"
           },
@@ -11173,7 +12007,6 @@
         },
         "required": [
           "name",
-          "description",
           "id",
           "workspaceId"
         ],
@@ -11355,6 +12188,77 @@
           "permissions"
         ],
         "title": "RoleResponse",
+        "type": "object"
+      },
+      "SampledMediumPatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "SampledMediumPatchBody",
+        "type": "object"
+      },
+      "SampledMediumPostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SampledMediumPostBody",
+        "type": "object"
+      },
+      "SampledMediumResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "SampledMediumResponse",
         "type": "object"
       },
       "SchedulePatchBody": {
@@ -12221,7 +13125,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -12371,7 +13276,8 @@
             "explode": false,
             "items": {
               "enum": [
-                "workspace"
+                "workspace",
+                "type"
               ],
               "type": "string"
             },
@@ -12566,6 +13472,77 @@
           "workspaceId"
         ],
         "title": "UnitResponse",
+        "type": "object"
+      },
+      "UnitTypePatchBody": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "UnitTypePatchBody",
+        "type": "object"
+      },
+      "UnitTypePostBody": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "UnitTypePostBody",
+        "type": "object"
+      },
+      "UnitTypeResponse": {
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "UnitTypeResponse",
         "type": "object"
       },
       "UserContactResponse": {
@@ -12884,6 +13861,27 @@
         "title": "VisualizationProcessingLevelResponse",
         "type": "object"
       },
+      "VocabularyItemQueryParameters": {
+        "properties": {
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          }
+        },
+        "title": "VocabularyItemQueryParameters",
+        "type": "object"
+      },
       "VocabularyQueryParameters": {
         "properties": {
           "include": {
@@ -12928,6 +13926,21 @@
             "title": "Offset"
           },
           "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "description"
+              ],
+              "type": "string"
+            },
+            "style": "form",
+            "title": "Properties",
+            "type": "array"
+          },
+          "q": {
             "anyOf": [
               {
                 "type": "string"
@@ -12936,21 +13949,28 @@
                 "type": "null"
               }
             ],
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "title": "Properties"
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "title": "Q"
           },
-          "sort_desc": {
+          "sortby": {
             "anyOf": [
               {
-                "type": "boolean"
+                "items": {
+                  "enum": [
+                    "name",
+                    "-name"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "default": false,
-            "description": "Sort terms by descending.",
-            "title": "Sort Desc"
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "title": "Sortby"
           }
         },
         "title": "VocabularyQueryParameters",
@@ -13262,6 +14282,491 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/data/aggregation-statistics": {
+      "get": {
+        "description": "Get Aggregation Statistics.",
+        "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_AggregationStatisticResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Aggregation Statistics",
+        "tags": [
+          "Aggregation Statistics"
+        ]
+      },
+      "post": {
+        "description": "Create a new Aggregation Statistic.",
+        "operationId": "interfaces_api_views_sta_aggregation_statistic_create_aggregation_statistic",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AggregationStatisticPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Aggregation Statistic",
+        "tags": [
+          "Aggregation Statistics"
+        ]
+      }
+    },
+    "/api/data/aggregation-statistics/{aggregation_statistic_id}": {
+      "delete": {
+        "description": "Delete an Aggregation Statistic.",
+        "operationId": "interfaces_api_views_sta_aggregation_statistic_delete_aggregation_statistic",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "aggregation_statistic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Aggregation Statistic Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Aggregation Statistic",
+        "tags": [
+          "Aggregation Statistics"
+        ]
+      },
+      "get": {
+        "description": "Get an Aggregation Statistic.",
+        "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistic",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "aggregation_statistic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Aggregation Statistic Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_AggregationStatisticResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Aggregation Statistic",
+        "tags": [
+          "Aggregation Statistics"
+        ]
+      },
+      "patch": {
+        "description": "Update an Aggregation Statistic.",
+        "operationId": "interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "aggregation_statistic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Aggregation Statistic Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AggregationStatisticPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Aggregation Statistic",
+        "tags": [
+          "Aggregation Statistics"
+        ]
+      }
+    },
     "/api/data/data-product-rating-curves": {
       "get": {
         "description": "Get rating curves accessible to the authenticated user.",
@@ -15684,6 +17189,491 @@
         ]
       }
     },
+    "/api/data/datastream-statuses": {
+      "get": {
+        "description": "Get Datastream Statuses.",
+        "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_statuses",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_DatastreamStatusResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Datastream Statuses",
+        "tags": [
+          "Datastream Statuses"
+        ]
+      },
+      "post": {
+        "description": "Create a new Datastream Status.",
+        "operationId": "interfaces_api_views_sta_datastream_status_create_datastream_status",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatastreamStatusPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Datastream Status",
+        "tags": [
+          "Datastream Statuses"
+        ]
+      }
+    },
+    "/api/data/datastream-statuses/{datastream_status_id}": {
+      "delete": {
+        "description": "Delete a Datastream Status.",
+        "operationId": "interfaces_api_views_sta_datastream_status_delete_datastream_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_status_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Status Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Datastream Status",
+        "tags": [
+          "Datastream Statuses"
+        ]
+      },
+      "get": {
+        "description": "Get a Datastream Status.",
+        "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_status_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Status Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_DatastreamStatusResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Datastream Status",
+        "tags": [
+          "Datastream Statuses"
+        ]
+      },
+      "patch": {
+        "description": "Update a Datastream Status.",
+        "operationId": "interfaces_api_views_sta_datastream_status_update_datastream_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_status_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Status Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatastreamStatusPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Datastream Status",
+        "tags": [
+          "Datastream Statuses"
+        ]
+      }
+    },
     "/api/data/datastreams": {
       "get": {
         "description": "Get public Datastreams and Datastreams associated with the authenticated user.",
@@ -15750,7 +17740,10 @@
                   "method",
                   "observedProperty",
                   "processingLevel",
-                  "unit"
+                  "unit",
+                  "sampledMedium",
+                  "aggregationStatistic",
+                  "status"
                 ],
                 "type": "string"
               },
@@ -16407,486 +18400,6 @@
         ]
       }
     },
-    "/api/data/datastreams/aggregation-statistics": {
-      "get": {
-        "description": "Get datastream aggregation statistics.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Datastream Aggregation Statistics",
-        "tags": [
-          "Datastreams"
-        ]
-      }
-    },
-    "/api/data/datastreams/linked-resource-types": {
-      "get": {
-        "description": "Get linked resource types.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resource_types",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Datastream Linked Resource Types",
-        "tags": [
-          "Datastreams"
-        ]
-      }
-    },
-    "/api/data/datastreams/sampled-mediums": {
-      "get": {
-        "description": "Get datastream sampled mediums.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_sampled_mediums",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Datastream Sampled Mediums",
-        "tags": [
-          "Datastreams"
-        ]
-      }
-    },
-    "/api/data/datastreams/statuses": {
-      "get": {
-        "description": "Get datastream statuses.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_statuses",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Datastream Statuses",
-        "tags": [
-          "Datastreams"
-        ]
-      }
-    },
     "/api/data/datastreams/tags/keys": {
       "get": {
         "description": "Get all existing unique datastream tag keys.",
@@ -17179,7 +18692,10 @@
                   "method",
                   "observedProperty",
                   "processingLevel",
-                  "unit"
+                  "unit",
+                  "sampledMedium",
+                  "aggregationStatistic",
+                  "status"
                 ],
                 "type": "string"
               },
@@ -20393,6 +21909,976 @@
         ]
       }
     },
+    "/api/data/linked-resource-types": {
+      "get": {
+        "description": "Get Linked Resource Types.",
+        "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_types",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_LinkedResourceTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Linked Resource Types",
+        "tags": [
+          "Linked Resource Types"
+        ]
+      },
+      "post": {
+        "description": "Create a new Linked Resource Type.",
+        "operationId": "interfaces_api_views_sta_linked_resource_type_create_linked_resource_type",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkedResourceTypePostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Linked Resource Type",
+        "tags": [
+          "Linked Resource Types"
+        ]
+      }
+    },
+    "/api/data/linked-resource-types/{linked_resource_type_id}": {
+      "delete": {
+        "description": "Delete a Linked Resource Type.",
+        "operationId": "interfaces_api_views_sta_linked_resource_type_delete_linked_resource_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "linked_resource_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Linked Resource Type",
+        "tags": [
+          "Linked Resource Types"
+        ]
+      },
+      "get": {
+        "description": "Get a Linked Resource Type.",
+        "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "linked_resource_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Type Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_LinkedResourceTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Linked Resource Type",
+        "tags": [
+          "Linked Resource Types"
+        ]
+      },
+      "patch": {
+        "description": "Update a Linked Resource Type.",
+        "operationId": "interfaces_api_views_sta_linked_resource_type_update_linked_resource_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "linked_resource_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkedResourceTypePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Linked Resource Type",
+        "tags": [
+          "Linked Resource Types"
+        ]
+      }
+    },
+    "/api/data/method-types": {
+      "get": {
+        "description": "Get Method Types.",
+        "operationId": "interfaces_api_views_sta_method_type_get_method_types",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_MethodTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Method Types",
+        "tags": [
+          "Method Types"
+        ]
+      },
+      "post": {
+        "description": "Create a new Method Type.",
+        "operationId": "interfaces_api_views_sta_method_type_create_method_type",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodTypePostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Method Type",
+        "tags": [
+          "Method Types"
+        ]
+      }
+    },
+    "/api/data/method-types/{method_type_id}": {
+      "delete": {
+        "description": "Delete a Method Type.",
+        "operationId": "interfaces_api_views_sta_method_type_delete_method_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "method_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Method Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Method Type",
+        "tags": [
+          "Method Types"
+        ]
+      },
+      "get": {
+        "description": "Get a Method Type.",
+        "operationId": "interfaces_api_views_sta_method_type_get_method_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "method_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Method Type Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_MethodTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Method Type",
+        "tags": [
+          "Method Types"
+        ]
+      },
+      "patch": {
+        "description": "Update a Method Type.",
+        "operationId": "interfaces_api_views_sta_method_type_update_method_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "method_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Method Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodTypePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Method Type",
+        "tags": [
+          "Method Types"
+        ]
+      }
+    },
     "/api/data/methods": {
       "get": {
         "description": "Get public Methods and Methods associated with the authenticated user.",
@@ -20436,7 +22922,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -20792,126 +23279,6 @@
         ]
       }
     },
-    "/api/data/methods/types": {
-      "get": {
-        "description": "Get method types.",
-        "operationId": "interfaces_api_views_sta_method_get_types",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Types",
-        "tags": [
-          "Methods"
-        ]
-      }
-    },
     "/api/data/methods/{method_id}": {
       "delete": {
         "description": "Delete a Method.",
@@ -21037,7 +23404,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -21826,6 +24194,491 @@
         ]
       }
     },
+    "/api/data/monitoring-site-types": {
+      "get": {
+        "description": "Get Monitoring Site Types.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_MonitoringSiteTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Types",
+        "tags": [
+          "Monitoring Site Types"
+        ]
+      },
+      "post": {
+        "description": "Create a new Monitoring Site Type.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_type_create_monitoring_site_type",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonitoringSiteTypePostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Monitoring Site Type",
+        "tags": [
+          "Monitoring Site Types"
+        ]
+      }
+    },
+    "/api/data/monitoring-site-types/{monitoring_site_type_id}": {
+      "delete": {
+        "description": "Delete a Monitoring Site Type.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_type_delete_monitoring_site_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "monitoring_site_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Monitoring Site Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Monitoring Site Type",
+        "tags": [
+          "Monitoring Site Types"
+        ]
+      },
+      "get": {
+        "description": "Get a Monitoring Site Type.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "monitoring_site_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Monitoring Site Type Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_MonitoringSiteTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Type",
+        "tags": [
+          "Monitoring Site Types"
+        ]
+      },
+      "patch": {
+        "description": "Update a Monitoring Site Type.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "monitoring_site_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Monitoring Site Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonitoringSiteTypePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Monitoring Site Type",
+        "tags": [
+          "Monitoring Site Types"
+        ]
+      }
+    },
     "/api/data/monitoring-sites": {
       "get": {
         "description": "Get public MonitoringSites and MonitoringSites associated with the authenticated user.",
@@ -21876,7 +24729,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -22225,126 +25079,6 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/linked-resource-types": {
-      "get": {
-        "description": "Get linked resource types.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource_types",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Monitoring Site Linked Resource Types",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
     "/api/data/monitoring-sites/markers": {
       "get": {
         "description": "Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.",
@@ -22550,126 +25284,6 @@
           }
         },
         "summary": "Get Site Type Icons",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/site-types": {
-      "get": {
-        "description": "Get site types.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_site_types",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Site Types",
         "tags": [
           "Monitoring Sites"
         ]
@@ -22970,7 +25584,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -24863,7 +27478,8 @@
               "items": {
                 "enum": [
                   "datastream",
-                  "workspace"
+                  "workspace",
+                  "resultQualifiers"
                 ],
                 "type": "string"
               },
@@ -25484,7 +28100,8 @@
               "items": {
                 "enum": [
                   "datastream",
-                  "workspace"
+                  "workspace",
+                  "resultQualifiers"
                 ],
                 "type": "string"
               },
@@ -25588,7 +28205,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -25906,126 +28524,6 @@
         ]
       }
     },
-    "/api/data/observed-properties/variable-types": {
-      "get": {
-        "description": "Get variable types.",
-        "operationId": "interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Datastream Aggregation Statistics",
-        "tags": [
-          "Observed Properties"
-        ]
-      }
-    },
     "/api/data/observed-properties/{observed_property_id}": {
       "delete": {
         "description": "Delete an Observed Property.",
@@ -26148,7 +28646,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -26302,6 +28801,491 @@
         "summary": "Update Observed Property",
         "tags": [
           "Observed Properties"
+        ]
+      }
+    },
+    "/api/data/observed-property-types": {
+      "get": {
+        "description": "Get Observed Property Types.",
+        "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_types",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_ObservedPropertyTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Observed Property Types",
+        "tags": [
+          "Observed Property Types"
+        ]
+      },
+      "post": {
+        "description": "Create a new Observed Property Type.",
+        "operationId": "interfaces_api_views_sta_observed_property_type_create_observed_property_type",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservedPropertyTypePostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Observed Property Type",
+        "tags": [
+          "Observed Property Types"
+        ]
+      }
+    },
+    "/api/data/observed-property-types/{observed_property_type_id}": {
+      "delete": {
+        "description": "Delete an Observed Property Type.",
+        "operationId": "interfaces_api_views_sta_observed_property_type_delete_observed_property_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "observed_property_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Observed Property Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Observed Property Type",
+        "tags": [
+          "Observed Property Types"
+        ]
+      },
+      "get": {
+        "description": "Get an Observed Property Type.",
+        "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "observed_property_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Observed Property Type Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_ObservedPropertyTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Observed Property Type",
+        "tags": [
+          "Observed Property Types"
+        ]
+      },
+      "patch": {
+        "description": "Update an Observed Property Type.",
+        "operationId": "interfaces_api_views_sta_observed_property_type_update_observed_property_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "observed_property_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Observed Property Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservedPropertyTypePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Observed Property Type",
+        "tags": [
+          "Observed Property Types"
         ]
       }
     },
@@ -28898,7 +31882,6 @@
                   "id",
                   "workspaceId",
                   "name",
-                  "code",
                   "description"
                 ],
                 "type": "string"
@@ -28978,9 +31961,7 @@
                 {
                   "items": {
                     "enum": [
-                      "code",
                       "name",
-                      "-code",
                       "-name"
                     ],
                     "type": "string"
@@ -29015,13 +31996,13 @@
             }
           },
           {
-            "description": "Filter result qualifiers by workspace ID.",
+            "description": "Filter terms by workspace ID.",
             "in": "query",
             "name": "workspace_id",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter result qualifiers by workspace ID.",
+              "description": "Filter terms by workspace ID.",
               "items": {
                 "anyOf": [
                   {
@@ -29035,54 +32016,6 @@
                 ]
               },
               "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter result qualifiers by monitoring_site ID.",
-            "in": "query",
-            "name": "monitoring_site_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter result qualifiers by monitoring_site ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Monitoring Site Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter result qualifiers by datastream ID.",
-            "in": "query",
-            "name": "datastream_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter result qualifiers by datastream ID.",
-              "items": {
-                "anyOf": [
-                  {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  {
-                    "const": "null",
-                    "type": "string"
-                  }
-                ]
-              },
-              "title": "Datastream Id",
               "type": "array"
             }
           }
@@ -29297,7 +32230,6 @@
                   "id",
                   "workspaceId",
                   "name",
-                  "code",
                   "description"
                 ],
                 "type": "string"
@@ -29737,6 +32669,976 @@
         ]
       }
     },
+    "/api/data/sampled-mediums": {
+      "get": {
+        "description": "Get Sampled Mediums.",
+        "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_mediums",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_SampledMediumResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Sampled Mediums",
+        "tags": [
+          "Sampled Mediums"
+        ]
+      },
+      "post": {
+        "description": "Create a new Sampled Medium.",
+        "operationId": "interfaces_api_views_sta_sampled_medium_create_sampled_medium",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampledMediumPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Sampled Medium",
+        "tags": [
+          "Sampled Mediums"
+        ]
+      }
+    },
+    "/api/data/sampled-mediums/{sampled_medium_id}": {
+      "delete": {
+        "description": "Delete a Sampled Medium.",
+        "operationId": "interfaces_api_views_sta_sampled_medium_delete_sampled_medium",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sampled_medium_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sampled Medium Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Sampled Medium",
+        "tags": [
+          "Sampled Mediums"
+        ]
+      },
+      "get": {
+        "description": "Get a Sampled Medium.",
+        "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_medium",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sampled_medium_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sampled Medium Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_SampledMediumResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Sampled Medium",
+        "tags": [
+          "Sampled Mediums"
+        ]
+      },
+      "patch": {
+        "description": "Update a Sampled Medium.",
+        "operationId": "interfaces_api_views_sta_sampled_medium_update_sampled_medium",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sampled_medium_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sampled Medium Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampledMediumPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Sampled Medium",
+        "tags": [
+          "Sampled Mediums"
+        ]
+      }
+    },
+    "/api/data/unit-types": {
+      "get": {
+        "description": "Get Unit Types.",
+        "operationId": "interfaces_api_views_sta_unit_type_get_unit_types",
+        "parameters": [
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The maximum number of items to return.",
+              "title": "Limit"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "-name"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "title": "Sortby"
+            }
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_UnitTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Unit Types",
+        "tags": [
+          "Unit Types"
+        ]
+      },
+      "post": {
+        "description": "Create a new Unit Type.",
+        "operationId": "interfaces_api_views_sta_unit_type_create_unit_type",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitTypePostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Unit Type",
+        "tags": [
+          "Unit Types"
+        ]
+      }
+    },
+    "/api/data/unit-types/{unit_type_id}": {
+      "delete": {
+        "description": "Delete a Unit Type.",
+        "operationId": "interfaces_api_views_sta_unit_type_delete_unit_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unit Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Unit Type",
+        "tags": [
+          "Unit Types"
+        ]
+      },
+      "get": {
+        "description": "Get a Unit Type.",
+        "operationId": "interfaces_api_views_sta_unit_type_get_unit_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unit Type Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "explode": false,
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "style": "form",
+              "title": "Properties",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_UnitTypeResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Unit Type",
+        "tags": [
+          "Unit Types"
+        ]
+      },
+      "patch": {
+        "description": "Update a Unit Type.",
+        "operationId": "interfaces_api_views_sta_unit_type_update_unit_type",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_type_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unit Type Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitTypePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Unit Type",
+        "tags": [
+          "Unit Types"
+        ]
+      }
+    },
     "/api/data/units": {
       "get": {
         "description": "Get public Units and Units associated with the authenticated user.",
@@ -29776,7 +33678,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },
@@ -30083,126 +33986,6 @@
         ]
       }
     },
-    "/api/data/units/types": {
-      "get": {
-        "description": "Get unit types.",
-        "operationId": "interfaces_api_views_sta_unit_get_unit_types",
-        "parameters": [
-          {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "in": "query",
-            "name": "properties",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "title": "Properties"
-            }
-          },
-          {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
-            "description": "Number of items to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 0,
-              "description": "Number of items to skip.",
-              "title": "Offset"
-            }
-          },
-          {
-            "description": "The maximum number of items to return.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
-            }
-          },
-          {
-            "description": "Sort terms by descending.",
-            "in": "query",
-            "name": "sort_desc",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": false,
-              "description": "Sort terms by descending.",
-              "title": "Sort Desc"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_str_"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Unit Types",
-        "tags": [
-          "Units"
-        ]
-      }
-    },
     "/api/data/units/{unit_id}": {
       "delete": {
         "description": "Delete a Unit.",
@@ -30324,7 +34107,8 @@
               "explode": false,
               "items": {
                 "enum": [
-                  "workspace"
+                  "workspace",
+                  "type"
                 ],
                 "type": "string"
               },

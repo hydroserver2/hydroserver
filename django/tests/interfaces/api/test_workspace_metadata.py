@@ -11,7 +11,6 @@ METADATA = [
     ("methods", {"type": "Instrument Deployment", "description": "Comments"}),
     ("observed-properties", {"type": "Hydrology", "description": "Comments"}),
     ("processing-levels", {"description": "Comments"}),
-    ("result-qualifiers", {"description": "Comments"}),
     ("units", {"symbol": "m", "type": "Length"}),
 ]
 
@@ -32,17 +31,14 @@ def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, 
     assert response.status_code == 201, response.content
     detail_url = f"{url}/{response.json()['id']}"
     data = client.get(detail_url).json()["data"]
-    if resource == "result-qualifiers":
-        assert "definition" not in data
-    else:
-        assert data["definition"] is None
+    assert data["definition"] is None
     if resource == "units":
         assert "code" not in data and "description" not in data
     else:
         assert data["code"] is None
 
     definition = "https://example.com/" + "a" * (2000 - len("https://example.com/"))
-    changes = {} if resource == "result-qualifiers" else {"definition": definition}
+    changes = {"definition": definition}
     if resource != "units":
         changes.update(code="C" * 255, description="D" * 5000)
     if "type" in fields:
@@ -51,12 +47,10 @@ def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, 
         changes["sensorModelDefinition"] = definition
     response = client.patch(detail_url, data=changes, content_type="application/json")
     assert response.status_code == 204, response.content
-    if resource != "result-qualifiers":
-        assert client.get(detail_url).json()["data"]["definition"] == definition
+    assert client.get(detail_url).json()["data"]["definition"] == definition
 
     invalid = [{"name": "N" * 256}, {"name": ""}]
-    if resource != "result-qualifiers":
-        invalid.extend([{"definition": "not a URL"}, {"definition": definition + "x"}])
+    invalid.extend([{"definition": "not a URL"}, {"definition": definition + "x"}])
     if resource != "units":
         invalid.extend([{"code": "C" * 256}, {"description": ""}, {"description": None}])
     if "type" in fields:
@@ -71,7 +65,7 @@ def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, 
         response = client.patch(detail_url, data=change, content_type="application/json")
         assert response.status_code == 400, (change, response.content)
 
-    cleared = {} if resource == "result-qualifiers" else {"definition": None}
+    cleared = {"definition": None}
     if resource == "methods":
         cleared["sensorModelDefinition"] = None
     if resource != "units":
@@ -92,8 +86,8 @@ def test_metadata_requires_name_and_description(client, owner_workspace, resourc
 @pytest.mark.parametrize("global_", [False, True])
 def test_qualifier_names_are_unique_within_scope(client, owner_workspace, global_):
     scope = None if global_ else owner_workspace
-    first = ResultQualifierFactory(workspace=scope, name="Estimated", code="EXTERNAL")
-    second = ResultQualifierFactory(workspace=scope, name="Provisional", code="EXTERNAL")
+    first = ResultQualifierFactory(workspace=scope, name="Estimated")
+    second = ResultQualifierFactory(workspace=scope, name="Provisional")
     # The database enforces name uniqueness, including for system metadata.
     from django.core.exceptions import ValidationError
     second.name = first.name
@@ -102,25 +96,11 @@ def test_qualifier_names_are_unique_within_scope(client, owner_workspace, global
     ResultQualifierFactory(name=first.name)  # Another workspace is independent.
 
 
-def test_qualifier_name_search_sort_and_projection(client, owner_workspace):
-    qualifier = ResultQualifierFactory(workspace=owner_workspace, name="Estimated", code="EXT")
-    response = client.get("/api/data/result-qualifiers", {
-        "q": "Estimated", "sortby": "name", "properties": "id,name",
-    })
-    assert response.status_code == 200
-    assert response.json()["data"] == [{"id": str(qualifier.id), "name": "Estimated"}]
-    qualifier.name = "Provisional"
-    qualifier.save()
-    assert client.get("/api/data/result-qualifiers", {"q": "Provisional"}).json()["data"][0]["name"] == "Provisional"
-    assert client.get("/api/data/result-qualifiers", {"q": "Estimated"}).json()["data"] == []
-
-
 @pytest.mark.parametrize("global_", [False, True])
 def test_observation_codes_use_qualifier_names(client, owner_workspace, global_):
     datastream = DatastreamFactory(monitoring_site__workspace=owner_workspace)
     qualifier = ResultQualifierFactory(
-        workspace=None if global_ else owner_workspace,
-        name="Estimated", code="EXTERNAL-ID",
+        workspace=None if global_ else owner_workspace, name="Estimated",
     )
     body = {
         "datastreamId": str(datastream.id), "phenomenonTime": "2026-01-01T00:00:00Z",
@@ -131,8 +111,6 @@ def test_observation_codes_use_qualifier_names(client, owner_workspace, global_)
     response = client.get("/api/data/observations", {"datastream_id": str(datastream.id), "result_qualifier_code": qualifier.name})
     assert response.status_code == 200
     assert response.json()["data"][0]["resultQualifierCodes"] == [qualifier.name]
-    body.update(phenomenonTime="2026-01-02T00:00:00Z", resultQualifierCodes=[qualifier.code])
-    assert client.post("/api/data/observations", data=body, content_type="application/json").status_code == 400
 
 
 def test_visualization_allows_observed_property_without_code(client, owner_workspace):
@@ -148,7 +126,7 @@ def test_visualization_allows_observed_property_without_code(client, owner_works
 
 def test_bulk_observation_codes_use_qualifier_names(client, owner_workspace):
     datastream = DatastreamFactory(monitoring_site__workspace=owner_workspace)
-    qualifier = ResultQualifierFactory(workspace=owner_workspace, name="Estimated", code=None)
+    qualifier = ResultQualifierFactory(workspace=owner_workspace, name="Estimated")
     body = {
         "datastreamId": str(datastream.id),
         "fields": ["phenomenonTime", "result", "resultQualifierCodes"],

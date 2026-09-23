@@ -149,7 +149,7 @@ const detailTitleId = useId()
 const selectedItem = computed(() =>
   props.items.find((item) => item.id === selectedId.value)
 )
-const titleKey = 'name'
+const titleKey = computed(() => 'name' as const)
 const kindLabel = computed(
   () =>
     ({
@@ -169,10 +169,9 @@ const fields = computed<Field[]>(() => {
   if (props.kind === 'unit') {
     result.push({ key: 'symbol', label: 'Symbol' })
   } else {
-    result.push({
-      key: 'code',
-      label: 'Code',
-    })
+    if (props.kind !== 'resultQualifier') {
+      result.push({ key: 'code', label: 'Code' })
+    }
     result.push({ key: 'description', label: 'Description' })
   }
   if (props.kind !== 'resultQualifier')
@@ -191,7 +190,7 @@ const fields = computed<Field[]>(() => {
   return result
 })
 const headers = computed(() => [
-  { title: kindLabel.value, key: titleKey },
+  { title: kindLabel.value, key: titleKey.value },
   {
     title: 'Actions',
     key: 'actions',
@@ -199,14 +198,14 @@ const headers = computed(() => [
     align: 'end' as const,
   },
 ])
-const itemTitle = (item: T) => item[titleKey] || kindLabel.value
+const itemTitle = (item: T) => item[titleKey.value] || kindLabel.value
 const itemScope = (item: T) => item._scope ?? props.defaultScope
 const summaryFields: Record<MetadataKind, FieldKey[]> = {
   method: ['type', 'code'],
   observedProperty: ['type', 'code'],
   processingLevel: ['code'],
   unit: ['type', 'symbol'],
-  resultQualifier: ['code'],
+  resultQualifier: ['description'],
 }
 const summaryDetails = (item: T) =>
   summaryFields[props.kind]

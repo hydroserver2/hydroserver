@@ -3,7 +3,6 @@
   pk: 667b63fb-e7a9-4b10-b6d8-9a4bafdf11bf
   fields:
     name: SystemResultQualifier
-    code: SystemResultQualifier
     description: System Result Qualifier
 
 # Public Result Qualifier
@@ -11,7 +10,6 @@
   pk: c66e9597-f474-4a77-afa0-f2b5a673249e
   fields:
     name: PublicResultQualifier
-    code: PublicResultQualifier
     description: Public Result Qualifier
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
@@ -20,6 +18,5 @@
   pk: 932dffca-0277-4dc2-8129-cb10212c4185
   fields:
     name: PrivateResultQualifier
-    code: PrivateResultQualifier
     description: Private Result Qualifier
     workspace: b27c51a0-7374-462d-8a53-d97d47176c10

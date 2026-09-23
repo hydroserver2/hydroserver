@@ -4,12 +4,6 @@ import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from core.sta.models import (
-    DatastreamAggregation,
-    DatastreamStatus,
-    LinkedResourceType,
-    SampledMedium,
-)
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -25,6 +19,9 @@ from tests.core.sta.factories import (
     MethodFactory,
     MonitoringSiteFactory,
     UnitFactory,
+    SampledMediumFactory,
+    AggregationStatisticFactory,
+    DatastreamStatusFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -234,49 +231,6 @@ def test_create_datastream_returns_400_for_observed_property_from_another_worksp
     )
 
     assert response.status_code == 400
-
-
-# --- vocabulary endpoints ------------------------------------------------------------
-
-
-def test_get_datastream_aggregation_statistics_returns_registered_type_names(client):
-    DatastreamAggregation.objects.create(name="Average")
-    DatastreamAggregation.objects.create(name="Maximum")
-
-    response = client.get(f"{DATASTREAMS_URL}/aggregation-statistics")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Average", "Maximum"}
-
-
-def test_get_datastream_statuses_returns_registered_type_names(client):
-    DatastreamStatus.objects.create(name="Ongoing")
-    DatastreamStatus.objects.create(name="Completed")
-
-    response = client.get(f"{DATASTREAMS_URL}/statuses")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Ongoing", "Completed"}
-
-
-def test_get_datastream_sampled_mediums_returns_registered_type_names(client):
-    SampledMedium.objects.create(name="Water")
-    SampledMedium.objects.create(name="Air")
-
-    response = client.get(f"{DATASTREAMS_URL}/sampled-mediums")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Water", "Air"}
-
-
-def test_get_datastream_linked_resource_types_returns_registered_type_names(client):
-    LinkedResourceType.objects.create(name="Photo")
-    LinkedResourceType.objects.create(name="Report")
-
-    response = client.get(f"{DATASTREAMS_URL}/linked-resource-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 # --- get_datastream --------------------------------------------------------------------
@@ -862,6 +816,64 @@ def test_get_datastream_include_sideloads_all_six_relations(client):
         str(datastream.processing_level_id)
     }
     assert {row["id"] for row in included["units"]} == {str(datastream.unit_id)}
+
+
+def test_get_datastream_include_sideloads_vocabulary_fields(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    sampled_medium = SampledMediumFactory(name="Surface Water")
+    aggregation_statistic = AggregationStatisticFactory(name="Maximum")
+    status = DatastreamStatusFactory(name="Active")
+    datastream = _make_datastream(
+        workspace,
+        sampled_medium=sampled_medium.name,
+        aggregation_statistic=aggregation_statistic.name,
+        status=status.name,
+    )
+    client.force_login(owner)
+
+    response = client.get(
+        _detail_url(datastream.id),
+        {"include": "sampledMedium,aggregationStatistic,status"},
+    )
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["sampledMediums"]} == {str(sampled_medium.id)}
+    assert {row["id"] for row in included["aggregationStatistics"]} == {
+        str(aggregation_statistic.id)
+    }
+    assert {row["id"] for row in included["datastreamStatuses"]} == {str(status.id)}
+
+
+def test_get_datastream_include_status_omits_bucket_when_status_unset(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace, status=None)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(datastream.id), {"include": "status"})
+
+    assert response.status_code == 200
+    assert "datastreamStatuses" not in response.json().get("included", {})
+
+
+def test_get_datastreams_include_vocabulary_field_deduplicates_across_items(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    sampled_medium = SampledMediumFactory(name="Groundwater")
+    _make_datastream(workspace, sampled_medium=sampled_medium.name)
+    _make_datastream(workspace, sampled_medium=sampled_medium.name)
+    client.force_login(owner)
+
+    response = client.get(DATASTREAMS_URL, {"include": "sampledMedium"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["data"]) == 2
+    assert [row["id"] for row in body["included"]["sampledMediums"]] == [
+        str(sampled_medium.id)
+    ]
 
 
 def test_get_datastream_without_include_omits_included_bucket(client):

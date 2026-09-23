@@ -19,12 +19,6 @@
           class="required-label"
           label="Name"
           :rules="rules.requiredAndMaxLength255"
-        />
-
-        <v-text-field
-          v-model="item.code"
-          label="Code"
-          :rules="rules.maxLength(255)"
         ></v-text-field>
 
         <v-textarea

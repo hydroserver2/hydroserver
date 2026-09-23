@@ -6,7 +6,6 @@ from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MethodAPIService
-from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     MethodResponse,
     MethodQueryParameters,
@@ -73,22 +72,6 @@ def create_method(
     return 201, method_service.create(
         principal=request.principal,
         data=data,
-    )
-
-
-@method_router.get("types", response={200: PaginatedResponse[str]}, by_alias=True)
-def get_types(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get method types.
-    """
-
-    return 200, method_service.list_types(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
     )
 
 

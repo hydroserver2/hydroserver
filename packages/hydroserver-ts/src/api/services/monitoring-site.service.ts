@@ -49,7 +49,6 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     isPrivate: boolean
   ): Promise<ApiResponse<MonitoringSite>> => this.patchAndRefetch(id, { isPrivate })
 
-  getSiteTypes = () => apiMethods.fetch<string[]>(`${this._route}/site-types`)
   getSiteTypeIcons = () =>
     apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
   /* ----------------------- Sub-resources: Tags ----------------------- */
@@ -77,9 +76,6 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   }
 
   /* ------------------ Sub-resources: Linked Resources ------------------ */
-
-  getLinkedResourceTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/linked-resource-types`)
 
   async getLinkedResources(monitoringSiteId: string) {
     const url = `${this._route}/${monitoringSiteId}/linked-resources`

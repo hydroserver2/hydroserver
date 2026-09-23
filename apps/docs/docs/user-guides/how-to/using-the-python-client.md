@@ -339,7 +339,6 @@ Processing-level creation accepts `name` and `description` by position or by key
 |---|---|---|
 | `uid` | `UUID` | No |
 | `name` | `str` | Yes |
-| `code` | `str \| None` | Yes |
 | `description` | `str` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
@@ -347,10 +346,10 @@ Processing-level creation accepts `name` and `description` by position or by key
 ```python
 hs_api.resultqualifiers.list(workspace=None) -> HydroServerCollection[ResultQualifier]
 hs_api.resultqualifiers.get(uid) -> ResultQualifier
-hs_api.resultqualifiers.create(name, description, *, code=None, workspace=None, uid=None) -> ResultQualifier
+hs_api.resultqualifiers.create(name, description=None, workspace=None, uid=None) -> ResultQualifier
 ```
 
-Result-qualifier creation accepts `name` and `description` by position or by keyword. Optional arguments must be named, for example `create("ICE", "Ice affected", code="EXT")`. The former qualifier code is now `name`, so `create("ICE", "Ice affected")` remains valid; change an old `code=` keyword to `name=`. Updates follow `update(uid, name, description, code)`, with all fields after `uid` optional.
+Result-qualifier creation accepts `name` and `description` by position or by keyword; both are optional after `name`. Updates follow `update(uid, name, description)`, with all fields after `uid` optional.
 
 ---
 

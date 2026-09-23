@@ -199,7 +199,6 @@ def _additional_workspace_metadata(workspace, marker, scope):
     ResultQualifierFactory(
         workspace=workspace,
         name=f"{scope}ResultQualifier-{marker}",
-        code=f"{scope}ResultQualifier-{marker}",
         description=f"E2E scenario result qualifier {marker}",
     )
 
@@ -225,7 +224,7 @@ def cleanup_scenario(scenario_key):
     # The admin CRUD test may rename the editable qualifier before failing,
     # so match the scenario marker rather than only its original code.
     ResultQualifier.objects.filter(
-        code__contains=marker, workspace__isnull=True
+        name__contains=marker, workspace__isnull=True
     ).delete()
     Organization.objects.filter(code=f"E2E-{marker}").delete()
 
@@ -371,13 +370,11 @@ def create_scenario(scenario_key):
     system_qualifier = ResultQualifierFactory(
         workspace=None,
         name=f"SystemResultQualifier-{marker}",
-        code=f"SystemResultQualifier-{marker}",
         description=f"E2E scenario result qualifier {marker}",
     )
     editable_system_qualifier = ResultQualifierFactory(
         workspace=None,
         name=f"EditableSystemResultQualifier-{marker}",
-        code=f"EditableSystemResultQualifier-{marker}",
         description=f"Editable E2E system result qualifier {marker}",
     )
 

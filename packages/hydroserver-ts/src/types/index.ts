@@ -268,17 +268,111 @@ export class ProcessingLevel {
 }
 
 export class ResultQualifier {
-  name: string
   id: string
   workspaceId: string
-  code: string | null
+  name: string
   description: string
 
   constructor() {
-    this.name = ''
     this.id = ''
     this.workspaceId = ''
-    this.code = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class SampledMedium {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class AggregationStatistic {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class DatastreamStatus {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class MethodType {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class UnitType {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class ObservedPropertyType {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class MonitoringSiteType {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
+    this.description = ''
+  }
+}
+
+export class LinkedResourceType {
+  id: string
+  name: string
+  description: string
+
+  constructor() {
+    this.id = ''
+    this.name = ''
     this.description = ''
   }
 }
@@ -362,11 +456,19 @@ export enum PermissionResource {
   ServiceAccount = 'ServiceAccount',
   Collaborator = 'Collaborator',
   MonitoringSite = 'MonitoringSite',
+  MonitoringSiteType = 'MonitoringSiteType',
+  LinkedResourceType = 'LinkedResourceType',
   ObservedProperty = 'ObservedProperty',
+  ObservedPropertyType = 'ObservedPropertyType',
   ProcessingLevel = 'ProcessingLevel',
   ResultQualifier = 'ResultQualifier',
+  SampledMedium = 'SampledMedium',
+  AggregationStatistic = 'AggregationStatistic',
+  DatastreamStatus = 'DatastreamStatus',
   Method = 'Method',
+  MethodType = 'MethodType',
   Unit = 'Unit',
+  UnitType = 'UnitType',
   Datastream = 'Datastream',
   Observation = 'Observation',
   DataConnection = 'DataConnection',

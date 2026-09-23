@@ -1,0 +1,73 @@
+---
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a57b62b2a70e
+  fields:
+    name: Average
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a57cc0f61f16
+  fields:
+    name: Best easy systematic estimator
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a57dd10258d1
+  fields:
+    name: Categorical
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a57eab962efe
+  fields:
+    name: Confidence Interval
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a57f885b2ff0
+  fields:
+    name: Constant over interval
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a58010c8ac6f
+  fields:
+    name: Continuous
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a5815f53699d
+  fields:
+    name: Cumulative
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a582f95df8e2
+  fields:
+    name: Incremental
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a58396fe1ea6
+  fields:
+    name: Maximum
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a5845f96581a
+  fields:
+    name: Median
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a585127027c0
+  fields:
+    name: Minimum
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a586b7d7eb90
+  fields:
+    name: Mode
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a587ab694847
+  fields:
+    name: Sporadic
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a58849d8d6d1
+  fields:
+    name: Standard deviation
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a589e338ffdd
+  fields:
+    name: Standard error of mean
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a58a28f0cd30
+  fields:
+    name: Standard error of the mean
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a58b1284d2f9
+  fields:
+    name: Unknown
+- model: sta.aggregationstatistic
+  pk: 01a0b67f-d61c-7386-aefa-a58cb57fd22a
+  fields:
+    name: Variance

@@ -3,7 +3,6 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
-from core.sta.models import MethodType
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -11,7 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, MethodFactory
+from tests.core.sta.factories import DatastreamFactory, MethodFactory, MethodTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -158,6 +157,20 @@ def test_get_methods_include_rejects_unknown_relation(client):
     assert response.status_code == 400
 
 
+def test_get_methods_include_type_sideloads_method_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    method_type = MethodTypeFactory(name="Instrument Deployment")
+    MethodFactory(workspace=workspace, type=method_type.name)
+    client.force_login(owner)
+
+    response = client.get(METHODS_URL, {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["methodTypes"]} == {str(method_type.id)}
+
+
 def test_get_methods_properties_does_not_filter_included_resources(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner, name="Acme")
@@ -248,16 +261,6 @@ def test_create_method_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-def test_get_method_types_returns_registered_type_names(client):
-    MethodType.objects.create(name="Instrument Deployment")
-    MethodType.objects.create(name="Estimation")
-
-    response = client.get(f"{METHODS_URL}/types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Instrument Deployment", "Estimation"}
 
 
 # --- get_method --------------------------------------------------------------------

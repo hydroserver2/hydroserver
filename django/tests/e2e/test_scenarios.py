@@ -28,7 +28,7 @@ def test_scenario_uses_generated_ids_and_cleans_up_all_workspace_data():
     assert Workspace.objects.count() == 4
     assert MonitoringSite.objects.count() == 5
     editable_qualifier = ResultQualifier.objects.get(
-        code="EditableSystemResultQualifier-scenario-one", workspace__isnull=True
+        name="EditableSystemResultQualifier-scenario-one", workspace__isnull=True
     )
     editable_qualifier.name += "-UPDATED"
     editable_qualifier.save(update_fields=["name"])
@@ -39,7 +39,7 @@ def test_scenario_uses_generated_ids_and_cleans_up_all_workspace_data():
     assert not Workspace.objects.exists()
     assert not MonitoringSite.objects.exists()
     assert not ResultQualifier.objects.filter(
-        code__contains="scenario-one", workspace__isnull=True
+        name__contains="scenario-one", workspace__isnull=True
     ).exists()
 
 

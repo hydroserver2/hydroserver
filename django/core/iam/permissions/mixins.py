@@ -1,5 +1,6 @@
 import typing
 
+from types import EllipsisType
 from django.db.models import BooleanField, Case, Q, QuerySet, Value, When
 
 from .registry import resolve_resource_type
@@ -52,6 +53,10 @@ class ResourcePermissionMixin:
         if self.is_superuser_principal():
             return True
 
+        workspace_field = getattr(type(resource), "workspace_field", "workspace")
+        if workspace_field is None:
+            return True
+
         chain = getattr(type(resource), "privacy_chain", [])
         if chain:
             for field_path in chain:
@@ -65,9 +70,7 @@ class ResourcePermissionMixin:
             else:
                 return True
 
-        workspace = self._resolve_workspace(
-            resource, getattr(type(resource), "workspace_field", "workspace")
-        )
+        workspace = self._resolve_workspace(resource, workspace_field)
 
         if workspace is None:
             return True
@@ -93,9 +96,11 @@ class ResourcePermissionMixin:
         if self.is_superuser_principal():
             return True
 
-        workspace = self._resolve_workspace(
-            resource, getattr(type(resource), "workspace_field", "workspace")
-        )
+        workspace_field = getattr(type(resource), "workspace_field", "workspace")
+        if workspace_field is None:
+            return False
+
+        workspace = self._resolve_workspace(resource, workspace_field)
 
         return workspace is not None and self.has_permission(
             workspace,
@@ -118,9 +123,11 @@ class ResourcePermissionMixin:
         if self.is_superuser_principal():
             return True
 
-        workspace = self._resolve_workspace(
-            resource, getattr(type(resource), "workspace_field", "workspace")
-        )
+        workspace_field = getattr(type(resource), "workspace_field", "workspace")
+        if workspace_field is None:
+            return False
+
+        workspace = self._resolve_workspace(resource, workspace_field)
 
         return workspace is not None and self.has_permission(
             workspace,
@@ -141,13 +148,16 @@ class ResourcePermissionMixin:
         matching can_edit/can_delete's single-object behavior.
         """
 
+        workspace_field = getattr(model, "workspace_field", "workspace")
+
+        if workspace_field is None:
+            return Q(pk__isnull=False) if permission_field == "can_view" else Q(pk__in=[])
+
         accessible_ids = self._accessible_workspace_ids(
             model.resource_type, permission_field  # noqa
         )
 
-        workspace_field = getattr(model, "workspace_field", "workspace")
-
-        if workspace_field is None:
+        if workspace_field is ...:
             q = self._owner_q() | Q(pk__in=accessible_ids)
         else:
             q = self._owner_q(f"{workspace_field}__owner") | Q(
@@ -302,20 +312,22 @@ class ResourcePermissionMixin:
 
     @staticmethod
     def _resolve_workspace(
-        resource: object, workspace_field: "str | None"
+        resource: object, workspace_field: "str | EllipsisType"
     ) -> "Workspace | None":
         """
         Traverse a `__`-delimited attribute path on a resource to find its
         workspace.
 
-        Returns the resource itself when workspace_field is None, for the case
-        where the resource being checked is the workspace. Returns None if any
-        intermediate attribute in the chain is None.
+        Returns the resource itself when workspace_field is ... (Ellipsis), for
+        the case where the resource being checked is the workspace. Returns None
+        if any intermediate attribute in the chain is None. Callers never pass
+        workspace_field=None here — that case (no workspace concept at all) is
+        handled by an earlier short-circuit in can_view/can_edit/can_delete.
         """
 
         from ..models import Workspace
 
-        if workspace_field is None:
+        if workspace_field is ...:
             return resource if isinstance(resource, Workspace) else None
 
         obj = resource

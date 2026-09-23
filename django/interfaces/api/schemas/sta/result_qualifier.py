@@ -19,8 +19,7 @@ from interfaces.api.schemas import (
 
 class ResultQualifierFields(Schema):
     name: str = Field(..., max_length=255)
-    code: Optional[str] = Field(None, max_length=255)
-    description: str
+    description: str = ""
 
 
 RESULT_QUALIFIER_INCLUDE_RELATIONS = {
@@ -32,13 +31,15 @@ RESULT_QUALIFIER_INCLUDE_RELATIONS = {
 }
 ResultQualifierIncludeRelation = Literal[*RESULT_QUALIFIER_INCLUDE_RELATIONS.keys()]
 
-_sortby_fields = ("name", "code")
+_sortby_fields = ("name",)
 ResultQualifierSortByFields = Literal[
     *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
 _property_fields = (
-    "id", "workspaceId", *(to_camel(name) for name in ResultQualifierFields.model_fields)
+    "id",
+    "workspaceId",
+    *(to_camel(name) for name in ResultQualifierFields.model_fields),
 )
 ResultQualifierPropertyName = Literal[*_property_fields]
 
@@ -63,11 +64,15 @@ class ResultQualifierFilterFields(Schema):
     )
 
 
-class ResultQualifierItemQueryParameters(ResultQualifierFilterFields, BaseQueryParameters):
+class ResultQualifierItemQueryParameters(
+    ResultQualifierFilterFields, BaseQueryParameters
+):
     pass
 
 
-class ResultQualifierQueryParameters(ResultQualifierFilterFields, CollectionQueryParameters):
+class ResultQualifierQueryParameters(
+    ResultQualifierFilterFields, CollectionQueryParameters
+):
     sortby: Optional[list[ResultQualifierSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
@@ -77,15 +82,7 @@ class ResultQualifierQueryParameters(ResultQualifierFilterFields, CollectionQuer
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter result qualifiers by workspace ID."
-    )
-    observations__datastream__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter result qualifiers by monitoring_site ID.", alias="monitoring_site_id"
-    )
-    observations__datastream_id: list[uuid.UUID | Literal["null"]] = Query(
-        [],
-        description="Filter result qualifiers by datastream ID.",
-        alias="datastream_id",
+        [], description="Filter terms by workspace ID."
     )
 
 

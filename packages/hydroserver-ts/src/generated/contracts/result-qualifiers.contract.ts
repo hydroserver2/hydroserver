@@ -10,7 +10,7 @@ export namespace ResultQualifierContract {
   export type PostBody        = Data.components['schemas']['ResultQualifierPostBody']
   export type PatchBody       = Data.components['schemas']['ResultQualifierPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["code","description","name"] as const
+  export const writableKeys = ["description","name"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

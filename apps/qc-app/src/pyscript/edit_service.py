@@ -77,8 +77,8 @@ class EditService():
       rows[i][DATETIME_COL_INDEX] = datetime.strptime(
         r[DATETIME_COL_INDEX], ISO_FORMAT)
       
-      # extract qualifier codes
-      rows[i][QUALIFIER_COL_INDEX] = [q['code'] for q in r[QUALIFIER_COL_INDEX]['resultQualifiers']]
+      # extract qualifier names
+      rows[i][QUALIFIER_COL_INDEX] = [q['name'] for q in r[QUALIFIER_COL_INDEX]['resultQualifiers']]
     self._df = pd.DataFrame(rows, columns=cols)
 
   def get_dataframe(self):

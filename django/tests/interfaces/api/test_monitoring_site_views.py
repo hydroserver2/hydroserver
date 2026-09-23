@@ -4,10 +4,6 @@ from django.db import connection
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.test.utils import CaptureQueriesContext
 
-from core.sta.models import (
-    LinkedResourceType,
-    SiteType,
-)
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -15,7 +11,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MonitoringSiteFactory
+from tests.core.sta.factories import MonitoringSiteFactory, MonitoringSiteTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -278,29 +274,6 @@ def test_create_monitoring_site_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-# --- vocabulary endpoints ----------------------------------------------------------
-
-
-def test_get_site_types_returns_registered_type_names(client):
-    SiteType.objects.create(name="Stream")
-    SiteType.objects.create(name="Lake")
-
-    response = client.get(f"{MONITORING_SITES_URL}/site-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Stream", "Lake"}
-
-
-def test_get_linked_resource_types_returns_registered_type_names(client):
-    LinkedResourceType.objects.create(name="Photo")
-    LinkedResourceType.objects.create(name="Report")
-
-    response = client.get(f"{MONITORING_SITES_URL}/linked-resource-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Photo", "Report"}
 
 
 def test_get_site_type_icons_returns_configured_icon_mappings(client):
@@ -908,6 +881,22 @@ def test_get_monitoring_site_include_sideloads_workspace(client):
     body = response.json()
     assert body["data"]["id"] == str(monitoring_site.id)
     assert {row["id"] for row in body["included"]["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_monitoring_site_include_type_sideloads_monitoring_site_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site_type = MonitoringSiteTypeFactory(name="Stream")
+    monitoring_site = MonitoringSiteFactory(workspace=workspace, type=monitoring_site_type.name)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(monitoring_site.id), {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["monitoringSiteTypes"]} == {
+        str(monitoring_site_type.id)
+    }
 
 
 def test_get_monitoring_site_without_include_omits_included_bucket(client):
