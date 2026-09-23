@@ -4,18 +4,18 @@ import hs from '@hydroserver/client'
 import type { SiteTypeIcon } from '@hydroserver/client'
 
 export const useVocabularyStore = defineStore('vocabulary', () => {
-  const siteTypes = ref<string[]>([])
+  const monitoringSiteTypes = ref<string[]>([])
   const siteTypeIcons = ref<SiteTypeIcon[]>([])
   const methodTypes = ref<string[]>([])
-  const variableTypes = ref<string[]>([])
+  const observedPropertyTypes = ref<string[]>([])
   const unitTypes = ref<string[]>([])
   const datastreamStatuses = ref<string[]>([])
-  const datastreamAggregations = ref<string[]>([])
+  const aggregationStatistics = ref<string[]>([])
   const sampledMediums = ref<string[]>([])
 
-  async function fetchSiteTypes() {
+  async function fetchMonitoringSiteTypes() {
     const items = await hs.monitoringSiteTypes.listAllItems()
-    siteTypes.value = items.map((item) => item.name)
+    monitoringSiteTypes.value = items.map((item) => item.name)
   }
 
   async function fetchSiteTypeIcons() {
@@ -28,9 +28,9 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     methodTypes.value = items.map((item) => item.name)
   }
 
-  async function fetchVariableTypes() {
+  async function fetchObservedPropertyTypes() {
     const items = await hs.observedPropertyTypes.listAllItems()
-    variableTypes.value = items.map((item) => item.name)
+    observedPropertyTypes.value = items.map((item) => item.name)
   }
 
   async function fetchUnitTypes() {
@@ -43,9 +43,9 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     datastreamStatuses.value = items.map((item) => item.name)
   }
 
-  async function fetchDatastreamAggregations() {
+  async function fetchAggregationStatistics() {
     const items = await hs.aggregationStatistics.listAllItems()
-    datastreamAggregations.value = items.map((item) => item.name)
+    aggregationStatistics.value = items.map((item) => item.name)
   }
 
   async function fetchSampledMediums() {
@@ -56,34 +56,34 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   // Fetch all vocabularies in parallel
   async function fetchAllVocabularies() {
     await Promise.all([
-      fetchSiteTypes(),
+      fetchMonitoringSiteTypes(),
       fetchSiteTypeIcons(),
       fetchMethodTypes(),
-      fetchVariableTypes(),
+      fetchObservedPropertyTypes(),
       fetchUnitTypes(),
       fetchDatastreamStatuses(),
-      fetchDatastreamAggregations(),
+      fetchAggregationStatistics(),
       fetchSampledMediums(),
     ])
   }
 
   return {
-    siteTypes,
+    monitoringSiteTypes,
     siteTypeIcons,
     methodTypes,
-    variableTypes,
+    observedPropertyTypes,
     unitTypes,
     datastreamStatuses,
-    datastreamAggregations,
+    aggregationStatistics,
     sampledMediums,
 
-    fetchSiteTypes,
+    fetchMonitoringSiteTypes,
     fetchSiteTypeIcons,
     fetchMethodTypes,
-    fetchVariableTypes,
+    fetchObservedPropertyTypes,
     fetchUnitTypes,
     fetchDatastreamStatuses,
-    fetchDatastreamAggregations,
+    fetchAggregationStatistics,
     fetchSampledMediums,
 
     fetchAllVocabularies,

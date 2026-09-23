@@ -37,7 +37,7 @@
         ></v-textarea>
 
         <v-combobox
-          :items="vocabularyStore.variableTypes"
+          :items="vocabularyStore.observedPropertyTypes"
           v-model="item.type"
           class="required-label"
           label="Variable Type"
