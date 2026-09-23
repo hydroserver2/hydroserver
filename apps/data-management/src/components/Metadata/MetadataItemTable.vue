@@ -14,7 +14,7 @@
   >
     <template #[`item.${titleKey}`]="{ item }">
       <HsTableSummary :title="itemTitle(item)" :details="summaryDetails(item)">
-        <template #details>
+        <template v-if="showScope || summaryDetails(item).length" #details>
           <li v-for="(detail, index) in summaryDetails(item)" :key="index">
             {{ detail }}
           </li>
@@ -203,17 +203,19 @@ const itemScope = (item: T) => item._scope ?? props.defaultScope
 const summaryFields: Record<MetadataKind, FieldKey[]> = {
   method: ['type', 'code'],
   observedProperty: ['type', 'code'],
-  processingLevel: ['code', 'description'],
+  processingLevel: ['code'],
   unit: ['type', 'symbol'],
   resultQualifier: ['description'],
 }
 const summaryDetails = (item: T) =>
-  summaryFields[props.kind].map((key) => {
-    const value = item[key]
-    if (value?.trim()) return value
-    const label = fields.value.find((field) => field.key === key)!.label
-    return `${label} not provided`
-  })
+  summaryFields[props.kind]
+    .filter((key) => key !== 'code' || item.code?.trim())
+    .map((key) => {
+      const value = item[key]
+      if (value?.trim()) return value
+      const label = fields.value.find((field) => field.key === key)!.label
+      return `${label} not provided`
+    })
 
 // Search the metadata itself, including fields moved out of table columns.
 const filteredItems = computed(() => {
@@ -228,7 +230,7 @@ const filteredItems = computed(() => {
   )
 })
 
-function safeLink(value: string | undefined) {
+function safeLink(value: string | null | undefined) {
   if (!value) return undefined
   try {
     const url = new URL(value)

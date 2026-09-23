@@ -5041,7 +5041,7 @@ export interface components {
         /** ObservedPropertyPatchBody */
         ObservedPropertyPatchBody: {
             /** Code */
-            code?: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5054,7 +5054,7 @@ export interface components {
         /** ObservedPropertyPostBody */
         ObservedPropertyPostBody: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5131,7 +5131,7 @@ export interface components {
         /** ObservedPropertyResponse */
         ObservedPropertyResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5595,7 +5595,7 @@ export interface components {
         /** ProcessingLevelPatchBody */
         ProcessingLevelPatchBody: {
             /** Code */
-            code?: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5606,7 +5606,7 @@ export interface components {
         /** ProcessingLevelPostBody */
         ProcessingLevelPostBody: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5675,7 +5675,7 @@ export interface components {
         /** ProcessingLevelResponse */
         ProcessingLevelResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -6848,7 +6848,7 @@ export interface components {
         /** VisualizationObservedPropertyResponse */
         VisualizationObservedPropertyResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /**
              * Id
              * Format: uuid

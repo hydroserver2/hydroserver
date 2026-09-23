@@ -16,27 +16,28 @@
       <v-card-text>
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-model="item.code"
-          class="required-label"
           label="Code"
-          :rules="rules.requiredCode"
+          :rules="rules.maxLength(255)"
         />
 
         <v-textarea
           v-model="item.description"
-          label="Description *"
-          :rules="rules.requiredDescription"
+          class="required-label"
+          label="Description"
+          :rules="rules.required"
         />
 
         <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="item.definition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-card-actions>
@@ -75,14 +76,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
     console.error('Error uploading processing level', error)
+    return
   }
   emit('close')
 }

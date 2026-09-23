@@ -92,7 +92,6 @@ import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCa
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { ProcessingLevel } from '@hydroserver/client'
-import { useTableLogic } from '@/composables/useTableLogic'
 import { toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
 import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
@@ -123,26 +122,19 @@ const {
   onUpdate,
   onDelete,
 } =
-  props.scope === 'all'
+  props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
           await hs.processingLevels.listAllItems({ workspace_id: [wsId] }),
         () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
         hs.processingLevels.delete,
         ProcessingLevel,
-        toRef(props, 'workspaceId')
+        toRef(props, 'workspaceId'),
+        toRef(() => props.scope ?? 'workspace')
       )
-    : props.workspaceId
-      ? useTableLogic(
-          async (wsId: string) =>
-            await hs.processingLevels.listAllItems({ workspace_id: [wsId] }),
-          hs.processingLevels.delete,
-          ProcessingLevel,
-          toRef(props, 'workspaceId')
-        )
-      : useSystemTableLogic(
-          () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
-          (id: string) => hs.processingLevels.delete(id),
-          ProcessingLevel
-        )
+    : useSystemTableLogic(
+        () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
+        (id: string) => hs.processingLevels.delete(id),
+        ProcessingLevel
+      )
 </script>

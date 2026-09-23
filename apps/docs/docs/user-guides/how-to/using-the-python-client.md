@@ -278,14 +278,14 @@ hs_api.methods.create(name, description, type, code=None, definition=None,
 | `definition` | `str \| None` | Yes |
 | `description` | `str` | Yes |
 | `type` | `str` | Yes |
-| `code` | `str` | Yes |
+| `code` | `str \| None` | Yes |
 | `workspace_id` | `UUID \| None` | No |
 | `workspace` | `Workspace \| None` | No | Computed |
 
 ```python
 hs_api.observedproperties.list(workspace=None) -> HydroServerCollection[ObservedProperty]
 hs_api.observedproperties.get(uid) -> ObservedProperty
-hs_api.observedproperties.create(name, description, type, code, definition=None,
+hs_api.observedproperties.create(name, description, type, code=None, definition=None,
                                  workspace=None, uid=None) -> ObservedProperty
 ```
 
@@ -316,7 +316,7 @@ hs_api.units.create(name, symbol, type, definition=None, workspace=None, uid=Non
 | Property | Type | Editable |
 |---|---|---|
 | `uid` | `UUID` | No |
-| `code` | `str` | Yes |
+| `code` | `str \| None` | Yes |
 | `name` | `str` | Yes |
 | `description` | `str` | Yes |
 | `definition` | `str \| None` | Yes |
@@ -326,8 +326,10 @@ hs_api.units.create(name, symbol, type, definition=None, workspace=None, uid=Non
 ```python
 hs_api.processinglevels.list(workspace=None) -> HydroServerCollection[ProcessingLevel]
 hs_api.processinglevels.get(uid) -> ProcessingLevel
-hs_api.processinglevels.create(code, name, description, definition=None, workspace=None, uid=None) -> ProcessingLevel
+hs_api.processinglevels.create(name, description, *, code=None, definition=None, workspace=None, uid=None) -> ProcessingLevel
 ```
+
+Processing-level creation accepts `name` and `description` by position or by keyword. Optional arguments must be named, for example `create("Raw", "Unprocessed data", code="0")`. The old `create("0", "Raw", "Unprocessed data")` call raises Python's built-in `TypeError`; move the old first argument to `code=`. Processing-level updates retain their existing argument order: `update(uid, code, name, description, definition)`.
 
 ### Result Qualifiers
 
@@ -346,6 +348,8 @@ hs_api.resultqualifiers.list(workspace=None) -> HydroServerCollection[ResultQual
 hs_api.resultqualifiers.get(uid) -> ResultQualifier
 hs_api.resultqualifiers.create(name, description=None, workspace=None, uid=None) -> ResultQualifier
 ```
+
+Result-qualifier creation accepts `name` and `description` by position or by keyword; both are optional after `name`. Updates follow `update(uid, name, description)`, with all fields after `uid` optional.
 
 ---
 
@@ -436,7 +440,7 @@ datastream.load_observations(observations, mode='insert') -> None
 
 `observations` must be a pandas DataFrame with `phenomenon_time` and `result` columns. `phenomenon_time` must be timezone-aware. `mode` is `"insert"` (skip existing timestamps) or `"replace"` (overwrite all observations in the datastream).
 
-To load observations with result qualifiers, include a `result_qualifier_codes` column containing a list of qualifier code strings per row:
+To load observations with result qualifiers, include a `result_qualifier_codes` column containing a list of qualifier name strings per row (the column name remains unchanged):
 
 ```python
 df = pd.DataFrame({

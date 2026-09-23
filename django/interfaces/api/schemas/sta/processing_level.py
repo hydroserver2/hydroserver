@@ -18,10 +18,10 @@ from interfaces.api.schemas import (
 
 
 class ProcessingLevelFields(Schema):
-    code: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
     name: str = Field(..., max_length=255)
     description: str
-    definition: Optional[str] = None
+    definition: Optional[str] = Field(None, max_length=2000)
 
 
 PROCESSING_LEVEL_INCLUDE_RELATIONS = {

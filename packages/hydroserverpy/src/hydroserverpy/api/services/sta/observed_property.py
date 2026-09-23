@@ -43,7 +43,7 @@ class ObservedPropertyService(HydroServerBaseService):
         name: str,
         description: str,
         type: str,
-        code: str,
+        code: Optional[str] = None,
         definition: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
         uid: Optional[UUID] = None,
@@ -68,7 +68,7 @@ class ObservedPropertyService(HydroServerBaseService):
         name: str = ...,
         description: str = ...,
         type: str = ...,
-        code: str = ...,
+        code: Optional[str] = ...,
         definition: Optional[str] = ...,
     ) -> "ObservedProperty":
         """Update an observed property."""

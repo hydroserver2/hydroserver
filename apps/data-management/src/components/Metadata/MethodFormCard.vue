@@ -18,7 +18,7 @@
           label="Type"
           hide-details
           density="comfortable"
-          :rules="rules.required"
+          :rules="rules.requiredAndMaxLength255"
           class="mb-4 required-label"
         />
 
@@ -30,20 +30,20 @@
           :rules="rules.requiredAndMaxLength255"
         />
 
-        <v-text-field v-model="item.code" label="Code" :rules="rules.name" />
+        <v-text-field v-model="item.code" label="Code" :rules="rules.maxLength(255)" />
 
         <v-textarea
           v-model="item.description"
           class="required-label"
           label="Description"
           rows="1"
-          :rules="rules.requiredDescription"
+          :rules="rules.required"
         />
 
         <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="item.definition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-text-field
@@ -66,7 +66,7 @@
           v-if="isInstrument"
           v-model="item.sensorModelDefinition"
           label="Sensor Model Definition"
-          :rules="item.sensorModelDefinition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.sensorModelDefinition ? rules.urlFormat : [])]"
         />
 
         <v-divider />
@@ -120,14 +120,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
     console.error('Error uploading method', error)
+    return
   }
   emit('close')
 }

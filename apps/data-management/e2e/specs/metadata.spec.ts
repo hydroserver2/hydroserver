@@ -117,7 +117,7 @@ test.describe('metadata management', () => {
     page,
   }) => {
     const qualifier = fixtures.metadata.editableSystemResultQualifier
-    const renamedCode = `${qualifier.name}-UPDATED`
+    const renamedName = `${qualifier.name}-UPDATED`
 
     await authenticateSession(page, users.admin.email, users.admin.password)
     await page.goto(
@@ -139,7 +139,7 @@ test.describe('metadata management', () => {
     await page.getByLabel('Name').fill(renamedCode)
     await page.getByRole('button', { name: 'Update', exact: true }).click()
 
-    const renamedRow = allTable.locator('tr').filter({ hasText: renamedCode })
+    const renamedRow = allTable.locator('tr').filter({ hasText: renamedName })
     await expect(renamedRow).toBeVisible()
 
     await renamedRow.getByLabel('Delete metadata item').click()
@@ -272,7 +272,7 @@ test.describe('metadata management', () => {
       .fill(
         'Temporary observed property created by the Playwright metadata CRUD suite.'
       )
-    await page.getByLabel('Variable Code').fill(`E2E-OP-${Date.now()}`)
+    await page.getByLabel('Code').fill(`E2E-OP-${Date.now()}`)
     await page.getByLabel('Name').fill(propName)
     await page.getByRole('button', { name: 'Save' }).click()
 
@@ -408,8 +408,8 @@ test.describe('metadata management', () => {
     page,
   }) => {
     const stamp = Date.now()
-    const qualifierCode = `E2E-RQ-${stamp}`
-    const renamedCode = `${qualifierCode}-UPD`
+    const qualifierName = `E2E-RQ-${stamp}`
+    const renamedName = `${qualifierName}-UPD`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
@@ -431,7 +431,7 @@ test.describe('metadata management', () => {
 
     const qualifierRow = page
       .locator('tr')
-      .filter({ hasText: qualifierCode })
+      .filter({ hasText: qualifierName })
       .first()
     await expect(qualifierRow).toBeVisible()
 
@@ -443,7 +443,7 @@ test.describe('metadata management', () => {
 
     const renamedRow = page
       .locator('tr')
-      .filter({ hasText: renamedCode })
+      .filter({ hasText: renamedName })
       .first()
     await expect(renamedRow).toBeVisible()
 
@@ -454,7 +454,7 @@ test.describe('metadata management', () => {
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
-      page.locator('tr').filter({ hasText: renamedCode })
+      page.locator('tr').filter({ hasText: renamedName })
     ).toHaveCount(0)
   })
 

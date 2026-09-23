@@ -276,7 +276,7 @@ class VisualizationMonitoringSiteResponse(BaseGetResponse):
 class VisualizationObservedPropertyResponse(BaseGetResponse):
     id: uuid.UUID
     name: str = Field(..., max_length=255)
-    code: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
 
 
 class VisualizationProcessingLevelResponse(BaseGetResponse):

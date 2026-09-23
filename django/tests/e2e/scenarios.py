@@ -161,7 +161,7 @@ def _metadata(workspace, marker, scope):
             workspace=workspace,
             name=_name(f"{scope} Assigned Unit", marker),
             symbol=f"{scope[:1]}{marker[-4:]}",
-            definition=f"E2E scenario unit {marker}",
+            definition=f"https://example.com/units/{marker}",
             type=f"{scope} Unit",
         ),
     }
@@ -193,7 +193,7 @@ def _additional_workspace_metadata(workspace, marker, scope):
         workspace=workspace,
         name=_name(f"{scope} Unit", marker),
         symbol=f"{scope[:1]}A{marker[-3:]}",
-        definition=f"E2E scenario unit {marker}",
+        definition=f"https://example.com/units/{marker}",
         type=f"{scope} Unit",
     )
     ResultQualifierFactory(
@@ -572,7 +572,7 @@ def create_scenario(scenario_key):
                 },
                 "publicAssignedProcessingLevel": {
                     "id": str(public_metadata["processing_level"].id),
-                    "name": public_metadata["processing_level"].code,
+                    "name": public_metadata["processing_level"].name,
                 },
                 "publicAssignedUnit": {
                     "id": str(public_metadata["unit"].id),

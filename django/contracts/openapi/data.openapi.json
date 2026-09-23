@@ -5260,7 +5260,7 @@
           "code": {
             "anyOf": [
               {
-                "maxLength": 50,
+                "maxLength": 255,
                 "type": "string"
               },
               {
@@ -5272,7 +5272,7 @@
           "definition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5305,7 +5305,7 @@
           "sensorModelDefinition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5327,7 +5327,7 @@
             "title": "Sensormodelmanufacturer"
           },
           "type": {
-            "maxLength": 100,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           }
@@ -5340,7 +5340,7 @@
           "code": {
             "anyOf": [
               {
-                "maxLength": 50,
+                "maxLength": 255,
                 "type": "string"
               },
               {
@@ -5352,7 +5352,7 @@
           "definition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5397,7 +5397,7 @@
           "sensorModelDefinition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5419,7 +5419,7 @@
             "title": "Sensormodelmanufacturer"
           },
           "type": {
-            "maxLength": 100,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -5645,7 +5645,7 @@
           "code": {
             "anyOf": [
               {
-                "maxLength": 50,
+                "maxLength": 255,
                 "type": "string"
               },
               {
@@ -5657,7 +5657,7 @@
           "definition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5695,7 +5695,7 @@
           "sensorModelDefinition": {
             "anyOf": [
               {
-                "maxLength": 500,
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -5717,7 +5717,7 @@
             "title": "Sensormodelmanufacturer"
           },
           "type": {
-            "maxLength": 100,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -8326,13 +8326,21 @@
       "ObservedPropertyPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 500,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -8351,7 +8359,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 500,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           }
@@ -8362,13 +8370,21 @@
       "ObservedPropertyPostBody": {
         "properties": {
           "code": {
-            "maxLength": 500,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -8399,7 +8415,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 500,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -8420,7 +8436,6 @@
           "name",
           "description",
           "type",
-          "code",
           "workspaceId"
         ],
         "title": "ObservedPropertyPostBody",
@@ -8596,13 +8611,21 @@
       "ObservedPropertyResponse": {
         "properties": {
           "code": {
-            "maxLength": 500,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -8626,7 +8649,7 @@
             "type": "string"
           },
           "type": {
-            "maxLength": 500,
+            "maxLength": 255,
             "title": "Type",
             "type": "string"
           },
@@ -8647,7 +8670,6 @@
           "name",
           "description",
           "type",
-          "code",
           "id"
         ],
         "title": "ObservedPropertyResponse",
@@ -10172,13 +10194,21 @@
       "ProcessingLevelPatchBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -10203,13 +10233,21 @@
       "ProcessingLevelPostBody": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -10253,7 +10291,6 @@
           }
         },
         "required": [
-          "code",
           "name",
           "description"
         ],
@@ -10417,13 +10454,21 @@
       "ProcessingLevelResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -10460,7 +10505,6 @@
           }
         },
         "required": [
-          "code",
           "name",
           "description",
           "id",
@@ -13117,6 +13161,7 @@
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -13149,6 +13194,7 @@
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -13376,6 +13422,7 @@
           "definition": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -13765,9 +13812,16 @@
       "VisualizationObservedPropertyResponse": {
         "properties": {
           "code": {
-            "maxLength": 255,
-            "title": "Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "id": {
             "format": "uuid",
@@ -13782,8 +13836,7 @@
         },
         "required": [
           "id",
-          "name",
-          "code"
+          "name"
         ],
         "title": "VisualizationObservedPropertyResponse",
         "type": "object"
