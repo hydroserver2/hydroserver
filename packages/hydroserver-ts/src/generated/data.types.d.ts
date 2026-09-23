@@ -4571,7 +4571,7 @@ export interface components {
         /** ObservedPropertyPatchBody */
         ObservedPropertyPatchBody: {
             /** Code */
-            code?: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -4584,7 +4584,7 @@ export interface components {
         /** ObservedPropertyPostBody */
         ObservedPropertyPostBody: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -4661,7 +4661,7 @@ export interface components {
         /** ObservedPropertyResponse */
         ObservedPropertyResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5021,7 +5021,7 @@ export interface components {
         /** ProcessingLevelPatchBody */
         ProcessingLevelPatchBody: {
             /** Code */
-            code?: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5032,7 +5032,7 @@ export interface components {
         /** ProcessingLevelPostBody */
         ProcessingLevelPostBody: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5101,7 +5101,7 @@ export interface components {
         /** ProcessingLevelResponse */
         ProcessingLevelResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Definition */
             definition?: string | null;
             /** Description */
@@ -5575,23 +5575,27 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "code" | "description")[];
+            properties?: ("id" | "workspaceId" | "name" | "code" | "description")[];
         };
         /** ResultQualifierPatchBody */
         ResultQualifierPatchBody: {
             /** Code */
-            code?: string;
+            code?: string | null;
             /** Description */
             description?: string;
+            /** Name */
+            name?: string;
         };
         /** ResultQualifierPostBody */
         ResultQualifierPostBody: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Description */
             description: string;
             /** Id */
             id?: string | null;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -5630,7 +5634,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "code" | "description")[];
+            properties?: ("id" | "workspaceId" | "name" | "code" | "description")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -5641,7 +5645,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("code" | "-code")[] | null;
+            sortby: ("code" | "name" | "-code" | "-name")[] | null;
             /**
              * Workspace Id
              * @description Filter result qualifiers by workspace ID.
@@ -5652,7 +5656,7 @@ export interface components {
         /** ResultQualifierResponse */
         ResultQualifierResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Description */
             description: string;
             /**
@@ -5660,6 +5664,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Name */
+            name: string;
             /** Workspaceid */
             workspaceId: string | null;
         };
@@ -6212,7 +6218,7 @@ export interface components {
         /** VisualizationObservedPropertyResponse */
         VisualizationObservedPropertyResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /**
              * Id
              * Format: uuid
@@ -12567,7 +12573,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "code" | "description")[];
+                properties?: ("id" | "workspaceId" | "name" | "code" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
@@ -12575,7 +12581,7 @@ export interface operations {
                 /** @description The maximum number of items to return. */
                 limit?: number | null;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("code" | "-code")[] | null;
+                sortby?: ("code" | "name" | "-code" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter result qualifiers by workspace ID. */
@@ -12666,7 +12672,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "code" | "description")[];
+                properties?: ("id" | "workspaceId" | "name" | "code" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
             };

@@ -29,6 +29,7 @@ def _collaborator_with_permission(workspace, **permissions):
 
 def _result_qualifier_body(**overrides):
     body = {
+        "name": "New Qualifier",
         "code": "New Qualifier",
         "description": "A new result qualifier.",
     }
@@ -111,7 +112,7 @@ def test_get_result_qualifiers_without_properties_returns_every_field(client):
 
     assert response.status_code == 200
     item = response.json()["data"][0]
-    assert set(item.keys()) == {"id", "code", "description", "workspaceId"}
+    assert set(item.keys()) == {"id", "name", "code", "description", "workspaceId"}
 
 
 def test_get_result_qualifiers_has_no_included_key_without_include_param(client):
@@ -244,15 +245,15 @@ def test_create_result_qualifier_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
-def test_create_result_qualifier_returns_400_for_duplicate_code_in_workspace(client):
+def test_create_result_qualifier_returns_400_for_duplicate_name_in_workspace(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    ResultQualifierFactory(workspace=workspace, code="Duplicate")
+    ResultQualifierFactory(workspace=workspace, name="Duplicate")
     client.force_login(owner)
 
     response = client.post(
         RESULT_QUALIFIERS_URL,
-        data=_result_qualifier_body(workspaceId=str(workspace.id), code="Duplicate"),
+        data=_result_qualifier_body(workspaceId=str(workspace.id), name="Duplicate"),
         content_type="application/json",
     )
 

@@ -26,14 +26,14 @@
         <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="item.definition ? rules.urlFormat : []"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-textarea
           v-model="item.description"
           class="required-label"
           label="Description"
-          :rules="rules.requiredDescription"
+          :rules="rules.required"
         ></v-textarea>
 
         <v-combobox
@@ -41,14 +41,13 @@
           v-model="item.type"
           class="required-label"
           label="Variable Type"
-          :rules="rules.requiredAndMaxLength500"
+          :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-model="item.code"
-          class="required-label"
-          label="Variable Code"
-          :rules="rules.requiredAndMaxLength500"
+          label="Code"
+          :rules="rules.maxLength(255)"
         />
       </v-card-text>
 
@@ -102,14 +101,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
-    console.error('Error uploading processing level', error)
+    console.error('Error uploading observed property', error)
+    return
   }
   emit('close')
 }

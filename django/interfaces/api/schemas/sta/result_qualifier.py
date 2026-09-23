@@ -18,7 +18,8 @@ from interfaces.api.schemas import (
 
 
 class ResultQualifierFields(Schema):
-    code: str = Field(..., max_length=255)
+    name: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
     description: str
 
 
@@ -31,7 +32,7 @@ RESULT_QUALIFIER_INCLUDE_RELATIONS = {
 }
 ResultQualifierIncludeRelation = Literal[*RESULT_QUALIFIER_INCLUDE_RELATIONS.keys()]
 
-_sortby_fields = ("code",)
+_sortby_fields = ("name", "code")
 ResultQualifierSortByFields = Literal[
     *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]

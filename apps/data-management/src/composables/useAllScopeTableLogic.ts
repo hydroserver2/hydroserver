@@ -1,4 +1,4 @@
-import { Ref, ref, watch } from 'vue'
+import { computed, Ref, ref, watch } from 'vue'
 import { Scoped } from './tableScope'
 
 interface WithId {
@@ -16,12 +16,20 @@ export function useAllScopeTableLogic<T extends WithId>(
   fetchSystemFn: () => Promise<T[]>,
   deleteFn: (id: string) => Promise<any>,
   ItemClass: new () => T,
-  idRef: Ref<string | null | undefined>
+  idRef: Ref<string | null | undefined>,
+  scopeRef?: Ref<'workspace' | 'system' | 'all'>
 ) {
   const openEdit = ref(false)
   const openDelete = ref(false)
   const item = ref(new ItemClass()) as Ref<Scoped<T>>
   const items: Ref<Scoped<T>[]> = ref([])
+  // Scope changes filter the loaded list without another request or loading state.
+  const visibleItems = computed(() => {
+    const scope = scopeRef?.value ?? 'all'
+    return scope === 'all'
+      ? items.value
+      : items.value.filter((item) => item._scope === scope)
+  })
   const isLoading = ref(true)
 
   function openDialog(selectedItem: T, dialog: string) {
@@ -88,7 +96,7 @@ export function useAllScopeTableLogic<T extends WithId>(
     openEdit,
     openDelete,
     item,
-    items,
+    items: visibleItems,
     isLoading,
     openDialog,
     onUpdate,

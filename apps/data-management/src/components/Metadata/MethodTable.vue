@@ -92,7 +92,6 @@ import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { Method } from '@hydroserver/client'
-import { useTableLogic } from '@/composables/useTableLogic'
 import { toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
 import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
@@ -123,26 +122,19 @@ const {
   onUpdate,
   onDelete,
 } =
-  props.scope === 'all'
+  props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
           await hs.methods.listAllItems({ workspace_id: [wsId] }),
         () => hs.methods.listAllItems({ workspace_id: ['null'] }),
         hs.methods.delete,
         Method,
-        toRef(props, 'workspaceId')
+        toRef(props, 'workspaceId'),
+        toRef(() => props.scope ?? 'workspace')
       )
-    : props.workspaceId
-      ? useTableLogic(
-          async (wsId: string) =>
-            await hs.methods.listAllItems({ workspace_id: [wsId] }),
-          hs.methods.delete,
-          Method,
-          toRef(props, 'workspaceId')
-        )
-      : useSystemTableLogic(
-          () => hs.methods.listAllItems({ workspace_id: ['null'] }),
-          (id: string) => hs.methods.delete(id),
-          Method
-        )
+    : useSystemTableLogic(
+        () => hs.methods.listAllItems({ workspace_id: ['null'] }),
+        (id: string) => hs.methods.delete(id),
+        Method
+      )
 </script>

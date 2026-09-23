@@ -19,10 +19,10 @@ from interfaces.api.schemas import (
 
 class ObservedPropertyFields(Schema):
     name: str = Field(..., max_length=255)
-    definition: Optional[str] = None
+    definition: Optional[str] = Field(None, max_length=2000)
     description: str
-    type: str = Field(..., max_length=500)
-    code: str = Field(..., max_length=500)
+    type: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
 
 
 OBSERVED_PROPERTY_INCLUDE_RELATIONS = {

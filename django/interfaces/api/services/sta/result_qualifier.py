@@ -162,7 +162,7 @@ class ResultQualifierAPIService(APIService):
             IntegrityError,
             UniqueViolation,
         ):
-            raise ConflictError("A result qualifier with this ID or code already exists")
+            raise ConflictError("A result qualifier with this ID or name already exists")
 
         return {"id": result_qualifier.pk}
 
@@ -190,7 +190,7 @@ class ResultQualifierAPIService(APIService):
             IntegrityError,
             UniqueViolation,
         ):
-            raise ConflictError("A result qualifier with this code already exists")
+            raise ConflictError("A result qualifier with this name already exists")
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         result_qualifier = self.get_result_qualifier_for_action(

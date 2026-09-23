@@ -105,6 +105,9 @@ const noSpaces = [
 
 const urlFormat = [
   (value: string) => {
+    if (!/^https?:\/\//i.test(value)) {
+      return 'Enter a URL starting with http:// or https://.'
+    }
     const pattern = new RegExp(
       '^(https?:\\/\\/)?' + // protocol
         '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name

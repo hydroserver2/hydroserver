@@ -7,6 +7,19 @@ Attribute names below use the persisted model field names in `snake_case`. Forei
 M = Mandatory
 O = Optional
 
+## Metadata field conventions
+
+Method, ObservedProperty, ProcessingLevel, Unit, and ResultQualifier share these conventions:
+
+| Field | Meaning | Requirement |
+| --- | --- | --- |
+| `name` | The label every frontend displays to identify the item. | Required; at most 255 characters. |
+| `description` | Free-text comments from the user. | Required text without a fixed length limit, except Unit has no description. |
+| `definition` | A URL defining or documenting the item, such as a vocabulary term, standard, or manual. | Optional URL; at most 2,000 characters. ResultQualifier has no definition. |
+| `code` | An external or organizational identifier. | Optional; at most 255 characters. Unit has no code because its definition serves this purpose. |
+
+Elsewhere in the data model, `link` is a person's or organization's website. An attachment's `url` identifies an external link or an uploaded file.
+
 ## Datastream
 
 A Datastream groups a collection of Observations measuring the same ObservedProperty and produced by the same Method. Each instance of a Datastream represents the properties for a time series of Observations.
@@ -52,9 +65,9 @@ An Observation is the act of measuring or otherwise determining the value of a p
 | M        | result            | The numeric value of the Observation.                                                                                    | Float        |
 | O        | result_time       | The time that the Observation's result was generated, if different from `phenomenon_time`.                               | Datetime     |
 | O        | quality_code      | A text code indicating the quality of the Observation.                                                                   | String       |
-| O        | result_qualifiers | A many-to-many relationship to ResultQualifier. This is stored in a join table, not as an array column on `Observation`. | Many-to-many |
+| O        | result_qualifiers | A JSON array of ResultQualifier names. | JSON array |
 
-**NOTE**: `quality_code` is persisted in the database, but the current Data Management API does not include it in the main observation schema. The API also uses `resultQualifierCodes` rather than exposing the join table directly.
+**NOTE**: `quality_code` is persisted in the database, but the current Data Management API does not include it in the main observation schema. The API retains `resultQualifierCodes` and the filter `result_qualifier_code`; their values are qualifier names, not optional external codes. Python client interfaces such as `result_qualifier_codes` keep their existing names.
 
 ## ObservedProperty
 
@@ -64,11 +77,11 @@ An ObservedProperty specifies the phenomenon of an Observation, such as flow, te
 | -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                     | A primary key unique identifier for the ObservedProperty.                                                                          | UUID      |
 | O        | workspace_id           | A foreign key identifier for the Workspace that owns the ObservedProperty. If omitted, the ObservedProperty is shared system-wide. | UUID      |
-| M        | name                   | A descriptive name for the ObservedProperty.                                                                                       | String    |
-| O        | definition             | A URI pointing to an externally controlled definition of the ObservedProperty.                                                     | URI       |
-| M        | description            | A text description of the ObservedProperty.                                                                                        | Text      |
-| M        | type                   | The type of ObservedProperty.                                                                                                      | String    |
-| M        | code                   | A brief text code identifying the ObservedProperty.                                                                                | String    |
+| M | name | The label displayed by every frontend. | String (255) |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
+| M | description | Free-text comments from the user. | Text |
+| M | type | The type of ObservedProperty. | String (255) |
+| O | code | An external or organizational identifier. | String (255) |
 
 ## Organization
 
@@ -118,10 +131,10 @@ The degree of quality control or processing to which a Datastream has been subje
 | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the ProcessingLevel.                                                                         | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ProcessingLevel. If omitted, the ProcessingLevel is shared system-wide. | UUID      |
-| M        | code         | A brief text code identifying the ProcessingLevel.                                                                               | String    |
-| M        | name         | A descriptive name for the ProcessingLevel.                                                                                      | String    |
-| M        | description  | A text description of the ProcessingLevel.                                                                                       | Text      |
-| O        | definition   | A URI pointing to an externally controlled definition of the ProcessingLevel.                                                    | URI       |
+| O | code | An external or organizational identifier. | String (255) |
+| M | name | The label displayed by every frontend. | String (255) |
+| M | description | Free-text comments from the user. | Text |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
 
 ## ResultQualifier
 
@@ -131,10 +144,11 @@ Data qualifying comments added to individual data values to qualify their interp
 | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the ResultQualifier.                                                                         | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ResultQualifier. If omitted, the ResultQualifier is shared system-wide. | UUID      |
-| M        | code         | A brief text code identifying the ResultQualifier.                                                                               | String    |
-| M        | description  | A longer text description or explanation of the ResultQualifier.                                                                 | Text      |
+| M | name | The label displayed by every frontend and stored on observations. | String (255) |
+| O | code | An external or organizational identifier. | String (255) |
+| M | description | Free-text comments from the user. | Text |
 
-**NOTE**: The database enforces a unique constraint on `(code, workspace_id)`, including the system-wide `NULL` workspace scope.
+**NOTE**: The database enforces a unique constraint on `(name, workspace_id)`, including the system-wide `NULL` workspace scope.
 
 ## Method
 
@@ -144,14 +158,14 @@ A Method describes how a Datastream's Observations are produced, whether by an i
 | -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                       | A primary key unique identifier for the Method.                                                                | UUID      |
 | O        | workspace_id             | A foreign key identifier for the Workspace that owns the Method. If omitted, the Method is shared system-wide. | UUID      |
-| M        | name                     | A descriptive name for the Method.                                                                             | String    |
-| O        | code                     | A brief text code identifying the Method.                                                                      | String    |
-| M        | type                     | A controlled-vocabulary value identifying the kind of Method.                                                  | String    |
-| M        | description              | A longer text description of the Method.                                                                       | Text      |
-| O        | definition               | A URI pointing to documentation that defines or describes the Method.                                          | String    |
+| M | name | The label displayed by every frontend. | String (255) |
+| O | code | An external or organizational identifier. | String (255) |
+| M | type | A controlled-vocabulary value identifying the kind of Method. | String (255) |
+| M | description | Free-text comments from the user. | Text |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
 | O        | sensor_model             | The model name when the Method represents an instrument.                                                       | String    |
 | O        | sensor_model_manufacturer | The model manufacturer when the Method represents an instrument.                                               | String    |
-| O        | sensor_model_definition  | A URI pointing to documentation for the sensor model.                                                          | String    |
+| O | sensor_model_definition | A URL pointing to documentation for the sensor model. | URL (2,000) |
 
 The SensorThings API continues to expose these records as Sensor entities for standards compatibility.
 
@@ -203,10 +217,10 @@ The unit of measure associated with the Observations within a Datastream.
 | -------- | ------------ | ---------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the Unit.                                                              | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the Unit. If omitted, the Unit is shared system-wide. | UUID      |
-| M        | name         | A descriptive name for the Unit.                                                                           | String    |
+| M | name | The label displayed by every frontend. | String (255) |
 | M        | symbol       | An abbreviation or symbol used for the Unit.                                                               | String    |
-| O        | definition   | A URI pointing to an externally controlled definition of the Unit.                                       | URI       |
-| M        | type         | The type of Unit.                                                                                          | String    |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
+| M | type | The type of Unit. | String (255) |
 
 ## Workspace
 

@@ -88,9 +88,9 @@
         <v-window v-model="tab" class="metadata-window">
           <v-window-item :value="0">
             <MethodTable
-              :key="`${scope}-${methodKey}`"
+              :key="methodKey"
               :search="search"
-              :workspace-id="workspaceId"
+              :workspace-id="activeWorkspace.id"
               :can-edit="canEditMetadata"
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
@@ -100,9 +100,9 @@
 
           <v-window-item :value="1">
             <ObservedPropertyTable
-              :key="`${scope}-${OPKey}`"
+              :key="OPKey"
               :search="search"
-              :workspace-id="workspaceId"
+              :workspace-id="activeWorkspace.id"
               :can-edit="canEditMetadata"
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
@@ -112,9 +112,9 @@
 
           <v-window-item :value="2">
             <ProcessingLevelTable
-              :key="`${scope}-${PLKey}`"
+              :key="PLKey"
               :search="search"
-              :workspace-id="workspaceId"
+              :workspace-id="activeWorkspace.id"
               :can-edit="canEditMetadata"
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
@@ -124,9 +124,9 @@
 
           <v-window-item :value="3">
             <UnitTable
-              :key="`${scope}-${unitKey}`"
+              :key="unitKey"
               :search="search"
-              :workspace-id="workspaceId"
+              :workspace-id="activeWorkspace.id"
               :can-edit="canEditMetadata"
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
@@ -136,9 +136,9 @@
 
           <v-window-item :value="4">
             <ResultQualifierTable
-              :key="`${scope}-${qualifierKey}`"
+              :key="qualifierKey"
               :search="search"
-              :workspace-id="workspaceId"
+              :workspace-id="activeWorkspace.id"
               :can-edit="canEditMetadata"
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
@@ -236,8 +236,8 @@ const activeWorkspace = computed<Workspace | undefined>(
   () => props.workspace ?? selectedWorkspace.value ?? undefined
 )
 
-// System-only tables don't need a workspace, but workspace and merged ("all")
-// tables both fetch this workspace's items alongside/instead of system ones.
+// Creation in the system view omits the workspace. Tables always receive the
+// active workspace so changing scope only filters their already-loaded rows.
 const workspaceId = computed(() =>
   scope.value === 'system' ? undefined : activeWorkspace.value!.id
 )

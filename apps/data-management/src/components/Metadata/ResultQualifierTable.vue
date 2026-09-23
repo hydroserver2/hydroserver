@@ -89,7 +89,6 @@
 
 <script setup lang="ts">
 import hs, { ResultQualifier } from '@hydroserver/client'
-import { useTableLogic } from '@/composables/useTableLogic'
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
@@ -123,26 +122,19 @@ const {
   onUpdate,
   onDelete,
 } =
-  props.scope === 'all'
+  props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
           await hs.resultQualifiers.listAllItems({ workspace_id: [wsId] }),
         () => hs.resultQualifiers.listAllItems({ workspace_id: ['null'] }),
         hs.resultQualifiers.delete,
         ResultQualifier,
-        toRef(props, 'workspaceId')
+        toRef(props, 'workspaceId'),
+        toRef(() => props.scope ?? 'workspace')
       )
-    : props.workspaceId
-      ? useTableLogic(
-          async (wsId: string) =>
-            await hs.resultQualifiers.listAllItems({ workspace_id: [wsId] }),
-          hs.resultQualifiers.delete,
-          ResultQualifier,
-          toRef(props, 'workspaceId')
-        )
-      : useSystemTableLogic(
-          () => hs.resultQualifiers.listAllItems({ workspace_id: ['null'] }),
-          (id: string) => hs.resultQualifiers.delete(id),
-          ResultQualifier
-        )
+    : useSystemTableLogic(
+        () => hs.resultQualifiers.listAllItems({ workspace_id: ['null'] }),
+        (id: string) => hs.resultQualifiers.delete(id),
+        ResultQualifier
+      )
 </script>

@@ -10,6 +10,8 @@ import ObservedPropertyTable from '../ObservedPropertyTable.vue'
 import ProcessingLevelTable from '../ProcessingLevelTable.vue'
 import UnitTable from '../UnitTable.vue'
 import ResultQualifierTable from '../ResultQualifierTable.vue'
+import MetadataTable from '../MetadataTable.vue'
+import { useMetadata } from '@/store/metadata'
 
 vi.mock('@hydroserver/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hydroserver/client')>()
@@ -96,6 +98,60 @@ afterEach(() => {
 
 describe('metadata table UUIDs and read-only details', () => {
   it.each([
+    ['methods', MethodTable, 0],
+    ['observedProperties', ObservedPropertyTable, 1],
+    ['processingLevels', ProcessingLevelTable, 2],
+    ['units', UnitTable, 3],
+    ['resultQualifiers', ResultQualifierTable, 4],
+  ] as const)(
+    'switches %s scopes without remounting, refetching, or flashing a skeleton',
+    async (service, component, tab) => {
+      let resolveWorkspace!: (items: any[]) => void
+      const workspaceItems = new Promise<any[]>((resolve) => {
+        resolveWorkspace = resolve
+      })
+      const systemRecord = { ...record, id: 'system-item', name: 'System metadata' }
+      const fetch = vi.spyOn(hs[service], 'listAllItems').mockImplementation(
+        async (params: any) => params.workspace_id[0] === 'null'
+          ? [systemRecord] as any
+          : workspaceItems
+      )
+      const pinia = createPinia()
+      useMetadata(pinia).tab = tab
+      const wrapper = mount(MetadataTable, {
+        props: { workspace: { id: 'workspace-1' } as any },
+        global: { plugins: [vuetify, pinia] },
+      })
+      mounted.push(wrapper)
+      await flushPromises()
+      expect(wrapper.find('.metadata-table-loading-skeleton').exists()).toBe(true)
+      resolveWorkspace([{ ...record }])
+      await flushPromises()
+      const tableId = wrapper.findComponent(component as any).vm.$.uid
+
+      for (const scope of ['workspace', 'system', 'all'] as const) {
+        await wrapper.get(`[data-testid="metadata-scope-${scope}"]`).trigger('click')
+        expect(wrapper.find('.metadata-table-loading-skeleton').exists()).toBe(false)
+        expect(wrapper.findComponent(component as any).vm.$.uid).toBe(tableId)
+        expect(wrapper.find(`[data-testid="view-metadata-${record.id}"]`).exists())
+          .toBe(scope !== 'system')
+        expect(wrapper.find('[data-testid="view-metadata-system-item"]').exists())
+          .toBe(scope !== 'workspace')
+        expect(fetch).toHaveBeenCalledTimes(2)
+      }
+    }
+  )
+
+  it('uses the qualifier name as its title without a definition field', async () => {
+    const wrapper = render(MetadataItemTable, { kind: 'resultQualifier' })
+    expect(wrapper.get('.hs-table-summary__title').text()).toBe(record.name)
+    await wrapper.get(`[data-testid="view-metadata-${record.id}"]`).trigger('click')
+    await flushPromises()
+    const definition = document.querySelector(`a[href="${record.definition}"]`)
+    expect(definition).toBeNull()
+  })
+
+  it.each([
     ['methods', MethodTable],
     ['observedProperties', ObservedPropertyTable],
     ['processingLevels', ProcessingLevelTable],
@@ -104,7 +160,9 @@ describe('metadata table UUIDs and read-only details', () => {
   ] as const)(
     'supports copying and viewing %s with no edit permission',
     async (service, component) => {
-      vi.spyOn(hs[service], 'listAllItems').mockResolvedValue([record] as any)
+      vi.spyOn(hs[service], 'listAllItems').mockImplementation(async (params: any) =>
+        params.workspace_id[0] === 'null' ? [] : [{ ...record }] as any
+      )
       const wrapper = render(component, {
         search: '',
         workspaceId: 'workspace-1',
@@ -213,9 +271,9 @@ describe('metadata table UUIDs and read-only details', () => {
   it.each([
     ['method', ['Hydrology', 'TEMP']],
     ['observedProperty', ['Hydrology', 'TEMP']],
-    ['processingLevel', ['TEMP', record.description]],
+    ['processingLevel', ['TEMP']],
     ['unit', ['Hydrology', '°C']],
-    ['resultQualifier', ['TEMP', record.description]],
+    ['resultQualifier', ['TEMP']],
   ] as const)(
     'orders %s summary fields and shows scope last only in the all view',
     async (kind, details) => {
@@ -242,24 +300,35 @@ describe('metadata table UUIDs and read-only details', () => {
   )
 
   it.each([
-    ['method', ['Type not provided', 'Code not provided']],
-    ['observedProperty', ['Type not provided', 'Code not provided']],
-    ['processingLevel', ['Code not provided', 'Description not provided']],
+    ['method', ['Type not provided']],
+    ['observedProperty', ['Type not provided']],
+    ['processingLevel', []],
     ['unit', ['Type not provided', 'Symbol not provided']],
-    ['resultQualifier', ['Code not provided', 'Description not provided']],
+    ['resultQualifier', []],
   ] as const)(
-    'keeps all three %s secondary fields when data is missing',
-    (kind, details) => {
+    'omits absent codes from %s summaries and preserves other details',
+    async (kind, details) => {
       const wrapper = render(MetadataItemTable, {
         kind,
         items: [{ id: record.id, type: ' ', code: '' }],
         showScope: true,
       })
-      expect(
-        wrapper
-          .findAll('.hs-table-summary__details > li')
-          .map((detail) => detail.text())
-      ).toEqual([...details, 'Workspace'])
+      for (const code of [undefined, null, '', '   ']) {
+        for (const showScope of [true, false]) {
+          await wrapper.setProps({
+            items: [{ id: record.id, type: ' ', code }],
+            showScope,
+          })
+          expect(
+            wrapper
+              .findAll('.hs-table-summary__details > li')
+              .map((detail) => detail.text())
+          ).toEqual([...details, ...(showScope ? ['Workspace'] : [])])
+          expect(wrapper.find('.hs-table-summary__details').exists()).toBe(
+            showScope || details.length > 0
+          )
+        }
+      }
     }
   )
 

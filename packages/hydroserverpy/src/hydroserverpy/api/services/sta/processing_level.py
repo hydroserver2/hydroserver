@@ -38,14 +38,15 @@ class ProcessingLevelService(HydroServerBaseService):
 
     def create(
         self,
-        code: str,
         name: str,
         description: str,
+        *,
+        code: Optional[str] = None,
         definition: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "ProcessingLevel":
-        """Create a new processing level."""
+        """Create a processing level; pass optional arguments by keyword."""
 
         body = {
             "id": normalize_uuid(uid),
@@ -61,7 +62,7 @@ class ProcessingLevelService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
-        code: str = ...,
+        code: Optional[str] = ...,
         name: str = ...,
         description: str = ...,
         definition: Optional[str] = ...,

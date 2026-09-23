@@ -30,7 +30,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
     observedProperties.value
       .map((op) => ({
         ...op,
-        title: `${op.code}: ${op.name}, ${op.type}`,
+        title: `${op.name}, ${op.type}`,
       }))
       .sort((a, b) => a.title.localeCompare(b.title))
   )
@@ -38,7 +38,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   const formattedProcessingLevels = computed(() =>
     processingLevels.value.map((pl) => ({
       ...pl,
-      title: `${pl.code}: ${pl.name}`,
+      title: pl.name,
     }))
   )
 
@@ -60,12 +60,12 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
           ...workspaceFilter,
         }),
         hs.processingLevels.listAllItems({
-          sortby: ['code'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
         hs.methods.listAllItems({ sortby: ['name'], ...workspaceFilter }),
         hs.resultQualifiers.listAllItems({
-          sortby: ['code'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
       ])

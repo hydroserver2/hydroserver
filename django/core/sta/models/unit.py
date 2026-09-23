@@ -20,7 +20,7 @@ class Unit(models.Model):
     )
     name = models.CharField(max_length=255)
     symbol = models.CharField(max_length=255)
-    definition = models.TextField(null=True, blank=True)
+    definition = models.URLField(max_length=2000, blank=True, null=True)
     type = models.CharField(max_length=255)
     search_vector = SearchVectorField(null=True, editable=False)
 

@@ -18,10 +18,10 @@ class ProcessingLevel(models.Model):
         blank=True,
         null=True,
     )
-    code = models.CharField(max_length=255)
+    code = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    definition = models.TextField(null=True, blank=True)
+    definition = models.URLField(max_length=2000, blank=True, null=True)
     search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):
