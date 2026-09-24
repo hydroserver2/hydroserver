@@ -14,6 +14,7 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    BoundingBoxQuery,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
@@ -134,9 +135,11 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter monitoring sites by workspace ID."
     )
-    bbox: list[str] = Query(
-        [],
-        description="Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+    bbox: BoundingBoxQuery = Query(
+        None,
+        description="Filter monitoring sites by bounding box in WGS 84 longitude/latitude: "
+        "min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). "
+        "A six-value box with min and max heights is accepted; heights are not used for filtering.",
     )
     admin_area_1: list[str] = Query(
         [], description="Filter monitoring sites by admin area 1."
@@ -159,9 +162,11 @@ class MonitoringSiteMarkerQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter markers by workspace ID."
     )
-    bbox: list[str] = Query(
-        [],
-        description="Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+    bbox: BoundingBoxQuery = Query(
+        None,
+        description="Filter markers by bounding box in WGS 84 longitude/latitude: "
+        "min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). "
+        "A six-value box with min and max heights is accepted; heights are not used for filtering.",
     )
     type: list[str] = Query([], description="Filter markers by monitoring site type.")
 

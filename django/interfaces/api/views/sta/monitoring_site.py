@@ -56,6 +56,7 @@ def get_monitoring_sites(
         offset=query.offset,
         limit=query.limit,
         sortby=query.sortby,
+        bbox=query.bbox,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
@@ -80,6 +81,7 @@ def get_monitoring_site_markers(
 
     return 200, monitoring_site_service.list_markers(
         principal=request.principal,
+        bbox=query.bbox,
         filtering=query.dict(exclude_unset=True),
     )
 

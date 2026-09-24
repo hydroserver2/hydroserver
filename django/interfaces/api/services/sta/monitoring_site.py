@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Optional, Literal, get_args
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import Count, QuerySet, Q, FloatField, Subquery, OuterRef, IntegerField
+from django.db.models import Count, QuerySet, FloatField, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 
@@ -21,6 +21,7 @@ from core.sta.models import (
     MonitoringSiteLinkedResource,
 )
 from interfaces.api.schemas import (
+    BoundingBox,
     MonitoringSiteResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
@@ -90,10 +91,6 @@ class MonitoringSiteAPIService(APIService):
 
         return select_paths, []
 
-    @classmethod
-    def apply_bbox_filter(cls, queryset, bbox: Optional[list[str]]):
-        return cls.apply_marker_bbox_filter(queryset, bbox)
-
     @staticmethod
     def apply_tag_filter(queryset, tags: list[str]):
         if not tags:
@@ -107,57 +104,6 @@ class MonitoringSiteAPIService(APIService):
             queryset = queryset.filter(tags__contains={key: value})
 
         return queryset
-
-    @staticmethod
-    def parse_bbox_filters(bbox: Optional[list[str]]) -> list[tuple[float, float, float, float]]:
-        parsed_bbox_filters: list[tuple[float, float, float, float]] = []
-
-        if not bbox:
-            return parsed_bbox_filters
-
-        for bbox_str in bbox:
-            try:
-                parts = [float(x) for x in bbox_str.split(",")]
-            except ValueError:
-                raise BadRequestError("Bounding box must contain only numeric values")
-
-            if len(parts) != 4:
-                raise BadRequestError(
-                    "Bounding box must have exactly 4 comma-separated values: min_lon,min_lat,max_lon,max_lat"
-                )
-
-            min_lon, min_lat, max_lon, max_lat = parts
-
-            if min_lon > max_lon or min_lat > max_lat:
-                raise BadRequestError(
-                    "Invalid bounding box coordinates: min must be less than or equal to max"
-                )
-
-            parsed_bbox_filters.append((min_lon, min_lat, max_lon, max_lat))
-
-        return parsed_bbox_filters
-
-    @classmethod
-    def apply_marker_bbox_filter(
-        cls,
-        queryset: QuerySet,
-        bbox: Optional[list[str]],
-    ) -> QuerySet:
-        parsed_bbox_filters = cls.parse_bbox_filters(bbox)
-
-        if not parsed_bbox_filters:
-            return queryset
-
-        bbox_filter = Q()
-        for min_lon, min_lat, max_lon, max_lat in parsed_bbox_filters:
-            bbox_filter |= Q(
-                longitude__gte=min_lon,
-                longitude__lte=max_lon,
-                latitude__gte=min_lat,
-                latitude__lte=max_lat,
-            )
-
-        return queryset.filter(bbox_filter)
 
     @staticmethod
     def apply_marker_filters(queryset: QuerySet, filtering: Optional[dict] = None) -> QuerySet:
@@ -241,7 +187,10 @@ class MonitoringSiteAPIService(APIService):
 
     @classmethod
     def filter_cached_markers(
-        cls, markers: list[dict], filtering: Optional[dict] = None
+        cls,
+        markers: list[dict],
+        filtering: Optional[dict] = None,
+        bbox: Optional[BoundingBox] = None,
     ) -> list[dict]:
         filtering = filtering or {}
         filtered_markers = markers
@@ -262,21 +211,18 @@ class MonitoringSiteAPIService(APIService):
                 if marker["type"] in site_types
             ]
 
-        parsed_bbox_filters = cls.parse_bbox_filters(filtering.get("bbox"))
-        if parsed_bbox_filters:
+        if bbox is not None:
             filtered_markers = [
                 marker
                 for marker in filtered_markers
-                if any(
-                    min_lon <= marker["longitude"] <= max_lon
-                    and min_lat <= marker["latitude"] <= max_lat
-                    for min_lon, min_lat, max_lon, max_lat in parsed_bbox_filters
-                )
+                if bbox.contains(marker["longitude"], marker["latitude"])
             ]
 
         return filtered_markers
 
-    def get_public_markers(self, filtering: Optional[dict] = None) -> list[dict]:
+    def get_public_markers(
+        self, filtering: Optional[dict] = None, bbox: Optional[BoundingBox] = None
+    ) -> list[dict]:
         public_markers = get_public_monitoring_site_markers_cache()
 
         if public_markers is None:
@@ -286,12 +232,13 @@ class MonitoringSiteAPIService(APIService):
             public_markers = self.serialize_marker_rows(public_marker_queryset)
             set_public_monitoring_site_markers_cache(public_markers)
 
-        return self.filter_cached_markers(public_markers, filtering=filtering)
+        return self.filter_cached_markers(public_markers, filtering=filtering, bbox=bbox)
 
     def get_private_markers(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
+        bbox: Optional[BoundingBox] = None,
     ) -> list[dict]:
         if not principal.is_authenticated:
             return []
@@ -303,10 +250,7 @@ class MonitoringSiteAPIService(APIService):
             private_marker_queryset,
             filtering=filtering,
         )
-        private_marker_queryset = self.apply_marker_bbox_filter(
-            private_marker_queryset,
-            filtering.get("bbox") if filtering else None,
-        )
+        private_marker_queryset = self.apply_bbox(private_marker_queryset, bbox)
 
         return self.serialize_marker_rows(
             self.get_marker_values(private_marker_queryset.order_by("id").distinct())
@@ -316,9 +260,12 @@ class MonitoringSiteAPIService(APIService):
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
+        bbox: Optional[BoundingBox] = None,
     ):
-        public_markers = self.get_public_markers(filtering=filtering)
-        private_markers = self.get_private_markers(principal=principal, filtering=filtering)
+        public_markers = self.get_public_markers(filtering=filtering, bbox=bbox)
+        private_markers = self.get_private_markers(
+            principal=principal, filtering=filtering, bbox=bbox
+        )
         markers = public_markers + private_markers
         markers.sort(key=lambda marker: marker["id"])
 
@@ -399,6 +346,7 @@ class MonitoringSiteAPIService(APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        bbox: Optional[BoundingBox] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = MonitoringSite.objects
@@ -422,7 +370,7 @@ class MonitoringSiteAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
-        queryset = self.apply_bbox_filter(queryset, filtering.get("bbox"))
+        queryset = self.apply_bbox(queryset, bbox)
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(

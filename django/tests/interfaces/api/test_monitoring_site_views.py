@@ -90,6 +90,51 @@ def test_get_monitoring_sites_returns_400_for_malformed_bbox(client):
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize(
+    "bbox",
+    ["-181,40,-111,41", "-112,-91,-111,41", "-112,41,-111,40", "-112,40,-111", "-112,40,100,-111,41,0"],
+)
+def test_get_monitoring_sites_returns_400_for_invalid_bbox(client, bbox):
+    response = client.get(MONITORING_SITES_URL, {"bbox": bbox})
+
+    assert response.status_code == 400
+
+
+def _site_ids(response):
+    return {site["id"] for site in response.json()["data"]}
+
+
+def test_get_monitoring_sites_filters_by_bbox(client):
+    inside = MonitoringSiteFactory(longitude=-111.5, latitude=40.5)
+    MonitoringSiteFactory(longitude=-100, latitude=40.5)
+
+    response = client.get(MONITORING_SITES_URL, {"bbox": "-112,40,-111,41"})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(inside.id)}
+
+
+def test_get_monitoring_sites_accepts_a_six_value_bbox_and_ignores_heights(client):
+    inside = MonitoringSiteFactory(longitude=-111.5, latitude=40.5, elevation_m=5000)
+    MonitoringSiteFactory(longitude=-100, latitude=40.5)
+
+    response = client.get(MONITORING_SITES_URL, {"bbox": "-112,40,0,-111,41,10"})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(inside.id)}
+
+
+def test_get_monitoring_sites_filters_by_a_bbox_crossing_the_antimeridian(client):
+    east = MonitoringSiteFactory(longitude=175, latitude=-15)
+    west = MonitoringSiteFactory(longitude=-175, latitude=-15)
+    MonitoringSiteFactory(longitude=0, latitude=-15)
+
+    response = client.get(MONITORING_SITES_URL, {"bbox": "170,-20,-170,-10"})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(east.id), str(west.id)}
+
+
 def test_get_monitoring_sites_returns_400_for_malformed_tag(client):
     response = client.get(MONITORING_SITES_URL, {"tag": "no-colon-in-here"})
 
@@ -693,6 +738,36 @@ def test_get_monitoring_site_markers_returns_400_for_malformed_bbox(client):
     response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "not,a,valid,bbox"})
 
     assert response.status_code == 400
+
+
+def test_get_monitoring_site_markers_returns_400_for_out_of_range_bbox(client):
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "-112,40,-111,91"})
+
+    assert response.status_code == 400
+
+
+def test_get_monitoring_site_markers_filters_public_markers_by_a_bbox_crossing_the_antimeridian(client):
+    east = MonitoringSiteFactory(longitude=175, latitude=-15)
+    west = MonitoringSiteFactory(longitude=-175, latitude=-15)
+    MonitoringSiteFactory(longitude=0, latitude=-15)
+
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "170,-20,-170,-10"})
+
+    assert response.status_code == 200
+    assert {m["id"] for m in response.json()} == {str(east.id), str(west.id)}
+
+
+def test_get_monitoring_site_markers_filters_private_markers_by_bbox(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    inside = MonitoringSiteFactory(workspace=workspace, private=True, longitude=-111.5, latitude=40.5)
+    MonitoringSiteFactory(workspace=workspace, private=True, longitude=-100, latitude=40.5)
+    client.force_login(owner)
+
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "-112,40,-111,41"})
+
+    assert response.status_code == 200
+    assert {m["id"] for m in response.json()} == {str(inside.id)}
 
 
 def test_get_monitoring_site_site_summaries_returns_summary_for_public_monitoring_site(client):

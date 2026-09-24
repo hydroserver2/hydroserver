@@ -6298,12 +6298,20 @@
       "MonitoringSiteMarkerQueryParameters": {
         "properties": {
           "bbox": {
-            "default": [],
-            "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+            "description": "Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
             "items": {
-              "type": "string"
+              "type": "number"
             },
-            "title": "Bbox",
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
             "type": "array"
           },
           "type": {
@@ -6712,12 +6720,20 @@
             "type": "array"
           },
           "bbox": {
-            "default": [],
-            "description": "Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+            "description": "Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
             "items": {
-              "type": "string"
+              "type": "number"
             },
-            "title": "Bbox",
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
             "type": "array"
           },
           "country": {
@@ -24687,19 +24703,29 @@
             }
           },
           {
-            "description": "Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+            "description": "Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
+            "explode": false,
             "in": "query",
             "name": "bbox",
             "required": false,
             "schema": {
-              "default": [],
-              "description": "Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+              "description": "Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
               "items": {
-                "type": "string"
+                "type": "number"
               },
-              "title": "Bbox",
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Filter monitoring sites by admin area 1.",
@@ -25769,19 +25795,29 @@
             }
           },
           {
-            "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+            "description": "Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
+            "explode": false,
             "in": "query",
             "name": "bbox",
             "required": false,
             "schema": {
-              "default": [],
-              "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+              "description": "Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
               "items": {
-                "type": "string"
+                "type": "number"
               },
-              "title": "Bbox",
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Filter markers by monitoring site type.",

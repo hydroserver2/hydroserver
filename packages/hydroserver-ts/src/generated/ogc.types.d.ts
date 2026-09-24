@@ -4324,12 +4324,8 @@ export interface components {
         };
         /** MonitoringSiteMarkerQueryParameters */
         MonitoringSiteMarkerQueryParameters: {
-            /**
-             * Bbox
-             * @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
-             * @default []
-             */
-            bbox: string[];
+            /** @description Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Type
              * @description Filter markers by monitoring site type.
@@ -4456,12 +4452,8 @@ export interface components {
              * @default []
              */
             admin_area_2: string[];
-            /**
-             * Bbox
-             * @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
-             * @default []
-             */
-            bbox: string[];
+            /** @description Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Country
              * @description Filter monitoring sites by country.
@@ -11341,8 +11333,8 @@ export interface operations {
                 q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
+                /** @description Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Filter monitoring sites by admin area 1. */
                 admin_area_1?: string[];
                 /** @description Filter monitoring sites by admin area 2. */
@@ -11816,8 +11808,8 @@ export interface operations {
             query?: {
                 /** @description Filter markers by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
+                /** @description Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Filter markers by monitoring site type. */
                 type?: string[];
             };
