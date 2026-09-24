@@ -265,7 +265,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "role",
@@ -274,7 +273,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -309,7 +307,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "roleId",
@@ -318,7 +315,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -412,20 +408,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -445,7 +438,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -674,14 +666,12 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -725,7 +715,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -745,7 +734,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -1116,20 +1104,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "monitoringSite"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -1143,7 +1128,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -1232,14 +1216,12 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "monitoringSite"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -1321,7 +1303,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -1335,7 +1316,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -1494,7 +1474,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "outputDatastream",
@@ -1502,13 +1481,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -1528,7 +1505,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -1844,7 +1820,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "outputDatastream",
@@ -1852,7 +1827,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -1907,7 +1881,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -1927,7 +1900,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -2155,7 +2127,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -2170,13 +2141,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -2210,7 +2179,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -2670,7 +2638,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -2685,7 +2652,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -2845,7 +2811,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -2879,7 +2844,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -3460,20 +3424,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "targetDatastream"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -3482,7 +3443,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -3556,14 +3516,12 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "targetDatastream"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -3598,7 +3556,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -3607,7 +3564,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -3703,20 +3659,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "dataConnection"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -3731,7 +3684,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -3841,14 +3793,12 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "dataConnection"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -3974,7 +3924,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -3989,7 +3938,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -5217,7 +5165,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -5225,13 +5172,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -5247,7 +5192,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -5466,7 +5410,6 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -5474,7 +5417,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -5527,7 +5469,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -5543,7 +5484,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -5819,20 +5759,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "datastream"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -5846,7 +5783,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -6015,14 +5951,12 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "datastream"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -6057,7 +5991,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -6071,7 +6004,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -6236,7 +6168,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -6244,13 +6175,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -6273,7 +6202,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -6803,7 +6731,6 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -6811,7 +6738,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -6858,7 +6784,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -6881,7 +6806,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -7263,20 +7187,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "monitoringSite"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -7291,7 +7212,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -7405,14 +7325,12 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "monitoringSite"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -7474,7 +7392,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -7489,7 +7406,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -7933,7 +7849,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
-            "explode": false,
             "items": {
               "enum": [
                 "datastream",
@@ -7942,13 +7857,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -7960,7 +7873,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -8051,7 +7963,6 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
-            "explode": false,
             "items": {
               "enum": [
                 "datastream",
@@ -8060,7 +7971,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -8127,7 +8037,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -8139,7 +8048,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -8288,7 +8196,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -8296,13 +8203,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -8315,7 +8220,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -8463,7 +8367,6 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -8471,7 +8374,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -8524,7 +8426,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -8537,7 +8438,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -10158,20 +10058,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -10183,7 +10080,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -10319,14 +10215,12 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -10379,7 +10273,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -10391,7 +10284,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -10517,7 +10409,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "managedDatastream",
@@ -10525,13 +10416,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -10545,7 +10434,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -10577,7 +10465,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "managedDatastream",
@@ -10585,7 +10472,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -10630,7 +10516,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -10644,7 +10529,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -10770,7 +10654,6 @@
         "properties": {
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -10783,7 +10666,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -10936,7 +10818,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -10949,7 +10830,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -11066,7 +10946,6 @@
         "properties": {
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -11084,7 +10963,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -11218,7 +11096,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -11236,7 +11113,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -11424,20 +11300,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "monitoringSite"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -11449,7 +11322,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -11578,14 +11450,12 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "monitoringSite"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -11630,7 +11500,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -11642,7 +11511,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -11772,20 +11640,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -11795,7 +11660,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -11865,14 +11729,12 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -11907,7 +11769,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -11917,7 +11778,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -12017,7 +11877,6 @@
         "properties": {
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -12028,7 +11887,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -12081,7 +11939,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -12092,7 +11949,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -12483,20 +12339,17 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -12511,7 +12364,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -12647,14 +12499,12 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace"
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -12689,7 +12539,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -12704,7 +12553,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -12916,7 +12764,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -12928,7 +12775,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -13122,7 +12968,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -13130,13 +12975,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -13148,7 +12991,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -13273,7 +13115,6 @@
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "workspace",
@@ -13281,7 +13122,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -13334,7 +13174,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -13346,7 +13185,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -13865,7 +13703,6 @@
         "properties": {
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -13874,7 +13711,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -13927,7 +13763,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -13936,7 +13771,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -13980,7 +13814,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "owner",
@@ -13989,13 +13822,11 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -14007,7 +13838,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           }
@@ -14065,7 +13895,6 @@
         "properties": {
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
-            "explode": false,
             "items": {
               "enum": [
                 "owner",
@@ -14074,7 +13903,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Include",
             "type": "array"
           },
@@ -14133,7 +13961,6 @@
           },
           "properties": {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-            "explode": false,
             "items": {
               "enum": [
                 "id",
@@ -14145,7 +13972,6 @@
               ],
               "type": "string"
             },
-            "style": "form",
             "title": "Properties",
             "type": "array"
           },
@@ -14289,12 +14115,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -14303,10 +14129,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -14611,12 +14437,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -14625,10 +14451,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -14774,12 +14600,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -14791,29 +14617,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "monitoringSite"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -15166,12 +14992,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -15183,29 +15009,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "monitoringSite"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -15373,12 +15199,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -15392,29 +15218,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "monitoringSite"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -15857,12 +15683,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -15876,29 +15702,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "monitoringSite"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -16076,12 +15902,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -16093,10 +15919,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -16536,12 +16362,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -16561,19 +16387,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "outputDatastream",
@@ -16581,10 +16407,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -16980,12 +16806,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -17005,19 +16831,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "outputDatastream",
@@ -17025,10 +16851,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -17196,12 +17022,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -17210,10 +17036,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -17518,12 +17344,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -17532,10 +17358,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -17681,12 +17507,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -17720,19 +17546,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -17747,10 +17573,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -18478,12 +18304,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -18517,19 +18343,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -18544,10 +18370,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -19485,12 +19311,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -19510,29 +19336,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -19886,12 +19712,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -19911,29 +19737,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -20090,12 +19916,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -20104,29 +19930,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "targetDatastream"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -20506,12 +20332,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -20520,29 +20346,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "targetDatastream"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -20710,12 +20536,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -20730,29 +20556,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "dataConnection"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -21236,12 +21062,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -21256,29 +21082,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "dataConnection"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -21456,12 +21282,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -21473,10 +21299,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -21916,12 +21742,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -21930,10 +21756,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -22238,12 +22064,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -22252,10 +22078,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -22401,12 +22227,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -22415,10 +22241,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -22723,12 +22549,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -22737,10 +22563,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -22886,12 +22712,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -22907,19 +22733,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -22927,10 +22753,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -23368,12 +23194,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -23389,19 +23215,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -23409,10 +23235,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -23569,12 +23395,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -23588,29 +23414,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "datastream"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -23992,12 +23818,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -24011,29 +23837,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "datastream"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -24201,12 +24027,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -24215,10 +24041,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -24523,12 +24349,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -24537,10 +24363,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -24686,12 +24512,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -24714,19 +24540,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -24734,10 +24560,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -25157,12 +24983,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -25185,19 +25011,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -25205,10 +25031,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -26312,12 +26138,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -26332,29 +26158,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "monitoringSite"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -26765,12 +26591,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -26785,29 +26611,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "monitoringSite"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -26985,12 +26811,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -27002,10 +26828,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -27613,12 +27439,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -27630,19 +27456,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
-              "explode": false,
               "items": {
                 "enum": [
                   "datastream",
@@ -27651,10 +27477,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -28067,12 +27893,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -28084,19 +27910,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
-              "explode": false,
               "items": {
                 "enum": [
                   "datastream",
@@ -28105,10 +27931,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -28172,12 +27998,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -28190,19 +28016,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -28210,10 +28036,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -28613,12 +28439,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -28631,19 +28457,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -28651,10 +28477,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -28811,12 +28637,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -28825,10 +28651,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -29133,12 +28959,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -29147,10 +28973,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -29296,12 +29122,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -29313,29 +29139,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -29718,12 +29544,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -29735,29 +29561,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -29914,12 +29740,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -29933,19 +29759,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "managedDatastream",
@@ -29953,10 +29779,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -30296,12 +30122,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -30315,19 +30141,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "managedDatastream",
@@ -30335,10 +30161,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -30423,12 +30249,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -30446,10 +30272,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -30916,12 +30742,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -30939,10 +30765,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -31235,12 +31061,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -31253,10 +31079,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -31662,12 +31488,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -31680,10 +31506,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -31871,12 +31697,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -31886,29 +31712,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -32219,12 +32045,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -32234,29 +32060,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -32402,12 +32228,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -32418,10 +32244,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -32593,12 +32419,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -32609,10 +32435,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -32676,12 +32502,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -32690,10 +32516,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -32998,12 +32824,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -33012,10 +32838,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -33161,12 +32987,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -33175,10 +33001,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -33483,12 +33309,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -33497,10 +33323,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -33646,12 +33472,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -33663,19 +33489,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -33683,10 +33509,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -34075,12 +33901,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -34092,19 +33918,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace",
@@ -34112,10 +33938,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -34272,12 +34098,12 @@
         "parameters": [
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -34289,19 +34115,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "owner",
@@ -34310,10 +34136,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -34635,12 +34461,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -34652,19 +34478,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "owner",
@@ -34673,10 +34499,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -34919,12 +34745,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "roleId",
@@ -34933,19 +34759,19 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "role",
@@ -34954,10 +34780,10 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -35281,12 +35107,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -35301,29 +35127,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Number of items to skip.",
@@ -35603,12 +35429,12 @@
           },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
               "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
-              "explode": false,
               "items": {
                 "enum": [
                   "id",
@@ -35623,29 +35449,29 @@
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Properties",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
               "description": "Comma-separated list of related resources to include in the response.",
-              "explode": false,
               "items": {
                 "enum": [
                   "workspace"
                 ],
                 "type": "string"
               },
-              "style": "form",
               "title": "Include",
               "type": "array"
-            }
+            },
+            "style": "form"
           }
         ],
         "responses": {

@@ -14,6 +14,7 @@ from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, NotFoundError
 from interfaces.api.schemas.base import PaginationMeta
+from interfaces.api.schemas.bbox import BoundingBox
 
 User = get_user_model()
 
@@ -80,6 +81,48 @@ class APIService:
                 return queryset
         else:
             return queryset.filter(**{field_name: values})
+
+    @staticmethod
+    def bbox_q(
+        bbox: BoundingBox,
+        latitude_field: str = "latitude",
+        longitude_field: str = "longitude",
+    ) -> Q:
+        """
+        Builds a Q object matching points inside a bounding box, boundaries included. A box
+        that crosses the antimeridian matches longitudes east of its west edge or west of its
+        east edge.
+        """
+
+        latitude_q = Q(
+            **{f"{latitude_field}__gte": bbox.south, f"{latitude_field}__lte": bbox.north}
+        )
+
+        if bbox.crosses_antimeridian:
+            longitude_q = Q(**{f"{longitude_field}__gte": bbox.west}) | Q(
+                **{f"{longitude_field}__lte": bbox.east}
+            )
+        else:
+            longitude_q = Q(
+                **{f"{longitude_field}__gte": bbox.west, f"{longitude_field}__lte": bbox.east}
+            )
+
+        return latitude_q & longitude_q
+
+    @classmethod
+    def apply_bbox(
+        cls,
+        queryset: QuerySet,
+        bbox: Optional[BoundingBox],
+        latitude_field: str = "latitude",
+        longitude_field: str = "longitude",
+    ) -> QuerySet:
+        """Filters a queryset to points inside a bounding box. A missing box leaves it unfiltered."""
+
+        if bbox is None:
+            return queryset
+
+        return queryset.filter(cls.bbox_q(bbox, latitude_field, longitude_field))
 
     @staticmethod
     def apply_sorting(
