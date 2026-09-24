@@ -10,6 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
+from tests.core.sta.factories import MonitoringSiteFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -633,5 +634,94 @@ def test_reject_workspace_transfer_returns_400_when_none_pending(client):
     client.force_login(owner)
 
     response = client.delete(_transfer_url(workspace.id))
+
+    assert response.status_code == 400
+
+
+# --- bbox --------------------------------------------------------------------------------
+#
+# A workspace's location is the set of its monitoring sites the requester can view. It matches
+# a bbox when one of those sites lies inside it, or when the requester can view none of its
+# sites (no location matches any bbox, per OGC API - Features Core Req 24C).
+
+INSIDE_BBOX = "-112,40,-111,41"
+
+
+def _site(workspace, longitude, latitude, **kwargs):
+    return MonitoringSiteFactory(workspace=workspace, longitude=longitude, latitude=latitude, **kwargs)
+
+
+def _workspace_ids(response):
+    return {workspace["id"] for workspace in response.json()["data"]}
+
+
+def test_get_workspaces_bbox_matches_workspaces_with_a_visible_site_inside(client):
+    inside = WorkspaceFactory()
+    _site(inside, -111.5, 40.5)
+    outside = WorkspaceFactory()
+    _site(outside, -100, 40.5)
+
+    response = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+
+    assert response.status_code == 200
+    assert str(inside.id) in _workspace_ids(response)
+    assert str(outside.id) not in _workspace_ids(response)
+
+
+def test_get_workspaces_bbox_matches_workspaces_without_sites(client):
+    empty = WorkspaceFactory()
+
+    response = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+
+    assert str(empty.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_bbox_ignores_private_sites_the_requester_cannot_view(client):
+    # A private site inside the box must not make the workspace match...
+    hidden_inside = WorkspaceFactory()
+    _site(hidden_inside, -100, 40.5)
+    _site(hidden_inside, -111.5, 40.5, private=True)
+    # ...and a workspace whose only site is private has no visible location, so it matches.
+    only_private = WorkspaceFactory()
+    _site(only_private, -100, 40.5, private=True)
+
+    response = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+
+    assert str(hidden_inside.id) not in _workspace_ids(response)
+    assert str(only_private.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_bbox_uses_private_sites_the_owner_can_view(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, private=True)
+    _site(workspace, -100, 40.5)
+    _site(workspace, -111.5, 40.5, private=True)
+    client.force_login(owner)
+
+    inside = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+    elsewhere = client.get(WORKSPACES_URL, {"bbox": "0,0,1,1"})
+
+    assert str(workspace.id) in _workspace_ids(inside)
+    assert str(workspace.id) not in _workspace_ids(elsewhere)
+
+
+def test_get_workspaces_bbox_uses_private_sites_a_collaborator_can_view(client):
+    workspace = WorkspaceFactory(private=True)
+    _site(workspace, -111.5, 40.5, private=True)
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Workspace", can_view=True)
+    PermissionFactory(role=role, resource_type="MonitoringSite", can_view=True)
+    collaborator = CollaboratorFactory(workspace=workspace, role=role)
+    client.force_login(collaborator.user)
+
+    inside = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+    elsewhere = client.get(WORKSPACES_URL, {"bbox": "0,0,1,1"})
+
+    assert str(workspace.id) in _workspace_ids(inside)
+    assert str(workspace.id) not in _workspace_ids(elsewhere)
+
+
+def test_get_workspaces_returns_400_for_invalid_bbox(client):
+    response = client.get(WORKSPACES_URL, {"bbox": "-112,40,-111"})
 
     assert response.status_code == 400

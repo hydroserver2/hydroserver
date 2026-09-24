@@ -49,6 +49,7 @@ def get_workspaces(
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
+        bbox=query.bbox,
     )
 
 

@@ -18,6 +18,7 @@ from core.sta.models import (
 from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
+    BoundingBox,
     DatastreamPostBody,
     DatastreamPatchBody,
     LinkedResourcePostBody,
@@ -101,6 +102,14 @@ class DatastreamAPIService(APIService):
 
         return queryset
 
+    @classmethod
+    def apply_site_bbox(cls, queryset, bbox: Optional[BoundingBox]):
+        """Filters datastreams to those whose monitoring site lies inside a bounding box."""
+
+        return cls.apply_bbox(
+            queryset, bbox, "monitoring_site__latitude", "monitoring_site__longitude"
+        )
+
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -109,6 +118,7 @@ class DatastreamAPIService(APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        bbox: Optional[BoundingBox] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = Datastream.objects
@@ -153,6 +163,7 @@ class DatastreamAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
+        queryset = self.apply_site_bbox(queryset, bbox)
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(

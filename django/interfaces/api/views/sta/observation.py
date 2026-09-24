@@ -58,6 +58,7 @@ def get_observations(
         filtering=query.dict(exclude_unset=True),
         response_format=query.response_format,
         include=query.include,
+        bbox=query.bbox,
     )
 
 

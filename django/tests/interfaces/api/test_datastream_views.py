@@ -930,3 +930,53 @@ def test_get_datastreams_properties_filters_response_fields(client):
     assert response.status_code == 200
     row = response.json()["data"][0]
     assert set(row.keys()) == {"id", "name"}
+
+
+# --- bbox --------------------------------------------------------------------------------
+
+
+def _datastream_at(longitude, latitude):
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(longitude=longitude, latitude=latitude))
+
+
+def _datastream_ids(response):
+    return {datastream["id"] for datastream in response.json()["data"]}
+
+
+def test_get_datastreams_filters_by_monitoring_site_location(client):
+    inside = _datastream_at(-111.5, 40.5)
+    _datastream_at(-100, 40.5)
+
+    response = client.get(DATASTREAMS_URL, {"bbox": "-112,40,-111,41"})
+
+    assert response.status_code == 200
+    assert _datastream_ids(response) == {str(inside.id)}
+
+
+def test_get_datastreams_filters_by_a_bbox_crossing_the_antimeridian(client):
+    east = _datastream_at(175, -15)
+    west = _datastream_at(-175, -15)
+    _datastream_at(0, -15)
+
+    response = client.get(DATASTREAMS_URL, {"bbox": "170,-20,-170,-10"})
+
+    assert response.status_code == 200
+    assert _datastream_ids(response) == {str(east.id), str(west.id)}
+
+
+def test_get_datastreams_combines_bbox_with_other_filters(client):
+    inside = _datastream_at(-111.5, 40.5)
+    _datastream_at(-111.5, 40.5)
+
+    response = client.get(
+        DATASTREAMS_URL, {"bbox": "-112,40,-111,41", "monitoring_site_id": str(inside.monitoring_site_id)}
+    )
+
+    assert response.status_code == 200
+    assert _datastream_ids(response) == {str(inside.id)}
+
+
+def test_get_datastreams_returns_400_for_invalid_bbox(client):
+    response = client.get(DATASTREAMS_URL, {"bbox": "-112,40,-111,91"})
+
+    assert response.status_code == 400

@@ -978,3 +978,73 @@ def test_delete_observations_returns_400_without_datastream_id(client):
     )
 
     assert response.status_code == 400
+
+
+# --- bbox --------------------------------------------------------------------------------
+
+
+def _datastream_with_observations(longitude, latitude, count=2):
+    datastream = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(longitude=longitude, latitude=latitude),
+        value_count=count,
+    )
+    ObservationFactory.create_batch(count, datastream=datastream)
+    return datastream
+
+
+def test_get_observations_filters_by_monitoring_site_location(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    _datastream_with_observations(-100, 40.5)
+
+    response = client.get(_observations_url(bbox="-112,40,-111,41"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {o["datastreamId"] for o in body["data"]} == {str(inside.id)}
+    assert len(body["data"]) == 2
+    assert body["meta"]["totalCount"] == 2
+
+
+def test_get_observations_bbox_count_uses_matched_datastreams_with_a_time_filter(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    _datastream_with_observations(-100, 40.5)
+
+    response = client.get(
+        _observations_url(
+            bbox="-112,40,-111,41",
+            phenomenon_time_min=(timezone.now() - timedelta(days=1)).isoformat(),
+        )
+    )
+
+    assert response.status_code == 200
+    assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
+    assert response.json()["meta"]["totalCount"] == 2
+
+
+def test_get_observations_bbox_combines_with_datastream_id(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    outside = _datastream_with_observations(-100, 40.5)
+
+    response = client.get(
+        _observations_url(datastream_id=[str(inside.id), str(outside.id)], bbox="-112,40,-111,41")
+    )
+
+    assert response.status_code == 200
+    assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
+    assert response.json()["meta"]["totalCount"] == 2
+
+
+def test_get_observations_row_format_is_empty_when_the_datastream_is_outside_the_bbox(client):
+    outside = _datastream_with_observations(-100, 40.5)
+
+    response = client.get(_observations_url(datastream_id=str(outside.id), format="row", bbox="-112,40,-111,41"))
+
+    assert response.status_code == 200
+    assert response.json()["data"]["rows"] == []
+    assert response.json()["meta"]["totalCount"] == 0
+
+
+def test_get_observations_returns_400_for_invalid_bbox(client):
+    response = client.get(_observations_url(bbox="-112,40,-111"))
+
+    assert response.status_code == 400
