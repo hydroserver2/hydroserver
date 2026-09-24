@@ -2222,16 +2222,16 @@
                 "timeAggregationInterval",
                 "status",
                 "resultType",
-                "valueCount",
-                "phenomenonBeginTime",
                 "phenomenonEndTime",
-                "resultBeginTime",
-                "resultEndTime",
                 "isPrivate",
                 "isVisible",
                 "timeAggregationIntervalUnit",
                 "intendedTimeSpacing",
                 "intendedTimeSpacingUnit",
+                "valueCount",
+                "phenomenonBeginTime",
+                "resultBeginTime",
+                "resultEndTime",
                 "monitoringSiteId",
                 "methodId",
                 "observedPropertyId",
@@ -2325,21 +2325,6 @@
             "title": "Observedpropertyid",
             "type": "string"
           },
-          "phenomenonBeginTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phenomenonbegintime"
-          },
           "phenomenonEndTime": {
             "anyOf": [
               {
@@ -2359,36 +2344,6 @@
             "format": "uuid",
             "title": "Processinglevelid",
             "type": "string"
-          },
-          "resultBeginTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resultbegintime"
-          },
-          "resultEndTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resultendtime"
           },
           "resultType": {
             "maxLength": 255,
@@ -2444,18 +2399,6 @@
             "format": "uuid",
             "title": "Unitid",
             "type": "string"
-          },
-          "valueCount": {
-            "anyOf": [
-              {
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valuecount"
           }
         },
         "title": "DatastreamPatchBody",
@@ -2551,21 +2494,6 @@
             "title": "Observedpropertyid",
             "type": "string"
           },
-          "phenomenonBeginTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phenomenonbegintime"
-          },
           "phenomenonEndTime": {
             "anyOf": [
               {
@@ -2585,36 +2513,6 @@
             "format": "uuid",
             "title": "Processinglevelid",
             "type": "string"
-          },
-          "resultBeginTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resultbegintime"
-          },
-          "resultEndTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resultendtime"
           },
           "resultType": {
             "maxLength": 255,
@@ -2664,18 +2562,6 @@
             "format": "uuid",
             "title": "Unitid",
             "type": "string"
-          },
-          "valueCount": {
-            "anyOf": [
-              {
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valuecount"
           }
         },
         "required": [
@@ -2844,16 +2730,16 @@
                 "timeAggregationInterval",
                 "status",
                 "resultType",
-                "valueCount",
-                "phenomenonBeginTime",
                 "phenomenonEndTime",
-                "resultBeginTime",
-                "resultEndTime",
                 "isPrivate",
                 "isVisible",
                 "timeAggregationIntervalUnit",
                 "intendedTimeSpacing",
                 "intendedTimeSpacingUnit",
+                "valueCount",
+                "phenomenonBeginTime",
+                "resultBeginTime",
+                "resultEndTime",
                 "monitoringSiteId",
                 "methodId",
                 "observedPropertyId",
@@ -18007,16 +17893,16 @@
                   "timeAggregationInterval",
                   "status",
                   "resultType",
-                  "valueCount",
-                  "phenomenonBeginTime",
                   "phenomenonEndTime",
-                  "resultBeginTime",
-                  "resultEndTime",
                   "isPrivate",
                   "isVisible",
                   "timeAggregationIntervalUnit",
                   "intendedTimeSpacing",
                   "intendedTimeSpacingUnit",
+                  "valueCount",
+                  "phenomenonBeginTime",
+                  "resultBeginTime",
+                  "resultEndTime",
                   "monitoringSiteId",
                   "methodId",
                   "observedPropertyId",
@@ -18628,16 +18514,16 @@
                   "timeAggregationInterval",
                   "status",
                   "resultType",
-                  "valueCount",
-                  "phenomenonBeginTime",
                   "phenomenonEndTime",
-                  "resultBeginTime",
-                  "resultEndTime",
                   "isPrivate",
                   "isVisible",
                   "timeAggregationIntervalUnit",
                   "intendedTimeSpacing",
                   "intendedTimeSpacingUnit",
+                  "valueCount",
+                  "phenomenonBeginTime",
+                  "resultBeginTime",
+                  "resultEndTime",
                   "monitoringSiteId",
                   "methodId",
                   "observedPropertyId",

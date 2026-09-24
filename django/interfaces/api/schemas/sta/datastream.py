@@ -38,11 +38,7 @@ class DatastreamFields(Schema):
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
     result_type: str = Field(..., max_length=255)
-    value_count: Optional[int] = Field(None, ge=0)
-    phenomenon_begin_time: Optional[ISODatetime] = None
     phenomenon_end_time: Optional[ISODatetime] = None
-    result_begin_time: Optional[ISODatetime] = None
-    result_end_time: Optional[ISODatetime] = None
     is_private: bool = False
     is_visible: bool = True
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
@@ -50,6 +46,15 @@ class DatastreamFields(Schema):
     intended_time_spacing_unit: Optional[
         Literal["seconds", "minutes", "hours", "days"]
     ] = None
+
+
+class DatastreamStatisticsFields(Schema):
+    """Observation statistics the server maintains; returned in responses but never writable."""
+
+    value_count: Optional[int] = Field(None, ge=0)
+    phenomenon_begin_time: Optional[ISODatetime] = None
+    result_begin_time: Optional[ISODatetime] = None
+    result_end_time: Optional[ISODatetime] = None
 
 
 class DatastreamRelatedFields(Schema):
@@ -135,6 +140,7 @@ _property_fields = (
     "id",
     "workspaceId",
     *(to_camel(name) for name in DatastreamFields.model_fields),
+    *(to_camel(name) for name in DatastreamStatisticsFields.model_fields),
     *(to_camel(name) for name in DatastreamRelatedFields.model_fields),
     "tags",
     "linkedResources",
@@ -279,7 +285,7 @@ class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
 
 
 class DatastreamResponse(
-    BaseGetResponse, DatastreamFields, DatastreamRelatedFields
+    BaseGetResponse, DatastreamFields, DatastreamStatisticsFields, DatastreamRelatedFields
 ):
     id: uuid.UUID
     workspace_id: uuid.UUID = Field(

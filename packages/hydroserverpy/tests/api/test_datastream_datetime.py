@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
@@ -28,6 +29,7 @@ def sent_params(client, call=0):
 
 
 JAN_1 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+FEB_1 = datetime(2024, 2, 1, tzinfo=timezone.utc)
 
 
 # --- build_datetime_interval ---------------------------------------------------------------
@@ -117,3 +119,62 @@ def test_get_observations_sends_a_datetime_interval_and_pages_with_the_same_boun
     assert sent_params(client, 0)["datetime"] == "2024-01-01T00:00:00+00:00/.."
     assert sent_params(client, 1)["datetime"] == "2024-01-01T00:00:00+00:00/.."
     assert "phenomenon_time_min" not in sent_params(client, 0)
+
+
+# --- server-maintained statistics -------------------------------------------------------
+
+STATISTIC_KEYS = {"valueCount", "phenomenonBeginTime", "resultBeginTime", "resultEndTime"}
+
+
+def _datastream_payload(**overrides):
+    payload = {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "name": "Datastream",
+        "description": "",
+        "observationType": "OM_Measurement",
+        "sampledMedium": "Water",
+        "noDataValue": -9999,
+        "aggregationStatistic": "Average",
+        "timeAggregationInterval": 15,
+        "timeAggregationIntervalUnit": "minutes",
+        "resultType": "Time Series Coverage",
+        "valueCount": 3,
+        "phenomenonEndTime": "2024-01-01T00:00:00+00:00",
+        "monitoringSiteId": "00000000-0000-0000-0000-000000000002",
+        "workspaceId": "00000000-0000-0000-0000-000000000003",
+        "methodId": "00000000-0000-0000-0000-000000000004",
+        "observedPropertyId": "00000000-0000-0000-0000-000000000005",
+        "processingLevelId": "00000000-0000-0000-0000-000000000006",
+        "unitId": "00000000-0000-0000-0000-000000000007",
+        "tags": {},
+        "linkedResources": {},
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_create_does_not_send_server_maintained_statistics():
+    service, client = make_service({"id": "00000000-0000-0000-0000-000000000001"}, {"data": _datastream_payload()})
+    client.datastreams = service
+
+    service.create(
+        name="Datastream", description="", monitoring_site="s", method="m", observed_property="o",
+        processing_level="p", unit="u", observation_type="OM_Measurement", result_type="Time Series Coverage",
+        sampled_medium="Water", no_data_value=-9999, aggregation_statistic="Average",
+        time_aggregation_interval=15, time_aggregation_interval_unit="minutes",
+    )
+
+    assert not set(json.loads(client.request.call_args_list[0].kwargs["data"])) & STATISTIC_KEYS
+
+
+def test_save_sends_only_the_writable_phenomenon_end_time():
+    service, client = make_service({"data": _datastream_payload()})
+    client.datastreams = service
+    datastream = service.get("00000000-0000-0000-0000-000000000001")
+
+    datastream.value_count = 99
+    datastream.phenomenon_begin_time = JAN_1
+    datastream.phenomenon_end_time = FEB_1
+
+    assert datastream.unsaved_changes == {"phenomenon_end_time": FEB_1}
+

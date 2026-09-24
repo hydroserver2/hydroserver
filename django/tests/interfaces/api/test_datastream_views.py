@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
+from core.sta.models import Datastream
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -1023,3 +1024,96 @@ def test_get_datastreams_returns_400_for_invalid_datetime(client):
     response = client.get(DATASTREAMS_URL, {"datetime": "../.."})
 
     assert response.status_code == 400
+
+
+# --- server-maintained statistics -------------------------------------------------------
+
+STATISTICS = {
+    "valueCount": 42,
+    "phenomenonBeginTime": "2020-01-01T00:00:00Z",
+    "resultBeginTime": "2020-01-01T00:00:00Z",
+    "resultEndTime": "2020-12-31T00:00:00Z",
+}
+
+
+def test_create_datastream_ignores_server_maintained_statistics(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    body = _datastream_body(
+        MonitoringSiteFactory(workspace=workspace),
+        MethodFactory(workspace=workspace),
+        ObservedPropertyFactory(workspace=workspace),
+        ProcessingLevelFactory(workspace=workspace),
+        UnitFactory(workspace=workspace),
+        **STATISTICS,
+    )
+    client.force_login(owner)
+
+    response = client.post(DATASTREAMS_URL, data=body, content_type="application/json")
+
+    assert response.status_code == 201
+    datastream = Datastream.objects.get(pk=response.json()["id"])
+    assert datastream.value_count in (None, 0)
+    assert datastream.phenomenon_begin_time is None
+    assert datastream.result_begin_time is None
+
+
+def test_update_datastream_ignores_server_maintained_statistics(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    begin = timezone.now().replace(microsecond=0) - timedelta(days=2)
+    datastream = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(workspace=workspace),
+        value_count=3,
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=begin + timedelta(days=1),
+    )
+    client.force_login(owner)
+
+    response = client.patch(_detail_url(datastream.id), data=STATISTICS, content_type="application/json")
+
+    assert response.status_code == 204
+    datastream.refresh_from_db()
+    assert datastream.value_count == 3
+    assert datastream.phenomenon_begin_time == begin
+
+
+def test_create_datastream_accepts_a_seeded_phenomenon_end_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    body = _datastream_body(
+        MonitoringSiteFactory(workspace=workspace),
+        MethodFactory(workspace=workspace),
+        ObservedPropertyFactory(workspace=workspace),
+        ProcessingLevelFactory(workspace=workspace),
+        UnitFactory(workspace=workspace),
+        phenomenonEndTime="2025-01-01T00:00:00Z",
+    )
+    client.force_login(owner)
+
+    response = client.post(DATASTREAMS_URL, data=body, content_type="application/json")
+
+    assert response.status_code == 201
+    datastream = Datastream.objects.get(pk=response.json()["id"])
+    assert datastream.phenomenon_end_time.isoformat() == "2025-01-01T00:00:00+00:00"
+
+
+def test_get_datastream_returns_server_maintained_statistics(client):
+    begin = timezone.now().replace(microsecond=0) - timedelta(days=2)
+    datastream = DatastreamFactory(value_count=3, phenomenon_begin_time=begin, phenomenon_end_time=begin)
+
+    response = client.get(_detail_url(datastream.id), {"properties": "valueCount,phenomenonBeginTime"})
+
+    assert response.status_code == 200
+    assert response.json()["data"] == {"valueCount": 3, "phenomenonBeginTime": begin.isoformat()}
+
+
+def test_datastream_request_bodies_do_not_declare_server_maintained_statistics():
+    from interfaces.api.urls import api
+
+    schemas = api.get_openapi_schema(path_prefix="/api/ogc/")["components"]["schemas"]
+
+    for body in ("DatastreamPostBody", "DatastreamPatchBody"):
+        assert not set(schemas[body]["properties"]) & set(STATISTICS)
+        assert "phenomenonEndTime" in schemas[body]["properties"]
+    assert set(STATISTICS) <= set(schemas["DatastreamResponse"]["properties"])

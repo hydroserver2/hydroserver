@@ -575,8 +575,6 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
 #### Example: Create Datastream
 ```python
-from datetime import datetime
-
 ...
 
 # Create a new datastream on HydroServer
@@ -590,11 +588,7 @@ new_datastream = hs_api.datastreams.create(
     time_aggregation_interval=1,
     status='Ongoing',
     result_type='Timeseries',
-    value_count=0,
-    phenomenon_begin_time=datetime(year=2024, month=1, day=1),
     phenomenon_end_time=None,
-    result_begin_time=datetime(year=2024, month=1, day=1),
-    result_end_time=None,
     is_visible=True,
     is_private=False,
     monitoring_site='00000000-0000-0000-0000-000000000000',

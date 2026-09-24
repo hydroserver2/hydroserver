@@ -52,8 +52,7 @@ class Datastream(HydroServerBaseModel):
 
     _editable_fields: ClassVar[set[str]] = {
         "name", "description", "observation_type", "sampled_medium", "no_data_value", "aggregation_statistic",
-        "time_aggregation_interval", "status", "result_type", "value_count", "phenomenon_begin_time",
-        "phenomenon_end_time", "result_begin_time", "result_end_time", "is_private", "is_visible",
+        "time_aggregation_interval", "status", "result_type", "phenomenon_end_time", "is_private", "is_visible",
         "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
         "method_id", "observed_property_id", "processing_level_id", "unit_id"
     }
