@@ -12,10 +12,10 @@
             v-model="valid"
           >
             <v-card-text>
+              <OAuth full-width divider-position="bottom" />
               <v-text-field
                 class="mb-4 email-input"
                 label="Email *"
-                autofocus
                 v-model="email"
                 :rules="rules.email"
                 type="email"
@@ -60,8 +60,6 @@
         Sign Up
       </router-link>
     </v-row>
-
-    <OAuth />
 
     <v-row justify="center" class="my-10">
       <router-link
