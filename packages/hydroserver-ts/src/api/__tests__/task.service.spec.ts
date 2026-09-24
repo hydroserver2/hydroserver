@@ -124,7 +124,7 @@ describe('TaskService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/monitoring-tasks'
+      'https://hydro.example.com/api/ogc/collections/monitoring-tasks/items'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({

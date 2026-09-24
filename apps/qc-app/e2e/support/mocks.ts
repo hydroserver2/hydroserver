@@ -1,7 +1,7 @@
 /**
  * Route-level HydroServer mocks for Playwright.
  *
- * The real QC app talks to a HydroServer instance (`/api/data/*` and
+ * The real QC app talks to a HydroServer instance (`/api/ogc/*` and
  * `/api/auth/*`). For e2e specs we don't want to depend on a live
  * backend: tests are slow, flaky, and can't set up the exact dataset
  * shape each spec needs. This module registers `page.route()` handlers
@@ -12,7 +12,7 @@
  *   await installMocks(page)
  *   await page.goto('/')
  *
- * The handlers match on path fragments (`/api/data/datastreams/...`)
+ * The handlers match on path fragments (`/api/ogc/collections/datastreams/items/...`)
  * regardless of host.
  */
 
@@ -178,9 +178,9 @@ export async function installMocks(
     }
 
     // --- Bulk observation create (submit) ---
-    // Observations moved to a top-level resource: POST /observations/bulk-create
+    // Observations moved to a top-level resource: POST /collections/observations/bulk-create
     // with datastreamId in the body, not the path.
-    const bulkCreate = path === '/api/data/observations/bulk-create'
+    const bulkCreate = path === '/api/ogc/collections/observations/bulk-create'
     if (bulkCreate && method === 'POST') {
       const params = new URL(url).searchParams
       const body = await safeJson(request)
@@ -191,7 +191,7 @@ export async function installMocks(
     // --- Observations list (columnar) ---
     // Same restructuring: GET /observations?datastream_id={id}, not nested
     // under /datastreams/{id}/observations.
-    const obsList = path === '/api/data/observations'
+    const obsList = path === '/api/ogc/collections/observations/items'
     if (obsList && method === 'GET') {
       const params = new URL(url).searchParams
       const dsId = params.get('datastream_id') ?? ''
@@ -216,26 +216,26 @@ export async function installMocks(
     }
 
     // --- Units ---
-    const unitGet = path.match(/\/api\/data\/units\/([^/]+)$/)
+    const unitGet = path.match(/\/api\/ogc\/collections\/units\/items\/([^/]+)$/)
     if (unitGet && method === 'GET') {
       const id = unitGet[1]
       const unit = units.find((u) => u.id === id) ?? units[0]
       return json(route, unit)
     }
-    if (path.endsWith('/api/data/units') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/units/items') && method === 'GET') {
       return json(route, { data: units, meta: listMeta(units.length) })
     }
 
     // --- Workspaces ---
-    if (path.endsWith('/api/data/workspaces') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/workspaces/items') && method === 'GET') {
       return json(route, { data: workspaces, meta: listMeta(workspaces.length) })
     }
 
     // --- Monitoring sites / datastreams / processing levels / observed properties ---
-    if (path.endsWith('/api/data/monitoring-sites') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/monitoring-sites/items') && method === 'GET') {
       return json(route, { data: monitoringSites, meta: listMeta(monitoringSites.length) })
     }
-    if (path.endsWith('/api/data/datastreams') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/datastreams/items') && method === 'GET') {
       return json(route, {
         data: datastreams,
         meta: listMeta(datastreams.length),
@@ -249,21 +249,21 @@ export async function installMocks(
         },
       })
     }
-    if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/processing-levels/items') && method === 'GET') {
       return json(route, { data: processingLevels, meta: listMeta(processingLevels.length) })
     }
-    if (path.endsWith('/api/data/observed-properties') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/observed-properties/items') && method === 'GET') {
       return json(route, { data: observedProperties, meta: listMeta(observedProperties.length) })
     }
-    if (path.endsWith('/api/data/methods') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/methods/items') && method === 'GET') {
       return json(route, { data: methods, meta: listMeta(methods.length) })
     }
-    if (path.endsWith('/api/data/result-qualifiers') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/result-qualifiers/items') && method === 'GET') {
       return json(route, { data: resultQualifiers, meta: listMeta(resultQualifiers.length) })
     }
 
     // --- Single datastream ---
-    const dsGet = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
+    const dsGet = path.match(/\/api\/ogc\/collections\/datastreams\/items\/([^/]+)$/)
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
       const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]

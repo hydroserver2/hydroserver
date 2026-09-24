@@ -29,7 +29,7 @@ datastream_service = DatastreamAPIService()
 
 
 @datastream_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[DatastreamResponse],
@@ -79,7 +79,7 @@ def get_datastream_visualization_bootstrap(
 
 
 @datastream_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -126,7 +126,7 @@ def get_datastream_tag_keys(
 
 
 @datastream_router.get(
-    "/{datastream_id}",
+    "/items/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[DatastreamResponse],
@@ -150,7 +150,7 @@ def get_datastream(
 
 
 @datastream_router.patch(
-    "/{datastream_id}",
+    "/items/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -180,7 +180,7 @@ def update_datastream(
 
 
 @datastream_router.delete(
-    "/{datastream_id}",
+    "/items/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -201,7 +201,7 @@ def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.
 
 
 @datastream_router.get(
-    "/{datastream_id}/linked-resources",
+    "/items/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[LinkedResourceGetResponse],
@@ -227,7 +227,7 @@ def get_datastream_linked_resources(
 
 
 @datastream_router.post(
-    "/{datastream_id}/linked-resources",
+    "/items/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -265,7 +265,7 @@ def add_datastream_linked_resource(
 
 
 @datastream_router.patch(
-    "/{datastream_id}/linked-resources/{linked_resource_id}",
+    "/items/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -307,7 +307,7 @@ def update_datastream_linked_resource(
 
 
 @datastream_router.delete(
-    "/{datastream_id}/linked-resources/{linked_resource_id}",
+    "/items/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -334,7 +334,7 @@ def remove_datastream_linked_resource(
 
 
 @datastream_router.get(
-    "/{datastream_id}/csv",
+    "/items/{datastream_id}/csv",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: None, 403: str, 404: str},
 )

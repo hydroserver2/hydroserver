@@ -14,7 +14,7 @@ from tests.core.sta.factories import DatastreamFactory, MethodFactory, MethodTyp
 
 pytestmark = pytest.mark.django_db
 
-METHODS_URL = "/api/data/methods"
+METHODS_URL = "/api/ogc/collections/methods/items"
 
 
 def _detail_url(method_id):

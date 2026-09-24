@@ -15,7 +15,8 @@ from tests.core.sta.factories import MonitoringSiteFactory, MonitoringSiteTypeFa
 
 pytestmark = pytest.mark.django_db
 
-MONITORING_SITES_URL = "/api/data/monitoring-sites"
+MONITORING_SITES_COLLECTION_URL = "/api/ogc/collections/monitoring-sites"
+MONITORING_SITES_URL = f"{MONITORING_SITES_COLLECTION_URL}/items"
 
 
 def _detail_url(monitoring_site_id):
@@ -277,7 +278,7 @@ def test_create_monitoring_site_returns_403_without_create_permission(client):
 
 
 def test_get_site_type_icons_returns_configured_icon_mappings(client):
-    response = client.get(f"{MONITORING_SITES_URL}/site-type-icons")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/site-type-icons")
 
     assert response.status_code == 200
     icons = {entry["icon"] for entry in response.json()}
@@ -682,14 +683,14 @@ def test_get_monitoring_site_markers_returns_marker_for_public_monitoring_site(c
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
 
-    response = client.get(f"{MONITORING_SITES_URL}/markers")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers")
 
     assert response.status_code == 200
     assert str(monitoring_site.id) in [m["id"] for m in response.json()]
 
 
 def test_get_monitoring_site_markers_returns_400_for_malformed_bbox(client):
-    response = client.get(f"{MONITORING_SITES_URL}/markers", {"bbox": "not,a,valid,bbox"})
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "not,a,valid,bbox"})
 
     assert response.status_code == 400
 
@@ -698,7 +699,7 @@ def test_get_monitoring_site_site_summaries_returns_summary_for_public_monitorin
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
 
-    response = client.get(f"{MONITORING_SITES_URL}/site-summaries")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/site-summaries")
 
     assert response.status_code == 200
     assert str(monitoring_site.id) in [s["id"] for s in response.json()]
@@ -710,7 +711,7 @@ def test_get_monitoring_site_task_summaries_returns_summary_for_workspace_owner(
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
     client.force_login(owner)
 
-    response = client.get(f"{MONITORING_SITES_URL}/task-summaries")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/task-summaries")
 
     assert response.status_code == 200
     summary = next(s for s in response.json() if s["id"] == str(monitoring_site.id))
@@ -726,7 +727,7 @@ def test_get_monitoring_site_tag_keys_returns_keys_for_workspace_owner(client):
     monitoring_site.save()
     client.force_login(owner)
 
-    response = client.get(f"{MONITORING_SITES_URL}/tags/keys")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/tags/keys")
 
     assert response.status_code == 200
     assert response.json()["season"] == ["summer"]

@@ -14,7 +14,7 @@ from tests.core.sta.factories import DatastreamFactory, ProcessingLevelFactory
 
 pytestmark = pytest.mark.django_db
 
-PROCESSING_LEVELS_URL = "/api/data/processing-levels"
+PROCESSING_LEVELS_URL = "/api/ogc/collections/processing-levels/items"
 
 
 def _detail_url(processing_level_id):

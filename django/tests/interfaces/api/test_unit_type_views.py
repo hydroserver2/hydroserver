@@ -5,7 +5,7 @@ from tests.core.sta.factories import UnitTypeFactory
 
 pytestmark = pytest.mark.django_db
 
-UNIT_TYPES_URL = "/api/data/unit-types"
+UNIT_TYPES_URL = "/api/ogc/collections/unit-types/items"
 
 
 def _detail_url(unit_type_id):

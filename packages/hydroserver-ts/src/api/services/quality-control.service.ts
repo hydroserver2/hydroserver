@@ -1,7 +1,7 @@
 import { apiMethods } from '../apiMethods'
 import type { HydroServer } from '../HydroServer'
 import type { ApiResponse } from '../responseInterceptor'
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 import {
   QualityControlHistoryContract,
   QualityControlOperationContract,
@@ -20,7 +20,7 @@ export class QualityControlHistoryService {
   private readonly _route: string
 
   constructor(client: HydroServer) {
-    this._route = `${client.baseRoute}/quality-control/histories`
+    this._route = `${client.baseRoute}/collections/quality-control-histories/items`
   }
 
   async list(
@@ -91,7 +91,7 @@ export class QualityControlSessionService {
   private readonly _route: string
 
   constructor(client: HydroServer) {
-    this._route = `${client.baseRoute}/quality-control/histories`
+    this._route = `${client.baseRoute}/collections/quality-control-histories/items`
   }
 
   async list(
@@ -195,7 +195,7 @@ export class QualityControlOperationService {
   private readonly _route: string
 
   constructor(client: HydroServer) {
-    this._route = `${client.baseRoute}/quality-control/histories`
+    this._route = `${client.baseRoute}/collections/quality-control-histories/items`
   }
 
   async list(

@@ -29,16 +29,16 @@ def _observations_url(datastream_id=None, **params):
     if datastream_id is not None:
         query["datastream_id"] = datastream_id
     if query:
-        return f"/api/data/observations?{urlencode(query, doseq=True)}"
-    return "/api/data/observations"
+        return f"/api/ogc/collections/observations/items?{urlencode(query, doseq=True)}"
+    return "/api/ogc/collections/observations/items"
 
 
 def _detail_url(observation_id):
-    return f"/api/data/observations/{observation_id}"
+    return f"/api/ogc/collections/observations/items/{observation_id}"
 
 
-_BULK_CREATE_URL = "/api/data/observations/bulk-create"
-_BULK_DELETE_URL = "/api/data/observations/bulk-delete"
+_BULK_CREATE_URL = "/api/ogc/collections/observations/bulk-create"
+_BULK_DELETE_URL = "/api/ogc/collections/observations/bulk-delete"
 
 
 def _with_datastream(datastream_id, body):
@@ -152,7 +152,7 @@ def test_get_observations_with_multiple_datastream_ids_unions_results(client):
     client.force_login(owner)
 
     response = client.get(
-        f"/api/data/observations?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
     )
 
     assert response.status_code == 200
@@ -198,7 +198,7 @@ def test_get_observations_column_format_returns_400_with_multiple_datastream_ids
     datastream_b = _make_datastream(workspace)
 
     response = client.get(
-        f"/api/data/observations?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
     )
 
     assert response.status_code == 400
@@ -285,7 +285,7 @@ def test_get_observations_default_order_groups_by_datastream_then_time(client):
     client.force_login(owner)
 
     response = client.get(
-        f"/api/data/observations?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
     )
 
     assert response.status_code == 200

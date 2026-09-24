@@ -183,7 +183,7 @@ export class RatingCurvePreviewService {
 }
 
 function isMonitoringSiteLinkDownloadPath(pathname: string) {
-  return /^\/api\/data\/monitoring-sites\/[^/]+\/links\/[^/]+\/download\/?$/.test(
+  return /^\/api\/ogc\/collections\/monitoring-sites\/items\/[^/]+\/links\/[^/]+\/download\/?$/.test(
     pathname
   )
 }

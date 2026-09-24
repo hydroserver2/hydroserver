@@ -18,7 +18,7 @@ class FakeResponse:
 
 def make_client():
     client = MagicMock()
-    client.base_route = "/api/data"
+    client.base_route = "/api/ogc"
     return client
 
 
@@ -55,12 +55,12 @@ def test_create_rule_posts_to_flat_route_with_task_id_in_body():
 
     post_call = client.request.call_args_list[0]
     assert post_call.args[0] == "post"
-    assert post_call.args[1] == "//api/data/monitoring-rules"
+    assert post_call.args[1] == "//api/ogc/collections/monitoring-rules/items"
     sent_body = json.loads(post_call.kwargs["data"])
     assert sent_body["taskId"] == str(task_id)
 
     get_call = client.request.call_args_list[1]
-    assert get_call.args[1] == f"//api/data/monitoring-rules/{rule_id}"
+    assert get_call.args[1] == f"//api/ogc/collections/monitoring-rules/items/{rule_id}"
 
     assert str(rule.uid) == rule_id
     assert rule.task_id == task_id
@@ -95,7 +95,7 @@ def test_update_rule_patches_flat_route_and_refetches_after_204():
 
     patch_call = client.request.call_args_list[0]
     assert patch_call.args[0] == "patch"
-    assert patch_call.args[1] == f"//api/data/monitoring-rules/{rule_id}"
+    assert patch_call.args[1] == f"//api/ogc/collections/monitoring-rules/items/{rule_id}"
     sent_body = json.loads(patch_call.kwargs["data"])
     assert sent_body == {"windowInterval": 2}
 

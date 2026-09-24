@@ -42,7 +42,7 @@ describe('paginatedFetch', () => {
 
     const response = await apiMethods.paginatedFetch<
       { id: string; ownerEmail: string }[]
-    >('https://hydro.example.com/api/data/workspaces?limit=1')
+    >('https://hydro.example.com/api/ogc/collections/workspaces/items?limit=1')
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -86,7 +86,7 @@ describe('paginatedFetch', () => {
     const response = await apiMethods.paginatedFetch<{
       fields: string[]
       rows: unknown[][]
-    }>('https://hydro.example.com/api/data/observations?format=row&limit=1')
+    }>('https://hydro.example.com/api/ogc/collections/observations/items?format=row&limit=1')
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -109,7 +109,7 @@ describe('paginatedFetch', () => {
 
     const response = await apiMethods.paginatedFetch<
       { id: string; ownerEmail: string }[]
-    >('https://hydro.example.com/api/data/workspaces')
+    >('https://hydro.example.com/api/ogc/collections/workspaces/items')
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -139,7 +139,7 @@ describe('paginatedFetch', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(
-      'https://hydro.example.com/api/data/observations?limit=2'
+      'https://hydro.example.com/api/ogc/collections/observations/items?limit=2'
     )
 
     expect(response.ok).toBe(true)
@@ -167,7 +167,7 @@ describe('paginatedFetch', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(
-      'https://hydro.example.com/api/data/observations?limit=2'
+      'https://hydro.example.com/api/ogc/collections/observations/items?limit=2'
     )
 
     expect(response.ok).toBe(true)

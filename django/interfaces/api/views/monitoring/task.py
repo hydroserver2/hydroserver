@@ -22,7 +22,7 @@ monitoring_task_service = MonitoringTaskAPIService()
 
 
 @monitoring_task_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[MonitoringTaskResponse],
@@ -50,7 +50,7 @@ def get_monitoring_tasks(
 
 
 @monitoring_task_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -73,7 +73,7 @@ def create_monitoring_task(
 
 
 @monitoring_task_router.get(
-    "/{task_id}",
+    "/items/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[MonitoringTaskResponse],
@@ -98,7 +98,7 @@ def get_monitoring_task(
 
 
 @monitoring_task_router.patch(
-    "/{task_id}",
+    "/items/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -124,7 +124,7 @@ def update_monitoring_task(
 
 
 @monitoring_task_router.delete(
-    "/{task_id}",
+    "/items/{task_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -151,7 +151,7 @@ def delete_monitoring_task(
 
 
 @monitoring_task_router.post(
-    "/{task_id}/trigger",
+    "/items/{task_id}/trigger",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         202: TaskRunResponse,
@@ -180,7 +180,7 @@ def trigger_monitoring_task(
 
 
 @monitoring_task_router.get(
-    "/{task_id}/runs",
+    "/items/{task_id}/runs",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[TaskRunResponse],
@@ -222,7 +222,7 @@ def get_monitoring_task_runs(
 
 
 @monitoring_task_router.get(
-    "/{task_id}/runs/{run_id}",
+    "/items/{task_id}/runs/{run_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskRunResponse,

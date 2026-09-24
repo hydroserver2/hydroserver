@@ -85,7 +85,7 @@ export class HydroServer {
     const { host, oidc } = opts
     this.host = host.trim().replace(/\/+$/, '')
     this.resolvedHost = this.host || globalThis.location?.origin || ''
-    this.baseRoute = `${this.host}/api/data`
+    this.baseRoute = `${this.host}/api/ogc`
     this.oidc = oidc
       ? {
           clientId: oidc.clientId,

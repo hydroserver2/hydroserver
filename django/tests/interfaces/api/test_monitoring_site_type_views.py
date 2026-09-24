@@ -5,7 +5,7 @@ from tests.core.sta.factories import MonitoringSiteTypeFactory
 
 pytestmark = pytest.mark.django_db
 
-MONITORING_SITE_TYPES_URL = "/api/data/monitoring-site-types"
+MONITORING_SITE_TYPES_URL = "/api/ogc/collections/monitoring-site-types/items"
 
 
 def _detail_url(monitoring_site_type_id):

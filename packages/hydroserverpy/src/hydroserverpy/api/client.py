@@ -26,7 +26,7 @@ class HydroServer:
     def __init__(
         self,
         host: str,
-        base_route: str = "/api/data",
+        base_route: str = "/api/ogc",
         email: Optional[str] = None,
         password: Optional[str] = None,
         apikey: Optional[str] = None,

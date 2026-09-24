@@ -115,7 +115,7 @@ def test_hydroserver_retries_connection_errors_with_same_basic_auth(
 
     monkeypatch.setattr(client_module.requests, "Session", next_session)
 
-    response = hs.request("get", "/api/data/workspaces")
+    response = hs.request("get", "/api/ogc/collections/workspaces/items")
 
     assert response is second_response
     assert fake_session_factory[0].closed is True

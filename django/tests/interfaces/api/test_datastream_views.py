@@ -26,7 +26,8 @@ from tests.core.sta.factories import (
 
 pytestmark = pytest.mark.django_db
 
-DATASTREAMS_URL = "/api/data/datastreams"
+DATASTREAMS_COLLECTION_URL = "/api/ogc/collections/datastreams"
+DATASTREAMS_URL = f"{DATASTREAMS_COLLECTION_URL}/items"
 
 
 def _detail_url(datastream_id):
@@ -692,7 +693,7 @@ def test_get_datastream_visualization_bootstrap_returns_public_datastream(client
         ),
     )
 
-    response = client.get(f"{DATASTREAMS_URL}/visualization-bootstrap")
+    response = client.get(f"{DATASTREAMS_COLLECTION_URL}/visualization-bootstrap")
 
     assert response.status_code == 200
     body = response.json()
@@ -715,7 +716,7 @@ def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):
     datastream.save()
     client.force_login(owner)
 
-    response = client.get(f"{DATASTREAMS_URL}/tags/keys")
+    response = client.get(f"{DATASTREAMS_COLLECTION_URL}/tags/keys")
 
     assert response.status_code == 200
     assert response.json()["season"] == ["summer"]

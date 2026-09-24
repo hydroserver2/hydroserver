@@ -22,7 +22,7 @@ class ResultQualifier(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "result-qualifiers"
+        return "collections/result-qualifiers/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

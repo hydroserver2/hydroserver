@@ -14282,7 +14282,7 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/data/aggregation-statistics": {
+    "/api/ogc/collections/aggregation-statistics/items": {
       "get": {
         "description": "Get Aggregation Statistics.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics",
@@ -14533,7 +14533,7 @@
         ]
       }
     },
-    "/api/data/aggregation-statistics/{aggregation_statistic_id}": {
+    "/api/ogc/collections/aggregation-statistics/items/{aggregation_statistic_id}": {
       "delete": {
         "description": "Delete an Aggregation Statistic.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_delete_aggregation_statistic",
@@ -14767,7 +14767,7 @@
         ]
       }
     },
-    "/api/data/data-product-rating-curves": {
+    "/api/ogc/collections/data-product-rating-curves/items": {
       "get": {
         "description": "Get rating curves accessible to the authenticated user.",
         "operationId": "interfaces_api_views_products_rating_curve_get_rating_curves",
@@ -15077,7 +15077,7 @@
         ]
       }
     },
-    "/api/data/data-product-rating-curves/{rating_curve_id}": {
+    "/api/ogc/collections/data-product-rating-curves/items/{rating_curve_id}": {
       "delete": {
         "description": "Delete a rating curve.",
         "operationId": "interfaces_api_views_products_rating_curve_delete_rating_curve",
@@ -15366,7 +15366,7 @@
         ]
       }
     },
-    "/api/data/data-product-tasks": {
+    "/api/ogc/collections/data-product-tasks/items": {
       "get": {
         "description": "Get data product tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_products_task_get_data_product_tasks",
@@ -15768,7 +15768,7 @@
         ]
       }
     },
-    "/api/data/data-product-tasks/{task_id}": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}": {
       "delete": {
         "description": "Delete a data product task.",
         "operationId": "interfaces_api_views_products_task_delete_data_product_task",
@@ -16059,7 +16059,7 @@
         ]
       }
     },
-    "/api/data/data-product-tasks/{task_id}/runs": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/runs": {
       "get": {
         "description": "Get runs for a data product task.",
         "operationId": "interfaces_api_views_products_task_get_data_product_task_runs",
@@ -16357,7 +16357,7 @@
         ]
       }
     },
-    "/api/data/data-product-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/runs/{run_id}": {
       "get": {
         "description": "Get a single run for a data product task.",
         "operationId": "interfaces_api_views_products_task_get_data_product_task_run",
@@ -16448,7 +16448,7 @@
         ]
       }
     },
-    "/api/data/data-product-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/trigger": {
       "post": {
         "description": "Trigger an immediate run of a data product task on a Celery worker.",
         "operationId": "interfaces_api_views_products_task_trigger_data_product_task",
@@ -16529,7 +16529,7 @@
         ]
       }
     },
-    "/api/data/data-product-transformations": {
+    "/api/ogc/collections/data-product-transformations/items": {
       "get": {
         "description": "Get data product transformations.",
         "operationId": "interfaces_api_views_products_transformation_get_data_product_transformations",
@@ -16891,7 +16891,7 @@
         ]
       }
     },
-    "/api/data/data-product-transformations/{transformation_id}": {
+    "/api/ogc/collections/data-product-transformations/items/{transformation_id}": {
       "delete": {
         "description": "Delete a data product transformation.",
         "operationId": "interfaces_api_views_products_transformation_delete_data_product_transformation",
@@ -17189,7 +17189,7 @@
         ]
       }
     },
-    "/api/data/datastream-statuses": {
+    "/api/ogc/collections/datastream-statuses/items": {
       "get": {
         "description": "Get Datastream Statuses.",
         "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_statuses",
@@ -17440,7 +17440,7 @@
         ]
       }
     },
-    "/api/data/datastream-statuses/{datastream_status_id}": {
+    "/api/ogc/collections/datastream-statuses/items/{datastream_status_id}": {
       "delete": {
         "description": "Delete a Datastream Status.",
         "operationId": "interfaces_api_views_sta_datastream_status_delete_datastream_status",
@@ -17674,7 +17674,7 @@
         ]
       }
     },
-    "/api/data/datastreams": {
+    "/api/ogc/collections/datastreams/items": {
       "get": {
         "description": "Get public Datastreams and Datastreams associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastreams",
@@ -18400,162 +18400,7 @@
         ]
       }
     },
-    "/api/data/datastreams/tags/keys": {
-      "get": {
-        "description": "Get all existing unique datastream tag keys.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_tag_keys",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Workspace Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "datastream_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Datastream Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
-                  },
-                  "title": "Response",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Datastream Tag Keys",
-        "tags": [
-          "Datastreams"
-        ]
-      }
-    },
-    "/api/data/datastreams/visualization-bootstrap": {
-      "get": {
-        "description": "Get the lean metadata required to bootstrap the visualization page.",
-        "operationId": "interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap",
-        "parameters": [
-          {
-            "description": "Filter visualization bootstrap datastreams by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter visualization bootstrap datastreams by workspace ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DatastreamVisualizationBootstrapResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Datastream Visualization Bootstrap",
-        "tags": [
-          "Datastreams"
-        ]
-      }
-    },
-    "/api/data/datastreams/{datastream_id}": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}": {
       "delete": {
         "description": "Delete a Datastream.",
         "operationId": "interfaces_api_views_sta_datastream_delete_datastream",
@@ -18841,7 +18686,7 @@
         ]
       }
     },
-    "/api/data/datastreams/{datastream_id}/csv": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/csv": {
       "get": {
         "description": "Get a CSV representation of the Datastream.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_csv",
@@ -18904,7 +18749,7 @@
         ]
       }
     },
-    "/api/data/datastreams/{datastream_id}/linked-resources": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources": {
       "get": {
         "description": "Get all linked resources associated with a Datastream.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resources",
@@ -19221,7 +19066,7 @@
         ]
       }
     },
-    "/api/data/datastreams/{datastream_id}/linked-resources/{linked_resource_id}": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources/{linked_resource_id}": {
       "delete": {
         "description": "Remove a linked resource from a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_remove_datastream_linked_resource",
@@ -19478,7 +19323,162 @@
         ]
       }
     },
-    "/api/data/etl-data-connections": {
+    "/api/ogc/collections/datastreams/tags/keys": {
+      "get": {
+        "description": "Get all existing unique datastream tag keys.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_tag_keys",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "datastream_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Datastream Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Datastream Tag Keys",
+        "tags": [
+          "Datastreams"
+        ]
+      }
+    },
+    "/api/ogc/collections/datastreams/visualization-bootstrap": {
+      "get": {
+        "description": "Get the lean metadata required to bootstrap the visualization page.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap",
+        "parameters": [
+          {
+            "description": "Filter visualization bootstrap datastreams by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter visualization bootstrap datastreams by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatastreamVisualizationBootstrapResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Datastream Visualization Bootstrap",
+        "tags": [
+          "Datastreams"
+        ]
+      }
+    },
+    "/api/ogc/collections/etl-data-connections/items": {
       "get": {
         "description": "Get ETL Data Connections associated with the authenticated user.",
         "operationId": "interfaces_api_views_etl_data_connection_get_data_connections",
@@ -19797,7 +19797,7 @@
         ]
       }
     },
-    "/api/data/etl-data-connections/{data_connection_id}": {
+    "/api/ogc/collections/etl-data-connections/items/{data_connection_id}": {
       "delete": {
         "description": "Delete an ETL Data Connection.",
         "operationId": "interfaces_api_views_etl_data_connection_delete_data_connection",
@@ -20083,7 +20083,7 @@
         ]
       }
     },
-    "/api/data/etl-mappings": {
+    "/api/ogc/collections/etl-mappings/items": {
       "get": {
         "description": "Get ETL mappings.",
         "operationId": "interfaces_api_views_etl_mapping_get_etl_mappings",
@@ -20417,7 +20417,7 @@
         ]
       }
     },
-    "/api/data/etl-mappings/{mapping_id}": {
+    "/api/ogc/collections/etl-mappings/items/{mapping_id}": {
       "delete": {
         "description": "Delete an ETL mapping.",
         "operationId": "interfaces_api_views_etl_mapping_delete_etl_mapping",
@@ -20703,7 +20703,7 @@
         ]
       }
     },
-    "/api/data/etl-tasks": {
+    "/api/ogc/collections/etl-tasks/items": {
       "get": {
         "description": "Get ETL Tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_etl_task_get_etl_tasks",
@@ -21147,7 +21147,7 @@
         ]
       }
     },
-    "/api/data/etl-tasks/{task_id}": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}": {
       "delete": {
         "description": "Delete an ETL Task.",
         "operationId": "interfaces_api_views_etl_task_delete_etl_task",
@@ -21439,7 +21439,7 @@
         ]
       }
     },
-    "/api/data/etl-tasks/{task_id}/runs": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/runs": {
       "get": {
         "description": "Get runs for an ETL Task.",
         "operationId": "interfaces_api_views_etl_task_get_etl_task_runs",
@@ -21737,7 +21737,7 @@
         ]
       }
     },
-    "/api/data/etl-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/runs/{run_id}": {
       "get": {
         "description": "Get a single run for an ETL Task.",
         "operationId": "interfaces_api_views_etl_task_get_etl_task_run",
@@ -21828,7 +21828,7 @@
         ]
       }
     },
-    "/api/data/etl-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/trigger": {
       "post": {
         "description": "Trigger an immediate run of an ETL Task on a Celery worker.",
         "operationId": "interfaces_api_views_etl_task_trigger_etl_task",
@@ -21909,7 +21909,7 @@
         ]
       }
     },
-    "/api/data/linked-resource-types": {
+    "/api/ogc/collections/linked-resource-types/items": {
       "get": {
         "description": "Get Linked Resource Types.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_types",
@@ -22160,7 +22160,7 @@
         ]
       }
     },
-    "/api/data/linked-resource-types/{linked_resource_type_id}": {
+    "/api/ogc/collections/linked-resource-types/items/{linked_resource_type_id}": {
       "delete": {
         "description": "Delete a Linked Resource Type.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_delete_linked_resource_type",
@@ -22394,7 +22394,7 @@
         ]
       }
     },
-    "/api/data/method-types": {
+    "/api/ogc/collections/method-types/items": {
       "get": {
         "description": "Get Method Types.",
         "operationId": "interfaces_api_views_sta_method_type_get_method_types",
@@ -22645,7 +22645,7 @@
         ]
       }
     },
-    "/api/data/method-types/{method_type_id}": {
+    "/api/ogc/collections/method-types/items/{method_type_id}": {
       "delete": {
         "description": "Delete a Method Type.",
         "operationId": "interfaces_api_views_sta_method_type_delete_method_type",
@@ -22879,7 +22879,7 @@
         ]
       }
     },
-    "/api/data/methods": {
+    "/api/ogc/collections/methods/items": {
       "get": {
         "description": "Get public Methods and Methods associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_method_get_methods",
@@ -23279,7 +23279,7 @@
         ]
       }
     },
-    "/api/data/methods/{method_id}": {
+    "/api/ogc/collections/methods/items/{method_id}": {
       "delete": {
         "description": "Delete a Method.",
         "operationId": "interfaces_api_views_sta_method_delete_method",
@@ -23562,7 +23562,7 @@
         ]
       }
     },
-    "/api/data/monitoring-rules": {
+    "/api/ogc/collections/monitoring-rules/items": {
       "get": {
         "description": "Get monitoring rules.",
         "operationId": "interfaces_api_views_monitoring_rule_get_monitoring_rules",
@@ -23903,7 +23903,7 @@
         ]
       }
     },
-    "/api/data/monitoring-rules/{rule_id}": {
+    "/api/ogc/collections/monitoring-rules/items/{rule_id}": {
       "delete": {
         "description": "Delete a monitoring rule.",
         "operationId": "interfaces_api_views_monitoring_rule_delete_monitoring_rule",
@@ -24194,7 +24194,7 @@
         ]
       }
     },
-    "/api/data/monitoring-site-types": {
+    "/api/ogc/collections/monitoring-site-types/items": {
       "get": {
         "description": "Get Monitoring Site Types.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types",
@@ -24445,7 +24445,7 @@
         ]
       }
     },
-    "/api/data/monitoring-site-types/{monitoring_site_type_id}": {
+    "/api/ogc/collections/monitoring-site-types/items/{monitoring_site_type_id}": {
       "delete": {
         "description": "Delete a Monitoring Site Type.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_delete_monitoring_site_type",
@@ -24679,7 +24679,7 @@
         ]
       }
     },
-    "/api/data/monitoring-sites": {
+    "/api/ogc/collections/monitoring-sites/items": {
       "get": {
         "description": "Get public MonitoringSites and MonitoringSites associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_sites",
@@ -25079,391 +25079,7 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/markers": {
-      "get": {
-        "description": "Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers",
-        "parameters": [
-          {
-            "description": "Filter markers by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter markers by workspace ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
-            "in": "query",
-            "name": "bbox",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
-              "items": {
-                "type": "string"
-              },
-              "title": "Bbox",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter markers by monitoring site type.",
-            "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter markers by monitoring site type.",
-              "items": {
-                "type": "string"
-              },
-              "title": "Type",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MonitoringSiteMarkerResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Monitoring Site Markers",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/site-summaries": {
-      "get": {
-        "description": "Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries",
-        "parameters": [
-          {
-            "description": "Filter site summaries by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter site summaries by workspace ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter summaries by monitoring site type.",
-            "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter summaries by monitoring site type.",
-              "items": {
-                "type": "string"
-              },
-              "title": "Type",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MonitoringSiteMapSummaryResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Monitoring Site Summaries",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/site-type-icons": {
-      "get": {
-        "description": "Get the configured site type icon mappings.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_site_type_icons",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SiteTypeIconResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Site Type Icons",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/tags/keys": {
-      "get": {
-        "description": "Get all existing unique monitoring_site tag keys.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Workspace Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "monitoring_site_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Monitoring Site Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
-                  },
-                  "title": "Response",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Monitoring Site Tag Keys",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/task-summaries": {
-      "get": {
-        "description": "Get task count summaries for MonitoringSites associated with the authenticated user.",
-        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries",
-        "parameters": [
-          {
-            "description": "Filter task summaries by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter task summaries by workspace ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter summaries by monitoring site type.",
-            "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter summaries by monitoring site type.",
-              "items": {
-                "type": "string"
-              },
-              "title": "Type",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MonitoringSiteTaskSummaryResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Get Monitoring Site Task Summaries",
-        "tags": [
-          "Monitoring Sites"
-        ]
-      }
-    },
-    "/api/data/monitoring-sites/{monitoring_site_id}": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}": {
       "delete": {
         "description": "Delete a MonitoringSite.",
         "operationId": "interfaces_api_views_sta_monitoring_site_delete_monitoring_site",
@@ -25731,7 +25347,7 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources": {
       "get": {
         "description": "Get all linked resources associated with a MonitoringSite.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources",
@@ -26048,7 +25664,7 @@
         ]
       }
     },
-    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
       "delete": {
         "description": "Remove a linked resource from a monitoring_site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource",
@@ -26305,7 +25921,391 @@
         ]
       }
     },
-    "/api/data/monitoring-tasks": {
+    "/api/ogc/collections/monitoring-sites/markers": {
+      "get": {
+        "description": "Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers",
+        "parameters": [
+          {
+            "description": "Filter markers by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter markers by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+              "items": {
+                "type": "string"
+              },
+              "title": "Bbox",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter markers by monitoring site type.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter markers by monitoring site type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MonitoringSiteMarkerResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Markers",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      }
+    },
+    "/api/ogc/collections/monitoring-sites/site-summaries": {
+      "get": {
+        "description": "Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries",
+        "parameters": [
+          {
+            "description": "Filter site summaries by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter site summaries by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter summaries by monitoring site type.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter summaries by monitoring site type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MonitoringSiteMapSummaryResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Summaries",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      }
+    },
+    "/api/ogc/collections/monitoring-sites/site-type-icons": {
+      "get": {
+        "description": "Get the configured site type icon mappings.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_site_type_icons",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SiteTypeIconResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Site Type Icons",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      }
+    },
+    "/api/ogc/collections/monitoring-sites/tags/keys": {
+      "get": {
+        "description": "Get all existing unique monitoring_site tag keys.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "monitoring_site_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Monitoring Site Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Tag Keys",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      }
+    },
+    "/api/ogc/collections/monitoring-sites/task-summaries": {
+      "get": {
+        "description": "Get task count summaries for MonitoringSites associated with the authenticated user.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries",
+        "parameters": [
+          {
+            "description": "Filter task summaries by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter task summaries by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter summaries by monitoring site type.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter summaries by monitoring site type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MonitoringSiteTaskSummaryResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Task Summaries",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      }
+    },
+    "/api/ogc/collections/monitoring-tasks/items": {
       "get": {
         "description": "Get monitoring tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_tasks",
@@ -26676,7 +26676,7 @@
         ]
       }
     },
-    "/api/data/monitoring-tasks/{task_id}": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}": {
       "delete": {
         "description": "Delete a monitoring task.",
         "operationId": "interfaces_api_views_monitoring_task_delete_monitoring_task",
@@ -26968,7 +26968,7 @@
         ]
       }
     },
-    "/api/data/monitoring-tasks/{task_id}/runs": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs": {
       "get": {
         "description": "Get runs for a monitoring task.",
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_task_runs",
@@ -27266,7 +27266,7 @@
         ]
       }
     },
-    "/api/data/monitoring-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs/{run_id}": {
       "get": {
         "description": "Get a single run for a monitoring task.",
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_task_run",
@@ -27357,7 +27357,7 @@
         ]
       }
     },
-    "/api/data/monitoring-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/trigger": {
       "post": {
         "description": "Trigger an immediate run of a monitoring task on a Celery worker.",
         "operationId": "interfaces_api_views_monitoring_task_trigger_monitoring_task",
@@ -27438,7 +27438,175 @@
         ]
       }
     },
-    "/api/data/observations": {
+    "/api/ogc/collections/observations/bulk-create": {
+      "post": {
+        "description": "Insert Observations.",
+        "operationId": "interfaces_api_views_sta_observation_insert_observations",
+        "parameters": [
+          {
+            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "insert",
+                    "append",
+                    "backfill",
+                    "replace"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+              "title": "Mode"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkPostBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
+                  }
+                ],
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Insert Observations",
+        "tags": [
+          "Observations"
+        ]
+      }
+    },
+    "/api/ogc/collections/observations/bulk-delete": {
+      "post": {
+        "description": "Delete Observations between the given phenomenon start and end times.",
+        "operationId": "interfaces_api_views_sta_observation_delete_observations",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationBulkDeleteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Observations",
+        "tags": [
+          "Observations"
+        ]
+      }
+    },
+    "/api/ogc/collections/observations/items": {
       "get": {
         "description": "Get Observations.",
         "operationId": "interfaces_api_views_sta_observation_get_observations",
@@ -27810,175 +27978,7 @@
         ]
       }
     },
-    "/api/data/observations/bulk-create": {
-      "post": {
-        "description": "Insert Observations.",
-        "operationId": "interfaces_api_views_sta_observation_insert_observations",
-        "parameters": [
-          {
-            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
-            "in": "query",
-            "name": "mode",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "insert",
-                    "append",
-                    "backfill",
-                    "replace"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
-              "title": "Mode"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/ObservationBulkPostBody"
-                  },
-                  {
-                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
-                  }
-                ],
-                "title": "Data"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Insert Observations",
-        "tags": [
-          "Observations"
-        ]
-      }
-    },
-    "/api/data/observations/bulk-delete": {
-      "post": {
-        "description": "Delete Observations between the given phenomenon start and end times.",
-        "operationId": "interfaces_api_views_sta_observation_delete_observations",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ObservationBulkDeleteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
-        "summary": "Delete Observations",
-        "tags": [
-          "Observations"
-        ]
-      }
-    },
-    "/api/data/observations/{observation_id}": {
+    "/api/ogc/collections/observations/items/{observation_id}": {
       "delete": {
         "description": "Delete an Observation.",
         "operationId": "interfaces_api_views_sta_observation_delete_observation",
@@ -28165,7 +28165,7 @@
         ]
       }
     },
-    "/api/data/observed-properties": {
+    "/api/ogc/collections/observed-properties/items": {
       "get": {
         "description": "Get public Observed Properties and Observed Properties associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_observed_property_get_observed_properties",
@@ -28524,7 +28524,7 @@
         ]
       }
     },
-    "/api/data/observed-properties/{observed_property_id}": {
+    "/api/ogc/collections/observed-properties/items/{observed_property_id}": {
       "delete": {
         "description": "Delete an Observed Property.",
         "operationId": "interfaces_api_views_sta_observed_property_delete_observed_property",
@@ -28804,7 +28804,7 @@
         ]
       }
     },
-    "/api/data/observed-property-types": {
+    "/api/ogc/collections/observed-property-types/items": {
       "get": {
         "description": "Get Observed Property Types.",
         "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_types",
@@ -29055,7 +29055,7 @@
         ]
       }
     },
-    "/api/data/observed-property-types/{observed_property_type_id}": {
+    "/api/ogc/collections/observed-property-types/items/{observed_property_type_id}": {
       "delete": {
         "description": "Delete an Observed Property Type.",
         "operationId": "interfaces_api_views_sta_observed_property_type_delete_observed_property_type",
@@ -29289,7 +29289,7 @@
         ]
       }
     },
-    "/api/data/processing-levels": {
+    "/api/ogc/collections/processing-levels/items": {
       "get": {
         "description": "Get public Processing Levels and Processing Levels associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_processing_level_get_processing_levels",
@@ -29629,7 +29629,7 @@
         ]
       }
     },
-    "/api/data/processing-levels/{processing_level_id}": {
+    "/api/ogc/collections/processing-levels/items/{processing_level_id}": {
       "delete": {
         "description": "Delete a Processing Level.",
         "operationId": "interfaces_api_views_sta_processing_level_delete_processing_level",
@@ -29907,7 +29907,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories": {
+    "/api/ogc/collections/quality-control-histories/items": {
       "get": {
         "description": "Get QC histories.",
         "operationId": "interfaces_api_views_quality_history_get_qc_histories",
@@ -30207,7 +30207,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories/{history_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}": {
       "delete": {
         "description": "Delete a QC history and all associated sessions.",
         "operationId": "interfaces_api_views_quality_history_delete_qc_history",
@@ -30406,7 +30406,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories/{history_id}/sessions": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions": {
       "get": {
         "description": "Get sessions for a QC history. Supports range_start/range_end overlap filtering, ancestor_of, and include_ancestors.",
         "operationId": "interfaces_api_views_quality_session_get_qc_sessions",
@@ -30807,7 +30807,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}": {
       "delete": {
         "description": "Delete an in-progress session.",
         "operationId": "interfaces_api_views_quality_session_delete_qc_session",
@@ -31113,7 +31113,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/commit": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/commit": {
       "post": {
         "description": "Commit an in-progress session after observations have been pushed to the managed datastream.",
         "operationId": "interfaces_api_views_quality_session_commit_qc_session",
@@ -31208,7 +31208,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations": {
       "get": {
         "description": "Get all operations for a QC session in execution order.",
         "operationId": "interfaces_api_views_quality_operation_get_qc_operations",
@@ -31533,7 +31533,7 @@
         ]
       }
     },
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations/{operation_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations/{operation_id}": {
       "delete": {
         "description": "Delete an operation from an in-progress session.",
         "operationId": "interfaces_api_views_quality_operation_delete_qc_operation",
@@ -31864,7 +31864,7 @@
         ]
       }
     },
-    "/api/data/result-qualifiers": {
+    "/api/ogc/collections/result-qualifiers/items": {
       "get": {
         "description": "Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_result_qualifier_get_result_qualifiers",
@@ -32141,7 +32141,7 @@
         ]
       }
     },
-    "/api/data/result-qualifiers/{result_qualifier_id}": {
+    "/api/ogc/collections/result-qualifiers/items/{result_qualifier_id}": {
       "delete": {
         "description": "Delete a Result Qualifier.",
         "operationId": "interfaces_api_views_sta_result_qualifier_delete_result_qualifier",
@@ -32395,7 +32395,7 @@
         ]
       }
     },
-    "/api/data/roles": {
+    "/api/ogc/collections/roles/items": {
       "get": {
         "description": "Get public Roles and Roles associated with the authenticated user.",
         "operationId": "interfaces_api_views_iam_role_get_roles",
@@ -32576,7 +32576,7 @@
         ]
       }
     },
-    "/api/data/roles/{role_id}": {
+    "/api/ogc/collections/roles/items/{role_id}": {
       "get": {
         "description": "Get a Role.",
         "operationId": "interfaces_api_views_iam_role_get_role",
@@ -32669,7 +32669,7 @@
         ]
       }
     },
-    "/api/data/sampled-mediums": {
+    "/api/ogc/collections/sampled-mediums/items": {
       "get": {
         "description": "Get Sampled Mediums.",
         "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_mediums",
@@ -32920,7 +32920,7 @@
         ]
       }
     },
-    "/api/data/sampled-mediums/{sampled_medium_id}": {
+    "/api/ogc/collections/sampled-mediums/items/{sampled_medium_id}": {
       "delete": {
         "description": "Delete a Sampled Medium.",
         "operationId": "interfaces_api_views_sta_sampled_medium_delete_sampled_medium",
@@ -33154,7 +33154,7 @@
         ]
       }
     },
-    "/api/data/unit-types": {
+    "/api/ogc/collections/unit-types/items": {
       "get": {
         "description": "Get Unit Types.",
         "operationId": "interfaces_api_views_sta_unit_type_get_unit_types",
@@ -33405,7 +33405,7 @@
         ]
       }
     },
-    "/api/data/unit-types/{unit_type_id}": {
+    "/api/ogc/collections/unit-types/items/{unit_type_id}": {
       "delete": {
         "description": "Delete a Unit Type.",
         "operationId": "interfaces_api_views_sta_unit_type_delete_unit_type",
@@ -33639,7 +33639,7 @@
         ]
       }
     },
-    "/api/data/units": {
+    "/api/ogc/collections/units/items": {
       "get": {
         "description": "Get public Units and Units associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_unit_get_units",
@@ -33986,7 +33986,7 @@
         ]
       }
     },
-    "/api/data/units/{unit_id}": {
+    "/api/ogc/collections/units/items/{unit_id}": {
       "delete": {
         "description": "Delete a Unit.",
         "operationId": "interfaces_api_views_sta_unit_delete_unit",
@@ -34265,7 +34265,7 @@
         ]
       }
     },
-    "/api/data/workspaces": {
+    "/api/ogc/collections/workspaces/items": {
       "get": {
         "description": "Get public workspaces and workspaces associated with the authenticated user.",
         "operationId": "interfaces_api_views_iam_workspace_get_workspaces",
@@ -34560,7 +34560,7 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}": {
       "delete": {
         "description": "Delete a workspace owned by the authenticated user.",
         "operationId": "interfaces_api_views_iam_workspace_delete_workspace",
@@ -34823,7 +34823,7 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}/collaborators": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/collaborators": {
       "delete": {
         "description": "Remove a collaborator from a workspace.",
         "operationId": "interfaces_api_views_iam_collaborator_remove_collaborator",
@@ -35264,7 +35264,7 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}/service-accounts": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts": {
       "get": {
         "description": "Get service accounts associated with the authenticated user.",
         "operationId": "interfaces_api_views_iam_service_account_get_service_accounts",
@@ -35511,7 +35511,7 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}": {
       "delete": {
         "description": "Delete a service account.",
         "operationId": "interfaces_api_views_iam_service_account_delete_service_account",
@@ -35771,7 +35771,7 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
       "put": {
         "description": "Regenerate a service account's key using existing settings.",
         "operationId": "interfaces_api_views_iam_service_account_regenerate_service_account_key",
@@ -35856,7 +35856,7 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}/transfer": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/transfer": {
       "delete": {
         "description": "Reject a pending workspace transfer.",
         "operationId": "interfaces_api_views_iam_workspace_reject_workspace_transfer",

@@ -29,7 +29,7 @@ class ProcessingLevel(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "processing-levels"
+        return "collections/processing-levels/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

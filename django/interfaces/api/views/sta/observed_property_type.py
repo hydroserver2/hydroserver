@@ -22,7 +22,7 @@ observed_property_type_service = ObservedPropertyTypeAPIService()
 
 
 @observed_property_type_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservedPropertyTypeResponse],
@@ -49,7 +49,7 @@ def get_observed_property_types(
 
 
 @observed_property_type_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_observed_property_type(
 
 
 @observed_property_type_router.get(
-    "/{observed_property_type_id}",
+    "/items/{observed_property_type_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ObservedPropertyTypeResponse],
@@ -101,7 +101,7 @@ def get_observed_property_type(
 
 
 @observed_property_type_router.patch(
-    "/{observed_property_type_id}",
+    "/items/{observed_property_type_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_observed_property_type(
 
 
 @observed_property_type_router.delete(
-    "/{observed_property_type_id}",
+    "/items/{observed_property_type_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

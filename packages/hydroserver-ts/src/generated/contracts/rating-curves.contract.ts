@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace RatingCurveContract {
-  export const route = 'data-product-rating-curves' as const
+  export const route = 'collections/data-product-rating-curves/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_products_rating_curve_get_rating_curves']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_products_rating_curve_get_rating_curves']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['RatingCurveResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_RatingCurveResponse_']

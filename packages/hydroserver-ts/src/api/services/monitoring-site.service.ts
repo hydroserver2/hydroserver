@@ -1,7 +1,7 @@
 import { apiMethods } from '../apiMethods'
 import { HydroServerBaseService } from './base'
 import { MonitoringSiteContract as C } from '../../generated/contracts'
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 import {
   MonitoringSite,
   PostHydroShareArchive,
@@ -22,14 +22,14 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   static Model = MonitoringSite
 
   listMarkers(): Promise<ApiResponse<MonitoringSiteMarker[]>> {
-    return apiMethods.fetch<MonitoringSiteMarker[]>(`${this._route}/markers`)
+    return apiMethods.fetch<MonitoringSiteMarker[]>(`${this._collectionRoute}/markers`)
   }
 
   listSiteSummaries(
     workspaceId?: string
   ): Promise<ApiResponse<MonitoringSiteMapSummary[]>> {
     return apiMethods.fetch<MonitoringSiteMapSummary[]>(
-      this.withQuery(`${this._route}/site-summaries`, {
+      this.withQuery(`${this._collectionRoute}/site-summaries`, {
         workspace_id: workspaceId,
       })
     )
@@ -40,7 +40,7 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     type?: string | string[]
   }): Promise<ApiResponse<MonitoringSiteTaskSummary[]>> {
     return apiMethods.fetch<MonitoringSiteTaskSummary[]>(
-      this.withQuery(`${this._route}/task-summaries`, params)
+      this.withQuery(`${this._collectionRoute}/task-summaries`, params)
     )
   }
 
@@ -50,11 +50,11 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   ): Promise<ApiResponse<MonitoringSite>> => this.patchAndRefetch(id, { isPrivate })
 
   getSiteTypeIcons = () =>
-    apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
+    apiMethods.fetch<SiteTypeIcon[]>(`${this._collectionRoute}/site-type-icons`)
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
   getTagKeys(params: { workspace_id?: string; monitoring_site_id?: string }) {
-    const url = this.withQuery(`${this._route}/tags/keys`, params)
+    const url = this.withQuery(`${this._collectionRoute}/tags/keys`, params)
     return apiMethods.fetch<Record<string, string[]>>(url)
   }
 

@@ -19,7 +19,7 @@ _service = DataProductTransformationAPIService()
 
 
 @data_product_transformation_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[DataProductTransformationResponse],
@@ -46,7 +46,7 @@ def get_data_product_transformations(
 
 
 @data_product_transformation_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -70,7 +70,7 @@ def create_data_product_transformation(
 
 
 @data_product_transformation_router.get(
-    "/{transformation_id}",
+    "/items/{transformation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[DataProductTransformationResponse],
@@ -95,7 +95,7 @@ def get_data_product_transformation(
 
 
 @data_product_transformation_router.patch(
-    "/{transformation_id}",
+    "/items/{transformation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -123,7 +123,7 @@ def update_data_product_transformation(
 
 
 @data_product_transformation_router.delete(
-    "/{transformation_id}",
+    "/items/{transformation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

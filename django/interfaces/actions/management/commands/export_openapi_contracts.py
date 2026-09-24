@@ -8,7 +8,7 @@ from interfaces.api.urls import api
 
 
 SCHEMA_TARGETS = {
-    "data.openapi.json": (api, "/api/data/"),
+    "ogc.openapi.json": (api, "/api/ogc/"),
 }
 
 

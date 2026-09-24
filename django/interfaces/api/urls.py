@@ -47,7 +47,7 @@ throttle_classes = {"anonymous": AnonRateThrottle, "authenticated": AuthRateThro
 api = NinjaAPI(
     title="HydroServer Data Management API",
     version=__version__,
-    urls_namespace="data",
+    urls_namespace="ogc",
     docs_decorator=ensure_csrf_cookie,
     renderer=ORJSONRenderer(),
     throttle=[cls(rate_limits[k]) for k, cls in throttle_classes.items() if rate_limits.get(k)],
@@ -55,46 +55,46 @@ api = NinjaAPI(
 
 handlers.register(api)
 
-api.add_router("workspaces", workspace_router)
-api.add_router("roles", role_router)
+api.add_router("collections/workspaces", workspace_router)
+api.add_router("collections/roles", role_router)
 
-api.add_router("monitoring-sites", monitoring_site_router)
-api.add_router("monitoring-site-types", monitoring_site_type_router)
-api.add_router("linked-resource-types", linked_resource_type_router)
-api.add_router("datastreams", datastream_router)
-api.add_router("datastream-statuses", datastream_status_router)
-api.add_router("aggregation-statistics", aggregation_statistic_router)
-api.add_router("observations", observation_router)
-api.add_router("observed-properties", observed_property_router)
-api.add_router("observed-property-types", observed_property_type_router)
-api.add_router("units", unit_router)
-api.add_router("unit-types", unit_type_router)
-api.add_router("methods", method_router)
-api.add_router("method-types", method_type_router)
-api.add_router("processing-levels", processing_level_router)
-api.add_router("result-qualifiers", result_qualifier_router)
-api.add_router("sampled-mediums", sampled_medium_router)
+api.add_router("collections/monitoring-sites", monitoring_site_router)
+api.add_router("collections/monitoring-site-types", monitoring_site_type_router)
+api.add_router("collections/linked-resource-types", linked_resource_type_router)
+api.add_router("collections/datastreams", datastream_router)
+api.add_router("collections/datastream-statuses", datastream_status_router)
+api.add_router("collections/aggregation-statistics", aggregation_statistic_router)
+api.add_router("collections/observations", observation_router)
+api.add_router("collections/observed-properties", observed_property_router)
+api.add_router("collections/observed-property-types", observed_property_type_router)
+api.add_router("collections/units", unit_router)
+api.add_router("collections/unit-types", unit_type_router)
+api.add_router("collections/methods", method_router)
+api.add_router("collections/method-types", method_type_router)
+api.add_router("collections/processing-levels", processing_level_router)
+api.add_router("collections/result-qualifiers", result_qualifier_router)
+api.add_router("collections/sampled-mediums", sampled_medium_router)
 
-api.add_router("etl-data-connections", data_connection_router)
-api.add_router("etl-tasks", etl_task_router)
-api.add_router("etl-mappings", etl_mapping_router)
+api.add_router("collections/etl-data-connections", data_connection_router)
+api.add_router("collections/etl-tasks", etl_task_router)
+api.add_router("collections/etl-mappings", etl_mapping_router)
 
-api.add_router("data-product-rating-curves", rating_curve_router)
-api.add_router("data-product-tasks", data_product_task_router)
-api.add_router("data-product-transformations", data_product_transformation_router)
+api.add_router("collections/data-product-rating-curves", rating_curve_router)
+api.add_router("collections/data-product-tasks", data_product_task_router)
+api.add_router("collections/data-product-transformations", data_product_transformation_router)
 
-api.add_router("monitoring-tasks", monitoring_task_router)
-api.add_router("monitoring-rules", monitoring_rule_router)
+api.add_router("collections/monitoring-tasks", monitoring_task_router)
+api.add_router("collections/monitoring-rules", monitoring_rule_router)
 
-api.add_router("quality-control/histories", qc_history_router)
+api.add_router("collections/quality-control-histories", qc_history_router)
 qc_history_router.add_router(
-    "/{history_id}/sessions", qc_session_router, tags=["Quality Control Sessions"]
+    "/items/{history_id}/sessions", qc_session_router, tags=["Quality Control Sessions"]
 )
 qc_session_router.add_router(
     "/{session_id}/operations", qc_operation_router, tags=["Quality Control Operations"]
 )
 
 urlpatterns = [
-    path("data/", api.urls),
+    path("ogc/", api.urls),
     path("sensorthings/", include("sensorthings.versions.v1_1.urls")),
 ]

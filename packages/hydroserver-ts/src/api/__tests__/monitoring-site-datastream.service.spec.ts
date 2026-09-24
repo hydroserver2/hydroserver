@@ -36,7 +36,7 @@ describe('MonitoringSiteService', () => {
       expect(res.ok).toBe(true)
       expect(res.data).toEqual(payload)
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/monitoring-sites\/markers$/)
+      expect(url).toMatch(/\/api\/ogc\/collections\/monitoring-sites\/markers$/)
     })
 
     it('returns ok:false on a failed request', async () => {
@@ -208,7 +208,7 @@ describe('MonitoringSiteService', () => {
 
       expect(res.ok).toBe(true)
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/monitoring-sites\/site-summaries$/)
+      expect(url).toMatch(/\/api\/ogc\/collections\/monitoring-sites\/site-summaries$/)
     })
 
     it('passes workspace_id as a query param and returns summaries', async () => {
@@ -235,7 +235,7 @@ describe('MonitoringSiteService', () => {
 
       const [url] = (fetch as any).mock.calls[0]
       const parsed = new URL(url)
-      expect(parsed.pathname).toBe('/api/data/monitoring-sites/site-summaries')
+      expect(parsed.pathname).toBe('/api/ogc/collections/monitoring-sites/site-summaries')
       expect(parsed.searchParams.get('workspace_id')).toBe('workspace id')
     })
 
@@ -323,7 +323,7 @@ describe('DatastreamService', () => {
       expect(res.ok).toBe(true)
 
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/datastreams\/visualization-bootstrap$/)
+      expect(url).toMatch(/\/api\/ogc\/collections\/datastreams\/visualization-bootstrap$/)
 
       expect(res.data.monitoringSites[0]).toBeInstanceOf(MonitoringSite)
       expect(res.data.datastreams[0]).toBeInstanceOf(Datastream)

@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/data/aggregation-statistics": {
+    "/api/ogc/collections/aggregation-statistics/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -28,7 +28,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/aggregation-statistics/{aggregation_statistic_id}": {
+    "/api/ogc/collections/aggregation-statistics/items/{aggregation_statistic_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -56,7 +56,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic"];
         trace?: never;
     };
-    "/api/data/data-product-rating-curves": {
+    "/api/ogc/collections/data-product-rating-curves/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -80,7 +80,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-rating-curves/{rating_curve_id}": {
+    "/api/ogc/collections/data-product-rating-curves/items/{rating_curve_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -108,7 +108,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
         trace?: never;
     };
-    "/api/data/data-product-tasks": {
+    "/api/ogc/collections/data-product-tasks/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,7 +132,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -160,7 +160,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_task_update_data_product_task"];
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}/runs": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -180,7 +180,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -200,7 +200,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -220,7 +220,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-transformations": {
+    "/api/ogc/collections/data-product-transformations/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -244,7 +244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-transformations/{transformation_id}": {
+    "/api/ogc/collections/data-product-transformations/items/{transformation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -272,7 +272,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_transformation_update_data_product_transformation"];
         trace?: never;
     };
-    "/api/data/datastream-statuses": {
+    "/api/ogc/collections/datastream-statuses/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -296,7 +296,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastream-statuses/{datastream_status_id}": {
+    "/api/ogc/collections/datastream-statuses/items/{datastream_status_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +324,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_status_update_datastream_status"];
         trace?: never;
     };
-    "/api/data/datastreams": {
+    "/api/ogc/collections/datastreams/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -348,47 +348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/tags/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Tag Keys
-         * @description Get all existing unique datastream tag keys.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_tag_keys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/visualization-bootstrap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Visualization Bootstrap
-         * @description Get the lean metadata required to bootstrap the visualization page.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -416,7 +376,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream"];
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/csv": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -436,7 +396,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/linked-resources": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources": {
         parameters: {
             query?: never;
             header?: never;
@@ -460,7 +420,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/linked-resources/{linked_resource_id}": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources/{linked_resource_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -485,7 +445,47 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
     };
-    "/api/data/etl-data-connections": {
+    "/api/ogc/collections/datastreams/tags/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Tag Keys
+         * @description Get all existing unique datastream tag keys.
+         */
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_tag_keys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/datastreams/visualization-bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Visualization Bootstrap
+         * @description Get the lean metadata required to bootstrap the visualization page.
+         */
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/etl-data-connections/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -509,7 +509,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-data-connections/{data_connection_id}": {
+    "/api/ogc/collections/etl-data-connections/items/{data_connection_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -537,7 +537,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_data_connection_update_data_connection"];
         trace?: never;
     };
-    "/api/data/etl-mappings": {
+    "/api/ogc/collections/etl-mappings/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -561,7 +561,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-mappings/{mapping_id}": {
+    "/api/ogc/collections/etl-mappings/items/{mapping_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -589,7 +589,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_mapping_update_etl_mapping"];
         trace?: never;
     };
-    "/api/data/etl-tasks": {
+    "/api/ogc/collections/etl-tasks/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -613,7 +613,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -641,7 +641,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_task_update_etl_task"];
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}/runs": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -661,7 +661,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -681,7 +681,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -701,7 +701,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/linked-resource-types": {
+    "/api/ogc/collections/linked-resource-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -725,7 +725,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/linked-resource-types/{linked_resource_type_id}": {
+    "/api/ogc/collections/linked-resource-types/items/{linked_resource_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -753,7 +753,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_linked_resource_type_update_linked_resource_type"];
         trace?: never;
     };
-    "/api/data/method-types": {
+    "/api/ogc/collections/method-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -777,7 +777,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/method-types/{method_type_id}": {
+    "/api/ogc/collections/method-types/items/{method_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -805,7 +805,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_method_type_update_method_type"];
         trace?: never;
     };
-    "/api/data/methods": {
+    "/api/ogc/collections/methods/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -829,7 +829,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/methods/{method_id}": {
+    "/api/ogc/collections/methods/items/{method_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -857,7 +857,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_method_update_method"];
         trace?: never;
     };
-    "/api/data/monitoring-rules": {
+    "/api/ogc/collections/monitoring-rules/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -881,7 +881,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-rules/{rule_id}": {
+    "/api/ogc/collections/monitoring-rules/items/{rule_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -909,7 +909,7 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
         trace?: never;
     };
-    "/api/data/monitoring-site-types": {
+    "/api/ogc/collections/monitoring-site-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -933,7 +933,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-site-types/{monitoring_site_type_id}": {
+    "/api/ogc/collections/monitoring-site-types/items/{monitoring_site_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -961,7 +961,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type"];
         trace?: never;
     };
-    "/api/data/monitoring-sites": {
+    "/api/ogc/collections/monitoring-sites/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -985,107 +985,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-sites/markers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Markers
-         * @description Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/site-summaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Summaries
-         * @description Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/site-type-icons": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Type Icons
-         * @description Get the configured site type icon mappings.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/tags/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Tag Keys
-         * @description Get all existing unique monitoring_site tag keys.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/task-summaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Task Summaries
-         * @description Get task count summaries for MonitoringSites associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/{monitoring_site_id}": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1113,7 +1013,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site"];
         trace?: never;
     };
-    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources": {
         parameters: {
             query?: never;
             header?: never;
@@ -1137,7 +1037,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1162,7 +1062,107 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource"];
         trace?: never;
     };
-    "/api/data/monitoring-tasks": {
+    "/api/ogc/collections/monitoring-sites/markers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Markers
+         * @description Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/site-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Summaries
+         * @description Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/site-type-icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Type Icons
+         * @description Get the configured site type icon mappings.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/tags/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Tag Keys
+         * @description Get all existing unique monitoring_site tag keys.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/task-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Task Summaries
+         * @description Get task count summaries for MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-tasks/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1186,7 +1186,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1214,7 +1214,7 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_task_update_monitoring_task"];
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}/runs": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1234,7 +1234,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1254,7 +1254,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -1274,7 +1274,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observations": {
+    "/api/ogc/collections/observations/bulk-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Insert Observations
+         * @description Insert Observations.
+         */
+        post: operations["interfaces_api_views_sta_observation_insert_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/observations/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Observations
+         * @description Delete Observations between the given phenomenon start and end times.
+         */
+        post: operations["interfaces_api_views_sta_observation_delete_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/observations/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1298,47 +1338,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observations/bulk-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Insert Observations
-         * @description Insert Observations.
-         */
-        post: operations["interfaces_api_views_sta_observation_insert_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/observations/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Observations
-         * @description Delete Observations between the given phenomenon start and end times.
-         */
-        post: operations["interfaces_api_views_sta_observation_delete_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/observations/{observation_id}": {
+    "/api/ogc/collections/observations/items/{observation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1362,7 +1362,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-properties": {
+    "/api/ogc/collections/observed-properties/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1386,7 +1386,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-properties/{observed_property_id}": {
+    "/api/ogc/collections/observed-properties/items/{observed_property_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1414,7 +1414,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_observed_property_update_observed_property"];
         trace?: never;
     };
-    "/api/data/observed-property-types": {
+    "/api/ogc/collections/observed-property-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1438,7 +1438,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-property-types/{observed_property_type_id}": {
+    "/api/ogc/collections/observed-property-types/items/{observed_property_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1466,7 +1466,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_observed_property_type_update_observed_property_type"];
         trace?: never;
     };
-    "/api/data/processing-levels": {
+    "/api/ogc/collections/processing-levels/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1490,7 +1490,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/processing-levels/{processing_level_id}": {
+    "/api/ogc/collections/processing-levels/items/{processing_level_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1518,7 +1518,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_processing_level_update_processing_level"];
         trace?: never;
     };
-    "/api/data/quality-control/histories": {
+    "/api/ogc/collections/quality-control-histories/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1542,7 +1542,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1566,7 +1566,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1590,7 +1590,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1618,7 +1618,7 @@ export interface paths {
         patch: operations["interfaces_api_views_quality_session_update_qc_session"];
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/commit": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/commit": {
         parameters: {
             query?: never;
             header?: never;
@@ -1638,7 +1638,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1662,7 +1662,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations/{operation_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations/{operation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1690,7 +1690,7 @@ export interface paths {
         patch: operations["interfaces_api_views_quality_operation_update_qc_operation"];
         trace?: never;
     };
-    "/api/data/result-qualifiers": {
+    "/api/ogc/collections/result-qualifiers/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1714,7 +1714,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/result-qualifiers/{result_qualifier_id}": {
+    "/api/ogc/collections/result-qualifiers/items/{result_qualifier_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1742,7 +1742,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_result_qualifier_update_result_qualifier"];
         trace?: never;
     };
-    "/api/data/roles": {
+    "/api/ogc/collections/roles/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1762,7 +1762,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/roles/{role_id}": {
+    "/api/ogc/collections/roles/items/{role_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1782,7 +1782,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/sampled-mediums": {
+    "/api/ogc/collections/sampled-mediums/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1806,7 +1806,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/sampled-mediums/{sampled_medium_id}": {
+    "/api/ogc/collections/sampled-mediums/items/{sampled_medium_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1834,7 +1834,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_sampled_medium_update_sampled_medium"];
         trace?: never;
     };
-    "/api/data/unit-types": {
+    "/api/ogc/collections/unit-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1858,7 +1858,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/unit-types/{unit_type_id}": {
+    "/api/ogc/collections/unit-types/items/{unit_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1886,7 +1886,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_unit_type_update_unit_type"];
         trace?: never;
     };
-    "/api/data/units": {
+    "/api/ogc/collections/units/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1910,7 +1910,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/units/{unit_id}": {
+    "/api/ogc/collections/units/items/{unit_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1938,7 +1938,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_unit_update_unit"];
         trace?: never;
     };
-    "/api/data/workspaces": {
+    "/api/ogc/collections/workspaces/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1962,7 +1962,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1990,7 +1990,7 @@ export interface paths {
         patch: operations["interfaces_api_views_iam_workspace_update_workspace"];
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/collaborators": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/collaborators": {
         parameters: {
             query?: never;
             header?: never;
@@ -2022,7 +2022,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/service-accounts": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2046,7 +2046,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2074,7 +2074,7 @@ export interface paths {
         patch: operations["interfaces_api_views_iam_service_account_update_service_account"];
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2094,7 +2094,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/transfer": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/transfer": {
         parameters: {
             query?: never;
             header?: never;
@@ -8612,72 +8612,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
-        parameters: {
-            query?: {
-                workspace_id?: string | null;
-                datastream_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string[];
-                    };
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap: {
-        parameters: {
-            query?: {
-                /** @description Filter visualization bootstrap datastreams by workspace ID. */
-                workspace_id?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DatastreamVisualizationBootstrapResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_api_views_sta_datastream_get_datastream: {
         parameters: {
             query?: {
@@ -9094,6 +9028,72 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                datastream_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string[];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap: {
+        parameters: {
+            query?: {
+                /** @description Filter visualization bootstrap datastreams by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatastreamVisualizationBootstrapResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11424,164 +11424,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
-        parameters: {
-            query?: {
-                /** @description Filter markers by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
-                /** @description Filter markers by monitoring site type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteMarkerResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries: {
-        parameters: {
-            query?: {
-                /** @description Filter site summaries by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter summaries by monitoring site type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteMapSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_site_type_icons: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
-        parameters: {
-            query?: {
-                workspace_id?: string | null;
-                monitoring_site_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string[];
-                    };
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries: {
-        parameters: {
-            query?: {
-                /** @description Filter task summaries by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter summaries by monitoring site type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteTaskSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_api_views_sta_monitoring_site_get_monitoring_site: {
         parameters: {
             query?: {
@@ -11960,6 +11802,164 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
+        parameters: {
+            query?: {
+                /** @description Filter markers by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
+                bbox?: string[];
+                /** @description Filter markers by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteMarkerResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter site summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter summaries by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteMapSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_site_type_icons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                monitoring_site_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string[];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter task summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter summaries by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteTaskSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12411,6 +12411,98 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_observation_insert_observations: {
+        parameters: {
+            query?: {
+                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
+                mode?: ("insert" | "append" | "backfill" | "replace") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_delete_observations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationBulkDeleteBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_observation_get_observations: {
         parameters: {
             query?: {
@@ -12521,98 +12613,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_insert_observations: {
-        parameters: {
-            query?: {
-                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
-                mode?: ("insert" | "append" | "backfill" | "replace") | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_delete_observations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationBulkDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

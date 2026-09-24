@@ -70,7 +70,7 @@ class Datastream(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "datastreams"
+        return "collections/datastreams/items"
 
     @property
     def workspace(self) -> "Workspace":
@@ -219,7 +219,7 @@ class Datastream(HydroServerBaseModel):
     def sync_phenomenon_end_time(self):
         """Ensures the phenomenon_end_time field matches the actual end time of the observations."""
 
-        path = f"/{self.client.base_route}/observations"
+        path = f"/{self.client.base_route}/collections/observations/items"
         response = self.client.request(
             "get",
             path,

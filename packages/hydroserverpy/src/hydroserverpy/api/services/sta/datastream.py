@@ -262,7 +262,7 @@ class DatastreamService(HydroServerBaseService):
             if v is not ...
         }
 
-        path = f"/{self.client.base_route}/observations"
+        path = f"/{self.client.base_route}/collections/observations/items"
         response = self.client.request("get", path, params=params)
         datastream = self.get(uid=uid)
         collection = ObservationCollection(
@@ -288,7 +288,7 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Load observations to a datastream."""
 
-        path = f"/{self.client.base_route}/observations/bulk-create"
+        path = f"/{self.client.base_route}/collections/observations/bulk-create"
         headers = {"Content-type": "application/json"}
         params = {"mode": mode}
         body = {
@@ -309,7 +309,7 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Delete observations from a datastream."""
 
-        path = f"/{self.client.base_route}/observations/bulk-delete"
+        path = f"/{self.client.base_route}/collections/observations/bulk-delete"
         headers = {"Content-type": "application/json"}
         body = {"datastreamId": str(uid)}
 

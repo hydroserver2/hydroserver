@@ -13,7 +13,7 @@ from tests.core.iam.factories import (
 
 pytestmark = pytest.mark.django_db
 
-WORKSPACES_URL = "/api/data/workspaces"
+WORKSPACES_URL = "/api/ogc/collections/workspaces/items"
 
 WORKSPACE_FIELDS = {
     "id",

@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace SampledMediumContract {
-  export const route = 'sampled-mediums' as const
+  export const route = 'collections/sampled-mediums/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_sampled_medium_get_sampled_mediums']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_sampled_medium_get_sampled_mediums']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['SampledMediumResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_SampledMediumResponse_']

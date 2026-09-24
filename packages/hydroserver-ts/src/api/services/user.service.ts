@@ -1,6 +1,6 @@
 import { apiMethods } from '../apiMethods'
 import { type HydroServer } from '../HydroServer'
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 import { User, Workspace } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 

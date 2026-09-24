@@ -27,7 +27,7 @@
     "test": "vitest",
     "coverage": "vitest run --coverage --environment jsdom",
     "gen:schemas": "DEBUG=True DEPLOYMENT_BACKEND=dev PROXY_BASE_URL=http://127.0.0.1:8000 python3.14 ../../django/manage.py export_openapi_contracts",
-    "gen:types": "npx --yes openapi-typescript@7.13.0 ../../django/contracts/openapi/data.openapi.json --output ./src/generated/data.types.d.ts",
+    "gen:types": "npx --yes openapi-typescript@7.13.0 ../../django/contracts/openapi/ogc.openapi.json --output ./src/generated/ogc.types.d.ts",
     "gen:contracts": "tsx ./scripts/generate-contracts.data.ts",
     "gen": "npm run gen:schemas && npm run gen:types && npm run gen:contracts",
     "check:contract": "npm run gen && git diff --exit-code -- ../../django/contracts/openapi ./src/generated"

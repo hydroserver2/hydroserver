@@ -55,7 +55,7 @@ class Workspace(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "workspaces"
+        return "collections/workspaces/items"
 
     @property
     def roles(self) -> List["Role"]:

@@ -20,7 +20,7 @@ describe('WorkspaceService', () => {
     await client.workspaces.getServiceAccounts('workspace-1')
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=0&limit=200'
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts?offset=0&limit=200'
     )
   })
 
@@ -69,8 +69,8 @@ describe('WorkspaceService', () => {
     expect(response.data.every((c) => c.role?.id === 'role-1')).toBe(true)
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=0&limit=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=200&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=0&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=200&limit=200',
     ])
   })
 
@@ -139,8 +139,8 @@ describe('WorkspaceService', () => {
     expect(response.data).toEqual([{ id: 'account-1' }, { id: 'account-2' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=0&limit=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=200&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts?offset=0&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts?offset=200&limit=200',
     ])
   })
 
@@ -175,7 +175,7 @@ describe('WorkspaceService', () => {
     const response = await client.workspaces.get('workspace-1')
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1?include=owner%2CpendingTransferTo%2CcollaboratorRole'
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1?include=owner%2CpendingTransferTo%2CcollaboratorRole'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -355,7 +355,7 @@ describe('WorkspaceService', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts/account-1/regenerate'
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts/account-1/regenerate'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return
