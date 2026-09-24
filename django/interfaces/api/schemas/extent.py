@@ -1,7 +1,10 @@
 import math
+import re
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional, Any, Annotated
+from ninja import Query, Schema
 from pydantic import BeforeValidator, WithJsonSchema
 
 
@@ -98,3 +101,100 @@ BoundingBoxQuery = Annotated[
     BeforeValidator(parse_bbox),
     WithJsonSchema(BBOX_JSON_SCHEMA),
 ]
+
+
+# RFC 3339 section 5.6 date-time: a full date, "T", a time and a required UTC offset.
+RFC3339_DATE_TIME = re.compile(
+    r"\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})"
+)
+
+
+@dataclass(frozen=True)
+class TimeInterval:
+    """
+    An OGC API datetime parameter value, per OGC API - Features - Part 1: Core. An instant has
+    equal start and end; an interval may leave one end open (None).
+    """
+
+    start: Optional[datetime]
+    end: Optional[datetime]
+
+
+def parse_rfc3339(value: str) -> datetime:
+    """Parses an RFC 3339 date-time, which requires a UTC offset, into an aware UTC datetime."""
+
+    if not RFC3339_DATE_TIME.fullmatch(value):
+        raise ValueError(
+            f"Invalid date-time '{value}'. Use RFC 3339 with a UTC offset, e.g. 2024-01-01T00:00:00Z"
+        )
+
+    try:
+        parsed = datetime.fromisoformat(value.upper())
+    except ValueError:
+        raise ValueError(f"Invalid date-time '{value}'")
+
+    return parsed.astimezone(timezone.utc)
+
+
+def parse_datetime(value: Any) -> Optional[TimeInterval]:
+    """
+    Parses an OGC API datetime query parameter value into a TimeInterval.
+
+    Accepts an instant (date-time), a bounded interval (start/end) or a half-bounded interval
+    whose open end is ".." or empty (../end, /end, start/.., start/), per Core Req 26.
+    """
+
+    if value is None or isinstance(value, TimeInterval):
+        return value
+
+    if not isinstance(value, str):
+        raise ValueError("Datetime must be a string")
+
+    value = value.strip()
+
+    if value.lower() == "null":
+        return None
+
+    if "/" not in value:
+        instant = parse_rfc3339(value)
+        return TimeInterval(start=instant, end=instant)
+
+    parts = value.split("/")
+    if len(parts) != 2:
+        raise ValueError("Datetime interval must have exactly one '/' separating its start and end")
+
+    start, end = (None if part in ("", "..") else parse_rfc3339(part) for part in parts)
+
+    if start is None and end is None:
+        raise ValueError("Datetime interval must have at least one bounded end")
+    if start is not None and end is not None and start > end:
+        raise ValueError("Datetime interval start must be earlier than or equal to its end")
+
+    return TimeInterval(start=start, end=end)
+
+
+DATETIME_JSON_SCHEMA = {
+    "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant "
+    "(2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with "
+    "'..' or an empty value for the open end (../end, start/..). Items without a time match any "
+    "datetime.",
+    "type": "string",
+    "style": "form",
+    "explode": False,
+}
+
+DatetimeQuery = Annotated[
+    Optional[TimeInterval],
+    BeforeValidator(parse_datetime),
+    WithJsonSchema(DATETIME_JSON_SCHEMA),
+]
+
+
+class ExtentQueryParameters(Schema):
+    """
+    Query parameters that filter items by their spatial and temporal extent, shared by every
+    OGC API collection items endpoint.
+    """
+
+    bbox: BoundingBoxQuery = Query(None)
+    datetime: DatetimeQuery = Query(None)

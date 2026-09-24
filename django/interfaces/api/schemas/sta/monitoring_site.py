@@ -15,6 +15,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
     ExtentQueryParameters,
+    BoundingBoxQuery,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
@@ -152,10 +153,11 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
     )
 
 
-class MonitoringSiteMarkerQueryParameters(BaseQueryParameters, ExtentQueryParameters):
+class MonitoringSiteMarkerQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter markers by workspace ID."
     )
+    bbox: BoundingBoxQuery = Query(None)
     type: list[str] = Query([], description="Filter markers by monitoring site type.")
 
 

@@ -2350,6 +2350,8 @@ export interface components {
         DataConnectionQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2514,6 +2516,8 @@ export interface components {
         DataProductTaskQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2717,6 +2721,8 @@ export interface components {
         DataProductTransformationQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3004,6 +3010,8 @@ export interface components {
         DatastreamQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3357,6 +3365,8 @@ export interface components {
         EtlMappingQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Etl Task Id
              * @description Filter mappings by ETL task ID.
@@ -3491,6 +3501,8 @@ export interface components {
              * @default []
              */
             data_connection_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4015,6 +4027,8 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4201,6 +4215,8 @@ export interface components {
              * @default []
              */
             datastream_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4476,6 +4492,8 @@ export interface components {
              * @default []
              */
             country: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4719,6 +4737,8 @@ export interface components {
              * @default []
              */
             datastream_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4941,6 +4961,8 @@ export interface components {
              * @default []
              */
             datastream_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Format
              * @description Controls the format of the observations response.
@@ -5090,6 +5112,8 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -5642,6 +5666,8 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -5736,6 +5762,8 @@ export interface components {
         QualityControlHistoryQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6082,6 +6110,8 @@ export interface components {
         RatingCurveQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6196,6 +6226,8 @@ export interface components {
         ResultQualifierQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6265,6 +6297,8 @@ export interface components {
         RoleQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6668,6 +6702,8 @@ export interface components {
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6905,6 +6941,8 @@ export interface components {
         VocabularyQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6972,6 +7010,8 @@ export interface components {
         WorkspaceQueryParameters: {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -7056,6 +7096,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -7283,6 +7325,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -7552,6 +7596,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -8000,6 +8046,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -8291,6 +8339,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -8518,6 +8568,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -9150,6 +9202,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -9410,6 +9464,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -9699,6 +9755,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10149,6 +10207,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10376,6 +10436,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10603,6 +10665,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10871,6 +10935,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -11160,6 +11226,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -11387,6 +11455,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -11872,10 +11942,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
         parameters: {
             query?: {
-                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
-                bbox?: number[] & (unknown | unknown);
                 /** @description Filter markers by workspace ID. */
                 workspace_id?: string[];
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Filter markers by monitoring site type. */
                 type?: string[];
             };
@@ -12032,6 +12102,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -12568,6 +12640,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
                 /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
@@ -12781,6 +12855,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -13045,6 +13121,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -13272,6 +13350,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -13534,6 +13614,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14389,6 +14471,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14620,6 +14704,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14707,6 +14793,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14934,6 +15022,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -15161,6 +15251,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -15416,6 +15508,8 @@ export interface operations {
             query?: {
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
                 /** @description Comma-separated list of related resources to include in the response. */

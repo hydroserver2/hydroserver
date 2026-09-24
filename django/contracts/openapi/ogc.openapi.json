@@ -681,6 +681,10 @@
             ],
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -1247,6 +1251,10 @@
               }
             ],
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -1868,6 +1876,10 @@
               }
             ],
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -2703,6 +2715,10 @@
               }
             ],
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -3589,6 +3605,10 @@
             ],
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "etl_task_id": {
             "default": [],
             "description": "Filter mappings by ETL task ID.",
@@ -3892,6 +3912,10 @@
             },
             "title": "Data Connection Id",
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -5527,6 +5551,10 @@
             "title": "Datastream Id",
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -6084,6 +6112,10 @@
             },
             "title": "Datastream Id",
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -6881,6 +6913,10 @@
             "title": "Country",
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -7491,6 +7527,10 @@
             },
             "title": "Datastream Id",
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -8130,6 +8170,10 @@
             "title": "Datastream Id",
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "format": {
             "anyOf": [
               {
@@ -8567,6 +8611,10 @@
             },
             "title": "Datastream Id",
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -10433,6 +10481,10 @@
             "title": "Datastream Id",
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -10699,6 +10751,10 @@
               }
             ],
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -11702,6 +11758,10 @@
             ],
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -11998,6 +12058,10 @@
             ],
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -12183,6 +12247,10 @@
               }
             ],
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "anyOf": [
@@ -13418,6 +13486,10 @@
             "title": "Datastream Id",
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -14042,6 +14114,10 @@
             ],
             "type": "array"
           },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
           "include": {
             "anyOf": [
               {
@@ -14231,6 +14307,10 @@
               }
             ],
             "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
@@ -14474,6 +14554,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -14984,6 +15076,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -15608,6 +15712,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -16800,6 +16916,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -17485,6 +17613,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -17991,6 +18131,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -19824,6 +19976,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -20450,6 +20614,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -21095,6 +21271,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -22330,6 +22518,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -22840,6 +23040,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -23346,6 +23558,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -24058,6 +24282,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -24715,6 +24951,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -25221,6 +25469,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -26452,6 +26712,22 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers",
         "parameters": [
           {
+            "description": "Filter markers by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter markers by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          },
+          {
             "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
             "explode": false,
             "in": "query",
@@ -26475,22 +26751,6 @@
               "type": "array"
             },
             "style": "form"
-          },
-          {
-            "description": "Filter markers by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter markers by workspace ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
           },
           {
             "description": "Filter markers by monitoring site type.",
@@ -26867,6 +27127,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -28197,6 +28469,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
             "explode": false,
             "in": "query",
@@ -28777,6 +29061,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -29445,6 +29741,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -29951,6 +30259,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -30594,6 +30914,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -32580,6 +32912,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -33136,6 +33480,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -33431,6 +33787,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -33945,6 +34313,18 @@
             "style": "form"
           },
           {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -34451,6 +34831,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },
@@ -35102,6 +35494,18 @@
                 }
               ],
               "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
             },
             "style": "form"
           },

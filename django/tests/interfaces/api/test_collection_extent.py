@@ -47,6 +47,10 @@ NON_SPATIAL_COLLECTIONS = [
     "quality-control-histories",
 ]
 
+TEMPORAL_COLLECTIONS = ["observations", "datastreams", "monitoring-sites", "workspaces", "quality-control-histories"]
+NON_TEMPORAL_COLLECTIONS = [c for c in NON_SPATIAL_COLLECTIONS if c not in TEMPORAL_COLLECTIONS]
+ALL_COLLECTIONS = NON_SPATIAL_COLLECTIONS + ["monitoring-sites", "datastreams", "observations", "workspaces"]
+
 ITEM_FACTORIES = {
     "observed-properties": lambda workspace: ObservedPropertyFactory(workspace=workspace),
     "units": lambda workspace: UnitFactory(workspace=workspace),
@@ -98,6 +102,33 @@ def test_non_spatial_collection_returns_items_for_any_bbox(client, owner_workspa
     item = ITEM_FACTORIES[collection](owner_workspace)
 
     response = client.get(_items_url(collection), {"bbox": "0,0,0.001,0.001"})
+
+    assert response.status_code == 200
+    assert str(item.id) in [i["id"] for i in response.json()["data"]]
+
+
+@pytest.mark.parametrize("collection", ALL_COLLECTIONS)
+@pytest.mark.parametrize("value", ["2024-01-01", "2024-01-01T00:00:00", "../..", "2024-02-01T00:00:00Z/2024-01-01T00:00:00Z"])
+def test_collection_returns_400_for_invalid_datetime(client, owner_workspace, collection, value):
+    response = client.get(_items_url(collection), {"datetime": value})
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize("collection", NON_TEMPORAL_COLLECTIONS)
+def test_non_temporal_collection_ignores_a_valid_datetime(client, owner_workspace, collection):
+    unfiltered = client.get(_items_url(collection))
+    filtered = client.get(_items_url(collection), {"datetime": "1900-01-01T00:00:00Z/1900-01-02T00:00:00Z"})
+
+    assert filtered.status_code == 200
+    assert filtered.json() == unfiltered.json()
+
+
+@pytest.mark.parametrize("collection", ITEM_FACTORIES)
+def test_non_temporal_collection_returns_items_for_any_datetime(client, owner_workspace, collection):
+    item = ITEM_FACTORIES[collection](owner_workspace)
+
+    response = client.get(_items_url(collection), {"datetime": "1900-01-01T00:00:00Z"})
 
     assert response.status_code == 200
     assert str(item.id) in [i["id"] for i in response.json()["data"]]

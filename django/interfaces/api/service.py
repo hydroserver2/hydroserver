@@ -14,7 +14,7 @@ from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, NotFoundError
 from interfaces.api.schemas.base import PaginationMeta
-from interfaces.api.schemas.bbox import BoundingBox
+from interfaces.api.schemas.extent import BoundingBox, TimeInterval
 
 User = get_user_model()
 
@@ -123,6 +123,63 @@ class APIService:
             return queryset
 
         return queryset.filter(cls.bbox_q(bbox, latitude_field, longitude_field))
+
+    @staticmethod
+    def datetime_instant_q(interval: TimeInterval, field: str) -> Q:
+        """
+        Builds a Q object matching items whose instant lies inside a datetime interval, bounds
+        included. Items without an instant match any interval (OGC API - Features Core Req 26C).
+        """
+
+        q = Q()
+        if interval.start is not None:
+            q &= Q(**{f"{field}__gte": interval.start})
+        if interval.end is not None:
+            q &= Q(**{f"{field}__lte": interval.end})
+
+        return q | Q(**{f"{field}__isnull": True})
+
+    @staticmethod
+    def datetime_interval_q(interval: TimeInterval, start_field: str, end_field: str) -> Q:
+        """
+        Builds a Q object matching items whose [start, end] interval intersects a datetime
+        interval, bounds included (OGC API - Features Core Req 26). A missing start or end on
+        an item is treated as open, so items without an interval match any datetime (Req 26C).
+        """
+
+        q = Q()
+        if interval.end is not None:
+            q &= Q(**{f"{start_field}__lte": interval.end}) | Q(**{f"{start_field}__isnull": True})
+        if interval.start is not None:
+            q &= Q(**{f"{end_field}__gte": interval.start}) | Q(**{f"{end_field}__isnull": True})
+
+        return q
+
+    @classmethod
+    def apply_datetime_instant(
+        cls, queryset: QuerySet, interval: Optional[TimeInterval], field: str
+    ) -> QuerySet:
+        """Filters a queryset to items whose instant lies inside a datetime interval."""
+
+        if interval is None:
+            return queryset
+
+        return queryset.filter(cls.datetime_instant_q(interval, field))
+
+    @classmethod
+    def apply_datetime_interval(
+        cls,
+        queryset: QuerySet,
+        interval: Optional[TimeInterval],
+        start_field: str,
+        end_field: str,
+    ) -> QuerySet:
+        """Filters a queryset to items whose interval intersects a datetime interval."""
+
+        if interval is None:
+            return queryset
+
+        return queryset.filter(cls.datetime_interval_q(interval, start_field, end_field))
 
     @staticmethod
     def apply_sorting(

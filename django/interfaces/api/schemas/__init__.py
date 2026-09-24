@@ -1,8 +1,8 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
-                   ExtentQueryParameters,
                    PaginationMeta, PaginatedResponse,
                    CreatedResponse, ItemResponse, split_comma_separated, comma_array_schema)
-from .bbox import BoundingBox, BoundingBoxQuery, parse_bbox
+from .extent import (BoundingBox, BoundingBoxQuery, DatetimeQuery, ExtentQueryParameters, TimeInterval,
+                     parse_bbox, parse_datetime)
 from interfaces.api.schemas.iam.user import UserContactResponse
 from interfaces.api.schemas.iam.role import (RoleResponse, RoleQueryParameters,
                                              RoleItemQueryParameters, RoleSortByFields)
