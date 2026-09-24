@@ -89,6 +89,8 @@ def get_app_settings_context():
         "analyticsConfiguration": {
             "enableClarityAnalytics": instance_configuration.analytics_configuration.enable_clarity_analytics,
             "clarityProjectId": instance_configuration.analytics_configuration.clarity_project_id,
+            "enableGoogleAnalytics": instance_configuration.analytics_configuration.enable_google_analytics,
+            "googleAnalyticsMeasurementId": instance_configuration.analytics_configuration.google_analytics_measurement_id,
         },
         "legalInformation": {
             "termsOfUseLink": instance_configuration.terms_of_use_link,

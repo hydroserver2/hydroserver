@@ -26,6 +26,8 @@ const defaultSettings: AppSettings = {
   analyticsConfiguration: {
     enableClarityAnalytics: false,
     clarityProjectId: null,
+    enableGoogleAnalytics: false,
+    googleAnalyticsMeasurementId: null,
   },
   legalInformation: {
     termsOfUseLink: null,

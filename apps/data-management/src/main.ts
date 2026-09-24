@@ -8,6 +8,7 @@ import router from './router/router'
 import vuetify from '@/plugins/vuetify'
 import { createPinia, storeToRefs } from 'pinia'
 import { injectClarity } from '@/plugins/clarity'
+import { injectGoogleAnalytics } from '@/plugins/googleAnalytics'
 import { settings } from '@/config/settings'
 import hs, { createHydroServer, User } from '@hydroserver/client'
 import { useVocabularyStore } from './composables/useVocabulary'
@@ -60,6 +61,11 @@ async function initializeApp() {
   settings.analyticsConfiguration.enableClarityAnalytics &&
     settings.analyticsConfiguration.clarityProjectId &&
     injectClarity(settings.analyticsConfiguration.clarityProjectId)
+  settings.analyticsConfiguration.enableGoogleAnalytics &&
+    settings.analyticsConfiguration.googleAnalyticsMeasurementId &&
+    injectGoogleAnalytics(
+      settings.analyticsConfiguration.googleAnalyticsMeasurementId
+    )
   app.mount('#app')
 }
 
