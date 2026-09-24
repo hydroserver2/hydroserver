@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
@@ -71,7 +72,7 @@ class EtlMappingItemQueryParameters(EtlMappingFilterFields, BaseQueryParameters)
     pass
 
 
-class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameters):
+class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[EtlMappingSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

@@ -12,6 +12,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     MonitoringSiteResponse,
     ObservedPropertyResponse,
@@ -165,7 +166,7 @@ class DatastreamItemQueryParameters(DatastreamFilterFields, BaseQueryParameters)
     pass
 
 
-class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters):
+class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[DatastreamSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

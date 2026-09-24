@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
@@ -68,7 +69,7 @@ class ProcessingLevelItemQueryParameters(ProcessingLevelFilterFields, BaseQueryP
     pass
 
 
-class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters):
+class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[ProcessingLevelSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

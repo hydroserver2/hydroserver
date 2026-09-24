@@ -12,6 +12,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DataConnectionResponse,
     split_comma_separated,
     comma_array_schema,
@@ -89,7 +90,7 @@ class EtlTaskItemQueryParameters(EtlTaskFilterFields, BaseQueryParameters):
     pass
 
 
-class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters):
+class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[EtlTaskSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

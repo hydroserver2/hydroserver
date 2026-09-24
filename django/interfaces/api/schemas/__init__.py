@@ -1,4 +1,5 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
+                   ExtentQueryParameters,
                    PaginationMeta, PaginatedResponse,
                    CreatedResponse, ItemResponse, split_comma_separated, comma_array_schema)
 from .bbox import BoundingBox, BoundingBoxQuery, parse_bbox

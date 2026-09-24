@@ -10,6 +10,7 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
@@ -77,7 +78,7 @@ class QualityControlHistoryItemQueryParameters(
 
 
 class QualityControlHistoryQueryParameters(
-    QualityControlHistoryFilterFields, CollectionQueryParameters
+    QualityControlHistoryFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
     sortby: Optional[list[QualityControlHistorySortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."

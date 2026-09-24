@@ -14,6 +14,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
@@ -93,7 +94,7 @@ class DataConnectionItemQueryParameters(DataConnectionFilterFields, BaseQueryPar
     pass
 
 
-class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryParameters):
+class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[DataConnectionSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

@@ -83,6 +83,9 @@ def parse_bbox(value: Any) -> Optional[BoundingBox]:
 
 
 BBOX_JSON_SCHEMA = {
+    "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, "
+    "or six values including min and max heights (heights are not used for filtering). A min_lon "
+    "greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
     "type": "array",
     "oneOf": [{"minItems": 4, "maxItems": 4}, {"minItems": 6, "maxItems": 6}],
     "items": {"type": "number"},

@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
@@ -76,7 +77,7 @@ class MonitoringRuleItemQueryParameters(MonitoringRuleFilterFields, BaseQueryPar
     pass
 
 
-class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryParameters):
+class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[MonitoringRuleSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

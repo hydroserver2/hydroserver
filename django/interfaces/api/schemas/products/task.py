@@ -12,6 +12,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     MonitoringSiteResponse,
     split_comma_separated,
     comma_array_schema,
@@ -90,7 +91,7 @@ class DataProductTaskItemQueryParameters(DataProductTaskFilterFields, BaseQueryP
     pass
 
 
-class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQueryParameters):
+class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[DataProductTaskSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

@@ -2348,6 +2348,8 @@ export interface components {
         };
         /** DataConnectionQueryParameters */
         DataConnectionQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2510,6 +2512,8 @@ export interface components {
         };
         /** DataProductTaskQueryParameters */
         DataProductTaskQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2711,6 +2715,8 @@ export interface components {
         };
         /** DataProductTransformationQueryParameters */
         DataProductTransformationQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2996,6 +3002,8 @@ export interface components {
         };
         /** DatastreamQueryParameters */
         DatastreamQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3347,6 +3355,8 @@ export interface components {
         };
         /** EtlMappingQueryParameters */
         EtlMappingQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Etl Task Id
              * @description Filter mappings by ETL task ID.
@@ -3473,6 +3483,8 @@ export interface components {
         };
         /** EtlTaskQueryParameters */
         EtlTaskQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Data Connection Id
              * @description Filter ETL tasks by data connection ID.
@@ -3995,6 +4007,8 @@ export interface components {
         };
         /** MethodQueryParameters */
         MethodQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter methods by datastream ID.
@@ -4179,6 +4193,8 @@ export interface components {
         };
         /** MonitoringRuleQueryParameters */
         MonitoringRuleQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter rules by datastream ID.
@@ -4324,7 +4340,7 @@ export interface components {
         };
         /** MonitoringSiteMarkerQueryParameters */
         MonitoringSiteMarkerQueryParameters: {
-            /** @description Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
              * Type
@@ -4452,7 +4468,7 @@ export interface components {
              * @default []
              */
             admin_area_2: string[];
-            /** @description Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
              * Country
@@ -4695,6 +4711,8 @@ export interface components {
         };
         /** MonitoringTaskQueryParameters */
         MonitoringTaskQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter monitoring tasks by datastream ID.
@@ -4915,6 +4933,8 @@ export interface components {
         };
         /** ObservationQueryParameters */
         ObservationQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter observations by datastream ID.
@@ -5062,6 +5082,8 @@ export interface components {
         };
         /** ObservedPropertyQueryParameters */
         ObservedPropertyQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter observed properties by datastream ID.
@@ -5612,6 +5634,8 @@ export interface components {
         };
         /** ProcessingLevelQueryParameters */
         ProcessingLevelQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter processing levels by datastream ID.
@@ -5710,6 +5734,8 @@ export interface components {
         };
         /** QualityControlHistoryQueryParameters */
         QualityControlHistoryQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6054,6 +6080,8 @@ export interface components {
         };
         /** RatingCurveQueryParameters */
         RatingCurveQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6166,6 +6194,8 @@ export interface components {
         };
         /** ResultQualifierQueryParameters */
         ResultQualifierQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6233,6 +6263,8 @@ export interface components {
         };
         /** RoleQueryParameters */
         RoleQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6628,6 +6660,8 @@ export interface components {
         };
         /** UnitQueryParameters */
         UnitQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter units by datastream ID.
@@ -6869,6 +6903,8 @@ export interface components {
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6934,6 +6970,8 @@ export interface components {
         };
         /** WorkspaceQueryParameters */
         WorkspaceQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -7016,6 +7054,8 @@ export interface operations {
     interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -7241,6 +7281,8 @@ export interface operations {
     interfaces_api_views_products_rating_curve_get_rating_curves: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -7508,6 +7550,8 @@ export interface operations {
     interfaces_api_views_products_task_get_data_product_tasks: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -7954,6 +7998,8 @@ export interface operations {
     interfaces_api_views_products_transformation_get_data_product_transformations: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -8243,6 +8289,8 @@ export interface operations {
     interfaces_api_views_sta_datastream_status_get_datastream_statuses: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -8468,6 +8516,8 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -9098,6 +9148,8 @@ export interface operations {
     interfaces_api_views_etl_data_connection_get_data_connections: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -9356,6 +9408,8 @@ export interface operations {
     interfaces_api_views_etl_mapping_get_etl_mappings: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -9643,6 +9697,8 @@ export interface operations {
     interfaces_api_views_etl_task_get_etl_tasks: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10091,6 +10147,8 @@ export interface operations {
     interfaces_api_views_sta_linked_resource_type_get_linked_resource_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10316,6 +10374,8 @@ export interface operations {
     interfaces_api_views_sta_method_type_get_method_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10541,6 +10601,8 @@ export interface operations {
     interfaces_api_views_sta_method_get_methods: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -10807,6 +10869,8 @@ export interface operations {
     interfaces_api_views_monitoring_rule_get_monitoring_rules: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -11094,6 +11158,8 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -11319,6 +11385,8 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_sites: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -11333,8 +11401,6 @@ export interface operations {
                 q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
-                bbox?: number[] & (unknown | unknown);
                 /** @description Filter monitoring sites by admin area 1. */
                 admin_area_1?: string[];
                 /** @description Filter monitoring sites by admin area 2. */
@@ -11806,10 +11872,10 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Filter markers by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering. */
-                bbox?: number[] & (unknown | unknown);
                 /** @description Filter markers by monitoring site type. */
                 type?: string[];
             };
@@ -11964,6 +12030,8 @@ export interface operations {
     interfaces_api_views_monitoring_task_get_monitoring_tasks: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -12498,6 +12566,8 @@ export interface operations {
     interfaces_api_views_sta_observation_get_observations: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
                 /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
@@ -12709,6 +12779,8 @@ export interface operations {
     interfaces_api_views_sta_observed_property_get_observed_properties: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -12971,6 +13043,8 @@ export interface operations {
     interfaces_api_views_sta_observed_property_type_get_observed_property_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -13196,6 +13270,8 @@ export interface operations {
     interfaces_api_views_sta_processing_level_get_processing_levels: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -13456,6 +13532,8 @@ export interface operations {
     interfaces_api_views_quality_history_get_qc_histories: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14309,6 +14387,8 @@ export interface operations {
     interfaces_api_views_sta_result_qualifier_get_result_qualifiers: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14538,6 +14618,8 @@ export interface operations {
     interfaces_api_views_iam_role_get_roles: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14623,6 +14705,8 @@ export interface operations {
     interfaces_api_views_sta_sampled_medium_get_sampled_mediums: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -14848,6 +14932,8 @@ export interface operations {
     interfaces_api_views_sta_unit_type_get_unit_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -15073,6 +15159,8 @@ export interface operations {
     interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
                 /** @description Comma-separated list of related resources to include in the response. */
@@ -15326,6 +15414,8 @@ export interface operations {
     interfaces_api_views_iam_workspace_get_workspaces: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
                 /** @description Comma-separated list of related resources to include in the response. */

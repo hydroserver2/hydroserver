@@ -14,6 +14,7 @@ from pydantic import (
 )
 
 from core.types import Unset
+from interfaces.api.schemas.bbox import BoundingBoxQuery
 
 base_alias_generator = AliasGenerator(
     serialization_alias=lambda field_name: to_camel(field_name),
@@ -122,6 +123,15 @@ class CollectionQueryParameters(BaseQueryParameters):
     limit: Optional[int] = Query(
         100, ge=0, le=100000, description="The maximum number of items to return."
     )
+
+
+class ExtentQueryParameters(Schema):
+    """
+    Query parameters that filter items by their spatial and temporal extent, shared by every
+    OGC API collection items endpoint.
+    """
+
+    bbox: BoundingBoxQuery = Query(None)
 
 
 class BaseGetResponse(Schema):

@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     split_comma_separated,
     comma_array_schema,
 )
@@ -52,7 +53,7 @@ class VocabularyItemQueryParameters(
 
 
 class VocabularyQueryParameters(
-    VocabularyFilterFields, CollectionQueryParameters
+    VocabularyFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
     sortby: Optional[list[VocabularySortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."

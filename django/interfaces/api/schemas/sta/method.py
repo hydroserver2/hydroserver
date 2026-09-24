@@ -12,6 +12,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
@@ -84,7 +85,7 @@ class MethodItemQueryParameters(MethodFilterFields, BaseQueryParameters):
     pass
 
 
-class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters):
+class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[MethodSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

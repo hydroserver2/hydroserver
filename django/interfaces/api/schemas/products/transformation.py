@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
@@ -105,7 +106,7 @@ class DataProductTransformationItemQueryParameters(
 
 
 class DataProductTransformationQueryParameters(
-    DataProductTransformationFilterFields, CollectionQueryParameters
+    DataProductTransformationFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
     sortby: Optional[list[DataProductTransformationSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."

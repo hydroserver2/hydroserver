@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     UserContactResponse,
     RoleResponse,
     split_comma_separated,
@@ -84,7 +85,7 @@ class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
     pass
 
 
-class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters):
+class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[WorkspaceSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

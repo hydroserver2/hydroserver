@@ -8,6 +8,7 @@ from interfaces.api.http import handlers
 from interfaces.api.http.api import HydroServerNinjaAPI
 from interfaces.api.schemas import BaseQueryParameters, BoundingBox, BoundingBoxQuery, parse_bbox
 from interfaces.api.service import APIService
+from interfaces.api.urls import api
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 
 
@@ -155,6 +156,25 @@ def test_bounding_box_query_is_declared_per_ogc_core_requirement_23():
 def test_bounding_box_query_rejects_invalid_values_during_model_validation():
     with pytest.raises(ValidationError):
         _BBoxQueryParameters.model_validate({"bbox": "-112,40,-111"})
+
+
+def test_bbox_is_declared_on_every_collection_items_list_and_no_nested_list():
+    paths = api.get_openapi_schema(path_prefix="/api/ogc/")["paths"]
+
+    def declares_bbox(path):
+        return any(p["name"] == "bbox" for p in paths[path]["get"].get("parameters", []))
+
+    items_lists = [path for path in paths if path.endswith("/items") and "get" in paths[path]]
+    nested_lists = [
+        path
+        for path in paths
+        if "/items/{" in path and not path.rsplit("/", 1)[-1].startswith("{") and "get" in paths[path]
+        and not path.endswith("/csv")
+    ]
+
+    assert len(items_lists) == 27
+    assert [path for path in items_lists if not declares_bbox(path)] == []
+    assert nested_lists and [path for path in nested_lists if declares_bbox(path)] == []
 
 
 # --- APIService.apply_bbox ----------------------------------------------------------------

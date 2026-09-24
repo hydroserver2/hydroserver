@@ -664,6 +664,23 @@
       },
       "DataConnectionQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -1214,6 +1231,23 @@
       },
       "DataProductTaskQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -1818,6 +1852,23 @@
       },
       "DataProductTransformationQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -2636,6 +2687,23 @@
       },
       "DatastreamQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -3504,6 +3572,23 @@
       },
       "EtlMappingQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "etl_task_id": {
             "default": [],
             "description": "Filter mappings by ETL task ID.",
@@ -3781,6 +3866,23 @@
       },
       "EtlTaskQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "data_connection_id": {
             "default": [],
             "description": "Filter ETL tasks by data connection ID.",
@@ -5390,6 +5492,23 @@
       },
       "MethodQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter methods by datastream ID.",
@@ -5939,6 +6058,23 @@
       },
       "MonitoringRuleQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter rules by datastream ID.",
@@ -6298,7 +6434,7 @@
       "MonitoringSiteMarkerQueryParameters": {
         "properties": {
           "bbox": {
-            "description": "Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
             "items": {
               "type": "number"
             },
@@ -6720,7 +6856,7 @@
             "type": "array"
           },
           "bbox": {
-            "description": "Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
             "items": {
               "type": "number"
             },
@@ -7329,6 +7465,23 @@
       },
       "MonitoringTaskQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter monitoring tasks by datastream ID.",
@@ -7950,6 +8103,23 @@
       },
       "ObservationQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter observations by datastream ID.",
@@ -8363,6 +8533,23 @@
       },
       "ObservedPropertyQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter observed properties by datastream ID.",
@@ -10211,6 +10398,23 @@
       },
       "ProcessingLevelQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter processing levels by datastream ID.",
@@ -10479,6 +10683,23 @@
       },
       "QualityControlHistoryQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -11464,6 +11685,23 @@
       },
       "RatingCurveQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -11743,6 +11981,23 @@
       },
       "ResultQualifierQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -11912,6 +12167,23 @@
       },
       "RoleQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "anyOf": [
               {
@@ -13111,6 +13383,23 @@
       },
       "UnitQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "datastream_id": {
             "default": [],
             "description": "Filter units by datastream ID.",
@@ -13736,6 +14025,23 @@
       },
       "VocabularyQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "anyOf": [
               {
@@ -13909,6 +14215,23 @@
       },
       "WorkspaceQueryParameters": {
         "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
           "include": {
             "description": "Comma-separated list of related resources to include in the response.",
             "items": {
@@ -14129,6 +14452,31 @@
         "description": "Get Aggregation Statistics.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -14614,6 +14962,31 @@
         "description": "Get rating curves accessible to the authenticated user.",
         "operationId": "interfaces_api_views_products_rating_curve_get_rating_curves",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -15213,6 +15586,31 @@
         "description": "Get data product tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_products_task_get_data_product_tasks",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -16377,6 +16775,31 @@
         "operationId": "interfaces_api_views_products_transformation_get_data_product_transformations",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -17037,6 +17460,31 @@
         "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_statuses",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -17521,6 +17969,31 @@
         "description": "Get public Datastreams and Datastreams associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastreams",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -19326,6 +19799,31 @@
         "operationId": "interfaces_api_views_etl_data_connection_get_data_connections",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -19930,6 +20428,31 @@
         "description": "Get ETL mappings.",
         "operationId": "interfaces_api_views_etl_mapping_get_etl_mappings",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -20550,6 +21073,31 @@
         "description": "Get ETL Tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_etl_task_get_etl_tasks",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -21757,6 +22305,31 @@
         "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_types",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -22242,6 +22815,31 @@
         "operationId": "interfaces_api_views_sta_method_type_get_method_types",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -22726,6 +23324,31 @@
         "description": "Get public Methods and Methods associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_method_get_methods",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -23410,6 +24033,31 @@
         "operationId": "interfaces_api_views_monitoring_rule_get_monitoring_rules",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -24042,6 +24690,31 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -24527,6 +25200,31 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_sites",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -24701,31 +25399,6 @@
               "title": "Workspace Id",
               "type": "array"
             }
-          },
-          {
-            "description": "Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
-            "explode": false,
-            "in": "query",
-            "name": "bbox",
-            "required": false,
-            "schema": {
-              "description": "Filter monitoring sites by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
-              "items": {
-                "type": "number"
-              },
-              "oneOf": [
-                {
-                  "maxItems": 4,
-                  "minItems": 4
-                },
-                {
-                  "maxItems": 6,
-                  "minItems": 6
-                }
-              ],
-              "type": "array"
-            },
-            "style": "form"
           },
           {
             "description": "Filter monitoring sites by admin area 1.",
@@ -25779,29 +26452,13 @@
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers",
         "parameters": [
           {
-            "description": "Filter markers by workspace ID.",
-            "in": "query",
-            "name": "workspace_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter markers by workspace ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Workspace Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
             "explode": false,
             "in": "query",
             "name": "bbox",
             "required": false,
             "schema": {
-              "description": "Filter markers by bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat (a min_lon greater than max_lon crosses the antimeridian). A six-value box with min and max heights is accepted; heights are not used for filtering.",
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
               "items": {
                 "type": "number"
               },
@@ -25818,6 +26475,22 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Filter markers by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter markers by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
           },
           {
             "description": "Filter markers by monitoring site type.",
@@ -26172,6 +26845,31 @@
         "description": "Get monitoring tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_tasks",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -27474,6 +28172,31 @@
         "operationId": "interfaces_api_views_sta_observation_get_observations",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
             "explode": false,
             "in": "query",
@@ -28032,6 +28755,31 @@
         "description": "Get public Observed Properties and Observed Properties associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_observed_property_get_observed_properties",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -28672,6 +29420,31 @@
         "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_types",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -29156,6 +29929,31 @@
         "description": "Get public Processing Levels and Processing Levels associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_processing_level_get_processing_levels",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -29774,6 +30572,31 @@
         "description": "Get QC histories.",
         "operationId": "interfaces_api_views_quality_history_get_qc_histories",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -31732,6 +32555,31 @@
         "operationId": "interfaces_api_views_sta_result_qualifier_get_result_qualifiers",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -32263,6 +33111,31 @@
         "operationId": "interfaces_api_views_iam_role_get_roles",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -32536,6 +33409,31 @@
         "description": "Get Sampled Mediums.",
         "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_mediums",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -33022,6 +33920,31 @@
         "operationId": "interfaces_api_views_sta_unit_type_get_unit_types",
         "parameters": [
           {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
@@ -33506,6 +34429,31 @@
         "description": "Get public Units and Units associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_unit_get_units",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
@@ -34132,6 +35080,31 @@
         "description": "Get public workspaces and workspaces associated with the authenticated user.",
         "operationId": "interfaces_api_views_iam_workspace_get_workspaces",
         "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
           {
             "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,

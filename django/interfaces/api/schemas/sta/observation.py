@@ -13,6 +13,7 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     PaginationMeta,
     WorkspaceResponse,
     DatastreamResponse,
@@ -88,7 +89,7 @@ class ObservationItemQueryParameters(ObservationFilterFields, BaseQueryParameter
     pass
 
 
-class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters):
+class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     datastream_id: list[uuid.UUID] = Query(
         [], description="Filter observations by datastream ID."
     )

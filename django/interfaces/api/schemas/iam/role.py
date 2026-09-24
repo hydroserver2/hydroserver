@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BaseGetResponse,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     split_comma_separated,
     comma_array_schema,
 )
@@ -57,7 +58,7 @@ class RoleItemQueryParameters(RoleFilterFields, BaseQueryParameters):
     pass
 
 
-class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters):
+class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[RoleSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )

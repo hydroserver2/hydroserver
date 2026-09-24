@@ -11,6 +11,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     MonitoringSiteResponse,
     split_comma_separated,
     comma_array_schema,
@@ -81,7 +82,7 @@ class RatingCurveItemQueryParameters(RatingCurveFilterFields, BaseQueryParameter
     pass
 
 
-class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParameters):
+class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     sortby: Optional[list[RatingCurveSortByFields]] = Query(
         [], description="Select one or more fields to sort the response by."
     )
