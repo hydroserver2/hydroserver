@@ -58,6 +58,8 @@ interface MapConfiguration {
 interface AnalyticsConfiguration {
   enableClarityAnalytics: boolean
   clarityProjectId?: string | null
+  enableGoogleAnalytics: boolean
+  googleAnalyticsMeasurementId?: string | null
 }
 
 interface LegalInformation {

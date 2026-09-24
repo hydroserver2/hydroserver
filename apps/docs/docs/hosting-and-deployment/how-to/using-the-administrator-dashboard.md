@@ -59,7 +59,7 @@ The following website settings can be configured under **Website Configuration**
 | Model | Purpose |
 | --- | --- |
 | **Instance Configuration** | Configure instance-wide website content and legal links. |
-| **Analytics Configuration** | Enable or disable Microsoft Clarity analytics. |
+| **Analytics Configuration** | Enable or disable Microsoft Clarity and Google Analytics independently. |
 | **Map Configuration** | Configure the default map view, default map layers, and map service providers. |
 | **Map Layers** | Create the map layers available to users in HydroServer map controls. |
 | **Contact Information** | Add contact cards shown on the About page. |
@@ -81,12 +81,26 @@ Use **Website Configuration** > **Instance Configuration** to manage general web
 ### Analytics Configuration
 
 Use **Website Configuration** > **Analytics Configuration** to optionally enable
-[Microsoft Clarity](https://clarity.microsoft.com/) analytics:
+[Microsoft Clarity](https://clarity.microsoft.com/) and/or Google Analytics for the Data Management app.
+Both are disabled by default. Each service only loads when its enable checkbox is selected and its ID is provided.
 
 | Field | Purpose |
 | --- | --- |
 | **Enable clarity analytics** | Turns Microsoft Clarity tracking on or off. |
 | **Clarity project id** | Stores the project ID from the Microsoft Clarity project settings. |
+| **Enable google analytics** | Turns Google Analytics tracking on or off, independently of Clarity. |
+| **Google analytics measurement id** | Stores the GA4 web stream measurement ID, such as `G-XXXXXXXXXX`. |
+
+For Google Analytics, create a GA4 web data stream for your HydroServer URL and copy its measurement ID
+from **Admin** > **Data streams**. In the stream's **Enhanced measurement** settings, enable **Page views**,
+including **Page changes based on browser history events** in the advanced settings. This tracks navigation
+within the app using Google's [automatic page-view measurement](https://developers.google.com/analytics/devguides/collection/ga4/single-page-applications).
+After saving the HydroServer settings, allow up to ten minutes for the cached page settings to expire, reload
+the app, and verify visits and navigation in Google Analytics Realtime or DebugView.
+
+Set **Instance Configuration** > **Privacy policy link** to your organization's analytics/cookie notice;
+the app already displays this link in its footer.
+This integration tracks browser usage of the Data Management app; it does not add API request tracking.
 
 ### Map Configuration
 
