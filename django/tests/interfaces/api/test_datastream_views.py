@@ -1,6 +1,8 @@
 import uuid
+from datetime import timedelta
 
 import pytest
+from django.utils import timezone
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
@@ -978,5 +980,46 @@ def test_get_datastreams_combines_bbox_with_other_filters(client):
 
 def test_get_datastreams_returns_400_for_invalid_bbox(client):
     response = client.get(DATASTREAMS_URL, {"bbox": "-112,40,-111,91"})
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+
+
+def _datastream_spanning(begin, end):
+    return DatastreamFactory(phenomenon_begin_time=begin, phenomenon_end_time=end)
+
+
+def test_get_datastreams_filters_by_overlapping_phenomenon_time(client):
+    jan = timezone.now().replace(microsecond=0) - timedelta(days=60)
+    feb = jan + timedelta(days=30)
+    before = _datastream_spanning(jan - timedelta(days=20), jan - timedelta(days=10))
+    overlaps_start = _datastream_spanning(jan - timedelta(days=5), jan + timedelta(days=5))
+    inside = _datastream_spanning(jan + timedelta(days=1), jan + timedelta(days=2))
+    touches_end = _datastream_spanning(feb, feb + timedelta(days=5))
+    after = _datastream_spanning(feb + timedelta(days=1), feb + timedelta(days=5))
+
+    response = client.get(DATASTREAMS_URL, {"datetime": f"{jan.isoformat()}/{feb.isoformat()}"})
+
+    assert response.status_code == 200
+    ids = _datastream_ids(response)
+    assert {str(overlaps_start.id), str(inside.id), str(touches_end.id)} <= ids
+    assert not ids & {str(before.id), str(after.id)}
+
+
+def test_get_datastreams_datetime_matches_datastreams_without_observations(client):
+    empty = _datastream_spanning(None, None)
+    old = _datastream_spanning(timezone.now() - timedelta(days=20), timezone.now() - timedelta(days=10))
+
+    response = client.get(DATASTREAMS_URL, {"datetime": timezone.now().replace(microsecond=0).isoformat()})
+
+    assert response.status_code == 200
+    assert str(empty.id) in _datastream_ids(response)
+    assert str(old.id) not in _datastream_ids(response)
+
+
+def test_get_datastreams_returns_400_for_invalid_datetime(client):
+    response = client.get(DATASTREAMS_URL, {"datetime": "../.."})
 
     assert response.status_code == 400

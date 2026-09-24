@@ -53,6 +53,7 @@ def get_datastreams(
         filtering=query.dict(exclude_unset=True),
         include=query.include,
         bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 

@@ -101,16 +101,6 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
         description="Controls the format of the observations response.",
         alias="format",
     )
-    phenomenon_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon time of filtered observations.",
-        alias="phenomenon_time_max",
-    )
-    phenomenon_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon time of filtered observations.",
-        alias="phenomenon_time_min",
-    )
     result_qualifier_codes: list[str] = Query(
         [],
         description="Filter observations by result qualifier code.",

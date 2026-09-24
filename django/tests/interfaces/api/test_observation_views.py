@@ -261,7 +261,7 @@ def test_get_observations_total_count_exact_for_phenomenon_time_filter(client):
 
     response = client.get(
         _observations_url(
-            datastream.id, phenomenon_time_min=_iso(keep_time - timedelta(minutes=1))
+            datastream.id, datetime=f"{_iso(keep_time - timedelta(minutes=1))}/.."
         )
     )
 
@@ -1012,7 +1012,7 @@ def test_get_observations_bbox_count_uses_matched_datastreams_with_a_time_filter
     response = client.get(
         _observations_url(
             bbox="-112,40,-111,41",
-            phenomenon_time_min=(timezone.now() - timedelta(days=1)).isoformat(),
+            datetime=f"{(timezone.now() - timedelta(days=1)).isoformat()}/..",
         )
     )
 
@@ -1046,5 +1046,48 @@ def test_get_observations_row_format_is_empty_when_the_datastream_is_outside_the
 
 def test_get_observations_returns_400_for_invalid_bbox(client):
     response = client.get(_observations_url(bbox="-112,40,-111"))
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+
+
+def _observations_at(datastream, *times):
+    return [ObservationFactory(datastream=datastream, phenomenon_time=t) for t in times]
+
+
+def test_get_observations_filters_by_datetime_interval_including_bounds(client):
+    datastream = DatastreamFactory(value_count=4)
+    start = timezone.now().replace(microsecond=0) - timedelta(days=10)
+    end = start + timedelta(days=5)
+    before, on_start, on_end, after = _observations_at(
+        datastream, start - timedelta(seconds=1), start, end, end + timedelta(seconds=1)
+    )
+
+    response = client.get(_observations_url(datastream.id, datetime=f"{_iso(start)}/{_iso(end)}"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {o["id"] for o in body["data"]} == {str(on_start.id), str(on_end.id)}
+    assert body["meta"]["totalCount"] == 2
+
+
+def test_get_observations_filters_by_datetime_instant_and_open_ends(client):
+    datastream = DatastreamFactory(value_count=2)
+    early_time = timezone.now().replace(microsecond=0) - timedelta(days=10)
+    late_time = early_time + timedelta(days=5)
+    early, late = _observations_at(datastream, early_time, late_time)
+
+    def ids(value):
+        return {o["id"] for o in client.get(_observations_url(datastream.id, datetime=value)).json()["data"]}
+
+    assert ids(_iso(late_time)) == {str(late.id)}
+    assert ids(f"../{_iso(early_time)}") == {str(early.id)}
+    assert ids(f"{_iso(late_time)}/") == {str(late.id)}
+
+
+def test_get_observations_returns_400_for_invalid_datetime(client):
+    response = client.get(_observations_url(datetime="2024-01-01"))
 
     assert response.status_code == 400

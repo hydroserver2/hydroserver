@@ -196,16 +196,14 @@ export async function installMocks(
       const params = new URL(url).searchParams
       const dsId = params.get('datastream_id') ?? ''
       const series = observationsById[dsId] ?? observations
-      // Honour the `phenomenon_time_min` / `phenomenon_time_max`
-      // params the client always sends. Without this, the app's
-      // cache-extension logic in `fetchObservationsInRange` (which
-      // re-fetches the segment outside its cached window every time
+      // Honour the `datetime` interval the client always sends. Without
+      // this, the app's cache-extension logic in `fetchObservationsInRange`
+      // (which re-fetches the segment outside its cached window every time
       // the range moves) would receive the full fixture series on
       // each call and stack duplicates into the ObservationRecord —
       // visible as wrong point counts and a long phantom line
       // connecting the first and last observations.
-      const tMin = parseISOorNull(params.get('phenomenon_time_min'))
-      const tMax = parseISOorNull(params.get('phenomenon_time_max'))
+      const [tMin, tMax] = parseDatetimeInterval(params.get('datetime'))
       const sliced =
         tMin == null && tMax == null ? series : sliceSeries(series, tMin, tMax)
       // The columnar format spreads its fields at the top level (no `data`
@@ -301,15 +299,24 @@ async function safeJson(request: ReturnType<Page['request']> | any): Promise<any
   }
 }
 
-function parseISOorNull(value: string | null): number | null {
-  if (!value) return null
-  const t = Date.parse(value)
-  return Number.isFinite(t) ? t : null
+/** Parses a `datetime` instant or interval into [start, end] epoch ms; open ends are null. */
+function parseDatetimeInterval(value: string | null): [number | null, number | null] {
+  if (!value) return [null, null]
+  const parseEnd = (part: string | undefined): number | null => {
+    if (!part || part === '..') return null
+    const t = Date.parse(part)
+    return Number.isFinite(t) ? t : null
+  }
+  if (!value.includes('/')) {
+    const instant = parseEnd(value)
+    return [instant, instant]
+  }
+  const [start, end] = value.split('/')
+  return [parseEnd(start), parseEnd(end)]
 }
 
 /**
- * Mirror the real backend's `phenomenon_time_min` / `phenomenon_time_max`
- * filtering. Bounds are inclusive on both ends, matching how the QC
+ * Mirror the real backend's `datetime` filtering. Bounds are inclusive on both ends, matching how the QC
  * app issues its cache-extension queries.
  */
 function sliceSeries(

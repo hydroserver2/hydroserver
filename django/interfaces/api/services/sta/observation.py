@@ -17,7 +17,7 @@ from core.sta.models import Datastream, Observation, ResultQualifier
 from interfaces.api.service import APIService
 from interfaces.api.services.sta.datastream import DatastreamAPIService
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
-from interfaces.api.schemas import BoundingBox
+from interfaces.api.schemas import BoundingBox, TimeInterval
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
     ObservationSortByFields,
@@ -153,6 +153,7 @@ class ObservationAPIService(APIService):
         response_format: Optional[str] = None,
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = Observation.objects
@@ -164,9 +165,10 @@ class ObservationAPIService(APIService):
                 "format=row and format=column require exactly one datastream_id filter value"
             )
 
-        for field in ["datastream_id", "phenomenon_time__lte", "phenomenon_time__gte"]:
-            if field in filtering:
-                queryset = self.apply_filters(queryset, field, filtering[field])
+        if "datastream_id" in filtering:
+            queryset = self.apply_filters(queryset, "datastream_id", filtering["datastream_id"])
+
+        queryset = self.apply_datetime_instant(queryset, datetime_interval, "phenomenon_time")
 
         if filtering.get("result_qualifier_codes"):
             code_filter = Q()
@@ -185,11 +187,7 @@ class ObservationAPIService(APIService):
 
         count = (
             self.resolve_count(queryset)
-            if bool(
-                filtering.get("phenomenon_time__lte")
-                or filtering.get("phenomenon_time__gte")
-                or filtering.get("result_qualifier_codes")
-            )
+            if datetime_interval is not None or filtering.get("result_qualifier_codes")
             else self.sum_datastream_value_count(principal, datastream_ids, bbox)
         )
 

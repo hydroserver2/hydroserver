@@ -59,6 +59,7 @@ def get_observations(
         response_format=query.response_format,
         include=query.include,
         bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 

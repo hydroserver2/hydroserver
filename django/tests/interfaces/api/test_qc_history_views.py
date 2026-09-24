@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
@@ -306,3 +309,35 @@ def test_get_qc_histories_properties_filters_response_fields(client):
     assert response.status_code == 200
     row = response.json()["data"][0]
     assert set(row.keys()) == {"id", "createdAt"}
+
+
+# --- datetime ----------------------------------------------------------------------------
+
+
+def test_get_qc_histories_filters_by_overlapping_phenomenon_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    now = timezone.now().replace(microsecond=0)
+    overlapping = _make_history(
+        workspace, phenomenon_time_start=now - timedelta(days=10), phenomenon_time_end=now - timedelta(days=5)
+    )
+    uncommitted = _make_history(workspace, phenomenon_time_start=None, phenomenon_time_end=None)
+    earlier = _make_history(
+        workspace, phenomenon_time_start=now - timedelta(days=40), phenomenon_time_end=now - timedelta(days=30)
+    )
+    client.force_login(owner)
+
+    response = client.get(QC_HISTORIES_URL, {"datetime": f"{(now - timedelta(days=7)).isoformat()}/.."})
+
+    assert response.status_code == 200
+    ids = {h["id"] for h in response.json()["data"]}
+    assert ids == {str(overlapping.id), str(uncommitted.id)}
+    assert str(earlier.id) not in ids
+
+
+def test_get_qc_histories_returns_400_for_invalid_datetime(client):
+    client.force_login(UserFactory())
+
+    response = client.get(QC_HISTORIES_URL, {"datetime": "2024-01-01T00:00:00"})
+
+    assert response.status_code == 400

@@ -40,8 +40,7 @@ export const fetchObservations = async (
     sortby: ['phenomenonTime'],
     limit: 50_000,
     format: 'column',
-    phenomenon_time_min: startTime ?? phenomenonBeginTime,
-    phenomenon_time_max: endTime ?? phenomenonEndTime,
+    datetime: `${startTime ?? phenomenonBeginTime}/${endTime ?? phenomenonEndTime}`,
   }
   if (signal) options.signal = signal
 

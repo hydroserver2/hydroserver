@@ -3059,26 +3059,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Phenomenon Begin Time Max
-             * @description Sets the maximum phenomenon begin time of filtered datastreams.
-             */
-            phenomenon_begin_time_max?: string | null;
-            /**
-             * Phenomenon Begin Time Min
-             * @description Sets the minimum phenomenon begin time of filtered datastreams.
-             */
-            phenomenon_begin_time_min?: string | null;
-            /**
-             * Phenomenon End Time Max
-             * @description Sets the maximum phenomenon end time of filtered datastreams.
-             */
-            phenomenon_end_time_max?: string | null;
-            /**
-             * Phenomenon End Time Min
-             * @description Sets the minimum phenomenon end time of filtered datastreams.
-             */
-            phenomenon_end_time_min?: string | null;
-            /**
              * Processing Level Id
              * @description Filter datastreams by processing level ID.
              * @default []
@@ -3094,26 +3074,6 @@ export interface components {
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
              */
             q?: string | null;
-            /**
-             * Result Begin Time Max
-             * @description Sets the maximum result begin time of filtered datastreams.
-             */
-            result_begin_time_max?: string | null;
-            /**
-             * Result Begin Time Min
-             * @description Sets the minimum result begin time of filtered datastreams.
-             */
-            result_begin_time_min?: string | null;
-            /**
-             * Result End Time Max
-             * @description Sets the maximum result end time of filtered datastreams.
-             */
-            result_end_time_max?: string | null;
-            /**
-             * Result End Time Min
-             * @description Sets the minimum result end time of filtered datastreams.
-             */
-            result_end_time_min?: string | null;
             /**
              * Result Qualifier Id
              * @description Filter datastreams by observation result qualifier ID.
@@ -4985,16 +4945,6 @@ export interface components {
              * @default 0
              */
             offset: number | null;
-            /**
-             * Phenomenon Time Max
-             * @description Sets the maximum phenomenon time of filtered observations.
-             */
-            phenomenon_time_max?: string | null;
-            /**
-             * Phenomenon Time Min
-             * @description Sets the minimum phenomenon time of filtered observations.
-             */
-            phenomenon_time_min?: string | null;
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
@@ -8612,22 +8562,6 @@ export interface operations {
                 value_count_max?: number | null;
                 /** @description Sets the minimum value count of filtered datastreams. */
                 value_count_min?: number | null;
-                /** @description Sets the maximum phenomenon begin time of filtered datastreams. */
-                phenomenon_begin_time_max?: string | null;
-                /** @description Sets the minimum phenomenon begin time of filtered datastreams. */
-                phenomenon_begin_time_min?: string | null;
-                /** @description Sets the maximum phenomenon end time of filtered datastreams. */
-                phenomenon_end_time_max?: string | null;
-                /** @description Sets the minimum phenomenon end time of filtered datastreams. */
-                phenomenon_end_time_min?: string | null;
-                /** @description Sets the maximum result begin time of filtered datastreams. */
-                result_begin_time_max?: string | null;
-                /** @description Sets the minimum result begin time of filtered datastreams. */
-                result_begin_time_min?: string | null;
-                /** @description Sets the maximum result end time of filtered datastreams. */
-                result_end_time_max?: string | null;
-                /** @description Sets the minimum result end time of filtered datastreams. */
-                result_end_time_min?: string | null;
             };
             header?: never;
             path?: never;
@@ -12656,10 +12590,6 @@ export interface operations {
                 sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
                 /** @description Controls the format of the observations response. */
                 format?: ("record" | "row" | "column") | null;
-                /** @description Sets the maximum phenomenon time of filtered observations. */
-                phenomenon_time_max?: string | null;
-                /** @description Sets the minimum phenomenon time of filtered observations. */
-                phenomenon_time_min?: string | null;
                 /** @description Filter observations by result qualifier code. */
                 result_qualifier_code?: string[];
             };

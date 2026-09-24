@@ -5,7 +5,7 @@ from uuid import UUID
 from datetime import datetime
 from pydantic.alias_generators import to_camel
 from hydroserverpy.api.models import Datastream, ObservationCollection
-from hydroserverpy.api.utils import normalize_uuid
+from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -44,19 +44,15 @@ class DatastreamService(HydroServerBaseService):
         is_private: bool = ...,
         value_count_max: int = ...,
         value_count_min: int = ...,
-        phenomenon_begin_time_max: datetime = ...,
-        phenomenon_begin_time_min: datetime = ...,
-        phenomenon_end_time_max: datetime = ...,
-        phenomenon_end_time_min: datetime = ...,
-        result_begin_time_max: datetime = ...,
-        result_begin_time_min: datetime = ...,
-        result_end_time_max: datetime = ...,
-        result_end_time_min: datetime = ...,
+        phenomenon_time_max: datetime = ...,
+        phenomenon_time_min: datetime = ...,
         fetch_all: bool = False,
     ) -> List["Workspace"]:
-        """Fetch a collection of HydroServer workspaces."""
+        """
+        Fetch a collection of HydroServer datastreams.
+        """
 
-        return super().list(
+        collection = super().list(
             offset=offset,
             limit=limit,
             sortby=sortby,
@@ -74,16 +70,24 @@ class DatastreamService(HydroServerBaseService):
             is_private=is_private,
             value_count_max=value_count_max,
             value_count_min=value_count_min,
-            phenomenon_begin_time_max=phenomenon_begin_time_max,
-            phenomenon_begin_time_min=phenomenon_begin_time_min,
-            phenomenon_end_time_max=phenomenon_end_time_max,
-            phenomenon_end_time_min=phenomenon_end_time_min,
-            result_begin_time_max=result_begin_time_max,
-            result_begin_time_min=result_begin_time_min,
-            result_end_time_max=result_end_time_max,
-            result_end_time_min=result_end_time_min,
-            fetch_all=fetch_all,
+            datetime=build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
+            fetch_all=False,
         )
+
+        collection.filters.pop("datetime", None)
+        collection.filters.update({
+            k: v
+            for k, v in {
+                "phenomenon_time_max": phenomenon_time_max,
+                "phenomenon_time_min": phenomenon_time_min,
+            }.items()
+            if v is not ...
+        })
+
+        if fetch_all is True:
+            collection = collection.fetch_all()
+
+        return collection
 
     def create(
         self,
@@ -251,8 +255,7 @@ class DatastreamService(HydroServerBaseService):
             "offset": offset,
             "limit": limit,
             "sortby": ",".join(sortby) if sortby is not ... else sortby,
-            "phenomenon_time_max": phenomenon_time_max,
-            "phenomenon_time_min": phenomenon_time_min,
+            "datetime": build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
             "result_qualifier_code": result_qualifier_code,
             "format": "column"
         }
@@ -271,8 +274,12 @@ class DatastreamService(HydroServerBaseService):
             sortby=sortby if sortby is not ... else None,
             filters={
                 k: v
-                for k, v in params.items()
-                if k not in ["datastream_id", "offset", "limit", "sortby", "format"]
+                for k, v in {
+                    "phenomenon_time_max": phenomenon_time_max,
+                    "phenomenon_time_min": phenomenon_time_min,
+                    "result_qualifier_code": result_qualifier_code,
+                }.items()
+                if v is not ...
             },
         )
         if fetch_all is True:

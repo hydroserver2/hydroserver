@@ -40,6 +40,7 @@ def get_qc_histories(
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
+        datetime_interval=query.datetime,
     )
 
 

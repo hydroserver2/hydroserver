@@ -19,6 +19,7 @@ from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundE
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
     BoundingBox,
+    TimeInterval,
     DatastreamPostBody,
     DatastreamPatchBody,
     LinkedResourcePostBody,
@@ -119,6 +120,7 @@ class DatastreamAPIService(APIService):
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = Datastream.objects
@@ -138,14 +140,6 @@ class DatastreamAPIService(APIService):
             "is_private",
             "value_count__lte",
             "value_count__gte",
-            "phenomenon_begin_time__lte",
-            "phenomenon_begin_time__gte",
-            "phenomenon_end_time__lte",
-            "phenomenon_end_time__gte",
-            "result_begin_time__lte",
-            "result_begin_time__gte",
-            "result_end_time__lte",
-            "result_end_time__gte",
         ]:
             if field in filtering:
                 if field == "is_private":
@@ -164,6 +158,9 @@ class DatastreamAPIService(APIService):
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
         queryset = self.apply_site_bbox(queryset, bbox)
+        queryset = self.apply_datetime_interval(
+            queryset, datetime_interval, "phenomenon_begin_time", "phenomenon_end_time"
+        )
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(

@@ -137,8 +137,7 @@ describe('fetchObservations', () => {
     expect(getObservationsMock).toHaveBeenCalledWith(
       '123',
       expect.objectContaining({
-        phenomenon_time_min: start,
-        phenomenon_time_max: end,
+        datetime: `${start}/${end}`,
       })
     )
   })

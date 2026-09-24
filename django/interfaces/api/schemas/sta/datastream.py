@@ -219,46 +219,6 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         description="Sets the minimum value count of filtered datastreams.",
         alias="value_count_min",
     )
-    phenomenon_begin_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon begin time of filtered datastreams.",
-        alias="phenomenon_begin_time_max",
-    )
-    phenomenon_begin_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon begin time of filtered datastreams.",
-        alias="phenomenon_begin_time_min",
-    )
-    phenomenon_end_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon end time of filtered datastreams.",
-        alias="phenomenon_end_time_max",
-    )
-    phenomenon_end_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon end time of filtered datastreams.",
-        alias="phenomenon_end_time_min",
-    )
-    result_begin_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum result begin time of filtered datastreams.",
-        alias="result_begin_time_max",
-    )
-    result_begin_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum result begin time of filtered datastreams.",
-        alias="result_begin_time_min",
-    )
-    result_end_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum result end time of filtered datastreams.",
-        alias="result_end_time_max",
-    )
-    result_end_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum result end time of filtered datastreams.",
-        alias="result_end_time_min",
-    )
 
 
 class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):

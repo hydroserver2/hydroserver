@@ -10,6 +10,7 @@ from core.sta.models import Datastream
 from processing.quality.models import QCHistory
 from interfaces.api.http.errors import ConflictError, PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
+from interfaces.api.schemas import TimeInterval
 from interfaces.api.schemas.quality.history import (
     QualityControlHistorySortByFields,
     QualityControlHistoryResponse,
@@ -85,6 +86,7 @@ class QCHistoryAPIService(APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = QCHistory.objects
@@ -92,6 +94,10 @@ class QCHistoryAPIService(APIService):
         for field in ["managed_datastream_id", "source_datastream_id"]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
+
+        queryset = self.apply_datetime_interval(
+            queryset, datetime_interval, "phenomenon_time_start", "phenomenon_time_end"
+        )
 
         queryset = self.apply_sorting(
             queryset,
