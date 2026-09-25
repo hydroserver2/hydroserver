@@ -75,6 +75,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { mdiClose, mdiMagnify } from '@mdi/js'
 import type { HsQueryQualifier } from './types'
+import { queryQualifierTokens } from './querySearch'
 
 defineOptions({ name: 'HsQuerySearchInput' })
 
@@ -98,12 +99,9 @@ const caret = ref(0)
 const suggestionIndex = ref(0)
 const suggestionsEnabled = ref(false)
 
-const qualifierPattern = computed(() => {
-  const keys = props.qualifiers
-    .map(({ key }) => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('|')
-  return keys ? new RegExp(`(${keys}):(?:"([^"]*)"|(\\S+))`, 'gi') : null
-})
+const qualifierTokens = computed(() =>
+  queryQualifierTokens(props.modelValue, props.qualifiers)
+)
 
 const qualifierByKey = computed(
   () =>
@@ -125,27 +123,20 @@ function isValidQualifierValue(key: string, value: string) {
 
 const highlightSegments = computed(() => {
   const raw = props.modelValue
-  const pattern = qualifierPattern.value
-  if (!pattern) return [{ text: raw, cls: '' }]
-
   const segments: { text: string; cls: string }[] = []
   let lastIndex = 0
-  let match: RegExpExecArray | null
-  pattern.lastIndex = 0
-  while ((match = pattern.exec(raw))) {
-    if (match.index > lastIndex) {
-      segments.push({ text: raw.slice(lastIndex, match.index), cls: '' })
+  for (const token of qualifierTokens.value) {
+    if (token.start > lastIndex) {
+      segments.push({ text: raw.slice(lastIndex, token.start), cls: '' })
     }
-    const key = match[1] ?? ''
-    const quoted = match[2] !== undefined
-    const value = match[2] ?? match[3] ?? ''
+    const { key, value } = token
     segments.push({ text: key, cls: 'hl-key' })
     segments.push({ text: ':', cls: 'hl-colon' })
     segments.push({
-      text: quoted ? `"${value}"` : value,
+      text: raw.slice(token.start + key.length + 1, token.end),
       cls: value && isValidQualifierValue(key, value) ? 'hl-value-valid' : '',
     })
-    lastIndex = pattern.lastIndex
+    lastIndex = token.end
   }
   if (lastIndex < raw.length) {
     segments.push({ text: raw.slice(lastIndex), cls: '' })
@@ -190,7 +181,23 @@ function findTokenStart(raw: string, caretPosition: number) {
   for (let index = 0; index < caretPosition; index += 1) {
     const character = raw[index]
     if (character === '"') inQuotes = !inQuotes
-    else if (character === ' ' && !inQuotes) tokenStart = index + 1
+    else if (/\s/.test(character ?? '') && !inQuotes) {
+      const token = raw.slice(tokenStart, caretPosition)
+      const colon = token.indexOf(':')
+      const qualifier = qualifierByKey.value.get(
+        token.slice(0, colon).toLocaleLowerCase()
+      )
+      const query = token.slice(colon + 1).toLocaleLowerCase()
+      // Keep suggesting a name as the user types beyond its first word.
+      if (
+        colon >= 0 &&
+        qualifier?.values.some((value) =>
+          value.toLocaleLowerCase().includes(query)
+        )
+      )
+        continue
+      tokenStart = index + 1
+    }
   }
   return tokenStart
 }
@@ -204,14 +211,11 @@ const currentToken = computed(() => {
 
 const selectedQualifierValues = computed(() => {
   const selected = new Map<string, string[]>()
-  const pattern = qualifierPattern.value
-  if (!pattern) return selected
-
-  let match: RegExpExecArray | null
-  pattern.lastIndex = 0
-  while ((match = pattern.exec(props.modelValue))) {
-    const key = (match[1] ?? '').toLocaleLowerCase()
-    const value = match[2] ?? match[3] ?? ''
+  for (const token of qualifierTokens.value) {
+    // The value under the caret is being edited, not a duplicate selection.
+    if (token.start <= caret.value && caret.value <= token.end) continue
+    const key = token.key.toLocaleLowerCase()
+    const value = token.value
     if (value) selected.set(key, [...(selected.get(key) ?? []), value])
   }
   return selected
@@ -265,10 +269,15 @@ watch(activeSuggestion, () => {
 
 function replaceCurrentToken(replacement: string) {
   const { start, end } = currentToken.value
+  const token = qualifierTokens.value.find((item) => item.start === start)
+  const replacementEnd = Math.max(end, token?.end ?? end)
+  const suffix = props.modelValue.slice(replacementEnd)
   const nextCaret = start + replacement.length
   emit(
     'update:modelValue',
-    props.modelValue.slice(0, start) + replacement + props.modelValue.slice(end)
+    props.modelValue.slice(0, start) +
+      replacement +
+      (replacement.endsWith(' ') ? suffix.replace(/^\s+/, '') : suffix)
   )
   nextTick(() => {
     const input = inputEl.value

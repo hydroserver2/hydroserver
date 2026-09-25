@@ -8,6 +8,18 @@ from allauth.core import context
 
 
 class AccountAdapter(DefaultAccountAdapter):
+    def add_message(
+        self,
+        request,
+        level,
+        message_template=None,
+        message_context=None,
+        extra_tags="",
+        message=None,
+    ):
+        """Account pages use inline feedback instead of queued flash messages."""
+        return
+
     def is_safe_url(self, url):
         """Allow configured frontend destinations as login return URLs."""
         allowed_hosts = {

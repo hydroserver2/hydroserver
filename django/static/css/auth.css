@@ -36,7 +36,6 @@ body.auth-page {
   padding: var(--hs-space-16);
 }
 
-.auth-flashes,
 .auth-layout {
   width: min(100%, 672px);
   margin: 0 auto;
@@ -61,14 +60,6 @@ body.auth-page {
   display: flex;
   flex: 1;
   flex-direction: column;
-}
-
-.auth-flashes {
-  padding-top: var(--hs-space-8);
-}
-
-.auth-flashes .hs-alert {
-  margin-bottom: var(--hs-space-8);
 }
 
 .auth-layout--entrance {
@@ -217,8 +208,7 @@ body.auth-page {
 
 @media (max-width: 640px) {
   .auth-layout,
-  .auth-layout--manage,
-  .auth-flashes {
+  .auth-layout--manage {
     width: 100%;
   }
 

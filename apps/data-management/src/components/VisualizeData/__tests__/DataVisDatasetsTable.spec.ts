@@ -17,6 +17,34 @@ describe('DataVisDatasetsTable query hydration', () => {
     setActivePinia(createPinia())
   })
 
+  it('filters by a typed multi-word site name without quotes', async () => {
+    const store = useDataVisStore()
+    const site = {
+      id: 'site-1',
+      name: 'Logan River',
+      workspaceId: 'workspace-1',
+    }
+    store.monitoringSites = [
+      site,
+      { ...site, id: 'site-2', name: 'Bear River' },
+    ] as any
+    store.datastreams = [
+      { id: 'stream-1', name: 'Discharge', monitoringSiteId: 'site-1' },
+      { id: 'stream-2', name: 'Discharge', monitoringSiteId: 'site-2' },
+    ] as any
+    const wrapper = shallowMount(DataVisDatasetsTable)
+    await wrapper
+      .getComponent({ name: 'HsQuerySearchInput' })
+      .vm.$emit('update:modelValue', 'site:Logan River')
+    expect(store.selectedMonitoringSites.map((item) => item.id)).toEqual([
+      'site-1',
+    ])
+    expect(store.filteredDatastreams.map((item) => item.id)).toEqual([
+      'stream-1',
+    ])
+    wrapper.unmount()
+  })
+
   it('hydrates the site qualifier while a deep-linked datastream is plotted', () => {
     const store = useDataVisStore()
     const site = {

@@ -400,7 +400,9 @@ const availableMonitoringSites = computed(
 const monitoringSiteById = computed(
   () => new Map(availableMonitoringSites.value.map((site) => [site.id, site]))
 )
-const parsedSearch = computed(() => parseDatastreamQuery(search.value)),
+const parsedSearch = computed(() =>
+    parseDatastreamQuery(search.value, searchQualifiers.value)
+  ),
   plainSearch = computed(() => parsedSearch.value.text.toLocaleLowerCase())
 const scopedDatastreams = computed(() =>
   availableDatastreams.value.filter(
