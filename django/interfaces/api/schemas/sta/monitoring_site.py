@@ -19,6 +19,8 @@ from interfaces.api.schemas import (
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
@@ -125,9 +127,11 @@ class MonitoringSiteItemQueryParameters(MonitoringSiteFilterFields, BaseQueryPar
 
 
 class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[MonitoringSiteSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[MonitoringSiteSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MonitoringSiteSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

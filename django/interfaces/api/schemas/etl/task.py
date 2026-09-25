@@ -16,6 +16,8 @@ from interfaces.api.schemas import (
     DataConnectionResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -91,9 +93,11 @@ class EtlTaskItemQueryParameters(EtlTaskFilterFields, BaseQueryParameters):
 
 
 class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[EtlTaskSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[EtlTaskSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(EtlTaskSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

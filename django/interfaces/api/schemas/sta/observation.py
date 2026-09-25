@@ -19,6 +19,8 @@ from interfaces.api.schemas import (
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
 
@@ -93,9 +95,11 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
     datastream_id: list[uuid.UUID] = Query(
         [], description="Filter observations by datastream ID."
     )
-    sortby: Optional[list[ObservationSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ObservationSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ObservationSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     response_format: Optional[Literal["record", "row", "column"]] = Query(
         None,
         description="Controls the format of the observations response.",

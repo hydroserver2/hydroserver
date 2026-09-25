@@ -16,6 +16,8 @@ from interfaces.api.schemas import (
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
 
@@ -83,9 +85,11 @@ class ObservedPropertyItemQueryParameters(ObservedPropertyFilterFields, BaseQuer
 
 
 class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[ObservedPropertySortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ObservedPropertySortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ObservedPropertySortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

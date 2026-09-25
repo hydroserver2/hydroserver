@@ -15,6 +15,8 @@ from interfaces.api.schemas import (
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -74,9 +76,11 @@ class ResultQualifierItemQueryParameters(
 class ResultQualifierQueryParameters(
     ResultQualifierFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
-    sortby: Optional[list[ResultQualifierSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ResultQualifierSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ResultQualifierSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

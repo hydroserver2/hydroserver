@@ -16,6 +16,8 @@ from interfaces.api.schemas import (
     RoleResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -86,9 +88,11 @@ class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
 
 
 class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[WorkspaceSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[WorkspaceSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(WorkspaceSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

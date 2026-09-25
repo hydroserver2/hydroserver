@@ -14,6 +14,8 @@ from interfaces.api.schemas import (
     ExtentQueryParameters,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 RESOURCE_TYPES = Literal["*", *resource_types]
@@ -59,9 +61,11 @@ class RoleItemQueryParameters(RoleFilterFields, BaseQueryParameters):
 
 
 class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[RoleSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[RoleSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(RoleSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter roles by workspace ID."
     )

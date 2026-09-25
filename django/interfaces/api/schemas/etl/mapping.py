@@ -15,6 +15,8 @@ from interfaces.api.schemas import (
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -73,9 +75,11 @@ class EtlMappingItemQueryParameters(EtlMappingFilterFields, BaseQueryParameters)
 
 
 class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[EtlMappingSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[EtlMappingSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(EtlMappingSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     source_identifier: list[str] = Query(
         [], description="Filter mappings by source identifier."
     )

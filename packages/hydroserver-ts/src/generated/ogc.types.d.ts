@@ -2256,7 +2256,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "roleId" | "-id" | "-roleId")[] | null;
+            sortby: ("id" | "roleId" | "-id" | "-roleId" | "+id" | "+roleId")[];
         };
         /** CollaboratorResponse */
         CollaboratorResponse: {
@@ -2390,7 +2390,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+            sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
             /**
              * Workspace Id
              * @description Filter data connections by workspace ID.
@@ -2580,7 +2580,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Transformation Type
              * @description Filter data product tasks by transformation type.
@@ -2762,7 +2762,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
+            sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
             /**
              * Task Id
              * @description Filter transformations by data product task ID.
@@ -3077,7 +3077,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+            sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
             /**
              * Status
              * @description Filter monitoring_sites by status.
@@ -3340,7 +3340,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+            sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
             /**
              * Source Identifier
              * @description Filter mappings by source identifier.
@@ -3507,7 +3507,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
@@ -4019,7 +4019,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
+            sortby: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition" | "+name" | "+code" | "+type" | "+sensorModel" | "+sensorModelManufacturer" | "+definition" | "+sensorModelDefinition")[];
             /**
              * Type
              * @description Filter methods by type
@@ -4190,7 +4190,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
+            sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
             /**
              * Task Id
              * @description Filter rules by monitoring task ID.
@@ -4471,7 +4471,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevation_m" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
             /**
              * Tag
              * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
@@ -4729,7 +4729,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Workspace Id
              * @description Filter monitoring tasks by workspace ID.
@@ -4941,7 +4941,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
+            sortby: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
         };
         /** ObservationResponse */
         ObservationResponse: {
@@ -5082,7 +5082,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+            sortby: ("name" | "type" | "code" | "-name" | "-type" | "-code" | "+name" | "+type" | "+code")[];
             /**
              * Type
              * @description Filter observed properties by type
@@ -5636,7 +5636,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("code" | "name" | "-code" | "-name")[] | null;
+            sortby: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
             /**
              * Workspace Id
              * @description Filter processing levels by workspace ID.
@@ -5727,7 +5727,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
+            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
             /**
              * Source Datastream Id
              * @description Filter histories by source datastream ID.
@@ -5830,7 +5830,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
+            sortby: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt" | "+id" | "+order" | "+operationType" | "+createdAt")[];
         };
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
@@ -5931,7 +5931,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
+            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
             /** Status */
             status?: ("in_progress" | "committed") | null;
         };
@@ -6080,7 +6080,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
             /**
              * Workspace Id
              * @description Filter rating curves by workspace ID.
@@ -6190,7 +6190,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "-name")[] | null;
+            sortby: ("name" | "-name" | "+name")[];
             /**
              * Workspace Id
              * @description Filter terms by workspace ID.
@@ -6256,7 +6256,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "-name")[] | null;
+            sortby: ("name" | "-name" | "+name")[];
             /**
              * Workspace Id
              * @description Filter roles by workspace ID.
@@ -6441,7 +6441,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
+            sortby: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt" | "+name" | "+isActive" | "+keyExpiresAt" | "+createdAt" | "+lastUsedAt")[];
         };
         /** ServiceAccountResponse */
         ServiceAccountResponse: {
@@ -6519,7 +6519,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+            sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
             /**
              * Started At Max
              * @description Filters for task runs started on or before this date and time.
@@ -6672,7 +6672,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+            sortby: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type" | "+name" | "+symbol" | "+type")[];
             /**
              * Type
              * @description Filter units by type
@@ -6905,7 +6905,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "-name")[] | null;
+            sortby: ("name" | "-name" | "+name")[];
         };
         /** WorkspaceItemQueryParameters */
         WorkspaceItemQueryParameters: {
@@ -6984,7 +6984,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+            sortby: ("name" | "isPrivate" | "-name" | "-isPrivate" | "+name" | "+isPrivate")[];
         };
         /** WorkspaceResponse */
         WorkspaceResponse: {
@@ -7037,7 +7037,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -7266,7 +7266,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter rating curves by monitoring site ID. */
@@ -7537,7 +7537,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter data product tasks by monitoring_site ID. */
@@ -7814,7 +7814,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -7987,7 +7987,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
+                sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
                 /** @description Filter transformations by type. */
                 transformation_type?: string[];
                 /** @description Filter transformations by output datastream ID. */
@@ -8280,7 +8280,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -8509,7 +8509,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+                sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter datastreams by workspace ID. */
@@ -9127,7 +9127,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+                sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter data connections by workspace ID. */
@@ -9389,7 +9389,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+                sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
                 /** @description Filter mappings by source identifier. */
                 source_identifier?: string[];
                 /** @description Filter mappings by target datastream ID. */
@@ -9680,7 +9680,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter ETL tasks by monitoring_site ID. */
@@ -9959,7 +9959,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -10132,7 +10132,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -10361,7 +10361,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -10590,7 +10590,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
+                sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition" | "+name" | "+code" | "+type" | "+sensorModel" | "+sensorModelManufacturer" | "+definition" | "+sensorModelDefinition")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter methods by workspace ID. */
@@ -10860,7 +10860,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
+                sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
                 /** @description Filter rules by datastream ID. */
                 datastream_id?: string[];
                 /** @description Filter rules by rule type. */
@@ -11151,7 +11151,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -11380,7 +11380,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevation_m" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
@@ -12027,7 +12027,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter monitoring tasks by monitoring_site ID. */
@@ -12300,7 +12300,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -12567,7 +12567,7 @@ export interface operations {
                 /** @description Filter observations by datastream ID. */
                 datastream_id?: string[];
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
+                sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
                 /** @description Controls the format of the observations response. */
                 format?: ("record" | "row" | "column") | null;
                 /** @description Filter observations by result qualifier code. */
@@ -12776,7 +12776,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+                sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code" | "+name" | "+type" | "+code")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter observed properties by workspace ID. */
@@ -13042,7 +13042,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -13271,7 +13271,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("code" | "name" | "-code" | "-name")[] | null;
+                sortby?: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter processing levels by workspace ID. */
@@ -13535,7 +13535,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
+                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
                 /** @description Filter histories by managed datastream ID. */
                 managed_datastream_id?: string[];
                 /** @description Filter histories by source datastream ID. */
@@ -13749,7 +13749,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
+                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
                 status?: ("in_progress" | "committed") | null;
                 /** @description Return sessions overlapping with this range start. */
                 range_start?: string | null;
@@ -14099,7 +14099,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
+                sortby?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt" | "+id" | "+order" | "+operationType" | "+createdAt")[];
             };
             header?: never;
             path: {
@@ -14392,7 +14392,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter terms by workspace ID. */
@@ -14625,7 +14625,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Filter roles by workspace ID. */
                 workspace_id?: (string | "null")[];
             };
@@ -14714,7 +14714,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -14943,7 +14943,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -15172,7 +15172,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+                sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type" | "+name" | "+symbol" | "+type")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter units by workspace ID. */
@@ -15429,7 +15429,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+                sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate" | "+name" | "+isPrivate")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Whether the workspace is associated with the authenticated user */
@@ -15671,7 +15671,7 @@ export interface operations {
                 /** @description Filter collaborators by role ID. */
                 role_id?: string[];
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "roleId" | "-id" | "-roleId")[] | null;
+                sortby?: ("id" | "roleId" | "-id" | "-roleId" | "+id" | "+roleId")[];
             };
             header?: never;
             path: {
@@ -15877,7 +15877,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
+                sortby?: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt" | "+name" | "+isActive" | "+keyExpiresAt" | "+createdAt" | "+lastUsedAt")[];
             };
             header?: never;
             path: {

@@ -63,6 +63,40 @@ def comma_array_schema(literal_type: Any) -> dict:
     }
 
 
+def split_sortby(value: Any) -> Optional[list[str]]:
+    """
+    Splits sortby values like split_comma_separated and drops a leading '+', which means
+    ascending, the same as no prefix (OGC API - Features Part 8 Req 5). An unencoded '+' arrives
+    as a space, which the split already trims.
+    """
+
+    fields = split_comma_separated(value)
+
+    if fields is None:
+        return None
+
+    return [
+        field[1:] if field.startswith("+") and field[1:2] not in ("+", "-") else field
+        for field in fields
+    ]
+
+
+def sortby_array_schema(literal_type: Any) -> dict:
+    """
+    Generates the JSON schema for a comma-separated sortby parameter. The enum lists each field
+    in the given Literal type, which holds 'field' and '-field', plus '+field' for ascending.
+    """
+
+    schema = comma_array_schema(literal_type)
+    fields = schema["items"]["enum"]
+    schema["items"]["enum"] = [
+        *fields,
+        *[f"+{field}" for field in fields if not field.startswith("-")],
+    ]
+
+    return schema
+
+
 def parse_requested_properties(info: SerializationInfo) -> Optional[set[str]]:
     """
     Parses and retrieves the requested properties from the serialization context.

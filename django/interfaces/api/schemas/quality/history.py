@@ -14,6 +14,8 @@ from interfaces.api.schemas import (
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -80,9 +82,11 @@ class QualityControlHistoryItemQueryParameters(
 class QualityControlHistoryQueryParameters(
     QualityControlHistoryFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
-    sortby: Optional[list[QualityControlHistorySortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[QualityControlHistorySortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(QualityControlHistorySortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     managed_datastream_id: list[uuid.UUID] = Query(
         [], description="Filter histories by managed datastream ID."
     )

@@ -16,6 +16,8 @@ from interfaces.api.schemas import (
     MonitoringSiteResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -93,9 +95,11 @@ class MonitoringTaskItemQueryParameters(MonitoringTaskFilterFields, BaseQueryPar
 
 
 class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[MonitoringTaskSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[MonitoringTaskSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MonitoringTaskSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

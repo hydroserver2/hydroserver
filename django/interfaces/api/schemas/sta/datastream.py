@@ -21,6 +21,8 @@ from interfaces.api.schemas import (
     ProcessingLevelResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
@@ -173,9 +175,11 @@ class DatastreamItemQueryParameters(DatastreamFilterFields, BaseQueryParameters)
 
 
 class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters, ExtentQueryParameters):
-    sortby: Optional[list[DatastreamSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[DatastreamSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(DatastreamSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

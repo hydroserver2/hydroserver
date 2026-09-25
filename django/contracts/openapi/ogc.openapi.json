@@ -322,26 +322,21 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "roleId",
-                    "-id",
-                    "-roleId"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "roleId",
+                "-id",
+                "-roleId",
+                "+id",
+                "+roleId"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           }
         },
         "title": "CollaboratorQueryParameters",
@@ -757,38 +752,39 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "timestampKey",
-                    "timestampFormat",
-                    "timezoneType",
-                    "timezone",
-                    "workspaceId",
-                    "workspaceName",
-                    "-id",
-                    "-name",
-                    "-timestampKey",
-                    "-timestampFormat",
-                    "-timezoneType",
-                    "-timezone",
-                    "-workspaceId",
-                    "-workspaceName"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "timestampKey",
+                "timestampFormat",
+                "timezoneType",
+                "timezone",
+                "workspaceId",
+                "workspaceName",
+                "-id",
+                "-name",
+                "-timestampKey",
+                "-timestampFormat",
+                "-timezoneType",
+                "-timezone",
+                "-workspaceId",
+                "-workspaceName",
+                "+id",
+                "+name",
+                "+timestampKey",
+                "+timestampFormat",
+                "+timezoneType",
+                "+timezone",
+                "+workspaceId",
+                "+workspaceName"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -1363,40 +1359,42 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "monitoringSiteId",
-                    "monitoringSiteName",
-                    "workspaceId",
-                    "workspaceName",
-                    "latestRunStatus",
-                    "latestRunStartedAt",
-                    "latestRunFinishedAt",
-                    "-id",
-                    "-name",
-                    "-monitoringSiteId",
-                    "-monitoringSiteName",
-                    "-workspaceId",
-                    "-workspaceName",
-                    "-latestRunStatus",
-                    "-latestRunStartedAt",
-                    "-latestRunFinishedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "monitoringSiteId",
+                "monitoringSiteName",
+                "workspaceId",
+                "workspaceName",
+                "latestRunStatus",
+                "latestRunStartedAt",
+                "latestRunFinishedAt",
+                "-id",
+                "-name",
+                "-monitoringSiteId",
+                "-monitoringSiteName",
+                "-workspaceId",
+                "-workspaceName",
+                "-latestRunStatus",
+                "-latestRunStartedAt",
+                "-latestRunFinishedAt",
+                "+id",
+                "+name",
+                "+monitoringSiteId",
+                "+monitoringSiteName",
+                "+workspaceId",
+                "+workspaceName",
+                "+latestRunStatus",
+                "+latestRunStartedAt",
+                "+latestRunFinishedAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "transformation_type": {
             "default": [],
@@ -1939,28 +1937,24 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "outputDatastreamId",
-                    "transformationType",
-                    "-id",
-                    "-outputDatastreamId",
-                    "-transformationType"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "outputDatastreamId",
+                "transformationType",
+                "-id",
+                "-outputDatastreamId",
+                "-transformationType",
+                "+id",
+                "+outputDatastreamId",
+                "+transformationType"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "task_id": {
             "default": [],
@@ -2729,48 +2723,54 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "observationType",
-                    "sampledMedium",
-                    "status",
-                    "resultType",
-                    "isPrivate",
-                    "isVisible",
-                    "aggregationStatistic",
-                    "valueCount",
-                    "phenomenonBeginTime",
-                    "phenomenonEndTime",
-                    "resultBeginTime",
-                    "resultEndTime",
-                    "-name",
-                    "-observationType",
-                    "-sampledMedium",
-                    "-status",
-                    "-resultType",
-                    "-isPrivate",
-                    "-isVisible",
-                    "-aggregationStatistic",
-                    "-valueCount",
-                    "-phenomenonBeginTime",
-                    "-phenomenonEndTime",
-                    "-resultBeginTime",
-                    "-resultEndTime"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "observationType",
+                "sampledMedium",
+                "status",
+                "resultType",
+                "isPrivate",
+                "isVisible",
+                "aggregationStatistic",
+                "valueCount",
+                "phenomenonBeginTime",
+                "phenomenonEndTime",
+                "resultBeginTime",
+                "resultEndTime",
+                "-name",
+                "-observationType",
+                "-sampledMedium",
+                "-status",
+                "-resultType",
+                "-isPrivate",
+                "-isVisible",
+                "-aggregationStatistic",
+                "-valueCount",
+                "-phenomenonBeginTime",
+                "-phenomenonEndTime",
+                "-resultBeginTime",
+                "-resultEndTime",
+                "+name",
+                "+observationType",
+                "+sampledMedium",
+                "+status",
+                "+resultType",
+                "+isPrivate",
+                "+isVisible",
+                "+aggregationStatistic",
+                "+valueCount",
+                "+phenomenonBeginTime",
+                "+phenomenonEndTime",
+                "+resultBeginTime",
+                "+resultEndTime"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "status": {
             "default": [],
@@ -3359,28 +3359,24 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "sourceIdentifier",
-                    "targetDatastreamId",
-                    "-id",
-                    "-sourceIdentifier",
-                    "-targetDatastreamId"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "sourceIdentifier",
+                "targetDatastreamId",
+                "-id",
+                "-sourceIdentifier",
+                "-targetDatastreamId",
+                "+id",
+                "+sourceIdentifier",
+                "+targetDatastreamId"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "source_identifier": {
             "default": [],
@@ -3759,40 +3755,42 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "dataConnectionId",
-                    "dataConnectionName",
-                    "workspaceId",
-                    "workspaceName",
-                    "latestRunStatus",
-                    "latestRunStartedAt",
-                    "latestRunFinishedAt",
-                    "-id",
-                    "-name",
-                    "-dataConnectionId",
-                    "-dataConnectionName",
-                    "-workspaceId",
-                    "-workspaceName",
-                    "-latestRunStatus",
-                    "-latestRunStartedAt",
-                    "-latestRunFinishedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "dataConnectionId",
+                "dataConnectionName",
+                "workspaceId",
+                "workspaceName",
+                "latestRunStatus",
+                "latestRunStartedAt",
+                "latestRunFinishedAt",
+                "-id",
+                "-name",
+                "-dataConnectionId",
+                "-dataConnectionName",
+                "-workspaceId",
+                "-workspaceName",
+                "-latestRunStatus",
+                "-latestRunStartedAt",
+                "-latestRunFinishedAt",
+                "+id",
+                "+name",
+                "+dataConnectionId",
+                "+dataConnectionName",
+                "+workspaceId",
+                "+workspaceName",
+                "+latestRunStatus",
+                "+latestRunStartedAt",
+                "+latestRunFinishedAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -5330,36 +5328,36 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "code",
-                    "type",
-                    "sensorModel",
-                    "sensorModelManufacturer",
-                    "definition",
-                    "sensorModelDefinition",
-                    "-name",
-                    "-code",
-                    "-type",
-                    "-sensorModel",
-                    "-sensorModelManufacturer",
-                    "-definition",
-                    "-sensorModelDefinition"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "code",
+                "type",
+                "sensorModel",
+                "sensorModelManufacturer",
+                "definition",
+                "sensorModelDefinition",
+                "-name",
+                "-code",
+                "-type",
+                "-sensorModel",
+                "-sensorModelManufacturer",
+                "-definition",
+                "-sensorModelDefinition",
+                "+name",
+                "+code",
+                "+type",
+                "+sensorModel",
+                "+sensorModelManufacturer",
+                "+definition",
+                "+sensorModelDefinition"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "type": {
             "default": [],
@@ -5843,30 +5841,27 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "ruleType",
-                    "datastreamId",
-                    "lastCheckedAt",
-                    "-id",
-                    "-ruleType",
-                    "-datastreamId",
-                    "-lastCheckedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "ruleType",
+                "datastreamId",
+                "lastCheckedAt",
+                "-id",
+                "-ruleType",
+                "-datastreamId",
+                "-lastCheckedAt",
+                "+id",
+                "+ruleType",
+                "+datastreamId",
+                "+lastCheckedAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "task_id": {
             "default": [],
@@ -6661,44 +6656,48 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "code",
-                    "type",
-                    "isPrivate",
-                    "latitude",
-                    "longitude",
-                    "elevation_m",
-                    "elevationDatum",
-                    "adminArea1",
-                    "adminArea2",
-                    "country",
-                    "-name",
-                    "-code",
-                    "-type",
-                    "-isPrivate",
-                    "-latitude",
-                    "-longitude",
-                    "-elevation_m",
-                    "-elevationDatum",
-                    "-adminArea1",
-                    "-adminArea2",
-                    "-country"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "code",
+                "type",
+                "isPrivate",
+                "latitude",
+                "longitude",
+                "elevation_m",
+                "elevationDatum",
+                "adminArea1",
+                "adminArea2",
+                "country",
+                "-name",
+                "-code",
+                "-type",
+                "-isPrivate",
+                "-latitude",
+                "-longitude",
+                "-elevation_m",
+                "-elevationDatum",
+                "-adminArea1",
+                "-adminArea2",
+                "-country",
+                "+name",
+                "+code",
+                "+type",
+                "+isPrivate",
+                "+latitude",
+                "+longitude",
+                "+elevation_m",
+                "+elevationDatum",
+                "+adminArea1",
+                "+adminArea2",
+                "+country"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "tag": {
             "default": [],
@@ -7284,40 +7283,42 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "monitoringSiteId",
-                    "monitoringSiteName",
-                    "workspaceId",
-                    "workspaceName",
-                    "latestRunStatus",
-                    "latestRunStartedAt",
-                    "latestRunFinishedAt",
-                    "-id",
-                    "-name",
-                    "-monitoringSiteId",
-                    "-monitoringSiteName",
-                    "-workspaceId",
-                    "-workspaceName",
-                    "-latestRunStatus",
-                    "-latestRunStartedAt",
-                    "-latestRunFinishedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "monitoringSiteId",
+                "monitoringSiteName",
+                "workspaceId",
+                "workspaceName",
+                "latestRunStatus",
+                "latestRunStartedAt",
+                "latestRunFinishedAt",
+                "-id",
+                "-name",
+                "-monitoringSiteId",
+                "-monitoringSiteName",
+                "-workspaceId",
+                "-workspaceName",
+                "-latestRunStatus",
+                "-latestRunStartedAt",
+                "-latestRunFinishedAt",
+                "+id",
+                "+name",
+                "+monitoringSiteId",
+                "+monitoringSiteName",
+                "+workspaceId",
+                "+workspaceName",
+                "+latestRunStatus",
+                "+latestRunStartedAt",
+                "+latestRunFinishedAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -7896,26 +7897,21 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "phenomenonTime",
-                    "datastreamId",
-                    "-phenomenonTime",
-                    "-datastreamId"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "phenomenonTime",
+                "datastreamId",
+                "-phenomenonTime",
+                "-datastreamId",
+                "+phenomenonTime",
+                "+datastreamId"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           }
         },
         "title": "ObservationQueryParameters",
@@ -8303,28 +8299,24 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "type",
-                    "code",
-                    "-name",
-                    "-type",
-                    "-code"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "type",
+                "code",
+                "-name",
+                "-type",
+                "-code",
+                "+name",
+                "+type",
+                "+code"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "type": {
             "default": [],
@@ -10163,26 +10155,21 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "code",
-                    "name",
-                    "-code",
-                    "-name"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "code",
+                "name",
+                "-code",
+                "-name",
+                "+code",
+                "+name"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -10410,30 +10397,27 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "createdAt",
-                    "phenomenonTimeStart",
-                    "phenomenonTimeEnd",
-                    "-id",
-                    "-createdAt",
-                    "-phenomenonTimeStart",
-                    "-phenomenonTimeEnd"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "createdAt",
+                "phenomenonTimeStart",
+                "phenomenonTimeEnd",
+                "-id",
+                "-createdAt",
+                "-phenomenonTimeStart",
+                "-phenomenonTimeEnd",
+                "+id",
+                "+createdAt",
+                "+phenomenonTimeStart",
+                "+phenomenonTimeEnd"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "source_datastream_id": {
             "default": [],
@@ -10704,30 +10688,27 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "order",
-                    "operationType",
-                    "createdAt",
-                    "-id",
-                    "-order",
-                    "-operationType",
-                    "-createdAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "order",
+                "operationType",
+                "createdAt",
+                "-id",
+                "-order",
+                "-operationType",
+                "-createdAt",
+                "+id",
+                "+order",
+                "+operationType",
+                "+createdAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           }
         },
         "title": "QualityControlOperationQueryParameters",
@@ -11012,34 +10993,33 @@
             "title": "Range Start"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "createdAt",
-                    "phenomenonTimeStart",
-                    "phenomenonTimeEnd",
-                    "status",
-                    "committedAt",
-                    "-id",
-                    "-createdAt",
-                    "-phenomenonTimeStart",
-                    "-phenomenonTimeEnd",
-                    "-status",
-                    "-committedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "createdAt",
+                "phenomenonTimeStart",
+                "phenomenonTimeEnd",
+                "status",
+                "committedAt",
+                "-id",
+                "-createdAt",
+                "-phenomenonTimeStart",
+                "-phenomenonTimeEnd",
+                "-status",
+                "-committedAt",
+                "+id",
+                "+createdAt",
+                "+phenomenonTimeStart",
+                "+phenomenonTimeEnd",
+                "+status",
+                "+committedAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "status": {
             "anyOf": [
@@ -11404,36 +11384,36 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "id",
-                    "name",
-                    "monitoringSiteId",
-                    "monitoringSiteName",
-                    "workspaceId",
-                    "workspaceName",
-                    "fittingMethod",
-                    "-id",
-                    "-name",
-                    "-monitoringSiteId",
-                    "-monitoringSiteName",
-                    "-workspaceId",
-                    "-workspaceName",
-                    "-fittingMethod"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "id",
+                "name",
+                "monitoringSiteId",
+                "monitoringSiteName",
+                "workspaceId",
+                "workspaceName",
+                "fittingMethod",
+                "-id",
+                "-name",
+                "-monitoringSiteId",
+                "-monitoringSiteName",
+                "-workspaceId",
+                "-workspaceName",
+                "-fittingMethod",
+                "+id",
+                "+name",
+                "+monitoringSiteId",
+                "+monitoringSiteName",
+                "+workspaceId",
+                "+workspaceName",
+                "+fittingMethod"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -11685,24 +11665,18 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "-name"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "-name",
+                "+name"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -11858,24 +11832,18 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "-name"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "-name",
+                "+name"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "workspace_id": {
             "default": [],
@@ -12455,32 +12423,30 @@
             "type": "array"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "isActive",
-                    "keyExpiresAt",
-                    "createdAt",
-                    "lastUsedAt",
-                    "-name",
-                    "-isActive",
-                    "-keyExpiresAt",
-                    "-createdAt",
-                    "-lastUsedAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "isActive",
+                "keyExpiresAt",
+                "createdAt",
+                "lastUsedAt",
+                "-name",
+                "-isActive",
+                "-keyExpiresAt",
+                "-createdAt",
+                "-lastUsedAt",
+                "+name",
+                "+isActive",
+                "+keyExpiresAt",
+                "+createdAt",
+                "+lastUsedAt"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           }
         },
         "title": "ServiceAccountQueryParameters",
@@ -12681,7 +12647,11 @@
                 "-id",
                 "-status",
                 "-startedAt",
-                "-finishedAt"
+                "-finishedAt",
+                "+id",
+                "+status",
+                "+startedAt",
+                "+finishedAt"
               ],
               "type": "string"
             },
@@ -13106,28 +13076,24 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "symbol",
-                    "type",
-                    "-name",
-                    "-symbol",
-                    "-type"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "symbol",
+                "type",
+                "-name",
+                "-symbol",
+                "-type",
+                "+name",
+                "+symbol",
+                "+type"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           },
           "type": {
             "default": [],
@@ -13706,24 +13672,18 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "-name"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "-name",
+                "+name"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           }
         },
         "title": "VocabularyQueryParameters",
@@ -13921,26 +13881,21 @@
             "title": "Q"
           },
           "sortby": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "isPrivate",
-                    "-name",
-                    "-isPrivate"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": [],
             "description": "Select one or more fields to sort the response by.",
-            "title": "Sortby"
+            "items": {
+              "enum": [
+                "name",
+                "isPrivate",
+                "-name",
+                "-isPrivate",
+                "+name",
+                "+isPrivate"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
           }
         },
         "title": "WorkspaceQueryParameters",
@@ -14158,29 +14113,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -14677,41 +14628,43 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "name",
-                      "monitoringSiteId",
-                      "monitoringSiteName",
-                      "workspaceId",
-                      "workspaceName",
-                      "fittingMethod",
-                      "-id",
-                      "-name",
-                      "-monitoringSiteId",
-                      "-monitoringSiteName",
-                      "-workspaceId",
-                      "-workspaceName",
-                      "-fittingMethod"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "monitoringSiteId",
+                  "monitoringSiteName",
+                  "workspaceId",
+                  "workspaceName",
+                  "fittingMethod",
+                  "-id",
+                  "-name",
+                  "-monitoringSiteId",
+                  "-monitoringSiteName",
+                  "-workspaceId",
+                  "-workspaceName",
+                  "-fittingMethod",
+                  "+id",
+                  "+name",
+                  "+monitoringSiteId",
+                  "+monitoringSiteName",
+                  "+workspaceId",
+                  "+workspaceName",
+                  "+fittingMethod"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -15308,45 +15261,49 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "name",
-                      "monitoringSiteId",
-                      "monitoringSiteName",
-                      "workspaceId",
-                      "workspaceName",
-                      "latestRunStatus",
-                      "latestRunStartedAt",
-                      "latestRunFinishedAt",
-                      "-id",
-                      "-name",
-                      "-monitoringSiteId",
-                      "-monitoringSiteName",
-                      "-workspaceId",
-                      "-workspaceName",
-                      "-latestRunStatus",
-                      "-latestRunStartedAt",
-                      "-latestRunFinishedAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "monitoringSiteId",
+                  "monitoringSiteName",
+                  "workspaceId",
+                  "workspaceName",
+                  "latestRunStatus",
+                  "latestRunStartedAt",
+                  "latestRunFinishedAt",
+                  "-id",
+                  "-name",
+                  "-monitoringSiteId",
+                  "-monitoringSiteName",
+                  "-workspaceId",
+                  "-workspaceName",
+                  "-latestRunStatus",
+                  "-latestRunStartedAt",
+                  "-latestRunFinishedAt",
+                  "+id",
+                  "+name",
+                  "+monitoringSiteId",
+                  "+monitoringSiteName",
+                  "+workspaceId",
+                  "+workspaceName",
+                  "+latestRunStatus",
+                  "+latestRunStartedAt",
+                  "+latestRunFinishedAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -16001,6 +15958,7 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
@@ -16016,13 +15974,18 @@
                   "-id",
                   "-status",
                   "-startedAt",
-                  "-finishedAt"
+                  "-finishedAt",
+                  "+id",
+                  "+status",
+                  "+startedAt",
+                  "+finishedAt"
                 ],
                 "type": "string"
               },
               "title": "Sortby",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Filters task runs by their status.",
@@ -16501,33 +16464,31 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "outputDatastreamId",
-                      "transformationType",
-                      "-id",
-                      "-outputDatastreamId",
-                      "-transformationType"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "outputDatastreamId",
+                  "transformationType",
+                  "-id",
+                  "-outputDatastreamId",
+                  "-transformationType",
+                  "+id",
+                  "+outputDatastreamId",
+                  "+transformationType"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Filter transformations by type.",
@@ -17178,29 +17139,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -17727,53 +17684,61 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "observationType",
-                      "sampledMedium",
-                      "status",
-                      "resultType",
-                      "isPrivate",
-                      "isVisible",
-                      "aggregationStatistic",
-                      "valueCount",
-                      "phenomenonBeginTime",
-                      "phenomenonEndTime",
-                      "resultBeginTime",
-                      "resultEndTime",
-                      "-name",
-                      "-observationType",
-                      "-sampledMedium",
-                      "-status",
-                      "-resultType",
-                      "-isPrivate",
-                      "-isVisible",
-                      "-aggregationStatistic",
-                      "-valueCount",
-                      "-phenomenonBeginTime",
-                      "-phenomenonEndTime",
-                      "-resultBeginTime",
-                      "-resultEndTime"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "observationType",
+                  "sampledMedium",
+                  "status",
+                  "resultType",
+                  "isPrivate",
+                  "isVisible",
+                  "aggregationStatistic",
+                  "valueCount",
+                  "phenomenonBeginTime",
+                  "phenomenonEndTime",
+                  "resultBeginTime",
+                  "resultEndTime",
+                  "-name",
+                  "-observationType",
+                  "-sampledMedium",
+                  "-status",
+                  "-resultType",
+                  "-isPrivate",
+                  "-isVisible",
+                  "-aggregationStatistic",
+                  "-valueCount",
+                  "-phenomenonBeginTime",
+                  "-phenomenonEndTime",
+                  "-resultBeginTime",
+                  "-resultEndTime",
+                  "+name",
+                  "+observationType",
+                  "+sampledMedium",
+                  "+status",
+                  "+resultType",
+                  "+isPrivate",
+                  "+isVisible",
+                  "+aggregationStatistic",
+                  "+valueCount",
+                  "+phenomenonBeginTime",
+                  "+phenomenonEndTime",
+                  "+resultBeginTime",
+                  "+resultEndTime"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -19356,43 +19321,46 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "name",
-                      "timestampKey",
-                      "timestampFormat",
-                      "timezoneType",
-                      "timezone",
-                      "workspaceId",
-                      "workspaceName",
-                      "-id",
-                      "-name",
-                      "-timestampKey",
-                      "-timestampFormat",
-                      "-timezoneType",
-                      "-timezone",
-                      "-workspaceId",
-                      "-workspaceName"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "timestampKey",
+                  "timestampFormat",
+                  "timezoneType",
+                  "timezone",
+                  "workspaceId",
+                  "workspaceName",
+                  "-id",
+                  "-name",
+                  "-timestampKey",
+                  "-timestampFormat",
+                  "-timezoneType",
+                  "-timezone",
+                  "-workspaceId",
+                  "-workspaceName",
+                  "+id",
+                  "+name",
+                  "+timestampKey",
+                  "+timestampFormat",
+                  "+timezoneType",
+                  "+timezone",
+                  "+workspaceId",
+                  "+workspaceName"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -19980,33 +19948,31 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "sourceIdentifier",
-                      "targetDatastreamId",
-                      "-id",
-                      "-sourceIdentifier",
-                      "-targetDatastreamId"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "sourceIdentifier",
+                  "targetDatastreamId",
+                  "-id",
+                  "-sourceIdentifier",
+                  "-targetDatastreamId",
+                  "+id",
+                  "+sourceIdentifier",
+                  "+targetDatastreamId"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Filter mappings by source identifier.",
@@ -20636,45 +20602,49 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "name",
-                      "dataConnectionId",
-                      "dataConnectionName",
-                      "workspaceId",
-                      "workspaceName",
-                      "latestRunStatus",
-                      "latestRunStartedAt",
-                      "latestRunFinishedAt",
-                      "-id",
-                      "-name",
-                      "-dataConnectionId",
-                      "-dataConnectionName",
-                      "-workspaceId",
-                      "-workspaceName",
-                      "-latestRunStatus",
-                      "-latestRunStartedAt",
-                      "-latestRunFinishedAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "dataConnectionId",
+                  "dataConnectionName",
+                  "workspaceId",
+                  "workspaceName",
+                  "latestRunStatus",
+                  "latestRunStartedAt",
+                  "latestRunFinishedAt",
+                  "-id",
+                  "-name",
+                  "-dataConnectionId",
+                  "-dataConnectionName",
+                  "-workspaceId",
+                  "-workspaceName",
+                  "-latestRunStatus",
+                  "-latestRunStartedAt",
+                  "-latestRunFinishedAt",
+                  "+id",
+                  "+name",
+                  "+dataConnectionId",
+                  "+dataConnectionName",
+                  "+workspaceId",
+                  "+workspaceName",
+                  "+latestRunStatus",
+                  "+latestRunStartedAt",
+                  "+latestRunFinishedAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -21371,6 +21341,7 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
@@ -21386,13 +21357,18 @@
                   "-id",
                   "-status",
                   "-startedAt",
-                  "-finishedAt"
+                  "-finishedAt",
+                  "+id",
+                  "+status",
+                  "+startedAt",
+                  "+finishedAt"
                 ],
                 "type": "string"
               },
               "title": "Sortby",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Filters task runs by their status.",
@@ -21858,29 +21834,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -22373,29 +22345,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -22897,41 +22865,43 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "code",
-                      "type",
-                      "sensorModel",
-                      "sensorModelManufacturer",
-                      "definition",
-                      "sensorModelDefinition",
-                      "-name",
-                      "-code",
-                      "-type",
-                      "-sensorModel",
-                      "-sensorModelManufacturer",
-                      "-definition",
-                      "-sensorModelDefinition"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "code",
+                  "type",
+                  "sensorModel",
+                  "sensorModelManufacturer",
+                  "definition",
+                  "sensorModelDefinition",
+                  "-name",
+                  "-code",
+                  "-type",
+                  "-sensorModel",
+                  "-sensorModelManufacturer",
+                  "-definition",
+                  "-sensorModelDefinition",
+                  "+name",
+                  "+code",
+                  "+type",
+                  "+sensorModel",
+                  "+sensorModelManufacturer",
+                  "+definition",
+                  "+sensorModelDefinition"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -23607,35 +23577,34 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "ruleType",
-                      "datastreamId",
-                      "lastCheckedAt",
-                      "-id",
-                      "-ruleType",
-                      "-datastreamId",
-                      "-lastCheckedAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "ruleType",
+                  "datastreamId",
+                  "lastCheckedAt",
+                  "-id",
+                  "-ruleType",
+                  "-datastreamId",
+                  "-lastCheckedAt",
+                  "+id",
+                  "+ruleType",
+                  "+datastreamId",
+                  "+lastCheckedAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Filter rules by datastream ID.",
@@ -24263,29 +24232,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -24794,49 +24759,55 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "code",
-                      "type",
-                      "isPrivate",
-                      "latitude",
-                      "longitude",
-                      "elevation_m",
-                      "elevationDatum",
-                      "adminArea1",
-                      "adminArea2",
-                      "country",
-                      "-name",
-                      "-code",
-                      "-type",
-                      "-isPrivate",
-                      "-latitude",
-                      "-longitude",
-                      "-elevation_m",
-                      "-elevationDatum",
-                      "-adminArea1",
-                      "-adminArea2",
-                      "-country"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "code",
+                  "type",
+                  "isPrivate",
+                  "latitude",
+                  "longitude",
+                  "elevation_m",
+                  "elevationDatum",
+                  "adminArea1",
+                  "adminArea2",
+                  "country",
+                  "-name",
+                  "-code",
+                  "-type",
+                  "-isPrivate",
+                  "-latitude",
+                  "-longitude",
+                  "-elevation_m",
+                  "-elevationDatum",
+                  "-adminArea1",
+                  "-adminArea2",
+                  "-country",
+                  "+name",
+                  "+code",
+                  "+type",
+                  "+isPrivate",
+                  "+latitude",
+                  "+longitude",
+                  "+elevation_m",
+                  "+elevationDatum",
+                  "+adminArea1",
+                  "+adminArea2",
+                  "+country"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -26429,45 +26400,49 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "name",
-                      "monitoringSiteId",
-                      "monitoringSiteName",
-                      "workspaceId",
-                      "workspaceName",
-                      "latestRunStatus",
-                      "latestRunStartedAt",
-                      "latestRunFinishedAt",
-                      "-id",
-                      "-name",
-                      "-monitoringSiteId",
-                      "-monitoringSiteName",
-                      "-workspaceId",
-                      "-workspaceName",
-                      "-latestRunStatus",
-                      "-latestRunStartedAt",
-                      "-latestRunFinishedAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "monitoringSiteId",
+                  "monitoringSiteName",
+                  "workspaceId",
+                  "workspaceName",
+                  "latestRunStatus",
+                  "latestRunStartedAt",
+                  "latestRunFinishedAt",
+                  "-id",
+                  "-name",
+                  "-monitoringSiteId",
+                  "-monitoringSiteName",
+                  "-workspaceId",
+                  "-workspaceName",
+                  "-latestRunStatus",
+                  "-latestRunStartedAt",
+                  "-latestRunFinishedAt",
+                  "+id",
+                  "+name",
+                  "+monitoringSiteId",
+                  "+monitoringSiteName",
+                  "+workspaceId",
+                  "+workspaceName",
+                  "+latestRunStatus",
+                  "+latestRunStartedAt",
+                  "+latestRunFinishedAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -27091,6 +27066,7 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
@@ -27106,13 +27082,18 @@
                   "-id",
                   "-status",
                   "-startedAt",
-                  "-finishedAt"
+                  "-finishedAt",
+                  "+id",
+                  "+status",
+                  "+startedAt",
+                  "+finishedAt"
                 ],
                 "type": "string"
               },
               "title": "Sortby",
               "type": "array"
-            }
+            },
+            "style": "form"
           },
           {
             "description": "Filters task runs by their status.",
@@ -27768,31 +27749,28 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "phenomenonTime",
-                      "datastreamId",
-                      "-phenomenonTime",
-                      "-datastreamId"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "phenomenonTime",
+                  "datastreamId",
+                  "-phenomenonTime",
+                  "-datastreamId",
+                  "+phenomenonTime",
+                  "+datastreamId"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Controls the format of the observations response.",
@@ -28297,33 +28275,31 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "type",
-                      "code",
-                      "-name",
-                      "-type",
-                      "-code"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "type",
+                  "code",
+                  "-name",
+                  "-type",
+                  "-code",
+                  "+name",
+                  "+type",
+                  "+code"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -28960,29 +28936,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -29479,31 +29451,28 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "code",
-                      "name",
-                      "-code",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "code",
+                  "name",
+                  "-code",
+                  "-name",
+                  "+code",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -30130,35 +30099,34 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "createdAt",
-                      "phenomenonTimeStart",
-                      "phenomenonTimeEnd",
-                      "-id",
-                      "-createdAt",
-                      "-phenomenonTimeStart",
-                      "-phenomenonTimeEnd"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "createdAt",
+                  "phenomenonTimeStart",
+                  "phenomenonTimeEnd",
+                  "-id",
+                  "-createdAt",
+                  "-phenomenonTimeStart",
+                  "-phenomenonTimeEnd",
+                  "+id",
+                  "+createdAt",
+                  "+phenomenonTimeStart",
+                  "+phenomenonTimeEnd"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Filter histories by managed datastream ID.",
@@ -30634,39 +30602,40 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "createdAt",
-                      "phenomenonTimeStart",
-                      "phenomenonTimeEnd",
-                      "status",
-                      "committedAt",
-                      "-id",
-                      "-createdAt",
-                      "-phenomenonTimeStart",
-                      "-phenomenonTimeEnd",
-                      "-status",
-                      "-committedAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "createdAt",
+                  "phenomenonTimeStart",
+                  "phenomenonTimeEnd",
+                  "status",
+                  "committedAt",
+                  "-id",
+                  "-createdAt",
+                  "-phenomenonTimeStart",
+                  "-phenomenonTimeEnd",
+                  "-status",
+                  "-committedAt",
+                  "+id",
+                  "+createdAt",
+                  "+phenomenonTimeStart",
+                  "+phenomenonTimeEnd",
+                  "+status",
+                  "+committedAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "in": "query",
@@ -31434,35 +31403,34 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "order",
-                      "operationType",
-                      "createdAt",
-                      "-id",
-                      "-order",
-                      "-operationType",
-                      "-createdAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "order",
+                  "operationType",
+                  "createdAt",
+                  "-id",
+                  "-order",
+                  "-operationType",
+                  "-createdAt",
+                  "+id",
+                  "+order",
+                  "+operationType",
+                  "+createdAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -32098,29 +32066,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -32659,29 +32623,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Filter roles by workspace ID.",
@@ -32961,29 +32921,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -33476,29 +33432,25 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "-name"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -33996,33 +33948,31 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "symbol",
-                      "type",
-                      "-name",
-                      "-symbol",
-                      "-type"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "symbol",
+                  "type",
+                  "-name",
+                  "-symbol",
+                  "-type",
+                  "+name",
+                  "+symbol",
+                  "+type"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -34653,31 +34603,28 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "isPrivate",
-                      "-name",
-                      "-isPrivate"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "isPrivate",
+                  "-name",
+                  "-isPrivate",
+                  "+name",
+                  "+isPrivate"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           },
           {
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
@@ -35306,31 +35253,28 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "id",
-                      "roleId",
-                      "-id",
-                      "-roleId"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "id",
+                  "roleId",
+                  "-id",
+                  "-roleId",
+                  "+id",
+                  "+roleId"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -35649,37 +35593,37 @@
           },
           {
             "description": "Select one or more fields to sort the response by.",
+            "explode": false,
             "in": "query",
             "name": "sortby",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "isActive",
-                      "keyExpiresAt",
-                      "createdAt",
-                      "lastUsedAt",
-                      "-name",
-                      "-isActive",
-                      "-keyExpiresAt",
-                      "-createdAt",
-                      "-lastUsedAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": [],
               "description": "Select one or more fields to sort the response by.",
-              "title": "Sortby"
-            }
+              "items": {
+                "enum": [
+                  "name",
+                  "isActive",
+                  "keyExpiresAt",
+                  "createdAt",
+                  "lastUsedAt",
+                  "-name",
+                  "-isActive",
+                  "-keyExpiresAt",
+                  "-createdAt",
+                  "-lastUsedAt",
+                  "+name",
+                  "+isActive",
+                  "+keyExpiresAt",
+                  "+createdAt",
+                  "+lastUsedAt"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {

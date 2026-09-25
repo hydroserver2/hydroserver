@@ -16,6 +16,8 @@ from interfaces.api.schemas import (
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -87,9 +89,11 @@ class ServiceAccountItemQueryParameters(ServiceAccountFilterFields, BaseQueryPar
 
 
 class ServiceAccountQueryParameters(ServiceAccountFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[ServiceAccountSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ServiceAccountSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ServiceAccountSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
 
 
 class ServiceAccountResponse(BaseGetResponse, ServiceAccountFields):
