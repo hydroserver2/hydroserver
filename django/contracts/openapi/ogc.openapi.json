@@ -3898,6 +3898,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -3925,6 +3933,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -3952,6 +3968,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -3979,6 +4003,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4006,6 +4038,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4033,6 +4073,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4060,6 +4108,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4087,6 +4143,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4114,6 +4178,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4141,6 +4213,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4168,6 +4248,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4195,6 +4283,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4222,6 +4318,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4249,6 +4353,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4276,6 +4388,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4303,6 +4423,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4330,6 +4458,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4357,6 +4493,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4384,6 +4528,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4411,6 +4563,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4438,6 +4598,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4465,6 +4633,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4492,6 +4668,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4519,6 +4703,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4546,6 +4738,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4573,6 +4773,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4600,6 +4808,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4627,6 +4843,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4654,6 +4878,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4681,6 +4913,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
@@ -4783,6 +5023,40 @@
           "timestampKey"
         ],
         "title": "JSONPayloadResponse",
+        "type": "object"
+      },
+      "Link": {
+        "properties": {
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
+          "rel": {
+            "title": "Rel",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "href",
+          "rel",
+          "type"
+        ],
+        "title": "Link",
         "type": "object"
       },
       "LinkedResourceGetResponse": {
@@ -7688,6 +7962,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8011,6 +8293,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8511,6 +8801,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8545,6 +8843,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8581,6 +8887,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8615,6 +8929,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8651,6 +8973,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8685,6 +9015,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8721,6 +9059,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8755,6 +9101,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8791,6 +9145,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8825,6 +9187,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8861,6 +9231,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8895,6 +9273,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -8931,6 +9317,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -8965,6 +9359,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9001,6 +9403,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9035,6 +9445,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9071,6 +9489,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9105,6 +9531,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9141,6 +9575,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9175,6 +9617,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9211,6 +9661,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9245,6 +9703,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9281,6 +9747,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9315,6 +9789,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9351,6 +9833,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9385,6 +9875,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9421,6 +9919,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9455,6 +9961,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9491,6 +10005,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9525,6 +10047,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
@@ -9561,6 +10091,14 @@
             ],
             "title": "Included"
           },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"
           }
@@ -9595,6 +10133,14 @@
               }
             ],
             "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
           },
           "meta": {
             "$ref": "#/components/schemas/PaginationMeta"

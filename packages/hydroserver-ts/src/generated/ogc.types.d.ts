@@ -3558,6 +3558,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DataConnectionResponse] */
         ItemResponse_DataConnectionResponse_: {
@@ -3566,6 +3571,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DataProductTaskResponse] */
         ItemResponse_DataProductTaskResponse_: {
@@ -3574,6 +3584,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DataProductTransformationResponse] */
         ItemResponse_DataProductTransformationResponse_: {
@@ -3582,6 +3597,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DatastreamResponse] */
         ItemResponse_DatastreamResponse_: {
@@ -3590,6 +3610,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DatastreamStatusResponse] */
         ItemResponse_DatastreamStatusResponse_: {
@@ -3598,6 +3623,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[EtlMappingResponse] */
         ItemResponse_EtlMappingResponse_: {
@@ -3606,6 +3636,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[EtlTaskResponse] */
         ItemResponse_EtlTaskResponse_: {
@@ -3614,6 +3649,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[LinkedResourceTypeResponse] */
         ItemResponse_LinkedResourceTypeResponse_: {
@@ -3622,6 +3662,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MethodResponse] */
         ItemResponse_MethodResponse_: {
@@ -3630,6 +3675,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MethodTypeResponse] */
         ItemResponse_MethodTypeResponse_: {
@@ -3638,6 +3688,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringRuleResponse] */
         ItemResponse_MonitoringRuleResponse_: {
@@ -3646,6 +3701,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringSiteResponse] */
         ItemResponse_MonitoringSiteResponse_: {
@@ -3654,6 +3714,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringSiteTypeResponse] */
         ItemResponse_MonitoringSiteTypeResponse_: {
@@ -3662,6 +3727,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringTaskResponse] */
         ItemResponse_MonitoringTaskResponse_: {
@@ -3670,6 +3740,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ObservationResponse] */
         ItemResponse_ObservationResponse_: {
@@ -3678,6 +3753,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ObservedPropertyResponse] */
         ItemResponse_ObservedPropertyResponse_: {
@@ -3686,6 +3766,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ObservedPropertyTypeResponse] */
         ItemResponse_ObservedPropertyTypeResponse_: {
@@ -3694,6 +3779,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ProcessingLevelResponse] */
         ItemResponse_ProcessingLevelResponse_: {
@@ -3702,6 +3792,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[QualityControlHistoryResponse] */
         ItemResponse_QualityControlHistoryResponse_: {
@@ -3710,6 +3805,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[QualityControlOperationResponse] */
         ItemResponse_QualityControlOperationResponse_: {
@@ -3718,6 +3818,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[QualityControlSessionResponse] */
         ItemResponse_QualityControlSessionResponse_: {
@@ -3726,6 +3831,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[RatingCurveResponse] */
         ItemResponse_RatingCurveResponse_: {
@@ -3734,6 +3844,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ResultQualifierResponse] */
         ItemResponse_ResultQualifierResponse_: {
@@ -3742,6 +3857,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[RoleResponse] */
         ItemResponse_RoleResponse_: {
@@ -3750,6 +3870,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[SampledMediumResponse] */
         ItemResponse_SampledMediumResponse_: {
@@ -3758,6 +3883,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ServiceAccountResponse] */
         ItemResponse_ServiceAccountResponse_: {
@@ -3766,6 +3896,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[UnitResponse] */
         ItemResponse_UnitResponse_: {
@@ -3774,6 +3909,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[UnitTypeResponse] */
         ItemResponse_UnitTypeResponse_: {
@@ -3782,6 +3922,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[WorkspaceResponse] */
         ItemResponse_WorkspaceResponse_: {
@@ -3790,6 +3935,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
@@ -3820,6 +3970,17 @@ export interface components {
              * @constant
              */
             type: "JSON";
+        };
+        /** Link */
+        Link: {
+            /** Href */
+            href: string;
+            /** Rel */
+            rel: string;
+            /** Title */
+            title?: string | null;
+            /** Type */
+            type: string;
         };
         /** LinkedResourceGetResponse */
         LinkedResourceGetResponse: {
@@ -4857,6 +5018,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** ObservationItemQueryParameters */
@@ -4987,6 +5153,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** ObservedPropertyItemQueryParameters */
@@ -5158,6 +5329,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[CollaboratorResponse] */
@@ -5168,6 +5344,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DataConnectionResponse] */
@@ -5178,6 +5359,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DataProductTaskResponse] */
@@ -5188,6 +5374,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DataProductTransformationResponse] */
@@ -5198,6 +5389,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DatastreamResponse] */
@@ -5208,6 +5404,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DatastreamStatusResponse] */
@@ -5218,6 +5419,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[EtlMappingResponse] */
@@ -5228,6 +5434,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[EtlTaskResponse] */
@@ -5238,6 +5449,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[LinkedResourceTypeResponse] */
@@ -5248,6 +5464,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MethodResponse] */
@@ -5258,6 +5479,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MethodTypeResponse] */
@@ -5268,6 +5494,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringRuleResponse] */
@@ -5278,6 +5509,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringSiteResponse] */
@@ -5288,6 +5524,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringSiteTypeResponse] */
@@ -5298,6 +5539,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringTaskResponse] */
@@ -5308,6 +5554,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ObservationResponse] */
@@ -5318,6 +5569,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ObservedPropertyResponse] */
@@ -5328,6 +5584,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ObservedPropertyTypeResponse] */
@@ -5338,6 +5599,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ProcessingLevelResponse] */
@@ -5348,6 +5614,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[QualityControlHistoryResponse] */
@@ -5358,6 +5629,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[QualityControlOperationResponse] */
@@ -5368,6 +5644,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[QualityControlSessionResponse] */
@@ -5378,6 +5659,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[RatingCurveResponse] */
@@ -5388,6 +5674,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ResultQualifierResponse] */
@@ -5398,6 +5689,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[RoleResponse] */
@@ -5408,6 +5704,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[SampledMediumResponse] */
@@ -5418,6 +5719,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ServiceAccountResponse] */
@@ -5428,6 +5734,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[TaskRunResponse] */
@@ -5438,6 +5749,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[UnitResponse] */
@@ -5448,6 +5764,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[UnitTypeResponse] */
@@ -5458,6 +5779,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[WorkspaceResponse] */
@@ -5468,6 +5794,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginationMeta */

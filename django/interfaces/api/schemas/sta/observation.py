@@ -22,6 +22,8 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import page_links
+from interfaces.api.http.links import Link
 from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
 
 
@@ -130,6 +132,7 @@ class ObservationFormatResponse(Schema, Generic[T]):
     data: T
     meta: PaginationMeta
     included: Optional[dict[str, list[Any]]] = None
+    links: list[Link] = []
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -142,6 +145,10 @@ class ObservationFormatResponse(Schema, Generic[T]):
         if not data.get("included"):
             data.pop("included", None)
 
+        links = page_links(info, self.meta, self.data.row_count)
+        if links is not None:
+            data["links"] = links
+
         return data
 
 
@@ -149,11 +156,19 @@ class ObservationRowData(BaseGetResponse):
     fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
     rows: list[list]
 
+    @property
+    def row_count(self) -> int:
+        return len(self.rows)
+
 
 class ObservationColumnarData(BaseGetResponse):
     phenomenon_time: list
     result: list
     result_qualifier_codes: list
+
+    @property
+    def row_count(self) -> int:
+        return len(self.phenomenon_time)
 
 
 class ObservationRowResponse(ObservationFormatResponse[ObservationRowData]):

@@ -16,6 +16,7 @@ from pydantic import (
 )
 
 from core.types import Unset
+from interfaces.api.http.links import Link, build_page_links, build_self_link, get_request
 
 MAX_LIMIT = 100000
 
@@ -200,6 +201,7 @@ T = TypeVar("T")
 class ItemResponse(Schema, Generic[T]):
     included: Optional[dict[str, list[Any]]] = None
     data: T
+    links: list[Link] = []
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -213,13 +215,31 @@ class ItemResponse(Schema, Generic[T]):
         if requested is not None:
             data["data"] = filter_requested_properties(data.get("data"), requested)
 
+        request = get_request(info)
+        if request is not None:
+            data["links"] = [build_self_link(request).model_dump(exclude_none=True)]
+
         return data
+
+
+def page_links(info: SerializationInfo, meta: PaginationMeta, returned: int) -> Optional[list[dict]]:
+    """Serialized self, next and prev links for a page of results, or None without a request."""
+
+    request = get_request(info)
+    if request is None:
+        return None
+
+    return [
+        link.model_dump(exclude_none=True)
+        for link in build_page_links(request, meta.offset, meta.limit, returned)
+    ]
 
 
 class PaginatedResponse(Schema, Generic[T]):
     included: Optional[dict[str, list[Any]]] = None
     data: list[T]
     meta: PaginationMeta
+    links: list[Link] = []
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -235,6 +255,10 @@ class PaginatedResponse(Schema, Generic[T]):
         requested = parse_requested_properties(info)
         if requested is not None and isinstance(data.get("data"), list):
             data["data"] = [filter_requested_properties(item, requested) for item in data["data"]]
+
+        links = page_links(info, self.meta, len(self.data))
+        if links is not None:
+            data["links"] = links
 
         return data
 

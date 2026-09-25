@@ -72,6 +72,14 @@ def _items_url(collection):
     return f"/api/ogc/collections/{collection}/items"
 
 
+def _without_links(response):
+    """The response body without its links, whose self href echoes the request's query string."""
+
+    body = response.json()
+    body.pop("links", None)
+    return body
+
+
 @pytest.fixture
 def owner_workspace(client):
     owner = UserFactory()
@@ -94,7 +102,7 @@ def test_non_spatial_collection_ignores_a_valid_bbox(client, owner_workspace, co
     filtered = client.get(_items_url(collection), {"bbox": "170,-20,-170,-10"})
 
     assert filtered.status_code == 200
-    assert filtered.json() == unfiltered.json()
+    assert _without_links(filtered) == _without_links(unfiltered)
 
 
 @pytest.mark.parametrize("collection", ITEM_FACTORIES)
@@ -121,7 +129,7 @@ def test_non_temporal_collection_ignores_a_valid_datetime(client, owner_workspac
     filtered = client.get(_items_url(collection), {"datetime": "1900-01-01T00:00:00Z/1900-01-02T00:00:00Z"})
 
     assert filtered.status_code == 200
-    assert filtered.json() == unfiltered.json()
+    assert _without_links(filtered) == _without_links(unfiltered)
 
 
 @pytest.mark.parametrize("collection", ITEM_FACTORIES)
