@@ -123,7 +123,7 @@ def test_get_observations_sends_a_datetime_interval_and_pages_with_the_same_boun
 
 # --- server-maintained statistics -------------------------------------------------------
 
-STATISTIC_KEYS = {"valueCount", "phenomenonBeginTime", "resultBeginTime", "resultEndTime"}
+STATISTIC_KEYS = {"valueCount", "phenomenonBeginTime", "phenomenonEndTime", "resultBeginTime", "resultEndTime"}
 
 
 def _datastream_payload(**overrides):
@@ -167,7 +167,7 @@ def test_create_does_not_send_server_maintained_statistics():
     assert not set(json.loads(client.request.call_args_list[0].kwargs["data"])) & STATISTIC_KEYS
 
 
-def test_save_sends_only_the_writable_phenomenon_end_time():
+def test_save_does_not_send_changed_server_maintained_statistics():
     service, client = make_service({"data": _datastream_payload()})
     client.datastreams = service
     datastream = service.get("00000000-0000-0000-0000-000000000001")
@@ -176,5 +176,19 @@ def test_save_sends_only_the_writable_phenomenon_end_time():
     datastream.phenomenon_begin_time = JAN_1
     datastream.phenomenon_end_time = FEB_1
 
-    assert datastream.unsaved_changes == {"phenomenon_end_time": FEB_1}
+    assert datastream.unsaved_changes == {}
+
+
+def test_sync_phenomenon_end_time_reloads_it_from_hydroserver():
+    service, client = make_service(
+        {"data": _datastream_payload()},
+        {"data": _datastream_payload(phenomenonEndTime="2024-02-01T00:00:00+00:00")},
+    )
+    client.datastreams = service
+    datastream = service.get("00000000-0000-0000-0000-000000000001")
+
+    datastream.sync_phenomenon_end_time()
+
+    assert datastream.phenomenon_end_time == FEB_1
+    assert client.request.call_args_list[1].args[0] == "get"
 

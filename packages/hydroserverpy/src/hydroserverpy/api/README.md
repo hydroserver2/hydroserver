@@ -588,7 +588,6 @@ new_datastream = hs_api.datastreams.create(
     time_aggregation_interval=1,
     status='Ongoing',
     result_type='Timeseries',
-    phenomenon_end_time=None,
     is_visible=True,
     is_private=False,
     monitoring_site='00000000-0000-0000-0000-000000000000',

@@ -52,7 +52,7 @@ class Datastream(HydroServerBaseModel):
 
     _editable_fields: ClassVar[set[str]] = {
         "name", "description", "observation_type", "sampled_medium", "no_data_value", "aggregation_statistic",
-        "time_aggregation_interval", "status", "result_type", "phenomenon_end_time", "is_private", "is_visible",
+        "time_aggregation_interval", "status", "result_type", "is_private", "is_visible",
         "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
         "method_id", "observed_property_id", "processing_level_id", "unit_id"
     }
@@ -214,28 +214,13 @@ class Datastream(HydroServerBaseModel):
             phenomenon_time_end=phenomenon_time_end,
         )
 
-    # TODO: Find a better long-term solution for this issue.
     def sync_phenomenon_end_time(self):
-        """Ensures the phenomenon_end_time field matches the actual end time of the observations."""
+        """
+        Reloads phenomenon_end_time and the datastream's other observation statistics, which
+        HydroServer maintains whenever observations are written.
+        """
 
-        path = f"/{self.client.base_route}/collections/observations/items"
-        response = self.client.request(
-            "get",
-            path,
-            params={
-                "datastream_id": str(self.uid),
-                "limit": 1,
-                "sortby": "-phenomenonTime",
-            },
-        ).json()
-
-        response = response["data"]
-        if len(response) > 0:
-            self.phenomenon_end_time = datetime.fromisoformat(response[0]["phenomenonTime"])
-        else:
-            self.phenomenon_end_time = None
-
-        self.save()
+        self.refresh()
 
     @field_validator("linked_resources", mode="before")
     def transform_linked_resources(cls, v):

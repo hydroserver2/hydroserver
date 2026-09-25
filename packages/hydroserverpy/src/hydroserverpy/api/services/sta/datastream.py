@@ -110,7 +110,6 @@ class DatastreamService(HydroServerBaseService):
             Literal["seconds", "minutes", "hours", "days"]
         ] = None,
         status: Optional[str] = None,
-        phenomenon_end_time: Optional[datetime] = None,
         is_private: bool = False,
         is_visible: bool = True,
         tags: Optional[Dict[str, str]] = None,
@@ -137,7 +136,6 @@ class DatastreamService(HydroServerBaseService):
             "intendedTimeSpacing": intended_time_spacing,
             "intendedTimeSpacingUnit": intended_time_spacing_unit,
             "status": status,
-            "phenomenonEndTime": phenomenon_end_time,
             "isPrivate": is_private,
             "isVisible": is_visible,
             "tags": tags or {},
@@ -174,7 +172,6 @@ class DatastreamService(HydroServerBaseService):
             Literal["seconds", "minutes", "hours", "days"]
         ] = ...,
         status: Optional[str] = ...,
-        phenomenon_end_time: Optional[datetime] = ...,
         is_private: bool = ...,
         is_visible: bool = ...,
         tags: Dict[str, Optional[str]] = ...,
@@ -203,7 +200,6 @@ class DatastreamService(HydroServerBaseService):
             "intendedTimeSpacing": intended_time_spacing,
             "intendedTimeSpacingUnit": intended_time_spacing_unit,
             "status": status,
-            "phenomenonEndTime": phenomenon_end_time,
             "isPrivate": is_private,
             "isVisible": is_visible,
             "tags": tags,

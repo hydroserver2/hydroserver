@@ -1031,6 +1031,7 @@ def test_get_datastreams_returns_400_for_invalid_datetime(client):
 STATISTICS = {
     "valueCount": 42,
     "phenomenonBeginTime": "2020-01-01T00:00:00Z",
+    "phenomenonEndTime": "2020-12-31T00:00:00Z",
     "resultBeginTime": "2020-01-01T00:00:00Z",
     "resultEndTime": "2020-12-31T00:00:00Z",
 }
@@ -1055,6 +1056,7 @@ def test_create_datastream_ignores_server_maintained_statistics(client):
     datastream = Datastream.objects.get(pk=response.json()["id"])
     assert datastream.value_count in (None, 0)
     assert datastream.phenomenon_begin_time is None
+    assert datastream.phenomenon_end_time is None
     assert datastream.result_begin_time is None
 
 
@@ -1076,26 +1078,7 @@ def test_update_datastream_ignores_server_maintained_statistics(client):
     datastream.refresh_from_db()
     assert datastream.value_count == 3
     assert datastream.phenomenon_begin_time == begin
-
-
-def test_create_datastream_accepts_a_seeded_phenomenon_end_time(client):
-    owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    body = _datastream_body(
-        MonitoringSiteFactory(workspace=workspace),
-        MethodFactory(workspace=workspace),
-        ObservedPropertyFactory(workspace=workspace),
-        ProcessingLevelFactory(workspace=workspace),
-        UnitFactory(workspace=workspace),
-        phenomenonEndTime="2025-01-01T00:00:00Z",
-    )
-    client.force_login(owner)
-
-    response = client.post(DATASTREAMS_URL, data=body, content_type="application/json")
-
-    assert response.status_code == 201
-    datastream = Datastream.objects.get(pk=response.json()["id"])
-    assert datastream.phenomenon_end_time.isoformat() == "2025-01-01T00:00:00+00:00"
+    assert datastream.phenomenon_end_time == begin + timedelta(days=1)
 
 
 def test_get_datastream_returns_server_maintained_statistics(client):
@@ -1115,5 +1098,4 @@ def test_datastream_request_bodies_do_not_declare_server_maintained_statistics()
 
     for body in ("DatastreamPostBody", "DatastreamPatchBody"):
         assert not set(schemas[body]["properties"]) & set(STATISTICS)
-        assert "phenomenonEndTime" in schemas[body]["properties"]
     assert set(STATISTICS) <= set(schemas["DatastreamResponse"]["properties"])

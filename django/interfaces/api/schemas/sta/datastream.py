@@ -38,7 +38,6 @@ class DatastreamFields(Schema):
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
     result_type: str = Field(..., max_length=255)
-    phenomenon_end_time: Optional[ISODatetime] = None
     is_private: bool = False
     is_visible: bool = True
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
@@ -53,6 +52,7 @@ class DatastreamStatisticsFields(Schema):
 
     value_count: Optional[int] = Field(None, ge=0)
     phenomenon_begin_time: Optional[ISODatetime] = None
+    phenomenon_end_time: Optional[ISODatetime] = None
     result_begin_time: Optional[ISODatetime] = None
     result_end_time: Optional[ISODatetime] = None
 

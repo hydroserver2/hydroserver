@@ -988,7 +988,8 @@ def _datastream_with_observations(longitude, latitude, count=2):
         monitoring_site=MonitoringSiteFactory(longitude=longitude, latitude=latitude),
         value_count=count,
     )
-    ObservationFactory.create_batch(count, datastream=datastream)
+    for minutes in range(count):
+        ObservationFactory(datastream=datastream, phenomenon_time=timezone.now() - timedelta(minutes=minutes))
     return datastream
 
 

@@ -2222,7 +2222,6 @@
                 "timeAggregationInterval",
                 "status",
                 "resultType",
-                "phenomenonEndTime",
                 "isPrivate",
                 "isVisible",
                 "timeAggregationIntervalUnit",
@@ -2230,6 +2229,7 @@
                 "intendedTimeSpacingUnit",
                 "valueCount",
                 "phenomenonBeginTime",
+                "phenomenonEndTime",
                 "resultBeginTime",
                 "resultEndTime",
                 "monitoringSiteId",
@@ -2324,21 +2324,6 @@
             "format": "uuid",
             "title": "Observedpropertyid",
             "type": "string"
-          },
-          "phenomenonEndTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phenomenonendtime"
           },
           "processingLevelId": {
             "format": "uuid",
@@ -2493,21 +2478,6 @@
             "format": "uuid",
             "title": "Observedpropertyid",
             "type": "string"
-          },
-          "phenomenonEndTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phenomenonendtime"
           },
           "processingLevelId": {
             "format": "uuid",
@@ -2730,7 +2700,6 @@
                 "timeAggregationInterval",
                 "status",
                 "resultType",
-                "phenomenonEndTime",
                 "isPrivate",
                 "isVisible",
                 "timeAggregationIntervalUnit",
@@ -2738,6 +2707,7 @@
                 "intendedTimeSpacingUnit",
                 "valueCount",
                 "phenomenonBeginTime",
+                "phenomenonEndTime",
                 "resultBeginTime",
                 "resultEndTime",
                 "monitoringSiteId",
@@ -17893,7 +17863,6 @@
                   "timeAggregationInterval",
                   "status",
                   "resultType",
-                  "phenomenonEndTime",
                   "isPrivate",
                   "isVisible",
                   "timeAggregationIntervalUnit",
@@ -17901,6 +17870,7 @@
                   "intendedTimeSpacingUnit",
                   "valueCount",
                   "phenomenonBeginTime",
+                  "phenomenonEndTime",
                   "resultBeginTime",
                   "resultEndTime",
                   "monitoringSiteId",
@@ -18514,7 +18484,6 @@
                   "timeAggregationInterval",
                   "status",
                   "resultType",
-                  "phenomenonEndTime",
                   "isPrivate",
                   "isVisible",
                   "timeAggregationIntervalUnit",
@@ -18522,6 +18491,7 @@
                   "intendedTimeSpacingUnit",
                   "valueCount",
                   "phenomenonBeginTime",
+                  "phenomenonEndTime",
                   "resultBeginTime",
                   "resultEndTime",
                   "monitoringSiteId",
