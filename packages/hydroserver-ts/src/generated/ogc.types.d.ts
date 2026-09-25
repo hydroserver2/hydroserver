@@ -2230,10 +2230,10 @@ export interface components {
             include?: ("role" | "user" | "serviceAccount")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -2359,10 +2359,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -2537,10 +2537,10 @@ export interface components {
             latest_run_status: (string | "null")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter data product tasks by monitoring_site ID.
@@ -2736,10 +2736,10 @@ export interface components {
             input_datastream_id: string[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -3004,10 +3004,10 @@ export interface components {
             is_private?: boolean | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Method Id
              * @description Filter datastreams by method ID.
@@ -3320,10 +3320,10 @@ export interface components {
             include?: "targetDatastream"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -3476,10 +3476,10 @@ export interface components {
             latest_run_status: (string | "null")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter ETL tasks by monitoring_site ID.
@@ -3846,10 +3846,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -3976,10 +3976,10 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter methods by monitoring_site ID.
@@ -4164,10 +4164,10 @@ export interface components {
             include?: "datastream"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -4446,10 +4446,10 @@ export interface components {
             is_private?: boolean | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -4692,10 +4692,10 @@ export interface components {
             latest_run_status: (string | "null")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter monitoring tasks by monitoring_site ID.
@@ -4915,10 +4915,10 @@ export interface components {
             include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -5051,10 +5051,10 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter observed properties by monitoring_site ID.
@@ -5605,10 +5605,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter processing levels by monitoring_site ID.
@@ -5701,10 +5701,10 @@ export interface components {
             include?: ("managedDatastream" | "sourceDatastream")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Managed Datastream Id
              * @description Filter histories by managed datastream ID.
@@ -5810,10 +5810,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -5901,10 +5901,10 @@ export interface components {
             include_ancestors: boolean;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6049,10 +6049,10 @@ export interface components {
             include?: "monitoringSite"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter rating curves by monitoring site ID.
@@ -6165,10 +6165,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6236,10 +6236,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6421,10 +6421,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6499,10 +6499,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6641,10 +6641,10 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter units by monitoring_site ID.
@@ -6880,10 +6880,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6959,10 +6959,10 @@ export interface components {
             is_private?: boolean | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -7034,8 +7034,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -7263,8 +7263,8 @@ export interface operations {
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -7534,8 +7534,8 @@ export interface operations {
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -7811,8 +7811,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -7984,8 +7984,8 @@ export interface operations {
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
                 /** @description Filter transformations by type. */
@@ -8277,8 +8277,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -8506,8 +8506,8 @@ export interface operations {
                 include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -8801,8 +8801,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -9124,8 +9124,8 @@ export interface operations {
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -9386,8 +9386,8 @@ export interface operations {
                 include?: "targetDatastream"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
                 /** @description Filter mappings by source identifier. */
@@ -9677,8 +9677,8 @@ export interface operations {
                 include?: "dataConnection"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -9956,8 +9956,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -10129,8 +10129,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -10358,8 +10358,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -10587,8 +10587,8 @@ export interface operations {
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -10857,8 +10857,8 @@ export interface operations {
                 include?: "datastream"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
                 /** @description Filter rules by datastream ID. */
@@ -11148,8 +11148,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -11377,8 +11377,8 @@ export interface operations {
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -11609,8 +11609,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -12024,8 +12024,8 @@ export interface operations {
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -12297,8 +12297,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
@@ -12562,8 +12562,8 @@ export interface operations {
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter observations by datastream ID. */
                 datastream_id?: string[];
                 /** @description Select one or more fields to sort the response by. */
@@ -12773,8 +12773,8 @@ export interface operations {
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -13039,8 +13039,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -13268,8 +13268,8 @@ export interface operations {
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("code" | "name" | "-code" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -13532,8 +13532,8 @@ export interface operations {
                 include?: ("managedDatastream" | "sourceDatastream")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
                 /** @description Filter histories by managed datastream ID. */
@@ -13746,8 +13746,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
                 status?: ("in_progress" | "committed") | null;
@@ -14096,8 +14096,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
             };
@@ -14389,8 +14389,8 @@ export interface operations {
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -14622,8 +14622,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Filter roles by workspace ID. */
@@ -14711,8 +14711,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -14940,8 +14940,8 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -15169,8 +15169,8 @@ export interface operations {
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -15426,8 +15426,8 @@ export interface operations {
                 include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
@@ -15666,8 +15666,8 @@ export interface operations {
                 include?: ("role" | "user" | "serviceAccount")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter collaborators by role ID. */
                 role_id?: string[];
                 /** @description Select one or more fields to sort the response by. */
@@ -15874,8 +15874,8 @@ export interface operations {
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
             };

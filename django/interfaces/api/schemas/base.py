@@ -5,15 +5,19 @@ from typing import Optional, Any, Union, Annotated, Generic, TypeVar, get_args
 from ninja import Schema, Query
 from pydantic.alias_generators import to_camel
 from pydantic import (
+    AfterValidator,
     AliasGenerator,
     AliasChoices,
     ConfigDict,
     field_validator,
     model_serializer,
     SerializationInfo,
+    WithJsonSchema,
 )
 
 from core.types import Unset
+
+MAX_LIMIT = 100000
 
 base_alias_generator = AliasGenerator(
     serialization_alias=lambda field_name: to_camel(field_name),
@@ -108,6 +112,12 @@ class BaseQueryParameters(Schema):
         return value
 
 
+def clamp_limit(value: Optional[int]) -> Optional[int]:
+    """Caps a page size at MAX_LIMIT."""
+
+    return value if value is None else min(value, MAX_LIMIT)
+
+
 class CollectionQueryParameters(BaseQueryParameters):
     properties: Optional[str] = Query(
         None,
@@ -119,8 +129,14 @@ class CollectionQueryParameters(BaseQueryParameters):
         description="Comma-separated list of related resources to include in the response.",
     )
     offset: Optional[int] = Query(0, ge=0, description="Number of items to skip.")
-    limit: Optional[int] = Query(
-        100, ge=0, le=100000, description="The maximum number of items to return."
+    limit: Annotated[
+        Optional[int],
+        AfterValidator(clamp_limit),
+        WithJsonSchema({"type": "integer", "minimum": 0, "maximum": MAX_LIMIT}),
+    ] = Query(
+        100,
+        ge=0,
+        description=f"The maximum number of items to return. (default: 100, maximum: {MAX_LIMIT})",
     )
 
 

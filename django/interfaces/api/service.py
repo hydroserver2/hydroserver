@@ -14,7 +14,7 @@ from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream
 from interfaces.api.http.errors import BadRequestError, NotFoundError
-from interfaces.api.schemas.base import PaginationMeta
+from interfaces.api.schemas.base import PaginationMeta, clamp_limit
 from interfaces.api.schemas.extent import BoundingBox, TimeInterval
 
 User = get_user_model()
@@ -432,8 +432,8 @@ class APIService:
             raise BadRequestError("Offset must be >= 0.")
         if limit < 0:
             raise BadRequestError("Limit must be >= 0.")
-        if limit > 100000:
-            raise BadRequestError("Limit must be <= 100000.")
+
+        limit = clamp_limit(limit)
 
         if count is None:
             count = queryset.count()

@@ -277,19 +277,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -697,19 +690,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -1295,19 +1281,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -1904,19 +1883,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -2608,19 +2580,12 @@
             "title": "Is Private"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "method_id": {
             "default": [],
@@ -3359,19 +3324,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -3738,19 +3696,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -4891,19 +4842,12 @@
             "title": "Include"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -5296,19 +5240,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -5857,19 +5794,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -6670,19 +6600,12 @@
             "title": "Is Private"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -7289,19 +7212,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -7933,19 +7849,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -8325,19 +8234,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -10193,19 +10095,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -10465,19 +10360,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "managed_datastream_id": {
             "default": [],
@@ -10777,19 +10665,12 @@
             "title": "Include"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -11055,19 +10936,12 @@
             "type": "boolean"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -11470,19 +11344,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -11770,19 +11637,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -11961,19 +11821,12 @@
             "title": "Include"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -12561,19 +12414,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -12786,19 +12632,12 @@
             "title": "Include"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -13199,19 +13038,12 @@
             "type": "array"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "monitoring_site_id": {
             "default": [],
@@ -13827,19 +13659,12 @@
             "title": "Include"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -14046,19 +13871,12 @@
             "title": "Is Private"
           },
           "limit": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "default": 100,
-            "description": "The maximum number of items to return.",
-            "title": "Limit"
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
           },
           "offset": {
             "anyOf": [
@@ -14325,24 +14143,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -14851,24 +14662,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -15489,24 +15293,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -16189,24 +15986,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -16696,24 +16486,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -17380,24 +17163,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -17936,24 +17712,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -18808,24 +18577,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -19579,24 +19341,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -20210,24 +19965,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -20873,24 +20621,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -21615,24 +21356,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -22109,24 +21843,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -22631,24 +22358,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -23162,24 +22882,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -23879,24 +23592,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -24542,24 +24248,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -25080,24 +24779,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -25724,24 +25416,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -26729,24 +26414,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -27398,24 +27076,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -28066,24 +27737,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -28618,24 +28282,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -29288,24 +28945,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -29814,24 +29464,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -30472,24 +30115,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -30983,24 +30619,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -31790,24 +31419,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -32461,24 +32083,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -33029,24 +32644,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -33338,24 +32946,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -33860,24 +33461,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -34387,24 +33981,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -35051,24 +34638,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -35695,24 +35275,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
@@ -36061,24 +35634,17 @@
             }
           },
           {
-            "description": "The maximum number of items to return.",
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
               "default": 100,
-              "description": "The maximum number of items to return.",
-              "title": "Limit"
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           },
           {
