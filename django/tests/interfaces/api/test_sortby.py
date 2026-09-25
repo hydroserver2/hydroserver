@@ -81,6 +81,22 @@ def test_get_task_runs_accepts_a_plus_prefix(client):
     assert [run["id"] for run in response.json()["data"]] == [str(older.id), str(newer.id)]
 
 
+def test_get_etl_tasks_accepts_a_plus_prefix_on_latest_run_fields(client):
+    owner = UserFactory()
+    now = timezone.now()
+    older = _etl_task(owner)
+    TaskRun.objects.create(task=older, status="SUCCESS", started_at=now - timedelta(hours=1))
+    newer = _etl_task(owner)
+    TaskRun.objects.create(task=newer, status="SUCCESS", started_at=now)
+    client.force_login(owner)
+
+    response = client.get("/api/ogc/collections/etl-tasks/items?sortby=%2BlatestRunStartedAt")
+
+    assert response.status_code == 200
+    ids = [task["id"] for task in response.json()["data"]]
+    assert ids.index(str(older.id)) < ids.index(str(newer.id))
+
+
 def test_every_sortby_parameter_is_comma_separated_with_plus_and_minus_prefixes():
     paths = api.get_openapi_schema(path_prefix="/api/ogc/")["paths"]
     sortby_parameters = [

@@ -1,8 +1,10 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 
 from processing.orchestration.models import TaskRun
 from tests.core.iam.factories import (
@@ -427,3 +429,31 @@ def test_get_data_product_task_runs_ignores_unsupported_include(client):
     response = client.get(f"{_detail_url(task.id)}/runs", {"include": "bogus"})
 
     assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "sortby, expected",
+    [
+        ("latestRunStartedAt", ["older", "newer"]),
+        ("-latestRunStartedAt", ["newer", "older"]),
+        ("latestRunFinishedAt", ["older", "newer"]),
+        ("latestRunStatus", ["newer", "older"]),
+    ],
+)
+def test_get_data_product_tasks_sorts_by_latest_run_fields(client, sortby, expected):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    now = timezone.now()
+    tasks = {"older": _make_data_product_task(workspace), "newer": _make_data_product_task(workspace)}
+    TaskRun.objects.create(
+        task=tasks["older"], status="SUCCESS", started_at=now - timedelta(hours=2),
+        finished_at=now - timedelta(hours=1),
+    )
+    TaskRun.objects.create(task=tasks["newer"], status="FAILURE", started_at=now, finished_at=now)
+    client.force_login(owner)
+
+    response = client.get(DATA_PRODUCT_TASKS_URL, {"sortby": sortby})
+
+    assert response.status_code == 200
+    ids = [task["id"] for task in response.json()["data"]]
+    assert ids == [str(tasks[name].id) for name in expected]

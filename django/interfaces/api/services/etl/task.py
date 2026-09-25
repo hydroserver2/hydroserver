@@ -4,6 +4,7 @@ from typing import Optional, Literal, get_args
 from django.db import transaction
 from django.db.models import Count
 from django.contrib.auth import get_user_model
+from pydantic.alias_generators import to_snake
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
@@ -103,7 +104,7 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
             "latest_run_finished_at_min", "latest_run_finished_at_max",
         ]
         if any(field in filtering for field in latest_run_fields) or any(
-            term.lstrip("-") in self.latest_run_filter_fields for term in sortby
+            to_snake(term.lstrip("-")) in self.latest_run_filter_fields for term in sortby
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
