@@ -1,10 +1,11 @@
 import pytest
 
 from allauth.account.models import EmailAddress
+from django.contrib.messages import get_messages
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
-from core.iam.models import User
+from core.iam.models import User, UserType
 from core.iam.templatetags.account_navigation import (
     RETURN_URL_SESSION_KEY,
     account_back_url,
@@ -80,6 +81,39 @@ def test_login_returns_to_the_frontend_destination(client):
 
     assert response.status_code == 302
     assert response["Location"] == destination
+    assert list(get_messages(response.wsgi_request)) == []
+
+
+def test_invalid_login_keeps_inline_errors(client):
+    response = client.post(
+        reverse("account_login"),
+        {"login": "missing@example.test", "password": "incorrect"},
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"].non_field_errors()
+    assert b"hs-alert--error" in response.content
+    assert list(get_messages(response.wsgi_request)) == []
+
+
+def test_profile_edit_does_not_queue_a_success_message(client):
+    UserType.objects.update_or_create(name="Other", defaults={"public": True})
+    user = User.objects.create_user(
+        email="edit-without-flash@example.test",
+        password="password",
+        user_type="Other",
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("account_profile_edit"),
+        {"first_name": "Updated", "last_name": "User", "user_type": "Other"},
+    )
+
+    assert response.status_code == 302
+    user.refresh_from_db()
+    assert user.first_name == "Updated"
+    assert list(get_messages(response.wsgi_request)) == []
 
 
 def test_profile_page_loads_the_account_navigation_tag(client):

@@ -5,6 +5,44 @@ import {
 } from '@/utils/datastreamSearch'
 
 describe('datastream query search', () => {
+  const qualifiers = [
+    { key: 'site', values: ['Logan', 'Logan River', 'Logan River at Mendon'] },
+    { key: 'workspace', values: ['Bear River'] },
+  ]
+
+  it('recognizes unquoted names with spaces and preserves trailing free text', () => {
+    const parsed = parseDatastreamQuery(
+      'discharge workspace:Bear River site:logan river at mendon recent sort:updated-desc',
+      qualifiers
+    )
+    expect(parsed.filters.workspace).toEqual(['Bear River'])
+    expect(parsed.filters.site).toEqual(['logan river at mendon'])
+    expect(parsed.text).toBe('discharge recent')
+    expect(parsed.sort).toEqual({ key: 'updated', order: 'desc' })
+  })
+
+  it('preserves explicit quotes, repeated filters, and incomplete quoted values', () => {
+    const parsed = parseDatastreamQuery(
+      'site:"Logan" site:Logan River site:"Logan River at',
+      qualifiers
+    )
+    expect(parsed.filters.site).toEqual([
+      'Logan',
+      'Logan River',
+      'Logan River at',
+    ])
+    expect(parsed.text).toBe('')
+  })
+
+  it('requires boundaries around qualifier keys and known values', () => {
+    const parsed = parseDatastreamQuery(
+      'website:Logan River site:Logan Riverside',
+      qualifiers
+    )
+    expect(parsed.filters.site).toEqual(['Logan'])
+    expect(parsed.text).toBe('website:Logan River Riverside')
+  })
+
   it('parses qualifier tags separately from free text', () => {
     expect(
       parseDatastreamQuery(

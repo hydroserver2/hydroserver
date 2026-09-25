@@ -1,3 +1,8 @@
+import {
+  queryQualifierTokens,
+  type QueryQualifier,
+} from '@hydroserver/design-system/vue'
+
 export const DATASTREAM_QUALIFIER_KEYS = [
   'workspace',
   'site',
@@ -19,9 +24,6 @@ export type DatastreamSort = {
   order: DatastreamSortOrder
 }
 
-const qualifierPattern = () =>
-  /(workspace|site|observed-property|unit|method|processing-level|sort):(?:"([^"]*)"|(\S+))/gi
-
 const parseDatastreamSort = (value: string): DatastreamSort | null => {
   const [key, order] = value.toLocaleLowerCase().split('-')
   if (
@@ -37,7 +39,10 @@ const parseDatastreamSort = (value: string): DatastreamSort | null => {
 export const quoteDatastreamQualifier = (value: string) =>
   /\s/.test(value) ? `"${value}"` : value
 
-export function parseDatastreamQuery(raw: string) {
+export function parseDatastreamQuery(
+  raw: string,
+  qualifiers: readonly QueryQualifier[] = []
+) {
   const filters: DatastreamQueryFilters = {
     workspace: [],
     site: [],
@@ -48,22 +53,27 @@ export function parseDatastreamQuery(raw: string) {
   }
   const textParts: string[] = []
   let sort: DatastreamSort | null = null
-  const pattern = qualifierPattern()
   let lastIndex = 0
-  let match: RegExpExecArray | null
+  const tokens = queryQualifierTokens(
+    raw,
+    [...DATASTREAM_QUALIFIER_KEYS, 'sort'].map((key) => ({
+      key,
+      values: qualifiers.find((item) => item.key === key)?.values ?? [],
+    }))
+  )
 
-  while ((match = pattern.exec(raw))) {
-    textParts.push(raw.slice(lastIndex, match.index))
-    const key = match[1].toLocaleLowerCase()
-    const value = (match[2] ?? match[3] ?? '').trim()
+  for (const token of tokens) {
+    textParts.push(raw.slice(lastIndex, token.start))
+    const key = token.key.toLocaleLowerCase()
+    const value = token.value.trim()
     if (key === 'sort') {
       const parsedSort = parseDatastreamSort(value)
       if (parsedSort) sort = parsedSort
-      else textParts.push(match[0])
+      else textParts.push(raw.slice(token.start, token.end))
     } else if (value) {
       filters[key as DatastreamQualifierKey].push(value)
     }
-    lastIndex = pattern.lastIndex
+    lastIndex = token.end
   }
   textParts.push(raw.slice(lastIndex))
 

@@ -15,15 +15,6 @@
 <body class="auth-page">
     <div class="auth-shell">
         <main class="auth-main">
-            {% if messages %}
-                <div class="auth-flashes">
-                    {% for message in messages %}
-                        <div class="hs-alert {% if message.tags == 'error' %}hs-alert--error{% elif message.tags == 'warning' %}hs-alert--warning{% elif message.tags == 'success' %}hs-alert--success{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
             {% block content_outer %}{% block content %}{% endblock %}{% endblock %}
         </main>
     </div>
