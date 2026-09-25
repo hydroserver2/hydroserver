@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/ogc/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Collections
+         * @description Get the collections the API serves.
+         */
+        get: operations["interfaces_api_views_ogc_get_collections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ogc/collections/aggregation-statistics/items": {
         parameters: {
             query?: never;
@@ -2122,6 +2142,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ogc/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Collection Metadata
+         * @description Get a collection.
+         */
+        get: operations["interfaces_api_views_ogc_get_collection_metadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2269,6 +2309,32 @@ export interface components {
             serviceAccountEmail?: string | null;
             /** Useremail */
             userEmail?: string | null;
+        };
+        /**
+         * CollectionResponse
+         * @description A collection's metadata (OGC API - Features Core collection.yaml).
+         */
+        CollectionResponse: {
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /** Itemtype */
+            itemType?: string | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Title */
+            title: string;
+        };
+        /**
+         * CollectionsResponse
+         * @description The collections the API serves (OGC API - Features Core collections.yaml).
+         */
+        CollectionsResponse: {
+            /** Collections */
+            collections: components["schemas"]["CollectionResponse"][];
+            /** Links */
+            links: components["schemas"]["Link"][];
         };
         /** CreatedResponse */
         CreatedResponse: {
@@ -7352,6 +7418,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    interfaces_api_views_ogc_get_collections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionsResponse"];
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics: {
         parameters: {
             query?: {
@@ -16593,6 +16679,37 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_ogc_get_collection_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

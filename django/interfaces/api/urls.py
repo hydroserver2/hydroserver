@@ -11,6 +11,7 @@ from interfaces.api.http.renderer import ORJSONRenderer
 
 from interfaces.api.collections import COLLECTIONS
 from interfaces.api.views import qc_history_router, qc_session_router, qc_operation_router
+from interfaces.api.views.ogc import ogc_router
 
 
 rate_limits = settings.API_RATE_LIMITS or {}
@@ -27,6 +28,8 @@ api = HydroServerNinjaAPI(
 
 handlers.register(api)
 api.add_decorator(reject_unknown_query_params, mode="view")
+
+api.add_router("", ogc_router)
 
 for collection in COLLECTIONS:
     api.add_router(f"collections/{collection.id}", collection.router)

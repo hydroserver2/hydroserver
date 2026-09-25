@@ -378,6 +378,74 @@
         "title": "CollaboratorResponse",
         "type": "object"
       },
+      "CollectionResponse": {
+        "description": "A collection's metadata (OGC API - Features Core collection.yaml).",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "itemType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemtype"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "links"
+        ],
+        "title": "CollectionResponse",
+        "type": "object"
+      },
+      "CollectionsResponse": {
+        "description": "The collections the API serves (OGC API - Features Core collections.yaml).",
+        "properties": {
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/CollectionResponse"
+            },
+            "title": "Collections",
+            "type": "array"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          }
+        },
+        "required": [
+          "links",
+          "collections"
+        ],
+        "title": "CollectionsResponse",
+        "type": "object"
+      },
       "CreatedResponse": {
         "properties": {
           "id": {
@@ -14542,6 +14610,43 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/ogc/collections": {
+      "get": {
+        "description": "Get the collections the API serves.",
+        "operationId": "interfaces_api_views_ogc_get_collections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Collections",
+        "tags": [
+          "Collections"
+        ]
+      }
+    },
     "/api/ogc/collections/aggregation-statistics/items": {
       "get": {
         "description": "Get Aggregation Statistics.",
@@ -36867,6 +36972,64 @@
         "summary": "Accept Workspace Transfer",
         "tags": [
           "Workspaces"
+        ]
+      }
+    },
+    "/api/ogc/collections/{collection_id}": {
+      "get": {
+        "description": "Get a collection.",
+        "operationId": "interfaces_api_views_ogc_get_collection_metadata",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Collection Metadata",
+        "tags": [
+          "Collections"
         ]
       }
     }

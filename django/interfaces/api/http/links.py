@@ -2,6 +2,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.http import HttpRequest
+from django.urls import get_script_prefix, reverse
 from ninja import Schema
 from pydantic import SerializationInfo
 
@@ -15,13 +16,28 @@ class Link(Schema):
     title: Optional[str] = None
 
 
-def build_url(request: HttpRequest, query_string: str) -> str:
+def build_absolute_url(path: str) -> str:
     """
-    Builds an absolute URL for the request's path from PROXY_BASE_URL, which is the public URL
-    of Django's root, so links are correct behind a proxy regardless of the request's Host.
+    Builds an absolute URL for a path relative to Django's root from PROXY_BASE_URL, which is the
+    public URL of Django's root, so links are correct behind a proxy regardless of the request's
+    Host.
     """
 
-    url = settings.PROXY_BASE_URL.rstrip("/") + request.path_info
+    return settings.PROXY_BASE_URL.rstrip("/") + "/" + path.lstrip("/")
+
+
+def build_api_url(path: str = "") -> str:
+    """Builds an absolute URL for a path relative to the OGC API root, e.g. 'collections/units'."""
+
+    api_root = reverse("ogc:api-root").removeprefix(get_script_prefix())
+
+    return build_absolute_url(api_root + path.lstrip("/"))
+
+
+def build_url(request: HttpRequest, query_string: str) -> str:
+    """Builds an absolute URL for the request's path with the given query string."""
+
+    url = build_absolute_url(request.path_info)
 
     return f"{url}?{query_string}" if query_string else url
 
