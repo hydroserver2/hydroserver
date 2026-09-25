@@ -16,7 +16,13 @@ from pydantic import (
 )
 
 from core.types import Unset
-from interfaces.api.http.links import Link, build_page_links, build_self_link, get_request
+from interfaces.api.http.links import (
+    Link,
+    build_collection_link,
+    build_page_links,
+    build_self_link,
+    get_request,
+)
 
 MAX_LIMIT = 100000
 
@@ -217,7 +223,8 @@ class ItemResponse(Schema, Generic[T]):
 
         request = get_request(info)
         if request is not None:
-            data["links"] = [build_self_link(request).model_dump(exclude_none=True)]
+            links = [build_self_link(request), build_collection_link(request)]
+            data["links"] = [link.model_dump(exclude_none=True) for link in links if link is not None]
 
         return data
 

@@ -1,3 +1,5 @@
+import re
+
 from typing import Optional
 
 from django.conf import settings
@@ -6,7 +8,10 @@ from django.urls import get_script_prefix, reverse
 from ninja import Schema
 from pydantic import SerializationInfo
 
+from interfaces.api.collections import get_collection
+
 JSON_MEDIA_TYPE = "application/json"
+COLLECTION_ITEM_PATH = re.compile(r"collections/(?P<collection_id>[^/]+)/items/[^/]+")
 
 
 class Link(Schema):
@@ -26,12 +31,16 @@ def build_absolute_url(path: str) -> str:
     return settings.PROXY_BASE_URL.rstrip("/") + "/" + path.lstrip("/")
 
 
+def api_root_path() -> str:
+    """The OGC API root relative to Django's root, e.g. 'api/ogc/'."""
+
+    return reverse("ogc:api-root").removeprefix(get_script_prefix())
+
+
 def build_api_url(path: str = "") -> str:
     """Builds an absolute URL for a path relative to the OGC API root, e.g. 'collections/units'."""
 
-    api_root = reverse("ogc:api-root").removeprefix(get_script_prefix())
-
-    return build_absolute_url(api_root + path.lstrip("/"))
+    return build_absolute_url(api_root_path() + path.lstrip("/"))
 
 
 def build_url(request: HttpRequest, query_string: str) -> str:
@@ -48,6 +57,26 @@ def build_self_link(request: HttpRequest) -> Link:
     return Link(
         href=build_url(request, request.META.get("QUERY_STRING", "")),
         rel="self",
+        type=JSON_MEDIA_TYPE,
+    )
+
+
+def build_collection_link(request: HttpRequest) -> Optional[Link]:
+    """
+    A link to the collection that contains the requested item (OGC API - Features Core Req 35),
+    or None when the request isn't for /collections/{collectionId}/items/{itemId}, such as a
+    nested sub-resource whose parent isn't a collection.
+    """
+
+    path = request.path_info.lstrip("/").removeprefix(api_root_path())
+    match = COLLECTION_ITEM_PATH.fullmatch(path)
+
+    if match is None or get_collection(match["collection_id"]) is None:
+        return None
+
+    return Link(
+        href=build_api_url(f"collections/{match['collection_id']}"),
+        rel="collection",
         type=JSON_MEDIA_TYPE,
     )
 

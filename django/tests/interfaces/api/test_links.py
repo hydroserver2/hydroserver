@@ -1,4 +1,5 @@
 import re
+import uuid
 
 from urllib.parse import parse_qs, urlsplit
 
@@ -6,10 +7,12 @@ import pytest
 
 from django.test import override_settings
 
+from interfaces.api.collections import COLLECTIONS
+from interfaces.api.http.links import build_collection_link
 from interfaces.api.schemas import base
 from interfaces.api.urls import api
 from tests.core.iam.factories import UserFactory
-from tests.core.sta.factories import DatastreamFactory, ObservationFactory, UnitFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory, ObservationFactory, UnitFactory
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 
@@ -58,7 +61,7 @@ def test_list_self_link_without_a_query_string_has_no_question_mark(client):
     assert _links(response)["self"]["href"] == f"{BASE_URL}{UNITS_PATH}"
 
 
-def test_item_self_link_is_the_item_url(client):
+def test_item_links_to_itself_and_its_collection(client):
     unit = UnitFactory(global_=True)
 
     response = client.get(f"{UNITS_PATH}/{unit.id}", {"properties": "name"})
@@ -69,8 +72,43 @@ def test_item_self_link_is_the_item_url(client):
             "href": f"{BASE_URL}{UNITS_PATH}/{unit.id}?properties=name",
             "rel": "self",
             "type": "application/json",
-        }
+        },
+        {
+            "href": f"{BASE_URL}/api/ogc/collections/units",
+            "rel": "collection",
+            "type": "application/json",
+        },
     ]
+
+
+def test_item_collection_link_resolves_to_its_collection(client):
+    site = MonitoringSiteFactory()
+
+    response = client.get(f"/api/ogc/collections/monitoring-sites/items/{site.id}")
+    collection_href = _links(response)["collection"]["href"]
+
+    assert client.get(collection_href.removeprefix(BASE_URL)).json()["id"] == "monitoring-sites"
+
+
+@pytest.mark.parametrize("collection", COLLECTIONS, ids=lambda collection: collection.id)
+def test_collection_link_for_an_item_of_every_collection(rf, collection):
+    request = rf.get(f"/api/ogc/collections/{collection.id}/items/{uuid.uuid4()}")
+
+    assert build_collection_link(request).href == f"{BASE_URL}/api/ogc/collections/{collection.id}"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        f"/api/ogc/collections/quality-control-histories/items/{uuid.uuid4()}/sessions/{uuid.uuid4()}",
+        f"/api/ogc/collections/etl-tasks/items/{uuid.uuid4()}/runs/{uuid.uuid4()}",
+        f"/api/ogc/collections/workspaces/items/{uuid.uuid4()}/service-accounts/{uuid.uuid4()}",
+        f"/api/ogc/collections/not-a-collection/items/{uuid.uuid4()}",
+        "/api/ogc/collections/units/items",
+    ],
+)
+def test_no_collection_link_outside_a_collection_item(rf, path):
+    assert build_collection_link(rf.get(path)) is None
 
 
 def test_full_first_page_links_next_but_not_prev(client):
