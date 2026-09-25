@@ -54,6 +54,33 @@ describe('HsQuerySearchInput', () => {
     wrapper.unmount()
   })
 
+  it('highlights only the hovered suggestion and selects it with Enter', async () => {
+    const wrapper = mountSearch()
+    const input = wrapper.get('input')
+    await input.setValue('site:')
+    const options = wrapper.findAll('[role="option"]')
+    expect(options.map((option) => option.attributes('aria-selected'))).toEqual(
+      ['true', 'false']
+    )
+
+    await options[1]!.trigger('mouseenter')
+    expect(options.map((option) => option.attributes('aria-selected'))).toEqual(
+      ['false', 'true']
+    )
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(wrapper.props('modelValue')).toBe('site:"Bear River" ')
+
+    await input.setValue('site:')
+    await wrapper.findAll('[role="option"]')[1]!.trigger('mouseenter')
+    await wrapper.get('[role="listbox"]').trigger('mouseleave')
+    expect(
+      wrapper
+        .findAll('[role="option"]')
+        .map((option) => option.attributes('aria-selected'))
+    ).toEqual(['true', 'false'])
+    wrapper.unmount()
+  })
+
   it('replaces the whole value when editing inside quotes and preserves later filters', async () => {
     const wrapper = mountSearch('site:"Logan River" unit:Feet')
     const input = wrapper.get('input')

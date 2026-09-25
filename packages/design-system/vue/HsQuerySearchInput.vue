@@ -37,38 +37,36 @@
     >
       <v-icon :icon="mdiClose" size="16" />
     </button>
-  </div>
-
-  <Teleport to="body">
     <div
       v-if="activeSuggestion && activeSuggestion.items.length"
-      class="hs-query-search-popover"
-      :style="suggestionStyle"
+      class="hs-query-search-popover bg-surface"
       role="listbox"
+      @mouseleave="suggestionIndex = 0"
     >
-      <div class="hs-query-search-popover__title">
+      <div class="hs-query-search-popover__title hs-subheading">
         {{
           activeSuggestion.type === 'key'
             ? 'Filter by…'
-            : `${activeSuggestion.label} values`
+            : activeSuggestion.label
         }}
       </div>
       <button
         v-for="(item, index) in activeSuggestion.items"
         :key="item"
         type="button"
-        class="hs-query-search-popover__option"
+        class="hs-query-search-popover__option hs-text-md"
         :class="{
           'hs-query-search-popover__option--active': index === suggestionIndex,
         }"
         role="option"
         :aria-selected="index === suggestionIndex"
+        @mouseenter="suggestionIndex = index"
         @mousedown.prevent="applySuggestion(item)"
       >
         {{ item }}{{ activeSuggestion.type === 'key' ? ':' : '' }}
       </button>
     </div>
-  </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -142,13 +140,6 @@ const highlightSegments = computed(() => {
     segments.push({ text: raw.slice(lastIndex), cls: '' })
   }
   return segments
-})
-
-const suggestionStyle = computed(() => {
-  const input = inputEl.value
-  if (!input) return {}
-  const rect = input.getBoundingClientRect()
-  return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` }
 })
 
 function syncCaret() {

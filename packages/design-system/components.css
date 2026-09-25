@@ -160,42 +160,47 @@ label.required-label::after {
 }
 
 .hs-query-search-popover {
-  position: fixed;
+  position: absolute;
+  top: calc(100% + var(--hs-space-4));
+  left: 0;
   z-index: 2000;
-  min-width: 220px;
-  max-width: 320px;
-  max-height: 240px;
+  width: max-content;
+  min-width: min(100%, 17.5rem);
+  max-width: min(22.5rem, calc(100vw - var(--hs-space-32)));
+  max-height: 20rem;
   padding: var(--hs-space-8) 0;
   overflow-y: auto;
-  background-color: var(--hs-surface, #fff);
   border: 1px solid var(--hs-border);
   border-radius: var(--hs-radius-sm);
   box-shadow: var(--hs-shadow-popover);
 }
 
 .hs-query-search-popover__title {
-  padding: var(--hs-space-4) var(--hs-space-16) var(--hs-space-8);
-  color: var(--hs-text-secondary);
-  font-size: var(--hs-font-2xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-primary);
 }
 
 .hs-query-search-popover__option {
   display: block;
   width: 100%;
+  min-height: calc(var(--hs-space-32) + var(--hs-space-8));
   padding: var(--hs-space-8) var(--hs-space-16);
   color: var(--hs-text-primary);
+  font-family: inherit;
+  line-height: 1.4;
   text-align: left;
+  overflow-wrap: anywhere;
   cursor: pointer;
   background: none;
   border: 0;
 }
 
-.hs-query-search-popover__option:hover,
 .hs-query-search-popover__option--active {
-  color: var(--hs-text-primary, #1c1b1f);
-  background-color: var(--hs-surface-muted, #eef4fa);
+  background-color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-on-surface)) 6%,
+    rgb(var(--v-theme-surface))
+  );
 }
 
 /* At-a-glance metric used in dashboard overview grids. */
