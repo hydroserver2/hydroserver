@@ -12,6 +12,7 @@ from interfaces.api.service import APIService
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError
 from interfaces.api.schemas import (
     BoundingBox,
+    TimeInterval,
     WorkspacePostBody,
     WorkspacePatchBody,
     WorkspaceTransferBody,
@@ -85,6 +86,7 @@ class WorkspaceAPIService(APIService):
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = Workspace.objects
@@ -119,6 +121,9 @@ class WorkspaceAPIService(APIService):
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
         queryset = self.apply_visible_site_bbox(principal, queryset, bbox)
+        queryset = self.apply_visible_datastream_datetime(
+            principal, queryset, datetime_interval, "monitoring_site__workspace_id"
+        )
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,

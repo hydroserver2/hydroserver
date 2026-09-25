@@ -11,7 +11,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MonitoringSiteFactory, MonitoringSiteTypeFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory, MonitoringSiteTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -133,6 +133,132 @@ def test_get_monitoring_sites_filters_by_a_bbox_crossing_the_antimeridian(client
 
     assert response.status_code == 200
     assert _site_ids(response) == {str(east.id), str(west.id)}
+
+
+# --- datetime ----------------------------------------------------------------------------
+#
+# A site's time is the observed time of each of its datastreams the requester can view. It
+# matches a datetime when one of those datastreams overlaps it, or when none of them has
+# observations (no time matches any datetime, per OGC API - Features Core Req 26C).
+
+
+def _observed_datastream(monitoring_site, begin, end, **kwargs):
+    return DatastreamFactory(
+        monitoring_site=monitoring_site,
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=end,
+        **kwargs,
+    )
+
+
+def test_get_monitoring_sites_datetime_matches_sites_with_an_overlapping_datastream(client):
+    overlapping = MonitoringSiteFactory()
+    _observed_datastream(overlapping, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+    touching = MonitoringSiteFactory()
+    _observed_datastream(touching, "2024-03-01T00:00:00Z", "2024-04-01T00:00:00Z")
+    before = MonitoringSiteFactory()
+    _observed_datastream(before, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+
+    response = client.get(
+        MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z/2024-03-01T00:00:00Z"}
+    )
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(overlapping.id), str(touching.id)}
+
+
+def test_get_monitoring_sites_datetime_requires_one_datastream_to_overlap(client):
+    # Neither datastream has observations in March, even though the site's overall span does.
+    site = MonitoringSiteFactory()
+    _observed_datastream(site, "2024-01-01T00:00:00Z", "2024-02-01T00:00:00Z")
+    _observed_datastream(site, "2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z")
+
+    march = client.get(MONITORING_SITES_URL, {"datetime": "2024-03-01T00:00:00Z/2024-03-31T00:00:00Z"})
+    june = client.get(MONITORING_SITES_URL, {"datetime": "2024-06-15T00:00:00Z"})
+
+    assert str(site.id) not in _site_ids(march)
+    assert str(site.id) in _site_ids(june)
+
+
+@pytest.mark.parametrize(
+    "datetime_value, expected",
+    [
+        ("2024-06-01T00:00:00Z/..", {"later"}),
+        ("../2024-01-31T00:00:00Z", {"earlier"}),
+        ("2024-06-01T00:00:00Z/", {"later"}),
+    ],
+)
+def test_get_monitoring_sites_datetime_accepts_half_bounded_intervals(client, datetime_value, expected):
+    sites = {
+        "earlier": MonitoringSiteFactory(),
+        "later": MonitoringSiteFactory(),
+    }
+    _observed_datastream(sites["earlier"], "2024-01-01T00:00:00Z", "2024-02-01T00:00:00Z")
+    _observed_datastream(sites["later"], "2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z")
+
+    response = client.get(MONITORING_SITES_URL, {"datetime": datetime_value})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(sites[name].id) for name in expected}
+
+
+def test_get_monitoring_sites_datetime_matches_sites_without_observed_datastreams(client):
+    without_datastreams = MonitoringSiteFactory()
+    without_observations = MonitoringSiteFactory()
+    DatastreamFactory(monitoring_site=without_observations)
+
+    response = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert _site_ids(response) == {str(without_datastreams.id), str(without_observations.id)}
+
+
+def test_get_monitoring_sites_datetime_ignores_private_datastreams_the_requester_cannot_view(client):
+    # A private datastream that overlaps must not make the site match...
+    hidden_overlap = MonitoringSiteFactory()
+    _observed_datastream(hidden_overlap, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+    _observed_datastream(hidden_overlap, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    # ...and a site whose only observed datastream is private has no visible time, so it matches.
+    only_private = MonitoringSiteFactory()
+    _observed_datastream(only_private, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z", private=True)
+
+    response = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert str(hidden_overlap.id) not in _site_ids(response)
+    assert str(only_private.id) in _site_ids(response)
+
+
+def test_get_monitoring_sites_datetime_uses_private_datastreams_the_owner_can_view(client):
+    owner = UserFactory()
+    site = MonitoringSiteFactory(workspace=WorkspaceFactory(owner=owner))
+    _observed_datastream(site, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    client.force_login(owner)
+
+    overlapping = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+    elsewhere = client.get(MONITORING_SITES_URL, {"datetime": "2020-01-01T00:00:00Z"})
+
+    assert str(site.id) in _site_ids(overlapping)
+    assert str(site.id) not in _site_ids(elsewhere)
+
+
+def test_get_monitoring_sites_datetime_combines_with_bbox(client):
+    inside = MonitoringSiteFactory(longitude=-111.5, latitude=40.5)
+    _observed_datastream(inside, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+    inside_elsewhen = MonitoringSiteFactory(longitude=-111.5, latitude=40.5)
+    _observed_datastream(inside_elsewhen, "2020-01-01T00:00:00Z", "2020-03-01T00:00:00Z")
+    outside = MonitoringSiteFactory(longitude=-100, latitude=40.5)
+    _observed_datastream(outside, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+
+    response = client.get(
+        MONITORING_SITES_URL, {"bbox": "-112,40,-111,41", "datetime": "2024-02-01T00:00:00Z"}
+    )
+
+    assert _site_ids(response) == {str(inside.id)}
+
+
+def test_get_monitoring_sites_returns_400_for_invalid_datetime(client):
+    response = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01"})
+
+    assert response.status_code == 400
 
 
 def test_get_monitoring_sites_returns_400_for_malformed_tag(client):

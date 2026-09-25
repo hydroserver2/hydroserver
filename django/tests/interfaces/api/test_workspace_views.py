@@ -10,7 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MonitoringSiteFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -723,5 +723,88 @@ def test_get_workspaces_bbox_uses_private_sites_a_collaborator_can_view(client):
 
 def test_get_workspaces_returns_400_for_invalid_bbox(client):
     response = client.get(WORKSPACES_URL, {"bbox": "-112,40,-111"})
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+#
+# A workspace's time is the observed time of each datastream the requester can view across its
+# sites. It matches a datetime when one of those datastreams overlaps it, or when none of them
+# has observations (no time matches any datetime, per OGC API - Features Core Req 26C).
+
+
+def _observed_datastream(workspace, begin, end, **kwargs):
+    return DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(workspace=workspace),
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=end,
+        **kwargs,
+    )
+
+
+def test_get_workspaces_datetime_matches_workspaces_with_an_overlapping_datastream_on_any_site(client):
+    overlapping = WorkspaceFactory()
+    _observed_datastream(overlapping, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+    _observed_datastream(overlapping, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+    before = WorkspaceFactory()
+    _observed_datastream(before, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z/.."})
+
+    assert response.status_code == 200
+    assert str(overlapping.id) in _workspace_ids(response)
+    assert str(before.id) not in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_requires_one_datastream_to_overlap(client):
+    workspace = WorkspaceFactory()
+    _observed_datastream(workspace, "2024-01-01T00:00:00Z", "2024-02-01T00:00:00Z")
+    _observed_datastream(workspace, "2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z")
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-03-01T00:00:00Z/2024-03-31T00:00:00Z"})
+
+    assert str(workspace.id) not in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_matches_workspaces_without_observed_datastreams(client):
+    empty = WorkspaceFactory()
+    without_observations = WorkspaceFactory()
+    DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=without_observations))
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert str(empty.id) in _workspace_ids(response)
+    assert str(without_observations.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_ignores_private_datastreams_the_requester_cannot_view(client):
+    hidden_overlap = WorkspaceFactory()
+    _observed_datastream(hidden_overlap, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+    _observed_datastream(hidden_overlap, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    only_private = WorkspaceFactory()
+    _observed_datastream(only_private, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z", private=True)
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert str(hidden_overlap.id) not in _workspace_ids(response)
+    assert str(only_private.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_uses_private_datastreams_the_owner_can_view(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, private=True)
+    _observed_datastream(workspace, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    client.force_login(owner)
+
+    overlapping = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+    elsewhere = client.get(WORKSPACES_URL, {"datetime": "2020-01-01T00:00:00Z"})
+
+    assert str(workspace.id) in _workspace_ids(overlapping)
+    assert str(workspace.id) not in _workspace_ids(elsewhere)
+
+
+def test_get_workspaces_returns_400_for_invalid_datetime(client):
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00"})
 
     assert response.status_code == 400

@@ -8,10 +8,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.exceptions import EmptyResultSet
 from django.db import connection
-from django.db.models import QuerySet, Model, Q, F
+from django.db.models import QuerySet, Model, Q, F, Exists, OuterRef
 
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from core.sta.models import Datastream
 from interfaces.api.http.errors import BadRequestError, NotFoundError
 from interfaces.api.schemas.base import PaginationMeta
 from interfaces.api.schemas.extent import BoundingBox, TimeInterval
@@ -180,6 +181,39 @@ class APIService:
             return queryset
 
         return queryset.filter(cls.datetime_interval_q(interval, start_field, end_field))
+
+    @classmethod
+    def apply_visible_datastream_datetime(
+        cls,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        queryset,
+        interval: Optional[TimeInterval],
+        datastream_field: str,
+    ):
+        """
+        Filters items by the observed time of the datastreams the principal can view, where
+        datastream_field links a datastream to the item's pk. An item matches when one of those
+        datastreams overlaps the interval, or when none of them has observations, since an item
+        without a time matches any datetime (OGC API - Features Core Req 26C). Datastreams the
+        principal can't view never affect the result.
+        """
+
+        if interval is None:
+            return queryset
+
+        observed_datastreams = principal.filter_by_permission(
+            Datastream.objects.filter(
+                **{datastream_field: OuterRef("pk")}, phenomenon_begin_time__isnull=False
+            ),
+            "can_view",
+        )
+        overlapping_datastreams = cls.apply_datetime_interval(
+            observed_datastreams, interval, "phenomenon_begin_time", "phenomenon_end_time"
+        )
+
+        return queryset.filter(
+            Exists(overlapping_datastreams) | ~Exists(observed_datastreams)
+        )
 
     @staticmethod
     def apply_sorting(

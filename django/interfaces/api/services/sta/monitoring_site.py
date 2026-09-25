@@ -22,6 +22,7 @@ from core.sta.models import (
 )
 from interfaces.api.schemas import (
     BoundingBox,
+    TimeInterval,
     MonitoringSiteResponse,
     MonitoringSitePostBody,
     MonitoringSitePatchBody,
@@ -347,6 +348,7 @@ class MonitoringSiteAPIService(APIService):
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = MonitoringSite.objects
@@ -371,6 +373,9 @@ class MonitoringSiteAPIService(APIService):
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
         queryset = self.apply_bbox(queryset, bbox)
+        queryset = self.apply_visible_datastream_datetime(
+            principal, queryset, datetime_interval, "monitoring_site_id"
+        )
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(

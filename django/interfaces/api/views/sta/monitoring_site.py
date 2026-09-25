@@ -57,6 +57,7 @@ def get_monitoring_sites(
         limit=query.limit,
         sortby=query.sortby,
         bbox=query.bbox,
+        datetime_interval=query.datetime,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
