@@ -160,3 +160,23 @@ def test_workspace_list_sends_lowercase_booleans(fake_session_factory):
     ).prepare().url
     assert "is_private=true" in url
     assert "is_associated=false" in url
+
+
+RUN_ID = "01a0e94d-307f-7347-8f40-66fb0327d09e"
+RUN_RESPONSE = json.dumps(
+    {"data": {"id": RUN_ID, "status": "PENDING"}, "included": None, "links": []}
+).encode()
+
+
+@pytest.mark.parametrize("service", ["etltasks", "monitoringtasks", "dataproducttasks"])
+def test_task_trigger_and_get_run_unwrap_the_item_envelope(fake_session_factory, service):
+    hs = client_module.HydroServer(host="https://example.com", apikey="hs_test_api_key")
+    fake_session_factory[0].queue("post", FakeResponse(status_code=202, content=RUN_RESPONSE))
+    fake_session_factory[0].queue("get", FakeResponse(content=RUN_RESPONSE))
+
+    triggered = getattr(hs, service).trigger("task-1")
+    fetched = getattr(hs, service).get_run("task-1", RUN_ID)
+
+    assert str(triggered.id) == RUN_ID
+    assert triggered.status == "PENDING"
+    assert str(fetched.id) == RUN_ID

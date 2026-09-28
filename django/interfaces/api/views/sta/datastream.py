@@ -206,7 +206,7 @@ def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.
     "/items/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[LinkedResourceGetResponse],
+        200: PaginatedResponse[LinkedResourceGetResponse],
         401: str,
         403: str,
     },
@@ -224,6 +224,8 @@ def get_datastream_linked_resources(
     return 200, datastream_service.get_linked_resources(
         principal=request.principal,
         uid=datastream_id,
+        offset=query.offset,
+        limit=query.limit,
         filtering=query.dict(exclude_unset=True),
     )
 

@@ -21,26 +21,24 @@ class Link(Schema):
     title: Optional[str] = None
 
 
-def build_absolute_url(path: str) -> str:
-    """
-    Builds an absolute URL for a path relative to Django's root from PROXY_BASE_URL, which is the
-    public URL of Django's root, so links are correct behind a proxy regardless of the request's
-    Host.
-    """
+def api_root_path() -> str:
+    """The OGC API root relative to Django's root, e.g., 'api/ogc/'."""
 
-    return settings.PROXY_BASE_URL.rstrip("/") + "/" + path.lstrip("/")
+    return route_path("ogc:api-root")
 
 
 def route_path(route_name: str) -> str:
-    """A named route's path relative to Django's root, e.g. 'api/ogc/openapi.json'."""
+    """A named route's path relative to Django's root, e.g., 'api/ogc/openapi.json'."""
 
     return reverse(route_name).removeprefix(get_script_prefix())
 
 
-def api_root_path() -> str:
-    """The OGC API root relative to Django's root, e.g. 'api/ogc/'."""
+def build_absolute_url(path: str, query_string: str = "") -> str:
+    """Builds an absolute URL for a path relative to Django's root from PROXY_BASE_URL"""
 
-    return route_path("ogc:api-root")
+    url = settings.PROXY_BASE_URL.rstrip("/") + "/" + path.lstrip("/")
+
+    return f"{url}?{query_string}" if query_string else url
 
 
 def build_api_url(path: str = "") -> str:
@@ -49,30 +47,20 @@ def build_api_url(path: str = "") -> str:
     return build_absolute_url(api_root_path() + path.lstrip("/"))
 
 
-def build_url(request: HttpRequest, query_string: str) -> str:
-    """Builds an absolute URL for the request's path with the given query string."""
+def build_self_link(request: HttpRequest, path: Optional[str] = None) -> Link:
+    """Builds a link to this response document."""
 
-    url = build_absolute_url(request.path_info)
-
-    return f"{url}?{query_string}" if query_string else url
-
-
-def build_self_link(request: HttpRequest) -> Link:
-    """A link to this response document (OGC API - Features Core Req 28 and 35)."""
-
-    return Link(
-        href=build_url(request, request.META.get("QUERY_STRING", "")),
-        rel="self",
-        type=JSON_MEDIA_TYPE,
+    href = (
+        build_absolute_url(path)
+        if path
+        else build_absolute_url(request.path_info, request.META.get("QUERY_STRING", ""))
     )
+
+    return Link(href=href, rel="self", type=JSON_MEDIA_TYPE)
 
 
 def build_collection_link(request: HttpRequest) -> Optional[Link]:
-    """
-    A link to the collection that contains the requested item (OGC API - Features Core Req 35),
-    or None when the request isn't for /collections/{collectionId}/items/{itemId}, such as a
-    nested sub-resource whose parent isn't a collection.
-    """
+    """Builds a link to the collection that contains the requested item."""
 
     path = request.path_info.lstrip("/").removeprefix(api_root_path())
     match = COLLECTION_ITEM_PATH.fullmatch(path)
@@ -88,22 +76,19 @@ def build_collection_link(request: HttpRequest) -> Optional[Link]:
 
 
 def build_page_link(request: HttpRequest, rel: str, offset: int, limit: int) -> Link:
+    """Builds a pagination link with the specified parameters."""
+
     query = request.GET.copy()
     query["offset"] = str(offset)
     query["limit"] = str(limit)
 
-    return Link(href=build_url(request, query.urlencode()), rel=rel, type=JSON_MEDIA_TYPE)
+    return Link(
+        href=build_absolute_url(request.path_info, query.urlencode()), rel=rel, type=JSON_MEDIA_TYPE
+    )
 
 
 def build_page_links(request: HttpRequest, offset: int, limit: int, returned: int) -> list[Link]:
-    """
-    Returns the self-link plus next and prev links for a page of results (OGC API - Features
-    Core Req 28, Recs 17-19 and Permission 7).
-
-    A next link is included when the page is full rather than by comparing against the total
-    count, which can be a Postgres estimate or a stored value count that runs low. At worst the
-    last next link leads to an empty page, which Core allows.
-    """
+    """Returns the self-link plus next and prev links for a page of results."""
 
     links = [build_self_link(request)]
 

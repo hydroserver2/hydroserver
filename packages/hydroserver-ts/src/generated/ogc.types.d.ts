@@ -4017,6 +4017,19 @@ export interface components {
              */
             links: components["schemas"]["Link"][];
         };
+        /** ItemResponse[TaskRunResponse] */
+        ItemResponse_TaskRunResponse_: {
+            data: components["schemas"]["TaskRunResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+        };
         /** ItemResponse[UnitResponse] */
         ItemResponse_UnitResponse_: {
             data: components["schemas"]["UnitResponse"];
@@ -4127,11 +4140,6 @@ export interface components {
         };
         /** LinkedResourceQueryParameters */
         LinkedResourceQueryParameters: {
-            /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: string | null;
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -5572,6 +5580,21 @@ export interface components {
         PaginatedResponse_EtlTaskResponse_: {
             /** Data */
             data: components["schemas"]["EtlTaskResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[LinkedResourceGetResponse] */
+        PaginatedResponse_LinkedResourceGetResponse_: {
+            /** Data */
+            data: components["schemas"]["LinkedResourceGetResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -8388,7 +8411,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8437,7 +8460,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -9295,8 +9318,6 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
@@ -9318,7 +9339,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_LinkedResourceGetResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10533,7 +10554,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10582,7 +10603,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12103,8 +12124,6 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
@@ -12126,7 +12145,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_LinkedResourceGetResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12874,7 +12893,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12923,7 +12942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */

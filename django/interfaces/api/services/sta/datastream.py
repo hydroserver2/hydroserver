@@ -436,6 +436,8 @@ class DatastreamAPIService(APIService):
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         filtering: Optional[dict] = None,
     ):
         datastream = self.get_datastream_for_action(
@@ -447,7 +449,10 @@ class DatastreamAPIService(APIService):
         if filtering.get("type"):
             queryset = self.apply_filters(queryset, "type", filtering["type"])
 
-        return queryset.all()
+        queryset = self.apply_sorting(queryset, [], [], default_sortby=("name",))
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+
+        return {"data": list(queryset), "meta": meta}
 
     def add_linked_resource(
         self,

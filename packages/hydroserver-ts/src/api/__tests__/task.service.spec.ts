@@ -15,6 +15,28 @@ describe('TaskService', () => {
     vi.restoreAllMocks()
   })
 
+  it('unwraps the item envelope from triggered and fetched runs', async () => {
+    const envelope = {
+      data: { id: 'run-1', status: 'PENDING' },
+      included: null,
+      links: [
+        {
+          href: 'https://hydro.example.com/api/ogc/collections/etl-tasks/items/task-1/runs/run-1',
+          rel: 'self',
+          type: 'application/json',
+        },
+      ],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => jsonResponse(envelope)))
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    const triggered = await client.tasks.runTask('task-1')
+    const fetched = await client.tasks.getTaskRun('task-1', 'run-1')
+
+    expect(triggered.ok && triggered.data).toEqual({ id: 'run-1', status: 'PENDING' })
+    expect(fetched.ok && fetched.data).toEqual({ id: 'run-1', status: 'PENDING' })
+  })
+
   it('forwards task run payloads without normalization', async () => {
     const rawResult = {
       message: 'Loaded 12 total observation(s) into 1 datastream(s).',

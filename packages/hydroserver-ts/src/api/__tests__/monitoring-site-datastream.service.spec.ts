@@ -15,6 +15,34 @@ describe('MonitoringSiteService', () => {
 
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
+  describe('getLinkedResources', () => {
+    it('fetches every page of a site\'s linked resources', async () => {
+      const items = Array.from({ length: 250 }, (_, i) => ({
+        id: `lr-${i}`,
+        name: `Resource ${i}`,
+        type: 'Report',
+        link: `https://example.com/${i}`,
+      }))
+      const fetchMock = vi.fn(async (input: any) => {
+        const params = new URL(String(input)).searchParams
+        const offset = Number(params.get('offset') ?? 0)
+        const limit = Number(params.get('limit') ?? 100)
+        return jsonResponse({
+          data: items.slice(offset, offset + limit),
+          meta: { offset, limit, totalCount: items.length },
+        })
+      })
+      vi.stubGlobal('fetch', fetchMock)
+
+      const res = await client.monitoringSites.getLinkedResources('site-1')
+
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(1)
+      expect(res.ok && res.data.map((item: { id: string }) => item.id)).toEqual(
+        items.map((item) => item.id)
+      )
+    })
+  })
+
   describe('listMarkers', () => {
     it('fetches monitoringSite markers and returns them in data', async () => {
       const payload = [

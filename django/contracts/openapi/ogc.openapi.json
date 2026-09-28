@@ -4925,6 +4925,41 @@
         "title": "ItemResponse[ServiceAccountResponse]",
         "type": "object"
       },
+      "ItemResponse_TaskRunResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskRunResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[TaskRunResponse]",
+        "type": "object"
+      },
       "ItemResponse_UnitResponse_": {
         "properties": {
           "data": {
@@ -5229,18 +5264,6 @@
       },
       "LinkedResourceQueryParameters": {
         "properties": {
-          "include": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Comma-separated list of related resources to include in the response.",
-            "title": "Include"
-          },
           "limit": {
             "default": 100,
             "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
@@ -9330,6 +9353,49 @@
           "meta"
         ],
         "title": "PaginatedResponse[EtlTaskResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_LinkedResourceGetResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[LinkedResourceGetResponse]",
         "type": "object"
       },
       "PaginatedResponse_LinkedResourceTypeResponse_": {
@@ -16997,7 +17063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskRunResponse"
+                  "$ref": "#/components/schemas/ItemResponse_TaskRunResponse_"
                 }
               }
             },
@@ -17078,7 +17144,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskRunResponse"
+                  "$ref": "#/components/schemas/ItemResponse_TaskRunResponse_"
                 }
               }
             },
@@ -19316,24 +19382,6 @@
             }
           },
           {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
             "description": "Number of items to skip.",
             "in": "query",
             "name": "offset",
@@ -19388,11 +19436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LinkedResourceGetResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_LinkedResourceGetResponse_"
                 }
               }
             },
@@ -22388,7 +22432,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskRunResponse"
+                  "$ref": "#/components/schemas/ItemResponse_TaskRunResponse_"
                 }
               }
             },
@@ -22469,7 +22513,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskRunResponse"
+                  "$ref": "#/components/schemas/ItemResponse_TaskRunResponse_"
                 }
               }
             },
@@ -26201,24 +26245,6 @@
             }
           },
           {
-            "description": "Comma-separated list of related resources to include in the response.",
-            "in": "query",
-            "name": "include",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Comma-separated list of related resources to include in the response.",
-              "title": "Include"
-            }
-          },
-          {
             "description": "Number of items to skip.",
             "in": "query",
             "name": "offset",
@@ -26273,11 +26299,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LinkedResourceGetResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedResponse_LinkedResourceGetResponse_"
                 }
               }
             },
@@ -28153,7 +28175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskRunResponse"
+                  "$ref": "#/components/schemas/ItemResponse_TaskRunResponse_"
                 }
               }
             },
@@ -28234,7 +28256,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskRunResponse"
+                  "$ref": "#/components/schemas/ItemResponse_TaskRunResponse_"
                 }
               }
             },

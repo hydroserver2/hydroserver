@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.conf import settings
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -346,7 +347,7 @@ def test_trigger_data_product_task_creates_pending_run_for_workspace_owner(clien
         response = client.post(f"{_detail_url(task.id)}/trigger")
 
     assert response.status_code == 202
-    assert response.json()["status"] == "PENDING"
+    assert response.json()["data"]["status"] == "PENDING"
     mock_apply_async.assert_called_once()
     assert TaskRun.objects.filter(task=task, status="PENDING").exists()
 
@@ -380,6 +381,41 @@ def test_get_data_product_task_runs_returns_runs_for_workspace_owner(client):
     assert str(run.id) in [r["id"] for r in response.json()["data"]]
 
 
+def test_trigger_data_product_task_returns_the_run_with_links_to_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    with patch("processing.products.tasks.run_data_product_task.apply_async"):
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    run = TaskRun.objects.get(task=task)
+    run_url = f"{settings.PROXY_BASE_URL.rstrip('/')}/api/ogc/collections/data-product-tasks/items/{task.id}/runs/{run.id}"
+    assert response.status_code == 202
+    assert response["Location"] == run_url
+    assert response.json()["data"]["id"] == str(run.id)
+    assert response.json()["links"] == [{"href": run_url, "rel": "self", "type": "application/json"}]
+
+
+def test_get_data_product_task_run_returns_a_self_link_and_no_collection_link(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    run = TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs/{run.id}")
+
+    assert response.json()["links"] == [
+        {
+            "href": f"{settings.PROXY_BASE_URL.rstrip('/')}/api/ogc/collections/data-product-tasks/items/{task.id}/runs/{run.id}",
+            "rel": "self",
+            "type": "application/json",
+        }
+    ]
+
+
 def test_get_data_product_task_run_returns_200_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -390,7 +426,7 @@ def test_get_data_product_task_run_returns_200_for_workspace_owner(client):
     response = client.get(f"{_detail_url(task.id)}/runs/{run.id}")
 
     assert response.status_code == 200
-    assert response.json()["id"] == str(run.id)
+    assert response.json()["data"]["id"] == str(run.id)
 
 
 def test_get_data_product_task_runs_accepts_properties_filter(client):

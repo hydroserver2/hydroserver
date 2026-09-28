@@ -4,6 +4,7 @@ from django.db import connection
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.test.utils import CaptureQueriesContext
 
+from core.sta.models import MonitoringSiteLinkedResource
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -941,6 +942,48 @@ def _linked_resources_url(monitoring_site_id):
     return f"{_detail_url(monitoring_site_id)}/linked-resources"
 
 
+def _make_monitoring_site_linked_resources(owner, names):
+    workspace = WorkspaceFactory(owner=owner)
+    parent = MonitoringSiteFactory(workspace=workspace)
+    for name in names:
+        MonitoringSiteLinkedResource.objects.create(monitoring_site=parent, name=name, type="Report", url=f"https://example.com/{name}")
+    return parent
+
+
+def test_get_monitoring_site_linked_resources_pages_by_name(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["C", "A", "B"])
+    client.force_login(owner)
+
+    first = client.get(_linked_resources_url(parent.id), {"limit": 2}).json()
+    second = client.get(_linked_resources_url(parent.id), {"limit": 2, "offset": 2}).json()
+
+    assert [item["name"] for item in first["data"]] == ["A", "B"]
+    assert first["meta"] == {"limit": 2, "offset": 0, "totalCount": 3}
+    assert "next" in [link["rel"] for link in first["links"]]
+    assert [item["name"] for item in second["data"]] == ["C"]
+
+
+def test_get_monitoring_site_linked_resources_selects_properties(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(_linked_resources_url(parent.id), {"properties": "name"})
+
+    assert response.json()["data"] == [{"name": "A"}]
+
+
+def test_get_monitoring_site_linked_resources_rejects_include(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(_linked_resources_url(parent.id), {"include": "monitoringSite"})
+
+    assert response.status_code == 400
+
+
 def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -958,7 +1001,7 @@ def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
 
     assert response.status_code == 201
     assert set(response.json().keys()) == {"id"}
-    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()
+    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()["data"]
     assert linked_resources[0]["name"] == "Site Report"
 
 
@@ -1013,7 +1056,7 @@ def test_update_monitoring_site_linked_resource_succeeds_for_name(client):
 
     assert response.status_code == 204
     assert not response.content
-    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()
+    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()["data"]
     assert linked_resources[0]["name"] == "Updated Report"
 
 

@@ -1,7 +1,9 @@
 import uuid
 
+from django.http import HttpResponse
 from ninja import Router, Path, Query
 
+from interfaces.api.http.links import build_self_link
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
@@ -156,7 +158,7 @@ def delete_data_product_task(
     "/items/{task_id}/trigger",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        202: TaskRunResponse,
+        202: ItemResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -165,6 +167,7 @@ def delete_data_product_task(
 )
 def trigger_data_product_task(
     request: HydroServerHttpRequest,
+    response: HttpResponse,
     task_id: Path[uuid.UUID],
 ):
     """
@@ -178,7 +181,10 @@ def trigger_data_product_task(
     run = TaskRun.objects.create(task=task, status="PENDING")
     run_data_product_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
 
-    return 202, run
+    run_link = build_self_link(request, request.path_info.removesuffix("/trigger") + f"/runs/{run.id}")
+    response["Location"] = run_link.href
+
+    return 202, {"data": run, "links": [run_link]}
 
 
 @data_product_task_router.get(
@@ -227,7 +233,7 @@ def get_data_product_task_runs(
     "/items/{task_id}/runs/{run_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
-        200: TaskRunResponse,
+        200: ItemResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -249,4 +255,4 @@ def get_data_product_task_run(
         principal=request.principal,
     )
 
-    return 200, run
+    return 200, {"data": run}
