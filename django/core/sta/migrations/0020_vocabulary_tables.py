@@ -145,7 +145,7 @@ class Migration(migrations.Migration):
     directly: that migration already renamed `ResultQualifier.code` to `name`, but (unlike
     this branch's design) kept the old `code` column around and left `description`
     required. This migration's `ResultQualifier` block just finishes the job — drops
-    `code`, makes `description` optional — without touching `name`/its constraint, which
+    `code`, makes `description` nullable — without touching `name`/its constraint, which
     already exist by the time this runs.
 
     The 8 non-`ResultQualifier` blocks each swap their BigAutoField `id` for a UUID via
@@ -209,7 +209,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='sampledmedium',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='sampledmedium',
@@ -281,7 +281,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='aggregationstatistic',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='aggregationstatistic',
@@ -350,7 +350,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='datastreamstatus',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='datastreamstatus',
@@ -419,7 +419,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='methodtype',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='methodtype',
@@ -488,7 +488,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='unittype',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='unittype',
@@ -560,7 +560,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='observedpropertytype',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='observedpropertytype',
@@ -636,7 +636,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='monitoringsitetype',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='monitoringsitetype',
@@ -705,7 +705,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='linkedresourcetype',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddConstraint(
             model_name='linkedresourcetype',
@@ -745,7 +745,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='resultqualifier',
             name='description',
-            field=models.TextField(blank=True, default=''),
+            field=models.TextField(blank=True, null=True),
         ),
         *_search_vector_trigger_sql(
             "sta_resultqualifier", {"description": "A", "name": "C"}

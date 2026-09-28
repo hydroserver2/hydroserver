@@ -338,6 +338,23 @@ def test_update_result_qualifier_succeeds_for_workspace_owner(client):
     assert detail.json()["data"]["name"] == "Updated Name"
 
 
+def test_update_result_qualifier_clears_description_with_empty_string(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    result_qualifier = ResultQualifierFactory(workspace=workspace, description="Old")
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(result_qualifier.id),
+        data={"description": ""},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    detail = client.get(_detail_url(result_qualifier.id))
+    assert detail.json()["data"]["description"] is None
+
+
 def test_update_result_qualifier_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     result_qualifier = ResultQualifierFactory(workspace=workspace)

@@ -19,7 +19,7 @@ from interfaces.api.schemas import (
 
 class ResultQualifierFields(Schema):
     name: str = Field(..., max_length=255)
-    description: str = ""
+    description: str | None = None
 
 
 RESULT_QUALIFIER_INCLUDE_RELATIONS = {

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class ResultQualifier(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
-    description: str
+    description: Optional[str] = None
     workspace_id: Optional[uuid.UUID] = None
 
     _editable_fields: ClassVar[set[str]] = {"name", "description"}
