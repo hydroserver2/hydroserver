@@ -77,9 +77,15 @@ def test_parse_bbox_accepts_a_box_that_crosses_the_antimeridian():
     assert bbox.crosses_antimeridian
 
 
-@pytest.mark.parametrize("value", [None, "null", "NULL", "", " "])
+@pytest.mark.parametrize("value", [None, "", " "])
 def test_parse_bbox_returns_none_for_missing_values(value):
     assert parse_bbox(value) is None
+
+
+@pytest.mark.parametrize("value", ["null", "NULL"])
+def test_parse_bbox_rejects_null(value):
+    with pytest.raises(ValueError, match="only numeric values"):
+        parse_bbox(value)
 
 
 def test_parse_bbox_passes_through_an_existing_bounding_box():
@@ -286,9 +292,14 @@ def test_parse_datetime_parses_an_open_end(value):
     assert parse_datetime(value) == TimeInterval(start=JAN_1, end=None)
 
 
-@pytest.mark.parametrize("value", [None, "null"])
-def test_parse_datetime_returns_none_for_missing_values(value):
-    assert parse_datetime(value) is None
+def test_parse_datetime_returns_none_for_missing_values():
+    assert parse_datetime(None) is None
+
+
+@pytest.mark.parametrize("value", ["null", "NULL"])
+def test_parse_datetime_rejects_null(value):
+    with pytest.raises(ValueError, match="RFC 3339"):
+        parse_datetime(value)
 
 
 @pytest.mark.parametrize(

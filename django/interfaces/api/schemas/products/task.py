@@ -122,7 +122,7 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
     input_datastream: list[uuid.UUID] = Query(
         [], description="Filter data product tasks by input datastream ID.", alias="input_datastream_id"
     )
-    rating_curve: list[uuid.UUID] = Query(
+    rating_curve: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter data product tasks by rating curve ID.", alias="rating_curve_id"
     )
 

@@ -1,14 +1,16 @@
 import copy
 import uuid
 
-from typing import Optional, Any, Union, Annotated, Generic, TypeVar, get_args
+from typing import Optional, Any, Union, Annotated, Generic, Literal, TypeVar, get_args, get_origin
 from ninja import Schema, Query
 from pydantic.alias_generators import to_camel
 from pydantic import (
     AfterValidator,
     AliasGenerator,
     AliasChoices,
+    BeforeValidator,
     ConfigDict,
+    ValidationInfo,
     field_validator,
     model_serializer,
     SerializationInfo,
@@ -139,17 +141,59 @@ def filter_requested_properties(item: Any, requested: set[str]) -> Any:
     return {k: v for k, v in item.items() if k in requested}
 
 
+NULL_QUERY_VALUE = "null"
+
+
+def accepts_null(annotation: Any) -> bool:
+    """Returns whether a query parameter's type admits the value 'null'."""
+
+    if get_origin(annotation) is Literal:
+        return NULL_QUERY_VALUE in get_args(annotation)
+
+    return any(accepts_null(arg) for arg in get_args(annotation))
+
+
+def parse_query_bool(value: Any) -> Any:
+    """Accepts only the lowercase strings 'true' and 'false' for a boolean query parameter."""
+
+    if isinstance(value, bool):
+        return value
+
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+
+    raise ValueError("Boolean query parameters must be 'true' or 'false'")
+
+
+QueryBool = Annotated[
+    bool,
+    BeforeValidator(parse_query_bool),
+    WithJsonSchema({"type": "boolean"}),
+]
+
+
 class BaseQueryParameters(Schema):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
     @field_validator("*", mode="after")
-    def convert_null_strings(value: Any) -> Any:  # noqa
-        if isinstance(value, str) and value.lower() == "null":
+    @classmethod
+    def convert_null_values(cls, value: Any, info: ValidationInfo) -> Any:
+        """
+        Converts 'null' to None for parameters whose type declares Literal["null"], where it
+        selects items whose value is null. Matching is case-sensitive, and parameters that
+        don't declare it treat 'null' as an ordinary value.
+        """
+
+        if not accepts_null(cls.model_fields[info.field_name].annotation):
+            return value
+
+        if value == NULL_QUERY_VALUE:
             return None
         if isinstance(value, list):
-            return [
-                None if isinstance(v, str) and v.lower() == "null" else v for v in value
-            ]
+            return [None if v == NULL_QUERY_VALUE else v for v in value]
+
         return value
 
 

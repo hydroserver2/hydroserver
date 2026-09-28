@@ -21,6 +21,7 @@ from interfaces.api.schemas import (
     comma_array_schema,
     split_sortby,
     sortby_array_schema,
+    QueryBool,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
@@ -140,18 +141,18 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter monitoring sites by workspace ID."
     )
-    admin_area_1: list[str] = Query(
+    admin_area_1: list[str | Literal["null"]] = Query(
         [], description="Filter monitoring sites by admin area 1."
     )
-    admin_area_2: list[str] = Query(
+    admin_area_2: list[str | Literal["null"]] = Query(
         [], description="Filter monitoring sites by admin area 2."
     )
-    country: list[str] = Query([], description="Filter monitoring sites by country.")
+    country: list[str | Literal["null"]] = Query([], description="Filter monitoring sites by country.")
     type: list[str] = Query([], description="Filter monitoring sites by type.")
     tag: list[str] = Query(
         [], description="Filter monitoring sites by tag. Format tag filters as {key}:{value}"
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None,
         description="Controls whether the returned monitoring sites should be private or public.",
     )

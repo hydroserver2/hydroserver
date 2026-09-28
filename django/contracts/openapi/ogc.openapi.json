@@ -1437,8 +1437,16 @@
             "default": [],
             "description": "Filter data product tasks by rating curve ID.",
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Rating Curve Id",
             "type": "array"
@@ -2859,9 +2867,17 @@
           },
           "status": {
             "default": [],
-            "description": "Filter monitoring_sites by status.",
+            "description": "Filter datastreams by status.",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Status",
             "type": "array"
@@ -5699,7 +5715,15 @@
             "default": [],
             "description": "Filter methods by sensor model",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Sensor Model",
             "type": "array"
@@ -5708,7 +5732,15 @@
             "default": [],
             "description": "Filter methods by sensor model manufacturer",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Sensor Model Manufacturer",
             "type": "array"
@@ -6912,7 +6944,15 @@
             "default": [],
             "description": "Filter monitoring sites by admin area 1.",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Admin Area 1",
             "type": "array"
@@ -6921,7 +6961,15 @@
             "default": [],
             "description": "Filter monitoring sites by admin area 2.",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Admin Area 2",
             "type": "array"
@@ -6947,7 +6995,15 @@
             "default": [],
             "description": "Filter monitoring sites by country.",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Country",
             "type": "array"
@@ -11081,8 +11137,16 @@
             "default": [],
             "description": "Filter histories by source datastream ID.",
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ]
             },
             "title": "Source Datastream Id",
             "type": "array"
@@ -16166,8 +16230,16 @@
               "default": [],
               "description": "Filter data product tasks by rating curve ID.",
               "items": {
-                "format": "uuid",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Rating Curve Id",
               "type": "array"
@@ -18633,15 +18705,23 @@
             }
           },
           {
-            "description": "Filter monitoring_sites by status.",
+            "description": "Filter datastreams by status.",
             "in": "query",
             "name": "status",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring_sites by status.",
+              "description": "Filter datastreams by status.",
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Status",
               "type": "array"
@@ -23749,7 +23829,15 @@
               "default": [],
               "description": "Filter methods by sensor model",
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Sensor Model",
               "type": "array"
@@ -23764,7 +23852,15 @@
               "default": [],
               "description": "Filter methods by sensor model manufacturer",
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Sensor Model Manufacturer",
               "type": "array"
@@ -25584,7 +25680,15 @@
               "default": [],
               "description": "Filter monitoring sites by admin area 1.",
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Admin Area 1",
               "type": "array"
@@ -25599,7 +25703,15 @@
               "default": [],
               "description": "Filter monitoring sites by admin area 2.",
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Admin Area 2",
               "type": "array"
@@ -25614,7 +25726,15 @@
               "default": [],
               "description": "Filter monitoring sites by country.",
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Country",
               "type": "array"
@@ -30885,8 +31005,16 @@
               "default": [],
               "description": "Filter histories by source datastream ID.",
               "items": {
-                "format": "uuid",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "const": "null",
+                    "type": "string"
+                  }
+                ]
               },
               "title": "Source Datastream Id",
               "type": "array"

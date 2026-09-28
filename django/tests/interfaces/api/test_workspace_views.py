@@ -406,7 +406,7 @@ def test_get_workspaces_include_pending_transfer_to_sideloads_for_recipient(clie
 
     response = client.get(
         WORKSPACES_URL,
-        {"is_associated": True, "include": "pendingTransferTo"},
+        {"is_associated": "true", "include": "pendingTransferTo"},
     )
 
     assert response.status_code == 200
@@ -425,7 +425,7 @@ def test_get_workspaces_include_collaborator_role_sideloads_for_collaborator(cli
 
     response = client.get(
         WORKSPACES_URL,
-        {"is_associated": True, "include": "collaboratorRole"},
+        {"is_associated": "true", "include": "collaboratorRole"},
     )
 
     assert response.status_code == 200

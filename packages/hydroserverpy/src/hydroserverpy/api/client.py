@@ -46,8 +46,27 @@ class HydroServer:
 
         self._init_session()
 
+    @staticmethod
+    def _encode_query_value(value):
+        """
+        Encodes booleans as the lowercase 'true' and 'false' the API requires; requests would
+        otherwise send str(value), i.e. 'True' and 'False'.
+        """
+
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, (list, tuple)):
+            return [HydroServer._encode_query_value(item) for item in value]
+
+        return value
+
     def request(self, method, path, *args, **kwargs) -> requests.Response:
         """Sends a request to HydroServer's API."""
+
+        if isinstance(kwargs.get("params"), dict):
+            kwargs["params"] = {
+                key: self._encode_query_value(value) for key, value in kwargs["params"].items()
+            }
 
         for attempt in range(2):
             try:

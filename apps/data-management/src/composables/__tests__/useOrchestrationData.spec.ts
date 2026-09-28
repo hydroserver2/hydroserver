@@ -100,7 +100,6 @@ describe('useOrchestrationData', () => {
       workspace_id: ['workspace-1'],
       data_connection_id: ['dc-1'],
       sortby: ['name'],
-      expand_related: true,
     })
 
     await data.fetchTasksForGroup('aggregation', 'monitoringSite-1', 'workspace-1')

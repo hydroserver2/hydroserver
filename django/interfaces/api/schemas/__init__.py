@@ -1,7 +1,7 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
                    PaginationMeta, PaginatedResponse,
                    CreatedResponse, ItemResponse, split_comma_separated, comma_array_schema,
-                   split_sortby, sortby_array_schema)
+                   split_sortby, sortby_array_schema, QueryBool)
 from .extent import (BoundingBox, BoundingBoxQuery, DatetimeQuery, ExtentQueryParameters, TimeInterval,
                      parse_bbox, parse_datetime)
 from interfaces.api.schemas.iam.user import UserContactResponse

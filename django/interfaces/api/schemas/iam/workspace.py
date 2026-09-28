@@ -18,6 +18,7 @@ from interfaces.api.schemas import (
     comma_array_schema,
     split_sortby,
     sortby_array_schema,
+    QueryBool,
 )
 
 
@@ -98,11 +99,11 @@ class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters,
         description="Full-text search query. Comma-separated terms are combined with OR; "
         "whitespace-separated words within a term are combined with AND.",
     )
-    is_associated: Optional[bool] = Query(
+    is_associated: Optional[QueryBool] = Query(
         None,
         description="Whether the workspace is associated with the authenticated user",
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None, description="Whether the returned workspaces should be private or public."
     )
 

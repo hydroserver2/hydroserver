@@ -23,6 +23,7 @@ from interfaces.api.schemas import (
     comma_array_schema,
     split_sortby,
     sortby_array_schema,
+    QueryBool,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
@@ -210,12 +211,12 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     sampled_medium: list[str] = Query(
         [], description="Filter monitoring_sites by sampled medium."
     )
-    status: list[str] = Query([], description="Filter monitoring_sites by status.")
+    status: list[str | Literal["null"]] = Query([], description="Filter datastreams by status.")
     result_type: list[str] = Query([], description="Filter monitoring_sites by result type.")
     tag: list[str] = Query(
         [], description="Filter datastreams by tag. Format tag filters as {key}:{value}"
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None,
         description="Controls whether the datastreams should be private or public.",
     )

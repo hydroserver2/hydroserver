@@ -7,6 +7,26 @@ describe('WorkspaceService', () => {
     vi.restoreAllMocks()
   })
 
+  it('serializes boolean and null query values as lowercase true, false and null', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 100, totalCount: 0 } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    await client.workspaces.list({ is_associated: true, is_private: false })
+    await client.units.list({ workspace_id: ['workspace-1', 'null'] } as any)
+
+    const workspaceParams = new URL(String(fetchMock.mock.calls[0][0])).searchParams
+    expect(workspaceParams.get('is_associated')).toBe('true')
+    expect(workspaceParams.get('is_private')).toBe('false')
+    const unitParams = new URL(String(fetchMock.mock.calls[1][0])).searchParams
+    expect(unitParams.getAll('workspace_id')).toEqual(['workspace-1', 'null'])
+  })
+
   it('uses the service-account endpoint for the workspace management table', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 200, totalCount: 0 } }), {

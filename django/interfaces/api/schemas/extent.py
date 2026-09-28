@@ -50,9 +50,6 @@ def parse_bbox(value: Any) -> Optional[BoundingBox]:
     if value is None or isinstance(value, BoundingBox):
         return value
 
-    if isinstance(value, str) and value.strip().lower() == "null":
-        return None
-
     parts = value.split(",") if isinstance(value, str) else list(value)
 
     if len(parts) == 1 and not str(parts[0]).strip():
@@ -154,9 +151,6 @@ def parse_datetime(value: Any) -> Optional[TimeInterval]:
         raise ValueError("Datetime must be a string")
 
     value = value.strip()
-
-    if value.lower() == "null":
-        return None
 
     if "/" not in value:
         instant = parse_rfc3339(value)

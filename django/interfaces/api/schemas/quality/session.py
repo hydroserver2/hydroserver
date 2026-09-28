@@ -16,6 +16,7 @@ from interfaces.api.schemas import (
     comma_array_schema,
     split_sortby,
     sortby_array_schema,
+    QueryBool,
 )
 from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
 
@@ -76,7 +77,7 @@ class QualityControlSessionQueryParameters(QualityControlSessionFilterFields, Co
     range_start: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range start.")
     range_end: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range end.")
     ancestor_of: Optional[uuid.UUID] = Query(None, description="Return all transitive ancestors of the given session ID.")
-    include_ancestors: bool = Query(False, description="Also return transitive ancestors of all sessions matched by other filters.")
+    include_ancestors: QueryBool = Query(False, description="Also return transitive ancestors of all sessions matched by other filters.")
 
 
 class QualityControlSessionResponse(BaseGetResponse):

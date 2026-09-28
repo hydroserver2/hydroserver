@@ -90,7 +90,7 @@ class QualityControlHistoryQueryParameters(
     managed_datastream_id: list[uuid.UUID] = Query(
         [], description="Filter histories by managed datastream ID."
     )
-    source_datastream_id: list[uuid.UUID] = Query(
+    source_datastream_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter histories by source datastream ID."
     )
 

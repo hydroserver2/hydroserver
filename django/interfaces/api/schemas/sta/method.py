@@ -108,8 +108,8 @@ class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, Exten
         [], description="Filter methods by datastream ID.", alias="datastream_id"
     )
     type: list[str] = Query([], description="Filter methods by type")
-    sensor_model: list[str] = Query([], description="Filter methods by sensor model")
-    sensor_model_manufacturer: list[str] = Query(
+    sensor_model: list[str | Literal["null"]] = Query([], description="Filter methods by sensor model")
+    sensor_model_manufacturer: list[str | Literal["null"]] = Query(
         [], description="Filter methods by sensor model manufacturer"
     )
 

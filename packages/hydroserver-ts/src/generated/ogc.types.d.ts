@@ -2689,7 +2689,7 @@ export interface components {
              * @description Filter data product tasks by rating curve ID.
              * @default []
              */
-            rating_curve_id: string[];
+            rating_curve_id: (string | "null")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -3195,10 +3195,10 @@ export interface components {
             sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
             /**
              * Status
-             * @description Filter monitoring_sites by status.
+             * @description Filter datastreams by status.
              * @default []
              */
-            status: string[];
+            status: (string | "null")[];
             /**
              * Tag
              * @description Filter datastreams by tag. Format tag filters as {key}:{value}
@@ -4295,13 +4295,13 @@ export interface components {
              * @description Filter methods by sensor model
              * @default []
              */
-            sensor_model: string[];
+            sensor_model: (string | "null")[];
             /**
              * Sensor Model Manufacturer
              * @description Filter methods by sensor model manufacturer
              * @default []
              */
-            sensor_model_manufacturer: string[];
+            sensor_model_manufacturer: (string | "null")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -4705,13 +4705,13 @@ export interface components {
              * @description Filter monitoring sites by admin area 1.
              * @default []
              */
-            admin_area_1: string[];
+            admin_area_1: (string | "null")[];
             /**
              * Admin Area 2
              * @description Filter monitoring sites by admin area 2.
              * @default []
              */
-            admin_area_2: string[];
+            admin_area_2: (string | "null")[];
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
@@ -4719,7 +4719,7 @@ export interface components {
              * @description Filter monitoring sites by country.
              * @default []
              */
-            country: string[];
+            country: (string | "null")[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -6191,7 +6191,7 @@ export interface components {
              * @description Filter histories by source datastream ID.
              * @default []
              */
-            source_datastream_id: string[];
+            source_datastream_id: (string | "null")[];
         };
         /** QualityControlHistoryResponse */
         QualityControlHistoryResponse: {
@@ -8051,7 +8051,7 @@ export interface operations {
                 /** @description Filter data product tasks by input datastream ID. */
                 input_datastream_id?: string[];
                 /** @description Filter data product tasks by rating curve ID. */
-                rating_curve_id?: string[];
+                rating_curve_id?: (string | "null")[];
             };
             header?: never;
             path?: never;
@@ -9028,8 +9028,8 @@ export interface operations {
                 observation_type?: string[];
                 /** @description Filter monitoring_sites by sampled medium. */
                 sampled_medium?: string[];
-                /** @description Filter monitoring_sites by status. */
-                status?: string[];
+                /** @description Filter datastreams by status. */
+                status?: (string | "null")[];
                 /** @description Filter monitoring_sites by result type. */
                 result_type?: string[];
                 /** @description Filter datastreams by tag. Format tag filters as {key}:{value} */
@@ -11100,9 +11100,9 @@ export interface operations {
                 /** @description Filter methods by type */
                 type?: string[];
                 /** @description Filter methods by sensor model */
-                sensor_model?: string[];
+                sensor_model?: (string | "null")[];
                 /** @description Filter methods by sensor model manufacturer */
-                sensor_model_manufacturer?: string[];
+                sensor_model_manufacturer?: (string | "null")[];
             };
             header?: never;
             path?: never;
@@ -11884,11 +11884,11 @@ export interface operations {
                 /** @description Filter monitoring sites by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter monitoring sites by admin area 1. */
-                admin_area_1?: string[];
+                admin_area_1?: (string | "null")[];
                 /** @description Filter monitoring sites by admin area 2. */
-                admin_area_2?: string[];
+                admin_area_2?: (string | "null")[];
                 /** @description Filter monitoring sites by country. */
-                country?: string[];
+                country?: (string | "null")[];
                 /** @description Filter monitoring sites by type. */
                 type?: string[];
                 /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value} */
@@ -14037,7 +14037,7 @@ export interface operations {
                 /** @description Filter histories by managed datastream ID. */
                 managed_datastream_id?: string[];
                 /** @description Filter histories by source datastream ID. */
-                source_datastream_id?: string[];
+                source_datastream_id?: (string | "null")[];
             };
             header?: never;
             path?: never;
