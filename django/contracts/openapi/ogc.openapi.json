@@ -446,6 +446,23 @@
         "title": "CollectionsResponse",
         "type": "object"
       },
+      "ConformanceResponse": {
+        "description": "The conformance classes the API implements (OGC API - Features Core confClasses.yaml).",
+        "properties": {
+          "conformsTo": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conformsto",
+            "type": "array"
+          }
+        },
+        "required": [
+          "conformsTo"
+        ],
+        "title": "ConformanceResponse",
+        "type": "object"
+      },
       "CreatedResponse": {
         "properties": {
           "id": {
@@ -5091,6 +5108,33 @@
           "timestampKey"
         ],
         "title": "JSONPayloadResponse",
+        "type": "object"
+      },
+      "LandingPageResponse": {
+        "description": "The API's landing page (OGC API - Features Core landingPage.yaml).",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "links"
+        ],
+        "title": "LandingPageResponse",
         "type": "object"
       },
       "Link": {
@@ -14604,12 +14648,49 @@
     }
   },
   "info": {
-    "description": "",
+    "description": "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer.",
     "title": "HydroServer Data Management API",
     "version": "2.0.0b3"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/ogc/": {
+      "get": {
+        "description": "Get the API's landing page, which links to the API definition, conformance declaration, and\ncollections.",
+        "operationId": "interfaces_api_views_ogc_get_landing_page",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingPageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Landing Page",
+        "tags": [
+          "Capabilities"
+        ]
+      }
+    },
     "/api/ogc/collections": {
       "get": {
         "description": "Get the collections the API serves.",
@@ -37030,6 +37111,43 @@
         "summary": "Get Collection Metadata",
         "tags": [
           "Collections"
+        ]
+      }
+    },
+    "/api/ogc/conformance": {
+      "get": {
+        "description": "Get the OGC API conformance classes the API implements.",
+        "operationId": "interfaces_api_views_ogc_get_conformance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConformanceResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Conformance",
+        "tags": [
+          "Capabilities"
         ]
       }
     }

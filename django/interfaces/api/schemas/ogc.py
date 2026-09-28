@@ -24,3 +24,19 @@ class CollectionsResponse(Schema):
 
     links: list[Link]
     collections: list[CollectionResponse]
+
+
+class LandingPageResponse(Schema):
+    """The API's landing page (OGC API - Features Core landingPage.yaml)."""
+
+    title: str
+    description: str
+    links: list[Link]
+
+
+class ConformanceResponse(Schema):
+    """The conformance classes the API implements (OGC API - Features Core confClasses.yaml)."""
+
+    conforms_to: list[str]
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)

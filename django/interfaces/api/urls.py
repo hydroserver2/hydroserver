@@ -11,14 +11,15 @@ from interfaces.api.http.renderer import ORJSONRenderer
 
 from interfaces.api.collections import COLLECTIONS
 from interfaces.api.views import qc_history_router, qc_session_router, qc_operation_router
-from interfaces.api.views.ogc import ogc_router
+from interfaces.api.views.ogc import API_DESCRIPTION, API_TITLE, ogc_router
 
 
 rate_limits = settings.API_RATE_LIMITS or {}
 throttle_classes = {"anonymous": AnonRateThrottle, "authenticated": AuthRateThrottle}
 
 api = HydroServerNinjaAPI(
-    title="HydroServer Data Management API",
+    title=API_TITLE,
+    description=API_DESCRIPTION,
     version=__version__,
     urls_namespace="ogc",
     docs_decorator=ensure_csrf_cookie,

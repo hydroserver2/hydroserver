@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/api/ogc/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Landing Page
+         * @description Get the API's landing page, which links to the API definition, conformance declaration, and
+         *     collections.
+         */
+        get: operations["interfaces_api_views_ogc_get_landing_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ogc/collections": {
         parameters: {
             query?: never;
@@ -2162,6 +2183,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ogc/conformance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Conformance
+         * @description Get the OGC API conformance classes the API implements.
+         */
+        get: operations["interfaces_api_views_ogc_get_conformance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2335,6 +2376,14 @@ export interface components {
             collections: components["schemas"]["CollectionResponse"][];
             /** Links */
             links: components["schemas"]["Link"][];
+        };
+        /**
+         * ConformanceResponse
+         * @description The conformance classes the API implements (OGC API - Features Core confClasses.yaml).
+         */
+        ConformanceResponse: {
+            /** Conformsto */
+            conformsTo: string[];
         };
         /** CreatedResponse */
         CreatedResponse: {
@@ -4036,6 +4085,18 @@ export interface components {
              * @constant
              */
             type: "JSON";
+        };
+        /**
+         * LandingPageResponse
+         * @description The API's landing page (OGC API - Features Core landingPage.yaml).
+         */
+        LandingPageResponse: {
+            /** Description */
+            description: string;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Title */
+            title: string;
         };
         /** Link */
         Link: {
@@ -7418,6 +7479,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    interfaces_api_views_ogc_get_landing_page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LandingPageResponse"];
+                };
+            };
+        };
+    };
     interfaces_api_views_ogc_get_collections: {
         parameters: {
             query?: never;
@@ -16715,6 +16796,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_ogc_get_conformance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConformanceResponse"];
                 };
             };
         };

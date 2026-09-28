@@ -120,8 +120,21 @@ def test_collections_endpoints_are_public(client, path):
     assert response.status_code == 200
 
 
-def test_collections_endpoints_are_documented_in_the_openapi_document():
+@pytest.mark.parametrize("path", [COLLECTIONS_PATH, f"{COLLECTIONS_PATH}/{{collection_id}}"])
+def test_collections_endpoints_are_documented_under_collections(path):
     paths = api.get_openapi_schema(path_prefix="/api/ogc/")["paths"]
 
-    assert "get" in paths[COLLECTIONS_PATH]
-    assert "get" in paths[f"{COLLECTIONS_PATH}/{{collection_id}}"]
+    assert paths[path]["get"]["tags"] == ["Collections"]
+
+
+def test_collection_metadata_is_documented_once_for_all_collections():
+    paths = api.get_openapi_schema(path_prefix="/api/ogc/")["paths"]
+
+    assert not [path for path in paths if path.removeprefix(f"{COLLECTIONS_PATH}/") in COLLECTION_IDS]
+
+
+def test_openapi_operation_ids_are_unique():
+    paths = api.get_openapi_schema(path_prefix="/api/ogc/")["paths"]
+    operation_ids = [operation["operationId"] for path in paths.values() for operation in path.values()]
+
+    assert len(operation_ids) == len(set(operation_ids))

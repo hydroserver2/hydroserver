@@ -3,11 +3,103 @@ from ninja import Router, Path
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.collections import COLLECTIONS, CollectionDefinition, get_collection
 from interfaces.api.http.errors import NotFoundError
-from interfaces.api.http.links import JSON_MEDIA_TYPE, Link, build_api_url, build_self_link
+from interfaces.api.http.links import (
+    JSON_MEDIA_TYPE,
+    Link,
+    build_absolute_url,
+    build_api_url,
+    build_self_link,
+    route_path,
+)
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.api.schemas.ogc import CollectionResponse, CollectionsResponse
+from interfaces.api.schemas.ogc import (
+    CollectionResponse,
+    CollectionsResponse,
+    ConformanceResponse,
+    LandingPageResponse,
+)
+
+API_TITLE = "HydroServer Data Management API"
+API_DESCRIPTION = (
+    "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer."
+)
+
+CONFORMANCE_CLASSES = (
+    "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core",
+    "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json",
+    "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page",
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+)
 
 ogc_router = Router(tags=["Collections"])
+
+
+@ogc_router.get(
+    "",
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={200: LandingPageResponse},
+    by_alias=True,
+    exclude_none=True,
+    tags=["Capabilities"],
+)
+def get_landing_page(request: HydroServerHttpRequest):
+    """
+    Get the API's landing page, which links to the API definition, conformance declaration, and
+    collections.
+    """
+
+    return 200, LandingPageResponse(
+        title=API_TITLE,
+        description=API_DESCRIPTION,
+        links=[
+            build_self_link(request),
+            Link(
+                href=build_absolute_url(route_path("ogc:openapi-json")),
+                rel="service-desc",
+                type=JSON_MEDIA_TYPE,
+                title="The API definition",
+            ),
+            Link(
+                href=build_absolute_url(route_path("ogc:openapi-view")),
+                rel="service-doc",
+                type="text/html",
+                title="The API documentation",
+            ),
+            Link(
+                href=build_api_url("conformance"),
+                rel="conformance",
+                type=JSON_MEDIA_TYPE,
+                title="OGC API conformance classes implemented by this server",
+            ),
+            Link(
+                href=build_api_url("conformance"),
+                rel="http://www.opengis.net/def/rel/ogc/1.0/conformance",
+                type=JSON_MEDIA_TYPE,
+                title="OGC API conformance classes implemented by this server",
+            ),
+            Link(
+                href=build_api_url("collections"),
+                rel="data",
+                type=JSON_MEDIA_TYPE,
+                title="Information about the collections",
+            ),
+        ],
+    )
+
+
+@ogc_router.get(
+    "/conformance",
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={200: ConformanceResponse},
+    by_alias=True,
+    tags=["Capabilities"],
+)
+def get_conformance(request: HydroServerHttpRequest):
+    """
+    Get the OGC API conformance classes the API implements.
+    """
+
+    return 200, ConformanceResponse(conforms_to=list(CONFORMANCE_CLASSES))
 
 
 def build_collection(collection: CollectionDefinition) -> CollectionResponse:

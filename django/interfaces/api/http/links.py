@@ -31,10 +31,16 @@ def build_absolute_url(path: str) -> str:
     return settings.PROXY_BASE_URL.rstrip("/") + "/" + path.lstrip("/")
 
 
+def route_path(route_name: str) -> str:
+    """A named route's path relative to Django's root, e.g. 'api/ogc/openapi.json'."""
+
+    return reverse(route_name).removeprefix(get_script_prefix())
+
+
 def api_root_path() -> str:
     """The OGC API root relative to Django's root, e.g. 'api/ogc/'."""
 
-    return reverse("ogc:api-root").removeprefix(get_script_prefix())
+    return route_path("ogc:api-root")
 
 
 def build_api_url(path: str = "") -> str:

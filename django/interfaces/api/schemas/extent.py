@@ -55,6 +55,9 @@ def parse_bbox(value: Any) -> Optional[BoundingBox]:
 
     parts = value.split(",") if isinstance(value, str) else list(value)
 
+    if len(parts) == 1 and not str(parts[0]).strip():
+        return None
+
     try:
         numbers = [float(part) for part in parts]
     except (TypeError, ValueError):

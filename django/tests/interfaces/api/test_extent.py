@@ -77,7 +77,7 @@ def test_parse_bbox_accepts_a_box_that_crosses_the_antimeridian():
     assert bbox.crosses_antimeridian
 
 
-@pytest.mark.parametrize("value", [None, "null", "NULL"])
+@pytest.mark.parametrize("value", [None, "null", "NULL", "", " "])
 def test_parse_bbox_returns_none_for_missing_values(value):
     assert parse_bbox(value) is None
 
@@ -92,7 +92,6 @@ def test_parse_bbox_passes_through_an_existing_bounding_box():
     "value, message",
     [
         ("-112,40,-111,north", "only numeric values"),
-        ("", "only numeric values"),
         ("-112,40,-111,nan", "finite"),
         ("-112,40,-111,inf", "finite"),
         ("-112,40,-111", "4 or 6"),
