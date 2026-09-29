@@ -467,6 +467,23 @@ export class ObservationRecord {
     return this._replay([...this.history]);
   }
 
+  /** First and last datetime among `indices`, or undefined if none are in
+   *  range. Indices need not be sorted. */
+  private _extentOf(
+    indices: ArrayLike<number>,
+  ): { begin: number; end: number } | undefined {
+    const xs = this.dataX;
+    let begin = Infinity;
+    let end = -Infinity;
+    for (let k = 0; k < indices.length; k++) {
+      const t = xs[indices[k]];
+      if (t === undefined || !Number.isFinite(t)) continue;
+      if (t < begin) begin = t;
+      if (t > end) end = t;
+    }
+    return begin <= end ? { begin, end } : undefined;
+  }
+
   private _refuseWhilePreviewing() {
     if (this.previewIndex !== null) throw new HistoryPreviewError();
   }
@@ -581,17 +598,14 @@ export class ObservationRecord {
       // survives the internal re-dispatch.
       if (!this._isReplaying) this.redoStack.length = 0;
 
-      // Selection-consuming edits read the preceding SELECTION's
-      // size at push time so the audit record reflects what the
-      // handler will operate on. `consumesPrecedingSelection` gates
-      // the read so non-selection edits (ADD_POINTS, FILL_GAPS)
-      // don't pick up a stale value.
-      const prevSelLen =
-        consumesPrecedingSelection(action, args) &&
-          this.history[this.history.length - 1]?.method ===
-          EnumFilterOperations.SELECTION
-          ? this.history[this.history.length - 1].selected?.length
-          : undefined;
+      // Selection-consuming edits read the preceding entry's selection
+      // (a SELECTION or a filter's result, as the handlers do) at push
+      // time so the audit record reflects what the handler will operate
+      // on. `consumesPrecedingSelection` gates the read so non-selection
+      // edits (ADD_POINTS, FILL_GAPS) don't pick up a stale value.
+      const prevSelected = consumesPrecedingSelection(action, args)
+        ? this.history[this.history.length - 1]?.selected
+        : undefined;
 
       historyItem = {
         method: action,
@@ -600,7 +614,9 @@ export class ObservationRecord {
           startedAt: Date.now(),
           inFlight: true,
           datasetSize: this.dataset.source.x?.length ?? 0,
-          selectionSize: prevSelLen,
+          selectionSize: prevSelected?.length,
+          // Read before the edit moves or removes those points.
+          extent: prevSelected && this._extentOf(prevSelected),
         },
       };
       this.history.push(historyItem);
@@ -642,6 +658,10 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           inFlight: false,
+          // Inserting ops have no prior selection; their result is it.
+          extent:
+            stored.execution.extent ??
+            (newSelection?.length ? this._extentOf(newSelection) : undefined),
         };
       }
     } catch (e) {
@@ -821,6 +841,9 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           selectionSize: measurement.response?.length,
+          extent: measurement.response?.length
+            ? this._extentOf(measurement.response)
+            : undefined,
           inFlight: false,
         };
       }

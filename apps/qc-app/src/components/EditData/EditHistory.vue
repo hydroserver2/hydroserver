@@ -329,28 +329,38 @@
             <!-- Grows as one unit so the badge sits against the title text. -->
             <button
               type="button"
-              class="edit-history__step edit-history__title flex-grow-1 d-flex align-center ga-1"
+              class="edit-history__step edit-history__title flex-grow-1 d-flex flex-column align-start"
               :data-testid="`history-step-btn-${index}`"
               :disabled="!canStepTo || entry.execution?.inFlight"
               :title="stepTitle(index)"
               @click.stop="onRowReload(index)"
             >
-              <span class="edit-history__method text-truncate font-weight-medium">
-                {{ formatMethod(entry.method) }}
+              <span class="d-flex align-center ga-1 w-100">
+                <span class="edit-history__method text-truncate font-weight-medium">
+                  {{ formatMethod(entry.method) }}
+                </span>
+
+                <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
+                  <template #activator="{ props: tp }">
+                    <v-icon
+                      v-bind="tp"
+                      :data-testid="`history-comment-badge-${index}`"
+                      icon="mdi-comment-text-outline"
+                      size="14"
+                      color="primary"
+                      class="flex-shrink-0"
+                    />
+                  </template>
+                </v-tooltip>
               </span>
 
-              <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
-                <template #activator="{ props: tp }">
-                  <v-icon
-                    v-bind="tp"
-                    :data-testid="`history-comment-badge-${index}`"
-                    icon="mdi-comment-text-outline"
-                    size="14"
-                    color="primary"
-                    class="flex-shrink-0"
-                  />
-                </template>
-              </v-tooltip>
+              <span
+                v-if="stepExtent(entry)"
+                class="edit-history__extent text-medium-emphasis text-truncate w-100"
+                :data-testid="`history-extent-${index}`"
+              >
+                {{ stepExtent(entry) }}
+              </span>
             </button>
 
             <v-chip
@@ -563,6 +573,7 @@ import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { SNAPSHOT_BASELINE_INDEX } from '@/utils/snapshotId'
 import { Snackbar } from '@uwrl/qc-utils'
 import type { HistoryItem } from '@uwrl/qc-utils'
+import { formatDateRange, formatStamp } from '@/utils/time'
 
 const props = withDefaults(
   defineProps<{
@@ -676,6 +687,21 @@ const stepTitle = (index: number) =>
   isApplied(index)
     ? 'Preview this step'
     : 'Not applied in the step currently shown. Click to preview it.'
+
+/** The period a step touched and how many points, from the datetimes qc-utils
+ *  read when it ran. Indices would drift with later edits. */
+function stepExtent(entry: HistoryItem): string {
+  const extent = entry.execution?.extent
+  if (!extent) return ''
+  const begin = new Date(extent.begin)
+  const end = new Date(extent.end)
+  const period =
+    extent.begin === extent.end
+      ? formatStamp(begin)
+      : formatDateRange(begin.toISOString(), end.toISOString())
+  const n = entry.execution?.selectionSize
+  return n ? `${period} · ${n.toLocaleString()} pt${n === 1 ? '' : 's'}` : period
+}
 
 function formatMethod(method: string) {
   if (!method) return ''
@@ -968,6 +994,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .edit-history__method {
   font-size: 0.8125rem;
   min-width: 0;
+}
+
+.edit-history__extent {
+  font-size: 0.6875rem;
+  line-height: 1.2;
 }
 
 .edit-history__args {

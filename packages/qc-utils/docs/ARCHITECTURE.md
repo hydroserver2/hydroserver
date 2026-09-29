@@ -240,6 +240,7 @@ last `reload()`. Each `HistoryItem`:
     mode?: 'worker' | 'inline', // calibration routing decision
     datasetSize?: number,       // observation count at dispatch time
     selectionSize?: number,     // indices the op acted on
+    extent?: { begin: number, end: number }, // datetimes of the first / last point acted on
   },
 }
 ```

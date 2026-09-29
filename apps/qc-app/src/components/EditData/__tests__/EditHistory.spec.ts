@@ -156,6 +156,7 @@ function makeEntry(
     mode: 'worker' | 'inline'
     datasetSize: number
     selectionSize: number
+    extent: { begin: number; end: number }
   }> = {},
 ) {
   return {
@@ -186,6 +187,30 @@ describe('EditHistory.vue', () => {
     isUpdating.value = false
     selectedSeries.value = makeSeries()
     vi.clearAllMocks()
+  })
+
+  it('shows the period and point count a step touched', async () => {
+    const begin = new Date(2026, 2, 3, 12, 5)
+    const end = new Date(2026, 3, 1, 8, 0)
+    editHistory.value = [
+      makeEntry('INTERPOLATE', [], {
+        extent: { begin: begin.getTime(), end: end.getTime() },
+        selectionSize: 1200,
+      }),
+      makeEntry('ADD_POINTS', [], {
+        extent: { begin: end.getTime(), end: end.getTime() },
+      }),
+      makeEntry('FIND_GAPS'),
+    ]
+    const wrapper = createWrapper()
+    await flushPromises()
+    expect(wrapper.find('[data-testid="history-extent-0"]').text()).toBe(
+      'Mar 3, 12:05 PM – Apr 1, 2026, 8:00 AM · 1,200 pts'
+    )
+    expect(wrapper.find('[data-testid="history-extent-1"]').text()).toBe(
+      'Apr 1, 2026, 8:00 AM'
+    )
+    expect(wrapper.find('[data-testid="history-extent-2"]').exists()).toBe(false)
   })
 
   it('disables undo/redo when history is empty', () => {

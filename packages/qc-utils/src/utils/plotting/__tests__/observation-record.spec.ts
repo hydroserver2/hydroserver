@@ -955,6 +955,90 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('execution extent', () => {
+    const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
+    const at = (i: number) => startMs + i * spacingMs;
+    let rec: ObservationRecord;
+
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes, dataValues });
+      await rec.reload();
+    });
+
+    it('spans the points a selection picked', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [7, 3, 5]);
+      expect(rec.history[0]!.execution.extent).toEqual({
+        begin: at(3),
+        end: at(7),
+      });
+    });
+
+    it('spans a filter result', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
+        [FilterOperation.GT]: 15,
+      });
+      expect(rec.history[0]!.execution.extent).toEqual({
+        begin: at(16),
+        end: at(19),
+      });
+    });
+
+    it('keeps the datetimes a delete removed, not the indices left behind', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      expect(rec.history[1]!.execution.extent).toEqual({
+        begin: at(0),
+        end: at(1),
+      });
+      // Same indices, but by then they held the next two points.
+      expect(rec.history[3]!.execution.extent).toEqual({
+        begin: at(2),
+        end: at(3),
+      });
+    });
+
+    it('spans the selection an edit took from a filter', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
+        [FilterOperation.GT]: 17,
+      });
+      await rec.dispatchAction(EnumEditOperations.DELETE_POINTS);
+      expect(rec.history[1]!.execution.selectionSize).toBe(2);
+      expect(rec.history[1]!.execution.extent).toEqual({
+        begin: at(18),
+        end: at(19),
+      });
+    });
+
+    it('spans the points an insert added', async () => {
+      await rec.dispatchAction(EnumEditOperations.ADD_POINTS, [
+        [at(30), 1],
+        [at(25), 1],
+      ]);
+      expect(rec.history[0]!.execution.extent).toEqual({
+        begin: at(25),
+        end: at(30),
+      });
+    });
+
+    it('is recomputed on replay', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 4]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[1]!.execution.extent = undefined;
+      await rec.undo();
+      await rec.redo();
+      expect(rec.history[1]!.execution.extent).toEqual({
+        begin: at(2),
+        end: at(4),
+      });
+    });
+  });
+
   describe('dispatch', () => {
     it('runs a batched sequence and returns the last response', async () => {
       const rec = new ObservationRecord(mockRawData);

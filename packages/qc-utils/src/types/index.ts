@@ -133,10 +133,21 @@ export interface HistoryExecution {
    * Number of indices the op acted on. For filters this is the
    * size of the resulting selection (populated at resolve time);
    * for selection-consuming edits it's the size of the preceding
-   * SELECTION (populated at push time). `undefined` when not
+   * entry's selection, a SELECTION or a filter result (populated at
+   * push time). `undefined` when not
    * applicable (e.g. ADD_POINTS, which is datetime-addressed).
    */
   selectionSize?: number;
+  /**
+   * Epoch-ms datetimes of the first and last points the op acted on, read
+   * from the data as it stood when the op ran. Indices shift with later
+   * edits; these don't, so a consumer can say which period a step touched.
+   * Filters: their resulting selection. Selection-consuming edits: the
+   * preceding entry's selection, before the edit. ADD_POINTS and FILL_GAPS: the
+   * points they inserted. `undefined` when the op touched no points.
+   * Runtime-only like `selected`: recomputed on replay, never serialized.
+   */
+  extent?: { begin: number; end: number };
 }
 
 export type HistoryItem = {

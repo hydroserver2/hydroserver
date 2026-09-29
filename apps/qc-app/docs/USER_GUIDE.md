@@ -553,6 +553,12 @@ The body shows:
 - A baseline **Data loaded** row at the top, carrying a plot-this-step button and a **discard-edits-and-reload-from-server** button (cloud icon). Clicking the row returns the plot to the state the session started from. The cloud button is hidden on a committed session, where there are no edits to discard.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
+  - Under the name, the period the step touched and how many points, for
+    example `Mar 3, 12:05 PM – Apr 1, 2026, 8:00 AM · 1,200 pts`. For a
+    filter or selection that is the points it picked; for an edit, the points
+    it changed, as they were before it ran; for Add points and Fill gaps, the
+    points it inserted. The dates are recorded when the step runs, so later
+    edits that move or remove points don't change them.
   - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
