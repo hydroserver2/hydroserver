@@ -63,10 +63,26 @@ export function committedExtent(
   return { begin: new Date(begin), end: new Date(end) }
 }
 
-/** The source's own extent, which the rules above always accept while the
- *  committed history lies inside it. */
-export function defaultSessionWindow(source: SourceExtent): TimeWindow | null {
-  return dataExtent([source])
+/** Where the last session left off: from the end of the committed history
+ *  to the end of the source. The whole source when nothing is committed, or
+ *  when nothing new arrived after the history (or it lies outside the source).
+ *  The rules above accept it while the committed history lies inside the
+ *  source. */
+export function defaultSessionWindow(
+  source: SourceExtent,
+  sessions: readonly SessionRange[]
+): TimeWindow | null {
+  const extent = dataExtent([source])
+  if (!extent) return null
+  const history = committedExtent(sessions)
+  if (
+    history &&
+    history.end.getTime() >= extent.begin.getTime() &&
+    history.end.getTime() < extent.end.getTime()
+  ) {
+    return { begin: new Date(history.end), end: new Date(extent.end) }
+  }
+  return extent
 }
 
 export const NO_SOURCE_DATA_ISSUE: SessionWindowIssue = {

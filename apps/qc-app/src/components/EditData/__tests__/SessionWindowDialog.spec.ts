@@ -64,12 +64,19 @@ const pickers = (w: ReturnType<typeof mount>) =>
   w.findAllComponents(DatePickerStub)
 
 describe('SessionWindowDialog', () => {
-  it('prefills the window with the whole source extent', () => {
+  it('prefills the window from where the committed history ends', () => {
     const w = mountDialog()
+    const [from, to] = pickers(w)
+    expect((from!.props('modelValue') as Date).toISOString()).toBe('2025-05-01T00:00:00.000Z')
+    expect((to!.props('modelValue') as Date).toISOString()).toBe('2025-12-31T00:00:00.000Z')
+    expect(w.find('[data-testid="session-window-error"]').exists()).toBe(false)
+  })
+
+  it('prefills the whole source extent when nothing is committed', () => {
+    const w = mountDialog({ sessions: [] })
     const [from, to] = pickers(w)
     expect((from!.props('modelValue') as Date).toISOString()).toBe('2025-01-01T00:00:00.000Z')
     expect((to!.props('modelValue') as Date).toISOString()).toBe('2025-12-31T00:00:00.000Z')
-    expect(w.find('[data-testid="session-window-error"]').exists()).toBe(false)
   })
 
   it('shows the committed history range', () => {
@@ -86,7 +93,7 @@ describe('SessionWindowDialog', () => {
     const w = mountDialog()
     await w.find('[data-testid="session-window-start"]').trigger('click')
     const [window] = w.emitted('confirm')![0] as [{ begin: Date; end: Date }]
-    expect(window.begin.toISOString()).toBe('2025-01-01T00:00:00.000Z')
+    expect(window.begin.toISOString()).toBe('2025-05-01T00:00:00.000Z')
     expect(window.end.toISOString()).toBe('2025-12-31T00:00:00.000Z')
   })
 
@@ -157,11 +164,11 @@ describe('SessionWindowDialog presets', () => {
 
   it('marks the preset matching the current window', async () => {
     const w = mountDialog()
-    expect(preset(w, 'all').attributes('aria-pressed')).toBe('true')
-    await preset(w, 'since').trigger('click')
-    await flushPromises()
     expect(preset(w, 'since').attributes('aria-pressed')).toBe('true')
-    expect(preset(w, 'all').attributes('aria-pressed')).toBe('false')
+    await preset(w, 'all').trigger('click')
+    await flushPromises()
+    expect(preset(w, 'all').attributes('aria-pressed')).toBe('true')
+    expect(preset(w, 'since').attributes('aria-pressed')).toBe('false')
   })
 })
 
@@ -193,7 +200,7 @@ describe('SessionWindowDialog one-click fix', () => {
     await fix(w).trigger('click')
     await flushPromises()
     const [from, to] = pickers(w)
-    expect((from!.props('modelValue') as Date).toISOString()).toBe('2025-01-01T00:00:00.000Z')
+    expect((from!.props('modelValue') as Date).toISOString()).toBe('2025-05-01T00:00:00.000Z')
     expect((to!.props('modelValue') as Date).toISOString()).toBe('2025-12-31T00:00:00.000Z')
     expect(w.find('[data-testid="session-window-error"]').exists()).toBe(false)
   })

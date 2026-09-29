@@ -187,10 +187,12 @@ need to.
 #### The session window
 
 The session window step shows the source's data extent and, if the managed
-datastream already has committed history, that history's extent too. The
-default window is the source's own begin and end datetimes, so a new session
-covers the whole record and overlaps whatever is already committed. Narrow it
-whenever you only want to work on part of the record.
+datastream already has committed history, that history's extent too, so you
+can see where the last session left off. The default window picks up from
+there: it starts where the committed history ends and runs to the end of the
+source record (the **Since commit** preset). With nothing committed yet, or no
+new data since the last commit, it covers the whole record instead. Widen or
+narrow it as you need; the **All** preset goes back to the whole record.
 
 You can adjust the From / To pickers, but two rules apply:
 
