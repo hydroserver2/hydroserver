@@ -123,10 +123,12 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     sessions.value = list
     const inProgress = list.find((s) => s.status === 'in_progress') ?? null
     currentSessionId.value = inProgress?.id ?? null
-    // Default view: the editable session, else the latest committed.
+    // Default view: the editable session, else the last one committed (the
+    // one a commit just made).
+    const commitOrder = (s: QualityControlSession) => s.committedAt ?? s.createdAt
     const latestCommitted = [...list]
       .filter((s) => s.status === 'committed')
-      .sort((a, b) => b.phenomenonTimeStart.localeCompare(a.phenomenonTimeStart))[0]
+      .sort((a, b) => commitOrder(b).localeCompare(commitOrder(a)))[0]
     viewedSessionId.value = inProgress?.id ?? latestCommitted?.id ?? null
   }
 

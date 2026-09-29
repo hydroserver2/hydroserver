@@ -26,6 +26,11 @@ const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
 const selectedData = ref<number[] | null>(null)
 const qcDatastream = ref<any>({ id: 'ds-1' })
 
+const editLock = ref<'readOnly' | 'preview' | null>(null)
+vi.mock('@/composables/useEditLock', () => ({
+  useEditLock: () => ({ editLock }),
+}))
+
 const qualifierById = ref<Record<string, any>>({})
 const applied = ref<Record<string, any>>({})
 
@@ -33,7 +38,6 @@ vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
     isUpdating,
     selectedSeries,
-    previewIndex: ref(null),
     redraw,
     tableScrollRequest,
   }),
@@ -69,7 +73,7 @@ vi.mock('@uwrl/qc-utils', () => ({
 vi.mock('@/components/VisualizeData/EditableCell.vue', () => ({
   default: {
     name: 'EditableCell',
-    props: ['value', 'display', 'edited', 'originalDisplay', 'editedDisplay', 'inputType', 'align'],
+    props: ['value', 'display', 'edited', 'originalDisplay', 'editedDisplay', 'inputType', 'align', 'readonly'],
     emits: ['save', 'clear'],
     template: '<div class="editable-cell-stub" />',
   },
@@ -153,6 +157,7 @@ function createWrapperWithSlots() {
 
 afterEach(() => {
   while (openWrappers.length) openWrappers.pop()!.unmount()
+  editLock.value = null
 })
 
 describe('DataTable.vue', () => {
@@ -988,5 +993,54 @@ describe('DataTable.vue scroll requests', () => {
     requestScroll(3000)
     await flushPromises()
     expect(scrollToIndexCalls.at(-1)).toBe(0)
+  })
+})
+
+describe('DataTable.vue edit lock', () => {
+  beforeEach(() => {
+    isUpdating.value = false
+    selectedSeries.value = {
+      data: {
+        dataX: [1000, 2000],
+        dataY: [10, 20],
+        dispatch: vi.fn().mockResolvedValue(undefined),
+      },
+    }
+    selectedData.value = null
+    qcDatastream.value = { id: 'ds-1' }
+    qualifierById.value = {}
+    applied.value = {}
+  })
+
+  it('makes cells read-only and blocks saving on a committed session', async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    await flushPromises()
+
+    editLock.value = 'readOnly'
+    await flushPromises()
+
+    expect(valueCell(wrapper, 0).props('readonly')).toBe(true)
+    expect(datetimeCell(wrapper, 0).props('readonly')).toBe(true)
+    expect(wrapper.text()).toContain('Committed session, read-only')
+    const save = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    expect(save.attributes('disabled')).toBeDefined()
+  })
+
+  it('keeps cells editable while previewing, but blocks saving', async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    editLock.value = 'preview'
+    await flushPromises()
+
+    expect(valueCell(wrapper, 0).props('readonly')).toBe(false)
+    const save = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    expect(save.attributes('disabled')).toBeDefined()
   })
 })

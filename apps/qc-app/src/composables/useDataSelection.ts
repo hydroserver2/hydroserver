@@ -13,6 +13,7 @@ import {
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import type { PlotData } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
+import { useEditLock } from '@/composables/useEditLock'
 
 import { computed } from 'vue'
 
@@ -20,7 +21,8 @@ export function useDataSelection() {
   const { plotlyRef, suppressedEchoSelection } = storeToRefs(
     usePlotlyStore()
   )
-  const { selectedSeries, previewIndex } = storeToRefs(usePlotlyStore())
+  const { selectedSeries } = storeToRefs(usePlotlyStore())
+  const { editLock } = useEditLock()
   const { selectedData } = storeToRefs(useDataVisStore())
 
   /**
@@ -115,8 +117,9 @@ export function useDataSelection() {
     selectedData.value = []
     hasSelectionShape.value = false
 
-    // A previewed step records nothing; the clear only shows.
-    if (recordHistory && previewIndex.value === null) {
+    // A previewed step or a committed session records nothing; the clear
+    // only shows.
+    if (recordHistory && editLock.value === null) {
       // Explicitly log the cleared state so qc-utils' `_selection`
       // empty-case logic (pop self, optionally pop the underlying
       // filter that drove the now-cleared selection) runs even though

@@ -116,6 +116,25 @@ describe('useQcSessionStore', () => {
     expect(store.isReadOnly).toBe(true)
   })
 
+  it('views the session committed last, even when an older one starts later', () => {
+    const session = (id: string, start: string, committedAt: string) =>
+      ({
+        id,
+        status: 'committed',
+        ...win(start, start),
+        createdAt: committedAt,
+        committedAt,
+      }) as any
+
+    const store = useQcSessionStore()
+    store.applySessions('h-1', [
+      session('later-window', '2025-06-01T00:00:00Z', '2025-07-01T00:00:00Z'),
+      session('just-committed', '2025-01-01T00:00:00Z', '2025-08-01T00:00:00Z'),
+    ])
+
+    expect(store.viewedSessionId).toBe('just-committed')
+  })
+
   it('keeps the resume pointer out of reset, so a reload can still reopen', async () => {
     const h = unwrap(
       await qc.histories.create({

@@ -37,7 +37,19 @@
     <v-divider />
 
     <div
-      v-if="previewIndex !== null"
+      v-if="editLock === 'readOnly'"
+      class="px-3 py-4 d-flex flex-column align-center text-center"
+      data-testid="operation-read-only-blocked"
+    >
+      <v-icon icon="mdi-lock-outline" size="28" color="primary" class="mb-2" />
+      <div class="text-body-small text-medium-emphasis">
+        This session is committed and read-only. Return to the current
+        session, or start a new one, to keep editing.
+      </div>
+    </div>
+
+    <div
+      v-else-if="editLock === 'preview'"
       class="px-3 py-4 d-flex flex-column align-center text-center"
       data-testid="operation-preview-blocked"
     >
@@ -118,17 +130,17 @@
 </template>
 
 <script setup lang="ts">
-import { usePlotlyStore } from '@/store/plotly'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/store/userInterface'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { operationsById } from './operations'
 import FilterRangePanel from '@/components/FilterPoints/FilterRangePanel.vue'
+import { useEditLock } from '@/composables/useEditLock'
 
 const { selectedOperation, filterRangeActive } = storeToRefs(useUIStore())
 const { selectedData } = storeToRefs(useDataVisStore())
-const { previewIndex } = storeToRefs(usePlotlyStore())
+const { editLock } = useEditLock()
 
 const op = computed(() =>
   selectedOperation.value ? operationsById[selectedOperation.value] : null

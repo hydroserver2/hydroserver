@@ -682,6 +682,20 @@ The dialog lets you add an optional session description. Once you confirm:
 2. The session is committed and becomes read-only. The Snackbar shows "Session committed." and the footer swaps Save and Commit for **New session**.
 3. On failure, the Snackbar shows the backend's error message verbatim. Show that to your administrator if you need help.
 
+### Committed sessions are read-only
+
+A committed session can be looked at but not changed. This applies right after
+a commit, and whenever you pick an earlier session in the session list. While a
+committed session is on screen:
+
+- The Operations drawer disables every operation and says why.
+- Plot selections highlight points but are not recorded in the history.
+- Table cells show their values without offering to edit them.
+- Undo, redo, loading a QC history and step undo are unavailable.
+
+To keep editing, click **Return to current** (when a session is in progress) or
+**New session**.
+
 ## Leaving a session
 
 You never leave an edit session by accident. Anything that ends it, the

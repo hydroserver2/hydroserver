@@ -8,7 +8,12 @@
             Observations
           </span>
           <span class="text-body-small text-medium-emphasis lh-1 mt-1">
-            Click <b>Datetime</b> or <b>Value</b> cells to edit
+            <template v-if="editLock === 'readOnly'">
+              Committed session, read-only
+            </template>
+            <template v-else>
+              Click <b>Datetime</b> or <b>Value</b> cells to edit
+            </template>
           </span>
         </div>
       </div>
@@ -52,9 +57,9 @@
         </v-btn>
 
         <v-btn
-          :disabled="!pendingEditCount || isUpdating || previewIndex !== null"
+          :disabled="!pendingEditCount || isUpdating || editLock !== null"
           :title="
-            previewIndex !== null
+            editLock === 'preview'
               ? 'Go back to the latest history step to save'
               : undefined
           "
@@ -110,6 +115,7 @@
                 : ''
             "
             input-type="datetime-local"
+            :readonly="editLock === 'readOnly'"
             @save="onDatetimeSave(index, $event)"
             @clear="clearDatetimeEdit(index)"
           />
@@ -126,6 +132,7 @@
             "
             input-type="number"
             align="end"
+            :readonly="editLock === 'readOnly'"
             @save="onValueSave(index, $event)"
             @clear="clearValueEdit(index)"
           />
@@ -172,10 +179,12 @@ import {
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useQualifierStore } from '@/store/qualifiers'
 import EditableCell from '@/components/VisualizeData/EditableCell.vue'
+import { useEditLock } from '@/composables/useEditLock'
 
-const { isUpdating, selectedSeries, tableScrollRequest, previewIndex } = storeToRefs(
+const { isUpdating, selectedSeries, tableScrollRequest } = storeToRefs(
   usePlotlyStore()
 )
+const { editLock } = useEditLock()
 const { redraw } = usePlotlyStore()
 const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { clearSelected } = useDataSelection()

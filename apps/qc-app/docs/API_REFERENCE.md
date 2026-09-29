@@ -255,6 +255,17 @@ const report = await importHistory(file)
 into the active datastream **before** replay (selection-coupled ops
 reference indices against this windowed dataset).
 
+### `useEditLock()`
+
+`src/composables/useEditLock.ts`. The one answer to "can the edit record take
+a new operation right now?", read by every surface that starts an edit: the
+Operations drawer, `OperationPanel`, plot selections (`handleSelected`,
+`clearSelected`) and the data table's cells and Save button.
+
+| Name       | Kind     | Type                                  | Notes |
+|------------|----------|---------------------------------------|-------|
+| `editLock` | computed | `'readOnly' \| 'preview' \| null` | `readOnly` while a committed session is on screen (`useQcSessionStore().isReadOnly`), else `preview` while an earlier history step is shown (`usePlotlyStore().previewIndex`), else `null`. |
+
 ### `useEditSession()`
 
 Orchestrates the server-backed QC session workflow against the
@@ -722,7 +733,7 @@ puts the editor in read-only mode.
 | `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
 | `hasSessionOperations` | computed | `boolean`                            | True when the in-progress session holds any work: the operations the server returned with it, plus anything saved since (a save leaves them in `savedEdits` before the sessions are re-fetched). The leave flow tells an untouched session from one worth keeping with it. |
 | `fetchSessions`     | action   | `(historyId: string) => Promise<QualityControlSession[]>` | Fetch a history's sessions with their operations without writing any state, so a caller can drop a result that went stale (see `useEditSession`). |
-| `applySessions`     | action   | `(historyId: string, sessions: QualityControlSession[]) => void` | Adopt fetched sessions; default the view to the in-progress one, else the latest committed. |
+| `applySessions`     | action   | `(historyId: string, sessions: QualityControlSession[]) => void` | Adopt fetched sessions; default the view to the in-progress one, else the one committed last (by `committedAt`), so a commit leaves the session it just made on screen. |
 | `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |
 | `returnToCurrent`   | action   | `() => void`                            | Return to the editable in-progress session. |
 | `reset`             | action   | `() => void`                            | Clear all state. |
