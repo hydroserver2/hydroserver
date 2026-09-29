@@ -431,6 +431,20 @@ describe('useDataVisStore edit target', () => {
     expect(edits[0].data).toBe(second)
   })
 
+  it('setEditRecord keeps the x view and refits the edit series y axis', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    vi.mocked(handleNewPlot).mockClear()
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    await store.setEditRecord({ dataX: [2], history: [] } as any)
+    expect(vi.mocked(handleNewPlot).mock.calls).toEqual([
+      [undefined, { preserveZoom: true, refitSeriesIds: ['mgd'] }],
+      [undefined, { preserveZoom: true, refitSeriesIds: ['mgd'] }],
+    ])
+  })
+
   it('clearEditTarget keeps the plotted datastreams and drops edit series', async () => {
     const { store, other } = await managedPair()
     await store.plotDatastream(other as any)

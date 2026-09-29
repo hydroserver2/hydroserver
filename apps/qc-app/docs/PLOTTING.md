@@ -300,7 +300,12 @@ previous target's window is never applied to the new one.
   source down to the window, leaving no context.
 - **Axes**: a re-plot (`handleNewPlot`) or `redraw` keeps the live y range
   only for an axis that had points drawn; an empty axis sits on Plotly's
-  default range, and carrying it would put the new data off the plot. Series
+  default range, and carrying it would put the new data off the plot. A
+  re-plot also refits an axis whose content is new: one that gains a series
+  with points, or holds a series passed in `refitSeriesIds`. `setEditRecord`
+  passes the edit target, whose record it just replaced. Opening a session
+  draws the source context alone first, then adds the working copy to the
+  same axis; keeping the context's range there clipped the edit target. Series
   sharing an axis (the edit target and its source) share one axis chip. The window watch runs a rebuild,
   since the source's traces first appear then and only a rebuild adds
   traces. The window is part of the `loadKey` a range reload checks.

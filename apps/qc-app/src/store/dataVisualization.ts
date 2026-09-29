@@ -442,7 +442,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     await rebuildPlot()
   }
 
-  /** Put the edit target's record on the plot, adding its series if needed. */
+  /** Put the edit target's record on the plot, adding its series if needed.
+   *  The x view stays; the target's y axis refits to the new record. */
   function setEditRecord(record: ObservationRecord): Promise<void> {
     return trackPlotWork(async () => {
       const edit = qcDatastream.value
@@ -450,14 +451,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       const existing = graphSeriesArray.value.find((s) => s.id === edit.id)
       if (existing) {
         existing.data = record
-        await usePlotlyStore().redraw()
-        return
+      } else {
+        graphSeriesArray.value.push(buildGraphSeries(edit, record))
+        orderAndColorSeries()
       }
-      graphSeriesArray.value.push(buildGraphSeries(edit, record))
-      orderAndColorSeries()
       updateOptions()
       const { plotlyRef } = storeToRefs(usePlotlyStore())
-      if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+      if (plotlyRef.value) {
+        await handleNewPlot(undefined, {
+          preserveZoom: true,
+          refitSeriesIds: [edit.id],
+        })
+      }
     })
   }
 

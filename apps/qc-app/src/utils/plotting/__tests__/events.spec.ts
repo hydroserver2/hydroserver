@@ -102,4 +102,80 @@ describe('handleNewPlot', () => {
 
     expect(newPlot.mock.calls[0]?.[2]).toStrictEqual(layout)
   })
+
+  describe('preserveZoom y ranges', () => {
+    const trace = (id: string, n: number, yaxis = 'y') => ({
+      id,
+      yaxis,
+      x: Array.from({ length: n }, (_, i) => i),
+      y: Array.from({ length: n }, (_, i) => i),
+    })
+
+    /** Live plot: `ctx` alone on the primary axis, `other` on yaxis2. */
+    function livePlot() {
+      const gd = fakeGraphDiv({
+        xaxis: { range: [0, 10] },
+        yaxis: { range: [9, 11] },
+        yaxis2: { range: [100, 200] },
+      })
+      gd.data = [trace('ctx', 5), trace('other', 5, 'y2')]
+      plotlyRef.value = gd
+    }
+
+    const drawnLayout = () =>
+      newPlot.mock.calls.at(-1)?.[2] as Record<string, { range?: unknown }>
+
+    it('keeps every axis when the same series redraw', async () => {
+      const { handleNewPlot } = await import('@/utils/plotting/events')
+      livePlot()
+      plotlyOptions.value = {
+        traces: [trace('ctx', 8), trace('other', 5, 'y2')],
+        layout: { xaxis: {}, yaxis: {}, yaxis2: {} },
+        config: {},
+      }
+
+      await handleNewPlot(undefined, { preserveZoom: true })
+
+      expect(drawnLayout().yaxis!.range).toEqual([9, 11])
+      expect(drawnLayout().yaxis2!.range).toEqual([100, 200])
+    })
+
+    it('refits an axis that gains a series with points', async () => {
+      const { handleNewPlot } = await import('@/utils/plotting/events')
+      livePlot()
+      plotlyOptions.value = {
+        traces: [
+          trace('ctx', 5),
+          trace('edit', 50),
+          trace('other', 5, 'y2'),
+        ],
+        layout: { xaxis: {}, yaxis: {}, yaxis2: {} },
+        config: {},
+      }
+
+      await handleNewPlot(undefined, { preserveZoom: true })
+
+      expect(drawnLayout().yaxis!.range).toBeUndefined()
+      expect(drawnLayout().yaxis2!.range).toEqual([100, 200])
+      expect(drawnLayout().xaxis!.range).toEqual([0, 10])
+    })
+
+    it('refits the axis of a series whose data was replaced', async () => {
+      const { handleNewPlot } = await import('@/utils/plotting/events')
+      livePlot()
+      plotlyOptions.value = {
+        traces: [trace('ctx', 5), trace('other', 5, 'y2')],
+        layout: { xaxis: {}, yaxis: {}, yaxis2: {} },
+        config: {},
+      }
+
+      await handleNewPlot(undefined, {
+        preserveZoom: true,
+        refitSeriesIds: ['ctx'],
+      })
+
+      expect(drawnLayout().yaxis!.range).toBeUndefined()
+      expect(drawnLayout().yaxis2!.range).toEqual([100, 200])
+    })
+  })
 })
