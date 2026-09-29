@@ -52,7 +52,7 @@
                 v-bind="props"
                 type="button"
                 class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
-                :disabled="!canEdit"
+                :disabled="!canEdit || !mappingsLoaded"
               >
                 <v-icon :icon="mdiPencil" size="16" />
                 <span>Edit</span>
@@ -186,15 +186,21 @@ function closeEditTaskDialog() {
 }
 
 const mappings = ref<EtlMapping[]>([])
+const mappingsLoaded = ref(false)
 
 async function loadMappings() {
-  if (!task.value?.id) {
+  mappingsLoaded.value = false
+  const taskId = task.value?.id
+  if (!taskId) {
     mappings.value = []
     return
   }
-  mappings.value = await hs.etlMappings.listAllItems({
-    etl_task_id: task.value.id,
+  const loaded = await hs.etlMappings.listAllItems({
+    etl_task_id: taskId,
   } as any)
+  if (task.value?.id !== taskId) return
+  mappings.value = loaded
+  mappingsLoaded.value = true
 }
 
 watch(() => task.value?.id, () => void loadMappings(), { immediate: true })
