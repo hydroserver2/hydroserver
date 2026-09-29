@@ -38,7 +38,7 @@
         Time range &middot; {{ rangeLabel }}
       </v-btn>
     </template>
-    <v-card width="300" class="pa-3" data-testid="time-range-menu">
+    <v-card width="330" class="pa-3" data-testid="time-range-menu">
       <v-switch
         v-if="isEditing"
         data-testid="context-toggle"

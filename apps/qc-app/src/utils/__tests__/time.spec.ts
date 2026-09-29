@@ -4,6 +4,8 @@ import {
   formatDateRange,
   formatDayStamp,
   formatStamp,
+  timeZoneAbbreviation,
+  timeZoneDescription,
 } from '../time'
 
 // Datetime strings without a timezone offset are parsed as local time, so
@@ -89,5 +91,34 @@ describe('formatStamp', () => {
 
   it('falls back for an unparseable date', () => {
     expect(formatStamp(new Date(NaN))).toBe('–')
+  })
+})
+
+describe('time zone labels', () => {
+  const winter = new Date(2026, 0, 15, 12)
+  const summer = new Date(2026, 6, 15, 12)
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  const offsetOf = (d: Date) => {
+    const m = -d.getTimezoneOffset()
+    const sign = m < 0 ? '-' : '+'
+    const hh = String(Math.floor(Math.abs(m) / 60)).padStart(2, '0')
+    const mm = String(Math.abs(m) % 60).padStart(2, '0')
+    return `UTC${sign}${hh}:${mm}`
+  }
+
+  it('abbreviates the browser zone on the given date', () => {
+    for (const d of [winter, summer]) {
+      const expected = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+        .formatToParts(d)
+        .find((p) => p.type === 'timeZoneName')!.value
+      expect(timeZoneAbbreviation(d)).toBe(expected)
+      expect(timeZoneAbbreviation(d)).not.toBe('')
+    }
+  })
+
+  it('names the zone and its UTC offset on the given date', () => {
+    expect(timeZoneDescription(winter)).toBe(`${zone}, ${offsetOf(winter)}`)
+    expect(timeZoneDescription(summer)).toBe(`${zone}, ${offsetOf(summer)}`)
   })
 })

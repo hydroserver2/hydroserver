@@ -1,7 +1,8 @@
 ﻿<template>
-  <div class="d-flex align-center ga-1" v-bind="$attrs">
+  <div class="d-flex flex-wrap align-center ga-1" v-bind="$attrs">
     <v-text-field
       ref="dateField"
+      class="date-picker-field__date"
       :model-value="dateInput"
       @blur="handleDateBlur"
       placeholder="MM/DD/YYYY"
@@ -17,9 +18,12 @@
       @blur="handleTimeBlur"
       :placeholder="seconds ? 'HH:MM:SS' : 'HH:MM'"
       prepend-inner-icon="mdi-clock-outline"
+      :suffix="zone"
+      :title="`Local time: ${zoneDescription}`"
       hide-details
       density="compact"
-      :style="{ 'max-width': seconds ? '9rem' : '7rem' }"
+      :style="{ flex: '0 0 auto', width: seconds ? '10.5rem' : '8.75rem' }"
+      data-testid="date-picker-time"
     />
   </div>
 
@@ -50,7 +54,15 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import { timeZoneAbbreviation, timeZoneDescription } from '@/utils/time'
 
 defineOptions({ inheritAttrs: false })
 
@@ -124,6 +136,10 @@ const toMidnight = (date: Date) => {
 }
 
 const showDateDialog = ref(false)
+
+// Inputs read and write the browser's local time; say which one.
+const zone = computed(() => timeZoneAbbreviation(props.modelValue))
+const zoneDescription = computed(() => timeZoneDescription(props.modelValue))
 
 const dateInput = ref(formatDateStr(props.modelValue))
 const timeInput = ref(formatTimeStr(props.modelValue))
@@ -429,6 +445,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Wide enough for MM/DD/YYYY; the time field wraps below it instead. */
+.date-picker-field__date {
+  min-width: 9.25rem;
+}
+
 .date-picker-card :deep(.v-date-picker-controls) {
   justify-content: center;
   gap: 0.25rem;

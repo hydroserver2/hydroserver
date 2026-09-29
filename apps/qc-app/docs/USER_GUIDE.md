@@ -50,6 +50,11 @@ Everything runs in your web browser. The backend never sees your edit history un
 
 4. On **Home**, the left filter drawer is open. Pick a time range and filter the datastream list by site / observed property / processing level. Click a row to plot it.
 
+All dates and times in the app, in the pickers, the plot axis, the table and
+tooltips, are in your browser's local time zone. Every time input names that
+zone at its end (for example `MDT`, or `MST` for a date in winter); hover it
+for the full zone name and its UTC offset.
+
 If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration ([DEPLOYMENT.md](./DEPLOYMENT.md) covers this).
 
 ## The QC App user interface, top to bottom

@@ -111,6 +111,26 @@ function getLocalTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || '–'
 }
 
+const ZONE_NAME = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+
+/** The browser's zone abbreviation on `date` (`MDT`, `MST`, `GMT+2`), which
+ *  tracks daylight saving. Every date the app shows or takes is in it. */
+export function timeZoneAbbreviation(date: Date): string {
+  return (
+    ZONE_NAME.formatToParts(date).find((p) => p.type === 'timeZoneName')
+      ?.value ?? ''
+  )
+}
+
+/** `America/Denver, UTC-06:00` for `date`. */
+export function timeZoneDescription(date: Date): string {
+  const offset = -date.getTimezoneOffset()
+  const sign = offset < 0 ? '-' : '+'
+  const hh = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0')
+  const mm = String(Math.abs(offset) % 60).padStart(2, '0')
+  return `${getLocalTimeZone()}, UTC${sign}${hh}:${mm}`
+}
+
 export function formatTimeWithZone(time?: string | null) {
   if (!time) return '–'
   return `${formatTime(time)} (${getLocalTimeZone()})`
