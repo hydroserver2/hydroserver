@@ -2129,17 +2129,14 @@ export interface components {
         /** AggregationStatisticPatchBody */
         AggregationStatisticPatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** AggregationStatisticPostBody */
         AggregationStatisticPostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -2147,11 +2144,8 @@ export interface components {
         };
         /** AggregationStatisticResponse */
         AggregationStatisticResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -3254,17 +3248,14 @@ export interface components {
         /** DatastreamStatusPatchBody */
         DatastreamStatusPatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** DatastreamStatusPostBody */
         DatastreamStatusPostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -3272,11 +3263,8 @@ export interface components {
         };
         /** DatastreamStatusResponse */
         DatastreamStatusResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -3907,17 +3895,14 @@ export interface components {
         /** LinkedResourceTypePatchBody */
         LinkedResourceTypePatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** LinkedResourceTypePostBody */
         LinkedResourceTypePostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -3925,11 +3910,8 @@ export interface components {
         };
         /** LinkedResourceTypeResponse */
         LinkedResourceTypeResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -4094,17 +4076,14 @@ export interface components {
         /** MethodTypePatchBody */
         MethodTypePatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** MethodTypePostBody */
         MethodTypePostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -4112,11 +4091,8 @@ export interface components {
         };
         /** MethodTypeResponse */
         MethodTypeResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -4623,17 +4599,14 @@ export interface components {
         /** MonitoringSiteTypePatchBody */
         MonitoringSiteTypePatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** MonitoringSiteTypePostBody */
         MonitoringSiteTypePostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -4641,11 +4614,8 @@ export interface components {
         };
         /** MonitoringSiteTypeResponse */
         MonitoringSiteTypeResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -5151,17 +5121,14 @@ export interface components {
         /** ObservedPropertyTypePatchBody */
         ObservedPropertyTypePatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** ObservedPropertyTypePostBody */
         ObservedPropertyTypePostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -5169,11 +5136,8 @@ export interface components {
         };
         /** ObservedPropertyTypeResponse */
         ObservedPropertyTypeResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -6154,17 +6118,14 @@ export interface components {
         /** ResultQualifierPatchBody */
         ResultQualifierPatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** ResultQualifierPostBody */
         ResultQualifierPostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -6216,11 +6177,8 @@ export interface components {
         };
         /** ResultQualifierResponse */
         ResultQualifierResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -6295,17 +6253,14 @@ export interface components {
         /** SampledMediumPatchBody */
         SampledMediumPatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** SampledMediumPostBody */
         SampledMediumPostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -6313,11 +6268,8 @@ export interface components {
         };
         /** SampledMediumResponse */
         SampledMediumResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -6715,17 +6667,14 @@ export interface components {
         /** UnitTypePatchBody */
         UnitTypePatchBody: {
             /** Description */
-            description?: string;
+            description?: string | null;
             /** Name */
             name?: string;
         };
         /** UnitTypePostBody */
         UnitTypePostBody: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -6733,11 +6682,8 @@ export interface components {
         };
         /** UnitTypeResponse */
         UnitTypeResponse: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid

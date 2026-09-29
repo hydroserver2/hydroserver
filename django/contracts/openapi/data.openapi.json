@@ -4,8 +4,15 @@
       "AggregationStatisticPatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -19,9 +26,15 @@
       "AggregationStatisticPostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -50,9 +63,15 @@
       "AggregationStatisticResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -3332,8 +3351,15 @@
       "DatastreamStatusPatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -3347,9 +3373,15 @@
       "DatastreamStatusPostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -3378,9 +3410,15 @@
       "DatastreamStatusResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -5145,8 +5183,15 @@
       "LinkedResourceTypePatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -5160,9 +5205,15 @@
       "LinkedResourceTypePostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -5191,9 +5242,15 @@
       "LinkedResourceTypeResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -5747,8 +5804,15 @@
       "MethodTypePatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -5762,9 +5826,15 @@
       "MethodTypePostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -5793,9 +5863,15 @@
       "MethodTypeResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -7191,8 +7267,15 @@
       "MonitoringSiteTypePatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -7206,9 +7289,15 @@
       "MonitoringSiteTypePostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -7237,9 +7326,15 @@
       "MonitoringSiteTypeResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -8678,8 +8773,15 @@
       "ObservedPropertyTypePatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -8693,9 +8795,15 @@
       "ObservedPropertyTypePostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -8724,9 +8832,15 @@
       "ObservedPropertyTypeResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -11806,8 +11920,15 @@
       "ResultQualifierPatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -11821,9 +11942,15 @@
       "ResultQualifierPostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -11978,9 +12105,15 @@
       "ResultQualifierResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -12193,8 +12326,15 @@
       "SampledMediumPatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -12208,9 +12348,15 @@
       "SampledMediumPostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -12239,9 +12385,15 @@
       "SampledMediumResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
@@ -13477,8 +13629,15 @@
       "UnitTypePatchBody": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "name": {
             "maxLength": 255,
@@ -13492,9 +13651,15 @@
       "UnitTypePostBody": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "anyOf": [
@@ -13523,9 +13688,15 @@
       "UnitTypeResponse": {
         "properties": {
           "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
