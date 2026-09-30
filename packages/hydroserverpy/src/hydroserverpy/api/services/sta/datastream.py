@@ -338,16 +338,36 @@ class DatastreamService(HydroServerBaseService):
             "post", path, data=data, files={"file": file} if file is not None else None
         ).json()
 
-        return next(
-            r for r in self.get_linked_resources(uid) if r["id"] == response["id"]
-        )
+        return self.get_linked_resource(uid=uid, linked_resource_id=response["id"])
 
-    def get_linked_resources(self, uid: Union[UUID, str]) -> List[Dict[str, str]]:
-        """Get all linked resources associated with a HydroServer datastream."""
+    def get_linked_resources(
+        self,
+        uid: Union[UUID, str],
+        offset: int = ...,
+        limit: int = ...,
+        type: List[str] = ...,
+    ) -> List[Dict[str, str]]:
+        """Get a page of linked resources associated with a HydroServer datastream."""
+
+        params = {
+            "offset": offset,
+            "limit": limit,
+            "type": type,
+        }
+        params = {k: v for k, v in params.items() if v is not ...}
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
 
-        return self.client.request("get", path).json()
+        return self.client.request("get", path, params=params).json()["data"]
+
+    def get_linked_resource(
+        self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]
+    ) -> Dict[str, str]:
+        """Get a linked resource associated with a HydroServer datastream."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+
+        return self.client.request("get", path).json()["data"]
 
     def update_linked_resource(
         self,
@@ -379,9 +399,7 @@ class DatastreamService(HydroServerBaseService):
             "patch", path, data=data, files={"file": file} if file is not None else None
         )
 
-        return next(
-            r for r in self.get_linked_resources(uid) if r["id"] == str(linked_resource_id)
-        )
+        return self.get_linked_resource(uid=uid, linked_resource_id=linked_resource_id)
 
     def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
         """Delete a linked resource from a HydroServer datastream."""

@@ -332,6 +332,35 @@ def add_monitoring_site_linked_resource(
     )
 
 
+@monitoring_site_router.get(
+    "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[LinkedResourceGetResponse],
+        401: str,
+        403: str,
+        404: str,
+    },
+    by_alias=True,
+)
+def get_monitoring_site_linked_resource(
+    request: HydroServerHttpRequest,
+    monitoring_site_id: Path[uuid.UUID],
+    linked_resource_id: Path[uuid.UUID],
+):
+    """
+    Get a linked resource associated with a MonitoringSite.
+    """
+
+    return 200, {
+        "data": monitoring_site_service.get_linked_resource(
+            principal=request.principal,
+            uid=monitoring_site_id,
+            linked_resource_id=linked_resource_id,
+        )
+    }
+
+
 @monitoring_site_router.patch(
     "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],

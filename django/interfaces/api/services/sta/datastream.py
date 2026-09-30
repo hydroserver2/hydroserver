@@ -454,6 +454,23 @@ class DatastreamAPIService(APIService):
 
         return {"data": list(queryset), "meta": meta}
 
+    def get_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+    ):
+        datastream = self.get_datastream_for_action(
+            principal=principal, uid=uid, action="view"
+        )
+
+        return self.get_linked_resource_by_id(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            linked_resource_id=linked_resource_id,
+        )
+
     def add_linked_resource(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,

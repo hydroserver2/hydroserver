@@ -472,6 +472,20 @@ class APIService:
         return estimated
 
     @staticmethod
+    def get_linked_resource_by_id(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+    ):
+        try:
+            return linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise NotFoundError("Linked resource does not exist")
+
+    @staticmethod
     def create_linked_resource(
         linked_resource_model: Type[Model],
         parent_field: str,

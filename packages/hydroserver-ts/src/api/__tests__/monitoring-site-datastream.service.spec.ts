@@ -167,14 +167,16 @@ describe('MonitoringSiteService', () => {
   })
 
   describe('linked resources', () => {
-    it('createLinkedResource posts, then re-fetches the list to find the new entry by id', async () => {
+    it('createLinkedResource posts, then fetches the new entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'POST') {
           return jsonResponse({ id: 'linked-1' })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Site Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Site Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -184,19 +186,22 @@ describe('MonitoringSiteService', () => {
       )
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Site Report' })
     })
 
-    it('updateLinkedResource patches, then re-fetches the list to find the updated entry by id', async () => {
+    it('updateLinkedResource patches, then fetches the updated entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'PATCH') {
           return new Response(null, { status: 204, headers: { 'Content-Length': '0' } })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -207,15 +212,16 @@ describe('MonitoringSiteService', () => {
       )
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Updated Report' })
     })
 
-    it('createLinkedResource returns ok:false when the new entry is missing from the refetched list', async () => {
+    it('createLinkedResource returns ok:false when the new entry cannot be fetched', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'POST') return jsonResponse({ id: 'linked-1' })
-        return jsonResponse([])
+        return jsonResponse({ message: 'Linked resource does not exist' }, 404)
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -286,33 +292,38 @@ describe('DatastreamService', () => {
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
   describe('linked resources', () => {
-    it('createLinkedResource posts, then re-fetches the list to find the new entry by id', async () => {
+    it('createLinkedResource posts, then fetches the new entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'POST') {
           return jsonResponse({ id: 'linked-1' })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Datastream Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Datastream Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
       const res = await client.datastreams.createLinkedResource('ds-1', new FormData())
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Datastream Report' })
     })
 
-    it('updateLinkedResource patches, then re-fetches the list to find the updated entry by id', async () => {
+    it('updateLinkedResource patches, then fetches the updated entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'PATCH') {
           return new Response(null, { status: 204, headers: { 'Content-Length': '0' } })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -323,6 +334,7 @@ describe('DatastreamService', () => {
       )
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Updated Report' })

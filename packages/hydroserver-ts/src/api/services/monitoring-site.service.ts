@@ -12,7 +12,10 @@ import {
   MonitoringSiteTaskSummary,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
-import { normalizeLinkCollection } from './link-normalization'
+import {
+  normalizeLinkCollection,
+  normalizeLinkRecord,
+} from './link-normalization'
 
 type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetResponse']
 
@@ -94,7 +97,7 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     const url = `${this._route}/${monitoringSiteId}/linked-resources`
     const res = await apiMethods.post<{ id: string }>(url, data)
     if (!res.ok) return res
-    return this.findLinkedResource(monitoringSiteId, res.data.id)
+    return this.getLinkedResource(monitoringSiteId, res.data.id)
   }
 
   async updateLinkedResource(
@@ -105,24 +108,17 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
     const res = await apiMethods.patch<null>(url, data)
     if (!res.ok) return res
-    return this.findLinkedResource(monitoringSiteId, linkedResourceId)
+    return this.getLinkedResource(monitoringSiteId, linkedResourceId)
   }
 
-  private async findLinkedResource(
+  async getLinkedResource(
     monitoringSiteId: string,
     linkedResourceId: string
   ): Promise<ApiResponse<LinkedResourceResponse>> {
-    const res = await this.getLinkedResources(monitoringSiteId)
+    const url = `${this._route}/${monitoringSiteId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.fetch<LinkedResourceResponse>(url)
     if (!res.ok) return res
-    const found = res.data.find((r) => r.id === linkedResourceId)
-    if (!found) {
-      return {
-        ok: false,
-        status: 404,
-        message: 'Linked resource not found after save.',
-      }
-    }
-    return { ...res, data: found }
+    return { ...res, data: normalizeLinkRecord(res.data, this._client.host) }
   }
 
   deleteLinkedResource(monitoringSiteId: string, linkedResourceId: string) {

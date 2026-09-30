@@ -791,6 +791,56 @@ def test_get_datastream_linked_resources_rejects_include(client):
     assert response.status_code == 400
 
 
+def test_get_datastream_linked_resource_returns_item(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A", "B"])
+    linked_resource = DatastreamLinkedResource.objects.get(datastream=parent, name="B")
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{linked_resource.id}")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["id"] == str(linked_resource.id)
+    assert data["name"] == "B"
+    assert data["type"] == "Report"
+    assert data["link"] == "https://example.com/B"
+
+
+def test_get_datastream_linked_resource_returns_404_for_unknown_id(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{uuid.uuid4()}")
+
+    assert response.status_code == 404
+
+
+def test_get_datastream_linked_resource_returns_404_for_other_parents_resource(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A"])
+    other_parent = _make_datastream_linked_resources(owner, ["B"])
+    other_resource = DatastreamLinkedResource.objects.get(datastream=other_parent)
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{other_resource.id}")
+
+    assert response.status_code == 404
+
+
+def test_get_datastream_linked_resource_returns_404_for_private_parent_when_outsider(client):
+    parent = _make_datastream(WorkspaceFactory(), private=True)
+    linked_resource = DatastreamLinkedResource.objects.create(
+        datastream=parent, name="A", type="Report", url="https://example.com/A"
+    )
+    client.force_login(UserFactory())
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{linked_resource.id}")
+
+    assert response.status_code == 404
+
+
 def test_add_datastream_linked_resource_succeeds_with_link(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)

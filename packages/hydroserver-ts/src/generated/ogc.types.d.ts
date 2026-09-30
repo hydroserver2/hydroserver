@@ -468,7 +468,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Datastream Linked Resource
+         * @description Get a linked resource associated with a Datastream.
+         */
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resource"];
         put?: never;
         post?: never;
         /**
@@ -1085,7 +1089,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Monitoring Site Linked Resource
+         * @description Get a linked resource associated with a MonitoringSite.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource"];
         put?: never;
         post?: never;
         /**
@@ -3748,6 +3756,19 @@ export interface components {
         /** ItemResponse[EtlTaskResponse] */
         ItemResponse_EtlTaskResponse_: {
             data: components["schemas"]["EtlTaskResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+        };
+        /** ItemResponse[LinkedResourceGetResponse] */
+        ItemResponse_LinkedResourceGetResponse_: {
+            data: components["schemas"]["LinkedResourceGetResponse"];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -9381,6 +9402,56 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_datastream_get_datastream_linked_resource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datastream_id: string;
+                linked_resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_LinkedResourceGetResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_datastream_remove_datastream_linked_resource: {
         parameters: {
             query?: never;
@@ -12178,6 +12249,56 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+                linked_resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_LinkedResourceGetResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

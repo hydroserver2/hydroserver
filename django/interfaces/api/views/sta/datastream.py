@@ -268,6 +268,35 @@ def add_datastream_linked_resource(
     )
 
 
+@datastream_router.get(
+    "/items/{datastream_id}/linked-resources/{linked_resource_id}",
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[LinkedResourceGetResponse],
+        401: str,
+        403: str,
+        404: str,
+    },
+    by_alias=True,
+)
+def get_datastream_linked_resource(
+    request: HydroServerHttpRequest,
+    datastream_id: Path[uuid.UUID],
+    linked_resource_id: Path[uuid.UUID],
+):
+    """
+    Get a linked resource associated with a Datastream.
+    """
+
+    return 200, {
+        "data": datastream_service.get_linked_resource(
+            principal=request.principal,
+            uid=datastream_id,
+            linked_resource_id=linked_resource_id,
+        )
+    }
+
+
 @datastream_router.patch(
     "/items/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],

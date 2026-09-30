@@ -4298,6 +4298,41 @@
         "title": "ItemResponse[EtlTaskResponse]",
         "type": "object"
       },
+      "ItemResponse_LinkedResourceGetResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LinkedResourceGetResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[LinkedResourceGetResponse]",
+        "type": "object"
+      },
       "ItemResponse_LinkedResourceTypeResponse_": {
         "properties": {
           "data": {
@@ -19890,6 +19925,95 @@
           "Datastreams"
         ]
       },
+      "get": {
+        "description": "Get a linked resource associated with a Datastream.",
+        "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_LinkedResourceGetResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Datastream Linked Resource",
+        "tags": [
+          "Datastreams"
+        ]
+      },
       "patch": {
         "description": "Update a linked resource for a datastream. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
         "operationId": "interfaces_api_views_sta_datastream_update_datastream_linked_resource",
@@ -26749,6 +26873,95 @@
           }
         ],
         "summary": "Remove Monitoring Site Linked Resource",
+        "tags": [
+          "Monitoring Sites"
+        ]
+      },
+      "get": {
+        "description": "Get a linked resource associated with a MonitoringSite.",
+        "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "monitoring_site_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Monitoring Site Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "linked_resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Linked Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_LinkedResourceGetResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Monitoring Site Linked Resource",
         "tags": [
           "Monitoring Sites"
         ]
