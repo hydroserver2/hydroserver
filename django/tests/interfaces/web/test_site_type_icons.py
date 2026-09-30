@@ -71,7 +71,7 @@ def test_django_and_data_management_app_icon_lists_stay_in_sync():
 
 @pytest.mark.django_db
 def test_default_site_type_icon_mappings_are_available(client):
-    response = client.get("/api/data/monitoring-sites/site-type-icons")
+    response = client.get("/api/ogc/collections/monitoring-sites/site-type-icons")
 
     assert response.status_code == 200
     mappings = response.json()

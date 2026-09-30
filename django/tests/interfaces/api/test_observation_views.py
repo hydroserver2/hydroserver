@@ -29,16 +29,16 @@ def _observations_url(datastream_id=None, **params):
     if datastream_id is not None:
         query["datastream_id"] = datastream_id
     if query:
-        return f"/api/data/observations?{urlencode(query, doseq=True)}"
-    return "/api/data/observations"
+        return f"/api/ogc/collections/observations/items?{urlencode(query, doseq=True)}"
+    return "/api/ogc/collections/observations/items"
 
 
 def _detail_url(observation_id):
-    return f"/api/data/observations/{observation_id}"
+    return f"/api/ogc/collections/observations/items/{observation_id}"
 
 
-_BULK_CREATE_URL = "/api/data/observations/bulk-create"
-_BULK_DELETE_URL = "/api/data/observations/bulk-delete"
+_BULK_CREATE_URL = "/api/ogc/collections/observations/bulk-create"
+_BULK_DELETE_URL = "/api/ogc/collections/observations/bulk-delete"
 
 
 def _with_datastream(datastream_id, body):
@@ -152,7 +152,7 @@ def test_get_observations_with_multiple_datastream_ids_unions_results(client):
     client.force_login(owner)
 
     response = client.get(
-        f"/api/data/observations?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
     )
 
     assert response.status_code == 200
@@ -198,7 +198,7 @@ def test_get_observations_column_format_returns_400_with_multiple_datastream_ids
     datastream_b = _make_datastream(workspace)
 
     response = client.get(
-        f"/api/data/observations?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
     )
 
     assert response.status_code == 400
@@ -261,7 +261,7 @@ def test_get_observations_total_count_exact_for_phenomenon_time_filter(client):
 
     response = client.get(
         _observations_url(
-            datastream.id, phenomenon_time_min=_iso(keep_time - timedelta(minutes=1))
+            datastream.id, datetime=f"{_iso(keep_time - timedelta(minutes=1))}/.."
         )
     )
 
@@ -285,7 +285,7 @@ def test_get_observations_default_order_groups_by_datastream_then_time(client):
     client.force_login(owner)
 
     response = client.get(
-        f"/api/data/observations?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
     )
 
     assert response.status_code == 200
@@ -976,5 +976,119 @@ def test_delete_observations_returns_400_without_datastream_id(client):
         data={"phenomenonTimeStart": _iso(observation.phenomenon_time)},
         content_type="application/json",
     )
+
+    assert response.status_code == 400
+
+
+# --- bbox --------------------------------------------------------------------------------
+
+
+def _datastream_with_observations(longitude, latitude, count=2):
+    datastream = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(longitude=longitude, latitude=latitude),
+        value_count=count,
+    )
+    for minutes in range(count):
+        ObservationFactory(datastream=datastream, phenomenon_time=timezone.now() - timedelta(minutes=minutes))
+    return datastream
+
+
+def test_get_observations_filters_by_monitoring_site_location(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    _datastream_with_observations(-100, 40.5)
+
+    response = client.get(_observations_url(bbox="-112,40,-111,41"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {o["datastreamId"] for o in body["data"]} == {str(inside.id)}
+    assert len(body["data"]) == 2
+    assert body["meta"]["totalCount"] == 2
+
+
+def test_get_observations_bbox_count_uses_matched_datastreams_with_a_time_filter(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    _datastream_with_observations(-100, 40.5)
+
+    response = client.get(
+        _observations_url(
+            bbox="-112,40,-111,41",
+            datetime=f"{(timezone.now() - timedelta(days=1)).isoformat()}/..",
+        )
+    )
+
+    assert response.status_code == 200
+    assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
+    assert response.json()["meta"]["totalCount"] == 2
+
+
+def test_get_observations_bbox_combines_with_datastream_id(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    outside = _datastream_with_observations(-100, 40.5)
+
+    response = client.get(
+        _observations_url(datastream_id=[str(inside.id), str(outside.id)], bbox="-112,40,-111,41")
+    )
+
+    assert response.status_code == 200
+    assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
+    assert response.json()["meta"]["totalCount"] == 2
+
+
+def test_get_observations_row_format_is_empty_when_the_datastream_is_outside_the_bbox(client):
+    outside = _datastream_with_observations(-100, 40.5)
+
+    response = client.get(_observations_url(datastream_id=str(outside.id), format="row", bbox="-112,40,-111,41"))
+
+    assert response.status_code == 200
+    assert response.json()["data"]["rows"] == []
+    assert response.json()["meta"]["totalCount"] == 0
+
+
+def test_get_observations_returns_400_for_invalid_bbox(client):
+    response = client.get(_observations_url(bbox="-112,40,-111"))
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+
+
+def _observations_at(datastream, *times):
+    return [ObservationFactory(datastream=datastream, phenomenon_time=t) for t in times]
+
+
+def test_get_observations_filters_by_datetime_interval_including_bounds(client):
+    datastream = DatastreamFactory(value_count=4)
+    start = timezone.now().replace(microsecond=0) - timedelta(days=10)
+    end = start + timedelta(days=5)
+    before, on_start, on_end, after = _observations_at(
+        datastream, start - timedelta(seconds=1), start, end, end + timedelta(seconds=1)
+    )
+
+    response = client.get(_observations_url(datastream.id, datetime=f"{_iso(start)}/{_iso(end)}"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {o["id"] for o in body["data"]} == {str(on_start.id), str(on_end.id)}
+    assert body["meta"]["totalCount"] == 2
+
+
+def test_get_observations_filters_by_datetime_instant_and_open_ends(client):
+    datastream = DatastreamFactory(value_count=2)
+    early_time = timezone.now().replace(microsecond=0) - timedelta(days=10)
+    late_time = early_time + timedelta(days=5)
+    early, late = _observations_at(datastream, early_time, late_time)
+
+    def ids(value):
+        return {o["id"] for o in client.get(_observations_url(datastream.id, datetime=value)).json()["data"]}
+
+    assert ids(_iso(late_time)) == {str(late.id)}
+    assert ids(f"../{_iso(early_time)}") == {str(early.id)}
+    assert ids(f"{_iso(late_time)}/") == {str(late.id)}
+
+
+def test_get_observations_returns_400_for_invalid_datetime(client):
+    response = client.get(_observations_url(datetime="2024-01-01"))
 
     assert response.status_code == 400

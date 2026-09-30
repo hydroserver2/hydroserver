@@ -30,8 +30,7 @@ const toObservationRows = (columnar: Record<string, unknown>): DataArray => {
 export const fetchObservations = async (
   datastream: Datastream,
   startTime: string | null = null,
-  endTime: string | null = null,
-  signal?: AbortSignal
+  endTime: string | null = null
 ) => {
   const { id, phenomenonBeginTime, phenomenonEndTime } = datastream
   if (!phenomenonBeginTime || !phenomenonEndTime) return []
@@ -40,10 +39,8 @@ export const fetchObservations = async (
     sortby: ['phenomenonTime'],
     limit: 50_000,
     format: 'column',
-    phenomenon_time_min: startTime ?? phenomenonBeginTime,
-    phenomenon_time_max: endTime ?? phenomenonEndTime,
+    datetime: `${startTime ?? phenomenonBeginTime}/${endTime ?? phenomenonEndTime}`,
   }
-  if (signal) options.signal = signal
 
   const res = await hs.datastreams.getObservations(id, options)
 

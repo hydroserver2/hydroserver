@@ -4,7 +4,48 @@
  */
 
 export interface paths {
-    "/api/data/aggregation-statistics": {
+    "/api/ogc/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Landing Page
+         * @description Get the API's landing page, which links to the API definition, conformance declaration, and
+         *     collections.
+         */
+        get: operations["interfaces_api_views_ogc_get_landing_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Collections
+         * @description Get the collections the API serves.
+         */
+        get: operations["interfaces_api_views_ogc_get_collections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/aggregation-statistics/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -28,7 +69,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/aggregation-statistics/{aggregation_statistic_id}": {
+    "/api/ogc/collections/aggregation-statistics/items/{aggregation_statistic_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -56,7 +97,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic"];
         trace?: never;
     };
-    "/api/data/data-product-rating-curves": {
+    "/api/ogc/collections/data-product-rating-curves/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -80,7 +121,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-rating-curves/{rating_curve_id}": {
+    "/api/ogc/collections/data-product-rating-curves/items/{rating_curve_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -108,7 +149,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
         trace?: never;
     };
-    "/api/data/data-product-tasks": {
+    "/api/ogc/collections/data-product-tasks/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,7 +173,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -160,7 +201,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_task_update_data_product_task"];
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}/runs": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -180,7 +221,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -200,7 +241,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/data-product-tasks/items/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -220,7 +261,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-transformations": {
+    "/api/ogc/collections/data-product-transformations/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -244,7 +285,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/data-product-transformations/{transformation_id}": {
+    "/api/ogc/collections/data-product-transformations/items/{transformation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -272,7 +313,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_transformation_update_data_product_transformation"];
         trace?: never;
     };
-    "/api/data/datastream-statuses": {
+    "/api/ogc/collections/datastream-statuses/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -296,7 +337,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastream-statuses/{datastream_status_id}": {
+    "/api/ogc/collections/datastream-statuses/items/{datastream_status_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +365,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_status_update_datastream_status"];
         trace?: never;
     };
-    "/api/data/datastreams": {
+    "/api/ogc/collections/datastreams/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -348,47 +389,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/tags/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Tag Keys
-         * @description Get all existing unique datastream tag keys.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_tag_keys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/visualization-bootstrap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Datastream Visualization Bootstrap
-         * @description Get the lean metadata required to bootstrap the visualization page.
-         */
-        get: operations["interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/datastreams/{datastream_id}": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -416,7 +417,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream"];
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/csv": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -436,7 +437,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/linked-resources": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources": {
         parameters: {
             query?: never;
             header?: never;
@@ -460,14 +461,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/datastreams/{datastream_id}/linked-resources/{linked_resource_id}": {
+    "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources/{linked_resource_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Datastream Linked Resource
+         * @description Get a linked resource associated with a Datastream.
+         */
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resource"];
         put?: never;
         post?: never;
         /**
@@ -485,7 +490,47 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
     };
-    "/api/data/etl-data-connections": {
+    "/api/ogc/collections/datastreams/tags/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Tag Keys
+         * @description Get all existing unique datastream tag keys.
+         */
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_tag_keys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/datastreams/visualization-bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Visualization Bootstrap
+         * @description Get the lean metadata required to bootstrap the visualization page.
+         */
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/etl-data-connections/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -509,7 +554,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-data-connections/{data_connection_id}": {
+    "/api/ogc/collections/etl-data-connections/items/{data_connection_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -537,7 +582,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_data_connection_update_data_connection"];
         trace?: never;
     };
-    "/api/data/etl-mappings": {
+    "/api/ogc/collections/etl-mappings/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -561,7 +606,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-mappings/{mapping_id}": {
+    "/api/ogc/collections/etl-mappings/items/{mapping_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -589,7 +634,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_mapping_update_etl_mapping"];
         trace?: never;
     };
-    "/api/data/etl-tasks": {
+    "/api/ogc/collections/etl-tasks/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -613,7 +658,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -641,7 +686,7 @@ export interface paths {
         patch: operations["interfaces_api_views_etl_task_update_etl_task"];
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}/runs": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -661,7 +706,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -681,7 +726,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/etl-tasks/items/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -701,7 +746,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/linked-resource-types": {
+    "/api/ogc/collections/linked-resource-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -725,7 +770,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/linked-resource-types/{linked_resource_type_id}": {
+    "/api/ogc/collections/linked-resource-types/items/{linked_resource_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -753,7 +798,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_linked_resource_type_update_linked_resource_type"];
         trace?: never;
     };
-    "/api/data/method-types": {
+    "/api/ogc/collections/method-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -777,7 +822,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/method-types/{method_type_id}": {
+    "/api/ogc/collections/method-types/items/{method_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -805,7 +850,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_method_type_update_method_type"];
         trace?: never;
     };
-    "/api/data/methods": {
+    "/api/ogc/collections/methods/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -829,7 +874,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/methods/{method_id}": {
+    "/api/ogc/collections/methods/items/{method_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -857,7 +902,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_method_update_method"];
         trace?: never;
     };
-    "/api/data/monitoring-rules": {
+    "/api/ogc/collections/monitoring-rules/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -881,7 +926,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-rules/{rule_id}": {
+    "/api/ogc/collections/monitoring-rules/items/{rule_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -909,7 +954,7 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
         trace?: never;
     };
-    "/api/data/monitoring-site-types": {
+    "/api/ogc/collections/monitoring-site-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -933,7 +978,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-site-types/{monitoring_site_type_id}": {
+    "/api/ogc/collections/monitoring-site-types/items/{monitoring_site_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -961,7 +1006,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type"];
         trace?: never;
     };
-    "/api/data/monitoring-sites": {
+    "/api/ogc/collections/monitoring-sites/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -985,107 +1030,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-sites/markers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Markers
-         * @description Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/site-summaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Summaries
-         * @description Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/site-type-icons": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Type Icons
-         * @description Get the configured site type icon mappings.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/tags/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Tag Keys
-         * @description Get all existing unique monitoring_site tag keys.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/task-summaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Monitoring Site Task Summaries
-         * @description Get task count summaries for MonitoringSites associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/monitoring-sites/{monitoring_site_id}": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1113,7 +1058,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site"];
         trace?: never;
     };
-    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources": {
         parameters: {
             query?: never;
             header?: never;
@@ -1137,14 +1082,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-sites/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
+    "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Monitoring Site Linked Resource
+         * @description Get a linked resource associated with a MonitoringSite.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource"];
         put?: never;
         post?: never;
         /**
@@ -1162,7 +1111,107 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource"];
         trace?: never;
     };
-    "/api/data/monitoring-tasks": {
+    "/api/ogc/collections/monitoring-sites/markers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Markers
+         * @description Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/site-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Summaries
+         * @description Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/site-type-icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Type Icons
+         * @description Get the configured site type icon mappings.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/tags/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Tag Keys
+         * @description Get all existing unique monitoring_site tag keys.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-sites/task-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Task Summaries
+         * @description Get task count summaries for MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/monitoring-tasks/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1186,7 +1235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1214,7 +1263,7 @@ export interface paths {
         patch: operations["interfaces_api_views_monitoring_task_update_monitoring_task"];
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}/runs": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1234,7 +1283,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}/runs/{run_id}": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1254,7 +1303,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/monitoring-tasks/{task_id}/trigger": {
+    "/api/ogc/collections/monitoring-tasks/items/{task_id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -1274,7 +1323,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observations": {
+    "/api/ogc/collections/observations/bulk-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Insert Observations
+         * @description Insert Observations.
+         */
+        post: operations["interfaces_api_views_sta_observation_insert_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/observations/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Observations
+         * @description Delete Observations between the given phenomenon start and end times.
+         */
+        post: operations["interfaces_api_views_sta_observation_delete_observations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/observations/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1298,47 +1387,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observations/bulk-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Insert Observations
-         * @description Insert Observations.
-         */
-        post: operations["interfaces_api_views_sta_observation_insert_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/observations/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Observations
-         * @description Delete Observations between the given phenomenon start and end times.
-         */
-        post: operations["interfaces_api_views_sta_observation_delete_observations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/observations/{observation_id}": {
+    "/api/ogc/collections/observations/items/{observation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1362,7 +1411,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-properties": {
+    "/api/ogc/collections/observed-properties/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1386,7 +1435,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-properties/{observed_property_id}": {
+    "/api/ogc/collections/observed-properties/items/{observed_property_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1414,7 +1463,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_observed_property_update_observed_property"];
         trace?: never;
     };
-    "/api/data/observed-property-types": {
+    "/api/ogc/collections/observed-property-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1438,7 +1487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/observed-property-types/{observed_property_type_id}": {
+    "/api/ogc/collections/observed-property-types/items/{observed_property_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1466,7 +1515,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_observed_property_type_update_observed_property_type"];
         trace?: never;
     };
-    "/api/data/processing-levels": {
+    "/api/ogc/collections/processing-levels/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1490,7 +1539,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/processing-levels/{processing_level_id}": {
+    "/api/ogc/collections/processing-levels/items/{processing_level_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1518,7 +1567,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_processing_level_update_processing_level"];
         trace?: never;
     };
-    "/api/data/quality-control/histories": {
+    "/api/ogc/collections/quality-control-histories/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1542,7 +1591,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1566,7 +1615,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1590,7 +1639,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1618,7 +1667,7 @@ export interface paths {
         patch: operations["interfaces_api_views_quality_session_update_qc_session"];
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/commit": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/commit": {
         parameters: {
             query?: never;
             header?: never;
@@ -1638,7 +1687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1662,7 +1711,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations/{operation_id}": {
+    "/api/ogc/collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations/{operation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1690,7 +1739,7 @@ export interface paths {
         patch: operations["interfaces_api_views_quality_operation_update_qc_operation"];
         trace?: never;
     };
-    "/api/data/result-qualifiers": {
+    "/api/ogc/collections/result-qualifiers/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1714,7 +1763,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/result-qualifiers/{result_qualifier_id}": {
+    "/api/ogc/collections/result-qualifiers/items/{result_qualifier_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1742,7 +1791,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_result_qualifier_update_result_qualifier"];
         trace?: never;
     };
-    "/api/data/roles": {
+    "/api/ogc/collections/roles/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1762,7 +1811,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/roles/{role_id}": {
+    "/api/ogc/collections/roles/items/{role_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1782,7 +1831,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/sampled-mediums": {
+    "/api/ogc/collections/sampled-mediums/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1806,7 +1855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/sampled-mediums/{sampled_medium_id}": {
+    "/api/ogc/collections/sampled-mediums/items/{sampled_medium_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1834,7 +1883,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_sampled_medium_update_sampled_medium"];
         trace?: never;
     };
-    "/api/data/unit-types": {
+    "/api/ogc/collections/unit-types/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1858,7 +1907,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/unit-types/{unit_type_id}": {
+    "/api/ogc/collections/unit-types/items/{unit_type_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1886,7 +1935,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_unit_type_update_unit_type"];
         trace?: never;
     };
-    "/api/data/units": {
+    "/api/ogc/collections/units/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1910,7 +1959,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/units/{unit_id}": {
+    "/api/ogc/collections/units/items/{unit_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1938,7 +1987,7 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_unit_update_unit"];
         trace?: never;
     };
-    "/api/data/workspaces": {
+    "/api/ogc/collections/workspaces/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1962,7 +2011,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1990,7 +2039,7 @@ export interface paths {
         patch: operations["interfaces_api_views_iam_workspace_update_workspace"];
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/collaborators": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/collaborators": {
         parameters: {
             query?: never;
             header?: never;
@@ -2022,7 +2071,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/service-accounts": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2046,7 +2095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2074,7 +2123,7 @@ export interface paths {
         patch: operations["interfaces_api_views_iam_service_account_update_service_account"];
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2094,7 +2143,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/transfer": {
+    "/api/ogc/collections/workspaces/items/{workspace_id}/transfer": {
         parameters: {
             query?: never;
             header?: never;
@@ -2117,6 +2166,46 @@ export interface paths {
          * @description Reject a pending workspace transfer.
          */
         delete: operations["interfaces_api_views_iam_workspace_reject_workspace_transfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Collection Metadata
+         * @description Get a collection.
+         */
+        get: operations["interfaces_api_views_ogc_get_collection_metadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/conformance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Conformance
+         * @description Get the OGC API conformance classes the API implements.
+         */
+        get: operations["interfaces_api_views_ogc_get_conformance"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2224,10 +2313,10 @@ export interface components {
             include?: ("role" | "user" | "serviceAccount")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -2250,7 +2339,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "roleId" | "-id" | "-roleId")[] | null;
+            sortby: ("id" | "roleId" | "-id" | "-roleId" | "+id" | "+roleId")[];
         };
         /** CollaboratorResponse */
         CollaboratorResponse: {
@@ -2263,6 +2352,40 @@ export interface components {
             serviceAccountEmail?: string | null;
             /** Useremail */
             userEmail?: string | null;
+        };
+        /**
+         * CollectionResponse
+         * @description A collection's metadata (OGC API - Features Core collection.yaml).
+         */
+        CollectionResponse: {
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /** Itemtype */
+            itemType?: string | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Title */
+            title: string;
+        };
+        /**
+         * CollectionsResponse
+         * @description The collections the API serves (OGC API - Features Core collections.yaml).
+         */
+        CollectionsResponse: {
+            /** Collections */
+            collections: components["schemas"]["CollectionResponse"][];
+            /** Links */
+            links: components["schemas"]["Link"][];
+        };
+        /**
+         * ConformanceResponse
+         * @description The conformance classes the API implements (OGC API - Features Core confClasses.yaml).
+         */
+        ConformanceResponse: {
+            /** Conformsto */
+            conformsTo: string[];
         };
         /** CreatedResponse */
         CreatedResponse: {
@@ -2342,6 +2465,10 @@ export interface components {
         };
         /** DataConnectionQueryParameters */
         DataConnectionQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2349,10 +2476,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -2380,7 +2507,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+            sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
             /**
              * Workspace Id
              * @description Filter data connections by workspace ID.
@@ -2504,6 +2631,10 @@ export interface components {
         };
         /** DataProductTaskQueryParameters */
         DataProductTaskQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2523,10 +2654,10 @@ export interface components {
             latest_run_status: (string | "null")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter data product tasks by monitoring_site ID.
@@ -2560,13 +2691,13 @@ export interface components {
              * @description Filter data product tasks by rating curve ID.
              * @default []
              */
-            rating_curve_id: string[];
+            rating_curve_id: (string | "null")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Transformation Type
              * @description Filter data product tasks by transformation type.
@@ -2705,6 +2836,10 @@ export interface components {
         };
         /** DataProductTransformationQueryParameters */
         DataProductTransformationQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -2718,10 +2853,10 @@ export interface components {
             input_datastream_id: string[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -2744,7 +2879,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
+            sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
             /**
              * Task Id
              * @description Filter transformations by data product task ID.
@@ -2829,7 +2964,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
         };
         /** DatastreamPatchBody */
         DatastreamPatchBody: {
@@ -2866,19 +3001,11 @@ export interface components {
              * Format: uuid
              */
             observedPropertyId?: string;
-            /** Phenomenonbegintime */
-            phenomenonBeginTime?: string | null;
-            /** Phenomenonendtime */
-            phenomenonEndTime?: string | null;
             /**
              * Processinglevelid
              * Format: uuid
              */
             processingLevelId?: string;
-            /** Resultbegintime */
-            resultBeginTime?: string | null;
-            /** Resultendtime */
-            resultEndTime?: string | null;
             /** Resulttype */
             resultType?: string;
             /** Sampledmedium */
@@ -2901,8 +3028,6 @@ export interface components {
              * Format: uuid
              */
             unitId?: string;
-            /** Valuecount */
-            valueCount?: number | null;
         };
         /** DatastreamPostBody */
         DatastreamPostBody: {
@@ -2947,19 +3072,11 @@ export interface components {
              * Format: uuid
              */
             observedPropertyId: string;
-            /** Phenomenonbegintime */
-            phenomenonBeginTime?: string | null;
-            /** Phenomenonendtime */
-            phenomenonEndTime?: string | null;
             /**
              * Processinglevelid
              * Format: uuid
              */
             processingLevelId: string;
-            /** Resultbegintime */
-            resultBeginTime?: string | null;
-            /** Resultendtime */
-            resultEndTime?: string | null;
             /** Resulttype */
             resultType: string;
             /** Sampledmedium */
@@ -2985,11 +3102,13 @@ export interface components {
              * Format: uuid
              */
             unitId: string;
-            /** Valuecount */
-            valueCount?: number | null;
         };
         /** DatastreamQueryParameters */
         DatastreamQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3002,10 +3121,10 @@ export interface components {
             is_private?: boolean | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Method Id
              * @description Filter datastreams by method ID.
@@ -3037,26 +3156,6 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Phenomenon Begin Time Max
-             * @description Sets the maximum phenomenon begin time of filtered datastreams.
-             */
-            phenomenon_begin_time_max?: string | null;
-            /**
-             * Phenomenon Begin Time Min
-             * @description Sets the minimum phenomenon begin time of filtered datastreams.
-             */
-            phenomenon_begin_time_min?: string | null;
-            /**
-             * Phenomenon End Time Max
-             * @description Sets the maximum phenomenon end time of filtered datastreams.
-             */
-            phenomenon_end_time_max?: string | null;
-            /**
-             * Phenomenon End Time Min
-             * @description Sets the minimum phenomenon end time of filtered datastreams.
-             */
-            phenomenon_end_time_min?: string | null;
-            /**
              * Processing Level Id
              * @description Filter datastreams by processing level ID.
              * @default []
@@ -3066,32 +3165,12 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
              */
             q?: string | null;
-            /**
-             * Result Begin Time Max
-             * @description Sets the maximum result begin time of filtered datastreams.
-             */
-            result_begin_time_max?: string | null;
-            /**
-             * Result Begin Time Min
-             * @description Sets the minimum result begin time of filtered datastreams.
-             */
-            result_begin_time_min?: string | null;
-            /**
-             * Result End Time Max
-             * @description Sets the maximum result end time of filtered datastreams.
-             */
-            result_end_time_max?: string | null;
-            /**
-             * Result End Time Min
-             * @description Sets the minimum result end time of filtered datastreams.
-             */
-            result_end_time_min?: string | null;
             /**
              * Result Qualifier Id
              * @description Filter datastreams by observation result qualifier ID.
@@ -3115,13 +3194,13 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+            sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
             /**
              * Status
-             * @description Filter monitoring_sites by status.
+             * @description Filter datastreams by status.
              * @default []
              */
-            status: string[];
+            status: (string | "null")[];
             /**
              * Tag
              * @description Filter datastreams by tag. Format tag filters as {key}:{value}
@@ -3335,6 +3414,10 @@ export interface components {
         };
         /** EtlMappingQueryParameters */
         EtlMappingQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Etl Task Id
              * @description Filter mappings by ETL task ID.
@@ -3348,10 +3431,10 @@ export interface components {
             include?: "targetDatastream"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -3368,7 +3451,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+            sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
             /**
              * Source Identifier
              * @description Filter mappings by source identifier.
@@ -3461,12 +3544,16 @@ export interface components {
         };
         /** EtlTaskQueryParameters */
         EtlTaskQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Data Connection Id
              * @description Filter ETL tasks by data connection ID.
              * @default []
              */
             data_connection_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3500,10 +3587,10 @@ export interface components {
             latest_run_status: (string | "null")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter ETL tasks by monitoring_site ID.
@@ -3531,7 +3618,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
@@ -3582,6 +3669,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DataConnectionResponse] */
         ItemResponse_DataConnectionResponse_: {
@@ -3590,6 +3682,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DataProductTaskResponse] */
         ItemResponse_DataProductTaskResponse_: {
@@ -3598,6 +3695,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DataProductTransformationResponse] */
         ItemResponse_DataProductTransformationResponse_: {
@@ -3606,6 +3708,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DatastreamResponse] */
         ItemResponse_DatastreamResponse_: {
@@ -3614,6 +3721,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[DatastreamStatusResponse] */
         ItemResponse_DatastreamStatusResponse_: {
@@ -3622,6 +3734,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[EtlMappingResponse] */
         ItemResponse_EtlMappingResponse_: {
@@ -3630,6 +3747,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[EtlTaskResponse] */
         ItemResponse_EtlTaskResponse_: {
@@ -3638,6 +3760,24 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+        };
+        /** ItemResponse[LinkedResourceGetResponse] */
+        ItemResponse_LinkedResourceGetResponse_: {
+            data: components["schemas"]["LinkedResourceGetResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[LinkedResourceTypeResponse] */
         ItemResponse_LinkedResourceTypeResponse_: {
@@ -3646,6 +3786,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MethodResponse] */
         ItemResponse_MethodResponse_: {
@@ -3654,6 +3799,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MethodTypeResponse] */
         ItemResponse_MethodTypeResponse_: {
@@ -3662,6 +3812,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringRuleResponse] */
         ItemResponse_MonitoringRuleResponse_: {
@@ -3670,6 +3825,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringSiteResponse] */
         ItemResponse_MonitoringSiteResponse_: {
@@ -3678,6 +3838,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringSiteTypeResponse] */
         ItemResponse_MonitoringSiteTypeResponse_: {
@@ -3686,6 +3851,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[MonitoringTaskResponse] */
         ItemResponse_MonitoringTaskResponse_: {
@@ -3694,6 +3864,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ObservationResponse] */
         ItemResponse_ObservationResponse_: {
@@ -3702,6 +3877,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ObservedPropertyResponse] */
         ItemResponse_ObservedPropertyResponse_: {
@@ -3710,6 +3890,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ObservedPropertyTypeResponse] */
         ItemResponse_ObservedPropertyTypeResponse_: {
@@ -3718,6 +3903,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ProcessingLevelResponse] */
         ItemResponse_ProcessingLevelResponse_: {
@@ -3726,6 +3916,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[QualityControlHistoryResponse] */
         ItemResponse_QualityControlHistoryResponse_: {
@@ -3734,6 +3929,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[QualityControlOperationResponse] */
         ItemResponse_QualityControlOperationResponse_: {
@@ -3742,6 +3942,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[QualityControlSessionResponse] */
         ItemResponse_QualityControlSessionResponse_: {
@@ -3750,6 +3955,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[RatingCurveResponse] */
         ItemResponse_RatingCurveResponse_: {
@@ -3758,6 +3968,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ResultQualifierResponse] */
         ItemResponse_ResultQualifierResponse_: {
@@ -3766,6 +3981,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[RoleResponse] */
         ItemResponse_RoleResponse_: {
@@ -3774,6 +3994,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[SampledMediumResponse] */
         ItemResponse_SampledMediumResponse_: {
@@ -3782,6 +4007,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[ServiceAccountResponse] */
         ItemResponse_ServiceAccountResponse_: {
@@ -3790,6 +4020,24 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+        };
+        /** ItemResponse[TaskRunResponse] */
+        ItemResponse_TaskRunResponse_: {
+            data: components["schemas"]["TaskRunResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[UnitResponse] */
         ItemResponse_UnitResponse_: {
@@ -3798,6 +4046,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[UnitTypeResponse] */
         ItemResponse_UnitTypeResponse_: {
@@ -3806,6 +4059,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** ItemResponse[WorkspaceResponse] */
         ItemResponse_WorkspaceResponse_: {
@@ -3814,6 +4072,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
         };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
@@ -3845,6 +4108,29 @@ export interface components {
              */
             type: "JSON";
         };
+        /**
+         * LandingPageResponse
+         * @description The API's landing page (OGC API - Features Core landingPage.yaml).
+         */
+        LandingPageResponse: {
+            /** Description */
+            description: string;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Title */
+            title: string;
+        };
+        /** Link */
+        Link: {
+            /** Href */
+            href: string;
+            /** Rel */
+            rel: string;
+            /** Title */
+            title?: string | null;
+            /** Type */
+            type: string;
+        };
         /** LinkedResourceGetResponse */
         LinkedResourceGetResponse: {
             /** Description */
@@ -3864,16 +4150,11 @@ export interface components {
         /** LinkedResourceQueryParameters */
         LinkedResourceQueryParameters: {
             /**
-             * Include
-             * @description Comma-separated list of related resources to include in the response.
-             */
-            include?: string | null;
-            /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -3977,12 +4258,16 @@ export interface components {
         };
         /** MethodQueryParameters */
         MethodQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter methods by datastream ID.
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3990,10 +4275,10 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter methods by monitoring_site ID.
@@ -4021,19 +4306,19 @@ export interface components {
              * @description Filter methods by sensor model
              * @default []
              */
-            sensor_model: string[];
+            sensor_model: (string | "null")[];
             /**
              * Sensor Model Manufacturer
              * @description Filter methods by sensor model manufacturer
              * @default []
              */
-            sensor_model_manufacturer: string[];
+            sensor_model_manufacturer: (string | "null")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
+            sortby: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition" | "+name" | "+code" | "+type" | "+sensorModel" | "+sensorModelManufacturer" | "+definition" | "+sensorModelDefinition")[];
             /**
              * Type
              * @description Filter methods by type
@@ -4155,12 +4440,16 @@ export interface components {
         };
         /** MonitoringRuleQueryParameters */
         MonitoringRuleQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter rules by datastream ID.
              * @default []
              */
             datastream_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4168,10 +4457,10 @@ export interface components {
             include?: "datastream"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -4194,7 +4483,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
+            sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
             /**
              * Task Id
              * @description Filter rules by monitoring task ID.
@@ -4300,12 +4589,8 @@ export interface components {
         };
         /** MonitoringSiteMarkerQueryParameters */
         MonitoringSiteMarkerQueryParameters: {
-            /**
-             * Bbox
-             * @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
-             * @default []
-             */
-            bbox: string[];
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Type
              * @description Filter markers by monitoring site type.
@@ -4425,25 +4710,23 @@ export interface components {
              * @description Filter monitoring sites by admin area 1.
              * @default []
              */
-            admin_area_1: string[];
+            admin_area_1: (string | "null")[];
             /**
              * Admin Area 2
              * @description Filter monitoring sites by admin area 2.
              * @default []
              */
-            admin_area_2: string[];
-            /**
-             * Bbox
-             * @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
-             * @default []
-             */
-            bbox: string[];
+            admin_area_2: (string | "null")[];
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Country
              * @description Filter monitoring sites by country.
              * @default []
              */
-            country: string[];
+            country: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4456,10 +4739,10 @@ export interface components {
             is_private?: boolean | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -4481,7 +4764,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevation_m" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
             /**
              * Tag
              * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
@@ -4673,12 +4956,16 @@ export interface components {
         };
         /** MonitoringTaskQueryParameters */
         MonitoringTaskQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter monitoring tasks by datastream ID.
              * @default []
              */
             datastream_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -4692,10 +4979,10 @@ export interface components {
             latest_run_status: (string | "null")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter monitoring tasks by monitoring_site ID.
@@ -4729,7 +5016,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Workspace Id
              * @description Filter monitoring tasks by workspace ID.
@@ -4857,6 +5144,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** ObservationItemQueryParameters */
@@ -4893,12 +5185,16 @@ export interface components {
         };
         /** ObservationQueryParameters */
         ObservationQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter observations by datastream ID.
              * @default []
              */
             datastream_id: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Format
              * @description Controls the format of the observations response.
@@ -4911,26 +5207,16 @@ export interface components {
             include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
              * @default 0
              */
             offset: number | null;
-            /**
-             * Phenomenon Time Max
-             * @description Sets the maximum phenomenon time of filtered observations.
-             */
-            phenomenon_time_max?: string | null;
-            /**
-             * Phenomenon Time Min
-             * @description Sets the minimum phenomenon time of filtered observations.
-             */
-            phenomenon_time_min?: string | null;
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
@@ -4947,7 +5233,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
+            sortby: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
         };
         /** ObservationResponse */
         ObservationResponse: {
@@ -4993,6 +5279,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** ObservedPropertyItemQueryParameters */
@@ -5040,12 +5331,16 @@ export interface components {
         };
         /** ObservedPropertyQueryParameters */
         ObservedPropertyQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter observed properties by datastream ID.
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -5053,10 +5348,10 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter observed properties by monitoring_site ID.
@@ -5084,7 +5379,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+            sortby: ("name" | "type" | "code" | "-name" | "-type" | "-code" | "+name" | "+type" | "+code")[];
             /**
              * Type
              * @description Filter observed properties by type
@@ -5154,6 +5449,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[CollaboratorResponse] */
@@ -5164,6 +5464,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DataConnectionResponse] */
@@ -5174,6 +5479,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DataProductTaskResponse] */
@@ -5184,6 +5494,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DataProductTransformationResponse] */
@@ -5194,6 +5509,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DatastreamResponse] */
@@ -5204,6 +5524,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[DatastreamStatusResponse] */
@@ -5214,6 +5539,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[EtlMappingResponse] */
@@ -5224,6 +5554,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[EtlTaskResponse] */
@@ -5234,6 +5569,26 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[LinkedResourceGetResponse] */
+        PaginatedResponse_LinkedResourceGetResponse_: {
+            /** Data */
+            data: components["schemas"]["LinkedResourceGetResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[LinkedResourceTypeResponse] */
@@ -5244,6 +5599,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MethodResponse] */
@@ -5254,6 +5614,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MethodTypeResponse] */
@@ -5264,6 +5629,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringRuleResponse] */
@@ -5274,6 +5644,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringSiteResponse] */
@@ -5284,6 +5659,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringSiteTypeResponse] */
@@ -5294,6 +5674,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[MonitoringTaskResponse] */
@@ -5304,6 +5689,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ObservationResponse] */
@@ -5314,6 +5704,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ObservedPropertyResponse] */
@@ -5324,6 +5719,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ObservedPropertyTypeResponse] */
@@ -5334,6 +5734,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ProcessingLevelResponse] */
@@ -5344,6 +5749,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[QualityControlHistoryResponse] */
@@ -5354,6 +5764,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[QualityControlOperationResponse] */
@@ -5364,6 +5779,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[QualityControlSessionResponse] */
@@ -5374,6 +5794,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[RatingCurveResponse] */
@@ -5384,6 +5809,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ResultQualifierResponse] */
@@ -5394,6 +5824,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[RoleResponse] */
@@ -5404,6 +5839,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[SampledMediumResponse] */
@@ -5414,6 +5854,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[ServiceAccountResponse] */
@@ -5424,6 +5869,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[TaskRunResponse] */
@@ -5434,6 +5884,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[UnitResponse] */
@@ -5444,6 +5899,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[UnitTypeResponse] */
@@ -5454,6 +5914,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginatedResponse[WorkspaceResponse] */
@@ -5464,6 +5929,11 @@ export interface components {
             included?: {
                 [key: string]: unknown[];
             } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
         /** PaginationMeta */
@@ -5584,12 +6054,16 @@ export interface components {
         };
         /** ProcessingLevelQueryParameters */
         ProcessingLevelQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter processing levels by datastream ID.
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -5597,10 +6071,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter processing levels by monitoring_site ID.
@@ -5628,7 +6102,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("code" | "name" | "-code" | "-name")[] | null;
+            sortby: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
             /**
              * Workspace Id
              * @description Filter processing levels by workspace ID.
@@ -5682,6 +6156,10 @@ export interface components {
         };
         /** QualityControlHistoryQueryParameters */
         QualityControlHistoryQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -5689,10 +6167,10 @@ export interface components {
             include?: ("managedDatastream" | "sourceDatastream")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Managed Datastream Id
              * @description Filter histories by managed datastream ID.
@@ -5715,13 +6193,13 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
+            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
             /**
              * Source Datastream Id
              * @description Filter histories by source datastream ID.
              * @default []
              */
-            source_datastream_id: string[];
+            source_datastream_id: (string | "null")[];
         };
         /** QualityControlHistoryResponse */
         QualityControlHistoryResponse: {
@@ -5798,10 +6276,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -5818,7 +6296,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
+            sortby: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt" | "+id" | "+order" | "+operationType" | "+createdAt")[];
         };
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
@@ -5889,10 +6367,10 @@ export interface components {
             include_ancestors: boolean;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -5919,7 +6397,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
+            sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
             /** Status */
             status?: ("in_progress" | "committed") | null;
         };
@@ -6026,6 +6504,10 @@ export interface components {
         };
         /** RatingCurveQueryParameters */
         RatingCurveQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6033,10 +6515,10 @@ export interface components {
             include?: "monitoringSite"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter rating curves by monitoring site ID.
@@ -6064,7 +6546,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
             /**
              * Workspace Id
              * @description Filter rating curves by workspace ID.
@@ -6135,6 +6617,10 @@ export interface components {
         };
         /** ResultQualifierQueryParameters */
         ResultQualifierQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6142,10 +6628,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6167,7 +6653,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "-name")[] | null;
+            sortby: ("name" | "-name" | "+name")[];
             /**
              * Workspace Id
              * @description Filter terms by workspace ID.
@@ -6199,6 +6685,10 @@ export interface components {
         };
         /** RoleQueryParameters */
         RoleQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6206,10 +6696,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6226,7 +6716,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "-name")[] | null;
+            sortby: ("name" | "-name" | "+name")[];
             /**
              * Workspace Id
              * @description Filter roles by workspace ID.
@@ -6385,10 +6875,10 @@ export interface components {
             include?: "workspace"[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6405,7 +6895,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
+            sortby: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt" | "+name" | "+isActive" | "+keyExpiresAt" | "+createdAt" | "+lastUsedAt")[];
         };
         /** ServiceAccountResponse */
         ServiceAccountResponse: {
@@ -6463,10 +6953,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6483,7 +6973,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+            sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
             /**
              * Started At Max
              * @description Filters for task runs started on or before this date and time.
@@ -6588,12 +7078,16 @@ export interface components {
         };
         /** UnitQueryParameters */
         UnitQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
             /**
              * Datastream Id
              * @description Filter units by datastream ID.
              * @default []
              */
             datastream_id: (string | "null")[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6601,10 +7095,10 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Monitoring Site Id
              * @description Filter units by monitoring_site ID.
@@ -6632,7 +7126,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+            sortby: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type" | "+name" | "+symbol" | "+type")[];
             /**
              * Type
              * @description Filter units by type
@@ -6823,6 +7317,10 @@ export interface components {
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6830,10 +7328,10 @@ export interface components {
             include?: string | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6855,7 +7353,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "-name")[] | null;
+            sortby: ("name" | "-name" | "+name")[];
         };
         /** WorkspaceItemQueryParameters */
         WorkspaceItemQueryParameters: {
@@ -6888,6 +7386,10 @@ export interface components {
         };
         /** WorkspaceQueryParameters */
         WorkspaceQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -6905,10 +7407,10 @@ export interface components {
             is_private?: boolean | null;
             /**
              * Limit
-             * @description The maximum number of items to return.
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
              * @default 100
              */
-            limit: number | null;
+            limit: number;
             /**
              * Offset
              * @description Number of items to skip.
@@ -6930,7 +7432,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+            sortby: ("name" | "isPrivate" | "-name" | "-isPrivate" | "+name" | "+isPrivate")[];
         };
         /** WorkspaceResponse */
         WorkspaceResponse: {
@@ -6967,19 +7469,63 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    interfaces_api_views_ogc_get_landing_page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LandingPageResponse"];
+                };
+            };
+        };
+    };
+    interfaces_api_views_ogc_get_collections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionsResponse"];
+                };
+            };
+        };
+    };
     interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -7195,16 +7741,20 @@ export interface operations {
     interfaces_api_views_products_rating_curve_get_rating_curves: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod")[] | null;
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter rating curves by monitoring site ID. */
@@ -7462,16 +8012,20 @@ export interface operations {
     interfaces_api_views_products_task_get_data_product_tasks: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter data product tasks by monitoring_site ID. */
@@ -7487,7 +8041,7 @@ export interface operations {
                 /** @description Filter data product tasks by input datastream ID. */
                 input_datastream_id?: string[];
                 /** @description Filter data product tasks by rating curve ID. */
-                rating_curve_id?: string[];
+                rating_curve_id?: (string | "null")[];
             };
             header?: never;
             path?: never;
@@ -7745,10 +8299,10 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -7824,7 +8378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7873,7 +8427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -7908,16 +8462,20 @@ export interface operations {
     interfaces_api_views_products_transformation_get_data_product_transformations: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType")[] | null;
+                sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
                 /** @description Filter transformations by type. */
                 transformation_type?: string[];
                 /** @description Filter transformations by output datastream ID. */
@@ -8197,16 +8755,20 @@ export interface operations {
     interfaces_api_views_sta_datastream_status_get_datastream_statuses: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -8422,16 +8984,20 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
+                sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter datastreams by workspace ID. */
@@ -8452,8 +9018,8 @@ export interface operations {
                 observation_type?: string[];
                 /** @description Filter monitoring_sites by sampled medium. */
                 sampled_medium?: string[];
-                /** @description Filter monitoring_sites by status. */
-                status?: string[];
+                /** @description Filter datastreams by status. */
+                status?: (string | "null")[];
                 /** @description Filter monitoring_sites by result type. */
                 result_type?: string[];
                 /** @description Filter datastreams by tag. Format tag filters as {key}:{value} */
@@ -8464,22 +9030,6 @@ export interface operations {
                 value_count_max?: number | null;
                 /** @description Sets the minimum value count of filtered datastreams. */
                 value_count_min?: number | null;
-                /** @description Sets the maximum phenomenon begin time of filtered datastreams. */
-                phenomenon_begin_time_max?: string | null;
-                /** @description Sets the minimum phenomenon begin time of filtered datastreams. */
-                phenomenon_begin_time_min?: string | null;
-                /** @description Sets the maximum phenomenon end time of filtered datastreams. */
-                phenomenon_end_time_max?: string | null;
-                /** @description Sets the minimum phenomenon end time of filtered datastreams. */
-                phenomenon_end_time_min?: string | null;
-                /** @description Sets the maximum result begin time of filtered datastreams. */
-                result_begin_time_max?: string | null;
-                /** @description Sets the minimum result begin time of filtered datastreams. */
-                result_begin_time_min?: string | null;
-                /** @description Sets the maximum result end time of filtered datastreams. */
-                result_end_time_max?: string | null;
-                /** @description Sets the minimum result end time of filtered datastreams. */
-                result_end_time_min?: string | null;
             };
             header?: never;
             path?: never;
@@ -8558,77 +9108,11 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
-        parameters: {
-            query?: {
-                workspace_id?: string | null;
-                datastream_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string[];
-                    };
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap: {
-        parameters: {
-            query?: {
-                /** @description Filter visualization bootstrap datastreams by workspace ID. */
-                workspace_id?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DatastreamVisualizationBootstrapResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_api_views_sta_datastream_get_datastream: {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
             };
@@ -8801,12 +9285,10 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -8824,7 +9306,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_LinkedResourceGetResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -8911,6 +9393,56 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_get_datastream_linked_resource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datastream_id: string;
+                linked_resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_LinkedResourceGetResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9049,19 +9581,89 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                datastream_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string[];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap: {
+        parameters: {
+            query?: {
+                /** @description Filter visualization bootstrap datastreams by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatastreamVisualizationBootstrapResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_etl_data_connection_get_data_connections: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[] | null;
+                sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter data connections by workspace ID. */
@@ -9310,16 +9912,20 @@ export interface operations {
     interfaces_api_views_etl_mapping_get_etl_mappings: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "targetDatastream"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId")[] | null;
+                sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
                 /** @description Filter mappings by source identifier. */
                 source_identifier?: string[];
                 /** @description Filter mappings by target datastream ID. */
@@ -9597,16 +10203,20 @@ export interface operations {
     interfaces_api_views_etl_task_get_etl_tasks: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "dataConnection"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter ETL tasks by monitoring_site ID. */
@@ -9882,10 +10492,10 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -9961,7 +10571,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10010,7 +10620,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -10045,16 +10655,20 @@ export interface operations {
     interfaces_api_views_sta_linked_resource_type_get_linked_resource_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -10270,16 +10884,20 @@ export interface operations {
     interfaces_api_views_sta_method_type_get_method_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -10495,16 +11113,20 @@ export interface operations {
     interfaces_api_views_sta_method_get_methods: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition")[] | null;
+                sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition" | "+name" | "+code" | "+type" | "+sensorModel" | "+sensorModelManufacturer" | "+definition" | "+sensorModelDefinition")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter methods by workspace ID. */
@@ -10516,9 +11138,9 @@ export interface operations {
                 /** @description Filter methods by type */
                 type?: string[];
                 /** @description Filter methods by sensor model */
-                sensor_model?: string[];
+                sensor_model?: (string | "null")[];
                 /** @description Filter methods by sensor model manufacturer */
-                sensor_model_manufacturer?: string[];
+                sensor_model_manufacturer?: (string | "null")[];
             };
             header?: never;
             path?: never;
@@ -10761,16 +11383,20 @@ export interface operations {
     interfaces_api_views_monitoring_rule_get_monitoring_rules: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "datastream"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt")[] | null;
+                sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
                 /** @description Filter rules by datastream ID. */
                 datastream_id?: string[];
                 /** @description Filter rules by rule type. */
@@ -11048,16 +11674,20 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -11273,28 +11903,30 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_sites: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevation_m" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
                 /** @description Filter monitoring sites by admin area 1. */
-                admin_area_1?: string[];
+                admin_area_1?: (string | "null")[];
                 /** @description Filter monitoring sites by admin area 2. */
-                admin_area_2?: string[];
+                admin_area_2?: (string | "null")[];
                 /** @description Filter monitoring sites by country. */
-                country?: string[];
+                country?: (string | "null")[];
                 /** @description Filter monitoring sites by type. */
                 type?: string[];
                 /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value} */
@@ -11357,164 +11989,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
-        parameters: {
-            query?: {
-                /** @description Filter markers by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
-                /** @description Filter markers by monitoring site type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteMarkerResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries: {
-        parameters: {
-            query?: {
-                /** @description Filter site summaries by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter summaries by monitoring site type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteMapSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_site_type_icons: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
-        parameters: {
-            query?: {
-                workspace_id?: string | null;
-                monitoring_site_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string[];
-                    };
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries: {
-        parameters: {
-            query?: {
-                /** @description Filter task summaries by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter summaries by monitoring site type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonitoringSiteTaskSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -11667,12 +12141,10 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: string | null;
-                /** @description Comma-separated list of related resources to include in the response. */
-                include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter by linked resource type. */
                 type?: string[];
             };
@@ -11690,7 +12162,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkedResourceGetResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_LinkedResourceGetResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -11777,6 +12249,56 @@ export interface operations {
             };
             /** @description Content Too Large */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+                linked_resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_LinkedResourceGetResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11915,19 +12437,181 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
+        parameters: {
+            query?: {
+                /** @description Filter markers by workspace ID. */
+                workspace_id?: string[];
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Filter markers by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteMarkerResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter site summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter summaries by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteMapSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_site_type_icons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                monitoring_site_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string[];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter task summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter summaries by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteTaskSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_monitoring_task_get_monitoring_tasks: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[] | null;
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter monitoring tasks by monitoring_site ID. */
@@ -12197,10 +12881,10 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
@@ -12276,7 +12960,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12325,7 +13009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["ItemResponse_TaskRunResponse_"];
                 };
             };
             /** @description Unauthorized */
@@ -12348,125 +13032,6 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_get_observations: {
-        parameters: {
-            query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
-                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
-                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
-                include?: ("datastream" | "workspace" | "resultQualifiers")[];
-                /** @description Number of items to skip. */
-                offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
-                /** @description Filter observations by datastream ID. */
-                datastream_id?: string[];
-                /** @description Select one or more fields to sort the response by. */
-                sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId")[] | null;
-                /** @description Controls the format of the observations response. */
-                format?: ("record" | "row" | "column") | null;
-                /** @description Sets the maximum phenomenon time of filtered observations. */
-                phenomenon_time_max?: string | null;
-                /** @description Sets the minimum phenomenon time of filtered observations. */
-                phenomenon_time_min?: string | null;
-                /** @description Filter observations by result qualifier code. */
-                result_qualifier_code?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_observation_create_observation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ObservationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatedResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12559,6 +13124,125 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_get_observations: {
+        parameters: {
+            query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
+                /** @description Filter observations by datastream ID. */
+                datastream_id?: string[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
+                /** @description Controls the format of the observations response. */
+                format?: ("record" | "row" | "column") | null;
+                /** @description Filter observations by result qualifier code. */
+                result_qualifier_code?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observation_create_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12663,16 +13347,20 @@ export interface operations {
     interfaces_api_views_sta_observed_property_get_observed_properties: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
+                sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code" | "+name" | "+type" | "+code")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter observed properties by workspace ID. */
@@ -12925,16 +13613,20 @@ export interface operations {
     interfaces_api_views_sta_observed_property_type_get_observed_property_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -13150,16 +13842,20 @@ export interface operations {
     interfaces_api_views_sta_processing_level_get_processing_levels: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("code" | "name" | "-code" | "-name")[] | null;
+                sortby?: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter processing levels by workspace ID. */
@@ -13410,20 +14106,24 @@ export interface operations {
     interfaces_api_views_quality_history_get_qc_histories: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("managedDatastream" | "sourceDatastream")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd")[] | null;
+                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
                 /** @description Filter histories by managed datastream ID. */
                 managed_datastream_id?: string[];
                 /** @description Filter histories by source datastream ID. */
-                source_datastream_id?: string[];
+                source_datastream_id?: (string | "null")[];
             };
             header?: never;
             path?: never;
@@ -13630,10 +14330,10 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt")[] | null;
+                sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
                 status?: ("in_progress" | "committed") | null;
                 /** @description Return sessions overlapping with this range start. */
                 range_start?: string | null;
@@ -13980,10 +14680,10 @@ export interface operations {
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt")[] | null;
+                sortby?: ("id" | "order" | "operationType" | "createdAt" | "-id" | "-order" | "-operationType" | "-createdAt" | "+id" | "+order" | "+operationType" | "+createdAt")[];
             };
             header?: never;
             path: {
@@ -14263,16 +14963,20 @@ export interface operations {
     interfaces_api_views_sta_result_qualifier_get_result_qualifiers: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter terms by workspace ID. */
@@ -14492,16 +15196,20 @@ export interface operations {
     interfaces_api_views_iam_role_get_roles: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Filter roles by workspace ID. */
                 workspace_id?: (string | "null")[];
             };
@@ -14577,16 +15285,20 @@ export interface operations {
     interfaces_api_views_sta_sampled_medium_get_sampled_mediums: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -14802,16 +15514,20 @@ export interface operations {
     interfaces_api_views_sta_unit_type_get_unit_types: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "-name")[] | null;
+                sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
             };
@@ -15027,16 +15743,20 @@ export interface operations {
     interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
+                sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type" | "+name" | "+symbol" | "+type")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter units by workspace ID. */
@@ -15280,16 +16000,20 @@ export interface operations {
     interfaces_api_views_iam_workspace_get_workspaces: {
         parameters: {
             query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate")[] | null;
+                sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate" | "+name" | "+isPrivate")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Whether the workspace is associated with the authenticated user */
@@ -15526,12 +16250,12 @@ export interface operations {
                 include?: ("role" | "user" | "serviceAccount")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Filter collaborators by role ID. */
                 role_id?: string[];
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "roleId" | "-id" | "-roleId")[] | null;
+                sortby?: ("id" | "roleId" | "-id" | "-roleId" | "+id" | "+roleId")[];
             };
             header?: never;
             path: {
@@ -15734,10 +16458,10 @@ export interface operations {
                 include?: "workspace"[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
-                /** @description The maximum number of items to return. */
-                limit?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt")[] | null;
+                sortby?: ("name" | "isActive" | "keyExpiresAt" | "createdAt" | "lastUsedAt" | "-name" | "-isActive" | "-keyExpiresAt" | "-createdAt" | "-lastUsedAt" | "+name" | "+isActive" | "+keyExpiresAt" | "+createdAt" | "+lastUsedAt")[];
             };
             header?: never;
             path: {
@@ -16127,6 +16851,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_ogc_get_collection_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_ogc_get_conformance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConformanceResponse"];
                 };
             };
         };

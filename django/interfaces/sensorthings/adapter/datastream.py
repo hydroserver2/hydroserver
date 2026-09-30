@@ -151,30 +151,12 @@ class DatastreamMixin(SensorThingsUtils):
         raise HttpError(403, "This operation is not permitted.")
 
     def update_datastreams(self, payload, context=None):
-        for datastream_id, dto in payload.items():
-            datastream = datastream_service.get_datastream_for_action(
+        for datastream_id in payload:
+            datastream_service.get_datastream_for_action(
                 principal=context.principal if context else None,
                 uid=datastream_id,
                 action="edit",
             )
-
-            if dto.phenomenon_time is not None:
-                parts = str(dto.phenomenon_time).split("/")
-                datastream.phenomenon_begin_time = parts[0]
-                datastream.phenomenon_end_time = parts[-1]
-            else:
-                datastream.phenomenon_begin_time = None
-                datastream.phenomenon_end_time = None
-
-            if dto.result_time is not None:
-                parts = str(dto.result_time).split("/")
-                datastream.result_begin_time = parts[0]
-                datastream.result_end_time = parts[-1]
-            else:
-                datastream.result_begin_time = None
-                datastream.result_end_time = None
-
-            datastream.save()
 
     def delete_datastreams(self, entity_ids, context=None):
         raise HttpError(403, "This operation is not permitted.")

@@ -45,7 +45,7 @@ def _access_token(oidc_client, user, value, scopes=None, expires_at=None):
 
 
 def _bearer_request(token_value=None):
-    request = RequestFactory().get("/api/data/workspaces")
+    request = RequestFactory().get("/api/ogc/collections/workspaces/items")
     if token_value is not None:
         request.META["HTTP_AUTHORIZATION"] = f"Bearer {token_value}"
     return request

@@ -86,7 +86,6 @@ stage_datastream = hs_api.datastreams.create(
     time_aggregation_interval_unit='minutes',
     intended_time_spacing=15,
     intended_time_spacing_unit='minutes',
-    phenomenon_end_time='2025-01-01T00:00:00Z',
     status='Ongoing',
     is_private=False,
 )
@@ -96,7 +95,7 @@ print(f"{stage_datastream.name}: {stage_datastream.uid}")
 
 ## Create a data connection
 
-A data connection describes where your data comes from and how to read it. Our source is the USGS Instantaneous Values API, which returns JSON. We'll define two run-time placeholder variables — `start_date` and `end_date` — that get substituted into the URL each time the task runs. HydroServer automatically sets `start_date` to the timestamp of the most recent observation already in the datastream, so you never re-fetch data you already have.
+A data connection describes where your data comes from and how to read it. Our source is the USGS Instantaneous Values API, which returns JSON. We'll define two run-time placeholder variables — `start_date` and `end_date` — that get substituted into the URL each time the task runs. HydroServer automatically sets `start_date` to the timestamp of the most recent observation already in the datastream, so you never re-fetch data you already have. Our datastream is new and has no observations yet, so the first run starts from 1970-01-01 and pulls in all the history USGS has for this gage; later runs pick up from the most recent observation.
 
 ```python
 usgs_data_connection = hs_api.dataconnections.create(

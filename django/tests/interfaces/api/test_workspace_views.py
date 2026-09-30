@@ -10,10 +10,11 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 
 pytestmark = pytest.mark.django_db
 
-WORKSPACES_URL = "/api/data/workspaces"
+WORKSPACES_URL = "/api/ogc/collections/workspaces/items"
 
 WORKSPACE_FIELDS = {
     "id",
@@ -405,7 +406,7 @@ def test_get_workspaces_include_pending_transfer_to_sideloads_for_recipient(clie
 
     response = client.get(
         WORKSPACES_URL,
-        {"is_associated": True, "include": "pendingTransferTo"},
+        {"is_associated": "true", "include": "pendingTransferTo"},
     )
 
     assert response.status_code == 200
@@ -424,7 +425,7 @@ def test_get_workspaces_include_collaborator_role_sideloads_for_collaborator(cli
 
     response = client.get(
         WORKSPACES_URL,
-        {"is_associated": True, "include": "collaboratorRole"},
+        {"is_associated": "true", "include": "collaboratorRole"},
     )
 
     assert response.status_code == 200
@@ -633,5 +634,177 @@ def test_reject_workspace_transfer_returns_400_when_none_pending(client):
     client.force_login(owner)
 
     response = client.delete(_transfer_url(workspace.id))
+
+    assert response.status_code == 400
+
+
+# --- bbox --------------------------------------------------------------------------------
+#
+# A workspace's location is the set of its monitoring sites the requester can view. It matches
+# a bbox when one of those sites lies inside it, or when the requester can view none of its
+# sites (no location matches any bbox, per OGC API - Features Core Req 24C).
+
+INSIDE_BBOX = "-112,40,-111,41"
+
+
+def _site(workspace, longitude, latitude, **kwargs):
+    return MonitoringSiteFactory(workspace=workspace, longitude=longitude, latitude=latitude, **kwargs)
+
+
+def _workspace_ids(response):
+    return {workspace["id"] for workspace in response.json()["data"]}
+
+
+def test_get_workspaces_bbox_matches_workspaces_with_a_visible_site_inside(client):
+    inside = WorkspaceFactory()
+    _site(inside, -111.5, 40.5)
+    outside = WorkspaceFactory()
+    _site(outside, -100, 40.5)
+
+    response = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+
+    assert response.status_code == 200
+    assert str(inside.id) in _workspace_ids(response)
+    assert str(outside.id) not in _workspace_ids(response)
+
+
+def test_get_workspaces_bbox_matches_workspaces_without_sites(client):
+    empty = WorkspaceFactory()
+
+    response = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+
+    assert str(empty.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_bbox_ignores_private_sites_the_requester_cannot_view(client):
+    # A private site inside the box must not make the workspace match...
+    hidden_inside = WorkspaceFactory()
+    _site(hidden_inside, -100, 40.5)
+    _site(hidden_inside, -111.5, 40.5, private=True)
+    # ...and a workspace whose only site is private has no visible location, so it matches.
+    only_private = WorkspaceFactory()
+    _site(only_private, -100, 40.5, private=True)
+
+    response = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+
+    assert str(hidden_inside.id) not in _workspace_ids(response)
+    assert str(only_private.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_bbox_uses_private_sites_the_owner_can_view(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, private=True)
+    _site(workspace, -100, 40.5)
+    _site(workspace, -111.5, 40.5, private=True)
+    client.force_login(owner)
+
+    inside = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+    elsewhere = client.get(WORKSPACES_URL, {"bbox": "0,0,1,1"})
+
+    assert str(workspace.id) in _workspace_ids(inside)
+    assert str(workspace.id) not in _workspace_ids(elsewhere)
+
+
+def test_get_workspaces_bbox_uses_private_sites_a_collaborator_can_view(client):
+    workspace = WorkspaceFactory(private=True)
+    _site(workspace, -111.5, 40.5, private=True)
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Workspace", can_view=True)
+    PermissionFactory(role=role, resource_type="MonitoringSite", can_view=True)
+    collaborator = CollaboratorFactory(workspace=workspace, role=role)
+    client.force_login(collaborator.user)
+
+    inside = client.get(WORKSPACES_URL, {"bbox": INSIDE_BBOX})
+    elsewhere = client.get(WORKSPACES_URL, {"bbox": "0,0,1,1"})
+
+    assert str(workspace.id) in _workspace_ids(inside)
+    assert str(workspace.id) not in _workspace_ids(elsewhere)
+
+
+def test_get_workspaces_returns_400_for_invalid_bbox(client):
+    response = client.get(WORKSPACES_URL, {"bbox": "-112,40,-111"})
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+#
+# A workspace's time is the observed time of each datastream the requester can view across its
+# sites. It matches a datetime when one of those datastreams overlaps it, or when none of them
+# has observations (no time matches any datetime, per OGC API - Features Core Req 26C).
+
+
+def _observed_datastream(workspace, begin, end, **kwargs):
+    return DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(workspace=workspace),
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=end,
+        **kwargs,
+    )
+
+
+def test_get_workspaces_datetime_matches_workspaces_with_an_overlapping_datastream_on_any_site(client):
+    overlapping = WorkspaceFactory()
+    _observed_datastream(overlapping, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+    _observed_datastream(overlapping, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+    before = WorkspaceFactory()
+    _observed_datastream(before, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z/.."})
+
+    assert response.status_code == 200
+    assert str(overlapping.id) in _workspace_ids(response)
+    assert str(before.id) not in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_requires_one_datastream_to_overlap(client):
+    workspace = WorkspaceFactory()
+    _observed_datastream(workspace, "2024-01-01T00:00:00Z", "2024-02-01T00:00:00Z")
+    _observed_datastream(workspace, "2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z")
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-03-01T00:00:00Z/2024-03-31T00:00:00Z"})
+
+    assert str(workspace.id) not in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_matches_workspaces_without_observed_datastreams(client):
+    empty = WorkspaceFactory()
+    without_observations = WorkspaceFactory()
+    DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=without_observations))
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert str(empty.id) in _workspace_ids(response)
+    assert str(without_observations.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_ignores_private_datastreams_the_requester_cannot_view(client):
+    hidden_overlap = WorkspaceFactory()
+    _observed_datastream(hidden_overlap, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+    _observed_datastream(hidden_overlap, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    only_private = WorkspaceFactory()
+    _observed_datastream(only_private, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z", private=True)
+
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert str(hidden_overlap.id) not in _workspace_ids(response)
+    assert str(only_private.id) in _workspace_ids(response)
+
+
+def test_get_workspaces_datetime_uses_private_datastreams_the_owner_can_view(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, private=True)
+    _observed_datastream(workspace, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    client.force_login(owner)
+
+    overlapping = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+    elsewhere = client.get(WORKSPACES_URL, {"datetime": "2020-01-01T00:00:00Z"})
+
+    assert str(workspace.id) in _workspace_ids(overlapping)
+    assert str(workspace.id) not in _workspace_ids(elsewhere)
+
+
+def test_get_workspaces_returns_400_for_invalid_datetime(client):
+    response = client.get(WORKSPACES_URL, {"datetime": "2024-02-01T00:00:00"})
 
     assert response.status_code == 400

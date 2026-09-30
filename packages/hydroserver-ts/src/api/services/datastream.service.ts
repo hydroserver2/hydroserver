@@ -4,7 +4,7 @@ import {
   DatastreamContract as C,
   ObservationContract,
 } from '../../generated/contracts'
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 import type { ApiResponse } from '../responseInterceptor'
 import {
   Datastream as M,
@@ -16,7 +16,10 @@ import {
   ProcessingLevel,
   Unit,
 } from '../../types'
-import { normalizeLinkCollection } from './link-normalization'
+import {
+  normalizeLinkCollection,
+  normalizeLinkRecord,
+} from './link-normalization'
 
 const DATASTREAM_EXPAND_INCLUDE =
   'workspace,monitoringSite,method,observedProperty,processingLevel,unit' as const
@@ -190,7 +193,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
   getTagKeys(params: { workspace_id?: string; datastream_id?: string }) {
-    const url = this.withQuery(`${this._route}/tags/keys`, params)
+    const url = this.withQuery(`${this._collectionRoute}/tags/keys`, params)
     return apiMethods.fetch<TagKeyResponse>(url)
   }
 
@@ -230,7 +233,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     const url = `${this._route}/${datastreamId}/linked-resources`
     const res = await apiMethods.post<{ id: string }>(url, data)
     if (!res.ok) return res
-    return this.findLinkedResource(datastreamId, res.data.id)
+    return this.getLinkedResource(datastreamId, res.data.id)
   }
 
   async updateLinkedResource(
@@ -241,24 +244,17 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
     const res = await apiMethods.patch<null>(url, data)
     if (!res.ok) return res
-    return this.findLinkedResource(datastreamId, linkedResourceId)
+    return this.getLinkedResource(datastreamId, linkedResourceId)
   }
 
-  private async findLinkedResource(
+  async getLinkedResource(
     datastreamId: string,
     linkedResourceId: string
   ): Promise<ApiResponse<LinkedResourceResponse>> {
-    const res = await this.getLinkedResources(datastreamId)
+    const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.fetch<LinkedResourceResponse>(url)
     if (!res.ok) return res
-    const found = res.data.find((r) => r.id === linkedResourceId)
-    if (!found) {
-      return {
-        ok: false,
-        status: 404,
-        message: 'Linked resource not found after save.',
-      }
-    }
-    return { ...res, data: found }
+    return { ...res, data: normalizeLinkRecord(res.data, this._client.host) }
   }
 
   deleteLinkedResource(datastreamId: string, linkedResourceId: string) {
@@ -281,7 +277,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     datastreamId: string,
     params: ObservationContract.QueryParameters
   ) {
-    const url = this.withQuery(`${this._client.baseRoute}/observations`, {
+    const url = this.withQuery(`${this._client.baseRoute}/collections/observations/items`, {
       ...params,
       datastream_id: datastreamId,
     })
@@ -289,7 +285,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   }
 
   createObservation(datastreamId: string, body: ObservationPostBody) {
-    const url = `${this._client.baseRoute}/observations`
+    const url = `${this._client.baseRoute}/collections/observations/items`
     return apiMethods.post<CreatedResponse>(url, {
       ...body,
       datastreamId,
@@ -302,14 +298,14 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     params?: ObservationBulkPostQueryParameters
   ) {
     const url = this.withQuery(
-      `${this._client.baseRoute}/observations/bulk-create`,
+      `${this._client.baseRoute}/collections/observations/bulk-create`,
       params
     )
     return apiMethods.post<NoContentResponse>(url, { ...body, datastreamId })
   }
 
   deleteObservations(datastreamId: string, body?: ObservationBulkDeleteBody) {
-    const url = `${this._client.baseRoute}/observations/bulk-delete`
+    const url = `${this._client.baseRoute}/collections/observations/bulk-delete`
     return apiMethods.post<NoContentResponse>(url, {
       ...(body || { phenomenonTimeStart: null, phenomenonTimeEnd: null }),
       datastreamId,
@@ -317,14 +313,14 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   }
 
   getObservation(_datastreamId: string, observationId: string) {
-    const url = `${this._client.baseRoute}/observations/${encodeURIComponent(
+    const url = `${this._client.baseRoute}/collections/observations/items/${encodeURIComponent(
       observationId
     )}`
     return apiMethods.fetch<ObservationResponse>(url)
   }
 
   deleteObservation(_datastreamId: string, observationId: string) {
-    const url = `${this._client.baseRoute}/observations/${observationId}`
+    const url = `${this._client.baseRoute}/collections/observations/items/${observationId}`
     return apiMethods.delete<NoContentResponse>(url)
   }
 
@@ -332,7 +328,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     ApiResponse<VisualizationBootstrap>
   > {
     const res = await apiMethods.fetch<VisualizationBootstrapPayload>(
-      `${this._route}/visualization-bootstrap`
+      `${this._collectionRoute}/visualization-bootstrap`
     )
     if (!res.ok) return res
 

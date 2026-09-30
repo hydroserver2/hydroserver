@@ -15,7 +15,7 @@ from tests.processing.etl.factories import EtlTaskFactory, EtlMappingFactory
 
 pytestmark = pytest.mark.django_db
 
-MAPPINGS_URL = "/api/data/etl-mappings"
+MAPPINGS_URL = "/api/ogc/collections/etl-mappings/items"
 
 MAPPING_FIELDS = {"id", "sourceIdentifier", "targetDatastreamId", "etlTaskId"}
 

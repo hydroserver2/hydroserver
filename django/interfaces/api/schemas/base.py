@@ -1,19 +1,35 @@
 import copy
 import uuid
 
-from typing import Optional, Any, Union, Annotated, Generic, TypeVar, get_args
+from typing import Optional, Any, Union, Annotated, Generic, Literal, TypeVar, get_args, get_origin
 from ninja import Schema, Query
 from pydantic.alias_generators import to_camel
 from pydantic import (
+    AfterValidator,
     AliasGenerator,
     AliasChoices,
+    BeforeValidator,
     ConfigDict,
+    ValidationInfo,
     field_validator,
     model_serializer,
     SerializationInfo,
+    WithJsonSchema,
 )
 
 from core.types import Unset
+from interfaces.api.http.links import (
+    Link,
+    build_collection_link,
+    build_page_links,
+    build_self_link,
+    get_request,
+)
+
+MAX_LIMIT = 100000
+NULL_QUERY_VALUE = "null"
+
+T = TypeVar("T")
 
 base_alias_generator = AliasGenerator(
     serialization_alias=lambda field_name: to_camel(field_name),
@@ -42,6 +58,53 @@ def split_comma_separated(value: Any) -> Optional[list[str]]:
     return result
 
 
+def split_sortby(value: Any) -> Optional[list[str]]:
+    """
+    Splits sortby values like split_comma_separated and drops a leading '+', which means
+    ascending, the same as no prefix (OGC API - Features Part 8 Req 5). An unencoded '+' arrives
+    as a space, which the split already trims.
+    """
+
+    fields = split_comma_separated(value)
+
+    if fields is None:
+        return None
+
+    return [
+        field[1:] if field.startswith("+") and field[1:2] not in ("+", "-") else field
+        for field in fields
+    ]
+
+
+def parse_query_bool(value: Any) -> Any:
+    """Accepts only the lowercase strings 'true' and 'false' for a boolean query parameter."""
+
+    if isinstance(value, bool):
+        return value
+
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+
+    raise ValueError("Boolean query parameters must be 'true' or 'false'")
+
+
+def clamp_limit(value: Optional[int]) -> Optional[int]:
+    """Caps a page size at MAX_LIMIT."""
+
+    return value if value is None else min(value, MAX_LIMIT)
+
+
+def accepts_null(annotation: Any) -> bool:
+    """Returns whether a query parameter's type admits the value 'null'."""
+
+    if get_origin(annotation) is Literal:
+        return NULL_QUERY_VALUE in get_args(annotation)
+
+    return any(accepts_null(arg) for arg in get_args(annotation))
+
+
 def comma_array_schema(literal_type: Any) -> dict:
     """
     Generates a JSON schema for an array of strings based on a given Python Literal type.
@@ -59,134 +122,94 @@ def comma_array_schema(literal_type: Any) -> dict:
     }
 
 
-def parse_requested_properties(info: SerializationInfo) -> Optional[set[str]]:
+def sortby_array_schema(literal_type: Any) -> dict:
     """
-    Parses and retrieves the requested properties from the serialization context.
-
-    Extracts the "properties" parameter from the serialization context's request and
-    converts it into a set of property names. If no properties are specified in the
-    request, the function returns None.
+    Generates the JSON schema for a comma-separated sortby parameter. The enum lists each field
+    in the given Literal type, which holds 'field' and '-field', plus '+field' for ascending.
     """
 
-    request = (info.context or {}).get("request") if info.context else None
-    query_dict = getattr(request, "GET", None) if request is not None else None
-    raw_values = query_dict.getlist("properties") if query_dict is not None else []
-    parsed = split_comma_separated(raw_values)
+    schema = comma_array_schema(literal_type)
+    fields = schema["items"]["enum"]
+    schema["items"]["enum"] = [
+        *fields,
+        *[f"+{field}" for field in fields if not field.startswith("-")],
+    ]
 
-    if not parsed:
-        return None
-
-    return set(parsed)
+    return schema
 
 
-def filter_requested_properties(item: Any, requested: set[str]) -> Any:
-    """
-    Filters properties of a dictionary based on a specified set of keys.
+QueryBool = Annotated[
+    bool,
+    BeforeValidator(parse_query_bool),
+    WithJsonSchema({"type": "boolean"}),
+]
 
-    This function takes a dictionary and a set of requested keys and returns a new dictionary
-    containing only the key-value pairs where the key exists in the requested set. If the input
-    item is not a dictionary, it is returned as is.
-    """
+LimitQuery = Annotated[
+    Optional[int],
+    AfterValidator(clamp_limit),
+    WithJsonSchema({"type": "integer", "minimum": 0, "maximum": MAX_LIMIT}),
+]
 
-    if not isinstance(item, dict):
-        return item
 
-    return {k: v for k, v in item.items() if k in requested}
+def properties_query():
+    return Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+
+
+def offset_query():
+    return Query(0, ge=0, description="Number of items to skip.")
+
+
+def limit_query():
+    return Query(
+        100,
+        ge=0,
+        description=f"The maximum number of items to return. (default: 100, maximum: {MAX_LIMIT})",
+    )
 
 
 class BaseQueryParameters(Schema):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
     @field_validator("*", mode="after")
-    def convert_null_strings(value: Any) -> Any:  # noqa
-        if isinstance(value, str) and value.lower() == "null":
+    @classmethod
+    def convert_null_values(cls, value: Any, info: ValidationInfo) -> Any:
+        """
+        Converts 'null' to None for parameters whose type declares Literal["null"], where it
+        selects items whose value is null. Matching is case-sensitive, and parameters that
+        don't declare it treat 'null' as an ordinary value.
+        """
+
+        if not accepts_null(cls.model_fields[info.field_name].annotation):
+            return value
+
+        if value == NULL_QUERY_VALUE:
             return None
         if isinstance(value, list):
-            return [
-                None if isinstance(v, str) and v.lower() == "null" else v for v in value
-            ]
+            return [None if v == NULL_QUERY_VALUE else v for v in value]
+
         return value
 
 
 class CollectionQueryParameters(BaseQueryParameters):
-    properties: Optional[str] = Query(
-        None,
-        description="Comma-separated list of properties to include in the response. "
-        "All properties are returned if omitted.",
-    )
+    properties: Optional[str] = properties_query()
     include: Optional[str] = Query(
         None,
         description="Comma-separated list of related resources to include in the response.",
     )
-    offset: Optional[int] = Query(0, ge=0, description="Number of items to skip.")
-    limit: Optional[int] = Query(
-        100, ge=0, le=100000, description="The maximum number of items to return."
-    )
+    offset: Optional[int] = offset_query()
+    limit: LimitQuery = limit_query()
 
 
-class BaseGetResponse(Schema):
-    model_config = ConfigDict(
-        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
-    )
+class PaginatedQueryParameters(BaseQueryParameters):
+    """CollectionQueryParameters without include, for collections whose items have no related resources."""
 
-
-class CreatedResponse(Schema):
-    id: uuid.UUID
-
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-
-class PaginationMeta(Schema):
-    limit: int
-    offset: int
-    total_count: int
-
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-
-T = TypeVar("T")
-
-
-class ItemResponse(Schema, Generic[T]):
-    included: Optional[dict[str, list[Any]]] = None
-    data: T
-
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    @model_serializer(mode="wrap")
-    def _finalize(self, handler, info: SerializationInfo):
-        data = handler(self)
-        if not isinstance(data, dict):
-            return data
-
-        requested = parse_requested_properties(info)
-        if requested is not None:
-            data["data"] = filter_requested_properties(data.get("data"), requested)
-
-        return data
-
-
-class PaginatedResponse(Schema, Generic[T]):
-    included: Optional[dict[str, list[Any]]] = None
-    data: list[T]
-    meta: PaginationMeta
-
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    @model_serializer(mode="wrap")
-    def _finalize(self, handler, info: SerializationInfo):
-        data = handler(self)
-        if not isinstance(data, dict):
-            return data
-
-        if not data.get("included"):
-            data.pop("included", None)
-
-        requested = parse_requested_properties(info)
-        if requested is not None and isinstance(data.get("data"), list):
-            data["data"] = [filter_requested_properties(item, requested) for item in data["data"]]
-
-        return data
+    properties: Optional[str] = properties_query()
+    offset: Optional[int] = offset_query()
+    limit: LimitQuery = limit_query()
 
 
 class BasePostBody(Schema):
@@ -249,3 +272,128 @@ class BasePatchBody(Schema, metaclass=PartialMetaclass):
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
     )
+
+
+def parse_requested_properties(info: SerializationInfo) -> Optional[set[str]]:
+    """
+    Parses and retrieves the requested properties from the serialization context.
+
+    Extracts the "properties" parameter from the serialization context's request and
+    converts it into a set of property names. If no properties are specified in the
+    request, the function returns None.
+    """
+
+    request = (info.context or {}).get("request") if info.context else None
+    query_dict = getattr(request, "GET", None) if request is not None else None
+    raw_values = query_dict.getlist("properties") if query_dict is not None else []
+    parsed = split_comma_separated(raw_values)
+
+    if not parsed:
+        return None
+
+    return set(parsed)
+
+
+def filter_requested_properties(item: Any, requested: set[str]) -> Any:
+    """
+    Filters properties of a dictionary based on a specified set of keys.
+
+    This function takes a dictionary and a set of requested keys and returns a new dictionary
+    containing only the key-value pairs where the key exists in the requested set. If the input
+    item is not a dictionary, it is returned as is.
+    """
+
+    if not isinstance(item, dict):
+        return item
+
+    return {k: v for k, v in item.items() if k in requested}
+
+
+def page_links(info: SerializationInfo, meta: "PaginationMeta", returned: int) -> Optional[list[dict]]:
+    """Serialized self, next and prev links for a page of results, or None without a request."""
+
+    request = get_request(info)
+    if request is None:
+        return None
+
+    return [
+        link.model_dump(exclude_none=True)
+        for link in build_page_links(request, meta.offset, meta.limit, returned)
+    ]
+
+
+class BaseGetResponse(Schema):
+    model_config = ConfigDict(
+        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
+    )
+
+
+class CreatedResponse(Schema):
+    id: uuid.UUID
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+class PaginationMeta(Schema):
+    limit: int
+    offset: int
+    total_count: int
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+class ItemResponse(Schema, Generic[T]):
+    included: Optional[dict[str, list[Any]]] = None
+    data: T
+    links: list[Link] = []
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        requested = parse_requested_properties(info)
+        if requested is not None:
+            data["data"] = filter_requested_properties(data.get("data"), requested)
+
+        if self.links:
+            data["links"] = [link.model_dump(exclude_none=True) for link in self.links]
+            return data
+
+        request = get_request(info)
+        if request is not None:
+            links = [build_self_link(request), build_collection_link(request)]
+            data["links"] = [link.model_dump(exclude_none=True) for link in links if link is not None]
+
+        return data
+
+
+class PaginatedResponse(Schema, Generic[T]):
+    included: Optional[dict[str, list[Any]]] = None
+    data: list[T]
+    meta: PaginationMeta
+    links: list[Link] = []
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        if not data.get("included"):
+            data.pop("included", None)
+
+        requested = parse_requested_properties(info)
+        if requested is not None and isinstance(data.get("data"), list):
+            data["data"] = [filter_requested_properties(item, requested) for item in data["data"]]
+
+        links = page_links(info, self.meta, len(self.data))
+        if links is not None:
+            data["links"] = links
+
+        return data

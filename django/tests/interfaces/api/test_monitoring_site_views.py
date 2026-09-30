@@ -1,9 +1,12 @@
+import uuid
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.test.utils import CaptureQueriesContext
 
+from core.sta.models import MonitoringSiteLinkedResource
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -11,11 +14,12 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MonitoringSiteFactory, MonitoringSiteTypeFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory, MonitoringSiteTypeFactory
 
 pytestmark = pytest.mark.django_db
 
-MONITORING_SITES_URL = "/api/data/monitoring-sites"
+MONITORING_SITES_COLLECTION_URL = "/api/ogc/collections/monitoring-sites"
+MONITORING_SITES_URL = f"{MONITORING_SITES_COLLECTION_URL}/items"
 
 
 def _detail_url(monitoring_site_id):
@@ -85,6 +89,177 @@ def test_get_monitoring_sites_includes_private_monitoring_site_for_workspace_own
 
 def test_get_monitoring_sites_returns_400_for_malformed_bbox(client):
     response = client.get(MONITORING_SITES_URL, {"bbox": "not,a,valid,bbox"})
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "bbox",
+    ["-181,40,-111,41", "-112,-91,-111,41", "-112,41,-111,40", "-112,40,-111", "-112,40,100,-111,41,0"],
+)
+def test_get_monitoring_sites_returns_400_for_invalid_bbox(client, bbox):
+    response = client.get(MONITORING_SITES_URL, {"bbox": bbox})
+
+    assert response.status_code == 400
+
+
+def _site_ids(response):
+    return {site["id"] for site in response.json()["data"]}
+
+
+def test_get_monitoring_sites_filters_by_bbox(client):
+    inside = MonitoringSiteFactory(longitude=-111.5, latitude=40.5)
+    MonitoringSiteFactory(longitude=-100, latitude=40.5)
+
+    response = client.get(MONITORING_SITES_URL, {"bbox": "-112,40,-111,41"})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(inside.id)}
+
+
+def test_get_monitoring_sites_accepts_a_six_value_bbox_and_ignores_heights(client):
+    inside = MonitoringSiteFactory(longitude=-111.5, latitude=40.5, elevation_m=5000)
+    MonitoringSiteFactory(longitude=-100, latitude=40.5)
+
+    response = client.get(MONITORING_SITES_URL, {"bbox": "-112,40,0,-111,41,10"})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(inside.id)}
+
+
+def test_get_monitoring_sites_filters_by_a_bbox_crossing_the_antimeridian(client):
+    east = MonitoringSiteFactory(longitude=175, latitude=-15)
+    west = MonitoringSiteFactory(longitude=-175, latitude=-15)
+    MonitoringSiteFactory(longitude=0, latitude=-15)
+
+    response = client.get(MONITORING_SITES_URL, {"bbox": "170,-20,-170,-10"})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(east.id), str(west.id)}
+
+
+# --- datetime ----------------------------------------------------------------------------
+#
+# A site's time is the observed time of each of its datastreams the requester can view. It
+# matches a datetime when one of those datastreams overlaps it, or when none of them has
+# observations (no time matches any datetime, per OGC API - Features Core Req 26C).
+
+
+def _observed_datastream(monitoring_site, begin, end, **kwargs):
+    return DatastreamFactory(
+        monitoring_site=monitoring_site,
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=end,
+        **kwargs,
+    )
+
+
+def test_get_monitoring_sites_datetime_matches_sites_with_an_overlapping_datastream(client):
+    overlapping = MonitoringSiteFactory()
+    _observed_datastream(overlapping, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+    touching = MonitoringSiteFactory()
+    _observed_datastream(touching, "2024-03-01T00:00:00Z", "2024-04-01T00:00:00Z")
+    before = MonitoringSiteFactory()
+    _observed_datastream(before, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+
+    response = client.get(
+        MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z/2024-03-01T00:00:00Z"}
+    )
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(overlapping.id), str(touching.id)}
+
+
+def test_get_monitoring_sites_datetime_requires_one_datastream_to_overlap(client):
+    # Neither datastream has observations in March, even though the site's overall span does.
+    site = MonitoringSiteFactory()
+    _observed_datastream(site, "2024-01-01T00:00:00Z", "2024-02-01T00:00:00Z")
+    _observed_datastream(site, "2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z")
+
+    march = client.get(MONITORING_SITES_URL, {"datetime": "2024-03-01T00:00:00Z/2024-03-31T00:00:00Z"})
+    june = client.get(MONITORING_SITES_URL, {"datetime": "2024-06-15T00:00:00Z"})
+
+    assert str(site.id) not in _site_ids(march)
+    assert str(site.id) in _site_ids(june)
+
+
+@pytest.mark.parametrize(
+    "datetime_value, expected",
+    [
+        ("2024-06-01T00:00:00Z/..", {"later"}),
+        ("../2024-01-31T00:00:00Z", {"earlier"}),
+        ("2024-06-01T00:00:00Z/", {"later"}),
+    ],
+)
+def test_get_monitoring_sites_datetime_accepts_half_bounded_intervals(client, datetime_value, expected):
+    sites = {
+        "earlier": MonitoringSiteFactory(),
+        "later": MonitoringSiteFactory(),
+    }
+    _observed_datastream(sites["earlier"], "2024-01-01T00:00:00Z", "2024-02-01T00:00:00Z")
+    _observed_datastream(sites["later"], "2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z")
+
+    response = client.get(MONITORING_SITES_URL, {"datetime": datetime_value})
+
+    assert response.status_code == 200
+    assert _site_ids(response) == {str(sites[name].id) for name in expected}
+
+
+def test_get_monitoring_sites_datetime_matches_sites_without_observed_datastreams(client):
+    without_datastreams = MonitoringSiteFactory()
+    without_observations = MonitoringSiteFactory()
+    DatastreamFactory(monitoring_site=without_observations)
+
+    response = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert _site_ids(response) == {str(without_datastreams.id), str(without_observations.id)}
+
+
+def test_get_monitoring_sites_datetime_ignores_private_datastreams_the_requester_cannot_view(client):
+    # A private datastream that overlaps must not make the site match...
+    hidden_overlap = MonitoringSiteFactory()
+    _observed_datastream(hidden_overlap, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z")
+    _observed_datastream(hidden_overlap, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    # ...and a site whose only observed datastream is private has no visible time, so it matches.
+    only_private = MonitoringSiteFactory()
+    _observed_datastream(only_private, "2023-01-01T00:00:00Z", "2023-02-01T00:00:00Z", private=True)
+
+    response = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+
+    assert str(hidden_overlap.id) not in _site_ids(response)
+    assert str(only_private.id) in _site_ids(response)
+
+
+def test_get_monitoring_sites_datetime_uses_private_datastreams_the_owner_can_view(client):
+    owner = UserFactory()
+    site = MonitoringSiteFactory(workspace=WorkspaceFactory(owner=owner))
+    _observed_datastream(site, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z", private=True)
+    client.force_login(owner)
+
+    overlapping = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01T00:00:00Z"})
+    elsewhere = client.get(MONITORING_SITES_URL, {"datetime": "2020-01-01T00:00:00Z"})
+
+    assert str(site.id) in _site_ids(overlapping)
+    assert str(site.id) not in _site_ids(elsewhere)
+
+
+def test_get_monitoring_sites_datetime_combines_with_bbox(client):
+    inside = MonitoringSiteFactory(longitude=-111.5, latitude=40.5)
+    _observed_datastream(inside, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+    inside_elsewhen = MonitoringSiteFactory(longitude=-111.5, latitude=40.5)
+    _observed_datastream(inside_elsewhen, "2020-01-01T00:00:00Z", "2020-03-01T00:00:00Z")
+    outside = MonitoringSiteFactory(longitude=-100, latitude=40.5)
+    _observed_datastream(outside, "2024-01-01T00:00:00Z", "2024-03-01T00:00:00Z")
+
+    response = client.get(
+        MONITORING_SITES_URL, {"bbox": "-112,40,-111,41", "datetime": "2024-02-01T00:00:00Z"}
+    )
+
+    assert _site_ids(response) == {str(inside.id)}
+
+
+def test_get_monitoring_sites_returns_400_for_invalid_datetime(client):
+    response = client.get(MONITORING_SITES_URL, {"datetime": "2024-02-01"})
 
     assert response.status_code == 400
 
@@ -277,7 +452,7 @@ def test_create_monitoring_site_returns_403_without_create_permission(client):
 
 
 def test_get_site_type_icons_returns_configured_icon_mappings(client):
-    response = client.get(f"{MONITORING_SITES_URL}/site-type-icons")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/site-type-icons")
 
     assert response.status_code == 200
     icons = {entry["icon"] for entry in response.json()}
@@ -682,23 +857,53 @@ def test_get_monitoring_site_markers_returns_marker_for_public_monitoring_site(c
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
 
-    response = client.get(f"{MONITORING_SITES_URL}/markers")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers")
 
     assert response.status_code == 200
     assert str(monitoring_site.id) in [m["id"] for m in response.json()]
 
 
 def test_get_monitoring_site_markers_returns_400_for_malformed_bbox(client):
-    response = client.get(f"{MONITORING_SITES_URL}/markers", {"bbox": "not,a,valid,bbox"})
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "not,a,valid,bbox"})
 
     assert response.status_code == 400
+
+
+def test_get_monitoring_site_markers_returns_400_for_out_of_range_bbox(client):
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "-112,40,-111,91"})
+
+    assert response.status_code == 400
+
+
+def test_get_monitoring_site_markers_filters_public_markers_by_a_bbox_crossing_the_antimeridian(client):
+    east = MonitoringSiteFactory(longitude=175, latitude=-15)
+    west = MonitoringSiteFactory(longitude=-175, latitude=-15)
+    MonitoringSiteFactory(longitude=0, latitude=-15)
+
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "170,-20,-170,-10"})
+
+    assert response.status_code == 200
+    assert {m["id"] for m in response.json()} == {str(east.id), str(west.id)}
+
+
+def test_get_monitoring_site_markers_filters_private_markers_by_bbox(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    inside = MonitoringSiteFactory(workspace=workspace, private=True, longitude=-111.5, latitude=40.5)
+    MonitoringSiteFactory(workspace=workspace, private=True, longitude=-100, latitude=40.5)
+    client.force_login(owner)
+
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/markers", {"bbox": "-112,40,-111,41"})
+
+    assert response.status_code == 200
+    assert {m["id"] for m in response.json()} == {str(inside.id)}
 
 
 def test_get_monitoring_site_site_summaries_returns_summary_for_public_monitoring_site(client):
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
 
-    response = client.get(f"{MONITORING_SITES_URL}/site-summaries")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/site-summaries")
 
     assert response.status_code == 200
     assert str(monitoring_site.id) in [s["id"] for s in response.json()]
@@ -710,7 +915,7 @@ def test_get_monitoring_site_task_summaries_returns_summary_for_workspace_owner(
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
     client.force_login(owner)
 
-    response = client.get(f"{MONITORING_SITES_URL}/task-summaries")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/task-summaries")
 
     assert response.status_code == 200
     summary = next(s for s in response.json() if s["id"] == str(monitoring_site.id))
@@ -726,7 +931,7 @@ def test_get_monitoring_site_tag_keys_returns_keys_for_workspace_owner(client):
     monitoring_site.save()
     client.force_login(owner)
 
-    response = client.get(f"{MONITORING_SITES_URL}/tags/keys")
+    response = client.get(f"{MONITORING_SITES_COLLECTION_URL}/tags/keys")
 
     assert response.status_code == 200
     assert response.json()["season"] == ["summer"]
@@ -737,6 +942,98 @@ def test_get_monitoring_site_tag_keys_returns_keys_for_workspace_owner(client):
 
 def _linked_resources_url(monitoring_site_id):
     return f"{_detail_url(monitoring_site_id)}/linked-resources"
+
+
+def _make_monitoring_site_linked_resources(owner, names):
+    workspace = WorkspaceFactory(owner=owner)
+    parent = MonitoringSiteFactory(workspace=workspace)
+    for name in names:
+        MonitoringSiteLinkedResource.objects.create(monitoring_site=parent, name=name, type="Report", url=f"https://example.com/{name}")
+    return parent
+
+
+def test_get_monitoring_site_linked_resources_pages_by_name(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["C", "A", "B"])
+    client.force_login(owner)
+
+    first = client.get(_linked_resources_url(parent.id), {"limit": 2}).json()
+    second = client.get(_linked_resources_url(parent.id), {"limit": 2, "offset": 2}).json()
+
+    assert [item["name"] for item in first["data"]] == ["A", "B"]
+    assert first["meta"] == {"limit": 2, "offset": 0, "totalCount": 3}
+    assert "next" in [link["rel"] for link in first["links"]]
+    assert [item["name"] for item in second["data"]] == ["C"]
+
+
+def test_get_monitoring_site_linked_resources_selects_properties(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(_linked_resources_url(parent.id), {"properties": "name"})
+
+    assert response.json()["data"] == [{"name": "A"}]
+
+
+def test_get_monitoring_site_linked_resources_rejects_include(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(_linked_resources_url(parent.id), {"include": "monitoringSite"})
+
+    assert response.status_code == 400
+
+
+def test_get_monitoring_site_linked_resource_returns_item(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A", "B"])
+    linked_resource = MonitoringSiteLinkedResource.objects.get(monitoring_site=parent, name="B")
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{linked_resource.id}")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["id"] == str(linked_resource.id)
+    assert data["name"] == "B"
+    assert data["type"] == "Report"
+    assert data["link"] == "https://example.com/B"
+
+
+def test_get_monitoring_site_linked_resource_returns_404_for_unknown_id(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{uuid.uuid4()}")
+
+    assert response.status_code == 404
+
+
+def test_get_monitoring_site_linked_resource_returns_404_for_other_parents_resource(client):
+    owner = UserFactory()
+    parent = _make_monitoring_site_linked_resources(owner, ["A"])
+    other_parent = _make_monitoring_site_linked_resources(owner, ["B"])
+    other_resource = MonitoringSiteLinkedResource.objects.get(monitoring_site=other_parent)
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{other_resource.id}")
+
+    assert response.status_code == 404
+
+
+def test_get_monitoring_site_linked_resource_returns_404_for_private_parent_when_outsider(client):
+    parent = MonitoringSiteFactory(workspace=WorkspaceFactory(), private=True)
+    linked_resource = MonitoringSiteLinkedResource.objects.create(
+        monitoring_site=parent, name="A", type="Report", url="https://example.com/A"
+    )
+    client.force_login(UserFactory())
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{linked_resource.id}")
+
+    assert response.status_code == 404
 
 
 def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
@@ -756,7 +1053,7 @@ def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
 
     assert response.status_code == 201
     assert set(response.json().keys()) == {"id"}
-    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()
+    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()["data"]
     assert linked_resources[0]["name"] == "Site Report"
 
 
@@ -811,7 +1108,7 @@ def test_update_monitoring_site_linked_resource_succeeds_for_name(client):
 
     assert response.status_code == 204
     assert not response.content
-    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()
+    linked_resources = client.get(_linked_resources_url(monitoring_site.id)).json()["data"]
     assert linked_resources[0]["name"] == "Updated Report"
 
 

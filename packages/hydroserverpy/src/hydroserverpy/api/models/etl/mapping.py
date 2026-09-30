@@ -23,4 +23,4 @@ class EtlMapping(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "etl-mappings"
+        return "collections/etl-mappings/items"

@@ -29,7 +29,7 @@ datastream_service = DatastreamAPIService()
 
 
 @datastream_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[DatastreamResponse],
@@ -52,6 +52,8 @@ def get_datastreams(
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
+        bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 
@@ -79,7 +81,7 @@ def get_datastream_visualization_bootstrap(
 
 
 @datastream_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -126,7 +128,7 @@ def get_datastream_tag_keys(
 
 
 @datastream_router.get(
-    "/{datastream_id}",
+    "/items/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[DatastreamResponse],
@@ -150,7 +152,7 @@ def get_datastream(
 
 
 @datastream_router.patch(
-    "/{datastream_id}",
+    "/items/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -180,7 +182,7 @@ def update_datastream(
 
 
 @datastream_router.delete(
-    "/{datastream_id}",
+    "/items/{datastream_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -201,10 +203,10 @@ def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.
 
 
 @datastream_router.get(
-    "/{datastream_id}/linked-resources",
+    "/items/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[LinkedResourceGetResponse],
+        200: PaginatedResponse[LinkedResourceGetResponse],
         401: str,
         403: str,
     },
@@ -222,12 +224,14 @@ def get_datastream_linked_resources(
     return 200, datastream_service.get_linked_resources(
         principal=request.principal,
         uid=datastream_id,
+        offset=query.offset,
+        limit=query.limit,
         filtering=query.dict(exclude_unset=True),
     )
 
 
 @datastream_router.post(
-    "/{datastream_id}/linked-resources",
+    "/items/{datastream_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -264,8 +268,37 @@ def add_datastream_linked_resource(
     )
 
 
+@datastream_router.get(
+    "/items/{datastream_id}/linked-resources/{linked_resource_id}",
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[LinkedResourceGetResponse],
+        401: str,
+        403: str,
+        404: str,
+    },
+    by_alias=True,
+)
+def get_datastream_linked_resource(
+    request: HydroServerHttpRequest,
+    datastream_id: Path[uuid.UUID],
+    linked_resource_id: Path[uuid.UUID],
+):
+    """
+    Get a linked resource associated with a Datastream.
+    """
+
+    return 200, {
+        "data": datastream_service.get_linked_resource(
+            principal=request.principal,
+            uid=datastream_id,
+            linked_resource_id=linked_resource_id,
+        )
+    }
+
+
 @datastream_router.patch(
-    "/{datastream_id}/linked-resources/{linked_resource_id}",
+    "/items/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -307,7 +340,7 @@ def update_datastream_linked_resource(
 
 
 @datastream_router.delete(
-    "/{datastream_id}/linked-resources/{linked_resource_id}",
+    "/items/{datastream_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -334,7 +367,7 @@ def remove_datastream_linked_resource(
 
 
 @datastream_router.get(
-    "/{datastream_id}/csv",
+    "/items/{datastream_id}/csv",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: None, 403: str, 404: str},
 )

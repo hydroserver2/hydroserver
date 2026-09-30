@@ -20,7 +20,7 @@ from tests.processing.products.factories import (
 
 pytestmark = pytest.mark.django_db
 
-TRANSFORMATIONS_URL = "/api/data/data-product-transformations"
+TRANSFORMATIONS_URL = "/api/ogc/collections/data-product-transformations/items"
 
 TRANSFORMATION_FIELDS = {
     "id",

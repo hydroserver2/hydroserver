@@ -11,9 +11,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.products.rating_curve import RatingCurveResponse
 
@@ -105,11 +108,13 @@ class DataProductTransformationItemQueryParameters(
 
 
 class DataProductTransformationQueryParameters(
-    DataProductTransformationFilterFields, CollectionQueryParameters
+    DataProductTransformationFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
-    sortby: Optional[list[DataProductTransformationSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[DataProductTransformationSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(DataProductTransformationSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     transformation_type: list[str] = Query(
         [], description="Filter transformations by type."
     )

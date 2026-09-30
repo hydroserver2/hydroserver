@@ -32,7 +32,7 @@ class DataProductTransformationService:
         raise TypeError(f"Type {type(obj)} not serializable")
 
     def _route(self) -> str:
-        return f"/{self.client.base_route}/data-product-transformations"
+        return f"/{self.client.base_route}/collections/data-product-transformations/items"
 
     def _list(
         self,

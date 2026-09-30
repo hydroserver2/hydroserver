@@ -28,7 +28,7 @@ observation_service = ObservationAPIService()
 
 
 @observation_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservationResponse]
@@ -58,11 +58,13 @@ def get_observations(
         filtering=query.dict(exclude_unset=True),
         response_format=query.response_format,
         include=query.include,
+        bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 
 @observation_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -131,7 +133,7 @@ def delete_observations(
 
 
 @observation_router.get(
-    "/{observation_id}",
+    "/items/{observation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ObservationResponse],
@@ -157,7 +159,7 @@ def get_observation(
 
 
 @observation_router.delete(
-    "/{observation_id}",
+    "/items/{observation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

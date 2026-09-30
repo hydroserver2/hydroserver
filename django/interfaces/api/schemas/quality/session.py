@@ -14,6 +14,9 @@ from interfaces.api.schemas import (
     UserContactResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
 from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
 
@@ -65,14 +68,16 @@ class QualityControlSessionItemQueryParameters(QualityControlSessionFilterFields
 
 
 class QualityControlSessionQueryParameters(QualityControlSessionFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[QualityControlSessionSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[QualityControlSessionSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(QualityControlSessionSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     status: Optional[SessionStatus] = None
     range_start: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range start.")
     range_end: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range end.")
     ancestor_of: Optional[uuid.UUID] = Query(None, description="Return all transitive ancestors of the given session ID.")
-    include_ancestors: bool = Query(False, description="Also return transitive ancestors of all sessions matched by other filters.")
+    include_ancestors: QueryBool = Query(False, description="Also return transitive ancestors of all sessions matched by other filters.")
 
 
 class QualityControlSessionResponse(BaseGetResponse):

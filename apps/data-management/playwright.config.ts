@@ -108,7 +108,7 @@ export default defineConfig({
         E2E_TESTING: 'True',
         E2E_CONTROL_TOKEN: e2eControlToken,
       },
-      url: `${apiBaseUrl}/api/data/workspaces`,
+      url: `${apiBaseUrl}/api/ogc/collections/workspaces/items`,
       // Isolated per-test scenarios make reusing a developer's local API safe
       // and remove repeated migration/startup cost. CI always starts fresh.
       reuseExistingServer: !process.env.CI,

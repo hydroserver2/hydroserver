@@ -22,7 +22,7 @@ data_connection_service = DataConnectionAPIService()
 
 
 @data_connection_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[DataConnectionResponse],
@@ -49,7 +49,7 @@ def get_data_connections(
 
 
 @data_connection_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -87,7 +87,7 @@ def create_data_connection(
 
 
 @data_connection_router.get(
-    "/{data_connection_id}",
+    "/items/{data_connection_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[DataConnectionResponse],
@@ -114,7 +114,7 @@ def get_data_connection(
 
 
 @data_connection_router.patch(
-    "/{data_connection_id}",
+    "/items/{data_connection_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -155,7 +155,7 @@ def update_data_connection(
 
 
 @data_connection_router.delete(
-    "/{data_connection_id}",
+    "/items/{data_connection_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

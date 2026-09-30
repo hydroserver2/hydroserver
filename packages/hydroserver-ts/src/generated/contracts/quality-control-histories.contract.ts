@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace QualityControlHistoryContract {
-  export const route = 'quality-control/histories' as const
+  export const route = 'collections/quality-control-histories/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_quality_history_get_qc_histories']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_quality_history_get_qc_histories']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['QualityControlHistoryResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_QualityControlHistoryResponse_']

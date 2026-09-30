@@ -32,7 +32,7 @@ class FakeResponse:
 
 def make_client():
     client = MagicMock()
-    client.base_route = "/api/data"
+    client.base_route = "/api/ogc"
     return client
 
 

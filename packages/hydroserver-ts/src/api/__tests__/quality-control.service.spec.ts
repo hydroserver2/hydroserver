@@ -39,7 +39,7 @@ describe('QualityControl services', () => {
 
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/quality-control/histories?managed_datastream_id=managed-1&offset=0&limit=200'
+      'https://hydro.example.com/api/ogc/collections/quality-control-histories/items?managed_datastream_id=managed-1&offset=0&limit=200'
     )
   })
 
@@ -63,7 +63,7 @@ describe('QualityControl services', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/quality-control/histories/history-1/sessions'
+      'https://hydro.example.com/api/ogc/collections/quality-control-histories/items/history-1/sessions'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -102,7 +102,7 @@ describe('QualityControl services', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/quality-control/histories/history-1/sessions/session-1/commit'
+      'https://hydro.example.com/api/ogc/collections/quality-control-histories/items/history-1/sessions/session-1/commit'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -134,7 +134,7 @@ describe('QualityControl services', () => {
     ])
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/quality-control/histories/history-1/sessions/session-1/operations'
+      'https://hydro.example.com/api/ogc/collections/quality-control-histories/items/history-1/sessions/session-1/operations'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual([

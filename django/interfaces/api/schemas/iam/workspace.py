@@ -11,10 +11,14 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     UserContactResponse,
     RoleResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
 
 
@@ -84,20 +88,22 @@ class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
     pass
 
 
-class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[WorkspaceSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[WorkspaceSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(WorkspaceSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
         "whitespace-separated words within a term are combined with AND.",
     )
-    is_associated: Optional[bool] = Query(
+    is_associated: Optional[QueryBool] = Query(
         None,
         description="Whether the workspace is associated with the authenticated user",
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None, description="Whether the returned workspaces should be private or public."
     )
 

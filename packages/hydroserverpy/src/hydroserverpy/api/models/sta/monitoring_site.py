@@ -44,7 +44,7 @@ class MonitoringSite(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "monitoring-sites"
+        return "collections/monitoring-sites/items"
 
     @property
     def workspace(self) -> "Workspace":

@@ -12,9 +12,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
 
@@ -84,10 +87,12 @@ class MethodItemQueryParameters(MethodFilterFields, BaseQueryParameters):
     pass
 
 
-class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[MethodSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[MethodSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MethodSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -103,8 +108,8 @@ class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters):
         [], description="Filter methods by datastream ID.", alias="datastream_id"
     )
     type: list[str] = Query([], description="Filter methods by type")
-    sensor_model: list[str] = Query([], description="Filter methods by sensor model")
-    sensor_model_manufacturer: list[str] = Query(
+    sensor_model: list[str | Literal["null"]] = Query([], description="Filter methods by sensor model")
+    sensor_model_manufacturer: list[str | Literal["null"]] = Query(
         [], description="Filter methods by sensor model manufacturer"
     )
 

@@ -35,7 +35,7 @@ monitoring_site_service = MonitoringSiteAPIService()
 
 
 @monitoring_site_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[MonitoringSiteResponse],
@@ -56,6 +56,8 @@ def get_monitoring_sites(
         offset=query.offset,
         limit=query.limit,
         sortby=query.sortby,
+        bbox=query.bbox,
+        datetime_interval=query.datetime,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
     )
@@ -80,6 +82,7 @@ def get_monitoring_site_markers(
 
     return 200, monitoring_site_service.list_markers(
         principal=request.principal,
+        bbox=query.bbox,
         filtering=query.dict(exclude_unset=True),
     )
 
@@ -132,7 +135,7 @@ def get_monitoring_site_task_summaries(
 
 
 @monitoring_site_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -191,7 +194,7 @@ def get_site_type_icons(request: HydroServerHttpRequest):
 
 
 @monitoring_site_router.get(
-    "/{monitoring_site_id}",
+    "/items/{monitoring_site_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[MonitoringSiteResponse],
@@ -215,7 +218,7 @@ def get_monitoring_site(
 
 
 @monitoring_site_router.patch(
-    "/{monitoring_site_id}",
+    "/items/{monitoring_site_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -245,7 +248,7 @@ def update_monitoring_site(
 
 
 @monitoring_site_router.delete(
-    "/{monitoring_site_id}",
+    "/items/{monitoring_site_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -264,10 +267,10 @@ def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: 
 
 
 @monitoring_site_router.get(
-    "/{monitoring_site_id}/linked-resources",
+    "/items/{monitoring_site_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[LinkedResourceGetResponse],
+        200: PaginatedResponse[LinkedResourceGetResponse],
         401: str,
         403: str,
     },
@@ -285,12 +288,14 @@ def get_monitoring_site_linked_resources(
     return 200, monitoring_site_service.get_linked_resources(
         principal=request.principal,
         uid=monitoring_site_id,
+        offset=query.offset,
+        limit=query.limit,
         filtering=query.dict(exclude_unset=True),
     )
 
 
 @monitoring_site_router.post(
-    "/{monitoring_site_id}/linked-resources",
+    "/items/{monitoring_site_id}/linked-resources",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -327,8 +332,37 @@ def add_monitoring_site_linked_resource(
     )
 
 
+@monitoring_site_router.get(
+    "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[LinkedResourceGetResponse],
+        401: str,
+        403: str,
+        404: str,
+    },
+    by_alias=True,
+)
+def get_monitoring_site_linked_resource(
+    request: HydroServerHttpRequest,
+    monitoring_site_id: Path[uuid.UUID],
+    linked_resource_id: Path[uuid.UUID],
+):
+    """
+    Get a linked resource associated with a MonitoringSite.
+    """
+
+    return 200, {
+        "data": monitoring_site_service.get_linked_resource(
+            principal=request.principal,
+            uid=monitoring_site_id,
+            linked_resource_id=linked_resource_id,
+        )
+    }
+
+
 @monitoring_site_router.patch(
-    "/{monitoring_site_id}/linked-resources/{linked_resource_id}",
+    "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -370,7 +404,7 @@ def update_monitoring_site_linked_resource(
 
 
 @monitoring_site_router.delete(
-    "/{monitoring_site_id}/linked-resources/{linked_resource_id}",
+    "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

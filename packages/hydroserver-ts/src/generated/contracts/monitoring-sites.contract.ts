@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace MonitoringSiteContract {
-  export const route = 'monitoring-sites' as const
+  export const route = 'collections/monitoring-sites/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_monitoring_site_get_monitoring_sites']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_monitoring_site_get_monitoring_sites']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['MonitoringSiteResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_MonitoringSiteResponse_']
