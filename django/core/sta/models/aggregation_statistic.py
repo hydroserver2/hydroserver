@@ -11,7 +11,7 @@ from core.iam.permissions.registry import register_resource_type
 class AggregationStatistic(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, default="")
+    description = models.TextField(null=True, blank=True)
     search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):

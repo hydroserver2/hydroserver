@@ -45,6 +45,8 @@ def test_create_metadata_without_optional_fields(service_class, fields):
      {"name": "ICE", "description": "Ice affected"}),
     (ResultQualifierService, ("ICE",), {"description": "Ice affected"},
      {"name": "ICE", "description": "Ice affected"}),
+    (ResultQualifierService, ("ICE",), {},
+     {"name": "ICE", "description": None}),
     (ProcessingLevelService, ("Raw", "Unprocessed"), {},
      {"name": "Raw", "description": "Unprocessed", "code": None}),
     (ProcessingLevelService, ("Raw", "Unprocessed"), {"code": "0"},

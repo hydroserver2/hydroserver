@@ -404,7 +404,9 @@ const searchQualifiers = computed(() => [
     ],
   },
 ])
-const parsedSearch = computed(() => parseDatastreamQuery(search.value))
+const parsedSearch = computed(() =>
+  parseDatastreamQuery(search.value, searchQualifiers.value)
+)
 const plainSearch = computed(() => parsedSearch.value.text)
 
 const canonicalValues = (candidates: string[], requested: string[]) => {

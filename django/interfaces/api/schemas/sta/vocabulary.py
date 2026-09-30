@@ -21,7 +21,7 @@ from interfaces.api.schemas import (
 
 class VocabularyFields(Schema):
     name: str = Field(..., max_length=255)
-    description: str = ""
+    description: str | None = None
 
 
 _sortby_fields = ("name",)

@@ -54,7 +54,7 @@ class ResultQualifierService(HydroServerBaseService):
         self,
         uid: Union[UUID, str],
         name: str = ...,
-        description: str = ...,
+        description: Optional[str] = ...,
     ) -> "ResultQualifier":
         """Update a result qualifier."""
 

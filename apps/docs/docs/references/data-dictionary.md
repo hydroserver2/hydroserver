@@ -14,7 +14,7 @@ Method, ObservedProperty, ProcessingLevel, Unit, and ResultQualifier share these
 | Field | Meaning | Requirement |
 | --- | --- | --- |
 | `name` | The label every frontend displays to identify the item. | Required; at most 255 characters. |
-| `description` | Free-text comments from the user. | Required text without a fixed length limit, except Unit has no description. |
+| `description` | Free-text comments from the user. | Required text without a fixed length limit, except Unit has no description and ResultQualifier's is optional. |
 | `definition` | A URL defining or documenting the item, such as a vocabulary term, standard, or manual. | Optional URL; at most 2,000 characters. ResultQualifier has no definition. |
 | `code` | An external or organizational identifier. | Optional; at most 255 characters. Unit has no code because its definition serves this purpose. |
 

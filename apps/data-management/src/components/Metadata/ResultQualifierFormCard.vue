@@ -23,9 +23,7 @@
 
         <v-textarea
           v-model="item.description"
-          class="required-label"
           label="Description"
-          :rules="rules.required"
         ></v-textarea>
 
         <v-card-actions>
