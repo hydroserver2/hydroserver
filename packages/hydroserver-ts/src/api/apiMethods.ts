@@ -209,6 +209,10 @@ export const apiMethods = {
       )
     }
 
+    const metaLimit = Number(firstPageMeta?.limit)
+    const pageSize =
+      Number.isInteger(metaLimit) && metaLimit > 0 ? metaLimit : limitParam
+
     const totalCount =
       typeof firstPageMeta?.totalCount === 'number'
         ? firstPageMeta.totalCount
@@ -216,7 +220,7 @@ export const apiMethods = {
 
     const offsets: number[] = []
     if (totalCount !== undefined) {
-      for (let offset = limitParam; offset < totalCount; offset += limitParam) {
+      for (let offset = pageSize; offset < totalCount; offset += pageSize) {
         offsets.push(offset)
       }
     }
@@ -233,12 +237,12 @@ export const apiMethods = {
       lastRowCount = pageRowCount(page.data)
     }
 
-    let nextOffset = limitParam * (1 + offsets.length)
+    let nextOffset = pageSize * (1 + offsets.length)
     const MAX_EXTRA_PAGES = 1000
     let extraPages = 0
     while (
-      limitParam > 0 &&
-      lastRowCount === limitParam &&
+      pageSize > 0 &&
+      lastRowCount === pageSize &&
       extraPages < MAX_EXTRA_PAGES
     ) {
       const page = await fetchPage(nextOffset)
@@ -246,7 +250,7 @@ export const apiMethods = {
       mergedIncluded = mergeIncluded(mergedIncluded, page.included)
       if (!mergePageData(page)) break
       lastRowCount = pageRowCount(page.data)
-      nextOffset += limitParam
+      nextOffset += pageSize
       extraPages += 1
     }
 
