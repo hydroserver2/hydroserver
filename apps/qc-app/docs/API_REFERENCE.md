@@ -353,7 +353,7 @@ workspace change.
 | `isLoading`                     | state    | `boolean`                                         | True while `loadQualifiers` is in flight. |
 | `qualifierById`                 | computed | `Record<string, Qualifier>`                       | Lookup map for the chips. |
 | `loadQualifiers`                | action   | `() => Promise<void>`                             | Fetch dictionary for the active workspace; triggers a plot refresh so the qualifier band materialises. |
-| `createQualifier`               | action   | `(code: string, description: string) => Promise<Qualifier>` | Server-side create with a local-only fallback when no workspace is active. |
+| `createQualifier`               | action   | `(name: string, description: string) => Promise<Qualifier>` | Server-side create with a local-only fallback when no workspace is active. |
 | `applyQualifiers`               | action   | `(datastreamId, indices, qualifierIds, appliedBy) => void` | Idempotent merge — already-applied (qualifier, index) pairs are skipped. |
 | `removeQualifier`               | action   | `(datastreamId, index, qualifierId) => void`      | Drops a single (qualifier, index) application. |
 | `getApplicationsForDatastream`  | action   | `(datastreamId) => Array<{ index, qualifierId, appliedAt, appliedBy }>` | Flat list suitable for plotting. |

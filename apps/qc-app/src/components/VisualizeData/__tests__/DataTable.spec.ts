@@ -509,7 +509,7 @@ describe('DataTable.vue discardEdits', () => {
   })
 })
 
-describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tooltip)', () => {
+describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Name, Tooltip)', () => {
   beforeEach(() => {
     isUpdating.value = false
     selectedSeries.value = {
@@ -529,7 +529,7 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
   it('renders nothing when qcDatastream is null', async () => {
     qcDatastream.value = null
     applied.value = { 'ds-1': { 0: [{ qualifierId: 'q1', appliedAt: 't', appliedBy: 'u' }] } }
-    qualifierById.value = { q1: { code: 'ABC', description: 'desc' } }
+    qualifierById.value = { q1: { name: 'ABC', description: 'desc' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     expect(wrapper.findAllComponents({ name: 'v-chip' }).length).toBeGreaterThanOrEqual(0)
@@ -539,30 +539,30 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
 
   it('renders nothing when no applied entry for the datastream', async () => {
     applied.value = {}
-    qualifierById.value = { q1: { code: 'ABC', description: 'desc' } }
+    qualifierById.value = { q1: { name: 'ABC', description: 'desc' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     expect(wrapper.text()).not.toContain('ABC')
   })
 
-  it('renders the qualifier code chip for an applied qualifier', async () => {
+  it('renders the qualifier name chip for an applied qualifier', async () => {
     applied.value = {
       'ds-1': { 0: [{ qualifierId: 'q1', appliedAt: 't', appliedBy: 'alice' }] },
     }
-    qualifierById.value = { q1: { code: 'SUS', description: 'Suspicious' } }
+    qualifierById.value = { q1: { name: 'SUS', description: 'Suspicious' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     expect(wrapper.text()).toContain('SUS')
   })
 
-  it('renders empty chip code for an unknown qualifier id', async () => {
+  it('renders empty chip name for an unknown qualifier id', async () => {
     applied.value = {
       'ds-1': { 0: [{ qualifierId: 'unknown', appliedAt: 't', appliedBy: '' }] },
     }
     qualifierById.value = {}
     const wrapper = createWrapperWithSlots()
     await flushPromises()
-    // chip renders but code is ''
+    // chip renders but name is ''
     const rowHtml = wrapper.findAll('.vdtv-row').at(0)!.html()
     expect(rowHtml).toContain('<')
   })
@@ -571,7 +571,7 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
     applied.value = {
       'ds-1': { 0: [{ qualifierId: 'q1', appliedAt: 't', appliedBy: 'alice' }] },
     }
-    qualifierById.value = { q1: { code: 'SUS', description: 'Suspicious' } }
+    qualifierById.value = { q1: { name: 'SUS', description: 'Suspicious' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const html = wrapper.findAll('.vdtv-row').at(0)!.html()
@@ -583,7 +583,7 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
     applied.value = {
       'ds-1': { 0: [{ qualifierId: 'q1', appliedAt: 't', appliedBy: '' }] },
     }
-    qualifierById.value = { q1: { code: 'SUS', description: 'Suspicious' } }
+    qualifierById.value = { q1: { name: 'SUS', description: 'Suspicious' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const html = wrapper.findAll('.vdtv-row').at(0)!.html()

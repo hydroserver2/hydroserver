@@ -6,7 +6,6 @@ from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ObservedPropertyAPIService
-from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     ObservedPropertyResponse,
     ObservedPropertyPostBody,
@@ -73,24 +72,6 @@ def create_observed_property(
     return 201, observed_property_service.create(
         principal=request.principal,
         data=data,
-    )
-
-
-@observed_property_router.get(
-    "/variable-types", response={200: PaginatedResponse[str]}, by_alias=True
-)
-def get_datastream_aggregation_statistics(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get variable types.
-    """
-
-    return 200, observed_property_service.list_variable_types(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
     )
 
 

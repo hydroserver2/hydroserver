@@ -9,7 +9,7 @@ from django.core.management import call_command
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
-from core.sta.models import SiteType
+from core.sta.models import MonitoringSiteType
 from core.web.admin import SiteTypeIconAdminForm
 from core.web.models import SITE_TYPE_ICON_CHOICES, SiteTypeIcon
 
@@ -143,35 +143,29 @@ def test_canonical_site_types_are_first_in_default_icon_mappings():
 
 @pytest.mark.django_db
 def test_default_site_type_fixture_contains_canonical_categories():
-    SiteType.objects.all().delete()
+    MonitoringSiteType.objects.all().delete()
 
-    call_command("loaddata", "core/sta/fixtures/default_site_types.yaml", verbosity=0)
-
-    assert list(SiteType.objects.order_by("pk").values_list("name", flat=True)) == (
-        SITE_TYPES
+    call_command(
+        "loaddata", "core/sta/fixtures/default_monitoring_site_types.yaml", verbosity=0
     )
+
+    assert list(
+        MonitoringSiteType.objects.order_by("pk").values_list("name", flat=True)
+    ) == (SITE_TYPES)
 
 
 @pytest.mark.django_db
 def test_site_type_icon_migration_does_not_replace_site_types():
-    SiteType.objects.all().delete()
-    SiteType.objects.create(name="Instance-specific site type")
+    MonitoringSiteType.objects.all().delete()
+    MonitoringSiteType.objects.create(name="Instance-specific site type")
     SiteTypeIcon.objects.all().delete()
     migration = importlib.import_module("core.web.migrations.0002_sitetypeicon")
 
     migration.create_default_site_type_icons(apps, schema_editor=None)
 
-    assert list(SiteType.objects.values_list("name", flat=True)) == [
+    assert list(MonitoringSiteType.objects.values_list("name", flat=True)) == [
         "Instance-specific site type"
     ]
-
-
-@pytest.mark.django_db
-def test_site_types_endpoint_remains_a_list_of_names(client):
-    response = client.get("/api/data/monitoring-sites/site-types")
-
-    assert response.status_code == 200
-    assert all(isinstance(site_type, str) for site_type in response.json())
 
 
 @pytest.mark.django_db

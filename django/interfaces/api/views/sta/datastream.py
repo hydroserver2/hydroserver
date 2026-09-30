@@ -8,7 +8,6 @@ from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import DatastreamAPIService
-from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     DatastreamVisualizationBootstrapQueryParameters,
     DatastreamVisualizationBootstrapResponse,
@@ -123,74 +122,6 @@ def get_datastream_tag_keys(
         principal=request.principal,
         workspace_id=workspace_id,
         datastream_id=datastream_id,
-    )
-
-
-@datastream_router.get(
-    "/aggregation-statistics", response={200: PaginatedResponse[str]}, by_alias=True
-)
-def get_datastream_aggregation_statistics(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get datastream aggregation statistics.
-    """
-
-    return 200, datastream_service.list_aggregation_statistics(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
-    )
-
-
-@datastream_router.get("/statuses", response={200: PaginatedResponse[str]}, by_alias=True)
-def get_datastream_statuses(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get datastream statuses.
-    """
-
-    return 200, datastream_service.list_statuses(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
-    )
-
-
-@datastream_router.get("/sampled-mediums", response={200: PaginatedResponse[str]}, by_alias=True)
-def get_datastream_sampled_mediums(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get datastream sampled mediums.
-    """
-
-    return 200, datastream_service.list_sampled_mediums(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
-    )
-
-
-@datastream_router.get(
-    "/linked-resource-types", response={200: PaginatedResponse[str]}, by_alias=True
-)
-def get_datastream_linked_resource_types(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get linked resource types.
-    """
-
-    return 200, datastream_service.list_linked_resource_types(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
     )
 
 

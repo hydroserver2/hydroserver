@@ -8,13 +8,15 @@ from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ResultQualifierAPIService
 from interfaces.api.schemas import (
     ResultQualifierResponse,
-    ResultQualifierQueryParameters,
-    ResultQualifierItemQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
     PaginatedResponse,
     ItemResponse,
     CreatedResponse,
+)
+from interfaces.api.schemas.sta.result_qualifier import (
+    ResultQualifierQueryParameters,
+    ResultQualifierItemQueryParameters,
 )
 
 result_qualifier_router = Router(tags=["Result Qualifiers"])

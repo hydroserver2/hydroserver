@@ -7,6 +7,7 @@ from ninja import Field, Query, Schema
 from pydantic import BeforeValidator, WithJsonSchema, field_validator
 from pydantic.alias_generators import to_camel
 
+from core.sta.models import MonitoringSiteType
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePatchBody,
@@ -19,6 +20,7 @@ from interfaces.api.schemas import (
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
 
 
 valid_country_codes = [code for code, _ in countries_for_language("en")]
@@ -56,6 +58,12 @@ MONITORING_SITE_INCLUDE_RELATIONS = {
         "path": "workspace",
         "bucket": "workspaces",
         "response_schema": WorkspaceResponse,
+    },
+    "type": {
+        "bucket": "monitoringSiteTypes",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": MonitoringSiteType,
+        "value_field": "type",
     },
 }
 MonitoringSiteIncludeRelation = Literal[*MONITORING_SITE_INCLUDE_RELATIONS.keys()]

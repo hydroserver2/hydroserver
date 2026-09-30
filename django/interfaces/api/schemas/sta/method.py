@@ -5,6 +5,7 @@ from pydantic import BeforeValidator, WithJsonSchema
 from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
 
+from core.sta.models import MethodType
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
@@ -15,6 +16,7 @@ from interfaces.api.schemas import (
     split_comma_separated,
     comma_array_schema,
 )
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
 
 
 class MethodFields(Schema):
@@ -33,6 +35,12 @@ METHOD_INCLUDE_RELATIONS = {
         "path": "workspace",
         "bucket": "workspaces",
         "response_schema": WorkspaceResponse,
+    },
+    "type": {
+        "bucket": "methodTypes",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": MethodType,
+        "value_field": "type",
     },
 }
 MethodIncludeRelation = Literal[*METHOD_INCLUDE_RELATIONS.keys()]

@@ -9,12 +9,20 @@ const OUT_DIR = path.resolve('src/generated/contracts')
 const resources = [
   'workspaces',
   'monitoring-sites',
+  'monitoring-site-types',
+  'linked-resource-types',
   'datastreams',
+  'datastream-statuses',
+  'aggregation-statistics',
   'units',
+  'unit-types',
   'methods',
+  'method-types',
   'observed-properties',
+  'observed-property-types',
   'processing-levels',
   'result-qualifiers',
+  'sampled-mediums',
   'observations',
 
   // ETL

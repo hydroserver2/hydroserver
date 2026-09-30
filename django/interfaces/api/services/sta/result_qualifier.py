@@ -10,14 +10,10 @@ from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ResultQualifier
 from interfaces.api.service import APIService
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
-from interfaces.api.schemas import (
-    ResultQualifierResponse,
-    ResultQualifierPostBody,
-    ResultQualifierPatchBody,
-)
 from interfaces.api.schemas.sta.result_qualifier import (
     ResultQualifierFields,
     ResultQualifierSortByFields,
+    ResultQualifierResponse,
     RESULT_QUALIFIER_INCLUDE_RELATIONS,
 )
 
@@ -25,36 +21,37 @@ User = get_user_model()
 
 
 class ResultQualifierAPIService(APIService):
+    model = ResultQualifier
+    resource_type_name = "ResultQualifier"
+    response_schema = ResultQualifierResponse
     INCLUDE_RELATIONS = RESULT_QUALIFIER_INCLUDE_RELATIONS
 
-    def get_result_qualifier_for_action(
+    def get_term_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         select_related: Optional[list[str]] = None,
     ):
-        queryset = ResultQualifier.objects.filter(pk=uid)
+        queryset = self.model.objects.filter(pk=uid)
         if select_related:
             queryset = queryset.select_related(*select_related)
         queryset = principal.annotate_permissions(queryset)
 
         try:
-            result_qualifier = queryset.get()
-        except ResultQualifier.DoesNotExist:
-            raise NotFoundError("Result qualifier does not exist")
+            term = queryset.get()
+        except self.model.DoesNotExist:
+            raise NotFoundError(f"{self.resource_type_name} does not exist")
 
-        if not principal.can_view(result_qualifier):
-            raise NotFoundError("Result qualifier does not exist")
+        if not principal.can_view(term):
+            raise NotFoundError(f"{self.resource_type_name} does not exist")
 
-        if action != "view" and not getattr(principal, f"can_{action}")(
-            result_qualifier
-        ):
+        if action != "view" and not getattr(principal, f"can_{action}")(term):
             raise PermissionDeniedError(
-                f"You do not have permission to {action} this result qualifier"
+                f"You do not have permission to {action} this {self.resource_type_name.lower()}"
             )
 
-        return result_qualifier
+        return term
 
     def list(
         self,
@@ -65,20 +62,12 @@ class ResultQualifierAPIService(APIService):
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
     ):
+        filtering = filtering or {}
         requested_includes = self.resolve_include_set(include)
-        queryset = ResultQualifier.objects
+        queryset = self.model.objects
 
-        for field in ["workspace_id"]:
-            if field in filtering:
-                queryset = self.apply_filters(queryset, field, filtering[field])
-        for field in [
-            "observations__datastream_id",
-            "observations__datastream__monitoring_site_id",
-        ]:
-            if field in filtering and not all(
-                value is None for value in filtering[field]
-            ):
-                queryset = ResultQualifier.objects.none()
+        if "workspace_id" in filtering:
+            queryset = self.apply_filters(queryset, "workspace_id", filtering["workspace_id"])
 
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
@@ -96,16 +85,13 @@ class ResultQualifierAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
         queryset, meta = self.apply_pagination(queryset, offset, limit)
-        result_qualifiers = list(queryset.all())
+        terms = list(queryset.all())
 
         return {
-            "data": [
-                ResultQualifierResponse.model_validate(result_qualifier)
-                for result_qualifier in result_qualifiers
-            ],
+            "data": [self.response_schema.model_validate(term) for term in terms],
             "meta": meta,
             "included": self.resolve_includes(
-                result_qualifiers, requested_includes, self.INCLUDE_RELATIONS
+                terms, requested_includes, self.INCLUDE_RELATIONS
             ),
         }
 
@@ -119,83 +105,71 @@ class ResultQualifierAPIService(APIService):
         select_paths = [
             self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
         ]
-        result_qualifier = self.get_result_qualifier_for_action(
+        term = self.get_term_for_action(
             principal=principal, uid=uid, action="view", select_related=select_paths
         )
 
         return {
-            "data": ResultQualifierResponse.model_validate(result_qualifier),
+            "data": self.response_schema.model_validate(term),
             "included": self.resolve_includes(
-                [result_qualifier], requested_includes, self.INCLUDE_RELATIONS
+                [term], requested_includes, self.INCLUDE_RELATIONS
             ),
         }
 
-    def create(
-        self,
-        principal: User | ServiceAccount | AnonymousPrincipal,
-        data: ResultQualifierPostBody,
-    ):
+    def create(self, principal: User | ServiceAccount | AnonymousPrincipal, data):
         workspace, _ = (
             self.get_workspace(principal=principal, workspace_id=data.workspace_id)
             if data.workspace_id
-            else (
-                None,
-                None,
-            )
+            else (None, None)
         )
 
-        if not principal.can_create("ResultQualifier", workspace=workspace):
+        if not principal.can_create(self.resource_type_name, workspace=workspace):
             raise PermissionDeniedError(
-                "You do not have permission to create this result qualifier"
+                f"You do not have permission to create this {self.resource_type_name.lower()}"
             )
 
-        result_qualifier = ResultQualifier(
+        term = self.model(
             pk=data.id,
             workspace=workspace,
             **data.dict(include=set(ResultQualifierFields.model_fields.keys())),
         )
-        result_qualifier.full_clean()
+        term.full_clean()
 
         try:
-            result_qualifier.save()
-        except (
-            IntegrityError,
-            UniqueViolation,
-        ):
-            raise ConflictError("A result qualifier with this ID or name already exists")
+            term.save()
+        except (IntegrityError, UniqueViolation):
+            raise ConflictError(
+                f"A {self.resource_type_name.lower()} with this ID or name already exists"
+            )
 
-        return {"id": result_qualifier.pk}
+        return {"id": term.pk}
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        data: ResultQualifierPatchBody,
+        data,
     ):
-        result_qualifier = self.get_result_qualifier_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-        result_qualifier_data = data.dict(
-            include=set(ResultQualifierFields.model_fields.keys()), exclude_unset=True
+        term = self.get_term_for_action(principal=principal, uid=uid, action="edit")
+        term_data = data.dict(
+            include=set(ResultQualifierFields.model_fields.keys()),
+            exclude_unset=True,
         )
 
-        for field, value in result_qualifier_data.items():
-            setattr(result_qualifier, field, value)
+        for field, value in term_data.items():
+            setattr(term, field, value)
 
-        result_qualifier.full_clean()
+        term.full_clean()
 
         try:
-            result_qualifier.save()
-        except (
-            IntegrityError,
-            UniqueViolation,
-        ):
-            raise ConflictError("A result qualifier with this name already exists")
+            term.save()
+        except (IntegrityError, UniqueViolation):
+            raise ConflictError(
+                f"A {self.resource_type_name.lower()} with this name already exists"
+            )
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        result_qualifier = self.get_result_qualifier_for_action(
-            principal=principal, uid=uid, action="delete"
-        )
-        result_qualifier.delete()
+        term = self.get_term_for_action(principal=principal, uid=uid, action="delete")
+        term.delete()
 
-        return "Result qualifier deleted"
+        return f"{self.resource_type_name} deleted"

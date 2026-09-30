@@ -3,7 +3,6 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
-from core.sta.models import UnitType
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -11,7 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, UnitFactory
+from tests.core.sta.factories import DatastreamFactory, UnitFactory, UnitTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -156,6 +155,20 @@ def test_get_units_include_workspace_skips_global_units_without_error(client):
     assert "included" not in response.json()
 
 
+def test_get_units_include_type_sideloads_unit_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    unit_type = UnitTypeFactory(name="Dimensionless")
+    UnitFactory(workspace=workspace, type=unit_type.name)
+    client.force_login(owner)
+
+    response = client.get(UNITS_URL, {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["unitTypes"]} == {str(unit_type.id)}
+
+
 def test_get_units_include_rejects_unknown_relation(client):
     response = client.get(UNITS_URL, {"include": "bogus"})
 
@@ -294,19 +307,6 @@ def test_create_unit_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-# --- get_unit_types ----------------------------------------------------------------
-
-
-def test_get_unit_types_returns_registered_type_names(client):
-    UnitType.objects.create(name="Dimensionless")
-    UnitType.objects.create(name="Length")
-
-    response = client.get(f"{UNITS_URL}/types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Dimensionless", "Length"}
 
 
 # --- get_unit --------------------------------------------------------------------

@@ -7,6 +7,7 @@ from pydantic.alias_generators import to_camel
 from ninja import Schema, Query, Field
 
 from core.types.iso_datetime import ISODatetime, validate_iso_datetime
+from core.sta.models import ResultQualifier
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
@@ -18,6 +19,7 @@ from interfaces.api.schemas import (
     split_comma_separated,
     comma_array_schema,
 )
+from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
 
 
 class ObservationFields(Schema):
@@ -36,6 +38,13 @@ OBSERVATION_INCLUDE_RELATIONS = {
         "path": "datastream__monitoring_site__workspace",
         "bucket": "workspaces",
         "response_schema": WorkspaceResponse,
+    },
+    "resultQualifiers": {
+        "bucket": "resultQualifiers",
+        "response_schema": ResultQualifierResponse,
+        "scoped_vocabulary_model": ResultQualifier,
+        "value_field": "result_qualifier_codes",
+        "workspace_path": "datastream__monitoring_site__workspace_id",
     },
 }
 ObservationIncludeRelation = Literal[*OBSERVATION_INCLUDE_RELATIONS.keys()]

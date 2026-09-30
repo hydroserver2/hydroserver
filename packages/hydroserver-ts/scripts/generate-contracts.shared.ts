@@ -41,6 +41,8 @@ function singularizeKebab(resource: string): string {
   const last = parts.pop() || ''
   let singular = last
   if (last.endsWith('ies')) singular = last.slice(0, -3) + 'y'
+  // Sibilant plurals ("statuses", "boxes", "churches") add -es, not just -s.
+  else if (/(?:s|x|z|ch|sh)es$/.test(last)) singular = last.slice(0, -2)
   else if (last.endsWith('s') && !last.endsWith('ss'))
     singular = last.slice(0, -1)
   parts.push(singular)

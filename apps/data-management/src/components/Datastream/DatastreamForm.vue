@@ -493,7 +493,7 @@
             />
 
             <v-combobox
-              :items="vocabularyStore.datastreamAggregations"
+              :items="vocabularyStore.aggregationStatistics"
               v-model="datastream.aggregationStatistic"
               class="required-label"
               label="Aggregation statistic"

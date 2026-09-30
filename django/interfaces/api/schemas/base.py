@@ -124,13 +124,6 @@ class CollectionQueryParameters(BaseQueryParameters):
     )
 
 
-class VocabularyQueryParameters(CollectionQueryParameters):
-    sort_desc: Optional[bool] = Query(
-        False,
-        description="Sort terms by descending.",
-    )
-
-
 class BaseGetResponse(Schema):
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel

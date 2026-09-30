@@ -57,7 +57,7 @@
               <v-col cols="12">
                 <v-combobox
                   label="Select Site Type *"
-                  :items="vocabularyStore.siteTypes"
+                  :items="vocabularyStore.monitoringSiteTypes"
                   v-model="monitoringSite.type"
                   :rules="rules.required"
                 />

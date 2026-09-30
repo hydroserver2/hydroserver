@@ -14,7 +14,12 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ObservationFactory, MonitoringSiteFactory
+from tests.core.sta.factories import (
+    DatastreamFactory,
+    ObservationFactory,
+    MonitoringSiteFactory,
+    ResultQualifierFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -307,6 +312,79 @@ def test_get_observations_include_sideloads_datastream_and_workspace(client):
     included = response.json()["included"]
     assert {row["id"] for row in included["datastreams"]} == {str(datastream.id)}
     assert {row["id"] for row in included["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_observations_include_result_qualifiers_resolves_workspace_scoped_match(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    scoped_qualifier = ResultQualifierFactory(workspace=workspace, name="ICE")
+    ResultQualifierFactory(global_=True, name="ICE")  # same name, global — should be shadowed
+    ObservationFactory(datastream=datastream, result_qualifiers=["ICE"])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]["resultQualifiers"]
+    assert {row["id"] for row in included} == {str(scoped_qualifier.id)}
+    assert included[0]["workspaceId"] == str(workspace.id)
+
+
+def test_get_observations_include_result_qualifiers_falls_back_to_global_match(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    global_qualifier = ResultQualifierFactory(global_=True, name="PF")
+    ObservationFactory(datastream=datastream, result_qualifiers=["PF"])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]["resultQualifiers"]
+    assert {row["id"] for row in included} == {str(global_qualifier.id)}
+    assert included[0]["workspaceId"] is None
+
+
+def test_get_observations_include_result_qualifiers_includes_both_when_scope_differs_across_items(
+    client,
+):
+    superuser = UserFactory(is_superuser=True)
+    workspace_a = WorkspaceFactory()
+    workspace_b = WorkspaceFactory()
+    datastream_a = _make_datastream(workspace_a)
+    datastream_b = _make_datastream(workspace_b)
+    scoped_qualifier = ResultQualifierFactory(workspace=workspace_a, name="ICE")
+    global_qualifier = ResultQualifierFactory(global_=True, name="ICE")
+    ObservationFactory(datastream=datastream_a, result_qualifiers=["ICE"])
+    ObservationFactory(datastream=datastream_b, result_qualifiers=["ICE"])
+    client.force_login(superuser)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]["resultQualifiers"]
+    assert {row["id"] for row in included} == {
+        str(scoped_qualifier.id),
+        str(global_qualifier.id),
+    }
+    by_id = {row["id"]: row for row in included}
+    assert by_id[str(scoped_qualifier.id)]["workspaceId"] == str(workspace_a.id)
+    assert by_id[str(global_qualifier.id)]["workspaceId"] is None
+
+
+def test_get_observations_include_result_qualifiers_omits_bucket_when_none_set(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream, result_qualifiers=[])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    assert "resultQualifiers" not in response.json().get("included", {})
 
 
 def test_get_observations_without_include_omits_included_bucket(client):

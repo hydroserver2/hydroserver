@@ -1,0 +1,93 @@
+---
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a598800d49fb
+  fields:
+    name: Age
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5994c161904
+  fields:
+    name: Biota
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a59a6b04ddfe
+  fields:
+    name: Chemistry
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a59bc5e704b9
+  fields:
+    name: Climate
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a59cd4c25adf
+  fields:
+    name: End-Member
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a59d2dc1b0a8
+  fields:
+    name: Geology
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a59ef5a2b613
+  fields:
+    name: Hydrology
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a59f9c6b96d3
+  fields:
+    name: Instrumentation
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a09c2c0672
+  fields:
+    name: Major oxide or element
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a1be6c28cd
+  fields:
+    name: Model data
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a22e627341
+  fields:
+    name: Noble gas
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a31c0b4e27
+  fields:
+    name: Radiogenic isotopes
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a4598d43f9
+  fields:
+    name: Rare earth element
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a512fece3e
+  fields:
+    name: Ratio
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a64933d61a
+  fields:
+    name: Rock mode
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a7b0d466cd
+  fields:
+    name: Soil
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a888edd8ba
+  fields:
+    name: Speciation ratio
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5a96c146679
+  fields:
+    name: Stable isotopes
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5aa71dc868b
+  fields:
+    name: Trace element
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5ab0a05ea2f
+  fields:
+    name: Unknown
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5ac35d14603
+  fields:
+    name: Uranium series
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5adb1e53b4f
+  fields:
+    name: Volatile
+- model: sta.observedpropertytype
+  pk: 01a0b67f-d61c-7386-aefa-a5aeb809f8b3
+  fields:
+    name: Water quality

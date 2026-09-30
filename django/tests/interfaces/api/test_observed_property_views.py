@@ -3,7 +3,6 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
-from core.sta.models import VariableType
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -11,7 +10,11 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ObservedPropertyFactory
+from tests.core.sta.factories import (
+    DatastreamFactory,
+    ObservedPropertyFactory,
+    ObservedPropertyTypeFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -160,6 +163,22 @@ def test_get_observed_properties_include_workspace_deduplicates_across_items(cli
     assert [w["id"] for w in body["included"]["workspaces"]] == [str(workspace.id)]
 
 
+def test_get_observed_properties_include_type_sideloads_observed_property_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    observed_property_type = ObservedPropertyTypeFactory(name="Hydrology")
+    ObservedPropertyFactory(workspace=workspace, type=observed_property_type.name)
+    client.force_login(owner)
+
+    response = client.get(OBSERVED_PROPERTIES_URL, {"include": "type"})
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["observedPropertyTypes"]} == {
+        str(observed_property_type.id)
+    }
+
+
 def test_get_observed_properties_include_rejects_unknown_relation(client):
     response = client.get(OBSERVED_PROPERTIES_URL, {"include": "bogus"})
 
@@ -303,19 +322,6 @@ def test_create_observed_property_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
-
-
-# --- get_datastream_aggregation_statistics (variable-types) ---------------------------
-
-
-def test_get_variable_types_returns_registered_type_names(client):
-    VariableType.objects.create(name="Hydrology")
-    VariableType.objects.create(name="Meteorology")
-
-    response = client.get(f"{OBSERVED_PROPERTIES_URL}/variable-types")
-
-    assert response.status_code == 200
-    assert set(response.json()["data"]) == {"Hydrology", "Meteorology"}
 
 
 # --- get_observed_property -------------------------------------------------------------

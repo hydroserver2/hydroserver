@@ -1,18 +1,21 @@
+from types import EllipsisType
 from django.core.exceptions import ImproperlyConfigured
 
 resource_types: dict[str, type] = {}
 
 
 def register_resource_type(
-    workspace_field: str | None = "workspace",
+    workspace_field: "str | None | EllipsisType" = "workspace",
     privacy_chain: list[str] | None = None,
     resource_type_name: str | None = None,
 ):
     """
     Register a model as a gatekept permission resource type.
 
-    workspace_field: None if the model itself is a Workspace, else a path to
-    reach one (e.g. "monitoring_site__workspace"). resource_type_name: overrides the
+    workspace_field: None if the model has no workspace concept at all (publicly
+    viewable, superuser-only to create/edit/delete), ... (Ellipsis) if the model
+    itself is a Workspace, else a path to reach one (e.g.
+    "monitoring_site__workspace"). resource_type_name: overrides the
     resource_type string (default: model_cls.__name__) — needed since
     resource_type is a flat namespace and two apps' models can share a name.
 

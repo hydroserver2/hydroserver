@@ -1,17 +1,17 @@
 ---
 - model: sta.datastreamstatus
-  pk: 1
+  pk: 01a0b67f-d61c-7386-aefa-a58d10264eaa
   fields:
     name: Complete
 - model: sta.datastreamstatus
-  pk: 2
+  pk: 01a0b67f-d61c-7386-aefa-a58e294d58bb
   fields:
     name: Ongoing
 - model: sta.datastreamstatus
-  pk: 3
+  pk: 01a0b67f-d61c-7386-aefa-a58f1ae29f02
   fields:
     name: Planned
 - model: sta.datastreamstatus
-  pk: 4
+  pk: 01a0b67f-d61c-7386-aefa-a590859be397
   fields:
     name: Unknown

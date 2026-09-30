@@ -110,20 +110,3 @@ class MonitoringSiteLinkedResource(LinkedResourceMixin, models.Model):
                 name="monitoring_site_linked_resource_file_xor_url",
             )
         ]
-
-
-class SiteTypeManager(models.Manager):
-    def get_by_natural_key(self, name):
-        return self.get(name=name)
-
-
-class SiteType(models.Model):
-    name = models.CharField(max_length=200, unique=True)
-    objects = SiteTypeManager()
-
-    def natural_key(self):
-        return (self.name,)
-
-
-class LinkedResourceType(models.Model):
-    name = models.CharField(max_length=200, unique=True)

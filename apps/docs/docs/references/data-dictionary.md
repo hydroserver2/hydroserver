@@ -14,7 +14,7 @@ Method, ObservedProperty, ProcessingLevel, Unit, and ResultQualifier share these
 | Field | Meaning | Requirement |
 | --- | --- | --- |
 | `name` | The label every frontend displays to identify the item. | Required; at most 255 characters. |
-| `description` | Free-text comments from the user. | Required text without a fixed length limit, except Unit has no description. |
+| `description` | Free-text comments from the user. | Required text without a fixed length limit, except Unit has no description and ResultQualifier's is optional. |
 | `definition` | A URL defining or documenting the item, such as a vocabulary term, standard, or manual. | Optional URL; at most 2,000 characters. ResultQualifier has no definition. |
 | `code` | An external or organizational identifier. | Optional; at most 255 characters. Unit has no code because its definition serves this purpose. |
 
@@ -144,9 +144,8 @@ Data qualifying comments added to individual data values to qualify their interp
 | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the ResultQualifier.                                                                         | UUID      |
 | O        | workspace_id | A foreign key identifier for the Workspace that owns the ResultQualifier. If omitted, the ResultQualifier is shared system-wide. | UUID      |
-| M | name | The label displayed by every frontend and stored on observations. | String (255) |
-| O | code | An external or organizational identifier. | String (255) |
-| M | description | Free-text comments from the user. | Text |
+| M        | name         | A brief text name identifying the ResultQualifier.                                                                               | String    |
+| O        | description  | A longer text description or explanation of the ResultQualifier.                                                                 | Text      |
 
 **NOTE**: The database enforces a unique constraint on `(name, workspace_id)`, including the system-wide `NULL` workspace scope.
 

@@ -31,7 +31,3 @@ class Unit(models.Model):
         indexes = [
             GinIndex(fields=["search_vector"], name="sta_unit_search_gin"),
         ]
-
-
-class UnitType(models.Model):
-    name = models.CharField(max_length=255, unique=True)

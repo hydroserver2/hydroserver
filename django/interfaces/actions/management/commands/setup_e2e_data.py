@@ -10,15 +10,15 @@ DEFAULT_FIXTURES = [
     "core/iam/fixtures/default_user_types.yaml",
     "core/iam/fixtures/default_organization_types.yaml",
     "core/iam/fixtures/default_roles.yaml",
-    "core/sta/fixtures/default_datastream_aggregations.yaml",
+    "core/sta/fixtures/default_aggregation_statistics.yaml",
     "core/sta/fixtures/default_datastream_statuses.yaml",
     "core/sta/fixtures/default_linked_resource_types.yaml",
     "core/sta/fixtures/default_method_types.yaml",
     "core/sta/fixtures/default_processing_levels.yaml",
     "core/sta/fixtures/default_sampled_mediums.yaml",
-    "core/sta/fixtures/default_site_types.yaml",
+    "core/sta/fixtures/default_monitoring_site_types.yaml",
     "core/sta/fixtures/default_units.yaml",
-    "core/sta/fixtures/default_variable_types.yaml",
+    "core/sta/fixtures/default_observed_property_types.yaml",
 ]
 
 

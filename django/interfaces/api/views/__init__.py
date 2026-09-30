@@ -4,11 +4,19 @@ from interfaces.api.views.iam.collaborator import collaborator_router
 from interfaces.api.views.iam.service_account import service_account_router
 
 from interfaces.api.views.sta.monitoring_site import monitoring_site_router
+from interfaces.api.views.sta.monitoring_site_type import monitoring_site_type_router
+from interfaces.api.views.sta.linked_resource_type import linked_resource_type_router
 from interfaces.api.views.sta.observed_property import observed_property_router
+from interfaces.api.views.sta.observed_property_type import observed_property_type_router
 from interfaces.api.views.sta.processing_level import processing_level_router
 from interfaces.api.views.sta.result_qualifier import result_qualifier_router
+from interfaces.api.views.sta.sampled_medium import sampled_medium_router
+from interfaces.api.views.sta.aggregation_statistic import aggregation_statistic_router
+from interfaces.api.views.sta.datastream_status import datastream_status_router
 from interfaces.api.views.sta.method import method_router
+from interfaces.api.views.sta.method_type import method_type_router
 from interfaces.api.views.sta.unit import unit_router
+from interfaces.api.views.sta.unit_type import unit_type_router
 from interfaces.api.views.sta.datastream import datastream_router
 from interfaces.api.views.sta.observation import observation_router
 

@@ -5,7 +5,7 @@ import pytest
 from core.iam.models import Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.iam.permissions.mixins import ResourcePermissionMixin
-from core.sta.models import Method, MonitoringSite
+from core.sta.models import Method, MonitoringSite, SampledMedium
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -14,7 +14,11 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import MethodFactory, MonitoringSiteFactory
+from tests.core.sta.factories import (
+    MethodFactory,
+    MonitoringSiteFactory,
+    SampledMediumFactory,
+)
 
 
 # --- is_superuser_principal --------------------------------------------------
@@ -42,14 +46,14 @@ def test_is_superuser_principal_false_for_anonymous():
 # --- _resolve_workspace -------------------------------------------------------
 
 
-def test_resolve_workspace_returns_resource_itself_when_field_is_none():
+def test_resolve_workspace_returns_resource_itself_when_field_is_ellipsis():
     workspace = Workspace()
-    assert ResourcePermissionMixin._resolve_workspace(workspace, None) is workspace
+    assert ResourcePermissionMixin._resolve_workspace(workspace, ...) is workspace
 
 
-def test_resolve_workspace_returns_none_when_field_is_none_and_not_a_workspace():
+def test_resolve_workspace_returns_none_when_field_is_ellipsis_and_not_a_workspace():
     resource = types.SimpleNamespace()
-    assert ResourcePermissionMixin._resolve_workspace(resource, None) is None
+    assert ResourcePermissionMixin._resolve_workspace(resource, ...) is None
 
 
 def test_resolve_workspace_single_hop():
@@ -133,7 +137,7 @@ def test_can_view_true_for_public_resource_via_privacy_chain():
     assert principal.can_view(workspace) is True
 
 
-# --- can_view / can_edit / can_delete: workspace-less (global) resources -----
+# --- can_view / can_edit / can_delete: nullable workspace FK, value is null --
 
 
 def test_can_view_true_for_workspace_less_resource():
@@ -155,6 +159,37 @@ def test_can_delete_false_for_workspace_less_resource():
     principal = AnonymousPrincipal()
 
     assert principal.can_delete(method) is False
+
+
+# --- can_view / can_edit / can_delete: workspace_field=None (no workspace concept) --
+
+
+def test_can_view_true_for_no_workspace_concept_resource():
+    sampled_medium = SampledMedium()
+    principal = AnonymousPrincipal()
+
+    assert principal.can_view(sampled_medium) is True
+
+
+def test_can_edit_false_for_no_workspace_concept_resource():
+    sampled_medium = SampledMedium()
+    principal = AnonymousPrincipal()
+
+    assert principal.can_edit(sampled_medium) is False
+
+
+def test_can_delete_false_for_no_workspace_concept_resource():
+    sampled_medium = SampledMedium()
+    principal = AnonymousPrincipal()
+
+    assert principal.can_delete(sampled_medium) is False
+
+
+def test_can_edit_true_for_superuser_on_no_workspace_concept_resource():
+    sampled_medium = SampledMedium()
+    principal = UserFactory.build(is_superuser=True)
+
+    assert principal.can_edit(sampled_medium) is True
 
 
 # --- can_create ---------------------------------------------------------------
@@ -402,6 +437,37 @@ def test_filter_by_permission_excludes_global_vocabulary_for_edit():
     visible = outsider.filter_by_permission(Method.objects.all(), "can_edit")
 
     assert list(visible) == []
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_includes_no_workspace_concept_resources_for_view():
+    sampled_medium = SampledMediumFactory()
+    outsider = UserFactory()
+
+    visible = outsider.filter_by_permission(SampledMedium.objects.all(), "can_view")
+
+    assert list(visible) == [sampled_medium]
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_excludes_no_workspace_concept_resources_for_edit():
+    SampledMediumFactory()
+    outsider = UserFactory()
+
+    visible = outsider.filter_by_permission(SampledMedium.objects.all(), "can_edit")
+
+    assert list(visible) == []
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_returns_every_no_workspace_concept_resource_for_superuser():
+    SampledMediumFactory()
+    SampledMediumFactory()
+    superuser = UserFactory(is_superuser=True)
+
+    visible = superuser.filter_by_permission(SampledMedium.objects.all(), "can_edit")
+
+    assert visible.count() == 2
 
 
 @pytest.mark.django_db

@@ -9,7 +9,6 @@ from core.web.models import SiteTypeIcon
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MonitoringSiteAPIService
-from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     MonitoringSiteMarkerResponse,
     MonitoringSiteMarkerQueryParameters,
@@ -178,22 +177,6 @@ def get_monitoring_site_tag_keys(
     )
 
 
-@monitoring_site_router.get("/site-types", response={200: PaginatedResponse[str]}, by_alias=True)
-def get_site_types(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get site types.
-    """
-
-    return 200, monitoring_site_service.list_site_types(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
-    )
-
-
 @monitoring_site_router.get(
     "/site-type-icons",
     response={200: list[SiteTypeIconResponse]},
@@ -205,22 +188,6 @@ def get_site_type_icons(request: HydroServerHttpRequest):
     """
 
     return 200, SiteTypeIcon.objects.values("icon", "site_types")
-
-
-@monitoring_site_router.get("/linked-resource-types", response={200: PaginatedResponse[str]}, by_alias=True)
-def get_monitoring_site_linked_resource_types(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get linked resource types.
-    """
-
-    return 200, monitoring_site_service.list_linked_resource_types(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
-    )
 
 
 @monitoring_site_router.get(

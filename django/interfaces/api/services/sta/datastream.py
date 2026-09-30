@@ -14,10 +14,6 @@ from core.sta.models import (
     Datastream,
     Observation,
     DatastreamLinkedResource,
-    DatastreamAggregation,
-    DatastreamStatus,
-    SampledMedium,
-    LinkedResourceType,
 )
 from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
@@ -79,9 +75,9 @@ class DatastreamAPIService(APIService):
     def _include_query_hints(
         cls, requested_includes: set[str]
     ) -> tuple[list[str], list[str]]:
-        select_paths = [
-            cls.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-        ]
+        select_paths = cls.resolve_select_related_paths(
+            requested_includes, cls.INCLUDE_RELATIONS
+        )
         prefetch_paths = []
 
         if "workspace" in requested_includes:
@@ -502,54 +498,6 @@ class DatastreamAPIService(APIService):
             parent=datastream,
             linked_resource_id=linked_resource_id,
         )
-
-    def list_aggregation_statistics(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = DatastreamAggregation.objects.order_by(
-            f"{'-' if sort_desc else ''}name"
-        )
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
-
-    def list_statuses(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = DatastreamStatus.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
-
-    def list_sampled_mediums(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = SampledMedium.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
-
-    def list_linked_resource_types(
-        self,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        sort_desc: bool = False,
-    ):
-        queryset = LinkedResourceType.objects.order_by(
-            f"{'-' if sort_desc else ''}name"
-        )
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}
 
     @staticmethod
     def generate_csv(datastream: Datastream, observations=None):

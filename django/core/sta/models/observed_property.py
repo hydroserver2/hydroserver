@@ -33,7 +33,3 @@ class ObservedProperty(models.Model):
         indexes = [
             GinIndex(fields=["search_vector"], name="sta_obsproperty_search_gin"),
         ]
-
-
-class VariableType(models.Model):
-    name = models.CharField(max_length=255, unique=True)

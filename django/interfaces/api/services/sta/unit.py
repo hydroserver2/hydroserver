@@ -8,7 +8,7 @@ from django.db import IntegrityError
 from interfaces.api.http.errors import ConflictError, NotFoundError, PermissionDeniedError
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Unit, UnitType
+from core.sta.models import Unit
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
     UnitResponse,
@@ -83,9 +83,9 @@ class UnitAPIService(APIService):
         )
 
         if requested_includes:
-            select_paths = [
-                self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-            ]
+            select_paths = self.resolve_select_related_paths(
+                requested_includes, self.INCLUDE_RELATIONS
+            )
             queryset = queryset.select_related(*select_paths)
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -107,9 +107,9 @@ class UnitAPIService(APIService):
         include: Optional[list[str]] = None,
     ):
         requested_includes = self.resolve_include_set(include)
-        select_paths = [
-            self.INCLUDE_RELATIONS[name]["path"] for name in requested_includes
-        ]
+        select_paths = self.resolve_select_related_paths(
+            requested_includes, self.INCLUDE_RELATIONS
+        )
         unit = self.get_unit_for_action(
             principal=principal, uid=uid, action="view", select_related=select_paths
         )
@@ -178,14 +178,3 @@ class UnitAPIService(APIService):
             raise ConflictError("Unit in use by one or more datastreams")
 
         return "Unit deleted"
-
-    def list_unit_types(
-        self,
-        offset: int | None = None,
-        limit: int | None = None,
-        sort_desc: bool = False,
-    ):
-        queryset = UnitType.objects.order_by(f"{'-' if sort_desc else ''}name")
-        queryset, meta = self.apply_pagination(queryset, offset, limit)
-
-        return {"data": list(queryset.values_list("name", flat=True)), "meta": meta}

@@ -6,7 +6,6 @@ from django.db import transaction
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import UnitAPIService
-from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     UnitResponse,
     UnitPostBody,
@@ -72,22 +71,6 @@ def create_unit(
     return 201, unit_service.create(
         principal=request.principal,
         data=data,
-    )
-
-
-@unit_router.get("/types", response={200: PaginatedResponse[str]}, by_alias=True)
-def get_unit_types(
-    request: HydroServerHttpRequest,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get unit types.
-    """
-
-    return 200, unit_service.list_unit_types(
-        offset=query.offset,
-        limit=query.limit,
-        sort_desc=query.sort_desc,
     )
 
 

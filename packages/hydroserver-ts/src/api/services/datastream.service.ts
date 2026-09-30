@@ -213,9 +213,6 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   /* ------------------ Sub-resources: Linked Resources ------------------ */
 
-  getLinkedResourceTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/linked-resource-types`)
-
   async getLinkedResources(datastreamId: string) {
     const url = `${this._route}/${datastreamId}/linked-resources`
     const res = await apiMethods.paginatedFetch<LinkedResourceResponse[]>(url)
@@ -330,15 +327,6 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     const url = `${this._client.baseRoute}/observations/${observationId}`
     return apiMethods.delete<NoContentResponse>(url)
   }
-
-  getStatuses = () =>
-    apiMethods.paginatedFetch<string[]>(`${this._route}/statuses`)
-
-  getAggregationStatistics = () =>
-    apiMethods.paginatedFetch<string[]>(`${this._route}/aggregation-statistics`)
-
-  getSampledMediums = () =>
-    apiMethods.paginatedFetch<string[]>(`${this._route}/sampled-mediums`)
 
   async getVisualizationBootstrap(): Promise<
     ApiResponse<VisualizationBootstrap>
