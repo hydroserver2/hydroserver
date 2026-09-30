@@ -989,7 +989,9 @@ const visibleDatastreams = computed(() => {
     })
 })
 
-const parsedSearch = computed(() => parseDatastreamQuery(search.value))
+const parsedSearch = computed(() =>
+  parseDatastreamQuery(search.value, searchQualifiers.value)
+)
 const normalizedSearch = computed(() =>
   parsedSearch.value.text.toLocaleLowerCase()
 )
@@ -1004,42 +1006,46 @@ const uniqueSorted = (values: Array<string | null | undefined>) =>
     (a, b) => a.localeCompare(b)
   )
 const option = (value: string): FilterOption => ({ value, label: value })
-const filterDefinitions = computed<FilterDefinition[]>(() => [
-  {
-    key: 'observed-property',
-    label: 'Observed property',
-    options: uniqueSorted(
-      visibleDatastreams.value.map((item) => item.observedPropertyName)
-    ).map(option),
-    selectedCount: parsedSearch.value.filters['observed-property'].length,
-  },
-  {
-    key: 'unit',
-    label: 'Unit',
-    options: uniqueSorted(
-      visibleDatastreams.value.map((item) => item.unitName)
-    ).map(option),
-    selectedCount: parsedSearch.value.filters.unit.length,
-  },
-  {
-    key: 'method',
-    label: 'Method',
-    options: uniqueSorted(
-      visibleDatastreams.value.map((item) => item.methodName)
-    ).map(option),
-    selectedCount: parsedSearch.value.filters.method.length,
-  },
-  {
-    key: 'processing-level',
-    label: 'Processing level',
-    options: uniqueSorted(
-      visibleDatastreams.value.map((item) => item.processingLevelName)
-    ).map(option),
-    selectedCount: parsedSearch.value.filters['processing-level'].length,
-  },
-])
+const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
+  () => [
+    {
+      key: 'observed-property',
+      label: 'Observed property',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.observedPropertyName)
+      ).map(option),
+    },
+    {
+      key: 'unit',
+      label: 'Unit',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.unitName)
+      ).map(option),
+    },
+    {
+      key: 'method',
+      label: 'Method',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.methodName)
+      ).map(option),
+    },
+    {
+      key: 'processing-level',
+      label: 'Processing level',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.processingLevelName)
+      ).map(option),
+    },
+  ]
+)
+const filterDefinitions = computed<FilterDefinition[]>(() =>
+  filterOptions.value.map((filter) => ({
+    ...filter,
+    selectedCount: parsedSearch.value.filters[filter.key].length,
+  }))
+)
 const searchQualifiers = computed(() => [
-  ...filterDefinitions.value.map((filter) => ({
+  ...filterOptions.value.map((filter) => ({
     key: filter.key,
     label: filter.label,
     values: filter.options.map((item) => item.value),

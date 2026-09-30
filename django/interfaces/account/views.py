@@ -1,7 +1,6 @@
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.contrib import messages
 from interfaces.account.forms import ProfileForm, DeleteAccountForm
 from core.iam.models import Workspace
 
@@ -21,7 +20,6 @@ def profile_edit(request):
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, "Profile updated successfully.")
             return redirect("account_profile")
     else:
         form = ProfileForm(instance=request.user)
@@ -48,7 +46,6 @@ def delete_account(request):
         if form.is_valid():
             user.delete()
             logout(request)
-            messages.success(request, "Your account has been deleted.")
             return redirect("account_login")
     else:
         form = DeleteAccountForm()
