@@ -129,8 +129,7 @@ export const useObservationStore = defineStore('observations', () => {
         const fetchedData = (await fetchObservations(
           datastream,
           beginTime,
-          endTime,
-          signal
+          endTime
         )) as ObservationArray
         ensureLatest()
         observationsRaw.value[id] = parseObservationRows(fetchedData)
@@ -153,8 +152,7 @@ export const useObservationStore = defineStore('observations', () => {
         beginDataPromise = fetchObservations(
           datastream,
           beginTime,
-          new Date(storedStart).toISOString(),
-          signal
+          new Date(storedStart).toISOString()
         ) as Promise<ObservationArray>
       }
 
@@ -164,8 +162,7 @@ export const useObservationStore = defineStore('observations', () => {
         endDataPromise = fetchObservations(
           datastream,
           new Date(storedEnd).toISOString(),
-          endTime,
-          signal
+          endTime
         ) as Promise<ObservationArray>
       }
 
