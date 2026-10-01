@@ -66,6 +66,8 @@ vi.mock('@/store/plotly', () => ({
     selectedSeries: ref(null),
     editHistory: ref([]),
     suppressedEchoSelection: ref<number[] | null>(null),
+    // Read by `useEditLock` when a relayout ends in a selection.
+    previewIndex: ref<number | null>(null),
   }),
 }))
 
