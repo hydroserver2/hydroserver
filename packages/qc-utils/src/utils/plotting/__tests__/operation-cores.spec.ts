@@ -329,57 +329,65 @@ describe('deleteDataPointsCore', () => {
 // =====================================================================
 
 describe('shiftDatetimesCollection', () => {
-  it('shifts by a precomputed deltaMs when unit is not month/year', () => {
+  const fixed = { months: 0, deltaMs: 500_000, timeZone: 'UTC' }
+
+  it('shifts by a fixed span', () => {
     const x = f64([1_000_000, 2_000_000, 3_000_000])
     const y = f32([1, 2, 3])
-    const out = shiftDatetimesCollection(x, y, [0, 2], {
-      amount: 1,
-      isMonth: false,
-      isYear: false,
-      deltaMs: 500_000,
-    })
-    expect(out).toEqual([
+    expect(shiftDatetimesCollection(x, y, [0, 2], fixed)).toEqual([
       [1_500_000, 1],
       [3_500_000, 3],
     ])
   })
 
-  it('shifts by calendar months when isMonth is true', () => {
-    const base = Date.UTC(2024, 0, 15)
-    const [shifted] = shiftDatetimesCollection(f64([base]), f32([42]), [0], {
-      amount: 2,
-      isMonth: true,
-      isYear: false,
-      deltaMs: 0,
-    })
-    const a = new Date(base)
-    const b = new Date(shifted[0])
-    const monthDelta =
-      (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth())
-    expect(monthDelta).toBe(2)
-    expect(shifted[1]).toBe(42)
+  it('keeps the clock time of the zone across daylight saving', () => {
+    // Jan 15, 9 AM MST to Jul 15, 9 AM MDT.
+    const [shifted] = shiftDatetimesCollection(
+      f64([Date.UTC(2026, 0, 15, 16)]),
+      f32([42]),
+      [0],
+      { months: 6, deltaMs: 0, timeZone: 'America/Denver' }
+    )
+    expect(shifted).toEqual([Date.UTC(2026, 6, 15, 15), 42])
   })
 
-  it('shifts by calendar years when isYear is true', () => {
-    const base = Date.UTC(2024, 5, 10)
-    const [shifted] = shiftDatetimesCollection(f64([base]), f32([7]), [0], {
-      amount: 3,
-      isMonth: false,
-      isYear: true,
-      deltaMs: 0,
-    })
-    expect(new Date(shifted[0]).getFullYear() - new Date(base).getFullYear()).toBe(3)
+  it('moves months on the zone calendar, not UTC', () => {
+    // Feb 1, 01:00Z is still Jan 31, 6 PM in Denver.
+    const [[x]] = shiftDatetimesCollection(
+      f64([Date.UTC(2026, 1, 1, 1)]),
+      f32([0]),
+      [0],
+      { months: 1, deltaMs: 0, timeZone: 'America/Denver' }
+    )
+    expect(x).toBe(Date.UTC(2026, 2, 1, 1))
+  })
+
+  it('clamps to the last day of a shorter month', () => {
+    const shift = (ms: number, months: number) =>
+      shiftDatetimesCollection(f64([ms]), f32([0]), [0], {
+        months,
+        deltaMs: 0,
+        timeZone: 'UTC',
+      })[0][0]
+    expect(shift(Date.UTC(2026, 0, 31, 6), 1)).toBe(Date.UTC(2026, 1, 28, 6))
+    expect(shift(Date.UTC(2024, 0, 31), 1)).toBe(Date.UTC(2024, 1, 29))
+    expect(shift(Date.UTC(2024, 1, 29), 12)).toBe(Date.UTC(2025, 1, 28))
+    expect(shift(Date.UTC(2026, 2, 31), -1)).toBe(Date.UTC(2026, 1, 28))
+  })
+
+  it('follows a fixed offset', () => {
+    // Jan 31, 22:00 at -0700 is Feb 1 in UTC.
+    const [[x]] = shiftDatetimesCollection(
+      f64([Date.UTC(2026, 1, 1, 5)]),
+      f32([0]),
+      [0],
+      { months: 1, deltaMs: 0, timeZone: '-0700' }
+    )
+    expect(x).toBe(Date.UTC(2026, 2, 1, 5))
   })
 
   it('returns an empty array for empty index list', () => {
-    expect(
-      shiftDatetimesCollection(f64([1]), f32([1]), [], {
-        amount: 1,
-        isMonth: false,
-        isYear: false,
-        deltaMs: 0,
-      })
-    ).toEqual([])
+    expect(shiftDatetimesCollection(f64([1]), f32([1]), [], fixed)).toEqual([])
   })
 })
 

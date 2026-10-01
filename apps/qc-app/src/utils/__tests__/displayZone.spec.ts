@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
-  fromWall,
   fromWallParts,
   offsetMs,
-  toWall,
-  toWallArray,
   wallParts,
   zoneAbbreviation,
   zoneDescription,
+  zoneId,
   type DisplayZone,
 } from '../timeZone'
 import { fromPlot, plotCoord, toPlotDate } from '../plotting/plotTime'
@@ -17,30 +15,14 @@ const denver: DisplayZone = { mode: 'iana', zone: 'America/Denver' }
 const india: DisplayZone = { mode: 'fixedOffset', zone: '+0530' }
 const utc: DisplayZone = { mode: 'utc', zone: '' }
 
-// 2026-03-08 09:00Z is 2 AM MST, when Denver springs forward to MDT.
-const SPRING = Date.UTC(2026, 2, 8, 9)
-
-describe('display zone offsets', () => {
-  it('reads an IANA zone, tracking daylight saving', () => {
+describe('display zone', () => {
+  it('passes the chosen zone to the offset math', () => {
+    expect(zoneId(denver)).toBe('America/Denver')
+    expect(zoneId(india)).toBe('+0530')
+    expect(zoneId(utc)).toBe('UTC')
     expect(offsetMs(Date.UTC(2026, 0, 15, 12), denver)).toBe(-7 * HOUR)
-    expect(offsetMs(Date.UTC(2026, 6, 15, 12), denver)).toBe(-6 * HOUR)
-  })
-
-  it('changes offset at the transition minute, not the day', () => {
-    expect(offsetMs(SPRING - 60_000, denver)).toBe(-7 * HOUR)
-    expect(offsetMs(SPRING, denver)).toBe(-6 * HOUR)
-  })
-
-  it('reads a fixed offset and UTC', () => {
     expect(offsetMs(0, india)).toBe(5.5 * HOUR)
     expect(offsetMs(0, utc)).toBe(0)
-  })
-
-  // Outside the hour that falling back repeats, which has two instants.
-  it('round-trips an instant through its wall value', () => {
-    for (const ms of [SPRING - HOUR, SPRING, SPRING + HOUR, Date.UTC(2026, 10, 1, 10)]) {
-      expect(fromWall(toWall(ms, denver), denver)).toBe(ms)
-    }
   })
 
   it('reads and builds the zone clock', () => {
@@ -54,15 +36,6 @@ describe('display zone offsets', () => {
       seconds: 0,
     })
     expect(fromWallParts(2026, 6, 15, 12, 30, 0, denver)).toBe(ms)
-  })
-
-  it('moves an array across a transition, and leaves UTC uncopied', () => {
-    const xs = new Float64Array([SPRING - HOUR, SPRING + HOUR])
-    expect(Array.from(toWallArray(xs, denver))).toEqual([
-      SPRING - 8 * HOUR,
-      SPRING - 5 * HOUR,
-    ])
-    expect(toWallArray(xs, utc)).toBe(xs)
   })
 
   it('names the zone', () => {

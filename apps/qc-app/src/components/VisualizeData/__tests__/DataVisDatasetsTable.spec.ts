@@ -82,7 +82,7 @@ vi.mock('@/utils/csvExport', () => ({
   downloadDatastreamsCsvZip: vi.fn().mockResolvedValue(undefined),
 }))
 
-const snackbarError = vi.fn()
+const snackbarError = vi.hoisted(() => vi.fn())
 vi.mock('@uwrl/qc-utils', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>
   return { ...actual, Snackbar: { error: snackbarError, success: vi.fn() } }

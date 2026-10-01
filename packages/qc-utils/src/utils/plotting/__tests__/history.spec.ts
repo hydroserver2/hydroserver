@@ -532,7 +532,7 @@ describe('applyHistory — round-trip', () => {
   it('round-trips SELECTION → SHIFT_DATETIMES with non-index args preserved', async () => {
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [7, 8, 9]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
     ]);
     const xAfter = Array.from(rec.dataX);
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -543,7 +543,36 @@ describe('applyHistory — round-trip', () => {
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataX)).toEqual(xAfter);
-    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR]);
+    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR, 'UTC']);
+  });
+
+  it('replays a month shift on its saved zone calendar', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [19]],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MONTH, 'America/Denver'],
+    ]);
+    const xAfter = Array.from(rec.dataX);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const report = await applyHistory(fresh, history);
+
+    expect(report.failed).toEqual([]);
+    expect(Array.from(fresh.dataX)).toEqual(xAfter);
+  });
+
+  it('fails a shift step saved without a zone', async () => {
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const report = await applyHistory(fresh, {
+      ...serializeHistory(fresh, SAMPLE_WINDOW),
+      operations: [
+        { method: EnumFilterOperations.SELECTION, args: [[1]] },
+        { method: EnumEditOperations.SHIFT_DATETIMES, args: [1, TimeUnit.MONTH] },
+      ],
+    });
+    expect(report.failed.map((f) => f.index)).toEqual([1]);
   });
 
   it('round-trips SELECTION → CHANGE_VALUES (consumes preceding selected at runtime)', async () => {

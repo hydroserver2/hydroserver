@@ -516,6 +516,8 @@ Press Enter on the value field, or click **Apply**, to commit.
 
 Offset the selection's timestamps by a duration. Pick an amount and a unit. Useful when a sensor's clock was off and the recorded datetime values need to be shifted by a known offset.
 
+Months and years follow the calendar of the time zone chosen on the rail, and keep the clock time: in Denver, Jan 15 at 9:00 AM plus six months is Jul 15 at 9:00 AM, even though daylight saving time started in between. A day past the end of the target month moves to its last day, so Jan 31 plus one month is Feb 28. Month and year amounts must be whole numbers. The step saves the zone it used, so it replays the same for everyone, whatever zone they have chosen.
+
 ![Shift datetimes panel](./images/panel-shiftDatetimes.png)
 
 When the QC datastream declares an `intendedTimeSpacing`, the panel shows snap chips (`0.5×`, `1×`, `2×`) that pre-fill the amount with a multiple of the intended cadence. The active chip gets a check mark.

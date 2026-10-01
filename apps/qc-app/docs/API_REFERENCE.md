@@ -801,11 +801,12 @@ default.
 Instants stay epoch ms everywhere. A **wall** value is an instant moved by
 the zone's offset, so its UTC fields read as the zone's clock:
 
-- `offsetMs(ms)`, `toWall(ms)`, `fromWall(wall)`: the conversion. IANA
-  offsets are looked up once per UTC day per zone and cached, with the
-  transition minute found on a day the offset changes.
-- `toWallArray(xs)`: an ascending array moved to wall time in one pass. It
-  returns `xs` itself when nothing moves (UTC), so only a shift copies.
+- `offsetMs(ms)`, `toWall(ms)`, `fromWall(wall)`, `toWallArray(xs)`: the
+  conversion, on qc-utils' zone math (see its Time zones section) with the
+  chosen zone filled in.
+- `zoneId()`: the chosen zone as qc-utils takes it (`UTC`, `-0700`, or an
+  IANA name). The shift dialog passes it to `SHIFT_DATETIMES`, which saves
+  it with the step.
 - `wallParts(ms)` / `fromWallParts(y, m, d, h, mi, s)`: the zone's clock
   fields, for pickers and calendar arithmetic.
 - `zoneAbbreviation(ms)`, `zoneDescription(ms)`, `zoneName()`: labels.

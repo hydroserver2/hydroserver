@@ -84,8 +84,11 @@ notable knobs:
   load.
 - `env: { TZ: 'UTC' }`: every unit test runs in UTC, so the browser's
   zone, the app's default display zone, is the same on every machine. A
-  test about a zone sets it explicitly (`timeZone.spec.ts` pins
-  `America/Denver`; `displayZone.spec.ts` passes a `DisplayZone`).
+  test about a zone sets it explicitly (`displayZone.spec.ts` passes a
+  `DisplayZone`). The offset math itself is tested in qc-utils.
+- Specs that mock all of `@uwrl/qc-utils` hand back the real `offsetMs`,
+  `toWall`, `fromWall` and `toWallArray` from `importOriginal`, since the
+  app's date helpers run on them.
 
 ### Test scaffolding
 
@@ -366,7 +369,8 @@ function observationsWithGap() {
 
 Playwright runs in the machine's zone unless a spec sets `timezoneId`.
 `time-zone.spec.ts` runs in `Asia/Tokyo`, so a time read as browser-local
-instead of in the chosen zone would show.
+instead of in the chosen zone would show. `edit-shift-datetimes.spec.ts`
+does too, and checks that a month shift saves `Asia/Tokyo` with the step.
 
 ### Test hooks
 

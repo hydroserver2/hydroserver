@@ -241,7 +241,7 @@ trailing range tuple.
 | `ASSIGN_DATETIMES_BULK` | `[datetimes[]]`                                                                                     | **Yes** (indices to assign at)           |
 | `DELETE_POINTS`         | `[]`                                                                                                | **Yes** (indices to delete)              |
 | `INTERPOLATE`           | `[]`                                                                                                | **Yes** (indices to interpolate)         |
-| `SHIFT_DATETIMES`       | `[amount, unit]`                                                                                    | **Yes** (indices to shift)               |
+| `SHIFT_DATETIMES`       | `[amount, unit, timeZone]`                                                                          | **Yes** (indices to shift)               |
 | `DRIFT_CORRECTION`      | `[value]`                                                                                           | **Yes** (consecutive groups → ranges, per-group drift = `value`) |
 
 ### Note on the runtime selection-coupling column

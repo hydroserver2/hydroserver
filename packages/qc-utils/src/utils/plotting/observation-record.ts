@@ -9,6 +9,7 @@ import {
 } from "../../types";
 import { measureEllapsedTime } from "../ellapsed-time";
 import { timeUnitMultipliers } from "../format";
+import { isValidTimeZone } from "../timeZone";
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from "../observations";
 // @ts-ignore
 import DeleteDataWorker from "./delete-data.worker?worker&inline";
@@ -46,6 +47,7 @@ import {
   persistenceCore,
   rateOfChangeCore,
   shiftDatetimesCollection,
+  type ShiftDatetimesParams,
   valueThresholdCore,
 } from "./operation-cores";
 import { shouldUseWorker } from "./calibration";
@@ -1091,36 +1093,47 @@ export class ObservationRecord {
 
   /**
    * Dispatch wrapper around `_shift` — reads target indices from
-   * `history[length - 2].selected`. The `amount` and `unit` args
-   * stay parametric on the public dispatch signature.
+   * `history[length - 2].selected`. The `amount`, `unit` and `timeZone`
+   * args stay parametric on the public dispatch signature.
    */
   private async _shiftFromSelection(
     amount: number,
     unit: TimeUnit,
+    timeZone: string,
   ): Promise<number[]> {
     const selection = this.history[this.history.length - 2]?.selected;
     if (!selection || selection.length === 0) return [];
-    return (await this._shift(selection, amount, unit)) ?? [];
+    return (await this._shift(selection, amount, unit, timeZone)) ?? [];
   }
 
   /**
    * Shifts the selected indexes by specified amount of units. Elements are reinserted according to their datetime.
    * @param index The index of the elements to shift
-   * @param amount Number of {@link TimeUnit}
+   * @param amount Number of {@link TimeUnit}; whole for months and years
    * @param unit {@link TimeUnit}
-   * @returns
+   * @param timeZone The zone whose calendar month and year shifts follow:
+   *   `UTC`, a fixed offset like `-0700`, or an IANA name
    */
   private async _shift(
     index: number[],
     amount: number,
     unit: TimeUnit,
+    timeZone: string,
   ): Promise<number[]> {
+    if (!isValidTimeZone(timeZone)) {
+      throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
+    }
+    const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
+    if (calendar && !Number.isInteger(amount)) {
+      throw new Error("Shift datetimes: months and years shift by whole numbers.");
+    }
     if (index.length === 0) return [];
 
-    const isMonth = unit === TimeUnit.MONTH;
-    const isYear = unit === TimeUnit.YEAR;
-    const deltaMs =
-      !isMonth && !isYear ? amount * timeUnitMultipliers[unit] * 1000 : 0;
+    const params: ShiftDatetimesParams = {
+      months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
+      deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
+      timeZone,
+    };
 
     const N = index.length;
 
@@ -1141,7 +1154,7 @@ export class ObservationRecord {
         this.dataX,
         this.dataY,
         index,
-        { amount, isMonth, isYear, deltaMs }
+        params
       );
       await this._deleteDataPoints(index);
       // The post-add inserted indices ARE the new positions of the
@@ -1179,10 +1192,7 @@ export class ObservationRecord {
             outputBufferY,
             indexes: indexesChunk,
             outStart: start,
-            amount,
-            isMonth,
-            isYear,
-            deltaMs,
+            ...params,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);

@@ -83,7 +83,7 @@ replay from a saved QC history, and in unit tests.
 | `ASSIGN_DATETIMES_BULK` | Write parallel datetimes; runs as one combined delete + add. |
 | `DELETE_POINTS`         | Drop the selection from x / y in a single skip-on-delete pass. |
 | `INTERPOLATE`           | Linear interpolation across each consecutive group in the selection. |
-| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit)`. |
+| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit, timeZone)`. |
 | `DRIFT_CORRECTION`      | Apply linear drift `value` to every consecutive group in the selection. |
 | `FILL_GAPS`             | Detect gaps over `gapThreshold`; insert points at `fillCadence` (interpolated or constant `fillValue`). |
 

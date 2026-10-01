@@ -463,7 +463,7 @@ describe('ObservationRecord', () => {
       const originalLen = local.dataX.length;
       await local.dispatch([
         [EnumFilterOperations.SELECTION, [7, 8, 9]],
-        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
       ]);
       expect(local.dataX.length).toBe(originalLen);
       // Datetimes still sorted
@@ -481,7 +481,29 @@ describe('ObservationRecord', () => {
       await local.reload();
       const before = Array.from(local.dataX);
       // No SELECTION dispatched first → wrapper bails.
-      await local.dispatch(EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR);
+      await local.dispatch(EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC');
+      expect(Array.from(local.dataX)).toEqual(before);
+    });
+
+    it('SHIFT_DATETIMES fails without a known zone or with a fractional month', async () => {
+      const uniform = buildUniformData(5, 0, 10);
+      const local = new ObservationRecord({
+        datetimes: uniform.datetimes,
+        dataValues: uniform.dataValues,
+      });
+      await local.reload();
+      const before = Array.from(local.dataX);
+      for (const [amount, unit, zone] of [
+        [1, TimeUnit.MONTH, 'Mars/Olympus'],
+        [1, TimeUnit.HOUR, undefined],
+        [0.5, TimeUnit.MONTH, 'UTC'],
+      ] as const) {
+        await local.dispatch([
+          [EnumFilterOperations.SELECTION, [1, 2]],
+          [EnumEditOperations.SHIFT_DATETIMES, amount, unit, zone],
+        ]);
+        expect(local.history[local.history.length - 1].execution.status).toBe('failed');
+      }
       expect(Array.from(local.dataX)).toEqual(before);
     });
 

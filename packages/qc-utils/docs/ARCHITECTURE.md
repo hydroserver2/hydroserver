@@ -149,7 +149,7 @@ Two enums define the entire dispatch surface:
 | `ASSIGN_DATETIMES_BULK` | Parallel `datetimes[i] → dataX[selection[i]]` via combined delete+add.   | inline  |
 | `DELETE_POINTS`         | Drop the selection in a single skip-on-delete pass.                       | yes     |
 | `INTERPOLATE`           | Linear interpolation per consecutive group in the selection.              | yes     |
-| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit)`.                | yes     |
+| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit, timeZone)`.      | yes     |
 | `DRIFT_CORRECTION`      | Apply linear drift across each consecutive group in the selection.         | yes     |
 | `FILL_GAPS`             | Detect gaps above threshold; insert points at fillCadence (interpolated). | yes     |
 

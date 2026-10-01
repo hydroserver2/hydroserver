@@ -216,76 +216,45 @@ describe('core-backed worker wiring', () => {
   })
 })
 
+describe('shift-datetimes.worker', () => {
+  const payload = (x: number[], params: object) => {
+    const outX = emptyBufferX(x.length)
+    const outY = emptyBufferY(x.length)
+    invokeShiftDatetimes({
+      bufferX: bufferX(x),
+      bufferY: bufferY(x.map((_, i) => i + 1)),
+      outputBufferX: outX,
+      outputBufferY: outY,
+      indexes: x.map((_, i) => i),
+      outStart: 0,
+      ...params,
+    })
+    return [Array.from(new Float64Array(outX)), Array.from(new Float32Array(outY))]
+  }
+
+  it('shifts by a fixed span', () => {
+    expect(
+      payload([1_000_000, 3_000_000], { months: 0, deltaMs: 500_000, timeZone: 'UTC' })
+    ).toEqual([
+      [1_500_000, 3_500_000],
+      [1, 2],
+    ])
+  })
+
+  it('shifts by calendar months in the given zone', () => {
+    const [x] = payload([Date.UTC(2026, 0, 15, 16)], {
+      months: 6,
+      deltaMs: 0,
+      timeZone: 'America/Denver',
+    })
+    expect(x).toEqual([Date.UTC(2026, 6, 15, 15)])
+  })
+})
+
 // ---------------------------------------------------------------------
 // No-core workers — these still carry their algorithm inline so the
 // test file is their only coverage. Keep behavioural assertions.
 // ---------------------------------------------------------------------
-
-describe('shift-datetimes.worker', () => {
-  it('shifts by a precomputed deltaMs when unit is not month/year', () => {
-    const outX = emptyBufferX(2)
-    const outY = emptyBufferY(2)
-    invokeShiftDatetimes({
-      bufferX: bufferX([1_000_000, 2_000_000, 3_000_000]),
-      bufferY: bufferY([1, 2, 3]),
-      outputBufferX: outX,
-      outputBufferY: outY,
-      indexes: [0, 2],
-      outStart: 0,
-      amount: 1,
-      isMonth: false,
-      isYear: false,
-      deltaMs: 500_000,
-    })
-    expect(Array.from(new Float64Array(outX))).toEqual([1_500_000, 3_500_000])
-    expect(Array.from(new Float32Array(outY))).toEqual([1, 3])
-  })
-
-  it('shifts by calendar months when isMonth is true', () => {
-    const base = Date.UTC(2024, 0, 15)
-    const outX = emptyBufferX(1)
-    const outY = emptyBufferY(1)
-    invokeShiftDatetimes({
-      bufferX: bufferX([base]),
-      bufferY: bufferY([42]),
-      outputBufferX: outX,
-      outputBufferY: outY,
-      indexes: [0],
-      outStart: 0,
-      amount: 2,
-      isMonth: true,
-      isYear: false,
-      deltaMs: 0,
-    })
-    const shifted = new Date(new Float64Array(outX)[0])
-    const original = new Date(base)
-    const months =
-      (shifted.getFullYear() - original.getFullYear()) * 12 +
-      (shifted.getMonth() - original.getMonth())
-    expect(months).toBe(2)
-    expect(new Float32Array(outY)[0]).toBe(42)
-  })
-
-  it('shifts by calendar years when isYear is true', () => {
-    const base = Date.UTC(2024, 5, 10)
-    const outX = emptyBufferX(1)
-    const outY = emptyBufferY(1)
-    invokeShiftDatetimes({
-      bufferX: bufferX([base]),
-      bufferY: bufferY([7]),
-      outputBufferX: outX,
-      outputBufferY: outY,
-      indexes: [0],
-      outStart: 0,
-      amount: 3,
-      isMonth: false,
-      isYear: true,
-      deltaMs: 0,
-    })
-    const shifted = new Date(new Float64Array(outX)[0])
-    expect(shifted.getFullYear() - new Date(base).getFullYear()).toBe(3)
-  })
-})
 
 describe('drift-correction.worker', () => {
   it('applies y_n = y_0 + value * ((x - startDatetime) / extent) for every job', () => {

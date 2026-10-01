@@ -6,9 +6,16 @@
  * Instants stay epoch ms everywhere. A "wall" value is an instant moved by
  * the zone's offset, so its UTC fields read as the zone's clock. Formatting,
  * pickers and the plot work on wall values; everything stored stays real.
+ * The offset math lives in qc-utils.
  */
 
 import { ref } from 'vue'
+import {
+  fromWall as zoneFromWall,
+  offsetMs as zoneOffsetMs,
+  toWall as zoneToWall,
+  toWallArray as zoneToWallArray,
+} from '@uwrl/qc-utils'
 
 export type ZoneMode = 'utc' | 'fixedOffset' | 'iana'
 
@@ -27,130 +34,31 @@ export const browserZone = (): DisplayZone => ({
 export const displayZone = ref<DisplayZone>(browserZone())
 
 const MINUTE = 60_000
-const DAY = 86_400_000
 
-/** `-0700` to minutes east of UTC. */
-function fixedOffsetMinutes(zone: string): number {
-  const m = /^([+-])(\d{2}):?(\d{2})$/.exec(zone)
-  if (!m) return 0
-  const minutes = Number(m[2]) * 60 + Number(m[3])
-  return m[1] === '-' ? -minutes : minutes
-}
-
-const partFormatters = new Map<string, Intl.DateTimeFormat>()
-
-function ianaOffsetMs(ms: number, timeZone: string): number {
-  let fmt = partFormatters.get(timeZone)
-  if (!fmt) {
-    fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hourCycle: 'h23',
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-    })
-    partFormatters.set(timeZone, fmt)
-  }
-  const get = (parts: Intl.DateTimeFormatPart[], type: string) =>
-    Number(parts.find((p) => p.type === type)?.value)
-  const parts = fmt.formatToParts(ms)
-  const wall = Date.UTC(
-    get(parts, 'year'),
-    get(parts, 'month') - 1,
-    get(parts, 'day'),
-    get(parts, 'hour'),
-    get(parts, 'minute'),
-    get(parts, 'second')
-  )
-  return wall - (ms - (((ms % 1000) + 1000) % 1000))
-}
-
-/** An offset that holds from `from` until `until`. */
-interface Segment {
-  from: number
-  until: number
-  offset: number
-}
-
-// Per zone, per UTC day: one segment, or two around a transition.
-const segmentCache = new Map<string, Map<number, Segment[]>>()
-
-function ianaSegment(ms: number, timeZone: string): Segment {
-  let days = segmentCache.get(timeZone)
-  if (!days) segmentCache.set(timeZone, (days = new Map()))
-  const day = Math.floor(ms / DAY)
-  let segments = days.get(day)
-  if (!segments) {
-    const start = day * DAY
-    const end = start + DAY
-    const first = ianaOffsetMs(start, timeZone)
-    const last = ianaOffsetMs(end - MINUTE, timeZone)
-    if (first === last) {
-      segments = [{ from: start, until: end, offset: first }]
-    } else {
-      // Zones change offset on a minute boundary at most once a day.
-      let lo = start
-      let hi = end - MINUTE
-      while (hi - lo > MINUTE) {
-        const mid = lo + Math.floor((hi - lo) / 2 / MINUTE) * MINUTE
-        if (ianaOffsetMs(mid, timeZone) === first) lo = mid
-        else hi = mid
-      }
-      segments = [
-        { from: start, until: hi, offset: first },
-        { from: hi, until: end, offset: last },
-      ]
-    }
-    days.set(day, segments)
-  }
-  return segments.find((s) => ms < s.until) ?? segments[segments.length - 1]!
-}
-
-function segmentAt(ms: number, z: DisplayZone): Segment {
-  if (z.mode === 'iana') return ianaSegment(ms, z.zone)
-  const offset = z.mode === 'fixedOffset' ? fixedOffsetMinutes(z.zone) * MINUTE : 0
-  return { from: -Infinity, until: Infinity, offset }
+/** The zone as qc-utils takes it: `UTC`, a fixed offset, or an IANA name.
+ *  Shift operations save it, so their calendar replays the same anywhere. */
+export function zoneId(z: DisplayZone = displayZone.value): string {
+  return z.mode === 'utc' ? 'UTC' : z.zone
 }
 
 /** The zone's offset from UTC at instant `ms`, in ms. */
-export function offsetMs(ms: number, z: DisplayZone = displayZone.value): number {
-  return segmentAt(ms, z).offset
-}
+export const offsetMs = (ms: number, z: DisplayZone = displayZone.value): number =>
+  zoneOffsetMs(ms, zoneId(z))
 
-export function toWall(ms: number, z: DisplayZone = displayZone.value): number {
-  return ms + offsetMs(ms, z)
-}
+export const toWall = (ms: number, z: DisplayZone = displayZone.value): number =>
+  zoneToWall(ms, zoneId(z))
 
 /** The instant a wall value names. A clock time that a daylight saving
  *  change skips or repeats has no single instant; it maps to one beside it. */
-export function fromWall(wall: number, z: DisplayZone = displayZone.value): number {
-  const guess = wall - offsetMs(wall, z)
-  return wall - offsetMs(guess, z)
-}
+export const fromWall = (wall: number, z: DisplayZone = displayZone.value): number =>
+  zoneFromWall(wall, zoneId(z))
 
-/** Every value of an ascending array moved to wall time, walking the offset
- *  segments rather than looking each point up. The input itself comes back
- *  when nothing moves (UTC), so it is copied only when it has to be. */
-export function toWallArray<T extends ArrayLike<number>>(
+/** Every value of an ascending array moved to wall time. The input itself
+ *  comes back when nothing moves (UTC). */
+export const toWallArray = <T extends ArrayLike<number>>(
   xs: T,
   z: DisplayZone = displayZone.value
-): T | Float64Array {
-  let out: Float64Array | null = null
-  let seg: Segment | null = null
-  for (let i = 0; i < xs.length; i++) {
-    const x = xs[i]!
-    if (!seg || x < seg.from || x >= seg.until) seg = segmentAt(x, z)
-    if (seg.offset !== 0 && !out) {
-      out = new Float64Array(xs.length)
-      for (let j = 0; j < i; j++) out[j] = xs[j]!
-    }
-    if (out) out[i] = x + seg.offset
-  }
-  return out ?? xs
-}
+): T | Float64Array => zoneToWallArray(xs, zoneId(z))
 
 /** The zone's clock at `ms`, with a 0-based month. */
 export function wallParts(ms: number, z: DisplayZone = displayZone.value) {

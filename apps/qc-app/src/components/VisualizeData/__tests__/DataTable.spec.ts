@@ -56,19 +56,28 @@ vi.mock('@/composables/useDataSelection', () => ({
   useDataSelection: () => ({ clearSelected }),
 }))
 
-vi.mock('@uwrl/qc-utils', () => ({
-  EnumEditOperations: {
-    ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
-    ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
-  },
-  EnumFilterOperations: { SELECTION: 'SELECTION' },
-  // Guard against Invalid Date (null/undefined/NaN epochs) during render.
-  formatDate: (d: Date) => {
-    const t = d?.getTime?.()
-    if (t == null || Number.isNaN(t)) return ''
-    return d.toISOString()
-  },
-}))
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    EnumEditOperations: {
+      ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
+      ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
+    },
+    EnumFilterOperations: { SELECTION: 'SELECTION' },
+    // Guard against Invalid Date (null/undefined/NaN epochs) during render.
+    formatDate: (d: Date) => {
+      const t = d?.getTime?.()
+      if (t == null || Number.isNaN(t)) return ''
+      return d.toISOString()
+    },
+  }
+})
 
 vi.mock('@/components/VisualizeData/EditableCell.vue', () => ({
   default: {

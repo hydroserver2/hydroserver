@@ -120,7 +120,7 @@ matters; lower means smaller idle memory, more frequent grow / copy.
 | `ASSIGN_DATETIMES_BULK`| `(indices: number[], datetimes: number[])` — combined delete + add.          |
 | `DELETE_POINTS`        | `(indices?: number[])`, defaulting to the prior selection. Indices past the end and repeats are ignored. |
 | `INTERPOLATE`          | `()` — linear interpolation per consecutive group in the prior selection.    |
-| `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit)`                                           |
+| `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit, timeZone: string)`; months and years follow `timeZone`'s calendar; see Time zones. |
 | `DRIFT_CORRECTION`     | `(value: number)` — linear drift across each consecutive group.              |
 | `FILL_GAPS`            | `(gapThreshold: [amount, unit], fillCadence: [amount, unit], fillValue?: number)` |
 
@@ -345,6 +345,33 @@ formatDuration(ms: number): string     // "1d 2h 3m 4s"
 and summer offsets), with their `FixedOffsetTimezone` and `DstAwareTimezone`
 value types. The lists a data connection's timestamps choose from; the QC
 app's time zone setting offers the same ones.
+
+The math takes a zone as a string: `UTC`, a fixed offset like `-0700`, or
+an IANA name.
+
+```ts
+isValidTimeZone(zone: unknown): boolean
+offsetMs(ms: number, zone: string): number       // the zone's offset at ms
+toWall(ms: number, zone: string): number         // ms moved to the zone's clock
+fromWall(wall: number, zone: string): number     // back to an instant
+toWallArray(xs, zone): typeof xs | Float64Array  // xs itself when nothing moves
+addCalendarMonths(ms: number, months: number, zone: string): number
+```
+
+A **wall** value is an instant moved by the zone's offset, so its UTC
+fields read as the zone's clock. IANA offsets are cached per UTC day, with
+the transition minute found on a day the offset changes. A clock time that
+daylight saving skips or repeats maps to an instant beside it.
+
+`addCalendarMonths` keeps the clock time on the zone's calendar, so Jan 15
+at 9:00 in Denver plus six months is Jul 15 at 9:00 there, across the
+change to daylight time. A day past the end of the target month clamps to
+its last day: Jan 31 plus a month is Feb 28 (29 in a leap year).
+
+`SHIFT_DATETIMES` saves its zone, so a month or year shift replays the
+same on any machine. It fails (`execution.status: "failed"`) on a zone
+`isValidTimeZone` rejects, or a month or year amount that isn't whole.
+Other units are fixed spans and ignore the zone.
 
 ### `measureEllapsedTime<T>(fn: () => Promise<T> | T): Promise<{ result: T; duration: number }>`
 
