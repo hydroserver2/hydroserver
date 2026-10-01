@@ -15,6 +15,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 BASE_URL = "https://hydroserver.example.org"
 COLLECTIONS_PATH = "/api/ogc/collections"
 COLLECTION_IDS = [collection.id for collection in COLLECTIONS]
+FEATURE_COLLECTION_IDS = ["workspaces", "monitoring-sites", "datastreams", "observations"]
 
 
 @pytest.fixture
@@ -51,7 +52,7 @@ def test_collection_describes_the_registered_collection(client, collection):
     assert body["id"] == collection.id
     assert body["title"] == collection.title
     assert body["description"] == collection.description
-    assert body.get("itemType") == collection.item_type
+    assert body["itemType"] == collection.item_type
     assert _links(body) == {
         "self": {
             "href": f"{BASE_URL}{COLLECTIONS_PATH}/{collection.id}",
@@ -77,16 +78,34 @@ def test_collection_matches_its_entry_in_collections(client, collection_id):
     assert response.json() == listed[collection_id]
 
 
-def test_collection_without_an_item_type_omits_it(client):
-    response = client.get(f"{COLLECTIONS_PATH}/units")
+def test_feature_collections_are_the_spatial_collections():
+    # A missing itemType means "feature" (Features Core collection.yaml), so a collection
+    # switching type silently changes which collections OGC clients treat as features.
+    assert {collection.id for collection in COLLECTIONS if collection.item_type == "feature"} == set(
+        FEATURE_COLLECTION_IDS
+    )
 
-    assert "itemType" not in response.json()
 
-
-def test_feature_collection_declares_its_item_type(client):
-    response = client.get(f"{COLLECTIONS_PATH}/monitoring-sites")
+@pytest.mark.parametrize("collection_id", FEATURE_COLLECTION_IDS)
+def test_feature_collection_declares_its_item_type(client, collection_id):
+    response = client.get(f"{COLLECTIONS_PATH}/{collection_id}")
 
     assert response.json()["itemType"] == "feature"
+
+
+def test_non_spatial_collection_declares_resource_item_type(client):
+    response = client.get(f"{COLLECTIONS_PATH}/units")
+
+    assert response.json()["itemType"] == "resource"
+
+
+def test_get_collections_declares_an_item_type_for_every_collection(client):
+    response = client.get(COLLECTIONS_PATH)
+
+    assert {collection["itemType"] for collection in response.json()["collections"]} <= {
+        "feature",
+        "resource",
+    }
 
 
 @pytest.mark.parametrize("collection_id", COLLECTION_IDS)

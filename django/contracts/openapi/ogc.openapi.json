@@ -409,15 +409,13 @@
             "type": "string"
           },
           "itemType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "description": "The type of the collection's items: 'feature' for spatial items served as OGC API features, or 'resource' for non-spatial items.",
+            "enum": [
+              "feature",
+              "resource"
             ],
-            "title": "Itemtype"
+            "title": "Itemtype",
+            "type": "string"
           },
           "links": {
             "items": {
@@ -435,6 +433,7 @@
           "id",
           "title",
           "description",
+          "itemType",
           "links"
         ],
         "title": "CollectionResponse",

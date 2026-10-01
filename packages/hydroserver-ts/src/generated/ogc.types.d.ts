@@ -2362,8 +2362,12 @@ export interface components {
             description: string;
             /** Id */
             id: string;
-            /** Itemtype */
-            itemType?: string | null;
+            /**
+             * Itemtype
+             * @description The type of the collection's items: 'feature' for spatial items served as OGC API features, or 'resource' for non-spatial items.
+             * @enum {string}
+             */
+            itemType: "feature" | "resource";
             /** Links */
             links: components["schemas"]["Link"][];
             /** Title */

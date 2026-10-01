@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
+
+ItemType = Literal["feature", "resource"]
 
 
 @dataclass(frozen=True)
@@ -15,7 +17,7 @@ class CollectionDefinition:
     title: str
     description: str
     router: str
-    item_type: Optional[str] = None
+    item_type: ItemType = "resource"
 
 
 VIEWS = "interfaces.api.views"
@@ -27,6 +29,7 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         description="Workspaces that own monitoring sites, datastreams, and other data, and "
         "control who can access them.",
         router=f"{VIEWS}.iam.workspace.workspace_router",
+        item_type="feature",
     ),
     CollectionDefinition(
         id="roles",
