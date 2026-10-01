@@ -275,7 +275,10 @@ it, drawn light grey (`SOURCE_CONTEXT_COLOR`) and only outside
 (`utils/contextSeriesId.ts`) so the user can also plot the source as an
 ordinary series beside it, which draws whole and counts toward the 4. It is
 null without an edit target or when the Context menu's switch is off
-(`showSourceContext`). `editSourceDatastream` is the edit target's source
+(`showSourceContext`). The edit target, when also plotted, is drawn the same
+way: under its `ctx:` id, from its committed observations, on its own axis
+and colour, beside the edit record. A `ctx:` series fetches the datastream
+its id names (`contextTargetId`), never a working copy. `editSourceDatastream` is the edit target's source
 either way.
 `setEditTarget` resets the session store when the target changes, so the
 previous target's window is never applied to the new one.

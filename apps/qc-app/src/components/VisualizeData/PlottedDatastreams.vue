@@ -136,6 +136,17 @@
             >
               snapshot
             </v-chip>
+            <v-chip
+              v-if="isCommittedCopy(datastream)"
+              size="x-small"
+              variant="tonal"
+              label
+              class="flex-shrink-0"
+              title="Drawn from its committed data, beside the copy being edited"
+              :data-testid="`plotted-committed-${datastream.id}`"
+            >
+              committed
+            </v-chip>
             <v-tooltip
               v-if="
                 !snapshotFor(datastream.id) &&
@@ -203,6 +214,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 import { formatDayStamp } from '@/utils/time'
+import { contextTargetId } from '@/utils/contextSeriesId'
 import { useClearPlot } from '@/composables/useClearPlot'
 
 /** `clearable`: show the Clear plot toolbar (the Select view's list). */
@@ -231,6 +243,10 @@ const { toggleDatastream } = useDataVisStore()
 const isEdit = (ds: Datastream) => qcDatastream.value?.id === ds.id
 const isSource = (ds: Datastream) =>
   sourceContextDatastream.value?.id === ds.id
+/** The edit target, also plotted, drawn from its committed data. */
+const isCommittedCopy = (ds: Datastream) =>
+  ds.id !== contextTargetId(ds.id) &&
+  contextTargetId(ds.id) === qcDatastream.value?.id
 /** Edit target and its source: always shown, never removed or reordered. */
 const isPinned = (ds: Datastream) => isEdit(ds) || isSource(ds)
 const isPrimary = (ds: Datastream, index: number) =>
@@ -378,8 +394,13 @@ function onDragEnd() {
 // then re-sorts `graphSeriesArray` so trace order (and the colours derived
 // from it) follows `seriesDatastreams`.
 function reorder(from: number, to: number): boolean {
-  const movedId = listedDatastreams.value[from]?.id
-  const targetId = listedDatastreams.value[to]?.id
+  // A context row reorders the datastream it draws.
+  const rowId = (i: number) => {
+    const id = listedDatastreams.value[i]?.id
+    return id && contextTargetId(id)
+  }
+  const movedId = rowId(from)
+  const targetId = rowId(to)
   const list = plottedDatastreams.value
   const fromPos = list.findIndex((d) => d.id === movedId)
   const toPos = list.findIndex((d) => d.id === targetId)

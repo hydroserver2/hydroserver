@@ -110,7 +110,8 @@ const props = defineProps<{
   loading?: boolean
   /** Free slots under the plot cap, ignoring this source's group. */
   slotsLeft: number
-  /** The datastream being edited: already on the plot, so not offered. */
+  /** The datastream being edited. Picking it plots its committed data as
+   *  context beside the edit. */
   editingId?: string | null
 }>()
 
@@ -159,7 +160,7 @@ const slotsLeftForNew = computed(() => props.slotsLeft - checked.value.length)
 const isEditing = (id: string) => !!props.editingId && id === props.editingId
 
 const isDisabled = (id: string) =>
-  isEditing(id) || (!checked.value.includes(id) && slotsLeftForNew.value <= 0)
+  !checked.value.includes(id) && slotsLeftForNew.value <= 0
 
 function toggle(id: string) {
   if (checked.value.includes(id)) {

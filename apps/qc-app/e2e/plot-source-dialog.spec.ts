@@ -9,7 +9,12 @@
 
 import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { seedWorkspaceSelection, waitForHomeReady } from './support/app'
+import {
+  seedWorkspaceSelection,
+  startSessionFromRow,
+  waitForHomeReady,
+} from './support/app'
+import { traceIds } from './support/plot'
 import { DATASTREAM_ID, MANAGED_DATASTREAM_ID } from './support/fixtures'
 
 test.describe('plot source chooser', () => {
@@ -111,5 +116,26 @@ test.describe('plot source chooser', () => {
     await expect(
       page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`)
     ).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  test('keeps a plotted managed datastream as committed context once it is edited', async ({
+    page,
+  }) => {
+    await openChooser(page)
+    await page
+      .getByTestId(`plot-option-${MANAGED_DATASTREAM_ID}`)
+      .locator('input')
+      .check()
+    await page.getByTestId('plot-source-apply').click()
+    await expect(page.getByTestId('plot-source-dialog')).toBeHidden()
+
+    await startSessionFromRow(page)
+
+    const ids = await traceIds(page)
+    expect(ids).toContain(MANAGED_DATASTREAM_ID)
+    expect(ids).toContain(`ctx:${MANAGED_DATASTREAM_ID}`)
+    await expect(
+      page.getByTestId(`plotted-committed-ctx:${MANAGED_DATASTREAM_ID}`)
+    ).toBeVisible()
   })
 })

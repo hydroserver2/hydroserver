@@ -330,6 +330,30 @@ describe('useDataVisStore edit target', () => {
     ])
   })
 
+  it('draws the edit target, also plotted, as committed context beside the edit', async () => {
+    const { store, managed } = await managedPair()
+    await store.plotDatastream(managed as any)
+    await store.setEditTarget('mgd')
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'ctx:src', 'ctx:mgd'])
+  })
+
+  it('fills the committed copy from the edit target datastream', async () => {
+    const { store, managed } = await managedPair()
+    await store.plotDatastream(managed as any)
+    await editWithWindow(store)
+    const call = mockFetchGraphSeries.mock.calls.find((c) => c[0].id === 'ctx:mgd')
+    expect(call?.[4]?.id).toBe('mgd')
+  })
+
+  it('unplots the edit target from its committed copy row', async () => {
+    const { store, managed } = await managedPair()
+    await store.plotDatastream(managed as any)
+    await store.setEditTarget('mgd')
+    await store.toggleDatastream({ id: 'ctx:mgd' } as any)
+    expect(store.plottedDatastreams).toEqual([])
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'ctx:src'])
+  })
+
   it('fills the context series with the source data', async () => {
     const { store } = await managedPair()
     await editWithWindow(store)

@@ -138,7 +138,9 @@ What changes:
   includes the edit target's own source and its other quality-controlled
   versions: a source you plot this way draws in full, in its own colour, like
   any plotted datastream. The edit target itself is marked **Editing** in the
-  chooser and cannot be picked, since it is already on the plot.
+  chooser. Picking it, or editing a datastream you had already plotted, draws
+  its committed data as context beside the copy you edit, in its own colour
+  and on its own axis. Its row in the plotted list is tagged **committed**.
 - The plot's **Time range** button becomes the **Context** menu, which sets
   the range around the session, with presets counting out from the session
   window. Your edits are never reloaded by it.

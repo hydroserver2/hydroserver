@@ -17,7 +17,8 @@ const datastreamB = { id: 'ds-b', name: 'Beta Stream', valueCount: 9999 }
 const plottedDatastreams = ref<any[]>([])
 const qcDatastream = ref<any>(null)
 const sourceContextDatastream = ref<any>(null)
-// Mirrors the store: edit target, its source, then the rest of plotted.
+// Mirrors the store: edit target, its source, then the rest of plotted, with
+// the edit target, when also plotted, as a committed copy.
 const seriesDatastreams = computed(() => {
   const edit = qcDatastream.value
   if (!edit) return plottedDatastreams.value
@@ -25,7 +26,9 @@ const seriesDatastreams = computed(() => {
   const pinnedIds = new Set(pinned.map((d) => d.id))
   return [
     ...pinned,
-    ...plottedDatastreams.value.filter((d) => !pinnedIds.has(d.id)),
+    ...plottedDatastreams.value
+      .filter((d) => !pinnedIds.has(d.id) || d.id === edit.id)
+      .map((d) => (d.id === edit.id ? { ...d, id: `ctx:${d.id}` } : d)),
   ]
 })
 const loadingStates = ref(new Map<string, boolean>())
@@ -117,7 +120,7 @@ function seedSeries(
 describe('PlottedDatastreams.vue: load status', () => {
   beforeEach(() => {
     plottedDatastreams.value = [datastreamA]
-    qcDatastream.value = datastreamA
+    qcDatastream.value = null
     graphSeriesArray.value = []
     plotlyOptions.value = { traces: [] }
     hiddenAxisIds.value = new Set()
@@ -348,6 +351,19 @@ describe('PlottedDatastreams row kinds', () => {
       'plotted-item-ctx',
       'plotted-item-ctx2',
     ])
+  })
+
+  it('lists the edit target, also plotted, as a committed copy row', async () => {
+    startEditing()
+    plottedDatastreams.value = [ctx, edit]
+    const wrapper = mountIt()
+    const r = row(wrapper, 'ctx:mgd')
+
+    expect(r.exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plotted-committed-ctx:mgd"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plotted-committed-mgd"]').exists()).toBe(false)
+    await r.find('[aria-label="Remove from plot"]').trigger('click')
+    expect(toggleDatastream).toHaveBeenCalledWith(expect.objectContaining({ id: 'ctx:mgd' }))
   })
 
   it('lists a source the user plotted as an ordinary row', () => {

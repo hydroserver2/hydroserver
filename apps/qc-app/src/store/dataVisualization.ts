@@ -15,7 +15,7 @@ import {
   type TimeWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
-import { isContextId, makeContextId } from '@/utils/contextSeriesId'
+import { contextTargetId, makeContextId } from '@/utils/contextSeriesId'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
 import { useQcSessionStore } from '@/store/qcSession'
 import type { SnapshotMeta } from '@/types'
@@ -184,7 +184,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   })
 
   /** What the plot draws, in order: edit target, its source context, then
-   *  plotted. */
+   *  plotted. The edit target, when also plotted, is drawn as context from
+   *  its committed data, beside the record being edited. */
   const seriesDatastreams = computed<Datastream[]>(() => {
     const edit = qcDatastream.value
     if (!edit) return plottedDatastreams.value
@@ -193,7 +194,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     const pinnedIds = new Set(pinned.map((d) => d.id))
     return [
       ...pinned,
-      ...plottedDatastreams.value.filter((d) => !pinnedIds.has(d.id)),
+      ...plottedDatastreams.value
+        .filter((d) => !pinnedIds.has(d.id) || d.id === edit.id)
+        .map((d) =>
+          d.id === edit.id ? ({ ...d, id: makeContextId(d.id) } as Datastream) : d
+        ),
     ]
   })
 
@@ -290,11 +295,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     clearChartState()
   }
 
+  /** Plot or unplot a datastream, given it or the series drawing it. */
   async function toggleDatastream(datastream: Datastream) {
-    const exists = plottedDatastreams.value.some(
-      (item) => item.id === datastream.id
-    )
-    if (exists) await unplotDatastream(datastream.id)
+    const id = contextTargetId(datastream.id)
+    const plotted = plottedDatastreams.value.some((item) => item.id === id)
+    if (plotted) await unplotDatastream(id)
     else await plotDatastream(datastream)
   }
 
@@ -739,10 +744,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   ) => {
     const load = {}
     latestLoads.set(datastream.id, load)
-    // The source context series reads the source's own data.
-    const fetchDs = isContextId(datastream.id)
-      ? (editSourceDatastream.value ?? datastream)
-      : datastream
+    // A context series reads its datastream's own data.
+    const targetId = contextTargetId(datastream.id)
+    const fetchDs =
+      targetId === datastream.id
+        ? datastream
+        : (datastreams.value.find((d) => d.id === targetId) ?? datastream)
     try {
       // A managed datastream with a session in progress plots its working
       // copy: it spans the session window and is never re-windowed, since a

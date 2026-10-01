@@ -228,7 +228,7 @@ test.describe('Select while editing', () => {
 
     await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
     await expect(page.getByTestId('plot-source-dialog')).toBeVisible()
-    // The edit target is already on the plot, so it is not offered.
+    // The edit target is marked in the chooser.
     await expect(
       page.getByTestId(`plot-option-editing-${MANAGED_DATASTREAM_ID}`)
     ).toBeVisible()
@@ -241,6 +241,30 @@ test.describe('Select while editing', () => {
     // The plotted source is an ordinary row; the grey context gets none.
     await expect(
       sidePanel(page).getByTestId(`plotted-item-${DATASTREAM_ID}`)
+    ).toBeVisible()
+  })
+
+  test('picking the edit target in the chooser plots its committed data beside it', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await startSessionFromRow(page)
+    await goToSelect(page)
+
+    await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
+    await page
+      .getByTestId(`plot-option-${MANAGED_DATASTREAM_ID}`)
+      .locator('input')
+      .check()
+    await page.getByTestId('plot-source-apply').click()
+
+    await expect
+      .poll(() => plottedTraceIds(page))
+      .toEqual(
+        expect.arrayContaining([MANAGED_DATASTREAM_ID, `ctx:${MANAGED_DATASTREAM_ID}`])
+      )
+    await expect(
+      sidePanel(page).getByTestId(`plotted-committed-ctx:${MANAGED_DATASTREAM_ID}`)
     ).toBeVisible()
   })
 
