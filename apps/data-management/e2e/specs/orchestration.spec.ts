@@ -1,17 +1,25 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
 import { chooseOverlayOption, selectWorkspace } from '../support/ui'
 
 test.describe('orchestration', () => {
+  async function selectDataConnection(page: Page) {
+    await page
+      .locator('.sidebar-item--connection')
+      .filter({ hasText: fixtures.orchestration.dataConnectionName })
+      .click()
+  }
+
   test('orchestration page loads seeded workspace orchestration data', async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
 
-    await page.goto('/orchestration')
+    await page.goto('/orchestration/ingestion')
     await selectWorkspace(page, fixtures.workspaces.private.name)
+    await selectDataConnection(page)
 
     await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
     await expect(
@@ -29,8 +37,9 @@ test.describe('orchestration', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
 
-    await page.goto('/orchestration')
+    await page.goto('/orchestration/ingestion')
     await selectWorkspace(page, fixtures.workspaces.private.name)
+    await selectDataConnection(page)
 
     await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
 
@@ -55,8 +64,9 @@ test.describe('orchestration', () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/orchestration')
+    await page.goto('/orchestration/ingestion')
     await selectWorkspace(page, fixtures.workspaces.private.name)
+    await selectDataConnection(page)
 
     await expect(
       page.getByRole('heading', {
@@ -68,6 +78,7 @@ test.describe('orchestration', () => {
     await expect(page.getByText(fixtures.orchestration.dataConnectionName)).toHaveCount(0)
 
     await selectWorkspace(page, fixtures.workspaces.private.name)
+    await selectDataConnection(page)
     await expect(
       page.getByRole('heading', {
         name: fixtures.orchestration.dataConnectionName,
