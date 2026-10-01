@@ -235,6 +235,94 @@ def test_create_observations(
     )
 
 
+REPLACE_DATASTREAM_ID = uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
+
+
+def replace_observations(get_principal, rows, **kwargs):
+    observation_service.bulk_create(
+        principal=get_principal("owner"),
+        datastream_id=REPLACE_DATASTREAM_ID,
+        data=ObservationBulkPostBody(fields=["phenomenonTime", "result"], data=rows),
+        mode="replace",
+        **kwargs,
+    )
+    return sorted(
+        Observation.objects.filter(datastream_id=REPLACE_DATASTREAM_ID).values_list(
+            "result", flat=True
+        )
+    )
+
+
+def test_replace_observations_deletes_the_given_range(get_principal):
+    # The existing points (08:00Z, 09:00Z) sit outside the upload's own span.
+    results = replace_observations(
+        get_principal,
+        [["2025-02-10T08:30:00Z", 5.5]],
+        phenomenon_time_start="2025-02-10T07:00:00Z",
+        phenomenon_time_end="2025-02-10T10:00:00Z",
+    )
+
+    assert results == [5.5]
+
+
+def test_replace_observations_with_an_empty_upload_clears_the_range(get_principal):
+    results = replace_observations(
+        get_principal,
+        [],
+        phenomenon_time_start="2025-02-10T07:00:00Z",
+        phenomenon_time_end="2025-02-10T10:00:00Z",
+    )
+
+    assert results == []
+
+
+def test_replace_observations_without_a_range_uses_the_upload_span(get_principal):
+    results = replace_observations(get_principal, [["2025-02-10T08:30:00Z", 5.5]])
+
+    assert results == [1.1, 3.1, 5.5]
+
+
+def test_replace_observations_rejects_an_empty_upload_without_a_range(get_principal):
+    from ninja.errors import HttpError
+
+    with pytest.raises(HttpError) as exc_info:
+        replace_observations(get_principal, [])
+
+    assert exc_info.value.status_code == 400
+
+
+def test_replace_observations_rejects_half_a_range(get_principal):
+    from ninja.errors import HttpError
+
+    with pytest.raises(HttpError) as exc_info:
+        replace_observations(
+            get_principal,
+            [["2025-02-10T08:30:00Z", 5.5]],
+            phenomenon_time_start="2025-02-10T07:00:00Z",
+        )
+
+    assert exc_info.value.status_code == 400
+
+
+def test_create_observations_rejects_a_range_outside_replace_mode(get_principal):
+    from ninja.errors import HttpError
+
+    with pytest.raises(HttpError) as exc_info:
+        observation_service.bulk_create(
+            principal=get_principal("owner"),
+            datastream_id=REPLACE_DATASTREAM_ID,
+            data=ObservationBulkPostBody(
+                fields=["phenomenonTime", "result"],
+                data=[["2025-03-10T01:00:00Z", 9.1]],
+            ),
+            mode="insert",
+            phenomenon_time_start="2025-03-10T00:00:00Z",
+            phenomenon_time_end="2025-03-10T02:00:00Z",
+        )
+
+    assert exc_info.value.status_code == 400
+
+
 def test_delete_observations(
     django_assert_max_num_queries,
     get_principal,

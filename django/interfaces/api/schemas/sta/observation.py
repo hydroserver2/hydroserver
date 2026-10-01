@@ -96,8 +96,17 @@ class ObservationBulkPostQueryParameters(Schema):
             "`insert` allows observations at any timestamp. "
             "`append` adds only future observations (after the latest existing timestamp). "
             "`backfill` adds only historical observations (before the earliest existing timestamp). "
-            "`replace` deletes all observations in the range of provided observations before inserting new ones."
+            "`replace` deletes all observations in the range of provided observations before inserting new ones, "
+            "or in `phenomenon_time_start` to `phenomenon_time_end` when given."
         ),
+    )
+    phenomenon_time_start: Optional[ISODatetime] = Query(
+        None,
+        description="Start of the range `replace` deletes. Requires `phenomenon_time_end`.",
+    )
+    phenomenon_time_end: Optional[ISODatetime] = Query(
+        None,
+        description="End of the range `replace` deletes. Requires `phenomenon_time_start`.",
     )
 
 
