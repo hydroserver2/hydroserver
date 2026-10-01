@@ -34,7 +34,15 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        // The plots are WebGL. Without a GPU (CI) Firefox turns WebGL off and
+        // Plotly covers each plot with a notice, which blocks clicks on it.
+        launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+      },
+    },
   ],
   webServer: {
     command: `npm run dev -- --host ${appHost} --port ${appPort}`,

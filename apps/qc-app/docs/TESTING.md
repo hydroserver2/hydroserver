@@ -233,6 +233,9 @@ The CI gate prints uncovered line numbers per file. Common causes:
 - `projects: chromium, firefox` only. WebKit is **excluded on
   purpose**: `SharedArrayBuffer` + COOP/COEP behavior diverges in
   Safari and would need its own validation pass.
+- Firefox launches with `webgl.force-enabled`. The plots are WebGL, and
+  without a GPU (CI) Firefox turns WebGL off, so Plotly covers each plot
+  with a notice that swallows clicks on it and its toolbar.
 - `baseURL: http://127.0.0.1:15173` (`E2E_APP_HOST` / `E2E_APP_PORT`): **never `localhost`**. The
   backend (`playground.hydroserver.org`) CORS-allowlists
   the `127.0.0.1` origins only; using `localhost` makes API requests fail
