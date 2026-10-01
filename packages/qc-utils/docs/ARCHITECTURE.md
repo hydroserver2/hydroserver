@@ -91,7 +91,7 @@ The record holds the full series in `rawData`, but `dataX` / `dataY` (the
 operation surface) carry only the active **window**. `applyWindow(begin,
 end, rawData?)` slices `rawData` into `dataX` / `dataY`, optionally taking
 new `rawData` first (a cache that grew); `reload()` restores that windowed
-baseline. A window or data change clears history — operations only ever see
+baseline. A window or data change clears history: operations only ever see
 data inside the current window, so a new window starts from a fresh QC
 baseline.
 
@@ -247,7 +247,17 @@ last `reload()`. Each `HistoryItem`:
 
 `undo()` truncates the last entry, pushes it onto `redoStack`, and
 replays the remaining history from scratch against the freshly
-`reload()`-ed dataset. `redo()` is the inverse. This is conservative
+`reload()`-ed dataset. `redo()` is the inverse. Every replay runs each
+step through `dispatchStep`, which carries the step's `comment` and
+`performedBy` onto the entry it produces, so they survive even when a
+replay merges entries (two filters left side by side collapse into one).
+
+`previewHistory(index)` replays only up to `index` and leaves the later
+steps listed but unapplied, with `previewIndex` marking the step shown.
+Edits throw `HistoryPreviewError` until `exitPreview()` replays the whole
+history again. `truncateHistory(index)` drops the later steps for good,
+and `restoreHistory(steps)` replaces the history wholesale, for going back
+to a saved one. This is conservative
 (every undo is O(history-length)) but correctness is straightforward —
 no rollback / inverse-op machinery to maintain. For typical QC sessions
 (<100 ops) it's instant.

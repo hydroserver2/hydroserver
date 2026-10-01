@@ -143,7 +143,8 @@ export interface HistoryExecution {
    * from the data as it stood when the op ran. Indices shift with later
    * edits; these don't, so a consumer can say which period a step touched.
    * Filters: their resulting selection. Selection-consuming edits: the
-   * preceding entry's selection, before the edit. ADD_POINTS and FILL_GAPS: the
+   * preceding entry's selection, before the edit, so SHIFT_DATETIMES reports
+   * where the points were, not where they moved. ADD_POINTS and FILL_GAPS: the
    * points they inserted. `undefined` when the op touched no points.
    * Runtime-only like `selected`: recomputed on replay, never serialized.
    */
@@ -162,8 +163,8 @@ export type HistoryItem = {
   comment?: string;
   /**
    * Who applied this operation, for display. Server-assigned provenance
-   * rather than authored input: the consumer stamps it when replaying a
-   * stored history, and it is never sent back as part of an operation.
+   * rather than authored input: `applyHistory` and every replay carry it
+   * from the stored operation, and it is never sent back as part of one.
    */
   performedBy?: string;
   /**

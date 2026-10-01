@@ -84,18 +84,20 @@ call `reload()` once construction is done to initialize.
 
 | Method                                       | Returns          | Effect                                                                                     |
 |----------------------------------------------|------------------|--------------------------------------------------------------------------------------------|
-| `dispatch(ops: Array<[Enum, ...args]>)`      | `Promise<void>`  | Run a chain of operations atomically. Each op appends a `HistoryItem`.                     |
-| `dispatchAction(op: EnumEditOperations, ...args)` | `Promise<void>` | Run one edit op.                                                                      |
-| `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<void>` | Run one filter op. Produces a selection.                                             |
-| `undo()`                                     | `Promise<void>`  | Pop the last history entry; replay the rest from a fresh `reload()`.                       |
-| `redo()`                                     | `Promise<void>`  | Replay the most recently undone entry.                                                     |
+| `dispatch(ops: Array<[Enum, ...args]>)`      | `Promise<number[]>` | Run a chain of operations in order. Each op appends a `HistoryItem` (a filter can replace the one before it). Returns the last op's selection. |
+| `dispatchStep(step)`                         | `Promise<number[]>` | Run one recorded step (`method`, `args`) and carry its `comment` and `performedBy` onto the entry it produces. Every replay goes through it, so these survive undo, redo, removal and `applyHistory` even when replay merges entries. |
+| `dispatchAction(op: EnumEditOperations, ...args)` | `Promise<number[]>` | Run one edit op. Returns the selection it leaves.                                  |
+| `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<number[]>` | Run one filter op. Returns its selection.                                        |
+| `undo()`                                     | `Promise<number[]>` | Pop the last history entry; replay the rest from a fresh `reload()`. Returns the selection left. |
+| `redo()`                                     | `Promise<number[]>` | Replay the most recently undone entry. Returns its selection.                           |
 | `applyWindow(begin, end, rawData?)`          | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. A passed `rawData` replaces the full series first (e.g. after a cache filled a gap). Clears history on a real change; no-op when neither the window nor the data changed. |
 | `reload()`                                   | `Promise<void>`  | Re-initialize the typed arrays from `rawData`, sliced to the current window; clear history. |
 | `previewHistory(index)`                      | `Promise<number[]>` | Show the data as of step `index` (`-1` for the starting state) and keep every later step listed, unapplied. Sets `previewIndex`; edits throw `HistoryPreviewError` until `exitPreview`. Previewing the last step is `exitPreview`. Returns the shown step's selection. |
 | `exitPreview()`                              | `Promise<number[]>` | Replay the whole history after a preview. A no-op when nothing is previewed. |
-| `truncateHistory(index)`                     | `Promise<number[]>` | Drop every step after `index` for good (discarding unsaved edits), clear the redo stack and replay the rest. |
+| `truncateHistory(index)`                     | `Promise<number[]>` | Drop every step after `index` for good, clear the redo stack and replay the rest. |
+| `restoreHistory(steps)`                      | `Promise<number[]>` | Replace the history with `steps` (keeping their comment and attribution), clear the redo stack and replay from raw. For going back to a saved history that undo and new edits have diverged from. |
 | `previewIndex`                               | `number \| null`    | The step being previewed, or null when the data reflects the whole history. `undo` ends a preview; `redo` ends it first, then redoes. |
-| `removeHistoryItem(index: number)`           | `Promise<void>`  | Drop a specific entry; replay the rest.                                                    |
+| `removeHistoryItem(index: number)`           | `Promise<number[]>` | Drop a specific entry and clear the redo stack; replay the rest. Returns the selection left. |
 
 The op handlers themselves are private — dispatch by enum.
 
@@ -116,7 +118,7 @@ matters; lower means smaller idle memory, more frequent grow / copy.
 | `CHANGE_VALUES`        | `(operator: Operator, value: number, [range?])` — applies at prior selection.|
 | `ASSIGN_VALUES_BULK`   | `(indices: number[], values: number[])` — parallel arrays. No workers.       |
 | `ASSIGN_DATETIMES_BULK`| `(indices: number[], datetimes: number[])` — combined delete + add.          |
-| `DELETE_POINTS`        | `(indices?: number[])` — defaults to the prior selection.                    |
+| `DELETE_POINTS`        | `(indices?: number[])`, defaulting to the prior selection. Indices past the end and repeats are ignored. |
 | `INTERPOLATE`          | `()` — linear interpolation per consecutive group in the prior selection.    |
 | `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit)`                                           |
 | `DRIFT_CORRECTION`     | `(value: number)` — linear drift across each consecutive group.              |
@@ -193,6 +195,8 @@ are captured in the report but do not abort.
 {
   method: EnumEditOperations | EnumFilterOperations,
   args: any[],
+  comment?: string,                    // the operator's note, trimmed; absent when blank
+  performedBy?: string,                // who applied it, for display; audit only
   execution?: QcHistoryExecution,
 }
 ```
@@ -348,9 +352,17 @@ Wrap any thunk with wall-clock measurement. Used by dispatch to fill
   method: EnumEditOperations | EnumFilterOperations,
   args?: any[],
   selected?: number[],
+  comment?: string,                    // authored; survives every replay
+  performedBy?: string,                // server provenance; survives every replay
   execution: HistoryExecution,
 }
 ```
+
+### `class HistoryPreviewError`
+
+Thrown by any edit dispatched while `previewIndex` is set, that is while
+`previewHistory` shows an earlier step. `exitPreview()` (or previewing the
+last step) ends the preview.
 
 `execution` is always present and carries every per-dispatch
 runtime fact. See below for the field-by-field contract.

@@ -89,6 +89,15 @@ function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
   }
 }
 
+/** The distinct indices in `[0, length)`, ascending. Both delete paths
+ *  size their output by this count. */
+function existingIndices(indices: ArrayLike<number>, length: number): number[] {
+  const sorted = Array.from(indices)
+    .filter((i) => i >= 0 && i < length)
+    .sort((a, b) => a - b);
+  return sorted.filter((i, k) => k === 0 || i !== sorted[k - 1]);
+}
+
 /**
  * Shallow per-index equality for two ascending index arrays. Used by
  * `_selection` to detect SELECTION dispatches that are echoes of the
@@ -395,25 +404,27 @@ export class ObservationRecord {
   }
 
   /**
-   * Re-stamp the metadata a replay cannot reproduce. `dispatch` rebuilds
-   * each entry from `[method, ...args]` alone, so the operator's comment
-   * and the server's attribution would be dropped on every undo, redo, or
-   * step reload. Execution timings are deliberately left alone: those
-   * describe the run that just happened, not the operation.
-   *
-   * Paired positionally and only when the method still matches, so a
-   * replay that lands differently leaves entries unstamped rather than
-   * attributing an operation to the wrong person.
+   * Dispatch one recorded step and carry its comment and `performedBy`
+   * onto the entry it produces. `dispatch` rebuilds an entry from
+   * `[method, ...args]` alone, so without this every undo, redo or replay
+   * would drop them. The entry is the one this step pushed or replaced;
+   * a step that merges into nothing new (a selection echo) stamps nothing.
+   * Execution timings are not carried: they describe the run that just
+   * happened.
    */
-  private _restoreReplayedMeta(preserved: HistoryItem[]) {
-    const len = Math.min(preserved.length, this.history.length);
-    for (let i = 0; i < len; i++) {
-      const from = preserved[i];
-      const to = this.history[i];
-      if (!from || !to || from.method !== to.method) continue;
-      if (from.comment !== undefined) to.comment = from.comment;
-      if (from.performedBy !== undefined) to.performedBy = from.performedBy;
+  async dispatchStep(
+    step: Pick<HistoryItem, "method" | "args" | "comment" | "performedBy">,
+  ): Promise<number[]> {
+    const before = this.history[this.history.length - 1];
+    const selection = await this.dispatch([[step.method, ...(step.args || [])]]);
+    const produced = this.history[this.history.length - 1];
+    if (produced && produced !== before && produced.method === step.method) {
+      if (step.comment !== undefined) produced.comment = step.comment;
+      if (step.performedBy !== undefined) {
+        produced.performedBy = step.performedBy;
+      }
     }
+    return selection;
   }
 
   /** Reload from raw and replay `steps`, keeping the redo stack. */
@@ -421,10 +432,8 @@ export class ObservationRecord {
     await this.reload();
     this._isReplaying = true;
     try {
-      const selection = await this.dispatch(
-        steps.map((h) => [h.method, ...(h.args || [])]),
-      );
-      this._restoreReplayedMeta(steps);
+      let selection: number[] = [];
+      for (const step of steps) selection = await this.dispatchStep(step);
       return selection;
     } finally {
       this._isReplaying = false;
@@ -458,6 +467,14 @@ export class ObservationRecord {
     const kept = this.history.slice(0, index + 1);
     this.redoStack.length = 0;
     return this._replay(kept);
+  }
+
+  /** Reload from raw and replay `steps` as the whole history, dropping the
+   *  redo stack. For putting back a saved history that undo and new edits
+   *  have diverged from. */
+  async restoreHistory(steps: HistoryItem[]): Promise<number[]> {
+    this.redoStack.length = 0;
+    return this._replay([...steps]);
   }
 
   /** Apply the whole history again after `previewHistory`. A no-op
@@ -495,12 +512,7 @@ export class ObservationRecord {
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
     this.redoStack.length = 0;
-    await this.reload();
-    const selection = await this.dispatch(
-      newHistory.map((h) => [h.method, ...(h.args || [])]),
-    );
-    this._restoreReplayedMeta(newHistory);
-    return selection;
+    return this._replay(newHistory);
   }
 
   /**
@@ -530,15 +542,7 @@ export class ObservationRecord {
     const item = this.redoStack.pop()!;
     this._isReplaying = true;
     try {
-      const selection = await this.dispatch([[item.method, ...(item.args || [])]]);
-      const replayed = this.history[this.history.length - 1];
-      if (replayed && replayed.method === item.method) {
-        if (item.comment !== undefined) replayed.comment = item.comment;
-        if (item.performedBy !== undefined) {
-          replayed.performedBy = item.performedBy;
-        }
-      }
-      return selection;
+      return await this.dispatchStep(item);
     } finally {
       this._isReplaying = false;
     }
@@ -1419,15 +1423,17 @@ export class ObservationRecord {
   }
 
   /**
-   * Delete points by ascending `deleteIndices` from x/y. Inline path
+   * Delete the points at `indices` from x/y. Indices past the end and
+   * repeats are ignored, and order doesn't matter. Inline path
    * runs a single skip-on-delete copy on the main thread; worker path:
    *  1. Main thread splits the original array into equal segments.
    *  2. Per-segment binary search locates the indexes to delete (deleteSegment) for efficient lookups.
    *  3. Cumulative deletions before each segment give each worker's output startTarget so segments don't overlap.
    *  4. Each worker walks its segment linearly, skipping deletions and copying kept elements into place.
    */
-  private async _deleteDataPoints(deleteIndices: number[]) {
+  private async _deleteDataPoints(indices: number[]) {
     const oldLen = this.dataX.length;
+    const deleteIndices = existingIndices(indices, oldLen);
     const newLength = oldLen - deleteIndices.length;
 
     // Inline fast path: skip segmentation + worker spawns; allocate

@@ -87,6 +87,14 @@ describe('ObservationRecord', () => {
       expect(rec.dataX.length).toBe(mockRawData.datetimes.length);
     });
 
+    it('holds no points when loaded with none', async () => {
+      const rec = new ObservationRecord({ datetimes: [], dataValues: [] });
+      await rec.reload();
+
+      expect(rec.dataX.length).toBe(0);
+      expect(rec.dataY.length).toBe(0);
+    });
+
     it('grows the shared buffer when raw data exceeds INCREASE_AMOUNT', async () => {
       const big = buildUniformData(INCREASE_AMOUNT + 1234);
       const rec = new ObservationRecord({
@@ -253,6 +261,48 @@ describe('ObservationRecord', () => {
       expect(rec.dataX.length).toBe(originalLength - toDelete);
       expect(rec.dataX[0]).toBe(keptX[0]);
       expect(rec.dataX[rec.dataX.length - 1]).toBe(keptX[keptX.length - 1]);
+    });
+
+    describe('DELETE_POINTS with indices that are not all points', () => {
+      const small = async (n: number) => {
+        const r = new ObservationRecord({
+          datetimes: Array.from({ length: n }, (_, i) => i + 1),
+          dataValues: Array.from({ length: n }, (_, i) => (i + 1) * 10),
+        });
+        await r.reload();
+        return r;
+      };
+      const deleteAt = (r: ObservationRecord, indices: number[]) =>
+        r.dispatch([
+          [EnumFilterOperations.SELECTION, indices],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+
+      it('leaves an empty record empty', async () => {
+        const r = await small(0);
+        await deleteAt(r, [1, 2, 3]);
+        expect(r.dataX.length).toBe(0);
+        expect(r.dataY.length).toBe(0);
+      });
+
+      it('skips indices past the end', async () => {
+        const r = await small(5);
+        await deleteAt(r, [3, 4, 7, 9]);
+        expect(Array.from(r.dataX)).toEqual([1, 2, 3]);
+        expect(Array.from(r.dataY)).toEqual([10, 20, 30]);
+      });
+
+      it('deletes a repeated index once', async () => {
+        const r = await small(5);
+        await deleteAt(r, [1, 1, 2]);
+        expect(Array.from(r.dataX)).toEqual([1, 4, 5]);
+      });
+
+      it('deletes indices given out of order', async () => {
+        const r = await small(5);
+        await deleteAt(r, [3, 0]);
+        expect(Array.from(r.dataX)).toEqual([2, 3, 5]);
+      });
     });
 
     it('CHANGE_VALUES applies operator to the prior SELECTION indexes', async () => {
@@ -952,6 +1002,67 @@ describe('ObservationRecord', () => {
       // pair, which removes one point.
       await rec.removeHistoryItem(0);
       expect(rec.dataX.length).toBe(originalLen - 1);
+    });
+
+    // Removing the ADD_POINTS leaves the two thresholds side by side, so the
+    // replay merges them into one entry and every later entry moves up.
+    it('keeps each comment on its own operation when replay merges entries', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 1 }],
+        [EnumEditOperations.ADD_POINTS, [[rec.dataX[1]! + 1, 5]]],
+        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 2 }],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history.forEach((item, i) => {
+        item.comment = `step ${i}`;
+        item.performedBy = `user ${i}`;
+      });
+
+      await rec.removeHistoryItem(1);
+
+      expect(rec.history.map((h) => h.method)).toEqual([
+        EnumFilterOperations.VALUE_THRESHOLD,
+        EnumEditOperations.DELETE_POINTS,
+      ]);
+      expect(rec.history.map((h) => h.comment)).toEqual(['step 2', 'step 3']);
+      expect(rec.history.map((h) => h.performedBy)).toEqual(['user 2', 'user 3']);
+    });
+
+    describe('restoreHistory', () => {
+      it('puts back steps that were undone and replaced', async () => {
+        const originalLen = rec.dataX.length;
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, [0, 1]],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+        const saved = [...rec.history];
+        await rec.undo();
+        await rec.dispatch(EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1);
+
+        await rec.restoreHistory(saved);
+
+        expect(rec.history.map((h) => h.method)).toEqual([
+          EnumFilterOperations.SELECTION,
+          EnumEditOperations.DELETE_POINTS,
+        ]);
+        expect(rec.dataX.length).toBe(originalLen - 2);
+        expect(rec.redoStack).toHaveLength(0);
+      });
+
+      it('keeps comment and attribution', async () => {
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, [0, 1]],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+        rec.history[1]!.comment = 'Removed the pair';
+        rec.history[1]!.performedBy = 'Grace Hopper';
+        const saved = [...rec.history];
+
+        await rec.restoreHistory(saved);
+
+        expect(rec.history[1]!.comment).toBe('Removed the pair');
+        expect(rec.history[1]!.performedBy).toBe('Grace Hopper');
+      });
     });
   });
 

@@ -64,8 +64,12 @@ The single state container. Holds:
 - `redoStack` — items popped by `undo()`, ready for `redo()`.
 
 Mutations only happen through `dispatch` / `dispatchAction` /
-`dispatchFilter` / `undo` / `redo` / `reload` / `reloadHistory` /
-`removeHistoryItem`. The handlers themselves are private — operations
+`dispatchFilter` / `dispatchStep` / `undo` / `redo` / `reload` /
+`truncateHistory` / `restoreHistory` / `removeHistoryItem` /
+`applyWindow(begin, end, rawData?)`. `previewHistory(index)` shows an
+earlier step without dropping the later ones (`previewIndex` says which);
+edits throw `HistoryPreviewError` until `exitPreview()`. The handlers
+themselves are private, so operations
 are driven by enum + args so the same call shape works at runtime, on
 replay from a saved QC history, and in unit tests.
 
