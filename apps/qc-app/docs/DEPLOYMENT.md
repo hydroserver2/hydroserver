@@ -184,22 +184,27 @@ shape-stable. If you ever need to break a persisted shape:
   it and let the user re-pick their workspace / preferences. Reset is
   cheap; data corruption is not.
 
-### 1. qc-utils version upgrades
+### 1. qc-utils
 
-`@uwrl/qc-utils` is the QC engine, versioned independently and published
-to npm. The QC App pins it in `package.json` (`"@uwrl/qc-utils": "^0.0.x"`).
-Upgrades:
+`@uwrl/qc-utils` is the QC engine. The QC App installs it from this
+repository (`"@uwrl/qc-utils": "file:../../packages/qc-utils"`), not from
+npm, so every build ships the qc-utils on the same commit. Publishing it
+to npm is separate and only matters to other consumers.
+
+Build qc-utils before installing or building the app, as CI and the
+release workflow do:
 
 ```bash
-cd apps/qc-app
-npm install @uwrl/qc-utils@<version>
-npm test
+cd packages/qc-utils
+npm ci
 npm run build
-# commit + deploy as a normal app release
+cd ../../apps/qc-app
+npm ci
+npm run build
 ```
 
-The package is pre-1.0, so assume any minor bump may require code
-changes in the consumer. Read the qc-utils commit log and re-run E2E.
+The package is pre-1.0, so a change to it may need changes in the app in
+the same commit. Re-run the app's unit and E2E suites after one.
 
 For local development against unreleased qc-utils changes, run the QC app
 dev server. It aliases `@uwrl/qc-utils` to `packages/qc-utils/src`, so no

@@ -21,7 +21,7 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 | Unit tests       | Vitest + Vue Test Utils (`jsdom`)            | Shares the Vite build pipeline, runs in-process, transparent ESM. |
 | E2E tests        | Playwright (chromium + firefox)              | Cross-browser, headless-or-headed, intercepts network requests cleanly. WebKit excluded (see [QUALITY.md](./QUALITY.md)). |
 | Auth             | HydroServer session cookies                  | Authentication is owned by the data-management app; QC consumes the existing session. |
-| Package manager  | npm                                          | Stays compatible with CI cache + the published `@uwrl/qc-utils` workflow.       |
+| Package manager  | npm                                          | Matches CI and the local `@uwrl/qc-utils` and `@hydroserver/client` links.     |
 
 ### Database technology
 
