@@ -176,7 +176,7 @@ describe('ObservationRecord — worker paths', () => {
     const originalLen = rec.dataX.length
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [5, 6, 7]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]

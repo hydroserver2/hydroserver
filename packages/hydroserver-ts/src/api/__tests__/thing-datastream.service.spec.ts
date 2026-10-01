@@ -96,6 +96,96 @@ describe('DatastreamService', () => {
 
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
+  describe('create', () => {
+    it('forwards expand_related so the 201 body carries nested relations', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ id: 'ds-1' }, 201)))
+
+      await client.datastreams.create({ name: 'DS 1' } as any, {
+        expand_related: true,
+      })
+
+      const [url] = (fetch as any).mock.calls[0]
+      const parsed = new URL(url)
+      expect(parsed.pathname).toBe('/api/data/datastreams')
+      expect(parsed.searchParams.get('expand_related')).toBe('true')
+    })
+
+    it('omits the query string when no params are given', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ id: 'ds-1' }, 201)))
+
+      await client.datastreams.create({ name: 'DS 1' } as any)
+
+      const [url] = (fetch as any).mock.calls[0]
+      expect(url).toMatch(/\/api\/data\/datastreams$/)
+    })
+  })
+
+  describe('createObservations', () => {
+    it('sends the replace range as query params', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(null, 201)))
+
+      await client.datastreams.createObservations(
+        'ds-1',
+        { fields: ['phenomenonTime', 'result'], data: [] },
+        {
+          mode: 'replace',
+          phenomenon_time_start: '2025-01-01T00:00:00Z',
+          phenomenon_time_end: '2025-02-01T00:00:00Z',
+        }
+      )
+
+      const [url] = (fetch as any).mock.calls[0]
+      const parsed = new URL(url)
+      expect(parsed.pathname).toMatch(/\/datastreams\/ds-1\/observations\/bulk-create$/)
+      expect(parsed.searchParams.get('mode')).toBe('replace')
+      expect(parsed.searchParams.get('phenomenon_time_start')).toBe('2025-01-01T00:00:00Z')
+      expect(parsed.searchParams.get('phenomenon_time_end')).toBe('2025-02-01T00:00:00Z')
+    })
+  })
+
+  describe('getObservationsChecksum', () => {
+    const start = new Date('2025-01-01T00:00:00Z')
+    const end = new Date('2025-02-01T00:00:00Z')
+
+    it('reads the X-Checksum header for the window', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ phenomenonTime: [], result: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'X-Checksum': 'abc123' },
+          })
+        )
+      )
+
+      const res = await client.datastreams.getObservationsChecksum('ds-1', start, end)
+
+      expect(res).toMatchObject({ ok: true, data: 'abc123' })
+      const [url] = (fetch as any).mock.calls[0]
+      const parsed = new URL(url)
+      expect(parsed.pathname).toMatch(/\/datastreams\/ds-1\/observations$/)
+      expect(parsed.searchParams.get('phenomenon_time_min')).toBe(start.toISOString())
+      expect(parsed.searchParams.get('phenomenon_time_max')).toBe(end.toISOString())
+      expect(parsed.searchParams.get('page_size')).toBe('1')
+    })
+
+    it('fails when the response has no checksum', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 200)))
+
+      const res = await client.datastreams.getObservationsChecksum('ds-1', start, end)
+
+      expect(res.ok).toBe(false)
+    })
+
+    it('returns ok:false on a failed request', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'nope' }, 404)))
+
+      const res = await client.datastreams.getObservationsChecksum('ds-1', start, end)
+
+      expect(res.ok).toBe(false)
+    })
+  })
+
   describe('getVisualizationBootstrap', () => {
     it('maps bootstrap payloads into model instances and resolves workspaceId', async () => {
       vi.stubGlobal(

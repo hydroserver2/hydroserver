@@ -11,7 +11,7 @@ import { expectHistoryContains } from './support/ops'
 
 test.describe('edit: add points', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
   })
 

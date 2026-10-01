@@ -2,6 +2,7 @@ import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
+import type { ObservationRecord } from "@uwrl/qc-utils"
 import type { LayoutAxis, PlotData } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
 
@@ -12,6 +13,8 @@ import {
   cropXaxisRange,
   labelColorFor,
   LABEL_COLORS,
+  SOURCE_CONTEXT_COLOR,
+  SOURCE_CONTEXT_LABEL_COLOR,
 } from '@/utils/plotting/plotly'
 import type {
   AppPlotlyHTMLElement,
@@ -33,8 +36,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
   const showTooltip = ref(false)
   const isUpdating = ref(false)
-  const isSubmitting = ref(false)
-  // Persisted as a user preference — large plots are cheap on fast machines
+  // Persisted as a user preference. Large plots are cheap on fast machines
   // and expensive on slow ones, so let the user pick. Bounded in the UI
   // but not hard-clamped here so power users can override via storage.
   // Persistence is wired through pinia-plugin-persistedstate at the
@@ -42,9 +44,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const tooltipsMaxDataPoints = ref<number>(10 * 1000)
   const visiblePoints: Ref<number> = ref(0)
   // Two-mode toggle for individual data-point rendering / hover.
-  //   - 'manual' — user controls on/off via `tooltipsManualEnabled`.
+  //   - 'manual': user controls on/off via `tooltipsManualEnabled`.
   //                Threshold ignored.
-  //   - 'auto'   — threshold-driven: on while visiblePoints <=
+  //   - 'auto':   threshold-driven: on while visiblePoints <=
   //                threshold, off otherwise. Default keeps backward
   //                behavior for existing users.
   const tooltipsMode = ref<'manual' | 'auto'>('auto')
@@ -52,7 +54,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // `auto`. Defaults to `true` so the first manual click feels like
   // an explicit toggle off.
   const tooltipsManualEnabled = ref(true)
-  // Derived "is hover currently rendering?" — read by the relayout
+  // Derived "is hover currently rendering?", read by the relayout
   // pipeline and the toolbar UI. Auto mode reads the live threshold;
   // manual mode reads the user's explicit on/off.
   const areTooltipsEnabled = computed(() => {
@@ -72,7 +74,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * `processMouseMove` on every frame. Lives outside Plotly's
    * `showspikes` because the built-in spikes are gated on
    * `hoverinfo !== 'skip'` and so disappear when tooltips auto-
-   * disable at high point counts — users want the crosshair to stay
+   * disable at high point counts, and users want the crosshair to stay
    * regardless of tooltip state. The CSS driver also avoids the
    * noticeable lag behind the cursor that Plotly's spike layer has
    * on scattergl.
@@ -90,7 +92,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Datastream IDs whose non-QC right-side y-axis is currently hidden.
    * `createPlotlyOption` reads this while building overlay axes and
-   * sets `visible: false` on matches — the trace itself keeps
+   * sets `visible: false` on matches. The trace itself keeps
    * rendering, only the axis chrome (line, ticks, labels, title) goes
    * away, and autoshift reclaims the column's horizontal space. Keyed
    * by datastream id so trace reorders and QC promotions don't
@@ -118,11 +120,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const activeTab = ref<'plot' | 'table'>('plot')
 
   /**
-   * Cross-component signal for the "zoom to range" presets. Plot.vue
-   * sets `time` to the epoch-ms start of the chosen range; DataTable.vue
-   * watches `seq` and scrolls its virtual list so the first in-range row
-   * sits at the top. `seq` is bumped on every request so re-selecting the
-   * same preset still re-triggers the scroll.
+   * Cross-component scroll signal. Plot.vue sets `time` to the start of
+   * the session window when it zooms to it; DataTable.vue watches `seq`
+   * and scrolls its virtual list so the first row at or after `time` sits
+   * at the top. `seq` is bumped on every request so a repeat still
+   * re-triggers the scroll.
    */
   const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
   function requestTableScroll(time: number) {
@@ -135,7 +137,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Horizontal title chips rendered above each non-QC right-side axis
    * (see `.plot-axis-chip` in Plot.vue). Replaces Plotly's rotated
-   * vertical axis titles — horizontal text is much easier to scan
+   * vertical axis titles, since horizontal text is much easier to scan
    * when several right-side axes stack up. Populated by
    * `updateAxisChips` after each plot/relayout; each entry carries
    * the datastream id, the axis line's pixel position (for
@@ -143,14 +145,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   const axisChips = ref<AxisChip[]>([])
 
-  /**
-   * Toggles a lightweight preview layout in `createPlotlyOption`: the
-   * qualifier flag band, the plot title, select/lasso modebar buttons,
-   * and the custom Y-autoscale button are all suppressed. Plot.vue
-   * flips this based on its `preview` prop so the Select-view chart
-   * stays uncluttered.
-   */
-  const previewMode = ref(false)
   /** The index of the series that represents the datastream selected for quality control */
   const selectedSeriesIndex = computed(() => {
     const { qcDatastream } = storeToRefs(useDataVisStore())
@@ -162,14 +156,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     return -1
   })
 
-  /** The edit history for the currently selected series */
-  const editHistory: Ref<HistoryItem[]> = ref([])
-
   /**
    * Sentinel armed by programmatic Plotly writes (`setPlotSelection`,
    * `clearSelected`). When the next `plotly_relayout`-induced
    * `handleSelected` call fires, we compare the current selection
-   * against this expected payload — if they match it's the echo of
+   * against this expected payload: if they match it's the echo of
    * our own write (skip the SELECTION dispatch); if they differ a
    * user gesture (box/lasso select) raced through the same debounce
    * window, so we let the dispatch proceed. `handleClick` (the
@@ -184,6 +175,24 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     return graphSeriesArray.value[selectedSeriesIndex.value]
   })
 
+  /**
+   * The edit history for the currently selected series. Derived, not
+   * assigned: resuming a session swaps in a fresh record without redrawing,
+   * so anything rebound during plot-option building would go stale.
+   */
+  const editHistory = computed<HistoryItem[]>(
+    () => selectedSeries.value?.data?.history ?? []
+  )
+
+  /**
+   * The earlier history step the edit target shows, or null when it shows
+   * the whole history. Previewing only shows a step, so edits wait until
+   * the user is back on the latest one.
+   */
+  const previewIndex = computed<number | null>(
+    () => selectedSeries.value?.data?.previewIndex ?? null
+  )
+
   // Initialize to an empty-trace PlotlyChartOptions so consumers can read
   // `plotlyOptions.value.traces` etc. without null-guards. 
   const plotlyOptions: Ref<PlotlyChartOptions> = ref(createPlotlyOption([]))
@@ -192,7 +201,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Monotonic counter bumped once per `handleNewPlot` run. `Plotly.newPlot`
    * reuses the same DOM element (so `plotlyRef.value`'s identity does not
-   * change) but purges every externally-attached event listener — code
+   * change) but purges every externally-attached event listener, so code
    * outside `handleNewPlot` that subscribes to `plotly_relayout` /
    * `plotly_restyle` (e.g. `ContextPlot.vue`) needs a positive signal to
    * re-attach. Watch this ref instead of trying to detect element
@@ -222,7 +231,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // }
 
   /**
-   * Zoom history — separate from `editHistory` (which tracks QC data
+   * Zoom history, separate from `editHistory` (which tracks QC data
    * edits). Each entry captures the plot's visible ranges at a point in
    * time so the user can step back/forward through viewport changes.
    *
@@ -241,7 +250,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
   /**
    * Live ranges currently shown on the plot. Top of the undo stack
-   * after every relayout (zoom, pan, axis drag) — `null` when nothing
+   * after every relayout (zoom, pan, axis drag), or `null` when nothing
    * has been recorded yet (initial mount before the first layout
    * settles). The share URL watcher subscribes to this so the link
    * reflects the latest viewport without poking into the stack
@@ -260,6 +269,14 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * means "no URL-supplied zoom, render at the default fit."
    */
   const pendingShareZoom = ref<ZoomState | null>(null)
+
+  /**
+   * The edit target whose session window the share zoom outranks, set with
+   * `pendingShareZoom` only when the link also carried one. `Plot.vue` drops
+   * it at the first session window it sees, so a link without an edit target
+   * never suppresses the zoom of an editor opened later in the page's life.
+   */
+  const shareZoomEditTarget = ref<string | null>(null)
 
   function clearZoomHistory() {
     zoomUndoStack.value = []
@@ -298,7 +315,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * @param preserveZoom When true (default), the current live x/y ranges
    *   are copied onto the fresh layout so QC edits don't reset the user's
    *   zoom. Pass `false` when the caller *wants* the new layout's default
-   *   range to apply — notably when the user changed the date filter
+   *   range to apply, notably when the user changed the date filter
    *   (`useDataVisStore#setDateRange`), where preserving the old range
    *   would defeat the action.
    */
@@ -323,9 +340,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
         | undefined)
       : undefined
     if (liveLayout) {
+      // A y axis with no points drawn sits on Plotly's default range, not a
+      // view the user chose, so it autoranges to the new data instead.
+      const drawnAxes = new Set(
+        ((plotlyRef.value?.data ?? []) as AppPlotlyTrace[])
+          .filter((t) => (t.x as ArrayLike<unknown> | undefined)?.length)
+          .map((t) => `yaxis${String(t.yaxis ?? 'y').slice(1)}`)
+      )
       const layoutRecord = opts.layout as Record<string, unknown>
       for (const key of Object.keys(layoutRecord)) {
         if (key !== 'xaxis' && !key.startsWith('yaxis')) continue
+        if (key.startsWith('yaxis') && !drawnAxes.has(key)) continue
         const nextAxis = layoutRecord[key] as Partial<LayoutAxis> | undefined
         const liveAxis = liveLayout[key] as Partial<LayoutAxis> | undefined
         const liveRange = liveAxis?.range as
@@ -357,19 +382,10 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     }
   }
 
-  const fetchGraphSeries = async (
+  const buildGraphSeries = (
     datastream: Datastream,
-    start: Date,
-    end: Date
-  ): Promise<GraphSeries> => {
-    const { fetchObservationsInRange } = useObservationStore()
-
-    const data = await fetchObservationsInRange(datastream, start, end)
-
-    if (!data.dataset.source.x) {
-      await data.reload()
-    }
-
+    data: ObservationRecord
+  ): GraphSeries => {
     // HydroServer returns full `observedProperty` / `unit` objects on
     // the wire even though the published `Datastream` type only carries
     // their ids. The catalog endpoint enriches the response, so we
@@ -403,6 +419,23 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       color: '',
       intendedSpacingMs: spacingMsFromDatastream(datastream),
     } as GraphSeries
+  }
+
+  /** A series for `datastream`, filled with `fetchAs`'s observations (the
+   *  source context series reads the source's). */
+  const fetchGraphSeries = async (
+    datastream: Datastream,
+    start: Date,
+    end: Date,
+    exclude?: { begin: Date; end: Date },
+    fetchAs: Datastream = datastream
+  ): Promise<GraphSeries> => {
+    const { fetchObservationsInRange } = useObservationStore()
+    const data = await fetchObservationsInRange(fetchAs, start, end, exclude)
+    if (!data.dataset.source.x) {
+      await data.reload()
+    }
+    return buildGraphSeries(datastream, data)
   }
 
   /**
@@ -442,7 +475,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    *
    * Race-safe because the walk is synchronous and reads the array
    * exactly once. Stable across reloads because the walk order is
-   * the user-facing legend order, not fetch-completion order — so
+   * the user-facing legend order, not fetch-completion order, so
    * the same `plottedDatastreams` configuration yields the same
    * colour assignment every time.
    *
@@ -486,8 +519,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   function colorForDatastream(id: string | undefined): string {
     if (!id) return COLORS[1]!
-    const { qcDatastream } = storeToRefs(useDataVisStore())
+    const { qcDatastream, sourceContextDatastream } = storeToRefs(useDataVisStore())
     if (qcDatastream.value?.id === id) return COLORS[0]!
+    if (sourceContextDatastream.value?.id === id) return SOURCE_CONTEXT_COLOR
     const series = graphSeriesArray.value.find((s) => s.id === id)
     // `||` (not `??`) so the empty-string sentinel emitted by
     // `fetchGraphSeries` before `assignSeriesColors` runs also falls
@@ -504,8 +538,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   function labelColorForDatastream(id: string | undefined): string {
     if (!id) return LABEL_COLORS[1]!
-    const { qcDatastream } = storeToRefs(useDataVisStore())
+    const { qcDatastream, sourceContextDatastream } = storeToRefs(useDataVisStore())
     if (qcDatastream.value?.id === id) return LABEL_COLORS[0]!
+    if (sourceContextDatastream.value?.id === id) return SOURCE_CONTEXT_LABEL_COLOR
     const series = graphSeriesArray.value.find((s) => s.id === id)
     if (!series || !series.color) return LABEL_COLORS[1]!
     return labelColorFor(series.color)
@@ -518,6 +553,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     selectedSeriesIndex,
     selectedSeries,
     editHistory,
+    previewIndex,
     suppressedEchoSelection,
     updateOptions,
     redraw,
@@ -526,11 +562,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     labelColorForDatastream,
     assignSeriesColors,
     fetchGraphSeries,
+    buildGraphSeries,
     plotlyOptions,
     plotlyRef,
     mainPlotEpoch,
     isUpdating,
-    isSubmitting,
     tooltipsMaxDataPoints,
     visiblePoints,
     tooltipsMode,
@@ -545,7 +581,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     tableScrollRequest,
     requestTableScroll,
     axisChips,
-    previewMode,
     // Zoom history
     zoomUndoStack,
     zoomRedoStack,
@@ -554,6 +589,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     canRedoZoom,
     currentZoom,
     pendingShareZoom,
+    shareZoomEditTarget,
     clearZoomHistory,
     pushZoomState,
   }

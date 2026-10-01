@@ -163,6 +163,16 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     return apiMethods.paginatedFetch<ObservationListResponse>(url)
   }
 
+  /** The checksum of the datastream's observations in `[start, end]`. */
+  getObservationsChecksum(datastreamId: string, start: Date, end: Date) {
+    const url = this.withQuery(`${this._route}/${datastreamId}/observations`, {
+      phenomenon_time_min: start.toISOString(),
+      phenomenon_time_max: end.toISOString(),
+      page_size: 1,
+    })
+    return apiMethods.fetchHeader(url, 'X-Checksum')
+  }
+
   createObservation(datastreamId: string, body: ObservationPostBody) {
     const url = `${this._route}/${datastreamId}/observations`
     return apiMethods.post<ObservationResponse>(url, body)

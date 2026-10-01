@@ -26,6 +26,11 @@ const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
 const selectedData = ref<number[] | null>(null)
 const qcDatastream = ref<any>({ id: 'ds-1' })
 
+const editLock = ref<'readOnly' | 'preview' | null>(null)
+vi.mock('@/composables/useEditLock', () => ({
+  useEditLock: () => ({ editLock }),
+}))
+
 const qualifierById = ref<Record<string, any>>({})
 const applied = ref<Record<string, any>>({})
 
@@ -51,24 +56,33 @@ vi.mock('@/composables/useDataSelection', () => ({
   useDataSelection: () => ({ clearSelected }),
 }))
 
-vi.mock('@uwrl/qc-utils', () => ({
-  EnumEditOperations: {
-    ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
-    ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
-  },
-  EnumFilterOperations: { SELECTION: 'SELECTION' },
-  // Guard against Invalid Date (null/undefined/NaN epochs) during render.
-  formatDate: (d: Date) => {
-    const t = d?.getTime?.()
-    if (t == null || Number.isNaN(t)) return ''
-    return d.toISOString()
-  },
-}))
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    EnumEditOperations: {
+      ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
+      ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
+    },
+    EnumFilterOperations: { SELECTION: 'SELECTION' },
+    // Guard against Invalid Date (null/undefined/NaN epochs) during render.
+    formatDate: (d: Date) => {
+      const t = d?.getTime?.()
+      if (t == null || Number.isNaN(t)) return ''
+      return d.toISOString()
+    },
+  }
+})
 
 vi.mock('@/components/VisualizeData/EditableCell.vue', () => ({
   default: {
     name: 'EditableCell',
-    props: ['value', 'display', 'edited', 'originalDisplay', 'editedDisplay', 'inputType', 'align'],
+    props: ['value', 'display', 'edited', 'originalDisplay', 'editedDisplay', 'inputType', 'align', 'readonly'],
     emits: ['save', 'clear'],
     template: '<div class="editable-cell-stub" />',
   },
@@ -152,6 +166,7 @@ function createWrapperWithSlots() {
 
 afterEach(() => {
   while (openWrappers.length) openWrappers.pop()!.unmount()
+  editLock.value = null
 })
 
 describe('DataTable.vue', () => {
@@ -613,7 +628,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const checkboxes = wrapper.findAllComponents({ name: 'VCheckbox' })
-    // toggle row 2 first, then row 0 — result should be sorted [0, 2]
+    // toggle row 2 first, then row 0; result should be sorted [0, 2]
     await checkboxes[2].vm.$emit('update:modelValue', true)
     await checkboxes[0].vm.$emit('update:modelValue', true)
     await flushPromises()
@@ -697,7 +712,7 @@ describe('DataTable.vue ResizeObserver integration', () => {
 
   it('uses bodyEl.clientHeight when non-zero and updates on resize', async () => {
     // The cast tells TS the class-constructor assignment widens the
-    // value back to the callable type — without it the analyzer pins
+    // value back to the callable type. Without it the analyzer pins
     // the variable to `null` after the literal initialiser.
     let capturedCallback = null as ((entries: any) => void) | null
     class CapturingRO {
@@ -884,11 +899,11 @@ describe('DataTable.vue onSaveChanges', () => {
   })
 })
 
-// Drives the "zoom to range" scroll: a request on the plotly store should
+// Drives `requestTableScroll`: a request on the plotly store should
 // scroll the virtual list so the first in-range row lands on top. The stub
 // exposes v-data-table-virtual's `scrollToIndex` so we can capture the index
 // the component asks to scroll to.
-describe('DataTable.vue zoom-to-range scroll', () => {
+describe('DataTable.vue scroll requests', () => {
   let scrollToIndexCalls: number[]
 
   beforeEach(() => {
@@ -987,5 +1002,54 @@ describe('DataTable.vue zoom-to-range scroll', () => {
     requestScroll(3000)
     await flushPromises()
     expect(scrollToIndexCalls.at(-1)).toBe(0)
+  })
+})
+
+describe('DataTable.vue edit lock', () => {
+  beforeEach(() => {
+    isUpdating.value = false
+    selectedSeries.value = {
+      data: {
+        dataX: [1000, 2000],
+        dataY: [10, 20],
+        dispatch: vi.fn().mockResolvedValue(undefined),
+      },
+    }
+    selectedData.value = null
+    qcDatastream.value = { id: 'ds-1' }
+    qualifierById.value = {}
+    applied.value = {}
+  })
+
+  it('makes cells read-only and blocks saving on a committed session', async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    await flushPromises()
+
+    editLock.value = 'readOnly'
+    await flushPromises()
+
+    expect(valueCell(wrapper, 0).props('readonly')).toBe(true)
+    expect(datetimeCell(wrapper, 0).props('readonly')).toBe(true)
+    expect(wrapper.text()).toContain('Committed session, read-only')
+    const save = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    expect(save.attributes('disabled')).toBeDefined()
+  })
+
+  it('keeps cells editable while previewing, but blocks saving', async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    editLock.value = 'preview'
+    await flushPromises()
+
+    expect(valueCell(wrapper, 0).props('readonly')).toBe(false)
+    const save = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    expect(save.attributes('disabled')).toBeDefined()
   })
 })

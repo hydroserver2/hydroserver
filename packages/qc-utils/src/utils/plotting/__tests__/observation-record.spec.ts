@@ -16,7 +16,11 @@ vi.mock('../value-threshold.worker?worker&inline', () => import('./workerMocks')
 vi.mock('../change-values.worker?worker&inline', () => import('./workerMocks').then(m => ({ default: m.MockChangeValuesWorker })));
 
 import { mockDatastream } from './mock';
-import { ObservationRecord, INCREASE_AMOUNT } from '../observation-record';
+import {
+  ObservationRecord,
+  INCREASE_AMOUNT,
+  HistoryPreviewError,
+} from '../observation-record';
 import {
   EnumEditOperations,
   EnumFilterOperations,
@@ -81,6 +85,14 @@ describe('ObservationRecord', () => {
       await rec.loadData(undefined as any);
       // Raw data remains intact
       expect(rec.dataX.length).toBe(mockRawData.datetimes.length);
+    });
+
+    it('holds no points when loaded with none', async () => {
+      const rec = new ObservationRecord({ datetimes: [], dataValues: [] });
+      await rec.reload();
+
+      expect(rec.dataX.length).toBe(0);
+      expect(rec.dataY.length).toBe(0);
     });
 
     it('grows the shared buffer when raw data exceeds INCREASE_AMOUNT', async () => {
@@ -161,6 +173,24 @@ describe('ObservationRecord', () => {
       expect(rec.history.length).toBe(histLen);
     });
 
+    it('re-materializes an unchanged window over new rawData', async () => {
+      const rec = makeRec();
+      await rec.applyWindow(t(0), t(9));
+      const full = {
+        datetimes: Float64Array.from(grid.datetimes),
+        dataValues: Float32Array.from(grid.dataValues),
+      };
+      const gapped = {
+        datetimes: full.datetimes.filter((_, i) => i < 3 || i > 6),
+        dataValues: full.dataValues.filter((_, i) => i < 3 || i > 6),
+      };
+      await rec.applyWindow(t(0), t(9), gapped);
+      expect(rec.dataX.length).toBe(6);
+      await rec.applyWindow(t(0), t(9), full);
+      expect(rec.dataX.length).toBe(10);
+      expect(rec.rawData).toBe(full);
+    });
+
     it('reload() restores the windowed baseline, not the full series', async () => {
       const rec = makeRec();
       await rec.applyWindow(t(4), t(7)); // 4 points
@@ -231,6 +261,48 @@ describe('ObservationRecord', () => {
       expect(rec.dataX.length).toBe(originalLength - toDelete);
       expect(rec.dataX[0]).toBe(keptX[0]);
       expect(rec.dataX[rec.dataX.length - 1]).toBe(keptX[keptX.length - 1]);
+    });
+
+    describe('DELETE_POINTS with indices that are not all points', () => {
+      const small = async (n: number) => {
+        const r = new ObservationRecord({
+          datetimes: Array.from({ length: n }, (_, i) => i + 1),
+          dataValues: Array.from({ length: n }, (_, i) => (i + 1) * 10),
+        });
+        await r.reload();
+        return r;
+      };
+      const deleteAt = (r: ObservationRecord, indices: number[]) =>
+        r.dispatch([
+          [EnumFilterOperations.SELECTION, indices],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+
+      it('leaves an empty record empty', async () => {
+        const r = await small(0);
+        await deleteAt(r, [1, 2, 3]);
+        expect(r.dataX.length).toBe(0);
+        expect(r.dataY.length).toBe(0);
+      });
+
+      it('skips indices past the end', async () => {
+        const r = await small(5);
+        await deleteAt(r, [3, 4, 7, 9]);
+        expect(Array.from(r.dataX)).toEqual([1, 2, 3]);
+        expect(Array.from(r.dataY)).toEqual([10, 20, 30]);
+      });
+
+      it('deletes a repeated index once', async () => {
+        const r = await small(5);
+        await deleteAt(r, [1, 1, 2]);
+        expect(Array.from(r.dataX)).toEqual([1, 4, 5]);
+      });
+
+      it('deletes indices given out of order', async () => {
+        const r = await small(5);
+        await deleteAt(r, [3, 0]);
+        expect(Array.from(r.dataX)).toEqual([2, 3, 5]);
+      });
     });
 
     it('CHANGE_VALUES applies operator to the prior SELECTION indexes', async () => {
@@ -391,7 +463,7 @@ describe('ObservationRecord', () => {
       const originalLen = local.dataX.length;
       await local.dispatch([
         [EnumFilterOperations.SELECTION, [7, 8, 9]],
-        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
       ]);
       expect(local.dataX.length).toBe(originalLen);
       // Datetimes still sorted
@@ -409,7 +481,29 @@ describe('ObservationRecord', () => {
       await local.reload();
       const before = Array.from(local.dataX);
       // No SELECTION dispatched first → wrapper bails.
-      await local.dispatch(EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR);
+      await local.dispatch(EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC');
+      expect(Array.from(local.dataX)).toEqual(before);
+    });
+
+    it('SHIFT_DATETIMES fails without a known zone or with a fractional month', async () => {
+      const uniform = buildUniformData(5, 0, 10);
+      const local = new ObservationRecord({
+        datetimes: uniform.datetimes,
+        dataValues: uniform.dataValues,
+      });
+      await local.reload();
+      const before = Array.from(local.dataX);
+      for (const [amount, unit, zone] of [
+        [1, TimeUnit.MONTH, 'Mars/Olympus'],
+        [1, TimeUnit.HOUR, undefined],
+        [0.5, TimeUnit.MONTH, 'UTC'],
+      ] as const) {
+        await local.dispatch([
+          [EnumFilterOperations.SELECTION, [1, 2]],
+          [EnumEditOperations.SHIFT_DATETIMES, amount, unit, zone],
+        ]);
+        expect(local.history[local.history.length - 1].execution.status).toBe('failed');
+      }
       expect(Array.from(local.dataX)).toEqual(before);
     });
 
@@ -745,19 +839,172 @@ describe('ObservationRecord', () => {
       expect(rec.history).toEqual([]);
     });
 
-    it('reloadHistory replays entries up to a given index', async () => {
+    describe('previewHistory', () => {
+      const twoDeletes = () =>
+        rec.dispatch([
+          [EnumFilterOperations.SELECTION, [0, 1]],
+          [EnumEditOperations.DELETE_POINTS],
+          [EnumFilterOperations.SELECTION, [0]],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+
+      it('shows an earlier step and keeps the later ones listed', async () => {
+        await twoDeletes();
+        const later = rec.history.slice(2);
+
+        // Only the first SELECTION + DELETE pair (entries 0 + 1) applies.
+        await rec.previewHistory(1);
+
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 2);
+        expect(rec.history).toHaveLength(4);
+        expect(rec.history.slice(2)).toEqual(later);
+        expect(rec.previewIndex).toBe(1);
+      });
+
+      it('previews the untouched data at -1', async () => {
+        await twoDeletes();
+        await rec.previewHistory(-1);
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length);
+        expect(rec.history).toHaveLength(4);
+        expect(rec.previewIndex).toBe(-1);
+      });
+
+      it('returns to the whole history', async () => {
+        await twoDeletes();
+        const len = rec.dataX.length;
+        await rec.previewHistory(1);
+
+        await rec.exitPreview();
+
+        expect(rec.dataX.length).toBe(len);
+        expect(rec.history).toHaveLength(4);
+        expect(rec.previewIndex).toBeNull();
+      });
+
+      it('treats previewing the last step as returning', async () => {
+        await twoDeletes();
+        await rec.previewHistory(1);
+        await rec.previewHistory(3);
+        expect(rec.previewIndex).toBeNull();
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 3);
+      });
+
+      it('refuses edits while previewing', async () => {
+        await twoDeletes();
+        await rec.previewHistory(1);
+        await expect(
+          rec.dispatch(EnumFilterOperations.SELECTION, [0])
+        ).rejects.toBeInstanceOf(HistoryPreviewError);
+        await expect(
+          rec.dispatch(EnumEditOperations.ADD_POINTS, [[1, 1]])
+        ).rejects.toBeInstanceOf(HistoryPreviewError);
+        expect(rec.history).toHaveLength(4);
+      });
+
+      it('undoes the last step of the whole history, ending the preview', async () => {
+        await twoDeletes();
+        await rec.previewHistory(0);
+
+        await rec.undo();
+
+        expect(rec.previewIndex).toBeNull();
+        expect(rec.history).toHaveLength(3);
+        expect(rec.redoStack).toHaveLength(1);
+      });
+
+      it('redoes on top of the whole history, ending the preview', async () => {
+        await twoDeletes();
+        await rec.undo();
+        await rec.previewHistory(-1);
+
+        await rec.redo();
+
+        expect(rec.previewIndex).toBeNull();
+        expect(rec.history).toHaveLength(4);
+        expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 3);
+      });
+
+      it('keeps the redo stack while previewing', async () => {
+        await twoDeletes();
+        await rec.undo();
+        await rec.previewHistory(0);
+        expect(rec.redoStack).toHaveLength(1);
+        await rec.exitPreview();
+        expect(rec.redoStack).toHaveLength(1);
+      });
+
+      it('ends on a reload', async () => {
+        await twoDeletes();
+        await rec.previewHistory(1);
+        await rec.reload();
+        expect(rec.previewIndex).toBeNull();
+      });
+    });
+
+    it('keeps comment and attribution across a step preview', async () => {
       await rec.dispatch([
         [EnumFilterOperations.SELECTION, [0, 1]],
         [EnumEditOperations.DELETE_POINTS],
         [EnumFilterOperations.SELECTION, [0]],
         [EnumEditOperations.DELETE_POINTS],
       ]);
-      const lenAfterTwo = rec.dataX.length;
+      rec.history[0]!.performedBy = 'Ada Lovelace';
+      rec.history[0]!.comment = 'Dropped the spike';
+      rec.history[1]!.performedBy = 'Grace Hopper';
 
-      // Replay only up through the first SELECTION + DELETE pair (entries 0 + 1).
-      await rec.reloadHistory(1);
-      expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 2);
-      expect(rec.dataX.length).toBeGreaterThan(lenAfterTwo);
+      await rec.previewHistory(1);
+
+      expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
+      expect(rec.history[0]!.comment).toBe('Dropped the spike');
+      expect(rec.history[1]!.performedBy).toBe('Grace Hopper');
+    });
+
+    it('re-measures execution timing rather than carrying it over', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[0]!.performedBy = 'Ada Lovelace';
+      rec.history[0]!.execution!.durationMs = 9999;
+
+      // Step 0 is replayed; previewing the last step would replay nothing.
+      await rec.previewHistory(0);
+
+      expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
+      // The timing describes the run that just happened, not the old one.
+      expect(rec.history[0]!.execution!.durationMs).not.toBe(9999);
+    });
+
+    it('keeps comment and attribution across undo', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[0]!.performedBy = 'Ada Lovelace';
+      rec.history[0]!.comment = 'Why this selection';
+
+      await rec.undo();
+
+      expect(rec.history).toHaveLength(1);
+      expect(rec.history[0]!.performedBy).toBe('Ada Lovelace');
+      expect(rec.history[0]!.comment).toBe('Why this selection');
+    });
+
+    it('keeps comment and attribution across redo', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[1]!.performedBy = 'Grace Hopper';
+      rec.history[1]!.comment = 'Removed the pair';
+
+      await rec.undo();
+      await rec.redo();
+
+      const last = rec.history[rec.history.length - 1]!;
+      expect(last.method).toBe(EnumEditOperations.DELETE_POINTS);
+      expect(last.performedBy).toBe('Grace Hopper');
+      expect(last.comment).toBe('Removed the pair');
     });
 
     it('removeHistoryItem replays history without the removed entry', async () => {
@@ -777,6 +1024,151 @@ describe('ObservationRecord', () => {
       // pair, which removes one point.
       await rec.removeHistoryItem(0);
       expect(rec.dataX.length).toBe(originalLen - 1);
+    });
+
+    // Removing the ADD_POINTS leaves the two thresholds side by side, so the
+    // replay merges them into one entry and every later entry moves up.
+    it('keeps each comment on its own operation when replay merges entries', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 1 }],
+        [EnumEditOperations.ADD_POINTS, [[rec.dataX[1]! + 1, 5]]],
+        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 2 }],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history.forEach((item, i) => {
+        item.comment = `step ${i}`;
+        item.performedBy = `user ${i}`;
+      });
+
+      await rec.removeHistoryItem(1);
+
+      expect(rec.history.map((h) => h.method)).toEqual([
+        EnumFilterOperations.VALUE_THRESHOLD,
+        EnumEditOperations.DELETE_POINTS,
+      ]);
+      expect(rec.history.map((h) => h.comment)).toEqual(['step 2', 'step 3']);
+      expect(rec.history.map((h) => h.performedBy)).toEqual(['user 2', 'user 3']);
+    });
+
+    describe('restoreHistory', () => {
+      it('puts back steps that were undone and replaced', async () => {
+        const originalLen = rec.dataX.length;
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, [0, 1]],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+        const saved = [...rec.history];
+        await rec.undo();
+        await rec.dispatch(EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1);
+
+        await rec.restoreHistory(saved);
+
+        expect(rec.history.map((h) => h.method)).toEqual([
+          EnumFilterOperations.SELECTION,
+          EnumEditOperations.DELETE_POINTS,
+        ]);
+        expect(rec.dataX.length).toBe(originalLen - 2);
+        expect(rec.redoStack).toHaveLength(0);
+      });
+
+      it('keeps comment and attribution', async () => {
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, [0, 1]],
+          [EnumEditOperations.DELETE_POINTS],
+        ]);
+        rec.history[1]!.comment = 'Removed the pair';
+        rec.history[1]!.performedBy = 'Grace Hopper';
+        const saved = [...rec.history];
+
+        await rec.restoreHistory(saved);
+
+        expect(rec.history[1]!.comment).toBe('Removed the pair');
+        expect(rec.history[1]!.performedBy).toBe('Grace Hopper');
+      });
+    });
+  });
+
+  describe('execution extent', () => {
+    const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
+    const at = (i: number) => startMs + i * spacingMs;
+    let rec: ObservationRecord;
+
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes, dataValues });
+      await rec.reload();
+    });
+
+    it('spans the points a selection picked', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [7, 3, 5]);
+      expect(rec.history[0]!.execution.extent).toEqual({
+        begin: at(3),
+        end: at(7),
+      });
+    });
+
+    it('spans a filter result', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
+        [FilterOperation.GT]: 15,
+      });
+      expect(rec.history[0]!.execution.extent).toEqual({
+        begin: at(16),
+        end: at(19),
+      });
+    });
+
+    it('keeps the datetimes a delete removed, not the indices left behind', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      expect(rec.history[1]!.execution.extent).toEqual({
+        begin: at(0),
+        end: at(1),
+      });
+      // Same indices, but by then they held the next two points.
+      expect(rec.history[3]!.execution.extent).toEqual({
+        begin: at(2),
+        end: at(3),
+      });
+    });
+
+    it('spans the selection an edit took from a filter', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
+        [FilterOperation.GT]: 17,
+      });
+      await rec.dispatchAction(EnumEditOperations.DELETE_POINTS);
+      expect(rec.history[1]!.execution.selectionSize).toBe(2);
+      expect(rec.history[1]!.execution.extent).toEqual({
+        begin: at(18),
+        end: at(19),
+      });
+    });
+
+    it('spans the points an insert added', async () => {
+      await rec.dispatchAction(EnumEditOperations.ADD_POINTS, [
+        [at(30), 1],
+        [at(25), 1],
+      ]);
+      expect(rec.history[0]!.execution.extent).toEqual({
+        begin: at(25),
+        end: at(30),
+      });
+    });
+
+    it('is recomputed on replay', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 4]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      rec.history[1]!.execution.extent = undefined;
+      await rec.undo();
+      await rec.redo();
+      expect(rec.history[1]!.execution.extent).toEqual({
+        begin: at(2),
+        end: at(4),
+      });
     });
   });
 

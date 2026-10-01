@@ -17,7 +17,11 @@
         </v-col>
       </v-row>
 
-      <v-card class="mb-1" elevation="2">
+      <v-card
+        v-if="hasWorkspaces && selectedWorkspace !== null"
+        class="mb-1"
+        elevation="2"
+      >
         <KeepAlive>
           <v-expand-transition>
             <SiteFilterToolbar
@@ -28,6 +32,18 @@
             />
           </v-expand-transition>
         </KeepAlive>
+      </v-card>
+
+      <v-card
+        v-if="!hasWorkspaces || selectedWorkspace === null"
+        class="pa-8 text-center"
+        elevation="2"
+      >
+        <v-icon size="48" color="grey lighten-1" :icon="mdiBriefcaseOutline" />
+        <h4 class="mt-2">No workspace selected</h4>
+        <p class="mb-0">
+          Create or join a workspace to register and manage sites.
+        </p>
       </v-card>
 
       <v-card v-if="hasWorkspaces && selectedWorkspace !== null">
@@ -171,6 +187,11 @@ import hs, {
   PermissionAction,
   type ThingSiteSummary,
 } from '@hydroserver/client'
+import {
+  hasBootstrappedWorkspaces,
+  isAppInitializing,
+  startAppInitialization,
+} from '@/bootstrap/appInitialization'
 import { addColorToMarkers } from '@/utils/maps/markers'
 import { ThingSiteSummaryWithColor } from '@/types'
 import { Snackbar } from '@/utils/notifications'
@@ -179,6 +200,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import {
+  mdiBriefcaseOutline,
   mdiFilterRemoveOutline,
   mdiMagnify,
   mdiMenuDown,
@@ -196,6 +218,9 @@ const isFiltered = ref(false)
 const isPageLoaded = ref(false)
 const filterCriteria = ref({ key: '', values: [] as string[] })
 const search = ref()
+const hasResolvedInitialWorkspaces = ref(false)
+const lastLoadedWorkspaceId = ref<string | null>(null)
+let currentThingsRequest = 0
 
 const matchesFilterCriteria = (
   thing: ThingSiteSummary,
@@ -229,8 +254,22 @@ const onClickRegisterSite = () => {
     )
 }
 
-watch(selectedWorkspace, async (ws) => {
-  await loadThings()
+const syncThingsToSelectedWorkspace = async () => {
+  const workspaceId = selectedWorkspace.value?.id ?? null
+  if (workspaceId === lastLoadedWorkspaceId.value) return
+
+  lastLoadedWorkspaceId.value = workspaceId
+  await loadThings(workspaceId)
+}
+
+watch(selectedWorkspace, async (workspace) => {
+  if (!hasResolvedInitialWorkspaces.value) return
+
+  if (!workspace) {
+    showSiteForm.value = false
+  }
+
+  await syncThingsToSelectedWorkspace()
 })
 
 const filteredThings = computed(() => {
@@ -281,26 +320,65 @@ const siteDetailsRoute = (id: string) => ({
   params: { id },
 })
 
-const loadThings = async () => {
-  const res = await hs.things.listSiteSummaries(selectedWorkspace.value!.id)
-  workspaceThings.value = res.ok ? res.data : []
+const loadThings = async (
+  workspaceId = selectedWorkspace.value?.id ?? null
+) => {
+  currentThingsRequest += 1
+  const requestId = currentThingsRequest
+
+  if (!workspaceId) {
+    workspaceThings.value = []
+    return
+  }
+
+  try {
+    const res = await hs.things.listSiteSummaries(workspaceId)
+    if (
+      requestId !== currentThingsRequest ||
+      selectedWorkspace.value?.id !== workspaceId
+    )
+      return
+
+    if (!res.ok) {
+      workspaceThings.value = []
+      console.error('Error fetching sites', res.status)
+      return
+    }
+
+    workspaceThings.value = res.data
+  } catch (error) {
+    if (requestId !== currentThingsRequest) return
+
+    workspaceThings.value = []
+    console.error('Error fetching sites', error)
+  }
+}
+
+const refreshWorkspaces = async () => {
+  const workspaceRes = await hs.workspaces.listAllItems({
+    is_associated: true,
+    expand_related: true,
+  })
+  setWorkspaces(workspaceRes)
 }
 
 onMounted(async () => {
-  if (selectedWorkspace.value == null) {
-    const [workspaceRes] = await Promise.all([
-      hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
-    ])
-    setWorkspaces(workspaceRes)
-  } else {
-    const [thingsRes, workspaceRes] = await Promise.all([
-      hs.things.listSiteSummaries(selectedWorkspace.value.id),
-      hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
-    ])
-    setWorkspaces(workspaceRes)
-    workspaceThings.value = thingsRes.ok ? thingsRes.data : []
+  try {
+    if (isAppInitializing.value) {
+      await startAppInitialization()
+    }
+
+    if (!hasBootstrappedWorkspaces.value) {
+      await refreshWorkspaces()
+    }
+  } catch (error) {
+    console.error('Error fetching workspaces', error)
+    workspaceThings.value = []
+  } finally {
+    hasResolvedInitialWorkspaces.value = true
+    await syncThingsToSelectedWorkspace()
+    isPageLoaded.value = true
   }
-  isPageLoaded.value = true
 })
 </script>
 

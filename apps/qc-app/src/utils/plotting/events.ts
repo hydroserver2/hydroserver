@@ -22,6 +22,20 @@ import {
   updateAxisChips,
 } from './interaction'
 import type { AppPlotlyTrace } from './options'
+import { withLiveShapes } from './shapes'
+import { toPlotDate } from './plotTime'
+import { queuePlotDraw } from './draw'
+
+const disposedPlots = new WeakSet<HTMLElement>()
+
+/** A pending draw must never put an unmounted graph back into the store. */
+export function disposePlot(target: HTMLElement): Promise<void> {
+  disposedPlots.add(target)
+  const store = usePlotlyStore()
+  if (store.plotlyRef === target) store.plotlyRef = null
+  // Purging during newPlot would tear down the resources it is still using.
+  return queuePlotDraw(target, async () => { Plotly.purge(target) })
+}
 
 const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -43,7 +57,7 @@ const handleClick = async (eventData: PlotMouseEvent) => {
     index >= 0
       ? alreadySelected.splice(index, 1)
       : alreadySelected.push(point.pointIndex)
-    alreadySelected.sort()
+    alreadySelected.sort((a, b) => a - b)
 
     // `selections` is a Plotly layout-level option that the published
     // type omits from `Partial<Layout>`. Cast through `unknown` to
@@ -61,14 +75,32 @@ const handleClick = async (eventData: PlotMouseEvent) => {
   }
 }
 
-export const handleNewPlot = async (
+/**
+ * Draw `plotlyOptions` onto the plot. With `preserveZoom`, the live x range
+ * and each series' y range carry over, except on an axis whose content is
+ * new: one that gains a series with points, or holds a series listed in
+ * `refitSeriesIds` (its data was replaced). Such an axis was fitted to other
+ * data, so it autoranges instead of clipping what arrived.
+ */
+export const handleNewPlot = (
   element?: HTMLElement,
-  opts?: { preserveZoom?: boolean }
+  opts?: { preserveZoom?: boolean; refitSeriesIds?: string[] }
+): Promise<void> => {
+  const target = element ?? usePlotlyStore().plotlyRef
+  if (!target) return Promise.resolve()
+  return queuePlotDraw(target, () => drawPlot(target, !!element, opts))
+}
+
+const drawPlot = async (
+  target: HTMLElement,
+  firstMount: boolean,
+  opts?: { preserveZoom?: boolean; refitSeriesIds?: string[] }
 ) => {
+  if (disposedPlots.has(target)) return
   const { plotlyOptions, plotlyRef, mainPlotEpoch, pendingShareZoom } =
     storeToRefs(usePlotlyStore())
 
-  if (!element && plotlyRef.value?.data) {
+  if (!firstMount && plotlyRef.value?.data) {
     const visibleBySeriesId: Record<string, boolean | 'legendonly'> = {}
     for (const trace of plotlyRef.value.data) {
       const t = trace as AppPlotlyTrace
@@ -82,11 +114,11 @@ export const handleNewPlot = async (
     }
     for (const trace of plotlyOptions.value.traces) {
       const t = trace as AppPlotlyTrace
-      // Gap overlays expose `_gapOverlayFor` instead of `id` so the
+      // Gap overlays expose `_partOf` instead of `id` so the
       // selection-by-id lookup keeps targeting the main trace; we still
       // want them to inherit the user's hide/show choice so the line
       // disappears with the markers it shadows.
-      const lookupId = t.id ?? t._gapOverlayFor
+      const lookupId = t.id ?? t._partOf
       if (!lookupId) continue
       const carried = visibleBySeriesId[lookupId]
       if (carried !== undefined) {
@@ -97,7 +129,7 @@ export const handleNewPlot = async (
 
   if (
     opts?.preserveZoom &&
-    !element &&
+    !firstMount &&
     plotlyRef.value?.layout &&
     plotlyRef.value?.data
   ) {
@@ -115,14 +147,29 @@ export const handleNewPlot = async (
     const yAxisKey = (yref: string | undefined) =>
       `yaxis${(yref ?? 'y').slice(1)}`
 
+    const hasPoints = (t: AppPlotlyTrace) =>
+      !!(t.x as ArrayLike<unknown> | undefined)?.length
+
     const yRangesBySeriesId: Record<string, Array<string | number>> = {}
     for (const trace of plotlyRef.value.data) {
       const t = trace as AppPlotlyTrace
-      if (!t.id) continue
+      // An empty trace's axis sits on Plotly's default range, not a view the
+      // user chose; carrying it would push the new data off the plot.
+      if (!t.id || !hasPoints(t)) continue
       const key = yAxisKey(t.yaxis as string | undefined)
       const range = (oldLayout[key] as Partial<LayoutAxis> | undefined)
         ?.range as Array<string | number> | undefined
       if (range) yRangesBySeriesId[t.id] = range
+    }
+
+    const refit = new Set(opts.refitSeriesIds ?? [])
+    const refitAxes = new Set<string>()
+    for (const trace of plotlyOptions.value.traces) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id || !hasPoints(t)) continue
+      if (refit.has(t.id) || !yRangesBySeriesId[t.id]) {
+        refitAxes.add(yAxisKey(t.yaxis as string | undefined))
+      }
     }
 
     for (const trace of plotlyOptions.value.traces) {
@@ -131,6 +178,7 @@ export const handleNewPlot = async (
       const oldRange = yRangesBySeriesId[t.id]
       if (!oldRange) continue
       const key = yAxisKey(t.yaxis as string | undefined)
+      if (refitAxes.has(key)) continue
       const nextAxis = newLayout[key] as Partial<LayoutAxis> | undefined
       if (nextAxis) {
         nextAxis.range = [...oldRange]
@@ -139,32 +187,41 @@ export const handleNewPlot = async (
     }
   }
 
+  // A re-plot keeps the live staged range band, which `createPlotlyOption`
+  // doesn't build. A first mount has no live plot to read it from.
+  const layout = firstMount
+    ? plotlyOptions.value.layout
+    : withLiveShapes(plotlyOptions.value.layout, plotlyRef.value?.layout)
+
   // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
   // `plotlyRef` is now typed as `PlotlyHTMLElement | null`
+  const traces = plotlyOptions.value.traces
   const newElement = await Plotly.newPlot(
-    element || plotlyRef.value as Plotly.Root,
-    plotlyOptions.value.traces,
-    plotlyOptions.value.layout,
+    target,
+    traces,
+    layout,
     plotlyOptions.value.config
   )
+  if (disposedPlots.has(target)) return
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value
 
   // Share-URL zoom: one-shot directive set by the URL hydrator. Apply
   // it via `Plotly.relayout` after `Plotly.newPlot` and clear the
   // ref. The first `handleNewPlot` after mount usually has empty
   // traces (the rebuild is queued behind the catalog fetch), so we
-  // gate on `traces.length` to skip until the rebuild lands with
-  // real data.
+  // gate on the traces passed to THIS draw. Options may have changed while
+  // it was rendering; consuming the zoom on an empty draw would let the
+  // subsequent data draw replace it with the default viewport.
   //
   // Note: this does NOT need to preserve Plotly's `_rangeInitial0/1`
-  // for Reset Axes — the custom Reset button in `options.ts`
+  // for Reset Axes: the custom Reset button in `options.ts`
   // computes the data extent directly from `trace.x` rather than
   // relying on Plotly's internal anchors.
-  if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
+  if (pendingShareZoom.value && traces.some((t) => (t as AppPlotlyTrace).x?.length)) {
     const snap = pendingShareZoom.value
-    const update: Record<string, [number, number] | boolean> = {}
+    const update: Record<string, [number, number] | [string, string] | boolean> = {}
     if (snap.xRange) {
-      update['xaxis.range'] = [...snap.xRange]
+      update['xaxis.range'] = [toPlotDate(snap.xRange[0]), toPlotDate(snap.xRange[1])]
       update['xaxis.autorange'] = false
     }
     for (const [axisName, range] of Object.entries(snap.yRanges ?? {})) {
@@ -184,7 +241,7 @@ export const handleNewPlot = async (
   // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
   // identity is unchanged and Vue's ref watchers don't refire. It does
   // wipe externally-attached listeners (the ContextPlot's brush sync,
-  // etc.) — bump an epoch so those subscribers know to re-attach.
+  // etc.), so an epoch bump tells those subscribers to re-attach.
   mainPlotEpoch.value++
 
   // Debounce long enough that a rapid scroll-wheel burst collapses
@@ -196,7 +253,7 @@ export const handleNewPlot = async (
   handleRelayout(null)
 
   // Only listen to `plotly_relayout`. We used to also wire
-  // `plotly_redraw`, which fires on every Plotly re-paint — so each
+  // `plotly_redraw`, which fires on every Plotly re-paint, so each
   // scroll tick routed through BOTH debouncers (one per event
   // type) and handleRelayout ran twice per gesture, each heavy pass
   // competing with the user's in-progress zoom. The relayout event
@@ -206,7 +263,7 @@ export const handleNewPlot = async (
     'plotly_relayout',
     debounce(handleRelayout, debounceDelay)
   )
-  // Zoom-history recorder — runs on its own 350 ms debouncer so a single
+  // Zoom-history recorder: runs on its own 350 ms debouncer so a single
   // drag/scroll gesture collapses to one entry. Kept independent of the
   // relayout handler above, which does tooltip/visible-point work.
   installZoomTracking(plotlyRef.value)

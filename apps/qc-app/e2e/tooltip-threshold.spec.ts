@@ -5,7 +5,7 @@
  *      counter in place of the toggle button. The toggle button is
  *      hidden because the threshold drives the on/off state.
  *   2. Switching to "Manual toggle" via the caret menu hides the
- *      counter and renders the icon toggle button — clicking it
+ *      counter and renders the icon toggle button; clicking it
  *      flips data-points hover on/off.
  *   3. The mode menu carries the threshold form when auto is active:
  *      typing buffers, Apply / Enter commit, Escape (which closes
@@ -16,12 +16,12 @@
 
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
-import { setupEditView } from './support/app'
+import { setupEditView, waitForEditorReady } from './support/app'
 
 /**
  * Pull the threshold number out of the auto-mode counter text. The
  * counter renders as "{count}/{threshold}" with locale-formatted
- * numbers — strip the comma group separators before parsing.
+ * numbers, so strip the comma group separators before parsing.
  */
 async function readDisplayedThreshold(page: Page): Promise<number> {
   const counterText = await page
@@ -37,7 +37,7 @@ async function readDisplayedThreshold(page: Page): Promise<number> {
  * underlying toolbar is interactable again. The v-menu uses
  * `close-on-content-click="false"` (so the threshold form stays open
  * during edits), which means a mode-option click does NOT auto-close
- * the menu — Escape does that reliably regardless of which mode was
+ * the menu. Escape does that reliably regardless of which mode was
  * picked.
  */
 async function pickMode(page: Page, mode: 'manual' | 'auto') {
@@ -54,7 +54,7 @@ async function openModeMenu(page: Page) {
 }
 
 test.describe('data-points combobox', () => {
-  // Each scenario takes ~18–20 s serially on Firefox — boot, plot,
+  // Each scenario takes ~18–20 s serially on Firefox: boot, plot,
   // setup, several menu open/close cycles, and a page.reload() in
   // beforeEach. With Playwright's default `workers: 2` cap, two of
   // these scenarios contending for the shared dev server can each
@@ -64,18 +64,19 @@ test.describe('data-points combobox', () => {
   test.setTimeout(60_000)
 
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     await setupEditView(page)
     // Reset the persisted preference bag so each test starts in auto
     // mode at the default threshold. The store persists `tooltipsMode`,
     // `tooltipsMaxDataPoints`, and `tooltipsManualEnabled` under a
-    // single key — clearing it resets all three.
+    // single key, so clearing it resets all three.
     await page.evaluate(() =>
       localStorage.removeItem('qc.plot.tooltipsMaxDataPoints')
     )
     await page.reload()
-    // Wait for the combobox to mount before each test acts on it. In
-    // the default (auto) mode the counter cell is the visible anchor;
+    // The reload resumes the session; the counter shows before that settles.
+    await waitForEditorReady(page)
+    // In the default (auto) mode the counter cell is the visible anchor;
     // the toggle button only renders in manual mode.
     await expect(page.getByTestId('tooltips-counter')).toBeVisible()
   })
@@ -100,7 +101,7 @@ test.describe('data-points combobox', () => {
     await expect(toggle).toBeEnabled()
     await expect(page.getByTestId('tooltips-counter')).toHaveCount(0)
 
-    // Manual mode starts at "on" by default — flip it off and back on.
+    // Manual mode starts at "on" by default; flip it off and back on.
     await expect(toggle).toHaveAttribute('aria-pressed', 'true')
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-pressed', 'false')

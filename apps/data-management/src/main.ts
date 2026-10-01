@@ -6,55 +6,22 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router/router'
 import vuetify from '@/plugins/vuetify'
-import { createPinia, storeToRefs } from 'pinia'
+import { createPinia } from 'pinia'
 import { injectClarity } from '@/plugins/clarity'
 import { injectGoogleAnalytics } from '@/plugins/googleAnalytics'
 import { settings } from '@/config/settings'
-import hs, { createHydroServer, User } from '@hydroserver/client'
-import { useVocabularyStore } from './composables/useVocabulary'
-import { useWorkspaceStore } from '@/store/workspaces'
-import { useUserStore } from './store/user'
+import { startAppInitialization } from '@/bootstrap/appInitialization'
 
 const app = createApp(App)
 const pinia = createPinia()
-const hydroServerHost =
-  import.meta.env.VITE_APP_PROXY_BASE_URL
-    ? ''
-    : import.meta.env.DEV
-    ? 'http://127.0.0.1:8000'
-    : ''
 
-async function initializeApp() {
+function initializeApp() {
   app.use(pinia)
 
-  // The session must be initialized before the router because some of the routes depend on the session state for access control
-  await createHydroServer({ host: hydroServerHost })
-
-  const vocabularyStore = useVocabularyStore()
-  await Promise.all([vocabularyStore.fetchAllVocabularies()])
-
-  const { user } = storeToRefs(useUserStore())
-
-  // Avoid spamming the console with an expected 401 before a user logs in.
-  // The session snapshot already tells us whether an authenticated user exists.
-  user.value = new User()
-  if (hs.session.isAuthenticated) {
-    const res = await hs.user.get()
-    user.value = res.ok && res.status !== 401 ? res.data : new User()
-  }
-
-  if (hs.session.isAuthenticated) {
-    try {
-      const workspacesResponse = await hs.workspaces.listAllItems({
-        is_associated: true,
-        expand_related: true,
-      })
-      const { setWorkspaces } = useWorkspaceStore()
-      setWorkspaces(workspacesResponse)
-    } catch (error) {
-      console.error('Error fetching workspaces', error)
-    }
-  }
+  // Start client initialization before the router's first navigation. The
+  // router guard waits for the client, while the rest of the bootstrap can
+  // finish after the app mounts.
+  const initialization = startAppInitialization()
 
   app.use(router)
   app.use(vuetify)
@@ -67,6 +34,10 @@ async function initializeApp() {
       settings.analyticsConfiguration.googleAnalyticsMeasurementId
     )
   app.mount('#app')
+
+  return initialization
 }
 
-initializeApp()
+void initializeApp().catch((error) => {
+  console.error('Error initializing app', error)
+})

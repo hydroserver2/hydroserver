@@ -1,9 +1,12 @@
-﻿<template>
+<template>
   <div class="d-flex flex-column ga-2 w-100">
     <div>
       <div class="text-body-small text-medium-emphasis">
-        <strong>Loaded time window.</strong>
-        Changing the range re-fetches observations from the server.
+        <template v-if="description">{{ description }}</template>
+        <template v-else>
+          <strong>Loaded time window.</strong>
+          Presets count back from the plotted data's last observation.
+        </template>
       </div>
     </div>
 
@@ -11,6 +14,7 @@
       <div>
         <div class="text-body-small text-medium-emphasis mb-1">From</div>
         <DatePickerField
+          data-testid="date-range-from"
           :model-value="beginDate"
           placeholder="Start date"
           @update:model-value="setDateRange({ begin: $event })"
@@ -19,6 +23,7 @@
       <div>
         <div class="text-body-small text-medium-emphasis mb-1">To</div>
         <DatePickerField
+          data-testid="date-range-to"
           :model-value="endDate"
           placeholder="End date"
           @update:model-value="setDateRange({ end: $event })"
@@ -28,19 +33,21 @@
 
     <div class="time-filters__presets">
       <v-chip
-        v-for="option in dateOptions"
+        v-for="option in presets"
         :key="option.id"
-        :color="selectedDateBtnId === option.id ? 'primary' : undefined"
-        :variant="selectedDateBtnId === option.id ? 'tonal' : 'outlined'"
+        :data-testid="`date-preset-${option.label}`"
+        :color="shownId === option.id ? 'primary' : undefined"
+        :variant="shownId === option.id ? 'tonal' : 'outlined'"
         size="small"
-        :title="(option as any).title ?? option.label"
+        :title="option.title"
         class="time-filters__preset-chip justify-center"
         @click="onDateBtnClick(option.id)"
       >
         {{ option.label }}
       </v-chip>
       <v-chip
-        v-if="selectedDateBtnId === -1"
+        v-if="activePresetId === CUSTOM_PRESET_ID"
+        data-testid="date-preset-custom"
         color="secondary"
         variant="tonal"
         size="small"
@@ -56,11 +63,30 @@
 <script setup lang="ts">
 import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
+import {
+  CUSTOM_PRESET_ID,
+  TIME_RANGE_PRESETS,
+  shownPresetId,
+  type TimeRangePreset,
+} from '@/utils/timeRangePresets'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
+
+const props = withDefaults(
+  defineProps<{
+    description?: string
+    /** Preset chips to offer; the editor leaves out YTD. */
+    presets?: readonly TimeRangePreset[]
+  }>(),
+  { description: undefined, presets: () => TIME_RANGE_PRESETS }
+)
 
 const { setDateRange, onDateBtnClick } = useDataVisStore()
-const { dateOptions, beginDate, endDate, selectedDateBtnId } =
-  storeToRefs(useDataVisStore())
+const { beginDate, endDate, activePresetId } = storeToRefs(useDataVisStore())
+
+const shownId = computed(() =>
+  shownPresetId(activePresetId.value, props.presets)
+)
 </script>
 
 <style scoped>

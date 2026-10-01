@@ -2,7 +2,7 @@
  * Single-session smoke that walks one datastream through every
  * filter / edit / add operation in order. Each step is performed
  * manually (open panel → fill controls → click commit), one after
- * another, against the same series — so any state pollution between
+ * another, against the same series, so any state pollution between
  * ops (stale selections, leftover box-select rectangles, indices
  * shifted by a prior insert/delete) surfaces as a failure on the
  * next op rather than going unnoticed.
@@ -14,7 +14,7 @@
  *     post-action highlight).
  *   - Edit ops that read indices from `history[length - 2].selected`
  *     silently no-op'd if a prior op left a non-SELECTION entry
- *     there — the panels now dispatch `[SELECTION, OP]` atomically.
+ *     there. The panels now dispatch `[SELECTION, OP]` atomically.
  */
 
 import { expect, test, type Page } from '@playwright/test'
@@ -30,7 +30,7 @@ import { FIXTURE_OBS_START_MS } from './support/fixtures'
  */
 function observationsWithGap() {
   // Anchor to FIXTURE_OBS_START_MS (relative to "now") so the series
-  // falls inside the QC app's default 1w window — a hard-coded literal
+  // falls inside the QC app's default time range. A hard-coded literal
   // would slide out of range as the calendar moves and leave the main
   // plot empty.
   const startMs = FIXTURE_OBS_START_MS
@@ -51,7 +51,7 @@ function observationsWithGap() {
 
 /** Re-seed a contiguous selection spanning the full series. Uses
  *  Datetime Range (live-commit, no Apply button) so the selection is
- *  guaranteed to be one consecutive block — Drift Correction needs
+ *  guaranteed to be one consecutive block: Drift Correction needs
  *  groups of length > 1 and Value Threshold can yield non-contiguous
  *  hits once intermediate edits have shifted Y values around. */
 async function seedWideSelection(page: Page) {
@@ -61,7 +61,7 @@ async function seedWideSelection(page: Page) {
 
 test.describe('all operations: single-session walkthrough', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page, { observations: observationsWithGap() })
+    await installMocks(page, { observations: observationsWithGap(), qcHistories: true })
     await setupEditView(page)
   })
 
@@ -111,7 +111,7 @@ test.describe('all operations: single-session walkthrough', () => {
     // --- Add: Fill Gaps ----------------------------------------------
     // Fill the deliberate ~4h gap with 15-minute samples. After the
     // commit, recordPostActionSelection lands an inserted-indices
-    // SELECTION in history — the next edit must NOT silently
+    // SELECTION in history, and the next edit must NOT silently
     // operate on those indices.
     await openOp(page, 'fillGaps')
     const fillPanel = page.getByTestId('operation-panel-fillGaps')
@@ -121,7 +121,7 @@ test.describe('all operations: single-session walkthrough', () => {
     await fillPanel.getByRole('button', { name: /fill gaps/i }).click()
     await expectHistoryContains(page, 'Fill Gaps')
 
-    // --- Edit: Change Values (after Fill Gaps — regression guard) ---
+    // --- Edit: Change Values (after Fill Gaps, regression guard) ---
     // Re-seed a fresh wide selection so we're operating on real data,
     // not the post-fill auto-selection. The dispatch chain in
     // ChangeValues.vue now anchors the SELECTION explicitly, so this

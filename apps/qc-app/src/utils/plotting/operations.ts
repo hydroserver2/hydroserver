@@ -11,12 +11,13 @@ import { storeToRefs } from 'pinia'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { handleNewPlot } from './events'
 import { traceXAsNumbers } from './internal'
+import { plotCoord, plotCoordToDate, toPlotDate } from './plotTime'
 import type { AppPlotlyTrace } from './options'
 
 /**
  * Zoom the x-axis to an explicit [start, end] window without touching
  * the data. Used by the editor's preset buttons, which should be a
- * visual-only zoom — unlike the Select-view sidebar presets, which
+ * visual-only zoom, unlike the Select-view sidebar presets, which
  * drive a fresh fetch + redraw via `useDataVisStore#onDateBtnClick`.
  */
 export const zoomXaxisTo = async (
@@ -26,7 +27,7 @@ export const zoomXaxisTo = async (
 ): Promise<void> => {
   if (!gd) return
   await Plotly.relayout(gd as Plotly.Root, {
-    'xaxis.range': [start, end],
+    'xaxis.range': [toPlotDate(start), toPlotDate(end)],
     'xaxis.autorange': false,
   } as unknown as Partial<Layout>)
 }
@@ -53,8 +54,8 @@ export const toggleTraceVisibility = async (
  *
  * A dot-path relayout (`{'yaxisN.visible': false}`) hides the chrome
  * but doesn't rerun the autoshift pass, so the column stays reserved.
- * We rebuild via `handleNewPlot(preserveZoom)` — the same replot path
- * used for QC swaps and trace reorders — which regenerates the layout
+ * We rebuild via `handleNewPlot(preserveZoom)` (the same replot path
+ * used for QC swaps and trace reorders), which regenerates the layout
  * from `createPlotlyOption` with the updated `hiddenAxisIds` and
  * preserves the user's viewport.
  *
@@ -161,25 +162,21 @@ export const cropXaxisRange = async () => {
 
   setTimeout(async () => {
     try {
-      const layoutUpdates: Partial<Layout> = { ...plotlyOptions.value.layout }
+      const layoutUpdates = plotlyOptions.value.layout
       const xAxis = layoutUpdates.xaxis as Partial<LayoutAxis> | undefined
-      const xRange = xAxis?.range as Array<string | number> | undefined
-      // Plotly will rewrite timestamps as datestrings. We need to convert them back to timestamps.
-      if (xRange && typeof xRange[0] == 'string') {
-        xRange[0] = Date.parse(xRange[0])
-        xRange[1] = Date.parse(xRange[1] as string)
-      }
-
+      const xRange = (xAxis?.range as Array<string | number> | undefined)?.map(
+        plotCoord
+      )
       const liveRange = (
         plotlyRef.value?.layout.xaxis.range as
         | Array<string | number>
         | undefined
-      )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+      )?.map(plotCoord)
 
       if (xAxis && xRange && liveRange) {
         xAxis.range = [
-          Math.max(liveRange[0] as number, xRange[0] as number),
-          Math.min(liveRange[1] as number, xRange[1] as number),
+          plotCoordToDate(Math.max(liveRange[0]!, xRange[0]!)),
+          plotCoordToDate(Math.min(liveRange[1]!, xRange[1]!)),
         ]
       }
 
@@ -195,7 +192,7 @@ export const cropXaxisRange = async () => {
  * points. Mirror of `fitYaxisToVisible`: for each trace we consider the
  * points already within the live x-range, keep those whose y also falls
  * inside the trace's live y-range, and shrink the x-axis to span their
- * min/max x (with 10% padding — same amount as the Y variant).
+ * min/max x (with 10% padding, same amount as the Y variant).
  * @param _eventData unused; preserved for the modebar click signature.
  */
 export const fitXaxisToVisible = async (_eventData?: unknown) => {
@@ -224,7 +221,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
       (liveLayout?.xaxis as Partial<LayoutAxis> | undefined)?.range as
       | Array<string | number>
       | undefined
-    )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+    )?.map(plotCoord)
 
     const xs = traceXAsNumbers(gd, qcIndex)
     if (!xs.length) return
@@ -265,7 +262,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
     // bounds clip marker glyphs; on a date axis there's nothing to clip
     // and any padding reads as a margin Plotly conjured up.
     await Plotly.relayout(gd as Plotly.Root, {
-      'xaxis.range': [xMin, xMax],
+      'xaxis.range': [plotCoordToDate(xMin), plotCoordToDate(xMax)],
       'xaxis.autorange': false,
     } as unknown as Partial<Layout>)
   } finally {
@@ -276,7 +273,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
 /**
  * Crops the QC trace's y axis to the extent of its currently visible
  * points. Only the primary `yaxis` (where QC always lives, per
- * `createPlotlyOption`) is rescaled — every non-QC overlay keeps the
+ * `createPlotlyOption`) is rescaled; every non-QC overlay keeps the
  * range the user set on it, so clicking this button never reshuffles
  * the companion axes. The data considered is exclusively the QC
  * trace's y-values within the current live x-range.
@@ -310,7 +307,7 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
 
     const liveXRange = (
       plotlyRef.value?.layout.xaxis.range as Array<string | number> | undefined
-    )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+    )?.map(plotCoord)
 
     const xs = traceXAsNumbers(plotlyRef.value, qcTraceIndex)
     const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)
@@ -339,10 +336,10 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
 
     if (yMax === yMin || !Number.isFinite(yMin) || !Number.isFinite(yMax)) return
 
-    // Fit Y means fit; no padding. Mirrors `fitXaxisToVisible` — any
+    // Fit Y means fit; no padding. Mirrors `fitXaxisToVisible`: any
     // padding reads as a margin Plotly conjured up.
     // Reuse the Plotly.update layout-object form (same shape the old
-    // loop-over-all-axes seam used) — a previous attempt with
+    // loop-over-all-axes seam used). A previous attempt with
     // Plotly.relayout + dot-path keys silently no-op'd in some cases
     // and left the y-axis showing the whole extent.
     const layoutUpdates: Partial<Layout> & Record<string, Partial<LayoutAxis>> = {

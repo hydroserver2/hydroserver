@@ -16,7 +16,11 @@ vi.mock('@/utils/observations', () => ({
 import { fetchObservationsSync } from '@/utils/observations'
 import { useObservationStore } from '@/store/observations'
 
-const datastream = { id: 'ds-1' } as any
+const datastream = {
+  id: 'ds-1',
+  phenomenonBeginTime: '1970-01-01T00:00:00Z',
+  phenomenonEndTime: '1970-01-01T00:00:00.010Z',
+} as any
 
 // 11 points at epoch-ms 0..10.
 const ALL_TIMES = Array.from({ length: 11 }, (_, i) => i)
@@ -91,7 +95,7 @@ describe('useObservationStore.fetchObservationsInRange windowing', () => {
     )
     expect(second).toBe(first)
     // applyWindow is a no-op for the same window, so the data buffer is the
-    // same instance — edits/history would survive.
+    // same instance, so edits/history would survive.
     expect(second.dataX).toBe(beforeX)
   })
 
@@ -104,5 +108,174 @@ describe('useObservationStore.fetchObservationsInRange windowing', () => {
       new Date(200)
     )
     expect(rec.dataX.length).toBe(0)
+  })
+})
+
+describe('useObservationStore.fetchObservationsInRange overlapping requests', () => {
+  const deferred = <T>() => {
+    let resolve!: (v: T) => void
+    const promise = new Promise<T>((r) => (resolve = r))
+    return { promise, resolve }
+  }
+  const rangeOf = (begin: number, end: number) => {
+    const datetimes = ALL_TIMES.filter((t) => t >= begin && t <= end)
+    return { datetimes, dataValues: datetimes.map((t) => t * 10) }
+  }
+
+  it('applies the latest requested window and keeps the cache free of duplicates when responses land out of order', async () => {
+    const slow = deferred<ReturnType<typeof rangeOf>>()
+    ;(fetchObservationsSync as any)
+      .mockImplementationOnce(() => slow.promise)
+      .mockImplementationOnce(async () => rangeOf(5, 10))
+    const store = useObservationStore()
+
+    const first = store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    const second = store.fetchObservationsInRange(datastream, new Date(5), new Date(10))
+    await Promise.resolve()
+    slow.resolve(rangeOf(0, 10))
+    const [, rec] = await Promise.all([first, second])
+
+    expect(rec.dataX.length).toBe(6)
+    expect(Array.from(store.observationsRaw['ds-1'].datetimes)).toEqual(ALL_TIMES)
+  })
+
+  it('shares one request for an identical range already in flight', async () => {
+    const store = useObservationStore()
+
+    const [a, b] = await Promise.all([
+      store.fetchObservationsInRange(datastream, new Date(2), new Date(8)),
+      store.fetchObservationsInRange(datastream, new Date(2), new Date(8)),
+    ])
+
+    expect(a).toBe(b)
+    expect(fetchObservationsSync).toHaveBeenCalledTimes(1)
+  })
+
+  it('still serves later requests after a failed one', async () => {
+    ;(fetchObservationsSync as any).mockRejectedValueOnce(new Error('offline'))
+    const store = useObservationStore()
+
+    const failed = store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    const next = store.fetchObservationsInRange(datastream, new Date(0), new Date(4))
+
+    await expect(failed).rejects.toThrow('offline')
+    expect((await next).dataX.length).toBe(5)
+  })
+})
+
+describe('useObservationStore.fetchObservationsInRange coverage', () => {
+  const requested = () =>
+    (fetchObservationsSync as any).mock.calls.map(
+      ([, b, e]: [unknown, Date, Date]) => [b.getTime(), e.getTime()]
+    )
+
+  it('skips the excluded stretch and leaves a gap in the record', async () => {
+    const store = useObservationStore()
+    const rec = await store.fetchObservationsInRange(
+      datastream,
+      new Date(0),
+      new Date(10),
+      { begin: new Date(3), end: new Date(6) }
+    )
+    expect(requested()).toEqual([
+      [0, 2],
+      [7, 10],
+    ])
+    expect(Array.from(rec.dataX)).toEqual([0, 1, 2, 7, 8, 9, 10])
+  })
+
+  it('fetches only the gap once it is asked for', async () => {
+    const store = useObservationStore()
+    await store.fetchObservationsInRange(datastream, new Date(0), new Date(10), {
+      begin: new Date(3),
+      end: new Date(6),
+    })
+    ;(fetchObservationsSync as any).mockClear()
+    const rec = await store.fetchObservationsInRange(
+      datastream,
+      new Date(0),
+      new Date(10)
+    )
+    expect(requested()).toEqual([[3, 6]])
+    expect(Array.from(rec.dataX)).toEqual(ALL_TIMES)
+  })
+
+  it('does not ask again for a range that held no data', async () => {
+    const store = useObservationStore()
+    await store.fetchObservationsInRange(datastream, new Date(100), new Date(200))
+    ;(fetchObservationsSync as any).mockClear()
+    await store.fetchObservationsInRange(datastream, new Date(100), new Date(200))
+    expect(fetchObservationsSync).not.toHaveBeenCalled()
+  })
+
+  it('keeps one copy of a timestamp two ranges both returned', async () => {
+    ;(fetchObservationsSync as any)
+      .mockImplementationOnce(async () => ({ datetimes: [0, 1, 2], dataValues: [0, 10, 20] }))
+      .mockImplementationOnce(async () => ({ datetimes: [2, 3], dataValues: [99, 30] }))
+    const store = useObservationStore()
+    await store.fetchObservationsInRange(datastream, new Date(0), new Date(2))
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(3))
+    expect(Array.from(rec.dataX)).toEqual([0, 1, 2, 3])
+    expect(Array.from(rec.dataY)).toEqual([0, 10, 20, 30])
+  })
+
+  it('asks again for a range whose fetch failed', async () => {
+    ;(fetchObservationsSync as any).mockRejectedValueOnce(new Error('offline'))
+    const store = useObservationStore()
+    await expect(
+      store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    ).rejects.toThrow('offline')
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    expect(rec.dataX.length).toBe(11)
+  })
+})
+
+describe('useObservationStore cache lifetime', () => {
+  it('does not count a datastream with no observations yet as loaded', async () => {
+    const store = useObservationStore()
+    const empty = { id: 'ds-1', phenomenonBeginTime: null, phenomenonEndTime: null } as any
+    const first = await store.fetchObservationsInRange(empty, new Date(0), new Date(10))
+    expect(first.dataX.length).toBe(0)
+    expect(fetchObservationsSync).not.toHaveBeenCalled()
+
+    // Once observations exist, the same range is asked for.
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    expect(rec.dataX.length).toBe(11)
+  })
+
+  it('asks the server again after forgetting a datastream', async () => {
+    const store = useObservationStore()
+    await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    ;(fetchObservationsSync as any).mockImplementation(async () => ({
+      datetimes: [5],
+      dataValues: [99],
+    }))
+
+    store.forget('ds-1')
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+
+    expect(Array.from(rec.dataX)).toEqual([5])
+    expect(Array.from(rec.dataY)).toEqual([99])
+  })
+
+  it('does not keep a load that was in flight when the datastream was forgotten', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    ;(fetchObservationsSync as any)
+      .mockImplementationOnce(async () => {
+        await gate
+        return { datetimes: [1], dataValues: [10] }
+      })
+      .mockImplementation(async () => ({ datetimes: [5], dataValues: [99] }))
+    const store = useObservationStore()
+
+    const stale = store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    await vi.waitFor(() => expect(fetchObservationsSync).toHaveBeenCalledTimes(1))
+    store.forget('ds-1')
+    release()
+    await stale
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+
+    expect(Array.from(rec.dataX)).toEqual([5])
   })
 })
