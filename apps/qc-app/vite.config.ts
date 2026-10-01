@@ -160,12 +160,7 @@ export default defineConfig(({ command, mode }) => {
           lines: 80,
           statements: 80,
           functions: 80,
-          // Branches sits a couple points below the others because the
-          // last few uncovered branches live in the qualifier-band path
-          // of `options.ts` and the relayout-echo path of `selected.ts`.
-          // Both require heavy Plotly-DOM fixture setup for marginal
-          // signal. Raise back to 80 once those are covered.
-          branches: 78,
+          branches: 80,
         },
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

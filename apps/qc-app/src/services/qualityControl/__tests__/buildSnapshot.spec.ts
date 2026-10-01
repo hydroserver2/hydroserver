@@ -88,6 +88,48 @@ describe('buildSnapshotRecord', () => {
     expect(Array.from(out.dataX)).toEqual(Array.from(base.dataX))
   })
 
+  it('serializes optional live-history fields and defaults missing args', async () => {
+    const { deps, captured } = makeDeps()
+    const item = {
+      method: 'CHANGE_VALUES',
+      args: undefined,
+      comment: 'reviewed adjustment',
+      performedBy: 'analyst',
+    } as unknown as HistoryItem
+
+    await buildSnapshotRecord(deps, {
+      historyId: 'h-1',
+      session: inProgressSession,
+      source,
+      managed,
+      opIndex: 0,
+      liveHistory: [item],
+    })
+
+    expect(captured()!.operations).toEqual([
+      {
+        method: 'CHANGE_VALUES',
+        args: [],
+        comment: 'reviewed adjustment',
+        performedBy: 'analyst',
+      },
+    ])
+  })
+
+  it('defaults missing live history to an empty operation list', async () => {
+    const { deps, captured } = makeDeps()
+
+    await buildSnapshotRecord(deps, {
+      historyId: 'h-1',
+      session: inProgressSession,
+      source,
+      managed,
+      opIndex: 0,
+    })
+
+    expect(captured()!.operations).toEqual([])
+  })
+
   it('replays nothing for an in-progress baseline snapshot', async () => {
     const { deps, captured } = makeDeps()
 

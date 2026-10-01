@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildDependentsMap,
+  commitOrder,
   hasDependents,
 } from '@/utils/sessionGraph'
 import type { SessionNode } from '@/utils/sessionGraph'
@@ -24,6 +25,14 @@ describe('buildDependentsMap', () => {
   it('treats a missing dependencyIds as no links', () => {
     expect(buildDependentsMap([{ id: 'a' }]).size).toBe(0)
   })
+
+  it('adds multiple dependents under the same parent', () => {
+    const map = buildDependentsMap([
+      node('b', ['a']),
+      node('c', ['a']),
+    ])
+    expect(map.get('a')).toEqual(['b', 'c'])
+  })
 })
 
 describe('hasDependents', () => {
@@ -34,5 +43,13 @@ describe('hasDependents', () => {
 
   it('is false for a leaf', () => {
     expect(hasDependents(chain, 'c')).toBe(false)
+  })
+})
+
+describe('commitOrder', () => {
+  it('falls back to createdAt when committedAt is missing', () => {
+    expect(commitOrder({ createdAt: '2025-01-01T00:00:00Z' })).toBe(
+      '2025-01-01T00:00:00Z',
+    )
   })
 })
