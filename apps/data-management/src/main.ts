@@ -8,6 +8,7 @@ import router from './router/router'
 import vuetify from '@/plugins/vuetify'
 import { createPinia } from 'pinia'
 import { injectClarity } from '@/plugins/clarity'
+import { injectGoogleAnalytics } from '@/plugins/googleAnalytics'
 import { settings } from '@/config/settings'
 import { startAppInitialization } from '@/bootstrap/appInitialization'
 
@@ -25,4 +26,9 @@ app.use(vuetify)
 settings.analyticsConfiguration.enableClarityAnalytics &&
   settings.analyticsConfiguration.clarityProjectId &&
   injectClarity(settings.analyticsConfiguration.clarityProjectId)
+settings.analyticsConfiguration.enableGoogleAnalytics &&
+  settings.analyticsConfiguration.googleAnalyticsMeasurementId &&
+  injectGoogleAnalytics(
+    settings.analyticsConfiguration.googleAnalyticsMeasurementId
+  )
 app.mount('#app')
