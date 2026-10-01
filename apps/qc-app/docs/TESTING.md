@@ -12,8 +12,8 @@ the operator's manual; QUALITY.md is the policy.
 
 | Layer      | Runner                          | Where                        | Count    |
 | ---------- | ------------------------------- | ---------------------------- | -------- |
-| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 84 files |
-| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 37 files |
+| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 85 files |
+| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 38 files |
 
 There is no separate "integration" tier; component tests live in the
 unit tier and mount real Vue components with the Vue Test Utils
@@ -82,6 +82,10 @@ notable knobs:
 - `server.deps.inline: ['vuetify']`: Vuetify ships ESM that
   Vitest's default externalization mishandles; inlining lets it
   load.
+- `env: { TZ: 'UTC' }`: every unit test runs in UTC, so the browser's
+  zone, the app's default display zone, is the same on every machine. A
+  test about a zone sets it explicitly (`timeZone.spec.ts` pins
+  `America/Denver`; `displayZone.spec.ts` passes a `DisplayZone`).
 
 ### Test scaffolding
 
@@ -250,7 +254,8 @@ e2e/
 │   ├── fixtures.ts   : workspace / datastream / observation fixtures
 │   ├── global-setup.ts : warms the dev server before the first test
 │   ├── mocks.ts      : page.route() handlers that stand in for HydroServer
-│   └── ops.ts        : op-specific preambles (selectAllPoints, expectHistoryContains)
+│   ├── ops.ts        : op-specific preambles (selectAllPoints, applyChangeValues, expectHistoryContains)
+│   └── plot.ts       : the main plot's x range and trace extents, read back as instants
 └── *.spec.ts         : one file per feature
 ```
 
@@ -358,6 +363,10 @@ function observationsWithGap() {
   // …
 }
 ```
+
+Playwright runs in the machine's zone unless a spec sets `timezoneId`.
+`time-zone.spec.ts` runs in `Asia/Tokyo`, so a time read as browser-local
+instead of in the chosen zone would show.
 
 ### Test hooks
 

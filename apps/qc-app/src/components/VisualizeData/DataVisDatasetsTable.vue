@@ -329,6 +329,7 @@ import { useEditEntry } from '@/composables/useEditEntry'
 import { useClearPlot } from '@/composables/useClearPlot'
 import { isSnapshotId } from '@/utils/snapshotId'
 import { PLOT_CAP } from '@/utils/plotCap'
+import { formatDateTime } from '@/utils/time'
 
 const emit = defineEmits<{
   (e: 'edit', datastream: Datastream & DatastreamExtended): void
@@ -425,17 +426,10 @@ const formatCount = (n: unknown): string => {
   return Number.isFinite(v) ? NUMBER_FORMATTER.format(v) : '-'
 }
 
-const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-})
 const formatTableDate = (raw: unknown): string => {
   if (!raw) return '-'
-  const d = new Date(raw as string)
-  return Number.isNaN(d.getTime()) ? '-' : DATE_FORMATTER.format(d)
+  const ms = new Date(raw as string).getTime()
+  return Number.isNaN(ms) ? '-' : formatDateTime(ms)
 }
 
 const { canClearPlot, clearPlot } = useClearPlot()

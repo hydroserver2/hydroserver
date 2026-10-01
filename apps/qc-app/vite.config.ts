@@ -100,6 +100,8 @@ export default defineConfig(({ command, mode }) => {
       },
       setupFiles: ['@vitest/web-worker', './src/utils/test/setup.ts'],
       environment: 'jsdom',
+      // Pinned so date tests read the same on every machine.
+      env: { TZ: 'UTC' },
       coverage: {
         exclude: [
           '**/src/store/observations.ts',

@@ -104,14 +104,14 @@
         <template #item.datetime="{ index }">
           <EditableCell
             :value="formatDatetimeLocal(selectedSeries?.data.dataX[index])"
-            :display="formatDate(new Date(selectedSeries?.data.dataX[index] as number))"
+            :display="formatDateTime(selectedSeries?.data.dataX[index] as number)"
             :edited="datetimeEdits.has(index)"
             :original-display="
-              formatDate(new Date(selectedSeries?.data.dataX[index] as number))
+              formatDateTime(selectedSeries?.data.dataX[index] as number)
             "
             :edited-display="
               datetimeEdits.has(index)
-                ? formatDate(new Date(datetimeEdits.get(index)!))
+                ? formatDateTime(datetimeEdits.get(index)!)
                 : ''
             "
             input-type="datetime-local"
@@ -171,11 +171,9 @@ import {
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import {
-  EnumEditOperations,
-  EnumFilterOperations,
-  formatDate,
-} from '@uwrl/qc-utils'
+import { EnumEditOperations, EnumFilterOperations } from '@uwrl/qc-utils'
+import { formatDateTime } from '@/utils/time'
+import { fromWallParts, wallParts } from '@/utils/timeZone'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useQualifierStore } from '@/store/qualifiers'
 import EditableCell from '@/components/VisualizeData/EditableCell.vue'
@@ -319,21 +317,22 @@ function formatNumber(num: unknown): string {
   return String(parseFloat((num as number).toFixed(4)))
 }
 
-// YYYY-MM-DDTHH:mm:ss in local time for <input type="datetime-local">.
+// YYYY-MM-DDTHH:mm:ss in the chosen zone for <input type="datetime-local">.
 function formatDatetimeLocal(epoch: number | undefined): string {
   if (epoch == null || Number.isNaN(epoch)) return ''
-  const d = new Date(epoch)
+  const p = wallParts(epoch)
   const pad = (n: number) => String(n).padStart(2, '0')
   return (
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    `${p.year}-${pad(p.month + 1)}-${pad(p.day)}` +
+    `T${pad(p.hours)}:${pad(p.minutes)}:${pad(p.seconds)}`
   )
 }
 
 function parseDatetimeLocal(raw: string): number | null {
-  if (!raw) return null
-  const t = new Date(raw).getTime()
-  return Number.isNaN(t) ? null : t
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(raw)
+  if (!m) return null
+  const [, y, mo, d, h, mi, s] = m.map(Number)
+  return fromWallParts(y!, mo! - 1, d!, h!, mi!, s || 0)
 }
 
 function onValueSave(index: number, raw: string) {

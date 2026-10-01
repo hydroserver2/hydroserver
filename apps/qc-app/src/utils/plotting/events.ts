@@ -23,6 +23,7 @@ import {
 } from './interaction'
 import type { AppPlotlyTrace } from './options'
 import { withLiveShapes } from './shapes'
+import { toPlotDate } from './plotTime'
 
 const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -192,9 +193,9 @@ export const handleNewPlot = async (
   // relying on Plotly's internal anchors.
   if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
     const snap = pendingShareZoom.value
-    const update: Record<string, [number, number] | boolean> = {}
+    const update: Record<string, [number, number] | [string, string] | boolean> = {}
     if (snap.xRange) {
-      update['xaxis.range'] = [...snap.xRange]
+      update['xaxis.range'] = [toPlotDate(snap.xRange[0]), toPlotDate(snap.xRange[1])]
       update['xaxis.autorange'] = false
     }
     for (const [axisName, range] of Object.entries(snap.yRanges ?? {})) {

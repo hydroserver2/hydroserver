@@ -54,9 +54,16 @@ The edits themselves run in your web browser. HydroServer stores the operations 
 4. On **Home**, the left filter drawer is open. Filter the datastream list by site / observed property / processing level there, and click a row to plot it. The time range is set from the **Time range** button on the plot toolbar.
 
 All dates and times in the app, in the pickers, the plot axis, the table and
-tooltips, are in your browser's local time zone. Every time input names that
-zone at its end (for example `MDT`, or `MST` for a date in winter); hover it
-for the full zone name and its UTC offset.
+tooltips, are in one time zone: your browser's, unless you pick another with
+the **globe** button in the navigation rail. The button's menu offers the
+same choices as a data connection's timestamps: **UTC**, a **fixed UTC
+offset**, or an **IANA time zone** (which follows daylight saving), plus a
+button to go back to your browser's zone. The choice is remembered on this
+browser, and changing it redraws the plot over the same stretch of time.
+Observations are stored in UTC either way, so the zone only changes how
+times are shown and typed. Every time input names the zone at its end (for
+example `MDT`, or `MST` for a date in winter); hover it for the full zone
+name and its UTC offset.
 
 If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration ([DEPLOYMENT.md](./DEPLOYMENT.md) covers this).
 
@@ -73,6 +80,7 @@ A thin, always-visible column of icons.
 | HydroServer logo | Top left. Go home. Resets the current view. Asks what should happen to an open edit session first. |
 | Cursor (Select) | Top left. Show the datastream Select drawer + plot. While you are editing, this keeps the session open behind it. |
 | Pencil (Edit) | Top left. Return to the Edit view. **Disabled** until you're editing: pick a datastream to edit with its row's Edit button first. |
+| Globe (time zone) | Bottom left. Labelled with the zone in use (for example `MDT`). Pick the time zone dates are shown in. |
 | Stopwatch (Performance) | Bottom left. Open the Performance Calibration dialog. See "Performance" below. |
 | Briefcase (Workspaces) | Bottom left. Switch workspace, or Continue in the current one. |
 | Logout | Bottom left. Sign out. |

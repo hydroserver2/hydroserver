@@ -1,24 +1,23 @@
 /**
- * Persisted QC editing preferences.
- *
- * Currently just the last-used processing level for the "Create Datastream
- * for Editing" form, so the user's choice is remembered across reloads.
- * Defaults to null (no assumed processing level on first use).
+ * Persisted QC preferences: the last-used processing level for the create
+ * form (null on first use), and the time zone dates are shown in.
  */
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { displayZone } from '@/utils/timeZone'
 
 export const useQcPreferencesStore = defineStore(
   'qcPreferences',
   () => {
     const processingLevelId = ref<string | null>(null)
-    return { processingLevelId }
+    // The module-level ref, so plain utilities read the same zone.
+    return { processingLevelId, displayZone }
   },
   {
     persist: {
       key: 'qc:preferences:v1',
-      pick: ['processingLevelId'],
+      pick: ['processingLevelId', 'displayZone'],
     },
   }
 )

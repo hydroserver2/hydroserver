@@ -11,6 +11,8 @@ import { storeToRefs } from 'pinia'
 import { isEqual } from 'lodash-es'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { traceXAsNumbers, DENSITY_HIDE_MARKERS } from './internal'
+import { plotCoord, plotCoordToDate } from './plotTime'
+import { toWall } from '@/utils/timeZone'
 import type { AppPlotlyTrace } from './options'
 import { handleSelected } from './selected'
 
@@ -52,8 +54,9 @@ export const intendedSpacingMs = (): number | null => {
 
 /**
  * Compute an explicit tick-position array aligned to the datastream's
- * intended cadence, bounded to the visible x-range. Returns `null` when
- * we should hand back to Plotly's auto tick picker.
+ * intended cadence, bounded to the visible x-range, in Plotly's frame (see
+ * `plotTime.ts`). Returns `null` when we should hand back to Plotly's auto
+ * tick picker.
  */
 export const computeIntendedTickvals = (
   xStart: number,
@@ -87,7 +90,7 @@ export const computeIntendedTickvals = (
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const anchorSource = qcDatastream.value?.phenomenonBeginTime
   const anchor = anchorSource
-    ? new Date(anchorSource).getTime()
+    ? toWall(new Date(anchorSource).getTime())
     : xStart
 
   const firstK = Math.ceil((xStart - anchor) / step)
@@ -170,14 +173,9 @@ export const handleRelayout = async (
         (plotlyRef.value as unknown as { layout?: Partial<Layout> })?.layout
       const liveXaxis = liveLayout?.xaxis as Partial<LayoutAxis> | undefined
       const xRange = liveXaxis?.range as Array<string | number> | undefined
-
-      if (xRange && typeof xRange[0] == 'string') {
-        xRange[0] = Date.parse(xRange[0])
-        xRange[1] = Date.parse(xRange[1] as string)
-      }
-
-      const xStart = Number(xRange?.[0])
-      const xEnd = Number(xRange?.[1])
+      // In Plotly's frame, like the trace values counted against it.
+      const xStart = xRange?.[0] !== undefined ? plotCoord(xRange[0]) : NaN
+      const xEnd = xRange?.[1] !== undefined ? plotCoord(xRange[1]) : NaN
 
       // Only rescan when the visible x-range actually moved.
       if (
@@ -278,7 +276,7 @@ export const handleRelayout = async (
         const currentTickmode =
           (liveXaxis?.tickmode as string | undefined) ?? 'auto'
         const currentTickvals = Array.isArray(liveXaxis?.tickvals)
-          ? (liveXaxis?.tickvals as number[])
+          ? (liveXaxis?.tickvals as Array<number | string>).map(plotCoord)
           : null
 
         const wantedTickmode = wantedTickvals ? 'array' : 'auto'
@@ -291,7 +289,7 @@ export const handleRelayout = async (
         if (tickmodeChanged || tickvalsChanged) {
           await Plotly.relayout(plotlyRef.value as unknown as HTMLElement, {
             'xaxis.tickmode': wantedTickvals ? 'array' : 'auto',
-            'xaxis.tickvals': wantedTickvals ?? null,
+            'xaxis.tickvals': wantedTickvals?.map(plotCoordToDate) ?? null,
           } as unknown as Partial<Layout>)
         }
       }

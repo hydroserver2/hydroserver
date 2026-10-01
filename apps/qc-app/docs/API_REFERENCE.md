@@ -758,12 +758,14 @@ puts the editor in read-only mode.
 
 ### `useQcPreferencesStore()` (`src/store/qcPreferences.ts`)
 
-Persisted QC editing preferences. Persistence: key `qc:preferences:v1`,
-`pick: ['processingLevelId']`.
+Persisted QC preferences. Persistence: key `qc:preferences:v1`,
+`pick: ['processingLevelId', 'displayZone']`. `main.ts` creates the store
+at startup so the zone is restored before anything is formatted.
 
 | Name                | Kind  | Type / signature | Notes |
 |---------------------|-------|------------------|-------|
 | `processingLevelId` | state | `string \| null` | Last-used processing level for the Create-Datastream-for-Editing form; null on first use (no assumed default). |
+| `displayZone`       | state | `DisplayZone`    | The time zone dates are shown in; the same ref `utils/timeZone.ts` exports. Defaults to the browser's IANA zone. |
 
 ## Internal: utilities
 
@@ -787,10 +789,49 @@ callers reach for:
 `fetchObservationsSync(datastream, startTime?, endTime?)`: paged
 columnar fetch, returns `{ datetimes: number[]; dataValues: number[] }`.
 
+### `src/utils/timeZone.ts`
+
+The time zone dates are shown and typed in. `displayZone` holds a
+`DisplayZone`, `{ mode: 'utc' | 'fixedOffset' | 'iana', zone }`, where
+`zone` is a fixed offset like `-0700` or an IANA name, the same choice a
+data connection's timestamps offer (the lists are qc-utils'
+`FIXED_OFFSET_TIMEZONES` and `DST_AWARE_TIMEZONES`). `browserZone()` is the
+default.
+
+Instants stay epoch ms everywhere. A **wall** value is an instant moved by
+the zone's offset, so its UTC fields read as the zone's clock:
+
+- `offsetMs(ms)`, `toWall(ms)`, `fromWall(wall)`: the conversion. IANA
+  offsets are looked up once per UTC day per zone and cached, with the
+  transition minute found on a day the offset changes.
+- `toWallArray(xs)`: an ascending array moved to wall time in one pass. It
+  returns `xs` itself when nothing moves (UTC), so only a shift copies.
+- `wallParts(ms)` / `fromWallParts(y, m, d, h, mi, s)`: the zone's clock
+  fields, for pickers and calendar arithmetic.
+- `zoneAbbreviation(ms)`, `zoneDescription(ms)`, `zoneName()`: labels.
+
+`utils/time.ts` formats through it, and `dateMath.ts`, the YTD presets,
+`DatePickerField` and the table's datetime input all work on the zone's
+clock. Change the zone with `useDisplayZone().setZone(zone)`: it reads the
+plot's view as real instants, switches the zone, rebuilds the plot, puts
+the view back and redraws the stage band.
+
+### `src/utils/plotting/plotTime.ts`
+
+Plotly has no time zones and reads epoch ms as UTC, so trace x values go in
+as wall values (`toPlotX`), which makes its axis, ticks and `%{x}` hover
+read in the chosen zone. Ranges, shapes and tick values are written as
+Plotly date strings (`toPlotDate`, `plotCoordToDate`): Plotly reads a bare
+number there as browser-local time, which shifted every programmatic zoom
+by the browser's UTC offset. `plotCoord` reads a range or shape value in
+Plotly's own frame, for comparing with trace values, and `fromPlot` turns
+any Plotly x back into an instant. Values the app keeps (zoom history,
+share-link zoom, the stage band, hover readout) are real instants.
+
 ### `src/utils/dateMath.ts`
 
 `subtractDays`, `subtractMonths`, `subtractYears` for the time-range
-preset buttons.
+preset buttons, on the chosen zone's clock.
 
 ### `src/utils/timeRangePresets.ts`
 

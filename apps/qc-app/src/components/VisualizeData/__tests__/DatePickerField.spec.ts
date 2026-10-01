@@ -54,13 +54,13 @@ describe('DatePickerField', () => {
     wrapper.unmount()
   })
 
-  it('labels the time input with the local zone of the shown date', () => {
+  it('labels the time input with the zone of the shown date', () => {
     const value = new Date(2026, 6, 15, 12)
     const wrapper = mountField(value)
     const field = wrapper.find('[data-testid="date-picker-time"]')
     expect(field.text()).toContain(timeZoneAbbreviation(value))
-    expect(wrapper.find('[title^="Local time"]').attributes('title')).toBe(
-      `Local time: ${timeZoneDescription(value)}`
+    expect(wrapper.find('[title^="Time zone"]').attributes('title')).toBe(
+      `Time zone: ${timeZoneDescription(value)}`
     )
     wrapper.unmount()
   })

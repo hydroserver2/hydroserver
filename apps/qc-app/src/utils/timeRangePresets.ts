@@ -4,6 +4,7 @@
  */
 
 import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
+import { fromWallParts, wallParts } from '@/utils/timeZone'
 
 export interface TimeRangePreset {
   id: number
@@ -75,7 +76,10 @@ export function presetWindow(id: number, extent: TimeWindow): TimeWindow | null 
   const end = new Date(extent.end)
   switch (preset.label) {
     case 'YTD':
-      return { begin: new Date(end.getFullYear(), 0, 1), end }
+      return {
+        begin: new Date(fromWallParts(wallParts(end.getTime()).year, 0, 1)),
+        end,
+      }
     case 'All':
       return { begin: new Date(extent.begin), end }
     default:

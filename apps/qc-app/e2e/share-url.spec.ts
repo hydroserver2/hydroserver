@@ -23,6 +23,7 @@ import {
   FIXTURE_OBS_START_MS,
   WORKSPACE_ID,
 } from './support/fixtures'
+import { plotXRange } from './support/plot'
 
 /**
  * Poll the live plot for: the current X range (as `[loMs, hiMs]`)
@@ -98,22 +99,6 @@ async function clickResetAxes(page: Page) {
     if (!button) throw new Error('Reset axes modebar button was not found')
     button.click()
   }, selector)
-}
-
-/** The live X range of the main plot as `[loMs, hiMs]`, or null. */
-async function plotXRange(page: Page): Promise<[number, number] | null> {
-  return page.evaluate(() => {
-    const gd = document.querySelector('[data-testid="main-plot"]') as
-      | (HTMLElement & {
-          _fullLayout?: { xaxis?: { range?: [number | string, number | string] } }
-        })
-      | null
-    const range = gd?._fullLayout?.xaxis?.range
-    if (!range) return null
-    const toMs = (v: number | string) =>
-      typeof v === 'number' ? v : Date.parse(v)
-    return [toMs(range[0]), toMs(range[1])] as [number, number]
-  })
 }
 
 type SessionWindow = { begin: number; end: number }

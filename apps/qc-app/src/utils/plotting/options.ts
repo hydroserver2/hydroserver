@@ -15,6 +15,8 @@ import { useQualifierStore } from '@/store/qualifiers'
 import { useUIStore } from '@/store/userInterface'
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from '@uwrl/qc-utils'
 import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
+import { formatDateTime } from '@/utils/time'
+import { fromPlot, plotCoord, plotCoordToDate, toPlotDate, toPlotX } from './plotTime'
 import { undoZoom, redoZoom } from './zoom'
 import { fitXaxisToVisible, fitYaxisToVisible } from './operations'
 
@@ -329,8 +331,6 @@ const resetAxesClick = (gd: unknown): void => {
   const fl = root?._fullLayout
   if (!root || !fl) return
 
-  const toMs = (v: number | string): number =>
-    typeof v === 'string' ? Date.parse(v) : Number(v)
 
   // Series are time-sorted, so first + last give the per-trace
   // extent in O(1). Min/max across all visible traces.
@@ -339,17 +339,17 @@ const resetAxesClick = (gd: unknown): void => {
   for (const t of root.data ?? []) {
     const xs = t?.x
     if (!xs || !xs.length) continue
-    const first = toMs((xs as ArrayLike<number | string>)[0] as number | string)
-    const last = toMs(
+    const first = plotCoord((xs as ArrayLike<number | string>)[0] as number | string)
+    const last = plotCoord(
       (xs as ArrayLike<number | string>)[xs.length - 1] as number | string
     )
     if (Number.isFinite(first) && first < xMin) xMin = first
     if (Number.isFinite(last) && last > xMax) xMax = last
   }
 
-  const update: Record<string, boolean | [number, number]> = {}
+  const update: Record<string, boolean | [string, string]> = {}
   if (Number.isFinite(xMin) && Number.isFinite(xMax) && xMin < xMax) {
-    update['xaxis.range'] = [xMin, xMax]
+    update['xaxis.range'] = [plotCoordToDate(xMin), plotCoordToDate(xMax)]
     update['xaxis.autorange'] = false
   } else {
     update['xaxis.autorange'] = true
@@ -437,8 +437,8 @@ function buildQualifierBand(
       if (x == null || Number.isNaN(x)) continue
       xs.push(x as number)
       ys.push(row)
-      const ts = new Date(e.appliedAt)
-      const when = isNaN(ts.getTime()) ? e.appliedAt : ts.toLocaleString()
+      const ms = new Date(e.appliedAt).getTime()
+      const when = isNaN(ms) ? e.appliedAt : formatDateTime(ms)
       texts.push(
         `<b>${code}</b>${e.description ? ': ' + e.description : ''}` +
         `<br>Applied: ${when}` +
@@ -504,8 +504,6 @@ export const createPlotlyOption = (
   // Density range for pre-seeding marker opacity.
   const live = (plotlyRef?.value as unknown as { layout?: Partial<Layout> } | null)
     ?.layout?.xaxis?.range as Array<string | number> | undefined
-  const parseCoord = (v: string | number): number =>
-    typeof v === 'string' ? Date.parse(v) : Number(v)
   // `live` is `Array<string | number>` after the cast above; under
   // noUncheckedIndexedAccess the index access returns `… | undefined`,
   // so guard before parsing. Falling through to the date-pickers'
@@ -514,10 +512,10 @@ export const createPlotlyOption = (
   const liveStart = live?.[0]
   const liveEnd = live?.[1]
   const densityStart = liveStart !== undefined
-    ? parseCoord(liveStart)
+    ? fromPlot(liveStart)
     : Number(beginDate?.value?.getTime?.())
   const densityEnd = liveEnd !== undefined
-    ? parseCoord(liveEnd)
+    ? fromPlot(liveEnd)
     : Number(endDate?.value?.getTime?.())
   const densityRangeValid =
     Number.isFinite(densityStart) && Number.isFinite(densityEnd)
@@ -800,7 +798,7 @@ export const createPlotlyOption = (
     type: 'date',
     title: undefined,
     rangeselector: undefined,
-    range: [xRangeStart, xRangeEnd],
+    range: [toPlotDate(xRangeStart), toPlotDate(xRangeEnd)],
     autorange: false,
     showline: true,
     automargin: true,
@@ -890,6 +888,11 @@ export const createPlotlyOption = (
     modeBarButtons: modebarGroups,
     edits: { shapePosition: true },
   } as unknown as Partial<Config>
+
+  // Built in epoch ms; Plotly gets the chosen zone's wall values.
+  for (const t of traces) {
+    if (t.x) t.x = toPlotX(t.x as ArrayLike<number>) as unknown as PlotData['x']
+  }
 
   return {
     traces,

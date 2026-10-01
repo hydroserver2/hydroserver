@@ -363,7 +363,7 @@
               aria-live="polite"
             >
               <span class="mr-2">
-                <b>x</b> {{ formatDate(new Date(hover.x)) }}
+                <b>x</b> {{ formatDateTime(hover.x) }}
               </span>
               <span>
                 <b>{{ yReadoutLabel }}</b> {{ hover.y }}{{ yReadoutUnit }}
@@ -400,7 +400,8 @@ import TimeRangeMenu from '@/components/VisualizeData/TimeRangeMenu.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
-import { formatDate, Snackbar } from '@uwrl/qc-utils'
+import { Snackbar } from '@uwrl/qc-utils'
+import { formatDateTime } from '@/utils/time'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
 import { DrawerType, useUIStore } from '@/store/userInterface'

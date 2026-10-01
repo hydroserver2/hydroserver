@@ -27,6 +27,7 @@ import {
   buildObservations,
   buildTemperatureObservations,
 } from './support/fixtures'
+import { plotXRange } from './support/plot'
 
 const editPanel = (page: Page) => page.getByTestId('edit-target-panel')
 /** The Select view's right column. The editor stays mounted behind it, so its
@@ -36,31 +37,6 @@ const sidePanel = (page: Page) => page.getByTestId('select-side-panel')
 async function goToEditor(page: Page) {
   await page.getByTestId('nav-rail-item-edit').click()
   await waitForEditorReady(page)
-}
-
-/** The live X range of the main plot, as `[loMs, hiMs]`. */
-async function plotXRange(page: Page): Promise<[number, number]> {
-  return page.evaluate(async () => {
-    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
-    const start = Date.now()
-    while (Date.now() - start < 10_000) {
-      const gd = document.querySelector('[data-testid="main-plot"]') as
-        | (HTMLElement & {
-            _fullLayout?: {
-              xaxis?: { range?: [number | string, number | string] }
-            }
-          })
-        | null
-      const range = gd?._fullLayout?.xaxis?.range
-      if (range) {
-        const toMs = (v: number | string) =>
-          typeof v === 'string' ? Date.parse(v) : v
-        return [toMs(range[0]), toMs(range[1])] as [number, number]
-      }
-      await wait(100)
-    }
-    throw new Error('plot never reported an x range')
-  })
 }
 
 /** The staged filter band's x span on the live plot, or null when absent. */
@@ -140,12 +116,14 @@ test.describe('Select while editing', () => {
     const stagedBand = await stageBandSpan(page)
     expect(stagedBand).not.toBeNull()
 
-    const before = await plotXRange(page)
+    await expect.poll(() => plotXRange(page)).not.toBeNull()
+    const before = (await plotXRange(page))!
 
     await goToSelect(page)
     await goToEditor(page)
 
-    const after = await plotXRange(page)
+    await expect.poll(() => plotXRange(page)).not.toBeNull()
+    const after = (await plotXRange(page))!
     expect(after[0]).toBeCloseTo(before[0], -4)
     expect(after[1]).toBeCloseTo(before[1], -4)
 

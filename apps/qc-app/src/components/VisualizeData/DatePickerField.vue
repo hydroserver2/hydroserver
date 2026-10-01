@@ -19,7 +19,7 @@
       :placeholder="seconds ? 'HH:MM:SS' : 'HH:MM'"
       prepend-inner-icon="mdi-clock-outline"
       :suffix="zone"
-      :title="`Local time: ${zoneDescription}`"
+      :title="`Time zone: ${zoneDescription}`"
       hide-details
       density="compact"
       :style="{ flex: '0 0 auto', width: seconds ? '10.5rem' : '8.75rem' }"
@@ -63,6 +63,7 @@ import {
   watch,
 } from 'vue'
 import { timeZoneAbbreviation, timeZoneDescription } from '@/utils/time'
+import { fromWallParts, wallParts } from '@/utils/timeZone'
 
 defineOptions({ inheritAttrs: false })
 
@@ -115,52 +116,56 @@ const TIME_WITH_SECONDS: MaskShape = {
 
 const timeShape = (): MaskShape => (props.seconds ? TIME_WITH_SECONDS : TIME)
 
-const formatDateStr = (date: Date) => {
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${m}/${d}/${date.getFullYear()}`
+// The calendar works on browser-local Dates, so a calendar day travels as a
+// local midnight. The typed text and the emitted instant are in the chosen
+// zone (`timeZone.ts`).
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/** MM/DD/YYYY of a calendar day. */
+const dayLabel = (day: Date) =>
+  `${pad(day.getMonth() + 1)}/${pad(day.getDate())}/${day.getFullYear()}`
+
+/** The calendar day `date` falls on in the chosen zone. */
+const calendarDay = (date: Date) => {
+  const p = wallParts(date.getTime())
+  return new Date(p.year, p.month, p.day)
 }
+
+const formatDateStr = (date: Date) => dayLabel(calendarDay(date))
 
 const formatTimeStr = (date: Date) => {
-  const h = String(date.getHours()).padStart(2, '0')
-  const m = String(date.getMinutes()).padStart(2, '0')
-  if (!props.seconds) return `${h}:${m}`
-  const s = String(date.getSeconds()).padStart(2, '0')
-  return `${h}:${m}:${s}`
-}
-
-const toMidnight = (date: Date) => {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+  const p = wallParts(date.getTime())
+  const hm = `${pad(p.hours)}:${pad(p.minutes)}`
+  return props.seconds ? `${hm}:${pad(p.seconds)}` : hm
 }
 
 const showDateDialog = ref(false)
 
-// Inputs read and write the browser's local time; say which one.
+// Inputs read and write the chosen zone; say which one.
 const zone = computed(() => timeZoneAbbreviation(props.modelValue))
 const zoneDescription = computed(() => timeZoneDescription(props.modelValue))
 
 const dateInput = ref(formatDateStr(props.modelValue))
 const timeInput = ref(formatTimeStr(props.modelValue))
-const pickerDate = ref<Date>(toMidnight(props.modelValue))
+const pickerDate = ref<Date>(calendarDay(props.modelValue))
 
 watch(
   () => props.modelValue,
   (newValue) => {
     dateInput.value = formatDateStr(newValue)
     timeInput.value = formatTimeStr(newValue)
-    pickerDate.value = toMidnight(newValue)
+    pickerDate.value = calendarDay(newValue)
   }
 )
 
-const emitCombined = (date: Date, time: string) => {
+const emitCombined = (day: Date, time: string) => {
   const parts = time.split(':').map(Number)
   const h = parts[0] || 0
   const m = parts[1] || 0
   const s = props.seconds ? (parts[2] || 0) : 0
-  const result = new Date(date)
-  result.setHours(h, m, s, 0)
+  const result = new Date(
+    fromWallParts(day.getFullYear(), day.getMonth(), day.getDate(), h, m, s)
+  )
   // Unchanged at the field's resolution, even if the model is finer.
   if (
     formatDateStr(result) === formatDateStr(props.modelValue) &&
@@ -172,8 +177,8 @@ const emitCombined = (date: Date, time: string) => {
 }
 
 const onDatePicked = (date: Date) => {
-  pickerDate.value = toMidnight(date)
-  dateInput.value = formatDateStr(date)
+  pickerDate.value = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  dateInput.value = dayLabel(pickerDate.value)
   emitCombined(pickerDate.value, timeInput.value)
   showDateDialog.value = false
 }
@@ -185,14 +190,14 @@ const handleDateBlur = () => {
     const d = Math.max(1, Math.min(31, +match[2]!))
     const parsed = new Date(+match[3]!, m - 1, d)
     if (!isNaN(parsed.getTime())) {
-      pickerDate.value = toMidnight(parsed)
-      dateInput.value = formatDateStr(parsed)
+      pickerDate.value = parsed
+      dateInput.value = dayLabel(parsed)
       emitCombined(pickerDate.value, timeInput.value)
       return
     }
   }
   // Anything not a complete date snaps back to the picker's last good value.
-  dateInput.value = formatDateStr(pickerDate.value)
+  dateInput.value = dayLabel(pickerDate.value)
 }
 
 const handleTimeBlur = () => {
@@ -204,7 +209,6 @@ const handleTimeBlur = () => {
     const h = Math.max(0, Math.min(23, +match[1]!))
     const m = Math.max(0, Math.min(59, +match[2]!))
     const s = props.seconds ? Math.max(0, Math.min(59, +match[3]!)) : 0
-    const pad = (n: number) => String(n).padStart(2, '0')
     const time = props.seconds
       ? `${pad(h)}:${pad(m)}:${pad(s)}`
       : `${pad(h)}:${pad(m)}`

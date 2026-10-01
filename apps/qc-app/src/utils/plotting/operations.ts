@@ -11,6 +11,7 @@ import { storeToRefs } from 'pinia'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { handleNewPlot } from './events'
 import { traceXAsNumbers } from './internal'
+import { plotCoord, plotCoordToDate, toPlotDate } from './plotTime'
 import type { AppPlotlyTrace } from './options'
 
 /**
@@ -26,7 +27,7 @@ export const zoomXaxisTo = async (
 ): Promise<void> => {
   if (!gd) return
   await Plotly.relayout(gd as Plotly.Root, {
-    'xaxis.range': [start, end],
+    'xaxis.range': [toPlotDate(start), toPlotDate(end)],
     'xaxis.autorange': false,
   } as unknown as Partial<Layout>)
 }
@@ -163,23 +164,19 @@ export const cropXaxisRange = async () => {
     try {
       const layoutUpdates = plotlyOptions.value.layout
       const xAxis = layoutUpdates.xaxis as Partial<LayoutAxis> | undefined
-      const xRange = xAxis?.range as Array<string | number> | undefined
-      // Plotly will rewrite timestamps as datestrings. We need to convert them back to timestamps.
-      if (xRange && typeof xRange[0] == 'string') {
-        xRange[0] = Date.parse(xRange[0])
-        xRange[1] = Date.parse(xRange[1] as string)
-      }
-
+      const xRange = (xAxis?.range as Array<string | number> | undefined)?.map(
+        plotCoord
+      )
       const liveRange = (
         plotlyRef.value?.layout.xaxis.range as
         | Array<string | number>
         | undefined
-      )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+      )?.map(plotCoord)
 
       if (xAxis && xRange && liveRange) {
         xAxis.range = [
-          Math.max(liveRange[0] as number, xRange[0] as number),
-          Math.min(liveRange[1] as number, xRange[1] as number),
+          plotCoordToDate(Math.max(liveRange[0]!, xRange[0]!)),
+          plotCoordToDate(Math.min(liveRange[1]!, xRange[1]!)),
         ]
       }
 
@@ -224,7 +221,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
       (liveLayout?.xaxis as Partial<LayoutAxis> | undefined)?.range as
       | Array<string | number>
       | undefined
-    )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+    )?.map(plotCoord)
 
     const xs = traceXAsNumbers(gd, qcIndex)
     if (!xs.length) return
@@ -265,7 +262,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
     // bounds clip marker glyphs; on a date axis there's nothing to clip
     // and any padding reads as a margin Plotly conjured up.
     await Plotly.relayout(gd as Plotly.Root, {
-      'xaxis.range': [xMin, xMax],
+      'xaxis.range': [plotCoordToDate(xMin), plotCoordToDate(xMax)],
       'xaxis.autorange': false,
     } as unknown as Partial<Layout>)
   } finally {
@@ -310,7 +307,7 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
 
     const liveXRange = (
       plotlyRef.value?.layout.xaxis.range as Array<string | number> | undefined
-    )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+    )?.map(plotCoord)
 
     const xs = traceXAsNumbers(plotlyRef.value, qcTraceIndex)
     const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)

@@ -117,7 +117,8 @@ src/
 │                               saving operations, commit, and replaying a past session.
 ├─ store/                       Pinia stores. See "State stores" below.
 ├─ utils/
-│  ├─ plotting/                 Plotly integration (trace builders, event handlers, selection, staging).
+│  ├─ plotting/                 Plotly integration (trace builders, event handlers, selection, staging,
+│  │                            and plotTime.ts, the boundary that puts x values in the chosen zone).
 │  ├─ dateMath.ts               Time-range arithmetic for presets ("1w", "1m", "All", …).
 │  ├─ timeRangePresets.ts       Preset definitions, resolved back from the context data's end, or around the session window while editing.
 │  ├─ observations.ts           Observation fetch helpers (paged columnar fetch).
@@ -128,7 +129,8 @@ src/
 │  ├─ qcHistory.ts              Typed reads off QC history and session shapes.
 │  ├─ plotCap.ts                How many datastreams can be plotted.
 │  ├─ rules.ts                  Vuetify form validation rules.
-│  └─ time.ts                   Time unit conversions.
+│  ├─ timeZone.ts               The chosen display time zone and wall-time conversion.
+│  └─ time.ts                   Date formatting in that zone.
 ├─ router/                      vue-router setup, auth + workspace guards.
 ├─ plugins/vuetify.ts           Vuetify theme + icon set.
 ├─ models/, types/              TypeScript models and ambient declarations.

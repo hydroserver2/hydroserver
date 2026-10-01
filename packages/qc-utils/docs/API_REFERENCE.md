@@ -338,6 +338,14 @@ formatDate(ts: number): string         // human-readable date
 formatDuration(ms: number): string     // "1d 2h 3m 4s"
 ```
 
+### Time zones
+
+`FIXED_OFFSET_TIMEZONES` (`{ title, value }` with values like `-0700`) and
+`DST_AWARE_TIMEZONES` (every IANA zone `Intl` knows, titled with its winter
+and summer offsets), with their `FixedOffsetTimezone` and `DstAwareTimezone`
+value types. The lists a data connection's timestamps choose from; the QC
+app's time zone setting offers the same ones.
+
 ### `measureEllapsedTime<T>(fn: () => Promise<T> | T): Promise<{ result: T; duration: number }>`
 
 Wrap any thunk with wall-clock measurement. Used by dispatch to fill
