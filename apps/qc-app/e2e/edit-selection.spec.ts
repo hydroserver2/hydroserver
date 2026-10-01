@@ -105,16 +105,20 @@ async function typeDateTime(field: Locator, when: Date) {
     await input.click()
     // The field selects a date/time segment on the next animation frame.
     // Let that click handler finish before selecting the entire value.
-    await input.evaluate((el: HTMLInputElement) =>
-      new Promise<void>((resolve) => requestAnimationFrame(() => {
-        el.setSelectionRange(0, el.value.length)
-        resolve()
-      }))
+    await input.evaluate(
+      (el: HTMLInputElement) =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => {
+            el.setSelectionRange(0, el.value.length)
+            resolve()
+          })
+        )
     )
     await input.pressSequentially(digits)
-    const formatted = digits.length === 8
-      ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
-      : `${digits.slice(0, 2)}:${digits.slice(2)}`
+    const formatted =
+      digits.length === 8
+        ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+        : `${digits.slice(0, 2)}:${digits.slice(2)}`
     await expect(input).toHaveValue(formatted)
     await input.blur()
     await expect(input).toHaveValue(formatted)
@@ -161,9 +165,9 @@ test.describe('edit selection', () => {
     await openWindowStep(page)
     await expect(page.getByTestId('session-window-start')).toBeEnabled()
     await expect(page.getByTestId('session-window-error')).toBeHidden()
-    await expect(page.getByTestId('session-window-committed')).not.toContainText(
-      'Nothing committed'
-    )
+    await expect(
+      page.getByTestId('session-window-committed')
+    ).not.toContainText('Nothing committed')
 
     // A From after the source ends is outside the source data.
     await typeDateTime(
@@ -174,7 +178,9 @@ test.describe('edit selection', () => {
     await expect(page.getByTestId('session-window-start')).toBeDisabled()
   })
 
-  test('the window step offers presets and a one-click fix', async ({ page }) => {
+  test('the window step offers presets and a one-click fix', async ({
+    page,
+  }) => {
     await gotoHome(page)
     await openWindowStep(page)
 
@@ -300,7 +306,15 @@ test.describe('edit selection', () => {
 
   test('box select works over the session window, and Clear drops it', async ({
     page,
+    browserName,
   }) => {
+    // The CI runner has no GPU, so Firefox gets no WebGL and Plotly covers the
+    // plot with a notice that blocks the modebar. Chromium covers this in CI.
+    // TODO: remove this skip when Firefox on CI gets WebGL.
+    test.skip(
+      browserName === 'firefox' && !!process.env.CI,
+      'Firefox on CI has no WebGL'
+    )
     await setupEditView(page)
     await page.locator('.modebar-btn[data-title="Box Select"]').first().click()
     const box = (await page
@@ -330,8 +344,9 @@ test.describe('edit selection', () => {
 
     // A context reload redraws the plot; the stage band must survive it.
     await page.evaluate(() => {
-      const gd = document.querySelector('[data-testid="main-plot"]') as
-        | (PlotRoot & { on: (event: string, cb: () => void) => void })
+      const gd = document.querySelector(
+        '[data-testid="main-plot"]'
+      ) as PlotRoot & { on: (event: string, cb: () => void) => void }
       const w = window as unknown as { __updates: number }
       w.__updates = 0
       gd.on('plotly_update', () => w.__updates++)
@@ -355,7 +370,10 @@ test.describe('edit selection', () => {
     await gotoHome(page)
     await plotDatastreamById(page, DATASTREAM_ID_B)
     await page.getByTestId('time-range-btn').click()
-    await page.getByTestId('time-range-menu').getByTestId('date-preset-All').click()
+    await page
+      .getByTestId('time-range-menu')
+      .getByTestId('date-preset-All')
+      .click()
     await page.keyboard.press('Escape')
 
     // Start the session halfway through the source, so the window is
@@ -385,7 +403,10 @@ test.describe('edit selection', () => {
     await gotoHome(page)
     await plotDatastreamById(page, DATASTREAM_ID_B)
     await page.getByTestId('time-range-btn').click()
-    await page.getByTestId('time-range-menu').getByTestId('date-preset-All').click()
+    await page
+      .getByTestId('time-range-menu')
+      .getByTestId('date-preset-All')
+      .click()
     await page.keyboard.press('Escape')
     await startSessionFromRow(page)
     await expect.poll(() => plotXRange(page)).not.toBeNull()
@@ -422,8 +443,9 @@ test.describe('edit selection', () => {
 
     // Record every redraw from here on, in page time, so none is missed.
     await page.evaluate(() => {
-      const gd = document.querySelector('[data-testid="main-plot"]') as
-        | (PlotRoot & { on: (event: string, cb: () => void) => void })
+      const gd = document.querySelector(
+        '[data-testid="main-plot"]'
+      ) as PlotRoot & { on: (event: string, cb: () => void) => void }
       const w = window as unknown as ReloadProbe
       // Dev-server module loads fill the default resource timing buffer.
       performance.clearResourceTimings()
@@ -468,7 +490,9 @@ test.describe('edit selection', () => {
       const end = performance.now() + 1_500
       while (performance.now() < end) {
         const gd = document.querySelector('[data-testid="main-plot"]') as
-          | (HTMLElement & { layout?: { xaxis?: { range?: Array<number | string> } } })
+          | (HTMLElement & {
+              layout?: { xaxis?: { range?: Array<number | string> } }
+            })
           | null
         const r = gd?.layout?.xaxis?.range
         if (!r) return Infinity
@@ -485,7 +509,9 @@ test.describe('edit selection', () => {
     expect(await traceIds(page)).toContain(MANAGED_DATASTREAM_ID)
   })
 
-  test('Context presets count out from the session window', async ({ page }) => {
+  test('Context presets count out from the session window', async ({
+    page,
+  }) => {
     await gotoHome(page)
     // Start halfway through the source, so the window has data before it.
     const mid = new Date((FIXTURE_OBS_START_MS + FIXTURE_OBS_END_MS) / 2)
@@ -513,11 +539,18 @@ test.describe('edit selection', () => {
     const expectedTo = new Date(FIXTURE_OBS_END_MS)
     expectedTo.setDate(expectedTo.getDate() + 7)
     const fieldText = (id: string) =>
-      menu.getByTestId(id).locator('input').evaluateAll((inputs) =>
-        inputs.map((i) => (i as HTMLInputElement).value)
-      )
-    await expect.poll(() => fieldText('date-range-from')).toEqual(pickerText(expectedFrom))
-    await expect.poll(() => fieldText('date-range-to')).toEqual(pickerText(expectedTo))
+      menu
+        .getByTestId(id)
+        .locator('input')
+        .evaluateAll((inputs) =>
+          inputs.map((i) => (i as HTMLInputElement).value)
+        )
+    await expect
+      .poll(() => fieldText('date-range-from'))
+      .toEqual(pickerText(expectedFrom))
+    await expect
+      .poll(() => fieldText('date-range-to'))
+      .toEqual(pickerText(expectedTo))
 
     // The grey source runs from the data start (the week before the window,
     // clamped to the fixture) and stops at the window.
