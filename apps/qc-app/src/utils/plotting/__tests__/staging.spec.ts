@@ -69,6 +69,7 @@ describe('staging shapes', () => {
     const lastCall = plotlyMock.relayout.mock.calls.at(-1)
     const shapes = lastCall![1].shapes as any[]
     expect(shapes.filter((s) => s.name === 'stage').length).toBe(1)
-    expect(shapes.find((s) => s.name === 'stage').x0).toBe(30)
+    // A Plotly date string: a bare number would be read as local time.
+    expect(shapes.find((s) => s.name === 'stage').x0).toBe('1970-01-01 00:00:00.030')
   })
 })

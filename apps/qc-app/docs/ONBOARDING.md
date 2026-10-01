@@ -107,8 +107,9 @@ you need to verify the published package artifacts.
 - Pinia stores for cross-component state; component-local state stays in
   `ref` / `reactive` inside the component.
 - Comments only for the non-obvious _why_. Don't restate the code.
-- Commit format: `{type}({scope}): {description}`: `feat`, `fix`,
-  `test`, `refactor`, `perf`, `docs`, `style`, `chore`.
+- Commit format: `{type}: {description}`, with no scope (the QC app is
+  implied): `feat`, `fix`, `test`, `refactor`, `perf`, `docs`, `style`,
+  `chore`.
 
 ## Documentation gaps
 

@@ -168,7 +168,7 @@ The shape mirrors `ObservationRecord.dispatch`'s tuple form:
 | `durationMs`    | number  | Wall-clock duration of the handler. Useful for retrospective perf review.   |
 | `mode`          | string  | `"worker"` or `"inline"` — the calibration layer's routing decision.        |
 | `datasetSize`   | number  | Observation count at dispatch time. Reflects the pre-edit shape.            |
-| `selectionSize` | number  | Indices the op acted on (filter's produced selection, or preceding SELECTION for selection-consuming edits). |
+| `selectionSize` | number  | Indices the op acted on (filter's produced selection, or the preceding entry's selection for selection-consuming edits). |
 
 Every sub-field is optional; the loader validates the type of any
 present value (finite number / `"success"` \| `"failed"` /
@@ -241,7 +241,7 @@ trailing range tuple.
 | `ASSIGN_DATETIMES_BULK` | `[datetimes[]]`                                                                                     | **Yes** (indices to assign at)           |
 | `DELETE_POINTS`         | `[]`                                                                                                | **Yes** (indices to delete)              |
 | `INTERPOLATE`           | `[]`                                                                                                | **Yes** (indices to interpolate)         |
-| `SHIFT_DATETIMES`       | `[amount, unit]`                                                                                    | **Yes** (indices to shift)               |
+| `SHIFT_DATETIMES`       | `[amount, unit, timeZone]`                                                                          | **Yes** (indices to shift)               |
 | `DRIFT_CORRECTION`      | `[value]`                                                                                           | **Yes** (consecutive groups → ranges, per-group drift = `value`) |
 
 ### Note on the runtime selection-coupling column

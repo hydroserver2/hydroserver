@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import type { RouteLocationNormalized } from 'vue-router'
 
@@ -21,7 +21,20 @@ vi.mock('@/store/workspaces', () => ({
   }),
 }))
 
+vi.mock('@/router/routes', () => ({
+  routes: [
+    { path: '/', name: 'Home', component: {}, meta: { title: 'Home' } },
+    {
+      path: '/workspaces',
+      name: 'Workspaces',
+      component: {},
+      meta: { title: 'Workspaces' },
+    },
+  ],
+}))
+
 import { leaveSessionGuard } from '@/router/guards'
+import router, { setupRouteGuards } from '@/router/router'
 
 const route = (name: string | undefined, query: Record<string, string> = {}) =>
   ({ name, query, meta: {}, fullPath: '/' }) as unknown as RouteLocationNormalized
@@ -69,5 +82,39 @@ describe('leaveSessionGuard', () => {
   it('ignores the first navigation of the session', async () => {
     expect(await leaveSessionGuard(route('Home'), route(undefined))).toBe(null)
     expect(requestLeave).not.toHaveBeenCalled()
+  })
+})
+
+describe('route guard order', () => {
+  beforeAll(() => setupRouteGuards())
+
+  beforeEach(async () => {
+    requestLeave.mockResolvedValue(true)
+    await router.push('/')
+    vi.clearAllMocks()
+  })
+
+  // The picker sends a user with a workspace straight back, so this
+  // navigation never leaves the editor and must not end the session.
+  it('does not ask about a navigation another guard redirects back', async () => {
+    await router.push('/workspaces')
+
+    expect(router.currentRoute.value.name).toBe('Home')
+    expect(requestLeave).not.toHaveBeenCalled()
+  })
+
+  it('asks about a navigation that leaves the page', async () => {
+    await router.push('/workspaces?switch=1')
+
+    expect(requestLeave).toHaveBeenCalledOnce()
+    expect(router.currentRoute.value.name).toBe('Workspaces')
+  })
+
+  it('keeps the page title when the user stays', async () => {
+    requestLeave.mockResolvedValueOnce(false)
+    await router.push('/workspaces?switch=1')
+
+    expect(router.currentRoute.value.name).toBe('Home')
+    expect(document.title).toBe('HydroServer | Home')
   })
 })

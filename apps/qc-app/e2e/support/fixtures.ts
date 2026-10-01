@@ -329,9 +329,12 @@ export const QC_SESSION_AUTHOR = {
 }
 export const QC_SOURCE_CHECKSUM = 'e2e-source-checksum'
 
+/** The committed session every QC history fixture starts with. */
+export const COMMITTED_SESSION_ID = 'qcs-e2e-1'
+
 export const qcSessions = [
   {
-    id: 'qcs-e2e-1',
+    id: COMMITTED_SESSION_ID,
     historyId: QC_HISTORY_ID,
     status: 'committed' as const,
     description: 'First pass',

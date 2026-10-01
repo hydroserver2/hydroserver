@@ -118,6 +118,15 @@ describe('PlotSourceDialog', () => {
     expect(optionInput(wrapper, 'mgd-1').attributes('disabled')).toBeUndefined()
   })
 
+  it('marks the edit target and still lets it be plotted', async () => {
+    const wrapper = mountDialog({ editingId: 'mgd-1' })
+    expect(wrapper.find('[data-testid="plot-option-editing-mgd-1"]').exists()).toBe(true)
+    expect(optionInput(wrapper, 'mgd-1').attributes('disabled')).toBeUndefined()
+    await optionInput(wrapper, 'mgd-1').setValue(true)
+    await wrapper.find('[data-testid="plot-source-apply"]').trigger('click')
+    expect(wrapper.emitted('apply')?.[0]).toEqual([['mgd-1']])
+  })
+
   it('emits cancel without a selection', async () => {
     const wrapper = mountDialog()
     await wrapper.find('[data-testid="plot-source-cancel"]').trigger('click')

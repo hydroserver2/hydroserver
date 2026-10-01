@@ -9,6 +9,7 @@ import {
 } from "../../types";
 import { measureEllapsedTime } from "../ellapsed-time";
 import { timeUnitMultipliers } from "../format";
+import { isValidTimeZone } from "../timeZone";
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from "../observations";
 // @ts-ignore
 import DeleteDataWorker from "./delete-data.worker?worker&inline";
@@ -46,6 +47,7 @@ import {
   persistenceCore,
   rateOfChangeCore,
   shiftDatetimesCollection,
+  type ShiftDatetimesParams,
   valueThresholdCore,
 } from "./operation-cores";
 import { shouldUseWorker } from "./calibration";
@@ -87,6 +89,15 @@ function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
   } else if (typeof anyBuf.resize === "function") {
     anyBuf.resize(newByteLength);
   }
+}
+
+/** The distinct indices in `[0, length)`, ascending. Both delete paths
+ *  size their output by this count. */
+function existingIndices(indices: ArrayLike<number>, length: number): number[] {
+  const sorted = Array.from(indices)
+    .filter((i) => i >= 0 && i < length)
+    .sort((a, b) => a - b);
+  return sorted.filter((i, k) => k === 0 || i !== sorted[k - 1]);
 }
 
 /**
@@ -395,25 +406,27 @@ export class ObservationRecord {
   }
 
   /**
-   * Re-stamp the metadata a replay cannot reproduce. `dispatch` rebuilds
-   * each entry from `[method, ...args]` alone, so the operator's comment
-   * and the server's attribution would be dropped on every undo, redo, or
-   * step reload. Execution timings are deliberately left alone: those
-   * describe the run that just happened, not the operation.
-   *
-   * Paired positionally and only when the method still matches, so a
-   * replay that lands differently leaves entries unstamped rather than
-   * attributing an operation to the wrong person.
+   * Dispatch one recorded step and carry its comment and `performedBy`
+   * onto the entry it produces. `dispatch` rebuilds an entry from
+   * `[method, ...args]` alone, so without this every undo, redo or replay
+   * would drop them. The entry is the one this step pushed or replaced;
+   * a step that merges into nothing new (a selection echo) stamps nothing.
+   * Execution timings are not carried: they describe the run that just
+   * happened.
    */
-  private _restoreReplayedMeta(preserved: HistoryItem[]) {
-    const len = Math.min(preserved.length, this.history.length);
-    for (let i = 0; i < len; i++) {
-      const from = preserved[i];
-      const to = this.history[i];
-      if (!from || !to || from.method !== to.method) continue;
-      if (from.comment !== undefined) to.comment = from.comment;
-      if (from.performedBy !== undefined) to.performedBy = from.performedBy;
+  async dispatchStep(
+    step: Pick<HistoryItem, "method" | "args" | "comment" | "performedBy">,
+  ): Promise<number[]> {
+    const before = this.history[this.history.length - 1];
+    const selection = await this.dispatch([[step.method, ...(step.args || [])]]);
+    const produced = this.history[this.history.length - 1];
+    if (produced && produced !== before && produced.method === step.method) {
+      if (step.comment !== undefined) produced.comment = step.comment;
+      if (step.performedBy !== undefined) {
+        produced.performedBy = step.performedBy;
+      }
     }
+    return selection;
   }
 
   /** Reload from raw and replay `steps`, keeping the redo stack. */
@@ -421,10 +434,8 @@ export class ObservationRecord {
     await this.reload();
     this._isReplaying = true;
     try {
-      const selection = await this.dispatch(
-        steps.map((h) => [h.method, ...(h.args || [])]),
-      );
-      this._restoreReplayedMeta(steps);
+      let selection: number[] = [];
+      for (const step of steps) selection = await this.dispatchStep(step);
       return selection;
     } finally {
       this._isReplaying = false;
@@ -460,11 +471,36 @@ export class ObservationRecord {
     return this._replay(kept);
   }
 
+  /** Reload from raw and replay `steps` as the whole history, dropping the
+   *  redo stack. For putting back a saved history that undo and new edits
+   *  have diverged from. */
+  async restoreHistory(steps: HistoryItem[]): Promise<number[]> {
+    this.redoStack.length = 0;
+    return this._replay([...steps]);
+  }
+
   /** Apply the whole history again after `previewHistory`. A no-op
    *  returning no selection when nothing is previewed. */
   async exitPreview(): Promise<number[]> {
     if (this.previewIndex === null) return [];
     return this._replay([...this.history]);
+  }
+
+  /** First and last datetime among `indices`, or undefined if none are in
+   *  range. Indices need not be sorted. */
+  private _extentOf(
+    indices: ArrayLike<number>,
+  ): { begin: number; end: number } | undefined {
+    const xs = this.dataX;
+    let begin = Infinity;
+    let end = -Infinity;
+    for (let k = 0; k < indices.length; k++) {
+      const t = xs[indices[k]];
+      if (t === undefined || !Number.isFinite(t)) continue;
+      if (t < begin) begin = t;
+      if (t > end) end = t;
+    }
+    return begin <= end ? { begin, end } : undefined;
   }
 
   private _refuseWhilePreviewing() {
@@ -478,12 +514,7 @@ export class ObservationRecord {
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
     this.redoStack.length = 0;
-    await this.reload();
-    const selection = await this.dispatch(
-      newHistory.map((h) => [h.method, ...(h.args || [])]),
-    );
-    this._restoreReplayedMeta(newHistory);
-    return selection;
+    return this._replay(newHistory);
   }
 
   /**
@@ -513,15 +544,7 @@ export class ObservationRecord {
     const item = this.redoStack.pop()!;
     this._isReplaying = true;
     try {
-      const selection = await this.dispatch([[item.method, ...(item.args || [])]]);
-      const replayed = this.history[this.history.length - 1];
-      if (replayed && replayed.method === item.method) {
-        if (item.comment !== undefined) replayed.comment = item.comment;
-        if (item.performedBy !== undefined) {
-          replayed.performedBy = item.performedBy;
-        }
-      }
-      return selection;
+      return await this.dispatchStep(item);
     } finally {
       this._isReplaying = false;
     }
@@ -581,17 +604,14 @@ export class ObservationRecord {
       // survives the internal re-dispatch.
       if (!this._isReplaying) this.redoStack.length = 0;
 
-      // Selection-consuming edits read the preceding SELECTION's
-      // size at push time so the audit record reflects what the
-      // handler will operate on. `consumesPrecedingSelection` gates
-      // the read so non-selection edits (ADD_POINTS, FILL_GAPS)
-      // don't pick up a stale value.
-      const prevSelLen =
-        consumesPrecedingSelection(action, args) &&
-          this.history[this.history.length - 1]?.method ===
-          EnumFilterOperations.SELECTION
-          ? this.history[this.history.length - 1].selected?.length
-          : undefined;
+      // Selection-consuming edits read the preceding entry's selection
+      // (a SELECTION or a filter's result, as the handlers do) at push
+      // time so the audit record reflects what the handler will operate
+      // on. `consumesPrecedingSelection` gates the read so non-selection
+      // edits (ADD_POINTS, FILL_GAPS) don't pick up a stale value.
+      const prevSelected = consumesPrecedingSelection(action, args)
+        ? this.history[this.history.length - 1]?.selected
+        : undefined;
 
       historyItem = {
         method: action,
@@ -600,7 +620,9 @@ export class ObservationRecord {
           startedAt: Date.now(),
           inFlight: true,
           datasetSize: this.dataset.source.x?.length ?? 0,
-          selectionSize: prevSelLen,
+          selectionSize: prevSelected?.length,
+          // Read before the edit moves or removes those points.
+          extent: prevSelected && this._extentOf(prevSelected),
         },
       };
       this.history.push(historyItem);
@@ -642,6 +664,10 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           inFlight: false,
+          // Inserting ops have no prior selection; their result is it.
+          extent:
+            stored.execution.extent ??
+            (newSelection?.length ? this._extentOf(newSelection) : undefined),
         };
       }
     } catch (e) {
@@ -821,6 +847,9 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           selectionSize: measurement.response?.length,
+          extent: measurement.response?.length
+            ? this._extentOf(measurement.response)
+            : undefined,
           inFlight: false,
         };
       }
@@ -1064,36 +1093,47 @@ export class ObservationRecord {
 
   /**
    * Dispatch wrapper around `_shift` — reads target indices from
-   * `history[length - 2].selected`. The `amount` and `unit` args
-   * stay parametric on the public dispatch signature.
+   * `history[length - 2].selected`. The `amount`, `unit` and `timeZone`
+   * args stay parametric on the public dispatch signature.
    */
   private async _shiftFromSelection(
     amount: number,
     unit: TimeUnit,
+    timeZone: string,
   ): Promise<number[]> {
     const selection = this.history[this.history.length - 2]?.selected;
     if (!selection || selection.length === 0) return [];
-    return (await this._shift(selection, amount, unit)) ?? [];
+    return (await this._shift(selection, amount, unit, timeZone)) ?? [];
   }
 
   /**
    * Shifts the selected indexes by specified amount of units. Elements are reinserted according to their datetime.
    * @param index The index of the elements to shift
-   * @param amount Number of {@link TimeUnit}
+   * @param amount Number of {@link TimeUnit}; whole for months and years
    * @param unit {@link TimeUnit}
-   * @returns
+   * @param timeZone The zone whose calendar month and year shifts follow:
+   *   `UTC`, a fixed offset like `-0700`, or an IANA name
    */
   private async _shift(
     index: number[],
     amount: number,
     unit: TimeUnit,
+    timeZone: string,
   ): Promise<number[]> {
+    if (!isValidTimeZone(timeZone)) {
+      throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
+    }
+    const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
+    if (calendar && !Number.isInteger(amount)) {
+      throw new Error("Shift datetimes: months and years shift by whole numbers.");
+    }
     if (index.length === 0) return [];
 
-    const isMonth = unit === TimeUnit.MONTH;
-    const isYear = unit === TimeUnit.YEAR;
-    const deltaMs =
-      !isMonth && !isYear ? amount * timeUnitMultipliers[unit] * 1000 : 0;
+    const params: ShiftDatetimesParams = {
+      months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
+      deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
+      timeZone,
+    };
 
     const N = index.length;
 
@@ -1114,7 +1154,7 @@ export class ObservationRecord {
         this.dataX,
         this.dataY,
         index,
-        { amount, isMonth, isYear, deltaMs }
+        params
       );
       await this._deleteDataPoints(index);
       // The post-add inserted indices ARE the new positions of the
@@ -1152,10 +1192,7 @@ export class ObservationRecord {
             outputBufferY,
             indexes: indexesChunk,
             outStart: start,
-            amount,
-            isMonth,
-            isYear,
-            deltaMs,
+            ...params,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);
@@ -1396,15 +1433,17 @@ export class ObservationRecord {
   }
 
   /**
-   * Delete points by ascending `deleteIndices` from x/y. Inline path
+   * Delete the points at `indices` from x/y. Indices past the end and
+   * repeats are ignored, and order doesn't matter. Inline path
    * runs a single skip-on-delete copy on the main thread; worker path:
    *  1. Main thread splits the original array into equal segments.
    *  2. Per-segment binary search locates the indexes to delete (deleteSegment) for efficient lookups.
    *  3. Cumulative deletions before each segment give each worker's output startTarget so segments don't overlap.
    *  4. Each worker walks its segment linearly, skipping deletions and copying kept elements into place.
    */
-  private async _deleteDataPoints(deleteIndices: number[]) {
+  private async _deleteDataPoints(indices: number[]) {
     const oldLen = this.dataX.length;
+    const deleteIndices = existingIndices(indices, oldLen);
     const newLength = oldLen - deleteIndices.length;
 
     // Inline fast path: skip segmentation + worker spawns; allocate

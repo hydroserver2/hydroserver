@@ -12,25 +12,13 @@ import { expect, test, type Page } from '@playwright/test'
 import { installMocks, type MockQcSession } from './support/mocks'
 import {
   gotoHome,
-  openOp,
+  leaveDialog,
   plotDatastreamById,
   setupEditView,
   startSessionFromRow,
 } from './support/app'
-import { expectHistoryContains, selectAllPoints } from './support/ops'
+import { applyChangeValues, expectHistoryContains } from './support/ops'
 import { DATASTREAM_ID_B, WORKSPACE_ID } from './support/fixtures'
-
-async function applyChangeValues(page: Page) {
-  await selectAllPoints(page)
-  await openOp(page, 'changeValues')
-  await page.getByLabel('Value').fill('1')
-  await page.getByRole('button', { name: 'Apply' }).click()
-  await expectHistoryContains(page, 'Change Values')
-}
-
-function leaveDialog(page: Page) {
-  return page.getByTestId('leave-session-dialog')
-}
 
 function expectWorkspacePicker(page: Page) {
   return expect(page.getByTestId(`workspace-pick-${WORKSPACE_ID}`)).toBeVisible({

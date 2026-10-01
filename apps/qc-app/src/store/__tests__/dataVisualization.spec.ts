@@ -330,6 +330,30 @@ describe('useDataVisStore edit target', () => {
     ])
   })
 
+  it('draws the edit target, also plotted, as committed context beside the edit', async () => {
+    const { store, managed } = await managedPair()
+    await store.plotDatastream(managed as any)
+    await store.setEditTarget('mgd')
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'ctx:src', 'ctx:mgd'])
+  })
+
+  it('fills the committed copy from the edit target datastream', async () => {
+    const { store, managed } = await managedPair()
+    await store.plotDatastream(managed as any)
+    await editWithWindow(store)
+    const call = mockFetchGraphSeries.mock.calls.find((c) => c[0].id === 'ctx:mgd')
+    expect(call?.[4]?.id).toBe('mgd')
+  })
+
+  it('unplots the edit target from its committed copy row', async () => {
+    const { store, managed } = await managedPair()
+    await store.plotDatastream(managed as any)
+    await store.setEditTarget('mgd')
+    await store.toggleDatastream({ id: 'ctx:mgd' } as any)
+    expect(store.plottedDatastreams).toEqual([])
+    expect(store.seriesDatastreams.map((d) => d.id)).toEqual(['mgd', 'ctx:src'])
+  })
+
   it('fills the context series with the source data', async () => {
     const { store } = await managedPair()
     await editWithWindow(store)
@@ -429,6 +453,20 @@ describe('useDataVisStore edit target', () => {
     const edits = mockGraphSeriesArray.value.filter((s) => s.id === 'mgd')
     expect(edits).toHaveLength(1)
     expect(edits[0].data).toBe(second)
+  })
+
+  it('setEditRecord keeps the x view and refits the edit series y axis', async () => {
+    const { store } = await managedPair()
+    await store.setEditTarget('mgd')
+    mockPlotlyRef.value = {}
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    vi.mocked(handleNewPlot).mockClear()
+    await store.setEditRecord({ dataX: [1], history: [] } as any)
+    await store.setEditRecord({ dataX: [2], history: [] } as any)
+    expect(vi.mocked(handleNewPlot).mock.calls).toEqual([
+      [undefined, { preserveZoom: true, refitSeriesIds: ['mgd'] }],
+      [undefined, { preserveZoom: true, refitSeriesIds: ['mgd'] }],
+    ])
   })
 
   it('clearEditTarget keeps the plotted datastreams and drops edit series', async () => {
@@ -719,9 +757,9 @@ describe('useDataVisStore overlapping plot loads', () => {
     pending.resolve({ id: 'old' })
     await Promise.all([inFlight, queued, reload])
 
+    // The queued rebuild loads the new range once; the stale load doesn't retry.
     const starts = mockFetchObservationsInRange.mock.calls.map((c) => c[1])
-    expect(starts.filter((d) => d === APR)).toHaveLength(2)
-    expect(starts).toHaveLength(3)
+    expect(starts).toEqual([expect.any(Date), APR])
     expect(mockRedraw).not.toHaveBeenCalled()
   })
 

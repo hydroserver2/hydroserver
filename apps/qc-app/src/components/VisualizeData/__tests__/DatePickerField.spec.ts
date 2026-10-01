@@ -7,6 +7,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import { createTestVuetify } from '@/utils/test/vuetify'
 import DatePickerField from '../DatePickerField.vue'
+import { timeZoneAbbreviation, timeZoneDescription } from '@/utils/time'
 ;(globalThis as any).ResizeObserver ||= class {
   observe() {}
   unobserve() {}
@@ -49,6 +50,17 @@ describe('DatePickerField', () => {
     expect(emitted).toHaveLength(1)
     expect((emitted![0]![0] as Date).getTime()).toBe(
       new Date(2021, 6, 4, 12, 34).getTime()
+    )
+    wrapper.unmount()
+  })
+
+  it('labels the time input with the zone of the shown date', () => {
+    const value = new Date(2026, 6, 15, 12)
+    const wrapper = mountField(value)
+    const field = wrapper.find('[data-testid="date-picker-time"]')
+    expect(field.text()).toContain(timeZoneAbbreviation(value))
+    expect(wrapper.find('[title^="Time zone"]').attributes('title')).toBe(
+      `Time zone: ${timeZoneDescription(value)}`
     )
     wrapper.unmount()
   })

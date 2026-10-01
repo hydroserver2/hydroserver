@@ -35,7 +35,8 @@ const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
 /**
  * Navigating to another page ends an open edit session, so it goes through
  * the leave flow first. Staying on the page (the editor rewrites its own URL
- * as the user works) is not an exit.
+ * as the user works) is not an exit. It is the last guard, so a navigation
+ * another guard redirects never asks.
  *
  * Only the resume pointer is cleared here. The page being left unmounts the
  * editor, which resets the rest; clearing the edit target now would have the
@@ -51,8 +52,6 @@ export const leaveSessionGuard: RouteGuard = async (to, from) => {
 
 /** Guards are executed in the order they appear in this array */
 export const guards: RouteGuard[] = [
-  leaveSessionGuard,
-
   (to) => {
     if (!to.meta?.hasAuthGuard) return null
     if (hs.session?.isAuthenticated) return null
@@ -100,63 +99,66 @@ export const guards: RouteGuard[] = [
     }
   },
 
-  // https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head
-  // Append head tags and update page title
-  (to, from) => {
-    // This goes through the matched routes from last to first, finding the closest route with a title.
-    // e.g., if we have `/some/deep/nested/route` and `/some`, `/deep`, and `/nested` have titles,
-    // `/nested`'s will be chosen.
-    const nearestWithTitle = to.matched
-      .slice()
-      .reverse()
-      .find((r) => r.meta && r.meta.title)
-
-    // Find the nearest route element with meta tags.
-    const nearestWithMeta = to.matched
-      .slice()
-      .reverse()
-      .find((r) => r.meta && r.meta.metaTags)
-
-    const previousNearestWithMeta = from?.matched
-      .slice()
-      .reverse()
-      .find((r) => r.meta && r.meta.metaTags)
-
-    // If a route with a title was found, set the document (page) title to that value.
-    if (nearestWithTitle) {
-      document.title = `HydroServer | ${nearestWithTitle.meta.title}`
-    } else if (previousNearestWithMeta) {
-      document.title = previousNearestWithMeta.meta.title as string
-    } else {
-      document.title = `HydroServer`
-    }
-
-    // Remove any stale meta tags from the document using the key attribute we set below.
-    Array.from(document.querySelectorAll('[data-vue-router-controlled]')).map(
-      (el) => el.parentNode?.removeChild(el)
-    )
-
-    // Skip rendering meta tags if there are none.
-    if (!nearestWithMeta) return null
-
-    // Turn the meta tag definitions into actual elements in the head.
-    // @ts-ignore
-    nearestWithMeta.meta.metaTags
-      .map((tagDef: any) => {
-        const tag = document.createElement('meta')
-
-        Object.keys(tagDef).forEach((key) => {
-          tag.setAttribute(key, tagDef[key])
-        })
-
-        // We use this to track which meta tags we create so we don't interfere with other ones.
-        tag.setAttribute('data-vue-router-controlled', '')
-
-        return tag
-      })
-      // Add the meta tags to the document head.
-      .forEach((tag: any) => document.head.appendChild(tag))
-
-    return null
-  },
+  leaveSessionGuard,
 ]
+
+// https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head
+// Append head tags and update page title
+export function updateHead(
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized
+) {
+  // This goes through the matched routes from last to first, finding the closest route with a title.
+  // e.g., if we have `/some/deep/nested/route` and `/some`, `/deep`, and `/nested` have titles,
+  // `/nested`'s will be chosen.
+  const nearestWithTitle = to.matched
+    .slice()
+    .reverse()
+    .find((r) => r.meta && r.meta.title)
+
+  // Find the nearest route element with meta tags.
+  const nearestWithMeta = to.matched
+    .slice()
+    .reverse()
+    .find((r) => r.meta && r.meta.metaTags)
+
+  const previousNearestWithMeta = from?.matched
+    .slice()
+    .reverse()
+    .find((r) => r.meta && r.meta.metaTags)
+
+  // If a route with a title was found, set the document (page) title to that value.
+  if (nearestWithTitle) {
+    document.title = `HydroServer | ${nearestWithTitle.meta.title}`
+  } else if (previousNearestWithMeta) {
+    document.title = previousNearestWithMeta.meta.title as string
+  } else {
+    document.title = `HydroServer`
+  }
+
+  // Remove any stale meta tags from the document using the key attribute we set below.
+  Array.from(document.querySelectorAll('[data-vue-router-controlled]')).map(
+    (el) => el.parentNode?.removeChild(el)
+  )
+
+  // Skip rendering meta tags if there are none.
+  if (!nearestWithMeta) return
+
+  // Turn the meta tag definitions into actual elements in the head.
+  // @ts-ignore
+  nearestWithMeta.meta.metaTags
+    .map((tagDef: any) => {
+      const tag = document.createElement('meta')
+
+      Object.keys(tagDef).forEach((key) => {
+        tag.setAttribute(key, tagDef[key])
+      })
+
+      // We use this to track which meta tags we create so we don't interfere with other ones.
+      tag.setAttribute('data-vue-router-controlled', '')
+
+      return tag
+    })
+    // Add the meta tags to the document head.
+    .forEach((tag: any) => document.head.appendChild(tag))
+}

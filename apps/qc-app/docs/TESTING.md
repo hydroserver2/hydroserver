@@ -12,8 +12,8 @@ the operator's manual; QUALITY.md is the policy.
 
 | Layer      | Runner                          | Where                        | Count    |
 | ---------- | ------------------------------- | ---------------------------- | -------- |
-| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 75 files |
-| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 34 files |
+| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 85 files |
+| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 38 files |
 
 There is no separate "integration" tier; component tests live in the
 unit tier and mount real Vue components with the Vue Test Utils
@@ -82,6 +82,13 @@ notable knobs:
 - `server.deps.inline: ['vuetify']`: Vuetify ships ESM that
   Vitest's default externalization mishandles; inlining lets it
   load.
+- `env: { TZ: 'UTC' }`: every unit test runs in UTC, so the browser's
+  zone, the app's default display zone, is the same on every machine. A
+  test about a zone sets it explicitly (`displayZone.spec.ts` passes a
+  `DisplayZone`). The offset math itself is tested in qc-utils.
+- Specs that mock all of `@uwrl/qc-utils` hand back the real `offsetMs`,
+  `toWall`, `fromWall` and `toWallArray` from `importOriginal`, since the
+  app's date helpers run on them.
 
 ### Test scaffolding
 
@@ -159,7 +166,7 @@ undefined (reading 'value')` from inside a `setTimeout` (the
 
 ### Coverage thresholds
 
-Configured in [`vite.config.ts:130-140`](../vite.config.ts). The
+Configured in [`vite.config.ts`](../vite.config.ts) (`test.coverage.thresholds`). The
 gate is:
 
 - Lines / statements / functions: **80%**
@@ -226,7 +233,7 @@ The CI gate prints uncovered line numbers per file. Common causes:
 - `projects: chromium, firefox` only. WebKit is **excluded on
   purpose**: `SharedArrayBuffer` + COOP/COEP behavior diverges in
   Safari and would need its own validation pass.
-- `baseURL: http://127.0.0.1:5173`: **never `localhost`**. The
+- `baseURL: http://127.0.0.1:15173` (`E2E_APP_HOST` / `E2E_APP_PORT`): **never `localhost`**. The
   backend (`playground.hydroserver.org`) CORS-allowlists
   the `127.0.0.1` origins only; using `localhost` makes API requests fail
   with `net::ERR_FAILED` and the app never mounts.
@@ -250,7 +257,8 @@ e2e/
 │   ├── fixtures.ts   : workspace / datastream / observation fixtures
 │   ├── global-setup.ts : warms the dev server before the first test
 │   ├── mocks.ts      : page.route() handlers that stand in for HydroServer
-│   └── ops.ts        : op-specific preambles (selectAllPoints, expectHistoryContains)
+│   ├── ops.ts        : op-specific preambles (selectAllPoints, applyChangeValues, expectHistoryContains)
+│   └── plot.ts       : the main plot's x range and trace extents, read back as instants
 └── *.spec.ts         : one file per feature
 ```
 
@@ -300,6 +308,7 @@ await installMocks(page, {
   authenticated: false,                 // simulate signed-out
   qcHistories: true,                    // give DATASTREAM_ID a managed datastream
   qcSessionState: sessions,             // live QC sessions, for assertions
+  qcCommittedSession: false,            // leave out the fixture's committed session
 })
 ```
 
@@ -312,7 +321,23 @@ straight from its check box, which is what the other specs assume.
 The QC session and operation routes are stateful. They start from the
 session fixtures and apply the app's creates, saves, commits and deletes, so
 a spec can pass a `qcSessionState` array and assert on what was persisted
-(see `submit.spec.ts`).
+(see `submit.spec.ts`). They refuse what the API refuses, with the same 400:
+a second in-progress session, commits and operation changes on a committed
+session, and deleting a session another one depends on. A new session
+depends on the committed sessions its window overlaps, and `ancestor_of`
+lists those dependencies transitively, as the API does.
+
+The committed session's id is `COMMITTED_SESSION_ID` in
+`support/fixtures.ts`. Shared steps live in `support/app.ts` (`goToSelect`,
+`leaveDialog`, the entry helpers) and `support/ops.ts` (`selectAllPoints`,
+`applyChangeValues`).
+
+The fixtures include a committed session over the whole observation window,
+and the app treats the managed datastream as the truth inside committed
+windows. A spec whose managed observations don't match that (nothing
+committed yet, or a commit over only part of the window) sets
+`qcCommittedSession: false` and passes the sessions it means in
+`qcSessionState` (see `managed-preview.spec.ts`, `editor-y-range.spec.ts`).
 
 Save and Commit only appear once a session is open. `setupEditView` enters
 through a row's Edit button rather than the nav rail, so it needs
@@ -341,6 +366,11 @@ function observationsWithGap() {
   // …
 }
 ```
+
+Playwright runs in the machine's zone unless a spec sets `timezoneId`.
+`time-zone.spec.ts` runs in `Asia/Tokyo`, so a time read as browser-local
+instead of in the chosen zone would show. `edit-shift-datetimes.spec.ts`
+does too, and checks that a month shift saves `Asia/Tokyo` with the step.
 
 ### Test hooks
 
@@ -499,8 +529,10 @@ targeting `main`. The job:
 1. Add the implementation in `src/testHooks.ts` under the
    `installTestHooks()` function, same registration pattern as
    `waitForSelectedData`.
-2. Update the `Window['__vbwTestHooks']` interface in
-   `e2e/support/app.ts` so spec callers get type-checking.
+2. Update the `Window['__vbwTestHooks']` interface in both
+   `src/testHooks.ts` and `e2e/support/app.ts` (the app and the e2e specs
+   are separate TypeScript projects), so callers on both sides get
+   type-checking.
 3. Hooks ship only when `import.meta.env.DEV` or
    `VITE_APP_E2E_HOOKS` is set; production builds never expose
    them.

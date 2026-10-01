@@ -1,5 +1,5 @@
 /**
- * View-mode state for QC sessions (spec section 4 history navigation).
+ * View-mode state for QC sessions.
  *
  * Tracks the history's sessions, which one is editable (the single
  * in-progress session) and which one is being viewed. Viewing a committed
@@ -11,8 +11,10 @@ import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useHydroServer } from '@/store/hydroserver'
 import { unwrap } from '@/services/qualityControl'
+import { commitOrder } from '@/utils/sessionGraph'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
 import type { HistoryItem } from '@uwrl/qc-utils'
+import { sessionOperations } from '@/utils/qcHistory'
 
 export const useQcSessionStore = defineStore('qcSession', () => {
   const historyId = ref<string | null>(null)
@@ -37,8 +39,8 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   /** Editing is allowed only while viewing the in-progress session. */
   // TODO(backend): ask for a way to keep editing the most recent session after
   // it is committed, when no newer session exists. Today a commit is terminal:
-  // the API rejects updating, deleting, adding operations to, or re-committing
-  // a committed session, and the PATCH body carries only `description`. Undoing
+  // the API rejects updating, adding operations to, or re-committing a
+  // committed session, and the PATCH body carries only `description`. Undoing
   // a commit also has to roll back what it wrote (the replayed observations on
   // the managed datastream plus the history's checksum and time extent), so
   // this is a real backend change, not just lifting the status guard.
@@ -53,9 +55,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   const inProgressSession = computed(
     () => sessions.value.find((s) => s.status === 'in_progress') ?? null
   )
-  const committedSessions = computed(() =>
-    sessions.value.filter((s) => s.status === 'committed')
-  )
   const viewedSession = computed(
     () => sessions.value.find((s) => s.id === viewedSessionId.value) ?? null
   )
@@ -68,53 +67,22 @@ export const useQcSessionStore = defineStore('qcSession', () => {
    * one worth keeping.
    */
   const hasSessionOperations = computed(() => {
-    const session = inProgressSession.value as
-      | { operations?: unknown[] }
-      | null
+    const session = inProgressSession.value
     if (!session) return false
-    return (session.operations?.length ?? 0) > 0 || savedEdits.value.length > 0
+    return sessionOperations(session).length > 0 || savedEdits.value.length > 0
   })
-
-  /**
-   * Guarantee every session carries its `operations`, which the previews
-   * read. `expand_related` should embed them, but a backend that ignores it
-   * returns the summary shape instead. Only the gaps are fetched.
-   */
-  async function withOperations(
-    client: ReturnType<typeof useHydroServer>['hs'],
-    id: string,
-    list: QualityControlSession[]
-  ): Promise<QualityControlSession[]> {
-    const missing = list.filter(
-      (s) => !(s as { operations?: unknown[] }).operations
-    )
-    if (!missing.length) return list
-
-    const fetched = new Map<string, unknown[]>()
-    await Promise.all(
-      missing.map(async (s) => {
-        const res = await client.qualityControlOperations.list(id, s.id, {
-          fetch_all: true,
-        })
-        if (res.ok) fetched.set(s.id, res.data)
-      })
-    )
-    return list.map((s) =>
-      fetched.has(s.id) ? { ...s, operations: fetched.get(s.id) } : s
-    ) as QualityControlSession[]
-  }
 
   /** A history's sessions with their operations. Writes nothing, so a caller
    *  can drop the result if it went stale while loading. */
   async function fetchSessions(id: string): Promise<QualityControlSession[]> {
     const { hs } = storeToRefs(useHydroServer())
-    const list = unwrap(
+    // `expand_related` embeds each session's operations.
+    return unwrap(
       await hs.value.qualityControlSessions.list(id, {
         fetch_all: true,
         expand_related: true,
       })
     )
-    return withOperations(hs.value, id, list)
   }
 
   /** Adopt a history's sessions; default the view to the in-progress session. */
@@ -123,10 +91,11 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     sessions.value = list
     const inProgress = list.find((s) => s.status === 'in_progress') ?? null
     currentSessionId.value = inProgress?.id ?? null
-    // Default view: the editable session, else the latest committed.
+    // Default view: the editable session, else the last one committed (the
+    // one a commit just made).
     const latestCommitted = [...list]
       .filter((s) => s.status === 'committed')
-      .sort((a, b) => b.phenomenonTimeStart.localeCompare(a.phenomenonTimeStart))[0]
+      .sort((a, b) => commitOrder(b).localeCompare(commitOrder(a)))[0]
     viewedSessionId.value = inProgress?.id ?? latestCommitted?.id ?? null
   }
 
@@ -164,7 +133,6 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     savedComments,
     isReadOnly,
     inProgressSession,
-    committedSessions,
     viewedSession,
     hasSessionOperations,
     fetchSessions,

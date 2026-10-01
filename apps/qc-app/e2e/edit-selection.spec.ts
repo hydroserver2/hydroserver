@@ -23,7 +23,7 @@ import {
   plotDatastreamById,
   setupEditView,
   startSessionFromRow,
-  waitForEditorReady,
+  waitForSelection,
 } from './support/app'
 import {
   DATASTREAM_ID,
@@ -32,6 +32,7 @@ import {
   FIXTURE_OBS_START_MS,
   MANAGED_DATASTREAM_ID,
 } from './support/fixtures'
+import { plotXRange, traceIds, traceXExtent } from './support/plot'
 
 type PlotRoot = HTMLElement & {
   data?: Array<{ id?: string; x?: Array<number | string> }>
@@ -67,8 +68,11 @@ function tracesOf(page: Page, id: string) {
     const gd = document.querySelector('[data-testid="main-plot"]') as
       | (HTMLElement & { data?: DrawnTrace[] })
       | null
+    // Trace values are wall values in the display zone, the browser's here.
     const ms = (v: number | string) =>
-      typeof v === 'number' ? v : Date.parse(v)
+      typeof v === 'number'
+        ? v + new Date(v).getTimezoneOffset() * 60_000
+        : Date.parse(v)
     return (gd?.data ?? [])
       .filter((t) => t.id === id || t._partOf === id)
       .map((t) => {
@@ -84,25 +88,6 @@ function tracesOf(page: Page, id: string) {
 }
 
 type ReloadProbe = { __contextStart: number; __afterplots: number[] }
-
-function traceIds(page: Page): Promise<string[]> {
-  return page.evaluate(() => {
-    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
-    return (gd?.data ?? []).map((t) => t.id ?? '').filter(Boolean)
-  })
-}
-
-/** Live x-axis range in epoch ms. Plotly date strings are UTC. */
-function xRange(page: Page): Promise<[number, number] | null> {
-  return page.evaluate(() => {
-    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
-    const range = gd?.layout?.xaxis?.range
-    if (!range || range.length !== 2) return null
-    const toMs = (v: number | string) =>
-      typeof v === 'number' ? v : Date.parse(`${v.replace(' ', 'T')}Z`)
-    return [toMs(range[0]!), toMs(range[1]!)] as [number, number]
-  })
-}
 
 /**
  * Type a local date and time into a `DatePickerField`. Its inputs mask
@@ -124,18 +109,6 @@ async function typeDateTime(field: Locator, when: Date) {
     await input.pressSequentially(digits)
     await input.blur()
   }
-}
-
-/** First and last x of a trace in epoch ms. Plotly date strings are UTC. */
-function traceXExtent(page: Page, id: string): Promise<[number, number] | null> {
-  return page.evaluate((traceId) => {
-    const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
-    const xs = (gd?.data ?? []).find((t) => t.id === traceId)?.x
-    if (!xs?.length) return null
-    const toMs = (v: number | string) =>
-      typeof v === 'number' ? v : Date.parse(`${v.replace(' ', 'T')}Z`)
-    return [toMs(xs[0]!), toMs(xs[xs.length - 1]!)] as [number, number]
-  }, id)
 }
 
 /** What a `DatePickerField` shows for `when`: local MM/DD/YYYY and HH:MM. */
@@ -247,12 +220,23 @@ test.describe('edit selection', () => {
         ])
       )
 
+    // A Context change reloads around the session and keeps all three.
     await page.getByTestId('time-range-btn').click()
     await page
       .getByTestId('time-range-menu')
       .getByTestId('date-preset-All')
       .click()
-    await expect(page.getByTestId('exit-save-btn')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('time-range-btn')).toContainText('All')
+    await expect
+      .poll(() => traceIds(page))
+      .toEqual(
+        expect.arrayContaining([
+          MANAGED_DATASTREAM_ID,
+          `ctx:${DATASTREAM_ID}`,
+          DATASTREAM_ID_B,
+        ])
+      )
   })
 
   test('closing the editor keeps the plotted datastreams', async ({ page }) => {
@@ -319,6 +303,7 @@ test.describe('edit selection', () => {
       steps: 10,
     })
     await page.mouse.up()
+    await waitForSelection(page, 1)
 
     const clear = page.getByTestId('clear-selection-btn')
     await expect(clear).toBeVisible()
@@ -341,12 +326,11 @@ test.describe('edit selection', () => {
       w.__updates = 0
       gd.on('plotly_update', () => w.__updates++)
     })
+    // The Context range starts on 1m, so All is a change.
     await page.getByTestId('time-range-btn').click()
     const menu = page.getByTestId('time-range-menu')
-    const allActive = /v-chip--variant-tonal/.test(
-      (await menu.getByTestId('date-preset-All').getAttribute('class')) ?? ''
-    )
-    await menu.getByTestId(allActive ? 'date-preset-1w' : 'date-preset-All').click()
+    await expect(page.getByTestId('time-range-btn')).toContainText('1m')
+    await menu.getByTestId('date-preset-All').click()
     await page.waitForFunction(
       () => (window as unknown as { __updates: number }).__updates > 0
     )
@@ -377,7 +361,7 @@ test.describe('edit selection', () => {
     const tolerance = 60_000
     await expect
       .poll(async () => {
-        const r = await xRange(page)
+        const r = await plotXRange(page)
         return (
           !!r &&
           Math.abs(r[0] - mid.getTime()) <= tolerance &&
@@ -394,8 +378,8 @@ test.describe('edit selection', () => {
     await page.getByTestId('time-range-menu').getByTestId('date-preset-All').click()
     await page.keyboard.press('Escape')
     await startSessionFromRow(page)
-    await expect.poll(() => xRange(page)).not.toBeNull()
-    const opened = (await xRange(page))!
+    await expect.poll(() => plotXRange(page)).not.toBeNull()
+    const opened = (await plotXRange(page))!
 
     // Zoom in with the wheel so the view differs from the session window.
     const box = (await page.getByTestId('main-plot').boundingBox())!
@@ -403,11 +387,11 @@ test.describe('edit selection', () => {
     for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -200)
     await expect
       .poll(async () => {
-        const r = await xRange(page)
+        const r = await plotXRange(page)
         return !!r && r[1] - r[0] < (opened[1] - opened[0]) * 0.9
       })
       .toBe(true)
-    const zoomed = (await xRange(page))!
+    const zoomed = (await plotXRange(page))!
 
     await page.getByTestId('time-range-btn').click()
     const menu = page.getByTestId('time-range-menu')
@@ -453,8 +437,9 @@ test.describe('edit selection', () => {
 
     // Sample the range over several frames so a late redraw would show up.
     const drift = await page.evaluate(async ([lo, hi]) => {
+      // The display zone's clock, the browser's here (see support/plot.ts).
       const toMs = (v: number | string) =>
-        typeof v === 'number' ? v : Date.parse(`${v.replace(' ', 'T')}Z`)
+        typeof v === 'number' ? v : Date.parse(v.replace(' ', 'T'))
       let worst = 0
       const end = performance.now() + 1_500
       while (performance.now() < end) {

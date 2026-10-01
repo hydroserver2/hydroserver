@@ -86,7 +86,7 @@
             prepend-icon="mdi-close"
             data-testid="leave-close-btn"
             :disabled="!!leaveWork"
-            @click="closeSession"
+            @click="keepSession"
           >
             Close
           </v-btn>
@@ -111,7 +111,6 @@ const {
   leaveWork,
   cancelLeave,
   keepSession,
-  closeSession,
   saveAndLeave,
   discardEditsAndLeave,
   discardSessionAndLeave,

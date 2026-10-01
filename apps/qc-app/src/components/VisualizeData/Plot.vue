@@ -363,7 +363,7 @@
               aria-live="polite"
             >
               <span class="mr-2">
-                <b>x</b> {{ formatDate(new Date(hover.x)) }}
+                <b>x</b> {{ formatDateTime(hover.x) }}
               </span>
               <span>
                 <b>{{ yReadoutLabel }}</b> {{ hover.y }}{{ yReadoutUnit }}
@@ -400,7 +400,8 @@ import TimeRangeMenu from '@/components/VisualizeData/TimeRangeMenu.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { usePersistedFlag } from '@/composables/useResizable'
-import { formatDate, Snackbar } from '@uwrl/qc-utils'
+import { Snackbar } from '@uwrl/qc-utils'
+import { formatDateTime } from '@/utils/time'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQcSessionStore } from '@/store/qcSession'
 import { DrawerType, useUIStore } from '@/store/userInterface'
@@ -668,7 +669,6 @@ const keyboardShortcuts = [
 
 let plotResizeObserver: ResizeObserver | null = null
 let pendingResizeFrame: number | null = null
-let cancelFirstDraw: (() => void) | null = null
 // Deferred work checks this so it never touches a detached plot.
 let isUnmounted = false
 
@@ -686,24 +686,12 @@ watch(
   { flush: 'post' }
 )
 
-// Plot work from the moment the element appears, so the editor is not
-// reported ready before the plot the user sees is drawn.
+// Plot work, so the editor is not reported ready before the plot the user
+// sees is drawn. A container still growing (the view-switch animation) is
+// caught by the size observer.
 function scheduleFirstDraw(target: HTMLDivElement) {
-  cancelFirstDraw?.()
   const drawn = trackPlotWork(async () => {
-    // Wait for the view-switch animation to expand the container.
-    let cancel!: () => void
-    const due = await new Promise<boolean>((resolve) => {
-      const timer = setTimeout(() => resolve(true), 200)
-      cancel = () => {
-        clearTimeout(timer)
-        resolve(false)
-      }
-      cancelFirstDraw = cancel
-    })
-    // A newer schedule owns the flag by now, so only clear our own.
-    if (cancelFirstDraw === cancel) cancelFirstDraw = null
-    if (!due || isUnmounted) return
+    if (isUnmounted) return
     updateOptions()
     // A share-URL zoom, if any, is applied and cleared inside
     // handleNewPlot itself, so capture it before that happens: it
@@ -747,7 +735,6 @@ function observePlotSize(target: HTMLDivElement) {
 
 onBeforeUnmount(() => {
   isUnmounted = true
-  cancelFirstDraw?.()
   if (pendingResizeFrame != null) {
     cancelAnimationFrame(pendingResizeFrame)
     pendingResizeFrame = null
@@ -758,13 +745,12 @@ onBeforeUnmount(() => {
   }
 })
 
-const onTabChange = () => {
-  if (tab.value === 'plot') {
-    setTimeout(() => {
-      if (isUnmounted) return
-      setPlotSelection(selectedData.value || [])
-    })
-  }
+// The plot tab is back in the DOM after the next render.
+const onTabChange = async () => {
+  if (tab.value !== 'plot') return
+  await nextTick()
+  if (isUnmounted) return
+  setPlotSelection(selectedData.value || [])
 }
 </script>
 

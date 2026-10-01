@@ -234,8 +234,11 @@ export function parseHistory(json: unknown): QcHistory {
       method: o.method as EnumEditOperations | EnumFilterOperations,
       args: [...o.args],
     };
-    if (o.comment) op.comment = o.comment as string;
-    if (o.performedBy) op.performedBy = o.performedBy as string;
+    // Trimmed and dropped when blank, as `serializeHistory` writes them.
+    const comment = (o.comment as string | undefined)?.trim();
+    if (comment) op.comment = comment;
+    const performedBy = (o.performedBy as string | undefined)?.trim();
+    if (performedBy) op.performedBy = performedBy;
     const exec = parseExecution(o.execution, i);
     if (exec) op.execution = exec;
     return op;
@@ -288,16 +291,11 @@ export async function applyHistory(
     try {
       // dispatch handles routing to dispatchAction / dispatchFilter
       // based on whether the method is in EnumFilterOperations.
-      await record.dispatch(op.method, ...op.args);
+      await record.dispatchStep(op);
       // The dispatch path's catch block writes
       // `historyItem.execution.status = "failed"` on throw. Read it
       // back to decide whether to count as applied.
       const last = record.history[record.history.length - 1];
-      // Unlike `execution` (runtime telemetry, re-stamped per dispatch),
-      // the comment is authored intent and belongs to the operation, so
-      // it is carried onto the replayed entry.
-      if (last && op.comment) last.comment = op.comment;
-      if (last && op.performedBy) last.performedBy = op.performedBy;
       if (last?.execution.status === "failed") {
         report.failed.push({
           index: i,

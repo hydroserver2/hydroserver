@@ -85,6 +85,11 @@ export interface MockOptions {
    * it, so pass an array to assert on what the app persisted.
    */
   qcSessionState?: MockQcSession[]
+  /**
+   * Seed the fixture's committed session over the whole observation window.
+   * Defaults to true; turn it off for a history with nothing committed.
+   */
+  qcCommittedSession?: boolean
   /** Set to false to mark the session as unauthenticated. */
   authenticated?: boolean
 }
@@ -96,6 +101,7 @@ export interface MockQcOperation {
   comment?: string | null
   order: number
   createdAt: string
+  createdBy?: { name: string; email: string }
 }
 
 export interface MockQcSession {
@@ -123,7 +129,7 @@ function corsHeaders(route: Route): Record<string, string> {
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': '*',
-    'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count',
+    'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count,X-Checksum',
   }
 }
 
@@ -160,7 +166,7 @@ export async function installMocks(
   const datastreamCreates = options.datastreamCreates ?? []
   const withQcHistories = options.qcHistories ?? false
   const sessionState = options.qcSessionState ?? []
-  if (withQcHistories) {
+  if (withQcHistories && options.qcCommittedSession !== false) {
     sessionState.push(...qcSessions.map((s) => ({ ...s, operations: [] })))
   }
   // The managed datastream only exists for specs that opted into histories.
@@ -238,7 +244,11 @@ export async function installMocks(
       // Only the first page carries data; subsequent pages are empty
       // so the client's pagination loop terminates.
       const data = page === 1 ? sliced : { phenomenonTime: [], result: [] }
-      return json(route, { data }, 200, { 'X-Total-Pages': '1' })
+      // Every mocked session starts from this checksum, so the source never changes.
+      return json(route, { data }, 200, {
+        'X-Total-Pages': '1',
+        'X-Checksum': QC_SOURCE_CHECKSUM,
+      })
     }
 
     // --- Units ---
@@ -352,7 +362,9 @@ export async function installMocks(
 
 /**
  * Stateful stand-in for the QC session and operation endpoints, covering
- * what the editor calls to start, save, commit, and delete a session.
+ * what the editor calls to start, save, commit, and delete a session. It
+ * refuses what the API refuses, so a test can't pass on a request the real
+ * server would reject.
  */
 async function handleQcSessions(
   route: Route,
@@ -364,17 +376,26 @@ async function handleQcSessions(
   const now = new Date().toISOString()
   const noContent = () =>
     route.fulfill({ status: 204, headers: corsHeaders(route) })
+  const refuse = (detail: string) => json(route, { detail }, 400)
+  const inHistory = state.filter((s) => s.historyId === historyId)
 
   if (!sessionId) {
     if (method === 'GET') {
-      const status = new URL(request.url()).searchParams.get('status')
+      const params = new URL(request.url()).searchParams
+      const status = params.get('status')
+      const ancestorOf = params.get('ancestor_of')
+      const ancestors = ancestorOf ? ancestorIds(inHistory, ancestorOf) : null
       return json(route, {
-        data: state.filter(
-          (s) => s.historyId === historyId && (!status || s.status === status)
+        data: inHistory.filter(
+          (s) =>
+            (!status || s.status === status) && (!ancestors || ancestors.has(s.id))
         ),
       })
     }
     if (method === 'POST') {
+      if (inHistory.some((s) => s.status === 'in_progress')) {
+        return refuse('This history already has an in-progress session.')
+      }
       const body = await safeJson(request)
       const session: MockQcSession = {
         id: `qcs-e2e-new-${state.length + 1}`,
@@ -387,7 +408,15 @@ async function handleQcSessions(
         createdAt: now,
         committedAt: null,
         createdBy: QC_SESSION_AUTHOR,
-        dependencyIds: [],
+        // Like the API: every committed session the new window overlaps.
+        dependencyIds: inHistory
+          .filter(
+            (s) =>
+              s.status === 'committed' &&
+              s.phenomenonTimeStart < body?.phenomenonTimeEnd &&
+              s.phenomenonTimeEnd > body?.phenomenonTimeStart
+          )
+          .map((s) => s.id),
         operations: [],
       }
       state.push(session)
@@ -399,8 +428,10 @@ async function handleQcSessions(
     (s) => s.id === sessionId && s.historyId === historyId
   )
   if (!session) return json(route, { detail: 'Session not found.' }, 404)
+  const inProgress = session.status === 'in_progress'
 
   if (action === 'commit' && method === 'POST') {
+    if (!inProgress) return refuse('Only in-progress sessions can be committed.')
     session.status = 'committed'
     session.committedAt = now
     return json(route, { data: session })
@@ -409,6 +440,9 @@ async function handleQcSessions(
   if (action === 'operations' && !operationId) {
     if (method === 'GET') return json(route, { data: session.operations })
     if (method === 'POST') {
+      if (!inProgress) {
+        return refuse('Operations can only be added to an in-progress session.')
+      }
       const bodies = ((await safeJson(request)) ?? []) as Array<
         Omit<MockQcOperation, 'id' | 'createdAt'>
       >
@@ -416,6 +450,7 @@ async function handleQcSessions(
         ...b,
         id: `${session.id}-op-${b.order}`,
         createdAt: now,
+        createdBy: QC_SESSION_AUTHOR,
       }))
       session.operations.push(...created)
       return json(route, { data: created }, 201)
@@ -425,6 +460,9 @@ async function handleQcSessions(
   if (action === 'operations' && operationId) {
     const index = session.operations.findIndex((o) => o.id === operationId)
     if (index < 0) return json(route, { detail: 'Operation not found.' }, 404)
+    if ((method === 'PATCH' || method === 'DELETE') && !inProgress) {
+      return refuse('Operations can only be changed in an in-progress session.')
+    }
     if (method === 'PATCH') {
       const body = await safeJson(request)
       session.operations[index]!.comment = body?.comment ?? null
@@ -439,17 +477,39 @@ async function handleQcSessions(
   if (!action) {
     if (method === 'GET') return json(route, { data: session })
     if (method === 'PATCH') {
+      if (!inProgress) return refuse('Only in-progress sessions can be updated.')
       const body = await safeJson(request)
       if (body && 'description' in body) session.description = body.description
       return json(route, { data: session })
     }
     if (method === 'DELETE') {
+      if (inHistory.some((s) => s.dependencyIds.includes(session.id))) {
+        return refuse(
+          'This session cannot be deleted because other sessions depend on it.'
+        )
+      }
       state.splice(state.indexOf(session), 1)
       return noContent()
     }
   }
 
   return json(route, { detail: `Unmocked ${method} ${pathOf(request.url())}` }, 405)
+}
+
+/** Every session `id` depends on, directly or through others. */
+function ancestorIds(sessions: MockQcSession[], id: string): Set<string> {
+  const found = new Set<string>()
+  const frontier = [id]
+  while (frontier.length) {
+    const s = sessions.find((x) => x.id === frontier.pop())
+    for (const dep of s?.dependencyIds ?? []) {
+      if (!found.has(dep)) {
+        found.add(dep)
+        frontier.push(dep)
+      }
+    }
+  }
+  return found
 }
 
 async function safeJson(request: ReturnType<Page['request']> | any): Promise<any> {

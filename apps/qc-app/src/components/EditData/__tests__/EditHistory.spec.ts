@@ -68,56 +68,65 @@ vi.mock('@/composables/useHistorySnapshots', () => ({
   }),
 }))
 
-vi.mock('@uwrl/qc-utils', () => ({
-  formatDuration: (ms: number) => String(ms) + 'ms',
-  // operations.ts (transitively imported via EditHistory.vue's
-  // `iconForMethod` lookup) reads enum values to build its method →
-  // operation-id map. Stub the keys it actually consults; the test
-  // never inspects the icon output, only that the entry renders.
-  EnumEditOperations: {
-    ADD_POINTS: 'ADD_POINTS',
-    CHANGE_VALUES: 'CHANGE_VALUES',
-    ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
-    ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
-    DELETE_POINTS: 'DELETE_POINTS',
-    DRIFT_CORRECTION: 'DRIFT_CORRECTION',
-    INTERPOLATE: 'INTERPOLATE',
-    SHIFT_DATETIMES: 'SHIFT_DATETIMES',
-    FILL_GAPS: 'FILL_GAPS',
-  },
-  EnumFilterOperations: {
-    FIND_GAPS: 'FIND_GAPS',
-    PERSISTENCE: 'PERSISTENCE',
-    CHANGE: 'CHANGE',
-    RATE_OF_CHANGE: 'RATE_OF_CHANGE',
-    VALUE_THRESHOLD: 'VALUE_THRESHOLD',
-    DATETIME_RANGE: 'DATETIME_RANGE',
-    SELECTION: 'SELECTION',
-  },
-  Operator: {
-    ADD: 'ADD',
-    SUB: 'SUB',
-    MULT: 'MULT',
-    DIV: 'DIV',
-    ASSIGN: 'ASSIGN',
-  },
-  TimeUnit: {
-    SECOND: 's',
-    MINUTE: 'm',
-    HOUR: 'h',
-    DAY: 'D',
-    WEEK: 'W',
-    MONTH: 'M',
-    YEAR: 'Y',
-  },
-  LogicalOperation: {
-    LT: 'Less than',
-    LTE: 'Less than or equal to',
-    GT: 'Greater than',
-    GTE: 'Greater than or equal to',
-    E: 'Equal',
-  },
-}))
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    formatDuration: (ms: number) => String(ms) + 'ms',
+    // operations.ts (transitively imported via EditHistory.vue's
+    // `iconForMethod` lookup) reads enum values to build its method →
+    // operation-id map. Stub the keys it actually consults; the test
+    // never inspects the icon output, only that the entry renders.
+    EnumEditOperations: {
+      ADD_POINTS: 'ADD_POINTS',
+      CHANGE_VALUES: 'CHANGE_VALUES',
+      ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
+      ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
+      DELETE_POINTS: 'DELETE_POINTS',
+      DRIFT_CORRECTION: 'DRIFT_CORRECTION',
+      INTERPOLATE: 'INTERPOLATE',
+      SHIFT_DATETIMES: 'SHIFT_DATETIMES',
+      FILL_GAPS: 'FILL_GAPS',
+    },
+    EnumFilterOperations: {
+      FIND_GAPS: 'FIND_GAPS',
+      PERSISTENCE: 'PERSISTENCE',
+      CHANGE: 'CHANGE',
+      RATE_OF_CHANGE: 'RATE_OF_CHANGE',
+      VALUE_THRESHOLD: 'VALUE_THRESHOLD',
+      DATETIME_RANGE: 'DATETIME_RANGE',
+      SELECTION: 'SELECTION',
+    },
+    Operator: {
+      ADD: 'ADD',
+      SUB: 'SUB',
+      MULT: 'MULT',
+      DIV: 'DIV',
+      ASSIGN: 'ASSIGN',
+    },
+    TimeUnit: {
+      SECOND: 's',
+      MINUTE: 'm',
+      HOUR: 'h',
+      DAY: 'D',
+      WEEK: 'W',
+      MONTH: 'M',
+      YEAR: 'Y',
+    },
+    LogicalOperation: {
+      LT: 'Less than',
+      LTE: 'Less than or equal to',
+      GT: 'Greater than',
+      GTE: 'Greater than or equal to',
+      E: 'Equal',
+    },
+  }
+})
 
 import EditHistory from '@/components/EditData/EditHistory.vue'
 
@@ -156,6 +165,7 @@ function makeEntry(
     mode: 'worker' | 'inline'
     datasetSize: number
     selectionSize: number
+    extent: { begin: number; end: number }
   }> = {},
 ) {
   return {
@@ -186,6 +196,30 @@ describe('EditHistory.vue', () => {
     isUpdating.value = false
     selectedSeries.value = makeSeries()
     vi.clearAllMocks()
+  })
+
+  it('shows the period and point count a step touched', async () => {
+    const begin = new Date(2026, 2, 3, 12, 5)
+    const end = new Date(2026, 3, 1, 8, 0)
+    editHistory.value = [
+      makeEntry('INTERPOLATE', [], {
+        extent: { begin: begin.getTime(), end: end.getTime() },
+        selectionSize: 1200,
+      }),
+      makeEntry('ADD_POINTS', [], {
+        extent: { begin: end.getTime(), end: end.getTime() },
+      }),
+      makeEntry('FIND_GAPS'),
+    ]
+    const wrapper = createWrapper()
+    await flushPromises()
+    expect(wrapper.find('[data-testid="history-extent-0"]').text()).toBe(
+      'Mar 3, 12:05 PM – Apr 1, 2026, 8:00 AM · 1,200 pts'
+    )
+    expect(wrapper.find('[data-testid="history-extent-1"]').text()).toBe(
+      'Apr 1, 2026, 8:00 AM'
+    )
+    expect(wrapper.find('[data-testid="history-extent-2"]').exists()).toBe(false)
   })
 
   it('disables undo/redo when history is empty', () => {
@@ -532,9 +566,6 @@ describe('EditHistory.vue actions', () => {
       ).toBeDefined()
       expect(
         w.find('[data-testid="history-redo-btn"]').attributes('disabled')
-      ).toBeDefined()
-      expect(
-        w.find('[data-testid="history-load-btn"]').attributes('disabled')
       ).toBeDefined()
     })
 

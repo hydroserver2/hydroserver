@@ -71,7 +71,8 @@
           class="text-body-small text-medium-emphasis"
           data-testid="plot-source-cap"
         >
-          Maximum of 4 datastreams plotted; remove one to add another.
+          Maximum of {{ PLOT_CAP }} datastreams plotted; remove one to add
+          another.
         </div>
       </template>
     </div>
@@ -100,15 +101,17 @@ import { computed, ref, watch } from 'vue'
 import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'
 import { datastreamSummary } from '@/utils/datastreamSummary'
+import { PLOT_CAP } from '@/utils/plotCap'
 
 const props = defineProps<{
   source: Datastream & Partial<DatastreamExtended>
   options: ManagedDatastreamOption[]
   plottedIds: string[]
   loading?: boolean
-  /** Free slots under the 4-datastream plot cap, ignoring this source's group. */
+  /** Free slots under the plot cap, ignoring this source's group. */
   slotsLeft: number
-  /** The datastream being edited: already on the plot, so not offered. */
+  /** The datastream being edited. Picking it plots its committed data as
+   *  context beside the edit. */
   editingId?: string | null
 }>()
 
@@ -157,7 +160,7 @@ const slotsLeftForNew = computed(() => props.slotsLeft - checked.value.length)
 const isEditing = (id: string) => !!props.editingId && id === props.editingId
 
 const isDisabled = (id: string) =>
-  isEditing(id) || (!checked.value.includes(id) && slotsLeftForNew.value <= 0)
+  !checked.value.includes(id) && slotsLeftForNew.value <= 0
 
 function toggle(id: string) {
   if (checked.value.includes(id)) {

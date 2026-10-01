@@ -5,8 +5,8 @@
  */
 
 import { mount, flushPromises } from '@vue/test-utils'
-import { ref } from 'vue'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { ref, type Component } from 'vue'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { createTestVuetify } from '@/utils/test/vuetify'
 import PlotSourceDialog from '../PlotSourceDialog.vue'
 import DatastreamInformationCard from '../DatastreamInformationCard.vue'
@@ -27,11 +27,11 @@ const filteredDatastreams = ref<any[]>([raw, lonely])
 const plottedDatastreams = ref<any[]>([])
 const qcDatastream = ref<any>(null)
 const editSourceDatastream = ref<any>(null)
-const historiesBySource = ref(
+const srcHistories = () =>
   new Map<string, any[]>([
     ['src', [{ id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' }]],
   ])
-)
+const historiesBySource = ref(srcHistories())
 
 const toggleDatastream = vi.fn().mockResolvedValue(undefined)
 const clearPlottedDatastreams = vi.fn().mockResolvedValue(undefined)
@@ -50,6 +50,10 @@ vi.mock('@/store/dataVisualization', () => ({
     sourceGroupIds,
     plotSourceSelection,
   }),
+}))
+
+vi.mock('@/store/plotly', () => ({
+  usePlotlyStore: () => ({ hiddenTraceIds: ref(new Set()) }),
 }))
 
 const canEdit = vi.fn(() => true)
@@ -78,7 +82,7 @@ vi.mock('@/utils/csvExport', () => ({
   downloadDatastreamsCsvZip: vi.fn().mockResolvedValue(undefined),
 }))
 
-const snackbarError = vi.fn()
+const snackbarError = vi.hoisted(() => vi.fn())
 vi.mock('@uwrl/qc-utils', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>
   return { ...actual, Snackbar: { error: snackbarError, success: vi.fn() } }
@@ -87,14 +91,21 @@ vi.mock('@uwrl/qc-utils', async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks()
   canEdit.mockReturnValue(true)
+  filteredDatastreams.value = [raw, lonely]
+  historiesBySource.value = srcHistories()
   plottedDatastreams.value = []
   qcDatastream.value = null
   editSourceDatastream.value = null
 })
 
+// Imported after the mocks, which use the variables above. Once, so the
+// first test doesn't pay for compiling the component.
+let DataVisDatasetsTable: Component
+beforeAll(async () => {
+  DataVisDatasetsTable = (await import('../DataVisDatasetsTable.vue')).default
+}, 60_000)
+
 const mountTable = async () => {
-  const DataVisDatasetsTable = (await import('../DataVisDatasetsTable.vue'))
-    .default
   const wrapper = mount(DataVisDatasetsTable, {
     global: {
       plugins: [createTestVuetify()],
@@ -143,6 +154,33 @@ describe('DataVisDatasetsTable plot checkbox', () => {
     expect(dialog.props('options')).toEqual([])
   })
 
+  it('ignores a chooser load that finishes after another source was opened', async () => {
+    const other = { id: 'src2', name: 'Other', valueCount: 3, thing: { id: 't-1' } }
+    filteredDatastreams.value = [raw, lonely, other]
+    historiesBySource.value.set('src2', [
+      { id: 'h-2', managedDatastreamId: 'mgd2', sourceDatastreamId: 'src2' },
+    ])
+    let finishFirst!: (options: unknown[]) => void
+    loadForSource
+      .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+      .mockImplementationOnce(() => new Promise(() => {}))
+    const wrapper = await mountTable()
+
+    await checkbox(wrapper, 'src').trigger('click')
+    await flushPromises()
+    wrapper.findComponent(PlotSourceDialog).vm.$emit('cancel')
+    await flushPromises()
+    await checkbox(wrapper, 'src2').trigger('click')
+    await flushPromises()
+    finishFirst([{ historyId: 'h-1', managed: { id: 'mgd' }, sessions: [] }])
+    await flushPromises()
+
+    const dialog = wrapper.findComponent(PlotSourceDialog)
+    expect(dialog.props('source').id).toBe('src2')
+    expect(dialog.props('options')).toEqual([])
+    expect(dialog.props('loading')).toBe(true)
+  })
+
   it('applies the chooser selection through the batched store action', async () => {
     const wrapper = await mountTable()
     await checkbox(wrapper, 'src').trigger('click')
@@ -168,6 +206,32 @@ describe('DataVisDatasetsTable plot checkbox', () => {
     await checkbox(wrapper, 'solo').trigger('click')
     await flushPromises()
     expect(toggleDatastream).not.toHaveBeenCalled()
+  })
+
+  // History comparison lines ride along in the plotted list but take no slot.
+  it('leaves comparison lines out of the plot limit', async () => {
+    plottedDatastreams.value = [
+      { id: 'a' },
+      { id: 'b' },
+      { id: 'c' },
+      { id: 'snap:s-1:0' },
+      { id: 'snap:s-1:1' },
+    ]
+    const wrapper = await mountTable()
+    expect(wrapper.text()).toContain('3/4 plotted')
+
+    await checkbox(wrapper, 'solo').trigger('click')
+    await flushPromises()
+    expect(toggleDatastream).toHaveBeenCalledWith(expect.objectContaining({ id: 'solo' }))
+  })
+
+  it('leaves comparison lines out of the chooser slots', async () => {
+    plottedDatastreams.value = [{ id: 'a' }, { id: 'snap:s-1:0' }, { id: 'snap:s-1:1' }]
+    const wrapper = await mountTable()
+    await checkbox(wrapper, 'src').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findComponent(PlotSourceDialog).props('slotsLeft')).toBe(3)
   })
 
   it('shows a checked box when the raw datastream is plotted', async () => {
@@ -247,15 +311,6 @@ describe('DataVisDatasetsTable edit button', () => {
     expect(wrapper.findComponent(DatastreamInformationCard).exists()).toBe(
       false
     )
-  })
-
-  it('no longer marks a QC target row', async () => {
-    plottedDatastreams.value = [lonely]
-    const wrapper = await mountTable()
-
-    expect(wrapper.find('.qc-pill').exists()).toBe(false)
-    expect(wrapper.find('.datasets-table__row--qc').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('QC target')
   })
 })
 

@@ -2,11 +2,11 @@
   <v-card rounded="lg">
     <div class="px-4 pt-4 pb-2">
       <div class="text-title-medium font-weight-bold">
-        Quality-control "{{ source.name }}"
+        Quality control for "{{ source.name }}"
       </div>
       <div class="text-body-small text-medium-emphasis mt-1">
-        Continue an in-progress session, start a new one over the current time
-        range, or set up a new managed datastream.
+        Continue an in-progress session, start a new one, or set up a new
+        managed datastream.
       </div>
     </div>
 
@@ -49,43 +49,9 @@
               color="error"
               :data-testid="`delete-managed-${opt.managed.id}`"
               title="Delete this managed datastream"
-              @click="confirmingDeleteId = opt.historyId"
+              @click="pendingDelete = { option: opt }"
             />
           </div>
-
-          <v-alert
-            v-if="confirmingDeleteId === opt.historyId"
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mx-3 mb-2"
-          >
-            <div class="d-flex align-center flex-wrap ga-2">
-              <span class="text-body-small">
-                Delete "{{ opt.managed.name }}" and its
-                {{ opt.sessions.length }} session{{
-                  opt.sessions.length === 1 ? '' : 's'
-                }}? This can't be undone.
-              </span>
-              <v-spacer />
-              <v-btn
-                size="x-small"
-                variant="text"
-                @click="confirmingDeleteId = null"
-              >
-                Cancel
-              </v-btn>
-              <v-btn
-                size="x-small"
-                color="error"
-                variant="flat"
-                :data-testid="`confirm-delete-${opt.managed.id}`"
-                @click="onDelete(opt)"
-              >
-                Delete
-              </v-btn>
-            </div>
-          </v-alert>
 
           <v-divider />
 
@@ -99,15 +65,7 @@
           >
             <!-- Heads the timeline as its own node so starting a session
                  reads as part of the history rather than a header action. -->
-            <v-timeline-item
-              v-if="!hasInProgress(opt)"
-              fill-dot
-              size="x-small"
-              width="100%"
-              icon="mdi-plus"
-              icon-color="primary"
-              class="qc-timeline__item qc-timeline__item--new"
-            >
+            <SessionTimelineItem v-if="!hasInProgress(opt)" kind="new">
               <div class="d-flex align-center ga-2">
                 <div class="flex-grow-1 text-body-small text-medium-emphasis">
                   {{
@@ -127,23 +85,13 @@
                   Start new session
                 </v-btn>
               </div>
-            </v-timeline-item>
+            </SessionTimelineItem>
 
-            <v-timeline-item
+            <SessionTimelineItem
               v-for="(s, i) in orderedSessions(opt.sessions)"
               :key="s.id"
-              fill-dot
-              size="x-small"
-              width="100%"
-              :icon="s.status === 'in_progress' ? 'mdi-pencil' : 'mdi-check'"
-              :icon-color="s.status === 'in_progress' ? 'warning' : 'success'"
+              :kind="s.status"
               :data-testid="`chooser-session-${s.id}`"
-              class="qc-timeline__item"
-              :class="
-                s.status === 'in_progress'
-                  ? 'qc-timeline__item--active'
-                  : 'qc-timeline__item--done'
-              "
             >
               <div class="d-flex align-center ga-2">
                 <div class="flex-grow-1" style="min-width: 0">
@@ -196,10 +144,10 @@
                   class="flex-shrink-0"
                   :data-testid="`delete-session-${s.id}`"
                   title="Delete this session"
-                  @click="openConfirm(opt, s)"
+                  @click="pendingDelete = { option: opt, session: s }"
                 />
               </div>
-            </v-timeline-item>
+            </SessionTimelineItem>
           </v-timeline>
         </v-card>
 
@@ -227,14 +175,24 @@
   </v-card>
 
   <v-dialog v-model="confirmOpen" max-width="480" persistent>
-    <v-card rounded="lg" data-testid="delete-session-dialog">
+    <v-card
+      v-if="pendingDelete"
+      rounded="lg"
+      :data-testid="
+        pendingDelete.session ? 'delete-session-dialog' : 'delete-managed-dialog'
+      "
+    >
       <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
         <v-avatar color="error" variant="tonal" size="40">
           <v-icon icon="mdi-delete-alert-outline" size="22" />
         </v-avatar>
         <div class="d-flex flex-column">
           <div class="text-title-large font-weight-bold">
-            Delete this session?
+            {{
+              pendingDelete.session
+                ? 'Delete this session?'
+                : 'Delete this managed datastream?'
+            }}
           </div>
           <div class="text-body-small text-medium-emphasis">
             This permanently removes quality control work
@@ -242,10 +200,17 @@
         </div>
       </div>
 
-      <v-card-text v-if="confirmingSession" class="pt-2 pb-4 px-6">
-        <p class="text-body-medium mb-3">
-          "{{ sessionLabel(confirmingSession) }}" and the record of its
+      <v-card-text class="pt-2 pb-4 px-6">
+        <p v-if="pendingDelete.session" class="text-body-medium mb-3">
+          "{{ sessionLabel(pendingDelete.session) }}" and the record of its
           operations are removed. Earlier sessions are untouched.
+        </p>
+        <p v-else class="text-body-medium mb-3">
+          "{{ pendingDelete.option.managed.name }}", its observations and its
+          {{ pendingDelete.option.sessions.length }} session{{
+            pendingDelete.option.sessions.length === 1 ? '' : 's'
+          }}
+          are removed. The source datastream is untouched.
         </p>
 
         <v-alert type="error" variant="tonal" density="compact">
@@ -255,7 +220,7 @@
 
       <v-divider />
       <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
-        <v-btn variant="text" data-testid="cancel-delete-session" @click="closeConfirm">
+        <v-btn variant="text" data-testid="cancel-delete" @click="pendingDelete = null">
           Cancel
         </v-btn>
         <v-spacer />
@@ -263,10 +228,14 @@
           color="error"
           variant="flat"
           prepend-icon="mdi-delete-outline"
-          :data-testid="`confirm-delete-session-${confirmingSession?.id}`"
-          @click="onDeleteSession"
+          :data-testid="
+            pendingDelete.session
+              ? `confirm-delete-session-${pendingDelete.session.id}`
+              : `confirm-delete-${pendingDelete.option.managed.id}`
+          "
+          @click="onConfirmDelete"
         >
-          Delete session
+          {{ pendingDelete.session ? 'Delete session' : 'Delete datastream' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -279,6 +248,7 @@ import type { Datastream, QualityControlSession } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'
 import { formatDateRange } from '@/utils/time'
 import { datastreamSummary } from '@/utils/datastreamSummary'
+import SessionTimelineItem from '@/components/EditData/SessionTimelineItem.vue'
 
 defineProps<{
   source: Datastream
@@ -294,40 +264,26 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
-// historyId of the managed datastream whose delete is awaiting confirmation.
-const confirmingDeleteId = ref<string | null>(null)
-// The session whose delete is awaiting confirmation, and the option it
-// belongs to, so the emit can name both.
-const confirmingSession = ref<QualityControlSession | null>(null)
-const confirmingOption = ref<ManagedDatastreamOption | null>(null)
+// The delete awaiting confirmation: a whole managed datastream, or one of
+// its sessions.
+const pendingDelete = ref<{
+  option: ManagedDatastreamOption
+  session?: QualityControlSession
+} | null>(null)
 
 const confirmOpen = computed({
-  get: () => !!confirmingSession.value,
+  get: () => !!pendingDelete.value,
   set: (open: boolean) => {
-    if (!open) closeConfirm()
+    if (!open) pendingDelete.value = null
   },
 })
 
-function openConfirm(opt: ManagedDatastreamOption, s: QualityControlSession) {
-  confirmingOption.value = opt
-  confirmingSession.value = s
-}
-
-function closeConfirm() {
-  confirmingSession.value = null
-  confirmingOption.value = null
-}
-
-function onDelete(opt: ManagedDatastreamOption) {
-  confirmingDeleteId.value = null
-  emit('delete', opt)
-}
-
-function onDeleteSession() {
-  const opt = confirmingOption.value
-  const sessionId = confirmingSession.value?.id
-  closeConfirm()
-  if (opt && sessionId) emit('deleteSession', opt, sessionId)
+function onConfirmDelete() {
+  const pending = pendingDelete.value
+  pendingDelete.value = null
+  if (!pending) return
+  if (pending.session) emit('deleteSession', pending.option, pending.session.id)
+  else emit('delete', pending.option)
 }
 
 const summary = (opt: ManagedDatastreamOption) =>

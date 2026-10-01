@@ -25,10 +25,13 @@ import { ref } from 'vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { STAGE_SHAPE_NAME, type PlotlyShape } from './shapes'
+import { fromPlot, toPlotDate, toPlotX } from './plotTime'
 
 const GHOST_TRACE_NAME = 'qc-ghost-fills'
 
 let stageShape: PlotlyShape | null = null
+/** The band's span in epoch ms; the shape gets it in the plot's frame. */
+let stageRange: [number, number] | null = null
 /** True when the plot is in pan mode, meaning the editable stage
  *  shape should be rendered. In zoom / select / lasso modes we drop
  *  the shape from the flushed array entirely so it can't swallow
@@ -52,9 +55,21 @@ async function flushShapes() {
   if (!root) return
   // Drop the stage shape outside pan mode so zoom / select / lasso
   // gestures aren't captured by the shape-edit hit-tester.
-  const shapes = stageShape && stagePanMode.value ? [stageShape] : []
+  const shapes =
+    stageShape && stageRange && stagePanMode.value
+      ? [
+          {
+            ...stageShape,
+            x0: toPlotDate(stageRange[0]),
+            x1: toPlotDate(stageRange[1]),
+          },
+        ]
+      : []
   await Plotly.relayout(root, { shapes } as unknown as Partial<Layout>)
 }
+
+/** Redraw the band where it was, after the time zone changes. */
+export const redrawStageShape = (): Promise<void> => flushShapes()
 
 /**
  * Read the plot's current dragmode off the live layout. Used at
@@ -93,13 +108,12 @@ export async function enterPanMode(): Promise<void> {
  */
 export async function setStageShape(fromTs: number, toTs: number) {
   stagePanMode.value = currentDragmode() === 'pan'
+  stageRange = [fromTs, toTs]
   stageShape = {
     name: STAGE_SHAPE_NAME,
     type: 'rect',
     xref: 'x',
     yref: 'paper',
-    x0: fromTs,
-    x1: toTs,
     y0: 0,
     y1: 1,
     fillcolor: 'rgba(25, 118, 210, 0.14)',
@@ -112,6 +126,7 @@ export async function setStageShape(fromTs: number, toTs: number) {
 
 export async function clearStageShape() {
   stageShape = null
+  stageRange = null
   await flushShapes()
 }
 
@@ -139,7 +154,7 @@ export async function setGhostFills(xs: number[], ys: number[]) {
     name: GHOST_TRACE_NAME,
     type: 'scattergl',
     mode: 'markers',
-    x: xs,
+    x: toPlotX(xs),
     y: ys,
     marker: {
       // Bumped from 0.55/0.9 with a thin X-glyph: barely readable
@@ -185,18 +200,14 @@ export function onStageDrag(
   if (!root?.on) return () => { }
 
   const parseTs = (v: unknown): number | null => {
-    if (typeof v === 'number' && Number.isFinite(v)) return v
-    if (typeof v === 'string') {
-      const t = Date.parse(v)
-      return Number.isFinite(t) ? t : null
-    }
-    if (v instanceof Date) return v.getTime()
-    return null
+    if (typeof v !== 'number' && typeof v !== 'string') return null
+    const t = fromPlot(v)
+    return Number.isFinite(t) ? t : null
   }
 
   const handler = (event: unknown) => {
     const evt = event as Record<string, unknown> | null
-    if (!evt || !stageShape) return
+    if (!evt || !stageShape || !stageRange) return
 
     // Dragmode change: the user picked zoom / select / lasso from
     // the modebar. Drop the stage shape from the flushed array so
@@ -227,8 +238,8 @@ export function onStageDrag(
     // Horizontal edit: pick the new x from whichever side(s) the
     // event carried, falling back to the stashed value for the
     // untouched side.
-    const nextX0 = touchedX0 ? parseTs(evt[x0Key]) : Number(stageShape.x0)
-    const nextX1 = touchedX1 ? parseTs(evt[x1Key]) : Number(stageShape.x1)
+    const nextX0 = touchedX0 ? parseTs(evt[x0Key]) : stageRange[0]
+    const nextX1 = touchedX1 ? parseTs(evt[x1Key]) : stageRange[1]
     if (!Number.isFinite(nextX0) || !Number.isFinite(nextX1)) return
     const from = Math.min(nextX0 as number, nextX1 as number)
     const to = Math.max(nextX0 as number, nextX1 as number)
@@ -240,7 +251,8 @@ export function onStageDrag(
     // (x via the parent's watcher, y via a separate relayout) was
     // racing, leaving vertical edits visible and horizontal edits
     // dropped.
-    stageShape = { ...stageShape, x0: from, x1: to, y0: 0, y1: 1 }
+    stageRange = [from, to]
+    stageShape = { ...stageShape, y0: 0, y1: 1 }
     void flushShapes()
 
     // Only notify the parent when the horizontal range actually

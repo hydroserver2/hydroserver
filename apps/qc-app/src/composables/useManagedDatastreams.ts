@@ -12,6 +12,7 @@ import type {
 } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { historyManagedId } from '@/utils/qcHistory'
 
 export interface ManagedDatastreamOption {
   historyId: string
@@ -29,16 +30,17 @@ export function useManagedDatastreams() {
     const { datastreams, historiesBySource } = useDataVisStore()
     const histories = historiesBySource.get(sourceId) ?? []
     return Promise.all(
-      histories.map(async (h: any) => {
-        const historyId = h.id as string
-        const managedId = h.managedDatastreamId ?? h.managedDatastream?.id
+      histories.map(async (h) => {
+        const historyId = h.id
+        const managedId = historyManagedId(h)
         // Managed datastreams are in the full catalog (just hidden from the
         // table); fall back to a name-only stub if it isn't loaded.
         const managed =
           datastreams.find((d) => d.id === managedId) ??
           ({
             id: managedId,
-            name: h.managedDatastream?.name ?? managedId,
+            name:
+              'managedDatastream' in h ? h.managedDatastream.name : managedId,
           } as Datastream)
         // expand_related so each session carries `dependencyIds`.
         const sessions = await hs.qualityControlSessions.listAllItems(

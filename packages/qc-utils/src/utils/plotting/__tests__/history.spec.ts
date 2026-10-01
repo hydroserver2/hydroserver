@@ -213,6 +213,21 @@ describe('parseHistory', () => {
     expect(without.operations[0].comment).toBeUndefined();
   });
 
+  it('trims a parsed comment and author, and drops blank ones', () => {
+    const parsed = parseHistory({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [], comment: '  fouling  ', performedBy: ' Ada ' },
+        { method: 'VALUE_THRESHOLD', args: [], comment: '   ', performedBy: '' },
+      ],
+    });
+    expect(parsed.operations[0]).toMatchObject({ comment: 'fouling', performedBy: 'Ada' });
+    expect(parsed.operations[1].comment).toBeUndefined();
+    expect(parsed.operations[1].performedBy).toBeUndefined();
+  });
+
   it('round-trips performedBy and rejects a non-string one', () => {
     const base = {
       version: '1',
@@ -517,7 +532,7 @@ describe('applyHistory — round-trip', () => {
   it('round-trips SELECTION → SHIFT_DATETIMES with non-index args preserved', async () => {
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [7, 8, 9]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
     ]);
     const xAfter = Array.from(rec.dataX);
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -528,7 +543,36 @@ describe('applyHistory — round-trip', () => {
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataX)).toEqual(xAfter);
-    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR]);
+    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR, 'UTC']);
+  });
+
+  it('replays a month shift on its saved zone calendar', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [19]],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MONTH, 'America/Denver'],
+    ]);
+    const xAfter = Array.from(rec.dataX);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const report = await applyHistory(fresh, history);
+
+    expect(report.failed).toEqual([]);
+    expect(Array.from(fresh.dataX)).toEqual(xAfter);
+  });
+
+  it('fails a shift step saved without a zone', async () => {
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const report = await applyHistory(fresh, {
+      ...serializeHistory(fresh, SAMPLE_WINDOW),
+      operations: [
+        { method: EnumFilterOperations.SELECTION, args: [[1]] },
+        { method: EnumEditOperations.SHIFT_DATETIMES, args: [1, TimeUnit.MONTH] },
+      ],
+    });
+    expect(report.failed.map((f) => f.index)).toEqual([1]);
   });
 
   it('round-trips SELECTION → CHANGE_VALUES (consumes preceding selected at runtime)', async () => {
@@ -721,7 +765,7 @@ describe('applyHistory — round-trip', () => {
       history: [],
       redoStack: [],
       reload: async () => { },
-      dispatch: async () => { throw new Error('boom-with-stack'); },
+      dispatchStep: async () => { throw new Error('boom-with-stack'); },
     } as unknown as ObservationRecord;
 
     const history = parseHistory({
@@ -738,7 +782,7 @@ describe('applyHistory — round-trip', () => {
   it('catches non-Error throws from dispatch and stringifies the value into the report', async () => {
     // `dispatchAction` / `dispatchFilter` normally swallow handler
     // errors themselves, but the catch in `applyHistory` is defensive
-    // and handles a bare throw too. Stub `record.dispatch` so it
+    // and handles a bare throw too. Stub `record.dispatchStep` so it
     // throws a plain string — the catch path must stringify it
     // (line 220's `e instanceof Error ? e.message : String(e)`
     // ternary) and record it in `report.failed[].error` without
@@ -747,7 +791,7 @@ describe('applyHistory — round-trip', () => {
       history: [],
       redoStack: [],
       reload: async () => { },
-      dispatch: async () => { throw 'plain-string-failure'; },
+      dispatchStep: async () => { throw 'plain-string-failure'; },
     } as unknown as ObservationRecord;
 
     const history = parseHistory({

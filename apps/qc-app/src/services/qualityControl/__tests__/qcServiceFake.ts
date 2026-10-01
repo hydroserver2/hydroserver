@@ -229,7 +229,9 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
             createdAt: '2025-01-01T00:00:00Z',
             createdBy,
             comment: b.comment ?? null,
-            arguments: b.arguments ?? null,
+            // Round-trip like the wire: Dates become ISO strings.
+            arguments:
+              b.arguments == null ? null : JSON.parse(JSON.stringify(b.arguments)),
           }) as unknown as QcOperation
       )
       s.operations.push(...created)

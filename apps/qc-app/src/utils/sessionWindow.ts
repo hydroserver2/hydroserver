@@ -1,5 +1,5 @@
 /**
- * Rules for a new edit session's window (history spec 7.2.3 and 7.2.4):
+ * Rules for a new edit session's window:
  * inside the source's observed extent, and never leaving a gap before or
  * after the committed history. Overlapping committed sessions is allowed.
  */
@@ -10,6 +10,7 @@ import {
   TIME_RANGE_PRESETS,
   dataExtent,
   presetWindow,
+  type TimeRangePreset,
   type TimeWindow,
 } from '@/utils/timeRangePresets'
 
@@ -63,10 +64,26 @@ export function committedExtent(
   return { begin: new Date(begin), end: new Date(end) }
 }
 
-/** The source's own extent, which the rules above always accept while the
- *  committed history lies inside it. */
-export function defaultSessionWindow(source: SourceExtent): TimeWindow | null {
-  return dataExtent([source])
+/** Where the last session left off: from the end of the committed history
+ *  to the end of the source. The whole source when nothing is committed, or
+ *  when nothing new arrived after the history (or it lies outside the source).
+ *  The rules above accept it while the committed history lies inside the
+ *  source. */
+export function defaultSessionWindow(
+  source: SourceExtent,
+  sessions: readonly SessionRange[]
+): TimeWindow | null {
+  const extent = dataExtent([source])
+  if (!extent) return null
+  const history = committedExtent(sessions)
+  if (
+    history &&
+    history.end.getTime() >= extent.begin.getTime() &&
+    history.end.getTime() < extent.end.getTime()
+  ) {
+    return { begin: new Date(history.end), end: new Date(extent.end) }
+  }
+  return extent
 }
 
 export const NO_SOURCE_DATA_ISSUE: SessionWindowIssue = {
@@ -185,12 +202,7 @@ const PRESET_REASONS: Record<SessionWindowIssueKind, string> = {
 }
 
 /** Whole record first, then shorter spans counting back from its end. */
-const SPAN_PRESETS: readonly { id: string; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: '1y', label: '1y' },
-  { id: '6m', label: '6m' },
-  { id: '1m', label: '1m' },
-]
+const SPAN_LABELS: readonly TimeRangePreset['label'][] = ['All', '1y', '6m', '1m']
 
 function toPreset(
   id: string,
@@ -223,12 +235,14 @@ export function sessionWindowPresets(
   if (!extent) return []
 
   const presets: SessionWindowPreset[] = []
-  for (const span of SPAN_PRESETS) {
-    const base = TIME_RANGE_PRESETS.find((p) => p.label === span.label)
+  for (const label of SPAN_LABELS) {
+    const base = TIME_RANGE_PRESETS.find((p) => p.label === label)
     const window = base ? presetWindow(base.id, extent) : null
     if (!base || !window) continue
     const title = base.id === ALL_PRESET_ID ? 'The whole source record' : base.title
-    presets.push(toPreset(span.id, span.label, title, window, source, sessions))
+    presets.push(
+      toPreset(label.toLowerCase(), label, title, window, source, sessions)
+    )
   }
 
   const history = committedExtent(sessions)

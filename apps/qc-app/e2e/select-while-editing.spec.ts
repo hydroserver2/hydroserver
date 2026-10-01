@@ -12,13 +12,14 @@
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import {
+  goToSelect,
   gotoHome,
   openOp,
   setupEditView,
   startSessionFromRow,
   waitForEditorReady,
 } from './support/app'
-import { expectHistoryContains, selectAllPoints } from './support/ops'
+import { applyChangeValues, expectHistoryContains } from './support/ops'
 import {
   DATASTREAM_ID,
   DATASTREAM_ID_B,
@@ -26,47 +27,16 @@ import {
   buildObservations,
   buildTemperatureObservations,
 } from './support/fixtures'
+import { plotXRange } from './support/plot'
 
 const editPanel = (page: Page) => page.getByTestId('edit-target-panel')
 /** The Select view's right column. The editor stays mounted behind it, so its
  *  own plotted list carries the same test ids. */
 const sidePanel = (page: Page) => page.getByTestId('select-side-panel')
 
-async function goToSelect(page: Page) {
-  await page.getByTestId('nav-rail-item-select').click()
-  await expect(page.getByTestId('datastreams-table')).toBeVisible({
-    timeout: 30_000,
-  })
-}
-
 async function goToEditor(page: Page) {
   await page.getByTestId('nav-rail-item-edit').click()
   await waitForEditorReady(page)
-}
-
-/** The live X range of the main plot, as `[loMs, hiMs]`. */
-async function plotXRange(page: Page): Promise<[number, number]> {
-  return page.evaluate(async () => {
-    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
-    const start = Date.now()
-    while (Date.now() - start < 10_000) {
-      const gd = document.querySelector('[data-testid="main-plot"]') as
-        | (HTMLElement & {
-            _fullLayout?: {
-              xaxis?: { range?: [number | string, number | string] }
-            }
-          })
-        | null
-      const range = gd?._fullLayout?.xaxis?.range
-      if (range) {
-        const toMs = (v: number | string) =>
-          typeof v === 'string' ? Date.parse(v) : v
-        return [toMs(range[0]), toMs(range[1])] as [number, number]
-      }
-      await wait(100)
-    }
-    throw new Error('plot never reported an x range')
-  })
 }
 
 /** The staged filter band's x span on the live plot, or null when absent. */
@@ -108,11 +78,7 @@ test.describe('Select while editing', () => {
 
   test('keeps unsaved edits and leads back to the editor', async ({ page }) => {
     await setupEditView(page)
-    await selectAllPoints(page)
-    await openOp(page, 'changeValues')
-    await page.getByLabel('Value').fill('1')
-    await page.getByRole('button', { name: 'Apply' }).click()
-    await expectHistoryContains(page, 'Change Values')
+    await applyChangeValues(page)
 
     await goToSelect(page)
 
@@ -150,12 +116,14 @@ test.describe('Select while editing', () => {
     const stagedBand = await stageBandSpan(page)
     expect(stagedBand).not.toBeNull()
 
-    const before = await plotXRange(page)
+    await expect.poll(() => plotXRange(page)).not.toBeNull()
+    const before = (await plotXRange(page))!
 
     await goToSelect(page)
     await goToEditor(page)
 
-    const after = await plotXRange(page)
+    await expect.poll(() => plotXRange(page)).not.toBeNull()
+    const after = (await plotXRange(page))!
     expect(after[0]).toBeCloseTo(before[0], -4)
     expect(after[1]).toBeCloseTo(before[1], -4)
 
@@ -260,7 +228,7 @@ test.describe('Select while editing', () => {
 
     await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
     await expect(page.getByTestId('plot-source-dialog')).toBeVisible()
-    // The edit target is already on the plot, so it is not offered.
+    // The edit target is marked in the chooser.
     await expect(
       page.getByTestId(`plot-option-editing-${MANAGED_DATASTREAM_ID}`)
     ).toBeVisible()
@@ -273,6 +241,30 @@ test.describe('Select while editing', () => {
     // The plotted source is an ordinary row; the grey context gets none.
     await expect(
       sidePanel(page).getByTestId(`plotted-item-${DATASTREAM_ID}`)
+    ).toBeVisible()
+  })
+
+  test('picking the edit target in the chooser plots its committed data beside it', async ({
+    page,
+  }) => {
+    await gotoHome(page)
+    await startSessionFromRow(page)
+    await goToSelect(page)
+
+    await page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`).click()
+    await page
+      .getByTestId(`plot-option-${MANAGED_DATASTREAM_ID}`)
+      .locator('input')
+      .check()
+    await page.getByTestId('plot-source-apply').click()
+
+    await expect
+      .poll(() => plottedTraceIds(page))
+      .toEqual(
+        expect.arrayContaining([MANAGED_DATASTREAM_ID, `ctx:${MANAGED_DATASTREAM_ID}`])
+      )
+    await expect(
+      sidePanel(page).getByTestId(`plotted-committed-ctx:${MANAGED_DATASTREAM_ID}`)
     ).toBeVisible()
   })
 

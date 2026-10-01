@@ -121,8 +121,8 @@
           <div class="data-vis-state__step-body">
             <div class="text-title-small font-weight-bold">Edit one</div>
             <div class="text-body-small text-medium-emphasis">
-              Click the <b>pencil</b> on a row to pick or create its QC datastream
-              and start a session.
+              Click <b>Edit</b> on a row to pick or create its QC datastream and
+              start a session.
             </div>
           </div>
         </div>

@@ -19,8 +19,8 @@
  *   - Short query keys (`ds`, `ed`, `b`, `e`, `r`, …) instead of
  *     verbose ones.
  *   - When a date preset is active (`r=0..5`), the begin/end pair is
- *     elided, recipients recompute it from "now" on load, matching
- *     the preset semantics the sender chose.
+ *     left out. Recipients resolve the preset against the data on load,
+ *     as the sender's view did.
  *   - Timestamps go through `tsToBase36Seconds` (≈ 7 chars instead
  *     of 24).
  *   - Visibility state is a hex bitmask over the `ds` order rather
@@ -30,6 +30,12 @@
  *   - Optional bits (tab, data-points mode/threshold, zoom) are
  *     emitted only when they differ from the default.
  */
+
+import {
+  parseSnapshotKey,
+  snapshotKey,
+  type SnapshotRef,
+} from '@/utils/snapshotId'
 
 export interface ShareableZoom {
   /** X range as [minMs, maxMs], or `null` when the X axis is at its
@@ -54,7 +60,7 @@ export interface ShareState {
   datastreamIds?: string[]
   /** History snapshots plotted as comparison lines. Kept out of `ds` so the
    *  `h` / `ya` bitmask indices still hold. */
-  snapshots?: { sessionId: string; opIndex: number }[]
+  snapshots?: SnapshotRef[]
   /** Date range preset id (`0..5`). When set, `begin`/`end` are
    *  omitted from the URL and the receiver resolves the window
    *  from the plotted data. */
@@ -145,7 +151,7 @@ export function encodeShareState(state: ShareState): Record<string, string> {
   }
 
   if (state.snapshots?.length) {
-    q.snap = state.snapshots.map((s) => `${s.sessionId}:${s.opIndex}`).join(',')
+    q.snap = state.snapshots.map(snapshotKey).join(',')
   }
 
   // Preset wins over begin/end: the recipient resolves the same preset
@@ -235,14 +241,10 @@ export function decodeShareState(query: Record<string, unknown>): ShareState {
   if (ds.length) out.datastreamIds = ds
 
   // A malformed entry is dropped rather than failing the whole link.
-  const snapshots: { sessionId: string; opIndex: number }[] = []
+  const snapshots: SnapshotRef[] = []
   for (const piece of splitCsv(str('snap'))) {
-    const sep = piece.lastIndexOf(':')
-    if (sep <= 0) continue
-    const sessionId = piece.slice(0, sep)
-    const opIndex = Number(piece.slice(sep + 1))
-    if (!sessionId || !Number.isInteger(opIndex) || opIndex < -1) continue
-    snapshots.push({ sessionId, opIndex })
+    const ref = parseSnapshotKey(piece)
+    if (ref) snapshots.push(ref)
   }
   if (snapshots.length) out.snapshots = snapshots
 

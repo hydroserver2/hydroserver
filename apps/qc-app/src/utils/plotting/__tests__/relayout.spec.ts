@@ -10,19 +10,28 @@ const plotlyMock = vi.hoisted(() => ({
 }))
 vi.mock('plotly.js-dist', () => ({ default: plotlyMock }))
 
-vi.mock('@uwrl/qc-utils', () => ({
-  findFirstGreaterOrEqual: (arr: number[], target: number) => {
-    let lo = 0
-    let hi = arr.length
-    while (lo < hi) {
-      const mid = (lo + hi) >>> 1
-      if (arr[mid] < target) lo = mid + 1
-      else hi = mid
-    }
-    return lo
-  },
-  EnumFilterOperations: { SELECTION: 'SELECTION' },
-}))
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    findFirstGreaterOrEqual: (arr: number[], target: number) => {
+      let lo = 0
+      let hi = arr.length
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1
+        if (arr[mid] < target) lo = mid + 1
+        else hi = mid
+      }
+      return lo
+    },
+    EnumFilterOperations: { SELECTION: 'SELECTION' },
+  }
+})
 
 const qcDatastream = ref<any>(null)
 const selectedData = ref<any>(null)
@@ -57,6 +66,8 @@ vi.mock('@/store/plotly', () => ({
     selectedSeries: ref(null),
     editHistory: ref([]),
     suppressedEchoSelection: ref<number[] | null>(null),
+    // Read by `useEditLock` when a relayout ends in a selection.
+    previewIndex: ref<number | null>(null),
   }),
 }))
 

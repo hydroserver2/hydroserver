@@ -165,6 +165,17 @@ export async function waitForEditorReady(page: Page): Promise<void> {
   )
 }
 
+/** Show the Select view from the nav rail. */
+export async function goToSelect(page: Page): Promise<void> {
+  await page.getByTestId('nav-rail-item-select').click()
+  await expect(page.getByTestId('datastreams-table')).toBeVisible({
+    timeout: 30_000,
+  })
+}
+
+/** The dialog asking what should happen to the session being left. */
+export const leaveDialog = (page: Page) => page.getByTestId('leave-session-dialog')
+
 /** Open an operation panel in the edit drawer by id (see operations.ts). */
 export async function openOp(page: Page, id: string): Promise<void> {
   await page.getByTestId(`op-${id}`).click()

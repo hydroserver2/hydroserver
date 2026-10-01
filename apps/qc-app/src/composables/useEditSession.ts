@@ -1,20 +1,11 @@
 /**
- * Orchestrates the session-based editing workflow (spec section 5-9),
- * wiring the QC service layer to the app's stores:
- *   - beginEditing: resolve the managed datastream's history, load its
- *     sessions, and resume the in-progress one (or signal that a session
- *     must be started); reports whether it actually resumed,
- *   - startSession: create a session and copy the source window in, or
- *     resume the in-progress one if it already exists,
- *   - saveDraft: persist the record's edit operations to the session
- *     (append-only, so each user's operations keep their creator),
- *   - commit: push the final observations (replace) and lock the session.
- *
- * The QC API client comes from `hs.qualityControl*`; the server stamps every
- * operation/session with the authenticated user.
+ * The session-based editing workflow, wiring the QC service layer to the
+ * app's stores: open or resume a session, save its operations as a draft,
+ * and commit it. The server stamps every session and operation with the
+ * signed-in user.
  */
 
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { serializeHistory, applyHistory, Snackbar } from '@uwrl/qc-utils'
 import type { Datastream, DatastreamExtended, QualityControlSessionContract } from '@hydroserver/client'
@@ -29,22 +20,19 @@ import {
   findHistoryForDatastream,
   startOrResumeSession,
   loadLatestBase,
+  committedWindows,
   persistSessionOperations,
   commitQcSession,
   reconstructCommittedSession,
   observationsBulkBody,
+  unwrap,
 } from '@/services/qualityControl'
 
 type QcSessionPostBody = QualityControlSessionContract.PostBody
 
-/**
- * Keep a new session's window within the source datastream's observed extent.
- * The window now comes from the session window dialog, so it is normally
- * already valid; this clamp is a backstop for the backend's end-time rule
- * (`phenomenon_time_end cannot extend past the source datastream's current
- * end time`). Resume ignores the spec, so this only shapes freshly-created
- * sessions.
- */
+/** Keep a new session's window within the source's observed extent. The
+ *  window dialog already checks it; this backs up the API's rule that a
+ *  session can't end past the source's last observation. */
 function clampSpecToSource(
   spec: QcSessionPostBody,
   source: Pick<Datastream, 'phenomenonBeginTime' | 'phenomenonEndTime'>
@@ -76,6 +64,8 @@ export class ResumeSupersededError extends Error {
   }
 }
 
+export type BeginOutcome = 'resumed' | 'needs-session' | 'not-managed'
+
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const { replaceDatastream, setEditRecord } = useDataVisStore()
@@ -83,7 +73,7 @@ export function useEditSession() {
   const { hs } = storeToRefs(useHydroServer())
   // Working copies build on records of their own, so the plotted source
   // keeps its context window.
-  const { fetchDetachedRecord } = useObservationStore()
+  const { fetchDetachedRecord, forget } = useObservationStore()
   const sessionStore = useQcSessionStore()
   const workingCopies = useWorkingCopiesStore()
 
@@ -91,10 +81,6 @@ export function useEditSession() {
   // footer and the leave flow) sees the same unsaved state.
   const { sourceDatastream, savedEdits, savedComments } =
     storeToRefs(sessionStore)
-  /** True when the managed datastream has no in-progress session to resume. */
-  const needsSession = ref(false)
-  /** True when the selected datastream has no QC history (not a managed datastream). */
-  const needsHistory = ref(false)
 
   const currentEdits = (): HistoryItem[] =>
     (selectedSeries.value?.data as ObservationRecord | undefined)?.history ?? []
@@ -143,15 +129,15 @@ export function useEditSession() {
     await setEditRecord(built.record)
     // The replayed draft operations are the saved baseline.
     snapshotSavedEdits()
-    needsSession.value = false
   }
 
-  /** Returns true when an in-progress session's working copy was wired into
-   *  the plot, i.e. the editor is now genuinely editable over it. */
-  async function beginEditing(): Promise<boolean> {
+  /** `'resumed'` once the in-progress session's working copy is on the plot,
+   *  so the editor is editable over it. `'needs-session'` when there is none
+   *  to resume, and `'not-managed'` when the target has no QC history (the
+   *  caller can offer to create one with it as the source). */
+  async function beginEditing(): Promise<BeginOutcome> {
     const managed = qcDatastream.value
-    if (!managed) return false
-    needsHistory.value = false
+    if (!managed) throw new ResumeSupersededError()
 
     // Entries can overlap; never write the session store for a target
     // another entry has since taken over.
@@ -164,12 +150,7 @@ export function useEditSession() {
       managed.id
     )
     stillOwner()
-    if (!history) {
-      // Not a managed datastream: the caller should offer to create one
-      // from it (with this datastream as the source).
-      needsHistory.value = true
-      return false
-    }
+    if (!history) return 'not-managed'
     const source =
       (await hs.value.datastreams.getItem(history.sourceDatastream.id)) ?? null
     stillOwner()
@@ -179,20 +160,11 @@ export function useEditSession() {
     sessionStore.applySessions(history.id, sessions)
 
     const inProgress = sessionStore.inProgressSession
-    if (inProgress && sourceDatastream.value) {
-      // A session exists, so a failed resume must never ask to start one.
-      needsSession.value = false
-      await resumeWorkingCopy(
-        managed,
-        sourceDatastream.value,
-        history.id,
-        inProgress
-      )
-      return true
-    } else {
-      needsSession.value = true
-      return false
-    }
+    // A session exists, so a failed resume throws rather than asking to
+    // start one.
+    if (!inProgress || !sourceDatastream.value) return 'needs-session'
+    await resumeWorkingCopy(managed, sourceDatastream.value, history.id, inProgress)
+    return 'resumed'
   }
 
   /**
@@ -219,10 +191,9 @@ export function useEditSession() {
       sessionStore.returnToCurrent()
       sessionStore.isSwitchingSession = true
       try {
-        const resumed = await beginEditing()
-        if (!resumed && previousSessionId) {
+        const outcome = await beginEditing()
+        if (outcome !== 'resumed' && previousSessionId) {
           sessionStore.viewSession(previousSessionId)
-          needsSession.value = false
         }
       } catch (e) {
         if (previousSessionId) sessionStore.viewSession(previousSessionId)
@@ -283,14 +254,13 @@ export function useEditSession() {
       await resumeWorkingCopy(managed, source, historyId, session)
       return
     }
-    // Start from the latest committed state (the managed datastream), or the
-    // raw source when nothing has been committed yet.
     const base = await loadLatestBase(
       fetchDetachedRecord,
       managed,
       source,
       new Date(session.phenomenonTimeStart),
-      new Date(session.phenomenonTimeEnd)
+      new Date(session.phenomenonTimeEnd),
+      committedWindows(sessions)
     )
     // The edit target may have changed under this await; same reasoning as
     // the check in `resumeWorkingCopy`.
@@ -303,20 +273,18 @@ export function useEditSession() {
       new Date(session.phenomenonTimeStart),
       new Date(session.phenomenonTimeEnd)
     )
-    needsSession.value = false
     // Fresh session: the loaded working copy is the saved baseline.
     snapshotSavedEdits()
   }
 
   /**
-   * Drop everything added since the last save: replay the saved prefix,
-   * then put the saved comment text back, since a comment edited in place
-   * on a surviving entry survives the replay.
+   * Go back to the last save: replay the saved edits, then put the saved
+   * comment text back, since comments are edited in place on the entries.
    */
   async function discardUnsavedEdits(): Promise<number[] | undefined> {
     const record = selectedSeries.value?.data as ObservationRecord | undefined
     if (!record) return
-    const selection = await record.truncateHistory(savedEdits.value.length - 1)
+    const selection = await record.restoreHistory(savedEdits.value)
     record.history.forEach((item, i) => {
       item.comment = savedComments.value[i] || undefined
     })
@@ -349,7 +317,8 @@ export function useEditSession() {
     const historyId = sessionStore.historyId
     const session = sessionStore.inProgressSession
     const record = selectedSeries.value?.data
-    if (!managed || !historyId || !session || !record) {
+    const source = sourceDatastream.value
+    if (!managed || !historyId || !session || !record || !source) {
       throw new Error('No active edit session to commit.')
     }
     await saveDraft()
@@ -373,13 +342,23 @@ export function useEditSession() {
       qcSessions: hs.value.qualityControlSessions,
       historyId,
       sessionId: session.id,
-      // The real client fetches the source window's X-Checksum header for a
-      // genuine integrity check; here we reuse the checksum captured at create.
-      currentSourceChecksum: session.sourceChecksum,
+      currentSourceChecksum: unwrap(
+        await hs.value.datastreams.getObservationsChecksum(
+          source.id,
+          new Date(session.phenomenonTimeStart),
+          new Date(session.phenomenonTimeEnd)
+        )
+      ),
       pushObservations: async () => {
-        await hs.value.datastreams.createObservations(managed.id, body, {
-          mode: 'replace',
-        })
+        // The whole window, so points deleted at its edges go too.
+        unwrap(
+          await hs.value.datastreams.createObservations(managed.id, body, {
+            mode: 'replace',
+            phenomenon_time_start: session.phenomenonTimeStart,
+            phenomenon_time_end: session.phenomenonTimeEnd,
+          })
+        )
+        forget(managed.id)
       },
     })
     workingCopies.invalidate(managed.id)
@@ -408,8 +387,6 @@ export function useEditSession() {
 
   return {
     sourceDatastream,
-    needsSession,
-    needsHistory,
     hasUnsavedChanges,
     unsavedEditCount,
     beginEditing,

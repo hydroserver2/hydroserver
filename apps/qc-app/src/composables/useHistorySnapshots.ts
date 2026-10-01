@@ -16,13 +16,9 @@ import { buildSnapshotRecord } from '@/services/qualityControl/buildSnapshot'
 import { formatDateRange } from '@/utils/time'
 import { SNAPSHOT_BASELINE_INDEX, makeSnapshotId } from '@/utils/snapshotId'
 import type { SnapshotMeta } from '@/types'
+import { sessionOperations } from '@/utils/qcHistory'
 
 /** The operation shape the session list embeds. */
-interface SessionOperation {
-  operationType?: string
-  createdBy?: { name?: string; email?: string }
-}
-
 export function useHistorySnapshots() {
   const isBuilding = ref(false)
   const dataVis = useDataVisStore()
@@ -88,23 +84,19 @@ function metaFor(
   session: QualityControlSession,
   opIndex: number
 ): SnapshotMeta {
-  const s = session as QualityControlSession & {
-    description?: string
-    operations?: SessionOperation[]
-  }
-  const ops = s.operations ?? []
+  const ops = sessionOperations(session)
   const op = opIndex >= SNAPSHOT_BASELINE_INDEX + 1 ? ops[opIndex] : undefined
   const performedBy = op?.createdBy?.name?.trim() || op?.createdBy?.email?.trim()
   return {
-    sessionId: s.id,
+    sessionId: session.id,
     sessionLabel:
-      s.description ||
-      formatDateRange(s.phenomenonTimeStart, s.phenomenonTimeEnd),
+      session.description ||
+      formatDateRange(session.phenomenonTimeStart, session.phenomenonTimeEnd),
     opIndex,
     opCount: ops.length,
     opName: op?.operationType ? formatMethod(op.operationType) : '',
     ...(performedBy ? { performedBy } : {}),
-    createdAt: s.createdAt,
+    createdAt: session.createdAt,
   }
 }
 

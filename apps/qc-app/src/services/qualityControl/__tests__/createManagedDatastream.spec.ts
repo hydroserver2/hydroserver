@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest'
 import type { Datastream, HydroServer } from '@hydroserver/client'
 import { makeQcFake } from './qcServiceFake'
 import {
-  SOURCE_TAG_KEY,
   buildManagedDatastreamBody,
   createManagedDatastream,
 } from '../createManagedDatastream'
@@ -37,9 +36,8 @@ const makeHs = (
   { ok = true, status = 201, message = '' } = {}
 ) => {
   const create = vi.fn().mockResolvedValue({ data: created, ok, status, message })
-  const createTag = vi.fn().mockResolvedValue({})
-  const hs = { datastreams: { create, createTag } } as unknown as HydroServer
-  return { hs, create, createTag }
+  const hs = { datastreams: { create } } as unknown as HydroServer
+  return { hs, create }
 }
 
 describe('buildManagedDatastreamBody', () => {
@@ -101,10 +99,10 @@ describe('buildManagedDatastreamBody', () => {
 })
 
 describe('createManagedDatastream', () => {
-  it('creates the datastream, the history, and tags the source', async () => {
+  it('creates the datastream and the history', async () => {
     const source = makeSource()
     const created = makeSource({ id: 'managed-1', processingLevelId: 'pl-qc', valueCount: 0 })
-    const { hs, create, createTag } = makeHs(created)
+    const { hs, create } = makeHs(created)
     const qc = makeQcFake()
 
     const result = await createManagedDatastream(hs, qc.histories, {
@@ -122,12 +120,6 @@ describe('createManagedDatastream', () => {
     expect(result.history.managedDatastream.id).toBe('managed-1')
     expect(result.history.sourceDatastream.id).toBe('source-1')
     expect(unwrap(await qc.histories.list())).toHaveLength(1)
-
-    // source datastream tagged with the managed id
-    expect(createTag).toHaveBeenCalledWith('source-1', {
-      key: SOURCE_TAG_KEY,
-      value: 'managed-1',
-    })
   })
 
   it('requests the expanded datastream so the catalog keeps its nested relations', async () => {

@@ -23,6 +23,7 @@ import {
 } from './interaction'
 import type { AppPlotlyTrace } from './options'
 import { withLiveShapes } from './shapes'
+import { toPlotDate } from './plotTime'
 
 const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -44,7 +45,7 @@ const handleClick = async (eventData: PlotMouseEvent) => {
     index >= 0
       ? alreadySelected.splice(index, 1)
       : alreadySelected.push(point.pointIndex)
-    alreadySelected.sort()
+    alreadySelected.sort((a, b) => a - b)
 
     // `selections` is a Plotly layout-level option that the published
     // type omits from `Partial<Layout>`. Cast through `unknown` to
@@ -62,9 +63,16 @@ const handleClick = async (eventData: PlotMouseEvent) => {
   }
 }
 
+/**
+ * Draw `plotlyOptions` onto the plot. With `preserveZoom`, the live x range
+ * and each series' y range carry over, except on an axis whose content is
+ * new: one that gains a series with points, or holds a series listed in
+ * `refitSeriesIds` (its data was replaced). Such an axis was fitted to other
+ * data, so it autoranges instead of clipping what arrived.
+ */
 export const handleNewPlot = async (
   element?: HTMLElement,
-  opts?: { preserveZoom?: boolean }
+  opts?: { preserveZoom?: boolean; refitSeriesIds?: string[] }
 ) => {
   const { plotlyOptions, plotlyRef, mainPlotEpoch, pendingShareZoom } =
     storeToRefs(usePlotlyStore())
@@ -116,16 +124,29 @@ export const handleNewPlot = async (
     const yAxisKey = (yref: string | undefined) =>
       `yaxis${(yref ?? 'y').slice(1)}`
 
+    const hasPoints = (t: AppPlotlyTrace) =>
+      !!(t.x as ArrayLike<unknown> | undefined)?.length
+
     const yRangesBySeriesId: Record<string, Array<string | number>> = {}
     for (const trace of plotlyRef.value.data) {
       const t = trace as AppPlotlyTrace
       // An empty trace's axis sits on Plotly's default range, not a view the
       // user chose; carrying it would push the new data off the plot.
-      if (!t.id || !(t.x as ArrayLike<unknown> | undefined)?.length) continue
+      if (!t.id || !hasPoints(t)) continue
       const key = yAxisKey(t.yaxis as string | undefined)
       const range = (oldLayout[key] as Partial<LayoutAxis> | undefined)
         ?.range as Array<string | number> | undefined
       if (range) yRangesBySeriesId[t.id] = range
+    }
+
+    const refit = new Set(opts.refitSeriesIds ?? [])
+    const refitAxes = new Set<string>()
+    for (const trace of plotlyOptions.value.traces) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id || !hasPoints(t)) continue
+      if (refit.has(t.id) || !yRangesBySeriesId[t.id]) {
+        refitAxes.add(yAxisKey(t.yaxis as string | undefined))
+      }
     }
 
     for (const trace of plotlyOptions.value.traces) {
@@ -134,6 +155,7 @@ export const handleNewPlot = async (
       const oldRange = yRangesBySeriesId[t.id]
       if (!oldRange) continue
       const key = yAxisKey(t.yaxis as string | undefined)
+      if (refitAxes.has(key)) continue
       const nextAxis = newLayout[key] as Partial<LayoutAxis> | undefined
       if (nextAxis) {
         nextAxis.range = [...oldRange]
@@ -171,9 +193,9 @@ export const handleNewPlot = async (
   // relying on Plotly's internal anchors.
   if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
     const snap = pendingShareZoom.value
-    const update: Record<string, [number, number] | boolean> = {}
+    const update: Record<string, [number, number] | [string, string] | boolean> = {}
     if (snap.xRange) {
-      update['xaxis.range'] = [...snap.xRange]
+      update['xaxis.range'] = [toPlotDate(snap.xRange[0]), toPlotDate(snap.xRange[1])]
       update['xaxis.autorange'] = false
     }
     for (const [axisName, range] of Object.entries(snap.yRanges ?? {})) {
@@ -193,7 +215,7 @@ export const handleNewPlot = async (
   // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
   // identity is unchanged and Vue's ref watchers don't refire. It does
   // wipe externally-attached listeners (the ContextPlot's brush sync,
-  // etc.), so bump an epoch so those subscribers know to re-attach.
+  // etc.), so an epoch bump tells those subscribers to re-attach.
   mainPlotEpoch.value++
 
   // Debounce long enough that a rapid scroll-wheel burst collapses

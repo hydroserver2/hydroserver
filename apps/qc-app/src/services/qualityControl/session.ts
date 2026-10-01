@@ -1,10 +1,6 @@
 /**
- * Session lifecycle helpers (spec section 5): resume the in-progress
- * session for a history or start a new one, and load the source-data
- * window for editing ("Copy data from source").
- *
- * Pure (deps injected) for unit testing; a composable wires these to the
- * QC client and the observation store.
+ * Session lifecycle helpers: resume the in-progress session for a history or
+ * start a new one, and load the data a session edits.
  */
 
 import type {
@@ -14,7 +10,8 @@ import type {
 } from '@hydroserver/client'
 import type { ObservationRecord } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
-import { cloneRecord, type CloneRecord } from './cloneRecord'
+import { recordFrom } from './recordFrom'
+import { subtractIntervals, type Interval } from '@/utils/timeIntervals'
 
 type QcSessionDetail = QualityControlSessionContract.DetailResponse
 type QcSessionSummary = QualityControlSessionContract.SummaryResponse
@@ -56,31 +53,16 @@ export type FetchObservationsInRange = (
   endTime: Date
 ) => Promise<ObservationRecord>
 
-/**
- * "Copy data from source": fetch the session's phenomenon-time window from
- * the source datastream into an ObservationRecord for editing. The mixed
- * managed+source fetch (windows overlapping committed sessions) is
- * deferred; this loads source-only.
- */
-export async function loadSourceWindow(
-  fetchInRange: FetchObservationsInRange,
-  source: Datastream,
-  session: Pick<QcSessionDetail, 'phenomenonTimeStart' | 'phenomenonTimeEnd'>
-): Promise<ObservationRecord> {
-  return fetchInRange(
-    source,
-    new Date(session.phenomenonTimeStart),
-    new Date(session.phenomenonTimeEnd)
-  )
+/** Observations as parallel time/value arrays, sorted by time. */
+export interface Points {
+  dataX: ArrayLike<number>
+  dataY: ArrayLike<number>
 }
 
 /**
- * The latest committed state for a window, as a standalone copy. Every commit
- * replays its session into the managed datastream (in-range replace), so the
- * managed datastream's observations already carry all previously-committed
- * sessions. Falls back to the raw source when nothing has been committed yet
- * (the first session). A copy, so editing it never touches the store's cached
- * record for either datastream.
+ * The latest committed state for a window, as a standalone record. The
+ * managed datastream only holds the ranges committed sessions covered, so
+ * those come from it and the rest of the window from the source.
  */
 export async function loadLatestBase(
   fetchInRange: FetchObservationsInRange,
@@ -88,10 +70,92 @@ export async function loadLatestBase(
   source: Datastream,
   start: Date,
   end: Date,
-  clone: CloneRecord = cloneRecord
+  committed: readonly Interval[]
 ): Promise<ObservationRecord> {
-  const base = await fetchInRange(managed, start, end)
-  const record =
-    (base.dataX?.length ?? 0) > 0 ? base : await fetchInRange(source, start, end)
-  return clone(record)
+  const window: Interval = [start.getTime(), end.getTime()]
+  const fromSource = subtractIntervals([window], committed)
+  const fromManaged = subtractIntervals([window], fromSource)
+  const [managedRecord, sourceRecord] = await Promise.all([
+    fromManaged.length ? fetchInRange(managed, start, end) : undefined,
+    fromSource.length ? fetchInRange(source, start, end) : undefined,
+  ])
+  const base = composeBase(managedRecord, sourceRecord, window, committed)
+  return recordFrom(base.dataX, base.dataY)
+}
+
+/**
+ * A window's base: `managed` inside the committed intervals, `source`
+ * everywhere else. Deleted points inside a committed range stay deleted.
+ */
+export function composeBase(
+  managed: Points | undefined,
+  source: Points | undefined,
+  window: Interval,
+  committed: readonly Interval[]
+): { dataX: number[]; dataY: number[] } {
+  const fromSource = subtractIntervals([window], committed)
+  const fromManaged = subtractIntervals([window], fromSource)
+  return mergeSorted(
+    pointsWithin(managed, fromManaged),
+    pointsWithin(source, fromSource)
+  )
+}
+
+/** `managed` after a commit replaced `window` with `output`. */
+export function replaceWindow(
+  managed: Points,
+  window: Interval,
+  output: Points
+): { dataX: number[]; dataY: number[] } {
+  const outside = subtractIntervals([[-Infinity, Infinity]], [window])
+  return mergeSorted(pointsWithin(managed, outside), output)
+}
+
+function pointsWithin(
+  points: Points | undefined,
+  parts: readonly Interval[]
+): { dataX: number[]; dataY: number[] } {
+  const dataX: number[] = []
+  const dataY: number[] = []
+  if (!points) return { dataX, dataY }
+  for (let i = 0; i < points.dataX.length; i++) {
+    const t = points.dataX[i]!
+    if (parts.some(([a, b]) => t >= a && t <= b)) {
+      dataX.push(t)
+      dataY.push(points.dataY[i]!)
+    }
+  }
+  return { dataX, dataY }
+}
+
+function mergeSorted(a: Points, b: Points): { dataX: number[]; dataY: number[] } {
+  const dataX: number[] = []
+  const dataY: number[] = []
+  let i = 0
+  let j = 0
+  while (i < a.dataX.length || j < b.dataX.length) {
+    if (j >= b.dataX.length || (i < a.dataX.length && a.dataX[i]! < b.dataX[j]!)) {
+      dataX.push(a.dataX[i]!)
+      dataY.push(a.dataY[i++]!)
+    } else {
+      dataX.push(b.dataX[j]!)
+      dataY.push(b.dataY[j++]!)
+    }
+  }
+  return { dataX, dataY }
+}
+
+/** The windows of the committed sessions in `sessions`. */
+export function committedWindows(
+  sessions: readonly Pick<
+    QcSessionSummary,
+    'status' | 'phenomenonTimeStart' | 'phenomenonTimeEnd'
+  >[]
+): Interval[] {
+  return sessions
+    .filter((s) => s.status === 'committed')
+    .map((s) => [
+      new Date(s.phenomenonTimeStart).getTime(),
+      new Date(s.phenomenonTimeEnd).getTime(),
+    ])
 }

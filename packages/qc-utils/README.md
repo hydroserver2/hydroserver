@@ -64,8 +64,12 @@ The single state container. Holds:
 - `redoStack` — items popped by `undo()`, ready for `redo()`.
 
 Mutations only happen through `dispatch` / `dispatchAction` /
-`dispatchFilter` / `undo` / `redo` / `reload` / `reloadHistory` /
-`removeHistoryItem`. The handlers themselves are private — operations
+`dispatchFilter` / `dispatchStep` / `undo` / `redo` / `reload` /
+`truncateHistory` / `restoreHistory` / `removeHistoryItem` /
+`applyWindow(begin, end, rawData?)`. `previewHistory(index)` shows an
+earlier step without dropping the later ones (`previewIndex` says which);
+edits throw `HistoryPreviewError` until `exitPreview()`. The handlers
+themselves are private, so operations
 are driven by enum + args so the same call shape works at runtime, on
 replay from a saved QC history, and in unit tests.
 
@@ -79,7 +83,7 @@ replay from a saved QC history, and in unit tests.
 | `ASSIGN_DATETIMES_BULK` | Write parallel datetimes; runs as one combined delete + add. |
 | `DELETE_POINTS`         | Drop the selection from x / y in a single skip-on-delete pass. |
 | `INTERPOLATE`           | Linear interpolation across each consecutive group in the selection. |
-| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit)`. |
+| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit, timeZone)`. |
 | `DRIFT_CORRECTION`      | Apply linear drift `value` to every consecutive group in the selection. |
 | `FILL_GAPS`             | Detect gaps over `gapThreshold`; insert points at `fillCadence` (interpolated or constant `fillValue`). |
 

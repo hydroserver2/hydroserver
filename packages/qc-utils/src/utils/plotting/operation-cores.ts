@@ -15,6 +15,8 @@
  *     diffed against inline output when debugging drift).
  */
 
+import { addCalendarMonths } from '../timeZone'
+
 /** Opcode encoding used by `valueThresholdCore` (matches the worker). */
 export const enum ThresholdOp {
   LT = 0,
@@ -338,17 +340,23 @@ export function deleteDataPointsCore(
 
 /** Params for `shiftDatetimesCollection`; mirrors the worker payload. */
 export interface ShiftDatetimesParams {
-  amount: number
-  isMonth: boolean
-  isYear: boolean
-  /** Precomputed scalar ms offset; unused when `isMonth || isYear`. */
+  /** Calendar months to move by on `timeZone`'s clock; 0 for a fixed span. */
+  months: number
+  /** A fixed span in ms; unused when `months` is set. */
   deltaMs: number
+  timeZone: string
+}
+
+/** One shifted datetime. */
+export function shiftDatetime(x: number, params: ShiftDatetimesParams): number {
+  return params.months
+    ? addCalendarMonths(x, params.months, params.timeZone)
+    : x + params.deltaMs
 }
 
 /**
  * Compute shifted `(x, y)` pairs for each index in `indexes` without
- * allocating a `SharedArrayBuffer`. Mirrors the shift worker's branches
- * for month / year / scalar units. Returned in the same order as
+ * allocating a `SharedArrayBuffer`. Returned in the same order as
  * `indexes` so the caller can hand the collection straight to
  * `_addDataPoints` after a `_deleteDataPoints(indexes)`.
  */
@@ -360,25 +368,9 @@ export function shiftDatetimesCollection(
 ): [number, number][] {
   const n = indexes.length
   const out: [number, number][] = new Array(n)
-  if (params.isMonth) {
-    for (let i = 0; i < n; i++) {
-      const idx = indexes[i]
-      const d = new Date(arrayX[idx])
-      d.setMonth(d.getMonth() + params.amount)
-      out[i] = [d.getTime(), arrayY[idx]]
-    }
-  } else if (params.isYear) {
-    for (let i = 0; i < n; i++) {
-      const idx = indexes[i]
-      const d = new Date(arrayX[idx])
-      d.setFullYear(d.getFullYear() + params.amount)
-      out[i] = [d.getTime(), arrayY[idx]]
-    }
-  } else {
-    for (let i = 0; i < n; i++) {
-      const idx = indexes[i]
-      out[i] = [arrayX[idx] + params.deltaMs, arrayY[idx]]
-    }
+  for (let i = 0; i < n; i++) {
+    const idx = indexes[i]
+    out[i] = [shiftDatetime(arrayX[idx], params), arrayY[idx]]
   }
   return out
 }

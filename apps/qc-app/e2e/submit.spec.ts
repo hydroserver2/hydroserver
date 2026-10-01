@@ -12,6 +12,29 @@ import { openOp, setupEditView } from './support/app'
 import { expectHistoryContains, selectAllPoints } from './support/ops'
 
 test.describe('commit a QC session', () => {
+  test('Save is enabled only while there are unsaved changes', async ({ page }) => {
+    await installMocks(page, { qcHistories: true })
+    await setupEditView(page)
+    const save = page.getByTestId('exit-save-btn')
+    await expect(save).toBeDisabled()
+
+    await selectAllPoints(page)
+    await openOp(page, 'changeValues')
+    const value = page.getByLabel('Value')
+    await value.fill('1')
+    await value.press('Enter')
+    await expectHistoryContains(page, 'Change Values')
+    await expect(save).toBeEnabled()
+
+    await save.click()
+    await expect(page.getByText('Draft saved.')).toBeVisible()
+    await expect(save).toBeDisabled()
+
+    // Undoing a saved edit is a change that still needs saving.
+    await page.getByTestId('history-undo-btn').click()
+    await expect(save).toBeEnabled()
+  })
+
   test('save then commit pushes a replace-mode payload', async ({ page }) => {
     const submissions: Array<{ mode: string | null; body: any }> = []
     const sessions: MockQcSession[] = []

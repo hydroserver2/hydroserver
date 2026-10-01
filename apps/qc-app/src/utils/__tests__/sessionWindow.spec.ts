@@ -44,26 +44,43 @@ describe('committedExtent', () => {
 
 describe('defaultSessionWindow', () => {
   it('covers the whole source when nothing is committed', () => {
-    expect(defaultSessionWindow(source)).toEqual(
+    expect(defaultSessionWindow(source, [])).toEqual(
+      win('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')
+    )
+  })
+
+  it('starts where the committed history ends', () => {
+    const sessions = [
+      committed('2025-01-01T00:00:00Z', '2025-03-01T00:00:00Z'),
+      committed('2025-03-01T00:00:00Z', '2025-05-01T00:00:00Z'),
+    ]
+    expect(defaultSessionWindow(source, sessions)).toEqual(
+      win('2025-05-01T00:00:00Z', '2025-12-31T00:00:00Z')
+    )
+  })
+
+  it('covers the whole source when nothing arrived after the history', () => {
+    const sessions = [committed('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')]
+    expect(defaultSessionWindow(source, sessions)).toEqual(
       win('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')
     )
   })
 
   it('is null when the source has no observations', () => {
-    expect(defaultSessionWindow({})).toBeNull()
+    expect(defaultSessionWindow({}, [])).toBeNull()
   })
 })
 
 describe('the default window against the rules', () => {
   it('is valid while committed history sits inside the source', () => {
     const sessions = [committed('2025-01-01T00:00:00Z', '2025-05-01T00:00:00Z')]
-    const window = defaultSessionWindow(source)!
+    const window = defaultSessionWindow(source, sessions)!
     expect(sessionWindowIssue(window, source, sessions)).toBeNull()
   })
 
   it('is valid when the history already covers the whole source', () => {
     const sessions = [committed('2025-01-01T00:00:00Z', '2025-12-31T00:00:00Z')]
-    const window = defaultSessionWindow(source)!
+    const window = defaultSessionWindow(source, sessions)!
     expect(sessionWindowIssue(window, source, sessions)).toBeNull()
   })
 
@@ -71,7 +88,7 @@ describe('the default window against the rules', () => {
   // then even the full extent leaves a gap. The dialog reports it.
   it('is rejected when the committed history sits outside the source', () => {
     const sessions = [committed('2026-03-01T00:00:00Z', '2026-04-01T00:00:00Z')]
-    const window = defaultSessionWindow(source)!
+    const window = defaultSessionWindow(source, sessions)!
     expect(message(window, sessions)).toMatch(/gap before/)
   })
 })
@@ -206,7 +223,7 @@ describe('the one-click fix', () => {
   // The history sits outside the source, so closing the gap would push the
   // end past the source and swap one error for another.
   it('offers nothing when the correction is itself invalid', () => {
-    const issue = sessionWindowIssue(defaultSessionWindow(source)!, source, [
+    const issue = sessionWindowIssue(defaultSessionWindow(source, [])!, source, [
       committed('2026-03-01T00:00:00Z', '2026-04-01T00:00:00Z'),
     ])
     expect(issue?.kind).toBe('gap-before-history')
@@ -229,7 +246,7 @@ describe('sessionWindowPresets', () => {
     expect(ids([])).toEqual(['all', '1y', '6m', '1m'])
     const presets = sessionWindowPresets(source, [])
     const all = presets.find((p) => p.id === 'all')!
-    expect(all.window).toEqual(defaultSessionWindow(source))
+    expect(all.window).toEqual(defaultSessionWindow(source, []))
     const month = presets.find((p) => p.id === '1m')!
     const recordEnd = new Date(source.phenomenonEndTime)
     expect(month.window.end.getTime()).toBe(recordEnd.getTime())

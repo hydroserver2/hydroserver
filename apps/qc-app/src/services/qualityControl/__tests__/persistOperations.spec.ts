@@ -1,8 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import type { QcHistoryOperation } from '@uwrl/qc-utils'
 import { makeQcFake } from './qcServiceFake'
 import {
-  sessionOperationsFromSerialized,
   persistSessionOperations,
 } from '../persistOperations'
 import { unwrap } from '../unwrap'
@@ -36,13 +35,16 @@ const listOps = async (
   sessionId: string
 ) => unwrap(await qc.operations.list(historyId, sessionId))
 
-describe('sessionOperationsFromSerialized', () => {
-  it('maps method/args to operationType/arguments, assigns order, drops execution', () => {
-    const serialized = [
+describe('persistSessionOperations: wire shape', () => {
+  it('sends method/args as operationType/arguments in order, without execution', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    const create = vi.spyOn(qc.operations, 'create')
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
       { method: 'VALUE_THRESHOLD', args: [{ min: 0 }], execution: { status: 'success' } },
       { method: 'DELETE_POINTS', args: [] },
-    ] as unknown as QcHistoryOperation[]
-    expect(sessionOperationsFromSerialized(serialized)).toEqual([
+    ] as unknown as QcHistoryOperation[])
+    expect(create.mock.calls[0]![2]).toEqual([
       { operationType: 'VALUE_THRESHOLD', arguments: [{ min: 0 }], order: 0 },
       { operationType: 'DELETE_POINTS', arguments: [], order: 1 },
     ])
@@ -129,6 +131,64 @@ describe('persistSessionOperations', () => {
     ])
     const ops = await listOps(qc, historyId, sessionId)
     expect(ops.map((o) => o.operationType)).toEqual(['SELECTION', 'DELETE_POINTS'])
+  })
+
+  it('replaces an undone operation with the one applied after it', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('SELECTION'),
+      op('DELETE_POINTS'),
+      op('CHANGE'),
+    ])
+    const keptIds = (await listOps(qc, historyId, sessionId))
+      .slice(0, 2)
+      .map((o) => o.id)
+
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('SELECTION'),
+      op('DELETE_POINTS'),
+      op('INTERPOLATE'),
+    ])
+    const ops = await listOps(qc, historyId, sessionId)
+
+    expect(ops.map((o) => o.operationType)).toEqual([
+      'SELECTION',
+      'DELETE_POINTS',
+      'INTERPOLATE',
+    ])
+    expect(ops.map((o) => o.order)).toEqual([0, 1, 2])
+    expect(ops.slice(0, 2).map((o) => o.id)).toEqual(keptIds)
+  })
+
+  it('replaces an operation whose arguments changed', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('VALUE_THRESHOLD', [{ min: 0 }]),
+      op('DELETE_POINTS'),
+    ])
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('VALUE_THRESHOLD', [{ min: 5 }]),
+      op('DELETE_POINTS'),
+    ])
+    const ops = await listOps(qc, historyId, sessionId)
+
+    expect(ops.map((o) => o.arguments)).toEqual([[{ min: 5 }], []])
+    expect(ops.map((o) => o.order)).toEqual([0, 1])
+  })
+
+  it('keeps an operation whose arguments only differ in wire form', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    const ops = [op('SHIFT_DATETIMES', [new Date('2025-01-05T00:00:00Z'), { b: 1, a: 2 }])]
+    await persistSessionOperations(qc.operations, historyId, sessionId, ops)
+    const [first] = await listOps(qc, historyId, sessionId)
+
+    await persistSessionOperations(qc.operations, historyId, sessionId, ops)
+    const [second] = await listOps(qc, historyId, sessionId)
+
+    expect(second.id).toBe(first.id)
   })
 
   it('clears operations when given an empty set', async () => {

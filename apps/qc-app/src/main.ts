@@ -10,12 +10,15 @@ import hs, { createHydroServer, User } from '@hydroserver/client'
 import { useUserStore } from '@/store/user'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useQcPreferencesStore } from '@/store/qcPreferences'
 import { ensureCalibration } from '@uwrl/qc-utils'
 
 const app = createApp(App)
 
 async function initializeApp() {
   app.use(store)
+  // Restores the chosen time zone before anything is formatted.
+  useQcPreferencesStore()
 
   const hydroServerHost =
     import.meta.env.VITE_APP_PROXY_BASE_URL

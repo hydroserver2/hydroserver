@@ -152,6 +152,27 @@ describe('handleSelected', () => {
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [102])
   })
 
+describe('handleSelected on a committed session', () => {
+  it('highlights without recording a SELECTION', async () => {
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    useQcSessionStore().applySessions('h', [
+      {
+        id: 'a',
+        status: 'committed',
+        phenomenonTimeStart: '2025-01-01T00:00:00Z',
+        phenomenonTimeEnd: '2025-02-01T00:00:00Z',
+        createdAt: '2025-01-01T00:00:00Z',
+        committedAt: '2025-02-01T00:00:00Z',
+      } as any,
+    ])
+    const { handleSelected } = await import('../selected')
+    const dispatchFilter = vi.fn()
+    selectedSeries.value = { data: { dispatchFilter } } as any
+    await handleSelected({ points: [{ pointIndex: 1, curveNumber: 0 }] } as any)
+    expect(dispatchFilter).not.toHaveBeenCalled()
+  })
+})
+
 describe('handleSelected while previewing a history step', () => {
   it('highlights without recording a SELECTION', async () => {
     previewIndex.value = 1

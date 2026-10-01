@@ -76,6 +76,7 @@ if DEPLOYMENT_BACKEND == "dev":
 CORS_EXPOSE_HEADERS = [
     "X-Total-Pages",
     "X-Total-Count",
+    "X-Checksum",
 ]
 
 # Celery

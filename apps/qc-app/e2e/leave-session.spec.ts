@@ -11,34 +11,18 @@
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks, type MockQcSession } from './support/mocks'
 import {
-  gotoHome,
-  openOp,
+  goToSelect,
+  leaveDialog,
   setupEditView,
   waitForEditorReady,
 } from './support/app'
-import { expectHistoryContains, selectAllPoints } from './support/ops'
-import { DATASTREAM_ID_B } from './support/fixtures'
+import { applyChangeValues } from './support/ops'
+import { COMMITTED_SESSION_ID, DATASTREAM_ID_B } from './support/fixtures'
 
-const leaveDialog = (page: Page) => page.getByTestId('leave-session-dialog')
 const editPanel = (page: Page) => page.getByTestId('edit-target-panel')
 
 const inProgress = (sessions: MockQcSession[]) =>
   sessions.find((s) => s.status === 'in_progress')
-
-async function applyChangeValues(page: Page) {
-  await selectAllPoints(page)
-  await openOp(page, 'changeValues')
-  await page.getByLabel('Value').fill('1')
-  await page.getByRole('button', { name: 'Apply' }).click()
-  await expectHistoryContains(page, 'Change Values')
-}
-
-async function goToSelect(page: Page) {
-  await page.getByTestId('nav-rail-item-select').click()
-  await expect(page.getByTestId('datastreams-table')).toBeVisible({
-    timeout: 30_000,
-  })
-}
 
 /** The editor is closed: the Select view is showing with nothing being edited. */
 async function expectClosed(page: Page) {
@@ -142,7 +126,7 @@ test.describe('leaving a session', () => {
   test('viewing committed history closes without a question', async ({
     page,
   }) => {
-    await page.getByTestId('session-header-qcs-e2e-1').click()
+    await page.getByTestId(`session-header-${COMMITTED_SESSION_ID}`).click()
     await expect(page.getByTestId('session-return-current')).toBeVisible()
 
     await page.getByTestId('exit-close-btn').click()

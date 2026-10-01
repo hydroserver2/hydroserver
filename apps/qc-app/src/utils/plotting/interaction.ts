@@ -9,6 +9,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { Y_AXIS_KEY_RE } from './internal'
 import type { AppPlotlyTrace, AxisChip } from './options'
+import { fromPlot, plotCoord, plotCoordToDate } from './plotTime'
 
 // Throttle the per-pixel mousemove work to one frame. DOM mousemove
 // fires ~hundreds of events/sec on modern displays; each one used to
@@ -95,7 +96,7 @@ const processMouseMove = (event: MouseEvent) => {
     return
   }
 
-  hover.value.x = Number(xaxis.p2c(cursorX - plotLeft))
+  hover.value.x = fromPlot(Number(xaxis.p2c(cursorX - plotLeft)))
   hover.value.y = Number(yaxis.p2c(cursorY - plotTop)).toFixed(4)
   showCoordinates.value = true
 
@@ -579,10 +580,8 @@ export const handleWheel = (event: WheelEvent) => {
     ]
     const r = ax?.range
     if (!r || r.length < 2) return null
-    const toNum = (v: string | number) =>
-      typeof v === 'string' ? Date.parse(v) : Number(v)
-    const lo = toNum(r[0] as string | number)
-    const hi = toNum(r[1] as string | number)
+    const lo = plotCoord(r[0] as string | number)
+    const hi = plotCoord(r[1] as string | number)
     return Number.isFinite(lo) && Number.isFinite(hi) ? { lo, hi } : null
   }
 
@@ -633,25 +632,22 @@ const applyWheelZoom = async (zoom: WheelPending): Promise<void> => {
 
   const update: Record<string, unknown> = {}
 
-  // Plotly serialises date-axis range endpoints as ISO strings; convert
-  // back to epoch ms so the pivot arithmetic matches `p2c`'s space.
-  const toNumber = (v: string | number): number =>
-    typeof v === 'string' ? Date.parse(v) : Number(v)
-
   const applyAxis = (key: string, pivot: number, factor: number): void => {
     const range = liveLayout[key]?.range as Array<string | number> | undefined
     if (!range) return
     const r0 = range[0]
     const r1 = range[1]
     if (r0 === undefined || r1 === undefined) return
-    const a = toNumber(r0)
-    const b = toNumber(r1)
+    const a = plotCoord(r0)
+    const b = plotCoord(r1)
     if (!Number.isFinite(a) || !Number.isFinite(b)) return
     const newA = pivot - (pivot - a) * factor
     const newB = pivot + (b - pivot) * factor
     // Bail on degenerate ranges (excessive zoom past axis resolution).
     if (!Number.isFinite(newA) || !Number.isFinite(newB) || newA >= newB) return
-    update[`${key}.range`] = [newA, newB]
+    // The date axis takes strings; see `plotTime.ts`.
+    update[`${key}.range`] =
+      key === 'xaxis' ? [plotCoordToDate(newA), plotCoordToDate(newB)] : [newA, newB]
     update[`${key}.autorange`] = false
   }
 

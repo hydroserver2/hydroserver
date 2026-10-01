@@ -1,13 +1,7 @@
 /**
- * Reactive workspace permission checks for the QC app.
- *
- * The signed-in user's role on a workspace travels with the `Workspace`
- * object: owners have a null `collaboratorRole`, collaborators carry their
- * role's `permissions[]`, and admins (`accountType === 'admin'`) override
- * everything. No separate "am I an editor" endpoint is needed: the role is
- * embedded in `hs.workspaces.list()`. (`hs.user.can()` is the async
- * single-shot equivalent; this composable is the synchronous, reactive one
- * for gating UI.)
+ * Synchronous, reactive permission checks for gating UI. The user's role
+ * comes with each `Workspace`: owners have a null `collaboratorRole`,
+ * collaborators carry its `permissions`, and admins can do everything.
  */
 
 import { computed } from 'vue'
@@ -22,9 +16,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { useUserStore } from '@/store/user'
 
 export function useWorkspacePermissions() {
-  const { availableWorkspaces, selectedWorkspace } = storeToRefs(
-    useWorkspaceStore()
-  )
+  const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
   const { user } = storeToRefs(useUserStore())
 
   const isAdmin = computed(
@@ -63,22 +55,26 @@ export function useWorkspacePermissions() {
     )
   }
 
-  /** Can create a managed datastream in this workspace (the QC setup step). */
-  function canCreateDatastream(ws?: Workspace | null): boolean {
-    return can(PermissionAction.Create, PermissionResource.Datastream, ws)
+  /** Can work in QC sessions: the API checks datastream edit for sessions
+   *  and their operations. Gates Edit, New session and Save. */
+  function canEdit(ws?: Workspace | null): boolean {
+    return can(PermissionAction.Edit, PermissionResource.Datastream, ws)
   }
 
-  /**
-   * Can run the QC edit workflow in this workspace. Needs to create the
-   * managed datastream and/or write observations. Used to gate the editor's
-   * row Edit / Save / Commit controls.
-   */
-  function canEdit(ws?: Workspace | null): boolean {
+  /** Commit also writes the managed datastream's observations. */
+  function canCommit(ws?: Workspace | null): boolean {
     return (
-      can(PermissionAction.Create, PermissionResource.Datastream, ws) ||
-      can(PermissionAction.Edit, PermissionResource.Datastream, ws) ||
-      can(PermissionAction.Create, PermissionResource.Observation, ws) ||
-      can(PermissionAction.Edit, PermissionResource.Observation, ws)
+      canEdit(ws) &&
+      can(PermissionAction.Create, PermissionResource.Observation, ws)
+    )
+  }
+
+  /** Creating a managed datastream also creates its QC history, which needs
+   *  datastream edit. */
+  function canCreateDatastream(ws?: Workspace | null): boolean {
+    return (
+      canEdit(ws) &&
+      can(PermissionAction.Create, PermissionResource.Datastream, ws)
     )
   }
 
@@ -92,18 +88,10 @@ export function useWorkspacePermissions() {
     return 'Read-only'
   }
 
-  function workspaceById(id?: string | null): Workspace | null {
-    if (!id) return null
-    return availableWorkspaces.value.find((w) => w.id === id) ?? null
-  }
-
   return {
-    isAdmin,
-    isOwner,
-    can,
     canEdit,
+    canCommit,
     canCreateDatastream,
     roleName,
-    workspaceById,
   }
 }

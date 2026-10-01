@@ -16,7 +16,11 @@ vi.mock('@/utils/observations', () => ({
 import { fetchObservationsSync } from '@/utils/observations'
 import { useObservationStore } from '@/store/observations'
 
-const datastream = { id: 'ds-1' } as any
+const datastream = {
+  id: 'ds-1',
+  phenomenonBeginTime: '1970-01-01T00:00:00Z',
+  phenomenonEndTime: '1970-01-01T00:00:00.010Z',
+} as any
 
 // 11 points at epoch-ms 0..10.
 const ALL_TIMES = Array.from({ length: 11 }, (_, i) => i)
@@ -223,5 +227,55 @@ describe('useObservationStore.fetchObservationsInRange coverage', () => {
     ).rejects.toThrow('offline')
     const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
     expect(rec.dataX.length).toBe(11)
+  })
+})
+
+describe('useObservationStore cache lifetime', () => {
+  it('does not count a datastream with no observations yet as loaded', async () => {
+    const store = useObservationStore()
+    const empty = { id: 'ds-1', phenomenonBeginTime: null, phenomenonEndTime: null } as any
+    const first = await store.fetchObservationsInRange(empty, new Date(0), new Date(10))
+    expect(first.dataX.length).toBe(0)
+    expect(fetchObservationsSync).not.toHaveBeenCalled()
+
+    // Once observations exist, the same range is asked for.
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    expect(rec.dataX.length).toBe(11)
+  })
+
+  it('asks the server again after forgetting a datastream', async () => {
+    const store = useObservationStore()
+    await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    ;(fetchObservationsSync as any).mockImplementation(async () => ({
+      datetimes: [5],
+      dataValues: [99],
+    }))
+
+    store.forget('ds-1')
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+
+    expect(Array.from(rec.dataX)).toEqual([5])
+    expect(Array.from(rec.dataY)).toEqual([99])
+  })
+
+  it('does not keep a load that was in flight when the datastream was forgotten', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    ;(fetchObservationsSync as any)
+      .mockImplementationOnce(async () => {
+        await gate
+        return { datetimes: [1], dataValues: [10] }
+      })
+      .mockImplementation(async () => ({ datetimes: [5], dataValues: [99] }))
+    const store = useObservationStore()
+
+    const stale = store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+    await vi.waitFor(() => expect(fetchObservationsSync).toHaveBeenCalledTimes(1))
+    store.forget('ds-1')
+    release()
+    await stale
+    const rec = await store.fetchObservationsInRange(datastream, new Date(0), new Date(10))
+
+    expect(Array.from(rec.dataX)).toEqual([5])
   })
 })

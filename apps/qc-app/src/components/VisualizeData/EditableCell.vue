@@ -43,6 +43,12 @@
         <v-icon icon="mdi-close" size="16" />
       </button>
     </div>
+    <span
+      v-else-if="readonly"
+      class="editable-cell__display editable-cell__display--readonly d-inline-flex align-center rounded-sm"
+    >
+      {{ display }}
+    </span>
     <template v-else>
       <button
         type="button"
@@ -75,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 
 const props = defineProps<{
   value: string
@@ -85,6 +91,8 @@ const props = defineProps<{
   editedDisplay: string
   inputType: 'number' | 'datetime-local'
   align?: 'start' | 'end'
+  /** Show the value without offering to edit it. */
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -113,6 +121,13 @@ function commit() {
 function cancel() {
   isEditing.value = false
 }
+
+watch(
+  () => props.readonly,
+  (readonly) => {
+    if (readonly) cancel()
+  }
+)
 </script>
 
 <style scoped>
@@ -130,7 +145,7 @@ function cancel() {
   background: transparent;
 }
 
-.editable-cell__display:hover {
+.editable-cell__display:not(.editable-cell__display--readonly):hover {
   border-color: rgba(var(--v-theme-primary), 0.45);
   background-color: rgba(var(--v-theme-primary), 0.06);
 }

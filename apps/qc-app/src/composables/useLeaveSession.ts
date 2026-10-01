@@ -114,11 +114,6 @@ function keepSession(): void {
   if (!leaveWork.value) settle(true)
 }
 
-/** Keeping it, under the word the user sees when nothing is at stake. */
-function closeSession(): void {
-  keepSession()
-}
-
 async function saveAndLeave(): Promise<void> {
   if (leaveWork.value || !leavePrompt.value?.canSave) return
   leaveWork.value = 'save'
@@ -163,8 +158,8 @@ async function discardSessionAndLeave(): Promise<void> {
   if (leaveWork.value || !session || !historyId) return
   leaveWork.value = 'discard-session'
   try {
-    // The in-progress session is the newest one, so nothing can be built on
-    // it. Refuse rather than cascade the delete into committed work.
+    // The in-progress session is normally the newest, so nothing is built on
+    // it. If something is, refuse rather than cascade the delete into it.
     if (hasDependents(store.sessions, session.id)) {
       throw new Error(
         'Another session was built on this one, so it cannot be discarded.'
@@ -201,7 +196,6 @@ export function useLeaveSession() {
     requestLeave,
     cancelLeave,
     keepSession,
-    closeSession,
     saveAndLeave,
     discardEditsAndLeave,
     discardSessionAndLeave,

@@ -1,11 +1,11 @@
 <template>
   <div class="qc-create-datastream-form pa-4">
-    <div class="text-body-1 font-weight-medium mb-1">
+    <div class="text-title-medium font-weight-bold mb-1">
       Set up QC editing for "{{ source.name }}"
     </div>
     <div class="text-body-small text-medium-emphasis mb-3">
-      Creates an empty managed datastream from this source, links a QC history,
-      and tags the source.
+      Creates an empty managed datastream from this source and links a QC
+      history to it.
     </div>
 
     <v-alert
@@ -157,7 +157,12 @@
     />
 
     <div class="d-flex justify-end ga-2">
-      <v-btn data-testid="create-cancel" variant="text" @click="emit('cancel')">
+      <v-btn
+        data-testid="create-cancel"
+        variant="text"
+        :disabled="loading"
+        @click="emit('cancel')"
+      >
         Cancel
       </v-btn>
       <v-btn
@@ -165,6 +170,7 @@
         color="primary"
         variant="flat"
         :disabled="!isValid"
+        :loading="loading"
         @click="onConfirm"
       >
         Create datastream
@@ -176,6 +182,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Datastream } from '@hydroserver/client'
+import type { CreateManagedDatastreamSpec } from '@/composables/useCreateManagedDatastream'
 
 interface ProcessingLevelOption {
   id: string
@@ -186,17 +193,6 @@ interface ProcessingLevelOption {
 interface SensorOption {
   id: string
   name: string
-}
-
-export interface CreateDatastreamSpec {
-  source: Datastream
-  processingLevelId: string
-  name?: string
-  description: string
-  /** Left out when the user clears it: the field is nullable. */
-  status?: string
-  /** A datastream's method is its sensor. */
-  sensorId: string
 }
 
 const props = defineProps<{
@@ -211,6 +207,8 @@ const props = defineProps<{
   /** When set, the user can't create datastreams here: shown as a warning
    *  and the confirm button is disabled. */
   permissionError?: string
+  /** True while the datastream is being created. */
+  loading?: boolean
   /** Creates a processing level in the active workspace and resolves with the
    *  new level (or null on failure). When provided, an inline "Add processing
    *  level" affordance is shown so users don't have to leave for the
@@ -225,7 +223,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'cancel'): void
-  (e: 'confirm', spec: CreateDatastreamSpec): void
+  (e: 'confirm', spec: CreateManagedDatastreamSpec): void
 }>()
 
 const knownLevelIds = computed(
@@ -312,7 +310,7 @@ const isValid = computed(
 )
 
 function onConfirm(): void {
-  if (!isValid.value || !processingLevelId.value) return
+  if (props.loading || !isValid.value || !processingLevelId.value) return
   emit('confirm', {
     source: props.source,
     processingLevelId: processingLevelId.value,

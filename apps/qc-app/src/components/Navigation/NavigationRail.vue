@@ -76,6 +76,7 @@
     </div>
 
     <div class="rail-bottom">
+      <TimeZoneMenu />
       <PerformanceCalibration rail-button />
       <v-tooltip location="right" :open-delay="400">
         <template #activator="{ props: tipProps }">
@@ -125,6 +126,7 @@ import { ref } from 'vue'
 import HydroServerIcon from '@/assets/icon-color-thick.svg'
 import SelectDrawer from '@/components/Navigation/SelectDrawer.vue'
 import PerformanceCalibration from '@/components/Navigation/PerformanceCalibration.vue'
+import TimeZoneMenu from '@/components/Navigation/TimeZoneMenu.vue'
 import { useUIStore, DrawerType } from '@/store/userInterface'
 import { Snackbar } from '@uwrl/qc-utils'
 import { storeToRefs } from 'pinia'

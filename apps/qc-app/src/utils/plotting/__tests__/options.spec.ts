@@ -5,29 +5,38 @@ import { ref } from 'vue'
 // --- Mocks --------------------------------------------------------------
 
 // Avoid real @uwrl/qc-utils (worker-heavy). Re-export just what options.ts touches.
-vi.mock('@uwrl/qc-utils', () => ({
-  findFirstGreaterOrEqual: (arr: number[], target: number) => {
-    let lo = 0
-    let hi = arr.length
-    while (lo < hi) {
-      const mid = (lo + hi) >>> 1
-      if (arr[mid] < target) lo = mid + 1
-      else hi = mid
-    }
-    return lo
-  },
-  findLastLessOrEqual: (arr: number[], target: number) => {
-    let lo = 0
-    let hi = arr.length
-    while (lo < hi) {
-      const mid = (lo + hi) >>> 1
-      if (arr[mid] > target) hi = mid
-      else lo = mid + 1
-    }
-    return lo - 1
-  },
-  EnumFilterOperations: { SELECTION: 'SELECTION' },
-}))
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    findFirstGreaterOrEqual: (arr: number[], target: number) => {
+      let lo = 0
+      let hi = arr.length
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1
+        if (arr[mid] < target) lo = mid + 1
+        else hi = mid
+      }
+      return lo
+    },
+    findLastLessOrEqual: (arr: number[], target: number) => {
+      let lo = 0
+      let hi = arr.length
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1
+        if (arr[mid] > target) hi = mid
+        else lo = mid + 1
+      }
+      return lo - 1
+    },
+    EnumFilterOperations: { SELECTION: 'SELECTION' },
+  }
+})
 
 const qcDatastream = ref<{ id: string; phenomenonBeginTime?: string } | null>(null)
 const sourceContextDatastream = ref<{ id: string } | null>(null)

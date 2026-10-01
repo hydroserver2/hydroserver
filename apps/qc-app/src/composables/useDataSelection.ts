@@ -2,7 +2,6 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { usePlotlyStore } from '@/store/plotly'
 import {
   EnumFilterOperations,
-  formatDate,
   findFirstGreaterOrEqual,
   findLastLessOrEqual,
 } from '@uwrl/qc-utils'
@@ -11,16 +10,15 @@ import {
   setSelectedPoints,
 } from '@/utils/plotting/plotly'
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
-import type { PlotData } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
-
-import { computed } from 'vue'
+import { useEditLock } from '@/composables/useEditLock'
 
 export function useDataSelection() {
   const { plotlyRef, suppressedEchoSelection } = storeToRefs(
     usePlotlyStore()
   )
-  const { selectedSeries, previewIndex } = storeToRefs(usePlotlyStore())
+  const { selectedSeries } = storeToRefs(usePlotlyStore())
+  const { editLock } = useEditLock()
   const { selectedData } = storeToRefs(useDataVisStore())
 
   /**
@@ -115,8 +113,9 @@ export function useDataSelection() {
     selectedData.value = []
     hasSelectionShape.value = false
 
-    // A previewed step records nothing; the clear only shows.
-    if (recordHistory && previewIndex.value === null) {
+    // A previewed step or a committed session records nothing; the clear
+    // only shows.
+    if (recordHistory && editLock.value === null) {
       // Explicitly log the cleared state so qc-utils' `_selection`
       // empty-case logic (pop self, optionally pop the underlying
       // filter that drove the now-cleared selection) runs even though
@@ -127,43 +126,6 @@ export function useDataSelection() {
       )
     }
   }
-
-  // `startDate` / `endDate` bracket the current selection, or the full
-  // series when nothing is selected. The `|| fallback` arm that used to
-  // sit on `new Date(...)` was dead code: `new Date()` is truthy even
-  // when given `undefined` (it just produces an Invalid Date), so the
-  // fallback was unreachable. The computeds now always return a Date,
-  // and the downstream string helpers stop guarding against a value
-  // that can't appear.
-  const traceX = (): number[] | undefined => {
-    const trace = plotlyRef.value?.data[0] as Partial<PlotData> | undefined
-    return trace?.x as number[] | undefined
-  }
-
-  const startDate = computed(() => {
-    if (selectedData.value?.length) {
-      const startIndex = selectedData.value[0] as number
-      const xs = traceX()
-      const ts = xs?.[startIndex]
-      if (ts !== undefined) return new Date(ts)
-    }
-    return selectedSeries.value?.data.beginTime ?? new Date()
-  })
-
-  const endDate = computed(() => {
-    if (selectedData.value?.length) {
-      const endIndex = selectedData.value[
-        selectedData.value.length - 1
-      ] as number
-      const xs = traceX()
-      const ts = xs?.[endIndex]
-      if (ts !== undefined) return new Date(ts)
-    }
-    return selectedSeries.value?.data.endTime ?? new Date()
-  })
-
-  const startDateString = computed(() => formatDate(startDate.value))
-  const endDateString = computed(() => formatDate(endDate.value))
 
   /** Select all data points within the given date range */
   const selectDateRange = async (from: Date, to: Date) => {
@@ -189,10 +151,6 @@ export function useDataSelection() {
   return {
     setPlotSelection,
     clearSelected,
-    startDate,
-    endDate,
-    startDateString,
-    endDateString,
     selectDateRange,
   }
 }

@@ -1,6 +1,7 @@
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
+import { useEditLock } from '@/composables/useEditLock'
 import type {
   PlotMouseEvent,
   PlotRelayoutEvent,
@@ -37,8 +38,8 @@ export const handleSelected = async (
     selectedSeries,
     isUpdating,
     suppressedEchoSelection,
-    previewIndex,
   } = storeToRefs(usePlotlyStore())
+  const { editLock } = useEditLock()
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -84,8 +85,9 @@ export const handleSelected = async (
     const current = selectedData.value ?? []
     if (sameSelection(expected, current)) return
   }
-  // A previewed step only shows data: the selection highlights, unrecorded.
-  if (eventData && !isUpdating.value && previewIndex.value === null) {
+  // A previewed step or a committed session only shows data: the selection
+  // highlights, unrecorded.
+  if (eventData && !isUpdating.value && editLock.value === null) {
     await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.SELECTION,
       selectedData.value ?? []

@@ -31,6 +31,8 @@ vi.mock('@uwrl/qc-utils', () => ({
 const managed = { id: 'm-1' } as any
 const source = { id: 's-1' } as any
 const rec = (xs: number[]) => ({ dataX: xs, dataY: xs.map(() => 1), history: [] })
+// Inside the sessions' January 2025 window.
+const SOURCE_TIMES = [1, 2, 3].map((d) => Date.UTC(2025, 0, d))
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -52,7 +54,7 @@ function gateFetch() {
   fetchDetachedRecord.mockImplementation(async (ds: any) => {
     started.resolve()
     await gate.promise
-    return ds.id === 'm-1' ? rec([]) : rec([1, 2, 3])
+    return ds.id === 'm-1' ? rec([]) : rec(SOURCE_TIMES)
   })
   return { gate, started }
 }
@@ -84,7 +86,7 @@ beforeEach(async () => {
   ).id
   // Managed datastream empty, source has data.
   fetchDetachedRecord.mockImplementation(async (ds: any) =>
-    ds.id === 'm-1' ? rec([]) : rec([1, 2, 3])
+    ds.id === 'm-1' ? rec([]) : rec(SOURCE_TIMES)
   )
 })
 
@@ -115,7 +117,7 @@ describe('useWorkingCopiesStore', () => {
     expect(copy?.sessionId).toBe(session.id)
     expect(copy?.begin.toISOString()).toBe('2025-01-01T00:00:00.000Z')
     expect(copy?.end.toISOString()).toBe('2025-02-01T00:00:00.000Z')
-    expect(Array.from(copy!.record.dataX)).toEqual([1, 2, 3])
+    expect(Array.from(copy!.record.dataX)).toEqual(SOURCE_TIMES)
     expect(applyHistory).toHaveBeenCalledTimes(1)
     expect((applyHistory.mock.calls[0] as any[])[0]).toBe(copy!.record)
     expect(store.get('m-1')).toBe(copy)

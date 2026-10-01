@@ -32,27 +32,6 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
   const hasSelection = computed(() => !!selectedWorkspace.value)
   const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
-  /**
-   * True when the signed-in user holds a role on the selected workspace
-   * that lets them create or edit Observations. Owners always pass
-   * (their `collaboratorRole` is `null` because ownership supersedes
-   * collaborator roles); collaborators need at least one permission
-   * that covers editing observations.
-   */
-  const canEditSelected = computed(() => {
-    const ws = selectedWorkspace.value
-    if (!ws) return false
-    // Owner: `collaboratorRole` is null on owned workspaces; the role
-    // machinery only applies to invited collaborators.
-    if (!ws.collaboratorRole) return true
-    const perms = ws.collaboratorRole.permissions ?? []
-    return perms.some(
-      (p) =>
-        (p.action === 'edit' || p.action === 'create' || p.action === '*') &&
-        (p.resource === 'Observation' || p.resource === '*')
-    )
-  })
-
   async function loadWorkspaces(): Promise<Workspace[]> {
     const { hs } = storeToRefs(useHydroServer())
     if (!hs.value) return []
@@ -130,7 +109,6 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
     selectedWorkspaceId,
     isLoading,
     hasSelection,
-    canEditSelected,
     loadWorkspaces,
     selectWorkspace,
     applyWorkspaceById,

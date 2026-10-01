@@ -65,9 +65,8 @@ describe('useManagedDatastreams.loadForSource', () => {
     historiesBySource.set('src-2', [
       {
         id: 'h-9',
-        managedDatastreamId: 'mgd-missing',
-        managedDatastream: { name: 'Orphan (QC)' },
-        sourceDatastreamId: 'src-2',
+        managedDatastream: { id: 'mgd-missing', name: 'Orphan (QC)' },
+        sourceDatastream: { id: 'src-2' },
       },
     ])
     listAllItems.mockResolvedValue([])

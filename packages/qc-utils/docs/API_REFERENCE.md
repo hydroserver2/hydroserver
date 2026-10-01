@@ -84,18 +84,20 @@ call `reload()` once construction is done to initialize.
 
 | Method                                       | Returns          | Effect                                                                                     |
 |----------------------------------------------|------------------|--------------------------------------------------------------------------------------------|
-| `dispatch(ops: Array<[Enum, ...args]>)`      | `Promise<void>`  | Run a chain of operations atomically. Each op appends a `HistoryItem`.                     |
-| `dispatchAction(op: EnumEditOperations, ...args)` | `Promise<void>` | Run one edit op.                                                                      |
-| `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<void>` | Run one filter op. Produces a selection.                                             |
-| `undo()`                                     | `Promise<void>`  | Pop the last history entry; replay the rest from a fresh `reload()`.                       |
-| `redo()`                                     | `Promise<void>`  | Replay the most recently undone entry.                                                     |
+| `dispatch(ops: Array<[Enum, ...args]>)`      | `Promise<number[]>` | Run a chain of operations in order. Each op appends a `HistoryItem` (a filter can replace the one before it). Returns the last op's selection. |
+| `dispatchStep(step)`                         | `Promise<number[]>` | Run one recorded step (`method`, `args`) and carry its `comment` and `performedBy` onto the entry it produces. Every replay goes through it, so these survive undo, redo, removal and `applyHistory` even when replay merges entries. |
+| `dispatchAction(op: EnumEditOperations, ...args)` | `Promise<number[]>` | Run one edit op. Returns the selection it leaves.                                  |
+| `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<number[]>` | Run one filter op. Returns its selection.                                        |
+| `undo()`                                     | `Promise<number[]>` | Pop the last history entry; replay the rest from a fresh `reload()`. Returns the selection left. |
+| `redo()`                                     | `Promise<number[]>` | Replay the most recently undone entry. Returns its selection.                           |
 | `applyWindow(begin, end, rawData?)`          | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. A passed `rawData` replaces the full series first (e.g. after a cache filled a gap). Clears history on a real change; no-op when neither the window nor the data changed. |
 | `reload()`                                   | `Promise<void>`  | Re-initialize the typed arrays from `rawData`, sliced to the current window; clear history. |
 | `previewHistory(index)`                      | `Promise<number[]>` | Show the data as of step `index` (`-1` for the starting state) and keep every later step listed, unapplied. Sets `previewIndex`; edits throw `HistoryPreviewError` until `exitPreview`. Previewing the last step is `exitPreview`. Returns the shown step's selection. |
 | `exitPreview()`                              | `Promise<number[]>` | Replay the whole history after a preview. A no-op when nothing is previewed. |
-| `truncateHistory(index)`                     | `Promise<number[]>` | Drop every step after `index` for good (discarding unsaved edits), clear the redo stack and replay the rest. |
+| `truncateHistory(index)`                     | `Promise<number[]>` | Drop every step after `index` for good, clear the redo stack and replay the rest. |
+| `restoreHistory(steps)`                      | `Promise<number[]>` | Replace the history with `steps` (keeping their comment and attribution), clear the redo stack and replay from raw. For going back to a saved history that undo and new edits have diverged from. |
 | `previewIndex`                               | `number \| null`    | The step being previewed, or null when the data reflects the whole history. `undo` ends a preview; `redo` ends it first, then redoes. |
-| `removeHistoryItem(index: number)`           | `Promise<void>`  | Drop a specific entry; replay the rest.                                                    |
+| `removeHistoryItem(index: number)`           | `Promise<number[]>` | Drop a specific entry and clear the redo stack; replay the rest. Returns the selection left. |
 
 The op handlers themselves are private — dispatch by enum.
 
@@ -116,9 +118,9 @@ matters; lower means smaller idle memory, more frequent grow / copy.
 | `CHANGE_VALUES`        | `(operator: Operator, value: number, [range?])` — applies at prior selection.|
 | `ASSIGN_VALUES_BULK`   | `(indices: number[], values: number[])` — parallel arrays. No workers.       |
 | `ASSIGN_DATETIMES_BULK`| `(indices: number[], datetimes: number[])` — combined delete + add.          |
-| `DELETE_POINTS`        | `(indices?: number[])` — defaults to the prior selection.                    |
+| `DELETE_POINTS`        | `(indices?: number[])`, defaulting to the prior selection. Indices past the end and repeats are ignored. |
 | `INTERPOLATE`          | `()` — linear interpolation per consecutive group in the prior selection.    |
-| `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit)`                                           |
+| `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit, timeZone: string)`; months and years follow `timeZone`'s calendar; see Time zones. |
 | `DRIFT_CORRECTION`     | `(value: number)` — linear drift across each consecutive group.              |
 | `FILL_GAPS`            | `(gapThreshold: [amount, unit], fillCadence: [amount, unit], fillValue?: number)` |
 
@@ -193,6 +195,8 @@ are captured in the report but do not abort.
 {
   method: EnumEditOperations | EnumFilterOperations,
   args: any[],
+  comment?: string,                    // the operator's note, trimmed; absent when blank
+  performedBy?: string,                // who applied it, for display; audit only
   execution?: QcHistoryExecution,
 }
 ```
@@ -334,6 +338,41 @@ formatDate(ts: number): string         // human-readable date
 formatDuration(ms: number): string     // "1d 2h 3m 4s"
 ```
 
+### Time zones
+
+`FIXED_OFFSET_TIMEZONES` (`{ title, value }` with values like `-0700`) and
+`DST_AWARE_TIMEZONES` (every IANA zone `Intl` knows, titled with its winter
+and summer offsets), with their `FixedOffsetTimezone` and `DstAwareTimezone`
+value types. The lists a data connection's timestamps choose from; the QC
+app's time zone setting offers the same ones.
+
+The math takes a zone as a string: `UTC`, a fixed offset like `-0700`, or
+an IANA name.
+
+```ts
+isValidTimeZone(zone: unknown): boolean
+offsetMs(ms: number, zone: string): number       // the zone's offset at ms
+toWall(ms: number, zone: string): number         // ms moved to the zone's clock
+fromWall(wall: number, zone: string): number     // back to an instant
+toWallArray(xs, zone): typeof xs | Float64Array  // xs itself when nothing moves
+addCalendarMonths(ms: number, months: number, zone: string): number
+```
+
+A **wall** value is an instant moved by the zone's offset, so its UTC
+fields read as the zone's clock. IANA offsets are cached per UTC day, with
+the transition minute found on a day the offset changes. A clock time that
+daylight saving skips or repeats maps to an instant beside it.
+
+`addCalendarMonths` keeps the clock time on the zone's calendar, so Jan 15
+at 9:00 in Denver plus six months is Jul 15 at 9:00 there, across the
+change to daylight time. A day past the end of the target month clamps to
+its last day: Jan 31 plus a month is Feb 28 (29 in a leap year).
+
+`SHIFT_DATETIMES` saves its zone, so a month or year shift replays the
+same on any machine. It fails (`execution.status: "failed"`) on a zone
+`isValidTimeZone` rejects, or a month or year amount that isn't whole.
+Other units are fixed spans and ignore the zone.
+
 ### `measureEllapsedTime<T>(fn: () => Promise<T> | T): Promise<{ result: T; duration: number }>`
 
 Wrap any thunk with wall-clock measurement. Used by dispatch to fill
@@ -348,9 +387,17 @@ Wrap any thunk with wall-clock measurement. Used by dispatch to fill
   method: EnumEditOperations | EnumFilterOperations,
   args?: any[],
   selected?: number[],
+  comment?: string,                    // authored; survives every replay
+  performedBy?: string,                // server provenance; survives every replay
   execution: HistoryExecution,
 }
 ```
+
+### `class HistoryPreviewError`
+
+Thrown by any edit dispatched while `previewIndex` is set, that is while
+`previewHistory` shows an earlier step. `exitPreview()` (or previewing the
+last step) ends the preview.
 
 `execution` is always present and carries every per-dispatch
 runtime fact. See below for the field-by-field contract.
@@ -366,6 +413,7 @@ runtime fact. See below for the field-by-field contract.
   mode?: 'worker' | 'inline',          // routing decision the calibration layer made
   datasetSize?: number,                // observation count at dispatch time
   selectionSize?: number,              // indices the op acted on
+  extent?: { begin: number, end: number }, // epoch-ms of the first / last point acted on
 }
 ```
 
@@ -373,10 +421,16 @@ runtime fact. See below for the field-by-field contract.
 
 - **Push time** (synchronous, before the handler runs): `startedAt`,
   `inFlight: true`, `datasetSize`, and (for selection-consuming
-  edits) `selectionSize`.
+  edits) `selectionSize` and `extent`, read from the preceding entry's
+  selection (a SELECTION or a filter result) before the edit moves it.
 - **Resolve time** (after the handler returns or throws): `status`,
   `durationMs`, `mode`, `inFlight: false`, and (for filters)
-  `selectionSize` (populated from the produced selection).
+  `selectionSize` and `extent` from the produced selection. ADD_POINTS
+  and FILL_GAPS get `extent` here from the points they inserted.
+
+`extent` names the period a step touched in datetimes, which later edits
+don't shift the way they shift indices. It is runtime-only, like
+`selected`: replay recomputes it and `serializeHistory` leaves it out.
 
 The qc-app reads this object to drive the EditHistory UI (per-row
 spinner via `inFlight`, failure badge via `status`, duration text

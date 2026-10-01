@@ -1,17 +1,7 @@
 /**
- * Commit handshake for a QC session (spec section 9).
- *
- * Order of operations:
- *   1. ensure the session is in progress,
- *   2. checksum C: the source-window checksum fetched now (from the
- *      observations `X-Checksum` header) must equal the checksum captured
- *      when the session was created, otherwise the source data changed
- *      out-of-band and the commit is blocked,
- *   3. push the final observations to the managed datastream (replace mode),
- *   4. lock the session into the history.
- *
- * `pushObservations` is injected as a thunk so this unit-tests without the
- * HydroServer client. A/B integrity checks and chunked upload are deferred.
+ * Commit a QC session: check it is still in progress and that its source
+ * window hasn't changed since it started, push the observations, then lock
+ * the session into the history.
  */
 
 import type {
@@ -26,7 +16,7 @@ export interface CommitQcSessionInput {
   qcSessions: QualityControlSessionService
   historyId: string
   sessionId: string
-  /** Source-window checksum fetched now; compared to the session's checksum C. */
+  /** The source window's checksum now; compared to the one taken at session start. */
   currentSourceChecksum: string
   /** Pushes the final observations to the managed datastream (replace mode). */
   pushObservations: () => Promise<void>
@@ -46,8 +36,8 @@ export async function commitQcSession(
   }
   if (currentSourceChecksum !== session.sourceChecksum) {
     throw new Error(
-      'Source data changed since this session started (checksum C mismatch). ' +
-        'Re-fetch the source and verify your edits before committing again.'
+      'The source data changed since this session started, ' +
+        'so these edits may no longer line up with it.'
     )
   }
 
