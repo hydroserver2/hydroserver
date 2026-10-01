@@ -30,7 +30,22 @@ const editorWs = ws({
   owner: { email: 'other@x.org' } as any,
   collaboratorRole: role('Editor', [
     { action: PermissionAction.Create, resource: PermissionResource.Datastream },
-    { action: PermissionAction.Edit, resource: PermissionResource.Observation },
+    { action: PermissionAction.Edit, resource: PermissionResource.Datastream },
+    { action: PermissionAction.Create, resource: PermissionResource.Observation },
+  ]),
+})
+const creatorWs = ws({
+  id: 'cr',
+  owner: { email: 'other@x.org' } as any,
+  collaboratorRole: role('Creator', [
+    { action: PermissionAction.Create, resource: PermissionResource.Datastream },
+  ]),
+})
+const draftWs = ws({
+  id: 'dr',
+  owner: { email: 'other@x.org' } as any,
+  collaboratorRole: role('Drafter', [
+    { action: PermissionAction.Edit, resource: PermissionResource.Datastream },
   ]),
 })
 const viewerWs = ws({
@@ -57,20 +72,36 @@ describe('useWorkspacePermissions', () => {
 
   it('owner: can edit and create, role is Owner', () => {
     setUser('me@x.org')
-    const { isOwner, canEdit, canCreateDatastream, roleName } =
-      useWorkspacePermissions()
-    expect(isOwner(ownerWs)).toBe(true)
+    const { canEdit, canCreateDatastream, roleName } = useWorkspacePermissions()
     expect(canEdit(ownerWs)).toBe(true)
     expect(canCreateDatastream(ownerWs)).toBe(true)
     expect(roleName(ownerWs)).toBe('Owner')
   })
 
-  it('editor role: can edit and create datastreams', () => {
+  it('editor role: can edit, commit and create datastreams', () => {
     setUser('me@x.org')
-    const { canEdit, canCreateDatastream, roleName } = useWorkspacePermissions()
+    const { canEdit, canCommit, canCreateDatastream, roleName } =
+      useWorkspacePermissions()
     expect(canEdit(editorWs)).toBe(true)
+    expect(canCommit(editorWs)).toBe(true)
     expect(canCreateDatastream(editorWs)).toBe(true)
     expect(roleName(editorWs)).toBe('Editor')
+  })
+
+  // The API needs datastream edit for the QC history and its sessions.
+  it('creating datastreams alone allows no QC work', () => {
+    setUser('me@x.org')
+    const { canEdit, canCommit, canCreateDatastream } = useWorkspacePermissions()
+    expect(canEdit(creatorWs)).toBe(false)
+    expect(canCommit(creatorWs)).toBe(false)
+    expect(canCreateDatastream(creatorWs)).toBe(false)
+  })
+
+  it('without creating observations, sessions can be saved but not committed', () => {
+    setUser('me@x.org')
+    const { canEdit, canCommit } = useWorkspacePermissions()
+    expect(canEdit(draftWs)).toBe(true)
+    expect(canCommit(draftWs)).toBe(false)
   })
 
   it('viewer role: cannot edit or create', () => {
@@ -101,14 +132,5 @@ describe('useWorkspacePermissions', () => {
     const { canEdit, roleName } = useWorkspacePermissions()
     expect(canEdit()).toBe(true)
     expect(roleName()).toBe('Editor')
-  })
-
-  it('workspaceById resolves from availableWorkspaces', () => {
-    setUser('me@x.org')
-    useWorkspaceStore().availableWorkspaces = [editorWs, viewerWs]
-    const { workspaceById } = useWorkspacePermissions()
-    expect(workspaceById('ed')?.id).toBe('ed')
-    expect(workspaceById('missing')).toBeNull()
-    expect(workspaceById(null)).toBeNull()
   })
 })

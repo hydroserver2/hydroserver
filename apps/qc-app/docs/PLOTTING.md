@@ -39,11 +39,11 @@ Take "user opens Find Gaps, picks a threshold, the plot updates". The
 sequence is:
 
 ```
-panel (FindGaps.vue)
+panel (GapFinder.vue)
    │
    │  validates inputs, sets store state
    ▼
-useFilterDispatch / useQcHistory
+useFilterDispatch
    │
    │  selectedSeries.data.dispatchFilter(FIND_GAPS, args)
    ▼
@@ -141,7 +141,7 @@ stack.
 The fix lives in two places:
 
 1. **The writers** (`setSelectedPoints` in `operations.ts`,
-   `clearSelected` in the dataVisualization store) arm
+   `clearSelected` in `useDataSelection`) arm
    `plotly.suppressedEchoSelection` with the payload they're about
    to write. One-shot, cleared on read.
 
@@ -202,7 +202,7 @@ target, so this order only matters for the legend and axis stacking.
 `createPlotlyOption` reads roles off the stores, not a field on `GraphSeries`:
 
 - **Edit target** (`useDataVisStore().qcDatastream`): primary axis `y`,
-  black, selectable.
+  dark grey (`#3f3f3f`), selectable.
 - **Source context** (`sourceContextDatastream`): shares `y` with the edit
   target, grey, drawn underneath it, read-only (no selection styling, no
   own axis).
@@ -271,10 +271,12 @@ instead. The edit target is one trace in QC grey (`COLORS[0]`), and its
 working copy spans only the session window. The source is the context around
 it, drawn light grey (`SOURCE_CONTEXT_COLOR`) and only outside
 `editSessionWindow` (the viewed session's window, else the in-progress one).
-`sourceContextDatastream` is that drawn source: null when the Context menu's
-switch is off (`showSourceContext`), or when the user plotted the source
-themselves, which then draws whole as an ordinary series and counts toward
-the 4. `editSourceDatastream` is the edit target's source either way.
+`sourceContextDatastream` is that drawn source, under its own `ctx:` id
+(`utils/contextSeriesId.ts`) so the user can also plot the source as an
+ordinary series beside it, which draws whole and counts toward the 4. It is
+null without an edit target or when the Context menu's switch is off
+(`showSourceContext`). `editSourceDatastream` is the edit target's source
+either way.
 `setEditTarget` resets the session store when the target changes, so the
 previous target's window is never applied to the new one.
 

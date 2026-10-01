@@ -142,7 +142,10 @@ The QC App is browser-side software, so the observability story is
 
 - **In-app Snackbar notifications** (`Snackbar` from `qc-utils`) surface
   successes, warnings, and failures for every user-driven action: load
-  failures, submit results, script import reports, etc.
+  failures, save and commit results, etc.
+- **An audit trail of QC work** in HydroServer: every saved operation
+  records who applied it, and committed sessions stay in the managed
+  datastream's QC history.
 - **Browser console** carries qc-utils dispatch logs and any unhandled
   promise rejections. The history panel in dev mode displays per-entry
   `inline` vs `worker` badges when `import.meta.env.DEV` is truthy.
@@ -159,8 +162,6 @@ The QC App is browser-side software, so the observability story is
   no Datadog RUM, no Google Analytics). The team has consciously kept
   the SPA telemetry-free; adding it is an opt-in deployment decision.
 - **No server-side metrics**, because there is no server-side runtime.
-- **No audit log** of QC edits. The QC History file is the closest
-  equivalent (export before submitting to keep a replayable record).
 - **No alerting** beyond what your CDN / object-store provider offers.
 
 If you need richer observability, the natural insertion point is `main.ts`
@@ -225,8 +226,10 @@ matters here is **how the QC App weathers them**:
   `packages/hydroserver-ts`. When the backend ships a schema change,
   update that client, run `npx vue-tsc --noEmit` to see the breakage, and
   patch the call sites.
-- The observation upload path uses `mode: 'replace'` on the bulk POST.
-  Replace semantics are stable across HydroServer versions. If you ever
+- The observation upload path uses `mode: 'replace'` on the bulk POST, with
+  `phenomenon_time_start`/`phenomenon_time_end` set to the session window.
+  Backends without those params replace only the span of the posted
+  observations, which leaves points deleted at the window's edges in place. If you ever
   need to change to append-only or upsert semantics, that's a coordinated
   release between the QC App and the backend.
 

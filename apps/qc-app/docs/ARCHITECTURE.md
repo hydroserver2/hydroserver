@@ -12,7 +12,7 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 | UI framework     | Vue 3 (Composition API, `<script setup>`)    | Same framework as `hydroserver-data-management-app`; lets HydroServer maintainers move between apps without re-learning the runtime. Composition API + `<script setup>` keeps components small and testable. |
 | UI kit           | Vuetify 3 + MDI icons                        | Material Design, accessible primitives, theming, and a ready-made navigation drawer pattern. Cuts custom CSS to a minimum. |
 | State            | Pinia (+ `pinia-plugin-persistedstate`)      | Pinia is the official Vue 3 store; tree-shakeable, fully typed, no boilerplate. The persistence plugin handles `localStorage` rehydration for workspace + UI prefs. |
-| Routing          | vue-router 5                                 | Only three routes; vue-router is the standard.                                  |
+| Routing          | vue-router 5                                 | Only two routes; vue-router is the standard.                                    |
 | Charting         | Plotly.js (`plotly.js-dist`)                 | Multi-axis synchronized plotting, lasso + box selection, programmatic restyle, mature in the science community. ECharts and uPlot were prototyped; Plotly's mature selection model was the deciding factor. |
 | QC engine        | `@uwrl/qc-utils`                             | Worker-parallelized typed-array kernels with a replayable history. Lives in `packages/qc-utils/` so non-Vue consumers can reuse it. |
 | Backend client   | `@hydroserver/client`                        | Generated typed REST client around the HydroServer Django + django-ninja API. Keeps endpoint shapes in sync with the backend. |
@@ -37,9 +37,11 @@ lives in three places, in increasing order of authority:
    operator inputs (`pinia-plugin-persistedstate`). Per-browser, never
    sent to the backend. Use only for ephemeral UI prefs; **never** persist
    observation data here.
-3. **HydroServer backend**: the system of record. The QC App reads
-   observations and writes edited observations back via the
-   `@hydroserver/client`'s `replace`-mode bulk POST. The backend stores
+3. **HydroServer backend**: the system of record. It holds the QC work
+   itself: each managed datastream's QC history, its sessions, and every
+   saved operation with who applied it. A commit writes the session's
+   observations to the managed datastream with the `@hydroserver/client`'s
+   `replace`-mode bulk POST. The backend stores
    everything in HydroServer's Postgres-compatible store, and is the
    place to look for archival, ACID, retention, and migration concerns.
    The QC App does not own any of that.
@@ -75,13 +77,14 @@ always be recovered by a hard refresh.
                 │  Django + django-ninja  ·  Postgres      │
                 │  Workspaces · Things · Datastreams       │
                 │  Observations (bulk read / replace)      │
+                │  QC histories · sessions · operations    │
                 │  Result qualifiers · Auth (AllAuth)      │
                 └──────────────────────────────────────────┘
 ```
 
-All QC computation runs in-browser. The backend never sees the intermediate
-edit state; it only sees the final observations the operator chooses to
-submit.
+All QC computation runs in-browser. The backend stores the operations, not
+the edited data: Save writes a session's operations as a draft, and Commit
+writes the observations they produce to the managed datastream.
 
 ## Source layout
 
@@ -93,21 +96,37 @@ src/
 │  ├─ Navigation/               NavigationRail, SelectDrawer, EditDrawer, PerformanceCalibration.
 │  ├─ VisualizeData/            DataVisualization (Plotly host), data table, info card, filters.
 │  ├─ FilterPoints/             One panel per filter op (ValueThreshold, GapFinder, Persistence, …).
-│  ├─ EditData/                 One panel per edit op (FillGaps, ChangeValues, Interpolate, …)
-│  │                            plus EditHistory + the operation metadata registry.
+│  ├─ EditData/                 One panel per edit op (FillGaps, ChangeValues, Interpolate, …),
+│  │                            EditHistory and its session list, the Start editing chooser,
+│  │                            the session window and leave dialogs, and the operation registry.
 │  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications).
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.
-│  ├─ useQcHistory.ts            Save / load QC Historys (calls qc-utils' serializeHistory / applyHistory).
+│  ├─ useEditEntry.ts           Entering and leaving the editor.
+│  ├─ useEditSession.ts         Open, save and commit a QC session.
+│  ├─ useLeaveSession.ts        The one question asked before any exit.
+│  ├─ useManagedDatastreams.ts  The chooser's managed datastreams, and deleting them.
+│  ├─ useHistorySnapshots.ts    History snapshots plotted as comparison lines.
+│  ├─ useWorkspacePermissions.ts Role checks that gate editing, Save and Commit.
+│  ├─ useQcHistory.ts           Download the QC history (qc-utils' serializeHistory).
 │  ├─ useResizable.ts           Generic drag-to-resize hook used by drawers + the plot.
 │  └─ useBufferedNumber.ts      Debounced numeric input wrapper for filter panels.
+├─ services/qualityControl/     The QC API workflow, with dependencies passed in so it tests
+│                               without Pinia: creating a managed datastream, a session's base,
+│                               saving operations, commit, and replaying a past session.
 ├─ store/                       Pinia stores. See "State stores" below.
 ├─ utils/
 │  ├─ plotting/                 Plotly integration (trace builders, event handlers, selection, staging).
 │  ├─ dateMath.ts               Time-range arithmetic for presets ("1w", "1m", "All", …).
 │  ├─ timeRangePresets.ts       Preset definitions, resolved back from the context data's end, or around the session window while editing.
 │  ├─ observations.ts           Observation fetch helpers (paged columnar fetch).
+│  ├─ sessionWindow.ts          Rules and presets for a new session's window.
+│  ├─ sessionGraph.ts           Session order and dependencies.
+│  ├─ share.ts                  Share-link encoding.
+│  ├─ snapshotId.ts, contextSeriesId.ts  Ids for series that are not datastreams.
+│  ├─ qcHistory.ts              Typed reads off QC history and session shapes.
+│  ├─ plotCap.ts                How many datastreams can be plotted.
 │  ├─ rules.ts                  Vuetify form validation rules.
 │  └─ time.ts                   Time unit conversions.
 ├─ router/                      vue-router setup, auth + workspace guards.
@@ -134,6 +153,8 @@ goes one direction.
 | `operationParams.ts`  | Per-operation form inputs, persisted so they survive panel re-opens.  |
 | `uiLayout.ts`         | Drawer widths, table heights: persisted UI geometry.                  |
 | `workingCopies.ts`    | Working copy per managed datastream, keyed by its in-progress session.|
+| `qcSession.ts`        | The open history's sessions, which one is current and which viewed, the saved-edits baseline, and the resume pointer. |
+| `qcPreferences.ts`    | Last-used processing level for the create form (persisted).           |
 
 The persisted stores use `pinia-plugin-persistedstate` with explicit
 `storage: localStorage` and an explicit `paths` list. **Never** persist
@@ -154,7 +175,7 @@ current plot ref or fetched observations are not; they belong in memory).
  └──────────────┬───────────────────────┘
                 ▼
  ┌──────────────────────────────────────┐
- │ useFilterDispatch / useQcHistory      │
+ │ useFilterDispatch                    │
  │   selectedSeries.data.dispatch(...)  │  ──►  qc-utils ObservationRecord
  └──────────────┬───────────────────────┘            · routes inline vs worker (calibration)
                 │                                    · mutates typed arrays
@@ -222,7 +243,7 @@ in tests.
 
 | File             | Concern                                                                |
 |------------------|------------------------------------------------------------------------|
-| `plotly.ts`      | Barrel + low-level trace builders, `setSelectedPoints`, `clearSelection`. |
+| `plotly.ts`      | Barrel over the modules below (`internal.ts` stays private).           |
 | `events.ts`      | `plotly_click` / `plotly_relayout` / `mousemove` handlers.             |
 | `relayout.ts`    | Debounced viewport recomputation, tick alignment.                      |
 | `selected.ts`    | Translates Plotly selection events into a `SELECTION` dispatch.        |
@@ -293,10 +314,12 @@ Two contract notes worth keeping in mind:
 
 - **The backend stores the operation DAG as metadata only; it never replays
   operations.** The app applies ops locally (qc-utils), pushes the edited
-  series to the managed datastream via `bulk-create` (replace mode), then calls
-  `/commit`, which only records checksums and extends the history window.
-  Checksum verification (source/managed) is the client's responsibility;
-  `/commit` performs none.
+  series to the managed datastream via `bulk-create` (replace mode over the
+  session window), then calls `/commit`, which only records checksums and
+  extends the history window. `/commit` verifies nothing; that is the
+  client's job. Before pushing, `commit()` reads the source window's current
+  `X-Checksum` and refuses to commit if it differs from the session's
+  `sourceChecksum`. The managed-side check is not implemented yet.
 - **Vocabulary differs across the boundary.** qc-utils serializes operations as
   `{ method, args }`; the QC API speaks `{ operationType, arguments, order }`.
   The enum values are identical, so `persistOperations`/`reconstructSession`
@@ -310,13 +333,15 @@ Two contract notes worth keeping in mind:
   refuses updates on committed sessions, so the panel renders their comments
   read-only.
 - **Sessions start/resume from the latest committed state, not the raw source.**
-  Because each commit replays its session into the managed datastream (in-range
-  `replace`), the managed datastream's observations already carry every
-  committed session. `startSession`/`reconstructSession` therefore load the
-  managed datastream as the working base (via `loadLatestBase`, falling back to
-  the source only when nothing has been committed yet) and replay just the
-  current session's own draft operations on top. `loadLatestBase` hands back a
-  standalone copy (`cloneRecord`), not the observation store's cached record,
+  Each commit replaces its window in the managed datastream, so the managed
+  datastream carries every committed session, but only over the ranges those
+  sessions covered. `loadLatestBase` builds a window's base from the managed
+  datastream inside committed session windows and from the source everywhere
+  else, so a window that reaches past the last commit still gets the new
+  source data, and points deleted inside a committed range stay deleted.
+  `startSession`/`reconstructSession` replay just the current session's own
+  draft operations on top. `loadLatestBase` hands back a standalone record,
+  not the observation store's cached record,
   so editing, resuming, and viewing a committed session never modify the
   store's cached records. The raw line stays unedited regardless of what a
   session does to its working copy.
@@ -329,8 +354,8 @@ Two contract notes worth keeping in mind:
   pointer, so only an interrupted session reopens.
 - **The editor and the Select-view plot share one working copy per managed
   datastream**, cached in `workingCopies` (`store/workingCopies.ts`). It is
-  built on a copy of the base (`reconstructSession`/`loadLatestBase`'s
-  `cloneRecord`), never the observation store's cached record, so the raw
+  built on a copy of the base (`loadLatestBase`), never the observation
+  store's cached record, so the raw
   datastream's cached observations are never edited. It is invalidated when
   the edit target is cleared (`dataVisualization.clearEditTarget`, which every
   exit reaches through `useEditEntry.leaveEdit`), on commit, when its session
@@ -351,16 +376,19 @@ Two contract notes worth keeping in mind:
   The managed datastream carries every commit, so it cannot be the base for a
   historical view: replaying an older session's operations on top of it would
   reproduce the final state. `reconstructCommittedSession` instead fetches the
-  ancestor closure (`ancestor_of`), loads the raw source over the union of
-  every window in the chain, and replays the chain in **commit order**
-  (`committedAt`, falling back to `createdAt`): committing is what writes
-  observations into the managed datastream, so it is commit order, not
-  authoring order, that decides what a later session built on. The union
-  window matters because operations replay against array indices: loading
-  only the viewed session's window would misalign a wider ancestor's
-  selections and corrupt the result silently. The panel then shows just the
-  viewed session's own operations; the ancestors produced the data, but the
-  history is about what this session did.
+  ancestor closure (`ancestor_of`), loads the raw source once over the chain's
+  windows, and replays the chain in **commit order** (`committedAt`, falling
+  back to `createdAt`): committing is what writes observations into the
+  managed datastream, so it is commit order, not authoring order, that decides
+  what a later session built on. Each session replays on the base its own
+  window had when it was edited (`composeBase`: the simulated managed data
+  where an earlier session committed, source elsewhere), and its result then
+  replaces its window in the simulated managed data (`replaceWindow`), as a
+  commit does. Operations replay against array indices, so any other base
+  would misalign a session's selections and corrupt the result silently.
+  The panel then shows just the viewed session's own operations; the
+  ancestors produced the data, but the history is about what this session
+  did.
 - **Operations are attributed by the server.** Every `QCOperation` carries a
   `created_by`, stamped from the authenticated user on create, and the
   response resolves a deleted account to a placeholder contact rather than
@@ -398,8 +426,10 @@ package, not the app.
 **Permission gating.** QC editing writes to the source datastream's workspace
 (creates the managed datastream, pushes observations), so the editor's entry
 points are gated on the signed-in user's workspace role via
-`useWorkspacePermissions()`: a read-only collaborator sees a disabled row
-Edit button, and disabled Save / Commit controls, with an explanation instead of a mid-flow 403,
+`useWorkspacePermissions()`, which checks what the API enforces for each
+step: datastream edit for sessions and Save, plus observation create for
+Commit, plus datastream create for the create form. A collaborator without
+them sees disabled controls with an explanation instead of a mid-flow 403,
 and each workspace's role is marked on the picker. The role rides along on the
 `Workspace` object (`collaboratorRole.permissions`; owners have a null role;
 admins override), so no extra request is needed.
@@ -432,16 +462,23 @@ Three constraints shape the implementation:
 
 ## Routing and auth
 
-vue-router 5, two routes (Home, Workspaces). Three guards run on
-every navigation:
+vue-router 5, two routes (Home, Workspaces). Guards run on every navigation,
+in this order:
 
-- **`leaveSessionGuard`**: a change of page ends an open edit session, so it
-  runs the leave flow first and cancels the navigation if the user stays.
 - **`hasAuthGuard`**: redirects unauthenticated users to the
   data-management app's `/login` route and remembers the intended QC
   destination.
 - **`hasWorkspaceGuard`**: redirects users without a selected workspace
-  to `/workspaces`.
+  to `/workspaces`. The picker itself sends a user who already has one on to
+  the page they asked for.
+- **`leaveSessionGuard`**: a change of page ends an open edit session, so it
+  runs the leave flow and cancels the navigation if the user stays. It is
+  the last guard, so it runs after the redirects above and a navigation they
+  send back to the editor never asks. Asking first could end the session for
+  a navigation that lands back in the editor.
+
+The page title and meta tags update in `afterEach` (`updateHead`), so a
+cancelled navigation leaves them as they were.
 
 The nav rail's "Edit" entry is enabled only while an edit target is set: it
 returns to the open editor and never picks one itself.

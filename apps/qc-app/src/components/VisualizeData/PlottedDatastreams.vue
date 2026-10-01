@@ -7,7 +7,7 @@
       <v-spacer></v-spacer>
       <v-btn
         data-testid="clear-plot-btn"
-        :disabled="!plottedDatastreams.length && !qcDatastream"
+        :disabled="!canClearPlot"
         size="x-small"
         variant="text"
         prepend-icon="mdi-close-circle-outline"
@@ -203,12 +203,12 @@ import { usePlotlyStore } from '@/store/plotly'
 import { ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 import { formatDayStamp } from '@/utils/time'
-import { useEditEntry } from '@/composables/useEditEntry'
+import { useClearPlot } from '@/composables/useClearPlot'
 
 /** `clearable`: show the Clear plot toolbar (the Select view's list). */
 defineProps<{ clearable?: boolean }>()
 
-const { closeEditor } = useEditEntry()
+const { canClearPlot, clearPlot } = useClearPlot()
 
 const { updateOptions, labelColorForDatastream } = usePlotlyStore()
 const {
@@ -226,7 +226,7 @@ const {
   sourceContextDatastream,
   loadingStates,
 } = storeToRefs(useDataVisStore())
-const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
+const { toggleDatastream } = useDataVisStore()
 
 const isEdit = (ds: Datastream) => qcDatastream.value?.id === ds.id
 const isSource = (ds: Datastream) =>
@@ -301,12 +301,6 @@ const snapshotSubtitle = (id: string): string => {
 }
 
 // Ending the edit session asks first; staying keeps the plot as it is.
-async function clearPlot() {
-  if (qcDatastream.value && !(await closeEditor())) return
-  hiddenTraceIds.value = new Set()
-  await clearPlottedDatastreams()
-}
-
 const toggleVisibility = async (datastream: Datastream) => {
   const traces = plotlyRef.value?.data ?? []
   const mainIndex = traces.findIndex(

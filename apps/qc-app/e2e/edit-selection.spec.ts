@@ -23,7 +23,7 @@ import {
   plotDatastreamById,
   setupEditView,
   startSessionFromRow,
-  waitForEditorReady,
+  waitForSelection,
 } from './support/app'
 import {
   DATASTREAM_ID,
@@ -247,12 +247,23 @@ test.describe('edit selection', () => {
         ])
       )
 
+    // A Context change reloads around the session and keeps all three.
     await page.getByTestId('time-range-btn').click()
     await page
       .getByTestId('time-range-menu')
       .getByTestId('date-preset-All')
       .click()
-    await expect(page.getByTestId('exit-save-btn')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('time-range-btn')).toContainText('All')
+    await expect
+      .poll(() => traceIds(page))
+      .toEqual(
+        expect.arrayContaining([
+          MANAGED_DATASTREAM_ID,
+          `ctx:${DATASTREAM_ID}`,
+          DATASTREAM_ID_B,
+        ])
+      )
   })
 
   test('closing the editor keeps the plotted datastreams', async ({ page }) => {
@@ -319,6 +330,7 @@ test.describe('edit selection', () => {
       steps: 10,
     })
     await page.mouse.up()
+    await waitForSelection(page, 1)
 
     const clear = page.getByTestId('clear-selection-btn')
     await expect(clear).toBeVisible()
@@ -341,12 +353,11 @@ test.describe('edit selection', () => {
       w.__updates = 0
       gd.on('plotly_update', () => w.__updates++)
     })
+    // The Context range starts on 1m, so All is a change.
     await page.getByTestId('time-range-btn').click()
     const menu = page.getByTestId('time-range-menu')
-    const allActive = /v-chip--variant-tonal/.test(
-      (await menu.getByTestId('date-preset-All').getAttribute('class')) ?? ''
-    )
-    await menu.getByTestId(allActive ? 'date-preset-1w' : 'date-preset-All').click()
+    await expect(page.getByTestId('time-range-btn')).toContainText('1m')
+    await menu.getByTestId('date-preset-All').click()
     await page.waitForFunction(
       () => (window as unknown as { __updates: number }).__updates > 0
     )

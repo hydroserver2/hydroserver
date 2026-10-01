@@ -25,14 +25,18 @@ vi.mock('@/store/plotly', () => ({
 
 const getItem = vi.fn()
 const createObservations = vi.fn()
-const hs = ref<any>({ datastreams: { getItem, createObservations } })
+const getObservationsChecksum = vi.fn()
+const hs = ref<any>({
+  datastreams: { getItem, createObservations, getObservationsChecksum },
+})
 vi.mock('@/store/hydroserver', () => ({
   useHydroServer: () => ({ hs }),
 }))
 
 const fetchDetachedRecord = vi.fn()
+const forget = vi.fn()
 vi.mock('@/store/observations', () => ({
-  useObservationStore: () => ({ fetchDetachedRecord }),
+  useObservationStore: () => ({ fetchDetachedRecord, forget }),
 }))
 
 const wcRebuild = vi.fn()
@@ -59,10 +63,10 @@ const { snackbarWarn, ObservationRecordDouble } = vi.hoisted(() => {
     history: any[] = []
     redoStack: any[] = []
     reload = vi.fn(async () => {})
-    // `discardUnsavedEdits` calls this on the working copy; mirror the
-    // truncate-in-place semantics the other test double in this file uses.
-    truncateHistory = vi.fn(async function (this: ObservationRecordDouble, index: number) {
-      this.history.splice(index + 1)
+    // `discardUnsavedEdits` calls this on the working copy; replay builds
+    // fresh entries, as the real record does.
+    restoreHistory = vi.fn(async function (this: ObservationRecordDouble, steps: any[]) {
+      this.history.splice(0, this.history.length, ...steps.map((h) => ({ ...h })))
       return []
     })
     constructor({ datetimes, dataValues }: { datetimes: number[]; dataValues: number[] }) {
@@ -107,9 +111,9 @@ const makeRecord = (history: any[] = []) => ({
   dataX: [Date.UTC(2025, 0, 1)],
   dataY: [10],
   reload: vi.fn(async () => {}),
-  // Stands in for qc-utils: truncate to `0..index` and hand back a selection.
-  truncateHistory: vi.fn(async function (this: any, index: number) {
-    history.splice(index + 1)
+  // Replay builds fresh entries, as the real record does.
+  restoreHistory: vi.fn(async (steps: any[]) => {
+    history.splice(0, history.length, ...steps.map((h) => ({ ...h })))
     return []
   }),
 })
@@ -118,7 +122,7 @@ let qc: ReturnType<typeof makeQcFake>
 
 const wireHs = () => {
   hs.value = {
-    datastreams: { getItem, createObservations },
+    datastreams: { getItem, createObservations, getObservationsChecksum },
     qualityControlHistories: qc.histories,
     qualityControlSessions: qc.sessions,
     qualityControlOperations: qc.operations,
@@ -133,7 +137,13 @@ beforeEach(() => {
   qcDatastream.value = { id: 'm-1' }
   selectedSeries.value = { data: makeRecord() }
   getItem.mockResolvedValue({ id: 's-1', name: 'Source' })
-  createObservations.mockResolvedValue(undefined)
+  createObservations.mockResolvedValue({ ok: true, status: 201, data: null })
+  // The source is unchanged unless a test says otherwise.
+  getObservationsChecksum.mockImplementation(async () => ({
+    ok: true,
+    status: 200,
+    data: useQcSessionStore().inProgressSession?.sourceChecksum,
+  }))
   fetchDetachedRecord.mockResolvedValue(makeRecord())
   wcRebuild.mockResolvedValue({
     sessionId: 'x',
@@ -154,19 +164,16 @@ describe('useEditSession', () => {
   it('beginEditing resolves the history and needs a session when none is in progress', async () => {
     await seedHistory()
     const { useEditSession } = await import('@/composables/useEditSession')
-    const { beginEditing, needsSession, sourceDatastream } = useEditSession()
-    await beginEditing()
+    const { beginEditing, sourceDatastream } = useEditSession()
+    expect(await beginEditing()).toBe('needs-session')
     expect(sourceDatastream.value?.id).toBe('s-1')
-    expect(needsSession.value).toBe(true)
     expect(useQcSessionStore().historyId).toBeTruthy()
   })
 
-  it('beginEditing flags needsHistory when the datastream is not a managed one', async () => {
+  it('beginEditing reports a datastream that is not a managed one', async () => {
     const { useEditSession } = await import('@/composables/useEditSession')
-    const { beginEditing, needsHistory, needsSession } = useEditSession()
-    await beginEditing()
-    expect(needsHistory.value).toBe(true)
-    expect(needsSession.value).toBe(false)
+    const { beginEditing } = useEditSession()
+    expect(await beginEditing()).toBe('not-managed')
   })
 
   it('beginEditing resumes an in-progress session from the shared working copy', async () => {
@@ -187,9 +194,8 @@ describe('useEditSession', () => {
       end: new Date(1),
     })
     const { useEditSession } = await import('@/composables/useEditSession')
-    const { beginEditing, needsSession } = useEditSession()
-    await beginEditing()
-    expect(needsSession.value).toBe(false)
+    const { beginEditing } = useEditSession()
+    expect(await beginEditing()).toBe('resumed')
     expect(wcRebuild).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'm-1' }),
       expect.objectContaining({ id: 's-1' }),
@@ -224,7 +230,7 @@ describe('useEditSession', () => {
     const { useEditSession } = await import('@/composables/useEditSession')
     const { beginEditing } = useEditSession()
 
-    await expect(beginEditing()).resolves.toBe(true)
+    await expect(beginEditing()).resolves.toBe('resumed')
 
     expect(setEditRecord).toHaveBeenCalledWith(rebuiltRecord)
   })
@@ -244,13 +250,11 @@ describe('useEditSession', () => {
     const { useEditSession, ResumeSupersededError } = await import(
       '@/composables/useEditSession'
     )
-    const { beginEditing, needsSession } = useEditSession()
-    needsSession.value = true
+    const { beginEditing } = useEditSession()
 
+    // A throw, not 'needs-session': starting a session here would edit a
+    // bare base under the saved draft.
     await expect(beginEditing()).rejects.toBeInstanceOf(ResumeSupersededError)
-
-    // Starting a session here would edit a bare base under the saved draft.
-    expect(needsSession.value).toBe(false)
     expect(selectedSeries.value.data).toBe(original)
     expect(useQcSessionStore().savedEdits).toEqual([])
     expect(setEditRecord).not.toHaveBeenCalled()
@@ -350,17 +354,23 @@ describe('useEditSession', () => {
     expect(wcRebuild).not.toHaveBeenCalled()
   })
 
-  it('startSession loads the managed datastream as the working base', async () => {
-    await seedHistory()
+  it('startSession bases a committed window on the managed datastream', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const earlier = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.sessions.commit(h.id, earlier.id)
     const managedBase = makeRecord()
     fetchDetachedRecord.mockResolvedValue(managedBase)
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
     await session.beginEditing()
     await session.startSession({ ...WIN, description: 'Jan' })
-    expect(session.needsSession.value).toBe(false)
     expect(useQcSessionStore().inProgressSession?.description).toBe('Jan')
-    // Working copy comes from the managed datastream (latest committed state).
+    expect(fetchDetachedRecord).toHaveBeenCalledTimes(1)
     expect(fetchDetachedRecord.mock.calls[0]?.[0].id).toBe('m-1')
     expect(Array.from(selectedSeries.value.data.dataX)).toEqual(
       Array.from(managedBase.dataX)
@@ -413,7 +423,72 @@ describe('useEditSession', () => {
     ])
   })
 
-  it('commit pushes observations in replace mode and locks the session', async () => {
+  it('commit checks the source window has not changed', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    await session.commit()
+
+    expect(getObservationsChecksum).toHaveBeenCalledWith(
+      's-1',
+      new Date(WIN.phenomenonTimeStart),
+      new Date(WIN.phenomenonTimeEnd)
+    )
+  })
+
+  it('commit stops when the source window changed since the session started', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    getObservationsChecksum.mockResolvedValue({ ok: true, status: 200, data: 'changed' })
+
+    await expect(session.commit()).rejects.toThrow(/source data changed/i)
+
+    expect(createObservations).not.toHaveBeenCalled()
+    expect(useQcSessionStore().inProgressSession).not.toBeNull()
+  })
+
+  it('commit drops the cached managed observations it replaced', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+
+    await session.commit()
+
+    expect(forget).toHaveBeenCalledWith('m-1')
+  })
+
+  it('commit leaves the session open when the upload fails', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    createObservations.mockResolvedValue({
+      ok: false,
+      status: 500,
+      message: 'Server error',
+    })
+    const commit = vi.spyOn(qc.sessions, 'commit')
+
+    await expect(session.commit()).rejects.toThrow('Server error')
+
+    expect(commit).not.toHaveBeenCalled()
+    expect(forget).not.toHaveBeenCalled()
+    expect(useQcSessionStore().inProgressSession).not.toBeNull()
+  })
+
+  it('commit replaces the session window and locks the session', async () => {
     await seedHistory()
     selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
     const { useEditSession } = await import('@/composables/useEditSession')
@@ -425,10 +500,14 @@ describe('useEditSession', () => {
     expect(createObservations).toHaveBeenCalledWith(
       'm-1',
       expect.objectContaining({ fields: ['phenomenonTime', 'result'] }),
-      { mode: 'replace' }
+      {
+        mode: 'replace',
+        phenomenon_time_start: new Date(WIN.phenomenonTimeStart).toISOString(),
+        phenomenon_time_end: new Date(WIN.phenomenonTimeEnd).toISOString(),
+      }
     )
     const store = useQcSessionStore()
-    expect(store.committedSessions.length).toBe(1)
+    expect(store.sessions.filter((s) => s.status === 'committed')).toHaveLength(1)
     expect(store.inProgressSession).toBeNull()
   })
 
@@ -461,7 +540,7 @@ describe('useEditSession', () => {
     await session.commit()
 
     const store = useQcSessionStore()
-    expect(store.committedSessions.length).toBe(1)
+    expect(store.sessions.filter((s) => s.status === 'committed')).toHaveLength(1)
     expect(store.inProgressSession).toBeNull()
     expect(replaceDatastream).not.toHaveBeenCalled()
     expect(snackbarWarn).toHaveBeenCalledWith(
@@ -482,7 +561,7 @@ describe('useEditSession', () => {
     await session.commit()
 
     const store = useQcSessionStore()
-    expect(store.committedSessions.length).toBe(1)
+    expect(store.sessions.filter((s) => s.status === 'committed')).toHaveLength(1)
     expect(store.inProgressSession).toBeNull()
     expect(replaceDatastream).not.toHaveBeenCalled()
     expect(snackbarWarn).toHaveBeenCalledWith(
@@ -581,7 +660,9 @@ describe('useEditSession', () => {
     await session.commit('Reviewed January spike')
 
     const store = useQcSessionStore()
-    expect(store.committedSessions[0]?.description).toBe('Reviewed January spike')
+    expect(store.sessions.find((s) => s.status === 'committed')?.description).toBe(
+      'Reviewed January spike'
+    )
   })
 
   it('startSession rejects without writing the session store when the target changes while sessions load', async () => {
@@ -662,8 +743,7 @@ describe('useEditSession', () => {
     )
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
-    await session.beginEditing()
-    expect(session.needsSession.value).toBe(true)
+    expect(await session.beginEditing()).toBe('needs-session')
 
     // Someone else starts the session and saves a draft first.
     const existing = unwrap(await qc.sessions.create(h.id, WIN))
@@ -695,7 +775,6 @@ describe('useEditSession', () => {
     expect(toRaw(selectedSeries.value.data)).toBe(replayed)
     expect(useQcSessionStore().savedEdits).toHaveLength(2)
     expect(session.hasUnsavedChanges.value).toBe(false)
-    expect(session.needsSession.value).toBe(false)
 
     // Saving keeps the server's operations instead of reconciling them away.
     await session.saveDraft()
@@ -787,6 +866,32 @@ describe('useEditSession.discardUnsavedEdits', () => {
     await discardUnsavedEdits()
 
     expect(record.history[0].comment).toBe('the saved reason')
+    expect(hasUnsavedChanges.value).toBe(false)
+  })
+
+  it('puts back a saved edit that was undone and replaced', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    const { saveDraft, discardUnsavedEdits, hasUnsavedChanges } = session
+    await session.beginEditing()
+    await session.startSession(WIN)
+
+    const record = selectedSeries.value.data
+    record.history.push(
+      { method: 'SELECTION', args: [[0]] },
+      { method: 'DELETE_POINTS', args: [] }
+    )
+    await saveDraft()
+    record.redoStack.push(record.history.pop())
+    record.history.push({ method: 'INTERPOLATE', args: [] })
+
+    await discardUnsavedEdits()
+
+    expect(record.history.map((h: any) => h.method)).toEqual([
+      'SELECTION',
+      'DELETE_POINTS',
+    ])
     expect(hasUnsavedChanges.value).toBe(false)
   })
 })
@@ -920,7 +1025,6 @@ describe('useEditSession.viewSession', () => {
     expect(store.viewedSessionId).toBe(committed.id)
     expect(store.isReadOnly).toBe(true)
     expect(selectedSeries.value.data).toBe(plottedBeforeReturn)
-    expect(session.needsSession.value).toBe(false)
   })
 
   it('rejects when the edit target changes while a committed session loads, without calling setEditRecord', async () => {

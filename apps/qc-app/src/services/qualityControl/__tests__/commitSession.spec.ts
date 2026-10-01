@@ -21,7 +21,7 @@ const setup = async () => {
 }
 
 describe('commitQcSession', () => {
-  it('checks checksum C, pushes observations, then commits', async () => {
+  it('checks the source checksum, pushes observations, then commits', async () => {
     const { qc, historyId, session } = await setup()
     const order: string[] = []
     const pushObservations = vi.fn(async () => {
@@ -46,7 +46,7 @@ describe('commitQcSession', () => {
     )
   })
 
-  it('blocks the commit on a checksum-C mismatch (no push, stays in progress)', async () => {
+  it('blocks the commit when the source checksum changed (no push, stays in progress)', async () => {
     const { qc, historyId, session } = await setup()
     const pushObservations = vi.fn()
 
@@ -58,7 +58,7 @@ describe('commitQcSession', () => {
         currentSourceChecksum: 'changed-checksum',
         pushObservations,
       })
-    ).rejects.toThrow(/checksum C/)
+    ).rejects.toThrow(/source data changed/)
 
     expect(pushObservations).not.toHaveBeenCalled()
     expect(unwrap(await qc.sessions.get(historyId, session.id)).status).toBe(

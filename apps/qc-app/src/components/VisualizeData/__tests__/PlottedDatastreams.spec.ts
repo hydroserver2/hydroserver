@@ -391,10 +391,6 @@ describe('PlottedDatastreams row kinds', () => {
     ).toBe(true)
   })
 
-  it('has no QC target radio', () => {
-    expect(mountIt().find('.plotted-item__dot').exists()).toBe(false)
-  })
-
   it('shows Clear plot only where asked, editing or not', () => {
     expect(mountIt().find('[data-testid="clear-plot-btn"]').exists()).toBe(false)
     expect(mountIt({ clearable: true }).find('[data-testid="clear-plot-btn"]').exists()).toBe(true)

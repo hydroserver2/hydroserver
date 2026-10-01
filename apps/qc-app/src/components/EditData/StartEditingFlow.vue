@@ -24,6 +24,7 @@
         :default-processing-level-id="qcPreferences.processingLevelId"
         :on-create-processing-level="onCreateProcessingLevel"
         :permission-error="createPermissionError"
+        :loading="isCreatingDatastream"
         @cancel="onCreateCancel"
         @confirm="onCreateDatastream"
       />
@@ -111,7 +112,7 @@ const { enterEdit, startSessionOver, leaveEdit, closeEditor } = useEditEntry()
 const createPermissionError = computed(() =>
   canCreateDatastream()
     ? ''
-    : `Your role on this workspace (${roleName()}) can't create datastreams. Ask a workspace owner for an editor role.`
+    : `Your role on this workspace (${roleName()}) can't create and edit datastreams. Ask a workspace owner for an editor role.`
 )
 
 const showChooser = ref(false)
@@ -119,6 +120,7 @@ const chooserLoading = ref(false)
 const chooserOptions = ref<ManagedDatastreamOption[]>([])
 const chooserSource = ref<Datastream | null>(null)
 const showCreateDatastream = ref(false)
+const isCreatingDatastream = ref(false)
 
 // The form's method and status lists are only needed once it opens.
 watch(showCreateDatastream, (open) => {
@@ -298,15 +300,18 @@ async function onCreateProcessingLevel(input: {
   }
 }
 
+// The form stays open until the create finishes, so a failure keeps what
+// the user entered.
 async function onCreateDatastream(spec: CreateManagedDatastreamSpec) {
-  showCreateDatastream.value = false
   qcPreferences.processingLevelId = spec.processingLevelId
+  isCreatingDatastream.value = true
   try {
     const { managedDatastream, history } = await createManaged(spec)
     // Register the new history and datastream so it's hidden from the
     // catalog and resolvable as an edit target without a reload.
     addQcHistory(history)
     datastreams.value = [...datastreams.value, managedDatastream]
+    showCreateDatastream.value = false
     Snackbar.success('Managed datastream created.')
     openWindow({
       managedId: managedDatastream.id,
@@ -319,12 +324,20 @@ async function onCreateDatastream(spec: CreateManagedDatastreamSpec) {
     Snackbar.error(
       e instanceof Error ? e.message : 'Could not create the datastream.'
     )
+  } finally {
+    isCreatingDatastream.value = false
   }
+}
+
+// The chooser already confirmed the delete, so leaving needs no question.
+async function leaveIfEditing(managedId: string) {
+  if (qcDatastream.value?.id === managedId) await leaveEdit()
 }
 
 async function onChooserDelete(option: ManagedDatastreamOption) {
   try {
     await deleteManaged(option.historyId, option.managed.id)
+    await leaveIfEditing(option.managed.id)
     removeManagedDatastream(option.historyId, option.managed.id)
     workingCopies.invalidate(option.managed.id)
     chooserOptions.value = chooserOptions.value.filter(
@@ -346,6 +359,7 @@ async function onChooserDeleteSession(
 ) {
   try {
     await deleteSession(option.historyId, sessionId)
+    await leaveIfEditing(option.managed.id)
     workingCopies.invalidate(option.managed.id)
     chooserOptions.value = chooserOptions.value.map((o) =>
       o.historyId === option.historyId
@@ -354,13 +368,17 @@ async function onChooserDeleteSession(
     )
     Snackbar.success('Session deleted.')
   } catch (e) {
-    // The server may have changed under the chooser, so reload its copy.
-    if (chooserSource.value) {
-      chooserOptions.value = await loadForSource(chooserSource.value.id)
-    }
     Snackbar.error(
       e instanceof Error ? e.message : 'Could not delete the session.'
     )
+    // The server may have changed under the chooser, so reload its copy.
+    if (chooserSource.value) {
+      try {
+        chooserOptions.value = await loadForSource(chooserSource.value.id)
+      } catch {
+        // The delete error above is what the user needs to see.
+      }
+    }
   }
 }
 

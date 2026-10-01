@@ -327,11 +327,11 @@ describe('requestLeave', () => {
   it('asks before leaving a session whose edits are all saved', async () => {
     emptySession()
     hasSessionOperations.value = true
-    const { requestLeave, leavePrompt, closeSession } = useLeaveSession()
+    const { requestLeave, leavePrompt, keepSession } = useLeaveSession()
     const pending = requestLeave()
 
     expect(leavePrompt.value?.kind).toBe('saved')
-    closeSession()
+    keepSession()
 
     expect(await pending).toBe(true)
     expect(deleteSession).not.toHaveBeenCalled()

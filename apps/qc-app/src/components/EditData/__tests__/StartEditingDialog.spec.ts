@@ -159,7 +159,7 @@ describe('StartEditingDialog', () => {
   it('cancelling the confirmation emits nothing', async () => {
     const w = mountDialog()
     await w.find('[data-testid="delete-session-s-1"]').trigger('click')
-    await clickInDialog('cancel-delete-session')
+    await clickInDialog('cancel-delete')
     expect(w.emitted('deleteSession')).toBeUndefined()
   })
 
@@ -198,9 +198,10 @@ describe('StartEditingDialog', () => {
   it('asks for confirmation, then emits delete with the chosen option', async () => {
     const w = mountDialog()
     await w.find('[data-testid="delete-managed-mgd-1"]').trigger('click')
-    const confirm = w.find('[data-testid="confirm-delete-mgd-1"]')
-    expect(confirm.exists()).toBe(true)
-    await confirm.trigger('click')
+    await flushPromises()
+    expect(inDialog('delete-managed-dialog')?.textContent).toContain('Temp (QC)')
+    expect(w.emitted('delete')).toBeUndefined()
+    await clickInDialog('confirm-delete-mgd-1')
     expect(w.emitted('delete')![0][0]).toMatchObject({ historyId: 'h-1' })
   })
 

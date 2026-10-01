@@ -5,8 +5,7 @@ import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
 import { unwrap } from '@/services/qualityControl/unwrap'
 
 const hsCreate = vi.fn()
-const createTag = vi.fn()
-const hs = ref<any>({ datastreams: { create: hsCreate, createTag } })
+const hs = ref<any>({ datastreams: { create: hsCreate } })
 vi.mock('@/store/hydroserver', () => ({
   useHydroServer: () => ({ hs }),
 }))
@@ -30,7 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   qc = makeQcFake()
   hs.value = {
-    datastreams: { create: hsCreate, createTag },
+    datastreams: { create: hsCreate },
     qualityControlHistories: qc.histories,
     qualityControlSessions: qc.sessions,
     qualityControlOperations: qc.operations,
@@ -41,11 +40,10 @@ beforeEach(() => {
     status: 201,
     message: '',
   })
-  createTag.mockResolvedValue({})
 })
 
 describe('useCreateManagedDatastream', () => {
-  it('creates the datastream, the history, and tags the source', async () => {
+  it('creates the datastream and the history', async () => {
     const { useCreateManagedDatastream } = await import(
       '@/composables/useCreateManagedDatastream'
     )
@@ -69,11 +67,6 @@ describe('useCreateManagedDatastream', () => {
 
     expect(result.history.managedDatastream.id).toBe('managed-1')
     expect(unwrap(await qc.histories.list())).toHaveLength(1)
-
-    expect(createTag).toHaveBeenCalledWith(
-      'source-1',
-      expect.objectContaining({ value: 'managed-1' })
-    )
   })
 
   it('sends no status when the spec leaves it out', async () => {

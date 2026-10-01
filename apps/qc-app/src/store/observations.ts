@@ -78,6 +78,9 @@ export const useObservationStore = defineStore(
     /** The ranges already asked of the server per datastream, found or not. */
     const covered = new Map<string, Interval[]>()
 
+    /** Bumped by `forget`, so a load that started before it is not kept. */
+    const generations = new Map<string, number>()
+
     type Exclude = { begin: Date; end: Date }
 
     /**
@@ -128,22 +131,28 @@ export const useObservationStore = defineStore(
       exclude?: Exclude
     ): Promise<ObservationData> => {
       const id = datastream.id
+      const empty = { datetimes: new Float64Array(0), dataValues: new Float32Array(0) }
+      // Nothing to ask for yet, and nothing to remember: it may gain data.
+      if (!datastream.phenomenonBeginTime || !datastream.phenomenonEndTime) {
+        return observationsRaw.value[id] ?? empty
+      }
       const wanted = subtractIntervals(
         [[beginTime.getTime(), endTime.getTime()]],
         exclude ? [[exclude.begin.getTime(), exclude.end.getTime()]] : []
       )
       const missing = subtractIntervals(wanted, covered.get(id) ?? [])
+      const generation = generations.get(id)
       const chunks = await Promise.all(
         missing.map(([start, end]) =>
           fetchObservationsSync(datastream, new Date(start), new Date(end))
         )
       )
+      if (generations.get(id) !== generation) {
+        return loadMissing(datastream, beginTime, endTime, exclude)
+      }
       covered.set(id, mergeIntervals([...(covered.get(id) ?? []), ...missing]))
 
-      const cached = observationsRaw.value[id] ?? {
-        datetimes: new Float64Array(0),
-        dataValues: new Float32Array(0),
-      }
+      const cached = observationsRaw.value[id] ?? empty
       observationsRaw.value[id] = chunks.some((c) => c.dataValues.length)
         ? mergeObservations(cached, chunks)
         : cached
@@ -200,11 +209,20 @@ export const useObservationStore = defineStore(
       return record
     }
 
+    /** Drop what is cached for a datastream whose observations changed, so
+     *  the next load asks the server again. */
+    const forget = (datastreamId: string) => {
+      generations.set(datastreamId, (generations.get(datastreamId) ?? 0) + 1)
+      covered.delete(datastreamId)
+      delete observationsRaw.value[datastreamId]
+    }
+
     return {
       observations,
       observationsRaw,
       fetchObservationsInRange,
       fetchDetachedRecord,
+      forget,
     }
   },
   {

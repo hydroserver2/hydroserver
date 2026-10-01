@@ -23,7 +23,6 @@ const {
   leaveWork,
   cancelLeave,
   keepSession,
-  closeSession,
   saveAndLeave,
   discardEditsAndLeave,
   discardSessionAndLeave,
@@ -34,7 +33,6 @@ const {
     leaveWork: r<string | null>(null),
     cancelLeave: vi.fn(),
     keepSession: vi.fn(),
-    closeSession: vi.fn(),
     saveAndLeave: vi.fn(),
     discardEditsAndLeave: vi.fn(),
     discardSessionAndLeave: vi.fn(),
@@ -47,7 +45,6 @@ vi.mock('@/composables/useLeaveSession', () => ({
     leaveWork,
     cancelLeave,
     keepSession,
-    closeSession,
     saveAndLeave,
     discardEditsAndLeave,
     discardSessionAndLeave,
@@ -154,7 +151,7 @@ describe('LeaveSessionDialog', () => {
     expect(button('leave-discard-session-btn')).toBeNull()
 
     button('leave-close-btn')?.click()
-    expect(closeSession).toHaveBeenCalled()
+    expect(keepSession).toHaveBeenCalled()
   })
 
   it('locks the choices while one is running', async () => {

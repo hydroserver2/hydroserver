@@ -1,9 +1,8 @@
 /**
- * Orchestrates creating a managed datastream for QC editing (spec section 5):
+ * Orchestrates creating a managed datastream for QC editing:
  *   1. create an empty managed datastream from the source's metadata, with
  *      a new processing level,
- *   2. create the QC history linking source and managed,
- *   3. tag the source datastream so the app can mark it read-only.
+ *   2. create the QC history linking source and managed.
  *
  * Pure (deps injected) so it unit-tests without Pinia/Vuetify; a thin
  * composable wires it to the live HydroServer client and stores.
@@ -19,9 +18,6 @@ import type {
 import { unwrap } from './unwrap'
 
 type QcHistoryDetail = QualityControlHistoryContract.DetailResponse
-
-/** Tag key placed on a source datastream, pointing at its managed datastream. */
-export const SOURCE_TAG_KEY = 'qc-managed-datastream'
 
 export interface CreateManagedDatastreamInput {
   /** Source datastream to derive the managed datastream from. */
@@ -119,11 +115,6 @@ export async function createManagedDatastream(
       sourceDatastreamId: source.id,
     })
   )
-
-  await hs.datastreams.createTag(source.id, {
-    key: SOURCE_TAG_KEY,
-    value: managedDatastream.id,
-  })
 
   return { managedDatastream, history }
 }

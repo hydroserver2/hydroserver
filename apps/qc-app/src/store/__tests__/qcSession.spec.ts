@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { useHydroServer } from '@/store/hydroserver'
 import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
@@ -51,7 +51,7 @@ describe('useQcSessionStore', () => {
     expect(store.currentSessionId).toBe(inProgressId)
     expect(store.viewedSessionId).toBe(inProgressId)
     expect(store.isReadOnly).toBe(false)
-    expect(store.committedSessions).toHaveLength(1)
+    expect(store.sessions.filter((s) => s.status === 'committed')).toHaveLength(1)
     expect(store.inProgressSession?.id).toBe(inProgressId)
   })
 
@@ -156,10 +156,8 @@ describe('useQcSessionStore', () => {
     expect(store.resumeDatastreamId).toBe('m-1')
   })
 
-  // A backend that ignores `expand_related` on this route returns the
-  // summary shape, and the session-list previews then claim "No operations"
-  // for sessions that plainly have some.
-  it('backfills operations when the list response omits them', async () => {
+  // The session-list previews read the embedded operations.
+  it('loads each session with its operations', async () => {
     const h = unwrap(
       await qc.histories.create({
         managedDatastreamId: 'm-1',
@@ -174,17 +172,6 @@ describe('useQcSessionStore', () => {
       { operationType: 'DELETE_POINTS' as any, order: 1 },
     ])
 
-    // Stand in for a backend that ignores the flag.
-    const listWithoutOperations = async (historyId: string, query?: any) => {
-      const res = await qc.sessions.list(historyId, { ...query, expand_related: false })
-      return res
-    }
-    useHydroServer().hs = {
-      ...useHydroServer().hs,
-      qualityControlSessions: { ...qc.sessions, list: listWithoutOperations },
-      qualityControlOperations: qc.operations,
-    } as any
-
     const store = useQcSessionStore()
     store.applySessions(h.id, await store.fetchSessions(h.id))
 
@@ -193,31 +180,6 @@ describe('useQcSessionStore', () => {
       'SELECTION',
       'DELETE_POINTS',
     ])
-  })
-
-  it('does not re-fetch operations the list already embedded', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const s = unwrap(
-      await qc.sessions.create(h.id, win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'))
-    )
-    await qc.operations.create(h.id, s.id, [
-      { operationType: 'SELECTION' as any, order: 0 },
-    ])
-
-    const opsList = vi.fn(qc.operations.list)
-    useHydroServer().hs = {
-      ...useHydroServer().hs,
-      qualityControlSessions: qc.sessions,
-      qualityControlOperations: { ...qc.operations, list: opsList },
-    } as any
-
-    useQcSessionStore().applySessions(h.id, await useQcSessionStore().fetchSessions(h.id))
-    expect(opsList).not.toHaveBeenCalled()
   })
 
   it('holds the source datastream and clears it on reset', () => {

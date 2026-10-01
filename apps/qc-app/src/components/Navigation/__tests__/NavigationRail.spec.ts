@@ -141,8 +141,6 @@ vi.mock('@/composables/useEditSession', async () => {
       discardUnsavedEdits: vi.fn(),
       beginEditing: vi.fn(),
       startSession: vi.fn(),
-      needsSession: ref(false),
-      needsHistory: ref(false),
     }),
   }
 })

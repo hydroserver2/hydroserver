@@ -5,7 +5,6 @@ import { makeQcFake } from './qcServiceFake'
 import {
   getInProgressSession,
   startOrResumeSession,
-  loadSourceWindow,
   loadLatestBase,
 } from '../session'
 import { unwrap } from '../unwrap'
@@ -70,72 +69,96 @@ describe('startOrResumeSession', () => {
   })
 })
 
-describe('loadSourceWindow', () => {
-  it('fetches the session window from the source datastream', async () => {
-    const record = {} as ObservationRecord
-    const fetchInRange = vi.fn().mockResolvedValue(record)
-    const source = { id: 's-1' } as unknown as Datastream
-
-    const result = await loadSourceWindow(fetchInRange, source, WIN)
-
-    expect(result).toBe(record)
-    expect(fetchInRange).toHaveBeenCalledTimes(1)
-    const [ds, begin, end] = fetchInRange.mock.calls[0]
-    expect(ds).toBe(source)
-    expect((begin as Date).toISOString()).toBe('2025-01-01T00:00:00.000Z')
-    expect((end as Date).toISOString()).toBe('2025-02-01T00:00:00.000Z')
-  })
-})
-
 describe('loadLatestBase', () => {
   const managed = { id: 'm-1' } as unknown as Datastream
   const source = { id: 's-1' } as unknown as Datastream
-  const start = new Date('2025-01-01T00:00:00Z')
-  const end = new Date('2025-02-01T00:00:00Z')
-  const recWith = (n: number) =>
-    ({ dataX: Array(n).fill(0), dataY: Array(n).fill(0), history: [] }) as unknown as ObservationRecord
-  const copyOf = (r: ObservationRecord) => ({ copyOf: r }) as unknown as ObservationRecord
+  const day = (m: number, d: number) => Date.UTC(2025, m, d)
+  const rec = (points: [number, number][]) =>
+    ({
+      dataX: points.map(([t]) => t),
+      dataY: points.map(([, v]) => v),
+      history: [],
+    }) as unknown as ObservationRecord
+  const fetchFrom = (byId: Record<string, ObservationRecord>) =>
+    vi.fn(async (ds: Datastream) => byId[ds.id]!)
+  const points = (r: ObservationRecord) =>
+    Array.from(r.dataX).map((t, i) => [t, r.dataY[i]])
 
-  it('copies the managed datastream window when it has committed data', async () => {
-    const managedRec = recWith(3)
-    const fetchInRange = vi.fn().mockResolvedValue(managedRec)
-    const clone = vi.fn(async (r: ObservationRecord) => copyOf(r))
+  it('uses the managed datastream where sessions were committed', async () => {
+    const fetchInRange = fetchFrom({ 'm-1': rec([[day(0, 10), 7]]) })
 
-    const result = await loadLatestBase(fetchInRange, managed, source, start, end, clone)
+    const base = await loadLatestBase(
+      fetchInRange,
+      managed,
+      source,
+      new Date(day(0, 1)),
+      new Date(day(0, 31)),
+      [[day(0, 1), day(0, 31)]]
+    )
 
+    expect(points(base)).toEqual([[day(0, 10), 7]])
     expect(fetchInRange).toHaveBeenCalledTimes(1)
-    expect(fetchInRange.mock.calls[0][0]).toBe(managed)
-    expect(clone).toHaveBeenCalledWith(managedRec)
-    expect((result as any).copyOf).toBe(managedRec)
+    expect(fetchInRange.mock.calls[0]![0]).toBe(managed)
   })
 
-  it('copies the source window when the managed datastream is empty', async () => {
-    const sourceRec = recWith(2)
-    const fetchInRange = vi
-      .fn()
-      .mockResolvedValueOnce(recWith(0))
-      .mockResolvedValueOnce(sourceRec)
-    const clone = vi.fn(async (r: ObservationRecord) => copyOf(r))
+  it('uses the source where nothing is committed', async () => {
+    const fetchInRange = fetchFrom({ 's-1': rec([[day(0, 10), 3]]) })
 
-    const result = await loadLatestBase(fetchInRange, managed, source, start, end, clone)
+    const base = await loadLatestBase(
+      fetchInRange,
+      managed,
+      source,
+      new Date(day(0, 1)),
+      new Date(day(0, 31)),
+      []
+    )
 
-    expect(fetchInRange).toHaveBeenCalledTimes(2)
-    expect(fetchInRange.mock.calls[1][0]).toBe(source)
-    expect((result as any).copyOf).toBe(sourceRec)
+    expect(points(base)).toEqual([[day(0, 10), 3]])
+    expect(fetchInRange).toHaveBeenCalledTimes(1)
+    expect(fetchInRange.mock.calls[0]![0]).toBe(source)
+  })
+
+  it('fills the uncommitted part of the window from the source', async () => {
+    // January was committed with the Jan 25 point deleted.
+    const fetchInRange = fetchFrom({
+      'm-1': rec([[day(0, 20), 7]]),
+      's-1': rec([
+        [day(0, 20), 3],
+        [day(0, 25), 4],
+        [day(1, 10), 5],
+      ]),
+    })
+
+    const base = await loadLatestBase(
+      fetchInRange,
+      managed,
+      source,
+      new Date(day(0, 15)),
+      new Date(day(2, 1)),
+      [[day(0, 1), day(0, 31)]]
+    )
+
+    expect(points(base)).toEqual([
+      [day(0, 20), 7],
+      [day(1, 10), 5],
+    ])
   })
 
   // The store hands back its cached record; editing a copy is what keeps a
   // plotted raw line free of draft edits.
   it('never returns the fetched record itself', async () => {
-    const sourceRec = recWith(2)
-    const fetchInRange = vi
-      .fn()
-      .mockResolvedValueOnce(recWith(0))
-      .mockResolvedValueOnce(sourceRec)
-    const clone = vi.fn(async (r: ObservationRecord) => copyOf(r))
+    const sourceRec = rec([[day(0, 10), 3]])
+    const fetchInRange = fetchFrom({ 's-1': sourceRec })
 
-    const result = await loadLatestBase(fetchInRange, managed, source, start, end, clone)
+    const base = await loadLatestBase(
+      fetchInRange,
+      managed,
+      source,
+      new Date(day(0, 1)),
+      new Date(day(0, 31)),
+      []
+    )
 
-    expect(result).not.toBe(sourceRec)
+    expect(base).not.toBe(sourceRec)
   })
 })

@@ -40,14 +40,16 @@ export function useEditEntry() {
   const { setEditTarget, clearEditTarget } = dataVis
   const { showView } = useUIStore()
   const { resumeDatastreamId } = storeToRefs(useQcSessionStore())
-  const { beginEditing, startSession, needsSession, needsHistory } =
-    useEditSession()
+  const { beginEditing, startSession } = useEditSession()
   const { requestLeave, forgetSession } = useLeaveSession()
 
   const owns = (id: string | undefined) => qcDatastream.value?.id === id
   // A cleared target is not a takeover: leaving again is harmless.
   const takenOver = (id: string | undefined) =>
     !!qcDatastream.value && !owns(id)
+  // No target means the user closed the editor mid-load, so a superseded
+  // load has nothing to report.
+  const closed = () => !qcDatastream.value
 
   /** Show the editor on the current target. Nothing about the session, the
    *  working copy or the staged edits changes. */
@@ -86,8 +88,9 @@ export function useEditEntry() {
     } catch (e) {
       if (takenOver(owner)) return 'superseded'
       if (e instanceof ResumeSupersededError) {
+        const wasClosed = closed()
         await leaveEdit()
-        Snackbar.error(e.message)
+        if (!wasClosed) Snackbar.error(e.message)
         return 'superseded'
       }
       Snackbar.error(
@@ -115,25 +118,27 @@ export function useEditEntry() {
       return 'editing'
     }
     if (takenOver(managedId) && !(await requestLeave())) return 'kept'
+    let begun
     try {
       await setEditTarget(managedId)
-      await beginEditing()
+      begun = await beginEditing()
     } catch (e) {
       if (takenOver(managedId)) return 'superseded'
+      const wasClosed = closed()
       await leaveEdit()
       if (!(e instanceof ResumeSupersededError)) throw e
-      Snackbar.error(e.message)
+      if (!wasClosed) Snackbar.error(e.message)
       return 'superseded'
     }
     if (!owns(managedId)) return 'superseded'
-    if (needsHistory.value) {
+    if (begun === 'not-managed') {
       await leaveEdit()
       Snackbar.error('This datastream is not set up for QC editing.')
       return 'not-managed'
     }
     showView(view)
     resumeDatastreamId.value = managedId
-    if (!needsSession.value) return 'editing'
+    if (begun === 'resumed') return 'editing'
     if (!window) return 'needs-window'
     const outcome = await tryStartSession(window)
     if (outcome === 'started') return 'editing'

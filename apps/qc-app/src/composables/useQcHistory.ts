@@ -1,28 +1,12 @@
 /**
- * QC History: Vue-side save / load wrapper.
- *
- * Wraps qc-utils' `serializeHistory` / `parseHistory` / `applyHistory`
- * with the consumer-specific glue:
- *   - using the session window (or, with no session, the loaded
- *     window) as the saved history's window
- *   - file-picker / blob-download plumbing
- *   - fetching the QC history's window into the active datastream's
- *     `ObservationRecord` before replay (qc-utils itself is data-
- *     agnostic; the consumer drives the data fetch)
+ * Download the current QC history as JSON, windowed to the session (or,
+ * with no session, the loaded range).
  */
 
 import { storeToRefs } from 'pinia'
-import {
-  applyHistory,
-  parseHistory,
-  serializeHistory,
-  type ApplyHistoryReport,
-  type ObservationRecord,
-  type QcHistory,
-} from '@uwrl/qc-utils'
+import { serializeHistory, type ObservationRecord } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useObservationStore } from '@/store/observations'
 import { useQcSessionStore } from '@/store/qcSession'
 
 /** Filename for downloaded QC histories: `qc-history-<datastream>-<isoTimestamp>.json`. */
@@ -54,7 +38,6 @@ function downloadJson(payload: unknown, filename: string): void {
 export function useQcHistory() {
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
-  const { fetchObservationsInRange } = useObservationStore()
   const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
 
   // While editing, `beginDate`/`endDate` follow the context range, not the
@@ -95,46 +78,5 @@ export function useQcHistory() {
     downloadJson(history, defaultFilename(datastreamName))
   }
 
-  /**
-   * Read a JSON file, parse it as a QcHistory, fetch the QC history's
-   * window into the current QC datastream, and replay the
-   * operations. Returns the per-op report so the caller can surface
-   * a Snackbar / toast summary.
-   *
-   * No datastream-id matching is enforced. QC histories are reusable
-   * across datastreams (see qc-utils' QC_HISTORY.md "Stay reusable").
-   */
-  async function importHistory(file: File): Promise<ApplyHistoryReport> {
-    const series = selectedSeries.value?.data
-    const datastream = qcDatastream.value
-    if (!series || !datastream) {
-      throw new Error('Pick a QC datastream before loading a QC history.')
-    }
-
-    const text = await file.text()
-    let json: unknown
-    try {
-      json = JSON.parse(text)
-    } catch (e) {
-      throw new Error(
-        `Couldn't parse ${file.name} as JSON: ${e instanceof Error ? e.message : String(e)}`
-      )
-    }
-
-    const history: QcHistory = parseHistory(json)
-
-    // Fetch the QC history's authored window into the active record
-    // BEFORE replaying. Selection-coupled ops reference indices
-    // against this windowed dataset; loading them against a
-    // differently-sized window would mis-target.
-    await fetchObservationsInRange(
-      datastream,
-      new Date(history.window.startDate),
-      new Date(history.window.endDate)
-    )
-
-    return await applyHistory(series as ObservationRecord, history)
-  }
-
-  return { exportHistory, importHistory }
+  return { exportHistory }
 }

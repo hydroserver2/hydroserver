@@ -55,6 +55,7 @@ test.describe('managed datastream preview', () => {
   test.beforeEach(async ({ page }) => {
     await installMocks(page, {
       qcHistories: true,
+      qcCommittedSession: false,
       qcSessionState: [inProgressSession()],
       observationsById: {
         [MANAGED_DATASTREAM_ID]: { phenomenonTime: [], result: [] },

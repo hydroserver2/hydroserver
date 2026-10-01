@@ -128,6 +128,15 @@ describe('SessionList', () => {
     expect(wrapper.emitted('view')![0]).toEqual([committedId])
   })
 
+  it('makes each session row a button, so the keyboard can reach it', async () => {
+    const { committedId } = await seedAndLoad()
+    const wrapper = mountList()
+    await flushPromises()
+    const header = wrapper.find(`[data-testid="session-header-${committedId}"]`)
+    expect(header.element.tagName).toBe('BUTTON')
+    expect(header.attributes('type')).toBe('button')
+  })
+
   it('emits view for the in-progress session too', async () => {
     const { inProgressId } = await seedAndLoad()
     const wrapper = mountList()

@@ -22,7 +22,7 @@
               Choose what to plot around the session you are editing
             </template>
             <template v-else-if="plottedDatastreams.length">
-              Use the pencil button on a row to edit a datastream
+              Use the Edit button on a row to edit a datastream
             </template>
             <template v-else>
               Select datastreams from the table below to preview their data
@@ -264,6 +264,11 @@
                     prepend-icon="mdi-cloud-check-outline"
                     :disabled="commitDisabled"
                     :loading="isCommitting"
+                    :title="
+                      canCommitWorkspace
+                        ? undefined
+                        : `Your role on this workspace (${workspaceRole}) can't write observations, so it can't commit.`
+                    "
                     @click="openCommit"
                   >
                     Commit
@@ -384,6 +389,40 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="showViewConfirm" max-width="520">
+      <v-card rounded="lg" data-testid="view-session-confirm">
+        <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
+          <v-avatar color="warning" variant="tonal" size="40">
+            <v-icon icon="mdi-content-save-alert-outline" size="22" />
+          </v-avatar>
+          <div class="d-flex flex-column">
+            <div class="text-title-large font-weight-bold">Discard unsaved edits?</div>
+            <div class="text-body-small text-medium-emphasis">
+              {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
+              since the last save
+            </div>
+          </div>
+        </div>
+        <v-card-text class="text-body-medium pt-2 pb-4 px-6">
+          Viewing another session drops the edits made since the last save.
+          Save first to keep them.
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
+          <v-btn variant="text" @click="showViewConfirm = false">Cancel</v-btn>
+          <v-spacer />
+          <v-btn
+            color="warning"
+            variant="flat"
+            data-testid="confirm-view-session-btn"
+            @click="onConfirmViewSession"
+          >
+            Discard and view
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="showDiscardConfirm" max-width="520">
       <v-card rounded="lg">
         <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
@@ -423,9 +462,8 @@
 
   <!-- One plot for both layouts. Moving it instead of rebuilding it is what
        keeps the zoom, the session band and a staged range across a view
-       switch. The hosts only exist once this component is in the document,
-       hence the mounted gate. -->
-  <Teleport v-if="isMounted" :to="plotHost">
+       switch. Deferred, since the hosts are rendered by this component. -->
+  <Teleport defer :to="plotHost">
     <DataVisualization />
   </Teleport>
 
@@ -495,7 +533,6 @@ const { currentView, selectedDrawer, selectedOperation } =
   storeToRefs(useUIStore())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 const {
-  editHistory,
   isUpdating,
   activeTab,
   hiddenTraceIds,
@@ -521,18 +558,26 @@ const {
 useUnsavedChangesWarning(hasUnsavedChanges)
 
 // Selecting a session in the list loads the data as that session left it,
-// plus its own operations. Guarded so unsaved edits aren't dropped silently.
+// plus its own operations. Unsaved edits are not dropped without asking.
 const isViewingSession = ref(false)
-async function onViewSession(sessionId: string) {
+const pendingViewSessionId = ref<string | null>(null)
+const showViewConfirm = computed({
+  get: () => !!pendingViewSessionId.value,
+  set: (open) => {
+    if (!open) pendingViewSessionId.value = null
+  },
+})
+function onViewSession(sessionId: string) {
   if (isViewingSession.value) return
-  if (
-    hasUnsavedChanges.value &&
-    !window.confirm(
-      'You have unsaved edits. Viewing another session will discard them. Continue?'
-    )
-  ) {
-    return
-  }
+  if (hasUnsavedChanges.value) pendingViewSessionId.value = sessionId
+  else void openSession(sessionId)
+}
+function onConfirmViewSession() {
+  const sessionId = pendingViewSessionId.value
+  pendingViewSessionId.value = null
+  if (sessionId) void openSession(sessionId)
+}
+async function openSession(sessionId: string) {
   isViewingSession.value = true
   try {
     await viewSession(sessionId)
@@ -546,12 +591,13 @@ async function onViewSession(sessionId: string) {
 }
 const { isReadOnly, inProgressSession, viewedSession, resumeDatastreamId } =
   storeToRefs(useQcSessionStore())
-const { canEdit, roleName } = useWorkspacePermissions()
+const { canEdit, canCommit, roleName } = useWorkspacePermissions()
 const { closeEditor } = useEditEntry()
 
 // Gate the editor footer so a read-only collaborator sees a disabled state
 // instead of a 403 mid-flow.
 const canEditWorkspace = computed(() => canEdit())
+const canCommitWorkspace = computed(() => canCommit())
 const workspaceRole = computed(() => roleName())
 
 // The Edit layout needs a resolved target to render; without one the Select
@@ -560,12 +606,6 @@ const isEditLayout = computed(
   () => currentView.value === DrawerType.Edit && !!qcDatastream.value
 )
 
-// Teleport resolves its target with `document.querySelector`, and this
-// component's own DOM is still detached while it first mounts.
-const isMounted = ref(false)
-onMounted(() => {
-  isMounted.value = true
-})
 const plotHost = computed(() =>
   isEditLayout.value ? '#qc-plot-host-edit' : '#qc-plot-host-select'
 )
@@ -597,7 +637,6 @@ useResumeEditSession(async (id) => {
   await startEditing.value?.resume(id, initialView)
 })
 
-const editCount = computed(() => editHistory.value?.length ?? 0)
 const showCommitConfirm = ref(false)
 const commitDescription = ref('')
 const isSavingDraft = ref(false)
@@ -610,14 +649,14 @@ const saveDisabled = computed(
     !canEditWorkspace.value ||
     isReadOnly.value ||
     !inProgressSession.value ||
-    !editCount.value ||
+    !hasUnsavedChanges.value ||
     isUpdating.value ||
     isSavingDraft.value ||
     isCommitting.value
 )
 const commitDisabled = computed(
   () =>
-    !canEditWorkspace.value ||
+    !canCommitWorkspace.value ||
     isReadOnly.value ||
     !inProgressSession.value ||
     isUpdating.value ||
@@ -625,10 +664,7 @@ const commitDisabled = computed(
     isCommitting.value
 )
 
-// --- Editor layout: sidebar sizes + collapse flags ------------------
-// Persisted to localStorage so the user's preferred layout survives
-// reloads. Widths / percentages share the same `qc:editorLayout`
-// namespace; flags are boolean keys alongside.
+// Editor layout, kept across reloads under `qc:editorLayout`.
 const {
   size: drawerWidth,
   onStart: startDrawerDrag,
@@ -653,10 +689,8 @@ const {
   invert: true,
   storageKey: 'qc:editorLayout:auxWidth',
 })
-// Template ref used by `useResizable` to convert pixel deltas into
-// percent-of-container during the History / OperationPanel split
-// drag. Without the conversion a small pointer move would add raw
-// pixels onto the percent value, making the panel lunge.
+// The History / OperationPanel split is a percentage, so the drag converts
+// pixels against this container.
 const auxBodyEl = useTemplateRef<HTMLElement>('auxBodyEl')
 const {
   size: historyPercent,
@@ -784,11 +818,9 @@ const hydrateFromUrl = () => {
     .map((id) => datastreams.value.find((ds) => ds.id === id))
     .filter((ds): ds is NonNullable<typeof ds> => !!ds)
 
-  // Set the window BEFORE loading datastreams so the first fetch uses it.
-  // A preset resolves against the plotted data during that load. An
-  // unknown id (a share link built by a newer version, or hand-edited)
-  // is not accepted as a preset.
-  // A link with an edit target carries the editor's Context range.
+  // Set the window before loading datastreams so the first fetch uses it.
+  // An unknown preset id is ignored. A link with an edit target carries the
+  // editor's Context range.
   const presetId = state.editDatastreamId ? contextPresetId : selectedDateBtnId
   if (state.datePresetId != null && findPreset(state.datePresetId)) {
     presetId.value = state.datePresetId
@@ -829,11 +861,8 @@ const hydrateFromUrl = () => {
     tooltipsMaxDataPoints.value = state.dataPointsThreshold
   }
 
-  // Park the URL-supplied zoom so the Plot's mount hook can apply it
-  // after `handleNewPlot` finishes the default-fit render.
-  // Carry `source: 'user'` so the zoom-history recorder treats this
-  // as a deliberate viewport choice (URL share is an intentional user
-  // action), matching the ZoomState contract.
+  // Applied once the first draw finishes. A shared zoom is the user's
+  // choice, so it goes into the zoom history as one.
   pendingShareZoom.value = state.zoom
     ? {
         xRange: state.zoom.xRange,
@@ -850,11 +879,9 @@ const hydrateFromUrl = () => {
   // before the resume hook is registered. Nothing to do here for it.
   void setPlottedDatastreams(resolved)
 
-  // Snapshots replay against the session store, which the resume hook loads
-  // asynchronously and independently of the plot. Wait for the editor to
-  // actually be open on the `ed` target (an in-progress or viewed session
-  // means its sessions were applied) rather than chaining off
-  // `setPlottedDatastreams`, which only settles the plot.
+  // Snapshots replay against the session store, which the resume loads on
+  // its own, so wait for the editor to be open on the `ed` target rather
+  // than for the plot.
   const snapshots = state.snapshots ?? []
   const editTargetId = state.editDatastreamId
   // No `immediate`: resuming the editor always takes at least one await, so
@@ -891,11 +918,8 @@ if (datastreams.value.length) {
   )
 }
 
-// Push URL updates whenever any piece of share-relevant state moves.
-// `router.replace` keeps the browser history clean (no entry per
-// click). Heavy lifting (key choice, default-elision, compaction)
-// lives in `share.ts` so this watcher reads as a plain assembly of
-// inputs.
+// Keep the URL in step with the share state. `replace`, so the browser
+// history doesn't get an entry per click.
 const SHARE_KEYS = [
   'ws', 'm', 'ed', 'tab', 'ds', 'snap', 'r', 'from', 'to',
   't', 'op', 'pl', 'h', 'ya', 'z', 'yz', 'dp', 'th',

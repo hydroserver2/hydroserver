@@ -3,17 +3,6 @@ import { config as loadEnv } from 'dotenv'
 
 loadEnv({ path: '.env.local' })
 
-declare global {
-  interface Window {
-    __vbwTestHooks?: {
-      waitForSelectedData: (
-        minLength?: number,
-        timeoutMs?: number
-      ) => Promise<number>
-    }
-  }
-}
-
 const QC_ENTRYPOINT = process.env.QC_E2E_BASE_URL || 'http://127.0.0.1:1203/qc/'
 const E2E_EMAIL = process.env.HYDROSERVER_E2E_EMAIL
 const E2E_PASSWORD = process.env.HYDROSERVER_E2E_PASSWORD

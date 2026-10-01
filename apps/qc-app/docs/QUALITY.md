@@ -40,12 +40,16 @@ signal.
 - All composables under `src/composables/__tests__/`.
 - The plotting utility layer: `events`, `selected`, `zoom`, `internal`,
   `options`, `operations`, `interaction`.
-- Three substantial SFCs under `src/components/`: `EditHistory.vue`,
-  `DataTable.vue`, `DatastreamFilters.vue`.
+- The SFCs with real behaviour of their own: the editor's session and
+  history components (`EditHistory`, `SessionList`, `StartEditingFlow`, the
+  dialogs) and the plot and table components (`DataVisualization`,
+  `PlottedDatastreams`, `DataTable`, `DataVisDatasetsTable`, …), with specs
+  beside each folder in `__tests__/`. Some of them are still in the
+  coverage excludes below, which predate their specs.
 
 ### What is intentionally excluded from coverage
 
-The blanket coverage excludes are listed inline in `vite.config.ts:74-128`
+The blanket coverage excludes are listed inline in `vite.config.ts` (`test.coverage.exclude`)
 with rationale. The high-level groups:
 
 | Group                                                  | Rationale                                                                |
@@ -90,11 +94,10 @@ HydroServer API team either making the columnar response carry
 qualifiers via opt-in (`include=resultQualifierCodes`) or speeding up
 the row mode. Tracked inline as a TODO.
 
-### 2. Three large SFCs not yet unit-tested
+### 2. A large SFC not yet unit-tested
 
-`DataVisualization.vue`, `PlottedDatastreams.vue`, and `FilterPanel.vue`
-are the three highest-complexity SFCs without unit tests. They are
-exercised by E2E specs but lack the per-branch coverage the rest of the
+`FilterPanel.vue` is the highest-complexity SFC without unit tests. It is
+exercised by E2E specs but lacks the per-branch coverage the rest of the
 project has.
 
 ### 3. Documentation gaps

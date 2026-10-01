@@ -1,34 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  formatDateInput,
   formatDateRange,
   formatDayStamp,
   formatStamp,
-  timeZoneAbbreviation,
-  timeZoneDescription,
 } from '../time'
 
 // Datetime strings without a timezone offset are parsed as local time, so
 // these assertions are stable regardless of the test runner's zone.
-describe('formatDateInput', () => {
-  it('formats as MM/DD/YYYY HH:MM (date-input style)', () => {
-    expect(formatDateInput('2025-01-05T14:30:00')).toBe('01/05/2025 14:30')
-  })
-
-  it('zero-pads month, day, hour, and minute', () => {
-    expect(formatDateInput('2025-09-08T04:07:00')).toBe('09/08/2025 04:07')
-  })
-
-  it('returns a dash for nullish input', () => {
-    expect(formatDateInput(null)).toBe('–')
-    expect(formatDateInput(undefined)).toBe('–')
-  })
-
-  it('returns the raw string when unparseable', () => {
-    expect(formatDateInput('not-a-date')).toBe('not-a-date')
-  })
-})
-
 describe('formatDateRange', () => {
   it('states the year once when both bounds share it', () => {
     expect(formatDateRange('2025-01-05T00:00:00', '2025-02-01T00:00:00')).toBe(
@@ -91,34 +69,5 @@ describe('formatStamp', () => {
 
   it('falls back for an unparseable date', () => {
     expect(formatStamp(new Date(NaN))).toBe('–')
-  })
-})
-
-describe('time zone labels', () => {
-  const winter = new Date(2026, 0, 15, 12)
-  const summer = new Date(2026, 6, 15, 12)
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
-
-  const offsetOf = (d: Date) => {
-    const m = -d.getTimezoneOffset()
-    const sign = m < 0 ? '-' : '+'
-    const hh = String(Math.floor(Math.abs(m) / 60)).padStart(2, '0')
-    const mm = String(Math.abs(m) % 60).padStart(2, '0')
-    return `UTC${sign}${hh}:${mm}`
-  }
-
-  it('abbreviates the browser zone on the given date', () => {
-    for (const d of [winter, summer]) {
-      const expected = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
-        .formatToParts(d)
-        .find((p) => p.type === 'timeZoneName')!.value
-      expect(timeZoneAbbreviation(d)).toBe(expected)
-      expect(timeZoneAbbreviation(d)).not.toBe('')
-    }
-  })
-
-  it('names the zone and its UTC offset on the given date', () => {
-    expect(timeZoneDescription(winter)).toBe(`${zone}, ${offsetOf(winter)}`)
-    expect(timeZoneDescription(summer)).toBe(`${zone}, ${offsetOf(summer)}`)
   })
 })

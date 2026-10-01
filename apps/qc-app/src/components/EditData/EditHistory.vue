@@ -76,30 +76,6 @@
         </template>
       </v-tooltip>
 
-      <v-tooltip location="bottom" text="Load QC History">
-        <template #activator="{ props: tp }">
-          <v-btn
-            v-bind="tp"
-            data-testid="history-load-btn"
-            aria-label="Load QC History"
-            size="x-small"
-            variant="text"
-            density="comfortable"
-            icon="mdi-tray-arrow-up"
-            :disabled="isUpdating || isReadOnly"
-            @click.stop="onLoadHistoryClick"
-          />
-        </template>
-      </v-tooltip>
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept="application/json,.json"
-        class="d-none"
-        @click.stop
-        @change="onLoadHistoryFile"
-      />
-
       <v-tooltip v-if="popOutEnabled" location="bottom" text="Open in window">
         <template #activator="{ props: tp }">
           <v-btn
@@ -125,416 +101,356 @@
       <SessionList @view="emit('view-session', $event)">
         <template #operations>
           <div class="rounded border bg-surface overflow-hidden">
-      <!-- Row clicks are a mouse shortcut. The step button is the real control,
-           so the row's other buttons are not nested inside a button. -->
-      <div
-        class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
-        :class="{ 'edit-history__row--clickable': canStepTo }"
-        data-testid="history-reload-step-baseline"
-        :title="canStepTo ? `Preview the session's starting state` : undefined"
-        @click="onRowReload(SNAPSHOT_BASELINE_INDEX)"
-      >
-        <v-icon
-          :icon="
-            selectedSeries?.data.isLoading
-              ? 'mdi-progress-download'
-              : 'mdi-database-check'
-          "
-          size="16"
-          :color="selectedSeries?.data.isLoading ? 'grey' : 'success'"
-          class="mr-2"
-        />
-        <button
-          type="button"
-          class="edit-history__step text-body-small font-weight-medium flex-grow-1 text-truncate"
-          data-testid="history-step-btn-baseline"
-          :disabled="!canStepTo"
-          :title="canStepTo ? `Preview the session's starting state` : undefined"
-          @click.stop="onRowReload(SNAPSHOT_BASELINE_INDEX)"
-        >
-          {{ selectedSeries?.data.isLoading ? 'Loading data…' : 'Data loaded' }}
-        </button>
-        <v-chip
-          v-if="shownStepIndex === SNAPSHOT_BASELINE_INDEX"
-          size="x-small"
-          color="primary"
-          variant="tonal"
-          label
-          class="mr-1 flex-shrink-0"
-          data-testid="history-loaded-baseline"
-        >
-          Showing
-        </v-chip>
-
-        <span
-          v-if="selectedSeries?.data.loadingTime"
-          class="text-body-small text-medium-emphasis mr-1 flex-shrink-0"
-        >
-          {{ formatDuration(selectedSeries?.data.loadingTime) }}
-        </span>
-        <v-progress-circular
-          v-if="selectedSeries?.data.isLoading"
-          size="14"
-          width="2"
-          color="primary"
-          indeterminate
-        />
-        <v-tooltip
-          location="start"
-          :text="
-            snapshotShown(SNAPSHOT_BASELINE_INDEX)
-              ? 'Remove this comparison line'
-              : `Plot the session's starting state`
-          "
-        >
-          <template #activator="{ props: tp }">
-            <v-btn
-              v-bind="tp"
-              data-testid="history-snapshot-baseline"
-              aria-label="Plot the session's starting state"
-              size="x-small"
-              variant="text"
-              density="comfortable"
-              :icon="
-                snapshotShown(SNAPSHOT_BASELINE_INDEX)
-                  ? 'mdi-chart-line-variant'
-                  : 'mdi-chart-line'
-              "
-              :color="
-                snapshotShown(SNAPSHOT_BASELINE_INDEX) ? 'primary' : undefined
-              "
-              :disabled="isBuilding"
-              @click.stop="onToggleSnapshot(SNAPSHOT_BASELINE_INDEX)"
-            />
-          </template>
-        </v-tooltip>
-
-        <!-- Refetches from the server; the step reload above replays the
-             in-memory raw. Hidden on a committed session. -->
-        <v-tooltip
-          v-if="!selectedSeries?.data.isLoading && !isReadOnly"
-          location="start"
-          text="Discard edits and reload from server"
-        >
-          <template #activator="{ props: tp }">
-            <v-btn
-              v-bind="tp"
-              data-testid="history-reload-btn"
-              aria-label="Discard edits and reload from server"
-              size="x-small"
-              variant="text"
-              density="comfortable"
-              icon="mdi-cloud-download-outline"
-              :disabled="isUpdating"
-              @click.stop="onReload"
-            />
-          </template>
-        </v-tooltip>
-      </div>
-
-      <v-divider />
-
-      <div
-        v-if="previewIndex !== null && !isSwitchingSession"
-        class="edit-history__preview d-flex align-center ga-2 px-3 py-2"
-        data-testid="history-preview-banner"
-      >
-        <v-icon icon="mdi-eye-outline" size="16" color="primary" />
-        <span class="text-body-small flex-grow-1">
-          Previewing
-          {{
-            previewIndex < 0
-              ? 'the starting state'
-              : `step ${previewIndex + 1} of ${editCount}`
-          }}. Editing waits until you are back on the latest step.
-        </span>
-        <v-btn
-          data-testid="history-back-to-latest-btn"
-          size="small"
-          variant="flat"
-          color="primary"
-          :disabled="isUpdating"
-          @click.stop="onBackToLatest"
-        >
-          Back to latest
-        </v-btn>
-      </div>
-
-      <!-- Or the outgoing session's operations linger as if they were these. -->
-      <div
-        v-if="isSwitchingSession"
-        class="pa-4 text-center"
-        data-testid="history-loading"
-      >
-        <v-progress-circular indeterminate color="primary" size="24" />
-        <div class="text-body-small text-medium-emphasis mt-2">
-          Loading session…
-        </div>
-      </div>
-
-      <div v-else-if="editCount === 0" class="pa-4 text-center">
-        <v-icon icon="mdi-clock-outline" size="28" color="grey" class="mb-2" />
-        <div class="text-body-small text-medium-emphasis">
-          Edit operations will appear here.
-        </div>
-      </div>
-
-      <div v-else>
-        <div
-          v-for="(entry, index) of editHistory"
-          :key="index"
-          :data-testid="`history-item-${index}`"
-        >
-          <div
-            class="edit-history__row px-3 py-1 d-flex align-center"
-            :class="{
-              'edit-history__row--loading': entry.execution?.inFlight,
-              'edit-history__row--open': openIndex === index,
-              'edit-history__row--loaded': shownStepIndex === index,
-              'edit-history__row--unapplied': !isApplied(index),
-              'edit-history__row--clickable': canStepTo,
-            }"
-            :title="stepTitle(index)"
-            @click="onRowReload(index)"
-          >
-            <button
-              type="button"
-              class="edit-history__expand mr-1 d-inline-flex align-center justify-center cursor-pointer rounded-sm"
-              :title="openIndex === index ? 'Collapse' : 'Expand arguments'"
-              :aria-label="
-                openIndex === index ? 'Collapse' : 'Expand arguments'
-              "
-              :aria-expanded="openIndex === index"
-              @click.stop="toggle(index)"
+            <!-- Row clicks are a mouse shortcut. The step button is the real control,
+                 so the row's other buttons are not nested inside a button. -->
+            <div
+              class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
+              :class="{ 'edit-history__row--clickable': canStepTo }"
+              data-testid="history-reload-step-baseline"
+              :title="canStepTo ? `Preview the session's starting state` : undefined"
+              @click="onRowReload(SNAPSHOT_BASELINE_INDEX)"
             >
               <v-icon
                 :icon="
-                  openIndex === index ? 'mdi-chevron-down' : 'mdi-chevron-right'
+                  selectedSeries?.data.isLoading
+                    ? 'mdi-progress-download'
+                    : 'mdi-database-check'
                 "
                 size="16"
+                :color="selectedSeries?.data.isLoading ? 'grey' : 'success'"
+                class="mr-2"
               />
-            </button>
-
-            <v-icon
-              :icon="iconForMethod(entry.method)"
-              size="16"
-              :color="
-                entry.execution?.status === 'failed'
-                  ? 'error'
-                  : colorForMethod(entry.method)
-              "
-              class="mr-2"
-            />
-
-            <!-- Grows as one unit so the badge sits against the title text. -->
-            <button
-              type="button"
-              class="edit-history__step edit-history__title flex-grow-1 d-flex flex-column align-start"
-              :data-testid="`history-step-btn-${index}`"
-              :disabled="!canStepTo || entry.execution?.inFlight"
-              :title="stepTitle(index)"
-              @click.stop="onRowReload(index)"
-            >
-              <span class="d-flex align-center ga-1 w-100">
-                <span class="edit-history__method text-truncate font-weight-medium">
-                  {{ formatMethod(entry.method) }}
-                </span>
-
-                <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
-                  <template #activator="{ props: tp }">
-                    <v-icon
-                      v-bind="tp"
-                      :data-testid="`history-comment-badge-${index}`"
-                      icon="mdi-comment-text-outline"
-                      size="14"
-                      color="primary"
-                      class="flex-shrink-0"
-                    />
-                  </template>
-                </v-tooltip>
-              </span>
+              <button
+                type="button"
+                class="edit-history__step text-body-small font-weight-medium flex-grow-1 text-truncate"
+                data-testid="history-step-btn-baseline"
+                :disabled="!canStepTo"
+                :title="canStepTo ? `Preview the session's starting state` : undefined"
+                @click.stop="onRowReload(SNAPSHOT_BASELINE_INDEX)"
+              >
+                {{ selectedSeries?.data.isLoading ? 'Loading data…' : 'Data loaded' }}
+              </button>
+              <v-chip
+                v-if="shownStepIndex === SNAPSHOT_BASELINE_INDEX"
+                size="x-small"
+                color="primary"
+                variant="tonal"
+                label
+                class="mr-1 flex-shrink-0"
+                data-testid="history-loaded-baseline"
+              >
+                Showing
+              </v-chip>
 
               <span
-                v-if="stepExtent(entry)"
-                class="edit-history__extent text-medium-emphasis text-truncate w-100"
-                :data-testid="`history-extent-${index}`"
+                v-if="selectedSeries?.data.loadingTime"
+                class="text-body-small text-medium-emphasis mr-1 flex-shrink-0"
               >
-                {{ stepExtent(entry) }}
+                {{ formatDuration(selectedSeries?.data.loadingTime) }}
               </span>
-            </button>
-
-            <v-chip
-              v-if="shownStepIndex === index"
-              size="x-small"
-              color="primary"
-              variant="tonal"
-              label
-              class="mr-1 flex-shrink-0"
-              :data-testid="`history-loaded-${index}`"
-            >
-              Showing
-            </v-chip>
-
-            <div class="d-flex align-center ga-2 flex-shrink-0">
-              <v-tooltip
-                v-if="isApplied(index) && entry.execution?.status === 'failed'"
-                location="start"
-                text="Operation failed: see console for details"
-              >
-                <template #activator="{ props: tp }">
-                  <v-icon
-                    v-bind="tp"
-                    :data-testid="`history-failed-${index}`"
-                    icon="mdi-alert-circle"
-                    size="14"
-                    color="error"
-                  />
-                </template>
-              </v-tooltip>
-
-              <!-- `!= null` so a replay that measures 0ms still reads as
-                   having run. -->
-              <span
-                v-if="isApplied(index) && entry.execution?.durationMs != null"
-                :data-testid="`history-duration-${index}`"
-                class="text-body-small text-medium-emphasis"
-              >
-                {{ formatDuration(entry.execution.durationMs) }}
-              </span>
-
               <v-progress-circular
-                v-if="entry.execution?.inFlight"
+                v-if="selectedSeries?.data.isLoading"
                 size="14"
                 width="2"
                 color="primary"
                 indeterminate
               />
-
               <v-tooltip
                 location="start"
                 :text="
-                  snapshotShown(index)
+                  snapshotShown(SNAPSHOT_BASELINE_INDEX)
                     ? 'Remove this comparison line'
-                    : 'Plot this step as a comparison line'
+                    : `Plot the session's starting state`
                 "
               >
                 <template #activator="{ props: tp }">
                   <v-btn
                     v-bind="tp"
-                    :data-testid="`history-snapshot-${index}`"
-                    aria-label="Plot this step as a comparison line"
+                    data-testid="history-snapshot-baseline"
+                    aria-label="Plot the session's starting state"
                     size="x-small"
                     variant="text"
                     density="comfortable"
                     :icon="
-                      snapshotShown(index)
+                      snapshotShown(SNAPSHOT_BASELINE_INDEX)
                         ? 'mdi-chart-line-variant'
                         : 'mdi-chart-line'
                     "
-                    :color="snapshotShown(index) ? 'primary' : undefined"
-                    :disabled="isBuilding || entry.execution?.inFlight"
-                    @click.stop="onToggleSnapshot(index)"
+                    :color="
+                      snapshotShown(SNAPSHOT_BASELINE_INDEX) ? 'primary' : undefined
+                    "
+                    :disabled="isBuilding"
+                    @click.stop="onToggleSnapshot(SNAPSHOT_BASELINE_INDEX)"
                   />
                 </template>
               </v-tooltip>
 
-              <!-- Trailing entry only; middle entries use "Reload from this
-                   step". Never on a committed session. -->
+              <!-- Refetches from the server; the step reload above replays the
+                   in-memory raw. Hidden on a committed session. -->
               <v-tooltip
-                v-if="index === editHistory.length - 1 && !isReadOnly"
+                v-if="!selectedSeries?.data.isLoading && !isReadOnly"
                 location="start"
-                text="Undo this step"
+                text="Discard edits and reload from server"
               >
                 <template #activator="{ props: tp }">
                   <v-btn
                     v-bind="tp"
-                    :data-testid="`history-undo-${index}`"
-                    aria-label="Undo this step"
+                    data-testid="history-reload-btn"
+                    aria-label="Discard edits and reload from server"
                     size="x-small"
                     variant="text"
                     density="comfortable"
-                    icon="mdi-undo-variant"
-                    color="error"
+                    icon="mdi-cloud-download-outline"
                     :disabled="isUpdating"
-                    @click.stop="onUndo"
+                    @click.stop="onReload"
                   />
                 </template>
               </v-tooltip>
             </div>
-          </div>
 
-          <div v-if="openIndex === index" class="edit-history__args px-3 py-2">
-            <div class="text-body-small text-medium-emphasis mb-1">Arguments</div>
-            <ul class="edit-history__args-list pa-0 ma-0 overflow-y-auto">
-              <li
-                v-for="(arg, argIdx) of entry.args"
-                :key="argIdx"
-                class="text-body-small px-1 py-1"
-                style="word-break: break-all"
+            <v-divider />
+
+            <div
+              v-if="previewIndex !== null && !isSwitchingSession"
+              class="edit-history__preview d-flex align-center ga-2 px-3 py-2"
+              data-testid="history-preview-banner"
+            >
+              <v-icon icon="mdi-eye-outline" size="16" color="primary" />
+              <span class="text-body-small flex-grow-1">
+                Previewing
+                {{
+                  previewIndex < 0
+                    ? 'the starting state'
+                    : `step ${previewIndex + 1} of ${editCount}`
+                }}. Editing waits until you are back on the latest step.
+              </span>
+              <v-btn
+                data-testid="history-back-to-latest-btn"
+                size="small"
+                variant="flat"
+                color="primary"
+                :disabled="isUpdating"
+                @click.stop="onBackToLatest"
               >
-                <code class="text-body-small">{{ formatArg(arg) }}</code>
-              </li>
-            </ul>
+                Back to latest
+              </v-btn>
+            </div>
 
+            <!-- Or the outgoing session's operations linger as if they were these. -->
             <div
-              v-if="isApplied(index) && isDev && entry.execution?.mode"
-              class="text-body-small text-medium-emphasis mt-3 d-flex align-center ga-2"
-              :data-testid="`history-execution-${index}`"
+              v-if="isSwitchingSession"
+              class="pa-4 text-center"
+              data-testid="history-loading"
             >
-              <!-- Dev-only: whether the dispatch ran on a worker or inline. -->
-              <v-chip
-                v-if="isDev && entry.execution?.mode"
-                size="x-small"
-                variant="tonal"
-                :color="entry.execution.mode === 'inline' ? 'success' : 'primary'"
-                class="edit-history__mode-chip"
-                :title="
-                  entry.execution.mode === 'inline'
-                    ? 'Ran on the main thread (inline)'
-                    : 'Ran on a web worker'
-                "
+              <v-progress-circular indeterminate color="primary" size="24" />
+              <div class="text-body-small text-medium-emphasis mt-2">
+                Loading session…
+              </div>
+            </div>
+
+            <div v-else-if="editCount === 0" class="pa-4 text-center">
+              <v-icon icon="mdi-clock-outline" size="28" color="grey" class="mb-2" />
+              <div class="text-body-small text-medium-emphasis">
+                Edit operations will appear here.
+              </div>
+            </div>
+
+            <div v-else>
+              <div
+                v-for="(entry, index) of editHistory"
+                :key="index"
+                :data-testid="`history-item-${index}`"
               >
-                {{ entry.execution.mode }}
-              </v-chip>
-            </div>
+                <div
+                  class="edit-history__row px-3 py-1 d-flex align-center"
+                  :class="{
+                    'edit-history__row--loading': entry.execution?.inFlight,
+                    'edit-history__row--open': openIndex === index,
+                    'edit-history__row--loaded': shownStepIndex === index,
+                    'edit-history__row--unapplied': !isApplied(index),
+                    'edit-history__row--clickable': canStepTo,
+                  }"
+                  :title="stepTitle(index)"
+                  @click="onRowReload(index)"
+                >
+                  <button
+                    type="button"
+                    class="edit-history__expand mr-1 d-inline-flex align-center justify-center cursor-pointer rounded-sm"
+                    :title="openIndex === index ? 'Collapse' : 'Expand arguments'"
+                    :aria-label="
+                      openIndex === index ? 'Collapse' : 'Expand arguments'
+                    "
+                    :aria-expanded="openIndex === index"
+                    @click.stop="toggle(index)"
+                  >
+                    <v-icon
+                      :icon="
+                        openIndex === index ? 'mdi-chevron-down' : 'mdi-chevron-right'
+                      "
+                      size="16"
+                    />
+                  </button>
 
-            <div
-              v-if="entry.performedBy"
-              class="text-body-small text-medium-emphasis mt-3"
-              :data-testid="`history-author-detail-${index}`"
-            >
-              Applied by {{ entry.performedBy }}
-            </div>
+                  <v-icon
+                    :icon="iconForMethod(entry.method)"
+                    size="16"
+                    :color="
+                      entry.execution?.status === 'failed'
+                        ? 'error'
+                        : colorForMethod(entry.method)
+                    "
+                    class="mr-2"
+                  />
 
-            <div class="text-body-small text-medium-emphasis mt-3 mb-1">
-              Comment
-            </div>
-            <v-textarea
-              v-if="!isReadOnly"
-              :model-value="entry.comment ?? ''"
-              :data-testid="`history-comment-${index}`"
-              placeholder="Why was this operation applied?"
-              variant="outlined"
-              density="compact"
-              rows="2"
-              auto-grow
-              hide-details
-              class="text-body-small"
-              @update:model-value="setComment(entry, $event)"
-            />
-            <div
-              v-else
-              class="text-body-small"
-              :class="{ 'text-medium-emphasis font-italic': !entry.comment }"
-              :data-testid="`history-comment-readonly-${index}`"
-            >
-              {{ entry.comment || 'No comment.' }}
-            </div>
-          </div>
+                  <!-- Grows as one unit so the badge sits against the title text. -->
+                  <button
+                    type="button"
+                    class="edit-history__step edit-history__title flex-grow-1 d-flex flex-column align-start"
+                    :data-testid="`history-step-btn-${index}`"
+                    :disabled="!canStepTo || entry.execution?.inFlight"
+                    :title="stepTitle(index)"
+                    @click.stop="onRowReload(index)"
+                  >
+                    <span class="d-flex align-center ga-1 w-100">
+                      <span class="edit-history__method text-truncate font-weight-medium">
+                        {{ formatMethod(entry.method) }}
+                      </span>
 
-          <v-divider />
-        </div>
-      </div>
+                      <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
+                        <template #activator="{ props: tp }">
+                          <v-icon
+                            v-bind="tp"
+                            :data-testid="`history-comment-badge-${index}`"
+                            icon="mdi-comment-text-outline"
+                            size="14"
+                            color="primary"
+                            class="flex-shrink-0"
+                          />
+                        </template>
+                      </v-tooltip>
+                    </span>
+
+                    <span
+                      v-if="stepExtent(entry)"
+                      class="edit-history__extent text-medium-emphasis text-truncate w-100"
+                      :data-testid="`history-extent-${index}`"
+                    >
+                      {{ stepExtent(entry) }}
+                    </span>
+                  </button>
+
+                  <v-chip
+                    v-if="shownStepIndex === index"
+                    size="x-small"
+                    color="primary"
+                    variant="tonal"
+                    label
+                    class="mr-1 flex-shrink-0"
+                    :data-testid="`history-loaded-${index}`"
+                  >
+                    Showing
+                  </v-chip>
+
+                  <div class="d-flex align-center ga-2 flex-shrink-0">
+                    <v-tooltip
+                      v-if="isApplied(index) && entry.execution?.status === 'failed'"
+                      location="start"
+                      text="Operation failed: see console for details"
+                    >
+                      <template #activator="{ props: tp }">
+                        <v-icon
+                          v-bind="tp"
+                          :data-testid="`history-failed-${index}`"
+                          icon="mdi-alert-circle"
+                          size="14"
+                          color="error"
+                        />
+                      </template>
+                    </v-tooltip>
+
+                    <!-- `!= null` so a replay that measures 0ms still reads as
+                         having run. -->
+                    <span
+                      v-if="isApplied(index) && entry.execution?.durationMs != null"
+                      :data-testid="`history-duration-${index}`"
+                      class="text-body-small text-medium-emphasis"
+                    >
+                      {{ formatDuration(entry.execution.durationMs) }}
+                    </span>
+
+                    <v-progress-circular
+                      v-if="entry.execution?.inFlight"
+                      size="14"
+                      width="2"
+                      color="primary"
+                      indeterminate
+                    />
+
+                    <v-tooltip
+                      location="start"
+                      :text="
+                        snapshotShown(index)
+                          ? 'Remove this comparison line'
+                          : 'Plot this step as a comparison line'
+                      "
+                    >
+                      <template #activator="{ props: tp }">
+                        <v-btn
+                          v-bind="tp"
+                          :data-testid="`history-snapshot-${index}`"
+                          aria-label="Plot this step as a comparison line"
+                          size="x-small"
+                          variant="text"
+                          density="comfortable"
+                          :icon="
+                            snapshotShown(index)
+                              ? 'mdi-chart-line-variant'
+                              : 'mdi-chart-line'
+                          "
+                          :color="snapshotShown(index) ? 'primary' : undefined"
+                          :disabled="isBuilding || entry.execution?.inFlight"
+                          @click.stop="onToggleSnapshot(index)"
+                        />
+                      </template>
+                    </v-tooltip>
+
+                    <!-- Trailing entry only: earlier steps are previewed, not
+                         undone. Never on a committed session. -->
+                    <v-tooltip
+                      v-if="index === editHistory.length - 1 && !isReadOnly"
+                      location="start"
+                      text="Undo this step"
+                    >
+                      <template #activator="{ props: tp }">
+                        <v-btn
+                          v-bind="tp"
+                          :data-testid="`history-undo-${index}`"
+                          aria-label="Undo this step"
+                          size="x-small"
+                          variant="text"
+                          density="comfortable"
+                          icon="mdi-undo-variant"
+                          color="error"
+                          :disabled="isUpdating"
+                          @click.stop="onUndo"
+                        />
+                      </template>
+                    </v-tooltip>
+                  </div>
+                </div>
+
+                <EditHistoryStepDetails
+                  v-if="openIndex === index"
+                  :entry="entry"
+                  :index="index"
+                  :applied="isApplied(index)"
+                  :read-only="isReadOnly"
+                  @update:comment="entry.comment = $event"
+                />
+
+                <v-divider />
+              </div>
+            </div>
           </div>
         </template>
       </SessionList>
@@ -567,6 +483,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
 import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
 import SessionList from '@/components/EditData/SessionList.vue'
+import EditHistoryStepDetails from '@/components/EditData/EditHistoryStepDetails.vue'
 import { useQcHistory } from '@/composables/useQcHistory'
 import { useQcSessionStore } from '@/store/qcSession'
 import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
@@ -620,8 +537,7 @@ const { editHistory, selectedSeries, isUpdating, previewIndex } =
 const { selectedOperation } = storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
 const { clearSelected, setPlotSelection } = useDataSelection()
-const { exportHistory, importHistory } = useQcHistory()
-const fileInputRef = ref<HTMLInputElement | null>(null)
+const { exportHistory } = useQcHistory()
 
 const openIndex = ref<number | null>(null)
 
@@ -648,12 +564,6 @@ const onToggleSnapshot = async (opIndex: number) => {
 
 const snapshotShown = (opIndex: number) =>
   !!viewedSessionId.value && isSnapshotPlotted(viewedSessionId.value, opIndex)
-
-function setComment(entry: HistoryItem, value: string) {
-  entry.comment = value
-}
-
-const isDev = import.meta.env.DEV
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
 
@@ -712,26 +622,6 @@ function formatMethod(method: string) {
     .join(' ')
 }
 
-function formatArg(arg: unknown): string {
-  if (Array.isArray(arg)) {
-    const len = arg.length
-    if (!len) return '[]'
-    const preview = arg
-      .slice(0, 5)
-      .map((v) => (typeof v === 'number' ? v : JSON.stringify(v)))
-      .join(', ')
-    return len <= 5 ? `[${preview}]` : `[${preview}, … (${len} items)]`
-  }
-  if (arg && typeof arg === 'object') {
-    try {
-      return JSON.stringify(arg)
-    } catch {
-      return String(arg)
-    }
-  }
-  return String(arg)
-}
-
 const onReload = async () => {
   if (isReadOnly.value || isUpdating.value) return
   isUpdating.value = true
@@ -785,39 +675,6 @@ const onSaveHistory = async () => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     Snackbar.error(`Couldn't save QC history: ${msg}`)
-  }
-}
-
-const onLoadHistoryClick = () => {
-  fileInputRef.value?.click()
-}
-
-const onLoadHistoryFile = async (e: Event) => {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  // Reset early so re-picking the same file fires change again.
-  input.value = ''
-  if (!file) return
-
-  isUpdating.value = true
-  try {
-    const report = await importHistory(file)
-    if (report.failed.length === 0) {
-      Snackbar.success(
-        `Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}.`
-      )
-    } else {
-      Snackbar.warn(
-        `Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}; ` +
-          `${report.failed.length} failed (see history badges).`
-      )
-    }
-    await redraw()
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    Snackbar.error(`Couldn't load QC history: ${msg}`)
-  } finally {
-    isUpdating.value = false
   }
 }
 
@@ -999,23 +856,5 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .edit-history__extent {
   font-size: 0.6875rem;
   line-height: 1.2;
-}
-
-.edit-history__args {
-  background-color: rgba(var(--v-theme-primary), 0.03);
-  border-left: 2px solid rgb(var(--v-theme-primary));
-}
-
-.edit-history__args-list {
-  list-style: none;
-  max-height: 12rem;
-}
-
-.edit-history__mode-chip {
-  font-size: 0.625rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  height: 16px;
-  padding-inline: 6px;
 }
 </style>

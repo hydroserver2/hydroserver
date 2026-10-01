@@ -41,13 +41,13 @@ const committedSession = {
 const ops = (methods: string[]) =>
   methods.map((operationType) => ({ operationType, arguments: [] }))
 
-function makeDeps(base = rec()) {
+function makeDeps(base = rec(), committed: QualityControlSession[] = []) {
   let captured: QcHistory | undefined
   const fetchInRange = vi.fn().mockResolvedValue(base)
   const deps = {
     qcSessions: {
       get: vi.fn(async () => ({ ok: true, data: committedSession })),
-      list: vi.fn(async () => ({ ok: true, data: [] })),
+      list: vi.fn(async () => ({ ok: true, data: committed })),
     },
     qcOperations: {
       list: vi.fn(async () => ({
@@ -60,7 +60,6 @@ function makeDeps(base = rec()) {
       captured = h
       return { applied: h.operations.length, failed: [] }
     }),
-    cloneRecord: async (r: ObservationRecord) => r,
   } as unknown as ReconstructSessionDeps
 
   return { base, captured: () => captured, deps, fetchInRange }
@@ -86,7 +85,7 @@ describe('buildSnapshotRecord', () => {
       'SELECTION',
       'DELETE_POINTS',
     ])
-    expect(out).toBe(base)
+    expect(Array.from(out.dataX)).toEqual(Array.from(base.dataX))
   })
 
   it('replays nothing for an in-progress baseline snapshot', async () => {
@@ -105,7 +104,8 @@ describe('buildSnapshotRecord', () => {
   })
 
   it('loads the in-progress base over the session window', async () => {
-    const { deps, fetchInRange } = makeDeps()
+    // A commit over the same window, so the base comes from the managed datastream.
+    const { deps, fetchInRange } = makeDeps(rec(), [committedSession])
 
     await buildSnapshotRecord(deps, {
       historyId: 'h-1',

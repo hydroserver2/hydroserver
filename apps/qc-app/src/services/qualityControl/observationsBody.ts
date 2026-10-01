@@ -1,5 +1,5 @@
 /** Bulk observations body for the replace-mode createObservations endpoint. */
-export interface ObservationBulkPostBody {
+interface ObservationBulkPostBody {
   fields: ('phenomenonTime' | 'result')[]
   data: unknown[][]
 }

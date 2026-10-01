@@ -14,7 +14,8 @@ import type {
   QcHistory,
   QcHistoryOperation,
 } from '@uwrl/qc-utils'
-import { loadLatestBase } from './session'
+import { committedWindows, loadLatestBase } from './session'
+import { unwrap } from './unwrap'
 import {
   reconstructCommittedSession,
   type ReconstructSessionDeps,
@@ -56,13 +57,16 @@ export async function buildSnapshotRecord(
     return record
   }
 
+  const committed = unwrap(
+    await deps.qcSessions.list(historyId, { status: 'committed', fetch_all: true })
+  )
   const record = await loadLatestBase(
     deps.fetchInRange,
     managed,
     source,
     new Date(session.phenomenonTimeStart),
     new Date(session.phenomenonTimeEnd),
-    deps.cloneRecord
+    committedWindows(committed)
   )
 
   const operations =

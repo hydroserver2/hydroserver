@@ -6,11 +6,11 @@
         <span class="text-body-medium font-weight-bold">Datastreams</span>
         <v-chip
           size="x-small"
-          :color="plottedDatastreams.length ? 'primary' : undefined"
-          :variant="plottedDatastreams.length ? 'tonal' : 'outlined'"
+          :color="plottedSeries.length ? 'primary' : undefined"
+          :variant="plottedSeries.length ? 'tonal' : 'outlined'"
           label
         >
-          {{ plottedDatastreams.length }}/{{ PLOT_CAP }} plotted
+          {{ plottedSeries.length }}/{{ PLOT_CAP }} plotted
         </v-chip>
       </div>
 
@@ -41,10 +41,10 @@
           <v-list density="compact" nav>
             <v-list-item
               prepend-icon="mdi-close-circle-outline"
-              :disabled="!plottedDatastreams.length"
-              @click="clearSelected"
+              :disabled="!canClearPlot"
+              @click="onClearPlot"
             >
-              <v-list-item-title>Clear selected</v-list-item-title>
+              <v-list-item-title>Clear plot</v-list-item-title>
             </v-list-item>
 
             <v-list-item
@@ -60,8 +60,8 @@
 
             <v-list-item
               prepend-icon="mdi-download"
-              :disabled="!plottedDatastreams.length || downloading"
-              @click="downloadSelected(plottedDatastreams)"
+              :disabled="!plottedSeries.length || downloading"
+              @click="downloadSelected(plottedSeries)"
             >
               <v-list-item-title>
                 {{ downloading ? 'Downloading…' : 'Download selected' }}
@@ -326,10 +326,9 @@ import {
 import { Snackbar } from '@uwrl/qc-utils'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useEditEntry } from '@/composables/useEditEntry'
-
-/** Datastreams the user can check. The fifth plot slot is kept for the
- *  datastream being edited. */
-const PLOT_CAP = 4
+import { useClearPlot } from '@/composables/useClearPlot'
+import { isSnapshotId } from '@/utils/snapshotId'
+import { PLOT_CAP } from '@/utils/plotCap'
 
 const emit = defineEmits<{
   (e: 'edit', datastream: Datastream & DatastreamExtended): void
@@ -346,9 +345,12 @@ const {
   qcDatastream,
   editSourceDatastream,
 } = storeToRefs(useDataVisStore())
+// History comparison lines are plotted too, but take no slot.
+const plottedSeries = computed(() =>
+  plottedDatastreams.value.filter((d) => !isSnapshotId(d.id))
+)
 const {
   toggleDatastream,
-  clearPlottedDatastreams,
   sourceGroupIds,
   plotSourceSelection,
 } = useDataVisStore()
@@ -436,9 +438,10 @@ const formatTableDate = (raw: unknown): string => {
   return Number.isNaN(d.getTime()) ? '-' : DATE_FORMATTER.format(d)
 }
 
-const clearSelected = () => {
+const { canClearPlot, clearPlot } = useClearPlot()
+const onClearPlot = async () => {
   showOnlySelected.value = false
-  void clearPlottedDatastreams()
+  await clearPlot()
 }
 
 const plottedIds = computed(
@@ -466,7 +469,7 @@ const isEditing = (item: Datastream) =>
     item.id === qcDatastream.value.id)
 
 const isAtCap = (item: Datastream) =>
-  plottedDatastreams.value.length >= PLOT_CAP && !isChecked(item)
+  plottedSeries.value.length >= PLOT_CAP && !isChecked(item)
 
 // --- Plot selection ---------------------------------------------------------
 // Sources with managed datastreams can't be a single toggle: the click opens
@@ -494,7 +497,7 @@ const plotDialogSlots = computed(() => {
   const source = plotDialogSource.value
   if (!source) return 0
   const group = new Set(sourceGroupIds(source.id))
-  const others = plottedDatastreams.value.filter((d) => !group.has(d.id)).length
+  const others = plottedSeries.value.filter((d) => !group.has(d.id)).length
   return Math.max(PLOT_CAP - others, 0)
 })
 
@@ -506,15 +509,20 @@ async function onPlotClick(item: Datastream & DatastreamExtended) {
   plotDialogSource.value = item
   plotDialogOptions.value = []
   plotDialogLoading.value = true
+  // The dialog may have closed, or moved to another source, meanwhile.
+  const stillOpen = () => plotDialogSource.value?.id === item.id
   try {
-    plotDialogOptions.value = await loadForSource(item.id)
+    const options = await loadForSource(item.id)
+    if (stillOpen()) plotDialogOptions.value = options
   } catch (e) {
     // The raw option stays selectable, so the click isn't a dead end.
-    Snackbar.error(
-      e instanceof Error ? e.message : 'Could not load QC datastreams.'
-    )
+    if (stillOpen()) {
+      Snackbar.error(
+        e instanceof Error ? e.message : 'Could not load QC datastreams.'
+      )
+    }
   } finally {
-    plotDialogLoading.value = false
+    if (stillOpen()) plotDialogLoading.value = false
   }
 }
 

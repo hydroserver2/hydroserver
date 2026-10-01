@@ -177,6 +177,18 @@ describe('CreateDatastreamForm', () => {
     expect(spec.processingLevelId).toBe('pl-new')
   })
 
+  it('shows progress and blocks both buttons while creating', async () => {
+    const w = mountForm({ defaultProcessingLevelId: 'pl-qc', loading: true })
+    const confirm = w.find('[data-testid="create-confirm"]')
+    expect(confirm.classes()).toContain('v-btn--loading')
+    expect(
+      w.find('[data-testid="create-cancel"]').attributes('disabled')
+    ).toBeDefined()
+
+    await field(w, 'create-confirm').vm.$emit('click')
+    expect(w.emitted('confirm')).toBeUndefined()
+  })
+
   it('blocks create and shows a warning when permissionError is set', async () => {
     const w = mountForm({
       defaultProcessingLevelId: 'pl-qc', // otherwise valid

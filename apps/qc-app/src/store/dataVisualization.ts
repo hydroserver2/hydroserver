@@ -28,6 +28,7 @@ import {
   type QualityControlHistory,
   Thing,
 } from '@hydroserver/client'
+import { historyManagedId, historySourceId } from '@/utils/qcHistory'
 
 export const useDataVisStore = defineStore('dataVisualization', () => {
   const {
@@ -50,17 +51,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // source -> managed lookup used by the "Start editing" chooser.
   const qcHistories = ref<QualityControlHistory[]>([])
 
-  const historyManagedId = (h: QualityControlHistory): string | undefined =>
-    (h as any).managedDatastreamId ?? (h as any).managedDatastream?.id
-  const historySourceId = (h: QualityControlHistory): string | undefined =>
-    (h as any).sourceDatastreamId ?? (h as any).sourceDatastream?.id
-
   /** History and catalog source for a managed datastream, if both are known. */
   function managedContext(managedId: string) {
     const history = qcHistories.value.find((h) => historyManagedId(h) === managedId)
-    const sourceId = history ? historySourceId(history) : undefined
-    const source = sourceId ? datastreams.value.find((d) => d.id === sourceId) : undefined
-    return history && source ? { historyId: (history as any).id as string, source } : null
+    if (!history) return null
+    const sourceId = historySourceId(history)
+    const source = datastreams.value.find((d) => d.id === sourceId)
+    return source ? { historyId: history.id, source } : null
   }
 
   /** Load or reuse the working copy of every plotted managed datastream. */
@@ -100,17 +97,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   /** Ids of every managed datastream; these are hidden from the catalog. */
   const managedDatastreamIds = computed(() => {
     const ids = new Set<string>()
-    for (const h of qcHistories.value) {
-      const id = historyManagedId(h)
-      if (id) ids.add(id)
-    }
+    for (const h of qcHistories.value) ids.add(historyManagedId(h))
     return ids
   })
 
   /** Add a newly-created QC history so the new managed datastream is hidden
    *  from the catalog and listed in the chooser without a full reload. */
   function addQcHistory(history: QualityControlHistory) {
-    if (qcHistories.value.some((h) => (h as any).id === (history as any).id)) {
+    if (qcHistories.value.some((h) => h.id === history.id)) {
       return
     }
     qcHistories.value = [...qcHistories.value, history]
@@ -120,7 +114,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    *  vanishes from the chooser and doesn't resurface in the catalog. */
   function removeManagedDatastream(historyId: string, managedId: string) {
     qcHistories.value = qcHistories.value.filter(
-      (h) => (h as any).id !== historyId
+      (h) => h.id !== historyId
     )
     datastreams.value = datastreams.value.filter((d) => d.id !== managedId)
   }
@@ -138,7 +132,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     const map = new Map<string, QualityControlHistory[]>()
     for (const h of qcHistories.value) {
       const sourceId = historySourceId(h)
-      if (!sourceId) continue
       ;(map.get(sourceId) ?? map.set(sourceId, []).get(sourceId)!).push(h)
     }
     return map
@@ -379,8 +372,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   function sourceGroupIds(sourceId: string): string[] {
     const ids = [sourceId]
     for (const h of historiesBySource.value.get(sourceId) ?? []) {
-      const id = historyManagedId(h)
-      if (id) ids.push(id)
+      ids.push(historyManagedId(h))
     }
     return ids
   }
@@ -486,8 +478,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // into at most two loads. Every caller resolves only once a load that
   // started after its change has finished.
   type PlotLoadKind = 'rebuild' | 'range'
-  /** Guard against a range that never settles. */
-  const MAX_RANGE_PASSES = 5
   let loadInFlight: Promise<void> | null = null
   let queuedLoad: { kind: PlotLoadKind; promise: Promise<void> } | null = null
   /** The `loadKey` the series were last loaded for. */
@@ -544,22 +534,17 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     return queuePlotLoad('rebuild')
   }
 
-  /** Load every series for the current range. Responses for a range that
-   *  moved meanwhile are dropped, so load again until it holds still. */
-  async function loadCurrentRange(): Promise<void> {
-    for (let pass = 0; pass < MAX_RANGE_PASSES; pass++) {
-      const begin = beginDate.value
-      const end = endDate.value
-      const key = loadKey()
-      await refreshGraphSeriesArray()
-      if (isCurrentRange(begin, end)) {
-        loadedRangeKey = key
-        return
-      }
-    }
-    console.warn(
-      `Plot range still moving after ${MAX_RANGE_PASSES} loads, drawing anyway.`
-    )
+  /** Load every series for the current range. False when the range moved
+   *  meanwhile: its responses were dropped, and the move queued the load
+   *  that draws the new range. */
+  async function loadCurrentRange(): Promise<boolean> {
+    const begin = beginDate.value
+    const end = endDate.value
+    const key = loadKey()
+    await refreshGraphSeriesArray()
+    if (!isCurrentRange(begin, end)) return false
+    loadedRangeKey = key
+    return true
   }
 
   /** Rebuild the plot from scratch: rebuild the graph-series array from
@@ -582,7 +567,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       beginDate.value = presetRange.begin
       endDate.value = presetRange.end
     }
-    await loadCurrentRange()
+    if (!(await loadCurrentRange())) {
+      // The queued load draws in this one's place, so it has to rebuild.
+      if (queuedLoad) queuedLoad.kind = 'rebuild'
+      return
+    }
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) {
@@ -595,7 +584,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   async function doReloadRange(): Promise<void> {
     if (!seriesDatastreams.value.length) return
     if (loadedRangeKey === loadKey()) return
-    await loadCurrentRange()
+    if (!(await loadCurrentRange())) return
     const { redraw, clearZoomHistory } = usePlotlyStore()
     if (qcDatastreamId.value) {
       // Context reload in the editor: the user's view of the session stays put.

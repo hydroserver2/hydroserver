@@ -103,6 +103,24 @@ describe('handleNewPlot', () => {
     expect(newPlot.mock.calls[0]?.[2]).toStrictEqual(layout)
   })
 
+  // A default sort compares as text, which would put 10 before 9.
+  it('keeps a clicked selection in numeric order', async () => {
+    const { handleNewPlot } = await import('@/utils/plotting/events')
+    const Plotly = (await import('plotly.js-dist')).default
+    const el = fakeGraphDiv({})
+    plotlyRef.value = el
+    await handleNewPlot()
+    const onClick = (el.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([name]) => name === 'plotly_click'
+    )?.[1] as (e: unknown) => Promise<void>
+
+    await onClick({ points: [{ pointIndex: 9, data: { selectedpoints: [10, 2] } }] })
+
+    expect(Plotly.restyle).toHaveBeenLastCalledWith(el, {
+      selectedpoints: [[2, 9, 10]],
+    })
+  })
+
   describe('preserveZoom y ranges', () => {
     const trace = (id: string, n: number, yaxis = 'y') => ({
       id,

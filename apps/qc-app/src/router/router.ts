@@ -1,6 +1,6 @@
 import { routes } from '@/router/routes'
 import { createRouter, createWebHistory } from 'vue-router'
-import { guards } from '@/router/guards'
+import { guards, updateHead } from '@/router/guards'
 
 const router = createRouter({
   history: createWebHistory('/qc/'),
@@ -8,9 +8,7 @@ const router = createRouter({
 })
 
 export function setupRouteGuards() {
-  // Return the guard's result rather than calling `next()`. The callback
-  // form is deprecated in vue-router. `false` cancels, a route location
-  // redirects, and null/undefined proceeds to the next guard.
+  // `false` cancels, a location redirects, and null/undefined continues.
   guards.forEach((fn) => {
     router.beforeEach(async (to, from) => {
       const result = await fn(to, from)
@@ -18,6 +16,9 @@ export function setupRouteGuards() {
       if (result === null || result === undefined) return true
       return result
     })
+  })
+  router.afterEach((to, from, failure) => {
+    if (!failure) updateHead(to, from)
   })
 }
 

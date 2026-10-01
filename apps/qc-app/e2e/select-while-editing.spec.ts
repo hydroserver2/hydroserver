@@ -12,13 +12,14 @@
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import {
+  goToSelect,
   gotoHome,
   openOp,
   setupEditView,
   startSessionFromRow,
   waitForEditorReady,
 } from './support/app'
-import { expectHistoryContains, selectAllPoints } from './support/ops'
+import { applyChangeValues, expectHistoryContains } from './support/ops'
 import {
   DATASTREAM_ID,
   DATASTREAM_ID_B,
@@ -31,13 +32,6 @@ const editPanel = (page: Page) => page.getByTestId('edit-target-panel')
 /** The Select view's right column. The editor stays mounted behind it, so its
  *  own plotted list carries the same test ids. */
 const sidePanel = (page: Page) => page.getByTestId('select-side-panel')
-
-async function goToSelect(page: Page) {
-  await page.getByTestId('nav-rail-item-select').click()
-  await expect(page.getByTestId('datastreams-table')).toBeVisible({
-    timeout: 30_000,
-  })
-}
 
 async function goToEditor(page: Page) {
   await page.getByTestId('nav-rail-item-edit').click()
@@ -108,11 +102,7 @@ test.describe('Select while editing', () => {
 
   test('keeps unsaved edits and leads back to the editor', async ({ page }) => {
     await setupEditView(page)
-    await selectAllPoints(page)
-    await openOp(page, 'changeValues')
-    await page.getByLabel('Value').fill('1')
-    await page.getByRole('button', { name: 'Apply' }).click()
-    await expectHistoryContains(page, 'Change Values')
+    await applyChangeValues(page)
 
     await goToSelect(page)
 

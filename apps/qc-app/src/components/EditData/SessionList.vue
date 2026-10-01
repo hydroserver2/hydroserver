@@ -32,26 +32,17 @@
       line-thickness="2"
       class="qc-session-list__timeline px-2 py-2"
     >
-      <v-timeline-item
+      <SessionTimelineItem
         v-for="session of orderedSessions"
         :key="session.id"
-        fill-dot
-        size="x-small"
-        :icon="session.status === 'in_progress' ? 'mdi-pencil' : 'mdi-check'"
-        :icon-color="session.status === 'in_progress' ? 'warning' : 'success'"
-        width="100%"
+        :kind="session.status"
+        :viewed="session.id === viewedSessionId"
         :data-testid="`session-${session.id}`"
-        class="qc-session-list__item qc-timeline__item"
-        :class="[
-          session.status === 'in_progress'
-            ? 'qc-timeline__item--active'
-            : 'qc-timeline__item--done',
-          { 'qc-timeline__item--viewed': session.id === viewedSessionId },
-        ]"
       >
         <!-- Only the header selects; clicks inside the nested panel must not. -->
-        <div
-          class="d-flex align-center ga-2 cursor-pointer"
+        <button
+          type="button"
+          class="qc-session-list__header-btn d-flex align-center ga-2 w-100 cursor-pointer"
           :data-testid="`session-header-${session.id}`"
           @click="onSelect(session)"
         >
@@ -78,7 +69,7 @@
           <v-chip v-else size="x-small" color="grey" variant="tonal" label>
             View
           </v-chip>
-        </div>
+        </button>
 
         <div v-if="session.id === viewedSessionId" class="mt-2">
           <slot name="operations" />
@@ -98,7 +89,7 @@
         >
           No operations.
         </div>
-      </v-timeline-item>
+      </SessionTimelineItem>
     </v-timeline>
 
     <div v-if="!viewedSessionId" class="pa-2">
@@ -111,7 +102,9 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useQcSessionStore } from '@/store/qcSession'
+import SessionTimelineItem from '@/components/EditData/SessionTimelineItem.vue'
 import { formatDateRange } from '@/utils/time'
+import { sessionOperations } from '@/utils/qcHistory'
 import type { QualityControlSession } from '@hydroserver/client'
 
 const store = useQcSessionStore()
@@ -128,7 +121,7 @@ const sessionPeriod = (session: QualityControlSession): string =>
   formatDateRange(session.phenomenonTimeStart, session.phenomenonTimeEnd)
 
 const operationCount = (session: QualityControlSession): number =>
-  (session as { operations?: unknown[] }).operations?.length ?? 0
+  sessionOperations(session).length
 
 function previewLabel(session: QualityControlSession): string {
   const total = operationCount(session)
@@ -155,4 +148,17 @@ function returnToCurrent(): void {
   min-height: 28px;
 }
 
+.qc-session-list__header-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+.qc-session-list__header-btn:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
 </style>

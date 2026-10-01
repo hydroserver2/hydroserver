@@ -33,6 +33,19 @@ export async function selectAllPoints(page: Page): Promise<void> {
 }
 
 /**
+ * Select every point and change their values: one unsaved edit. Enter on
+ * the field, not a click on Apply, for the same reason as `selectAllPoints`.
+ */
+export async function applyChangeValues(page: Page): Promise<void> {
+  await selectAllPoints(page)
+  await openOp(page, 'changeValues')
+  const value = page.getByLabel('Value')
+  await value.fill('1')
+  await value.press('Enter')
+  await expectHistoryContains(page, 'Change Values')
+}
+
+/**
  * Wait for a history entry matching `methodText` (the formatted
  * Title-Case rendering of the op's method name, e.g. "Change Values").
  */

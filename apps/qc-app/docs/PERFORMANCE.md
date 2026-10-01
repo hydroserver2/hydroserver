@@ -101,7 +101,7 @@ UI freeze on operations that take >300 ms inline.
 
 Observation fetches use HydroServer's columnar format (`format=column`)
 because the row format times out on ~35k-point ranges (see comments in
-`src/utils/observations.ts:24`). The QC App paginates client-side at
+`src/utils/observations.ts`). The QC App paginates client-side at
 50,000 obs / page and merges into the cache.
 
 Key fetch optimizations already in place:
@@ -116,6 +116,14 @@ Key fetch optimizations already in place:
   `applyWindow(begin, end, rawData)`, which re-slices when either the window
   or the cache changed, so the plot, table and counts only ever touch the
   current window.
+
+  A range only counts as asked once a request for it succeeded. A failed
+  page throws instead of returning what it has, and a datastream with no
+  observations yet is never marked, since it may gain some. Paging stops at a
+  short page rather than trusting the datastream's `valueCount`, which can be
+  out of date. A commit calls `forget(id)` on the managed datastream after
+  its upload, which drops its cache, so the next load asks the server again;
+  a load still in flight at that point discards its result and retries.
 - **One plot load at a time.** Rebuilds and context range reloads are
   serialized in `useDataVisStore`. A range reload that lands while a rebuild
   is queued joins it, and one that finds its range already loaded skips, so

@@ -588,7 +588,7 @@ export const createPlotlyOption = (
     // intended cadence, a sibling overlay trace draws the connecting line
     // with NaN-y breaks at gaps; otherwise the series renders as a pure
     // scatter plot. Either way the main trace owns selection and point
-    // indices, so its `line` attribute would be dead config, so it is omitted.
+    // indices, and a `line` on it would be dead config, so it has none.
     // The source is drawn only around the session window: its points
     // before and after it, as views of the record, with a gap in between.
     // Every other series is one piece.

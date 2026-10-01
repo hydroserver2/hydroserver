@@ -70,13 +70,20 @@ hs.datastreams.createObservations(
     fields: ['phenomenonTime', 'result'],
     data: dataX.map((ts, i) => [new Date(ts).toISOString(), dataY[i]]),
   },
-  { mode: 'replace' }
+  {
+    mode: 'replace',
+    phenomenon_time_start: session.phenomenonTimeStart,
+    phenomenon_time_end: session.phenomenonTimeEnd,
+  }
 )
 ```
 
-Replace mode tells HydroServer to overwrite any observation inside the
-posted window. The QC App always submits the full edited window;
-incremental submission is not implemented today.
+Replace mode deletes every observation between `phenomenon_time_start` and
+`phenomenon_time_end`, then inserts the posted ones. The QC App always sends
+the session window as that range, so points deleted at the window's edges are
+removed too, and a session that deleted every point commits an empty body.
+Without the range, the backend falls back to the span of the posted
+observations. Incremental submission is not implemented today.
 
 ### Result qualifier codes
 
@@ -141,6 +148,10 @@ below), and share-link hydration (the `ed` query param).
   `StartEditingFlow.vue` asks earlier, through `closeEditor()`: a created
   managed datastream is always a new target, so the takeover is certain and
   the question must come before anything reaches the server.
+  When the load is superseded it returns `'superseded'`. It shows the
+  `ResumeSupersededError` message only when the same target is still open; a
+  newer entry taking over, or the editor being closed mid-load, ends it
+  quietly, since the user asked for that.
 - `startSessionOver(window)`: starts a new session on the current edit
   target over `window` (a `utils/timeRangePresets.ts` `TimeWindow`); backs
   **Start new session** and the editor footer's **New session**.
@@ -191,11 +202,11 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
   Saving is refused with no session open. Discarding that empties the session
   falls through to the `'empty'` prompt rather than leaving silently.
 - `keepSession()` / `discardSessionAndLeave()`: the `'empty'` answers.
+  `keepSession()` is also the `'saved'` answer, keeping the session as it is.
   Discarding deletes the session through
   `useManagedDatastreams().deleteSession`, and refuses if another
   session was somehow built on it. A failed delete keeps the user in the
   session.
-- `closeSession()`: the `'saved'` answer, keeping the session as it is.
 - `cancelLeave()`: stay, with the zoom, staged band and unsaved edits intact.
 - `forgetSession()`: drop the resume pointer only. For exits that unmount the
   editor, where clearing the edit target would have the editor's URL writer
@@ -207,7 +218,7 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
 ### `useResumeEditSession()`
 
 ```ts
-const { resume } = useResumeEditSession(async (id) => {
+useResumeEditSession(async (id) => {
   await startEditing.value?.resume(id) // StartEditingFlow
 })
 ```
@@ -243,17 +254,14 @@ interacted with the page.
 ### `useQcHistory()`
 
 ```ts
-const { exportHistory, importHistory } = useQcHistory()
+const { exportHistory } = useQcHistory()
 
-await exportHistory()             // downloads qc-history-<datastream>-<isoTimestamp>.json
-const report = await importHistory(file)
-// report = { applied: 12, failed: [{ index, method, error }, ...] }
+await exportHistory() // downloads qc-history-<datastream>-<isoTimestamp>.json
 ```
 
-`exportHistory` reads the current wall-clock window from
-`useDataVisStore`. `importHistory` fetches the script's authored window
-into the active datastream **before** replay (selection-coupled ops
-reference indices against this windowed dataset).
+Serializes the edit record's history with the session window (the viewed or
+in-progress session, or the loaded range when there is none). Download only;
+the app has no import.
 
 ### `useEditLock()`
 
@@ -274,16 +282,17 @@ Orchestrates the server-backed QC session workflow against the
 ```ts
 const {
   beginEditing, startSession, saveDraft, discardUnsavedEdits, commit,
-  needsSession, needsHistory, hasUnsavedChanges, unsavedEditCount,
+  hasUnsavedChanges, unsavedEditCount,
 } = useEditSession()
 ```
 
 - `beginEditing()`: resolves the QC history for the QC datastream, loads
-  its sessions, resumes the in-progress one (or sets `needsSession`); sets
-  `needsHistory` when the datastream isn't QC-managed yet. Resuming rebuilds
-  the shared working copy; if that rebuild is superseded it throws
-  `ResumeSupersededError`, leaves `needsSession` false, and `enterEdit`
-  returns to the Select view. Entries can overlap, so it also throws
+  its sessions and resumes the in-progress one. Returns `'resumed'`,
+  `'needs-session'` when there is none to resume, or `'not-managed'` when
+  the datastream isn't QC-managed yet. Resuming rebuilds the shared working
+  copy; if that rebuild is superseded it throws `ResumeSupersededError`
+  rather than asking for a session, and `enterEdit` returns to the Select
+  view. Entries can overlap, so it also throws
   `ResumeSupersededError` when the edit target changes during any of its
   fetches, and it never writes the session store (source, sessions) for a
   target it no longer owns: sessions are fetched with `fetchSessions` and
@@ -297,8 +306,11 @@ const {
   (append-only reconcile).
 - `discardUnsavedEdits()`: drops edits made since the last save and restores
   edited comments.
-- `commit()`: saves, verifies checksum C, pushes observations
-  (`mode: 'replace'`), then locks the session and reloads the sessions. If
+- `commit()`: saves, checks that the source window's checksum
+  (`datastreams.getObservationsChecksum`) still matches the one the session
+  started with, pushes observations (`mode: 'replace'` over the session
+  window), then locks the session and reloads the sessions. A failed push
+  throws before the session is locked, so it stays in progress. If
   another target took over the editor while they reloaded, it leaves the
   session store and the saved-edits baseline alone and still resolves, since
   the commit itself went through.
@@ -375,16 +387,23 @@ have a null role; `accountType === 'admin'` overrides), so no separate
 endpoint is needed.
 
 ```ts
-const { canEdit, canCreateDatastream, roleName, isOwner, can } =
+const { canEdit, canCommit, canCreateDatastream, roleName } =
   useWorkspacePermissions()
-canEdit()                 // selected workspace: can run the QC edit flow?
-canCreateDatastream(ws)   // can create the managed datastream here?
+canEdit()                 // selected workspace: can work in QC sessions?
+canCommit()               // ...and commit them?
+canCreateDatastream(ws)   // can create a managed datastream here?
 roleName(ws)              // 'Owner' | <collaborator role> | 'Admin' | 'Read-only'
 ```
 
-Used to disable the row Edit button, the editor's Save / Commit controls,
-and the create-datastream form, and to mark each workspace's role on the
-picker.
+Each check is what the API enforces for that step:
+
+| Check | Needs | Gates |
+|---|---|---|
+| `canEdit` | edit Datastream (QC sessions and operations) | row Edit, New session, Save |
+| `canCommit` | `canEdit` and create Observation (the push to the managed datastream) | Commit |
+| `canCreateDatastream` | `canEdit` and create Datastream (its QC history needs edit) | the create-datastream form |
+
+`roleName` labels each workspace's role on the picker.
 
 ### `useResizable()`
 
@@ -442,7 +461,7 @@ on boot.
 | `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 4 streams the user chose to plot. Editing never adds to or removes from it (snapshots are the exception, dropped on leave); the 4-stream cap doesn't count the edit target or its source, so the plot holds at most 6 series while editing. |
 | `qcDatastreamId`                    | state    | `string \| null`                                  | The edit target's id. Set only by the edit flow (`setEditTarget` / `clearEditTarget`); null in the Select view. |
 | `qcDatastream`                      | computed | `Datastream \| null`                              | Live catalog lookup of `qcDatastreamId` in `datastreams`, not `plottedDatastreams`, since the edit target isn't a plotted entry. |
-| `sourceContextDatastream`           | computed | `Datastream \| null`                              | The source drawn around the edit target as context (light grey, cut around the session window). Null without an edit target, with context switched off, or when the user plotted the source, which then draws as an ordinary series. |
+| `sourceContextDatastream`           | computed | `Datastream \| null`                              | The source drawn around the edit target as context (light grey, cut around the session window), with a `ctx:` id so the user can also plot the source as an ordinary series beside it. Null without an edit target or with context switched off. |
 | `seriesDatastreams`                 | computed | `Datastream[]`                                    | What the plot actually draws, in order: `[edit target, its source, ...plotted minus those]` while editing, otherwise `plottedDatastreams` unchanged. Refresh, colour assignment, series ordering, working-copy invalidation, `PlottedDatastreams`, the share watcher, and snapshots all iterate this instead of `plottedDatastreams`. |
 | `qualifierSet`                      | state    | `Set<string>`                                     | Qualifier codes seen on the edit target's loaded points. |
 | `selectedQualifier`                 | state    | `string`                                          | Active qualifier in the picker. |
@@ -563,7 +582,7 @@ handles, live chart caches).
 | `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Fetch observations for `ds` over `[start, end]` and build a `GraphSeries` via `buildGraphSeries`. |
 | `buildGraphSeries`         | action   | `(ds: Datastream, data: ObservationRecord) => GraphSeries` | Build a `GraphSeries` from an already-loaded record, no fetch. Used directly for a managed datastream's working copy. |
 | `assignSeriesColors`       | action   | `(orderedIds: string[]) => void`                  | Stable per-id colour assignment over the legend order. |
-| `colorForDatastream`       | action   | `(id?: string) => string`                         | Resolve the line colour for a datastream (QC is always black). |
+| `colorForDatastream`       | action   | `(id?: string) => string`                         | Resolve the line colour for a datastream (QC is always dark grey, `#3f3f3f`). |
 | `labelColorForDatastream`  | action   | `(id?: string) => string`                         | Darker companion for legend text. |
 | `clearZoomHistory`         | action   | `() => void`                                      | Empty both stacks. |
 | `pushZoomState`            | action   | `(state: ZoomState) => void`                      | Called by the debounced recorder in `utils/plotting/zoom.ts`. |
@@ -579,10 +598,11 @@ Fetches + caches observation windows and inflates them into
 | `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes + `Float32Array` values). |
 | `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date, exclude?: { begin: Date; end: Date }) => Promise<ObservationRecord>` | Fetches only the parts of `[b, e]` never asked for before, skipping `exclude`, and returns the shared record windowed to `[b, e]`. Requests for one datastream run in order, so the record ends on the latest requested window; a request matching the last queued one shares its promise. |
 | `fetchDetachedRecord`      | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Fills the same cache through the same per-datastream queue, but returns a record of its own windowed to `[b, e]`. For working copies and snapshots: never re-windows the shared record the plot draws. |
+| `forget`                   | action   | `(datastreamId: string) => void`                                   | Drops a datastream's cached observations so the next load asks the server again. Called by `commit()` after its upload; a load already in flight discards its result and retries. |
 
 ### `useWorkspaceStore()` (`src/store/workspaces.ts`)
 
-Workspace selection + role-derived edit permission.
+Workspace selection. Permissions come from `useWorkspacePermissions()`.
 
 Persistence: `selectedWorkspace` only (key
 `qc:selectedWorkspace:v1`) so the router's `hasWorkspaceGuard` sees a
@@ -595,7 +615,6 @@ restored selection on the first navigation.
 | `isLoading`                | state    | `boolean`                                         | True while `loadWorkspaces` is in flight. |
 | `selectedWorkspaceId`      | computed | `string \| null`                                  | Shortcut for `selectedWorkspace?.id`. |
 | `hasSelection`             | computed | `boolean`                                         | True iff `selectedWorkspace` is non-null. |
-| `canEditSelected`          | computed | `boolean`                                         | True for workspace owners; for collaborators, true when their role includes an Observation create/edit permission. |
 | `loadWorkspaces`           | action   | `() => Promise<Workspace[]>`                      | Refetch + reconcile against the stored selection (drops the selection if the user lost access). |
 | `selectWorkspace`          | action   | `(id: string \| null) => Workspace \| null`       | Pick by id from `availableWorkspaces`. |
 | `applyWorkspaceById`       | action   | `(id: string) => Workspace \| null`               | Falls back to a placeholder `{ id }` when the list isn't loaded yet. Used by URL hydration. |
@@ -729,7 +748,6 @@ puts the editor in read-only mode.
 | `savedComments`     | state    | `string[]`                              | Comment text of `savedEdits`, since comments are edited in place. |
 | `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |
 | `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
-| `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
 | `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
 | `hasSessionOperations` | computed | `boolean`                            | True when the in-progress session holds any work: the operations the server returned with it, plus anything saved since (a save leaves them in `savedEdits` before the sessions are re-fetched). The leave flow tells an untouched session from one worth keeping with it. |
 | `fetchSessions`     | action   | `(historyId: string) => Promise<QualityControlSession[]>` | Fetch a history's sessions with their operations without writing any state, so a caller can drop a result that went stale (see `useEditSession`). |
@@ -751,15 +769,18 @@ Persisted QC editing preferences. Persistence: key `qc:preferences:v1`,
 
 ### `src/utils/plotting/plotly.ts` (barrel)
 
-Re-exports:
+Re-exports `options`, `zoom`, `relayout`, `selected`, `events`,
+`interaction` and `operations`. `internal.ts` stays private. The ones most
+callers reach for:
 
-| Function                 | Purpose                                                          |
-|--------------------------|------------------------------------------------------------------|
-| `handleNewPlot(...)`     | First-mount: build traces, wire events, set initial range.       |
-| `setSelectedPoints(...)` | Programmatic selection update via `Plotly.restyle`.              |
-| `clearSelection(...)`    | Drop the selection shape + restyle.                              |
-| `redrawTraces(...)`      | Push new typed-array x/y into all plotted traces.                |
-| `updateOptions(...)`     | Apply axis label / range / tick-formatting changes.              |
+| Function                 | From            | Purpose                                                          |
+|--------------------------|-----------------|------------------------------------------------------------------|
+| `handleNewPlot(...)`     | `events.ts`     | First draw: build traces, wire events, set the initial range.    |
+| `createPlotlyOption(...)`| `options.ts`    | Build the traces and layout for the plotted series.              |
+| `setSelectedPoints(...)` | `operations.ts` | Programmatic selection update via `Plotly.restyle`.              |
+| `clearSelection(...)`    | `operations.ts` | Drop the selection shape + restyle.                              |
+
+`updateOptions()` is on the plotly store (`store/plotly.ts`), not here.
 
 ### `src/utils/observations.ts`
 
@@ -809,7 +830,7 @@ opened from the row Edit chooser or the editor footer's **New session**):
 - `sessionWindowIssue(window, source, sessions)`: `null` when `window` is
   valid, otherwise `{ kind, message, fix }` for the first broken rule. The
   window must lie inside the source's extent, and it can't leave a gap
-  before or after the committed history (history spec 7.2.3 / 7.2.4).
+  before or after the committed history.
   Touching an edge or overlapping is fine. `fix` carries only the
   endpoints at fault, set to the nearest valid value (source start or end,
   committed end for a gap after, committed start for a gap before), plus
@@ -818,9 +839,11 @@ opened from the row Edit chooser or the editor footer's **New session**):
   shows it as a button on the warning.
 - `NO_SOURCE_DATA_ISSUE`: the issue for a source without observations.
 - `sessionWindowPresets(source, sessions)`: the dialog's preset chips.
-  `All` (the whole record, the default), then `1y`, `6m`, `1m` counting back
-  from the source's last observation through `presetWindow`, and, when
-  something is committed, `Since commit` (committed end to source end).
+  `All` (the whole record), then `1y`, `6m`, `1m` counting back from the
+  source's last observation through `presetWindow`, and, when something is
+  committed, `Since commit` (committed end to source end). The default
+  window is `defaultSessionWindow` above: `Since commit` when there is
+  committed work after which data arrived, else `All`.
   Each carries its `window` and a short `disabledReason` when that window
   breaks a rule; the dialog disables it and shows the reason as its
   tooltip. Empty when the source has no observations.

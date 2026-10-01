@@ -44,7 +44,7 @@ const handleClick = async (eventData: PlotMouseEvent) => {
     index >= 0
       ? alreadySelected.splice(index, 1)
       : alreadySelected.push(point.pointIndex)
-    alreadySelected.sort()
+    alreadySelected.sort((a, b) => a - b)
 
     // `selections` is a Plotly layout-level option that the published
     // type omits from `Partial<Layout>`. Cast through `unknown` to
@@ -214,7 +214,7 @@ export const handleNewPlot = async (
   // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
   // identity is unchanged and Vue's ref watchers don't refire. It does
   // wipe externally-attached listeners (the ContextPlot's brush sync,
-  // etc.), so bump an epoch so those subscribers know to re-attach.
+  // etc.), so an epoch bump tells those subscribers to re-attach.
   mainPlotEpoch.value++
 
   // Debounce long enough that a rapid scroll-wheel burst collapses

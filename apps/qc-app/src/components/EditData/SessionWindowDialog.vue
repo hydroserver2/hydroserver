@@ -44,7 +44,6 @@
               role="button"
               :aria-pressed="String(activePresetId === preset.id)"
               :disabled="!!preset.disabledReason"
-              class="session-window__preset-chip"
               @click="applyPreset(preset)"
             >
               {{ preset.label }}
@@ -196,10 +195,5 @@ function onStart() {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-}
-
-.session-window__preset-chip {
-  font-size: 0.75rem !important;
-  height: 26px !important;
 }
 </style>

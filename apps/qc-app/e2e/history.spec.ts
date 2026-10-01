@@ -3,7 +3,7 @@
  *   - Undo (toolbar + Ctrl+Z) pops the trailing edit and repopulates
  *     the redoStack; Redo re-applies it.
  *   - Expand chevron on a history row opens the Arguments panel.
- *   - "Reload from this step" reloads to a specific history index.
+ *   - The undo button on the trailing entry rolls it back.
  *
  * We exercise the flow end-to-end: one filter + one edit, then undo /
  * redo the edit and check the row count.

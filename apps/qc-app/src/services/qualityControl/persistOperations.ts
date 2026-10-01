@@ -1,5 +1,5 @@
 /**
- * Persist an edit session's operations to the QC API (spec section 5-6).
+ * Persist an edit session's operations to the QC API.
  *
  * qc-utils' `serializeHistory` emits operations as `{ method, args }`; the
  * QC API speaks `{ operationType, arguments, order }`. The enum values are
@@ -7,6 +7,7 @@
  * `order` by position.
  */
 
+import { isEqual } from 'lodash-es'
 import type { QcHistoryOperation } from '@uwrl/qc-utils'
 import type {
   QualityControlOperationService,
@@ -30,28 +31,26 @@ function operationBody(op: QcHistoryOperation, order: number): QcOperationPostBo
 /** Normalized comment for comparison: blank and absent are both "no comment". */
 const commentOf = (value?: string | null): string | null => value?.trim() || null
 
-/**
- * Map qc-utils serialized operations to QC API operation bodies: rename
- * method/args to operationType/arguments and assign order by index.
- */
-export function sessionOperationsFromSerialized(
-  operations: QcHistoryOperation[]
-): QcOperationPostBody[] {
-  return operations.map((op, index) => operationBody(op, index))
+// Args are compared in their wire form (Dates as ISO strings), and `isEqual`
+// ignores key order, which JSONB does not preserve.
+function sameOperation(
+  persisted: QualityControlOperation,
+  local: QcHistoryOperation
+): boolean {
+  return (
+    persisted.operationType === local.method &&
+    isEqual(persisted.arguments, JSON.parse(JSON.stringify(local.args)))
+  )
 }
 
 /**
  * Reconcile a session's persisted operations with the current ordered set
  * (used when saving an in-progress session).
  *
- * Append-only: existing operations are left untouched so they keep their
+ * The persisted prefix that still matches is left untouched so it keeps its
  * original creator (drafts are shared, and the server stamps each create
- * request with the requesting user). Only operations added since the last
- * save are created; operations removed by undo are deleted from the tail.
- *
- * Limitation: reconciles by position, so a mid-history rewrite that keeps
- * the operation count but changes earlier operations is not re-persisted;
- * the common append / trailing-undo flow is.
+ * request with the requesting user). From the first operation that differs,
+ * persisted operations are deleted and the local ones appended.
  */
 export async function persistSessionOperations(
   qcOperations: QualityControlOperationService,
@@ -65,33 +64,36 @@ export async function persistSessionOperations(
     await qcOperations.list(historyId, sessionId, { fetch_all: true })
   )
 
-  // Undo: drop persisted operations past the current length (newest first).
-  for (let i = existing.length - 1; i >= operations.length; i--) {
-    const op = existing[i]
-    if (op) unwrap(await qcOperations.delete(historyId, sessionId, op.id))
+  let kept = 0
+  while (
+    kept < existing.length &&
+    kept < operations.length &&
+    sameOperation(existing[kept]!, operations[kept]!)
+  ) {
+    kept++
   }
 
-  // Comments are patched in place; the rest of an operation is append-only.
-  const retained = Math.min(existing.length, operations.length)
-  for (let i = 0; i < retained; i++) {
-    const persisted = existing[i]
-    const local = operations[i]
-    if (!persisted || !local) continue
-    const comment = commentOf(local.comment)
+  for (let i = existing.length - 1; i >= kept; i--) {
+    unwrap(await qcOperations.delete(historyId, sessionId, existing[i]!.id))
+  }
+
+  // Comments are patched in place on the kept prefix.
+  for (let i = 0; i < kept; i++) {
+    const persisted = existing[i]!
+    const comment = commentOf(operations[i]!.comment)
     if (commentOf(persisted.comment) === comment) continue
     unwrap(
       await qcOperations.update(historyId, sessionId, persisted.id, { comment })
     )
   }
 
-  // Append the operations added since the last save (server stamps creator).
-  const appended = operations.slice(existing.length)
+  const appended = operations.slice(kept)
   if (appended.length) {
     unwrap(
       await qcOperations.create(
         historyId,
         sessionId,
-        appended.map((op, index) => operationBody(op, existing.length + index))
+        appended.map((op, index) => operationBody(op, kept + index))
       )
     )
   }

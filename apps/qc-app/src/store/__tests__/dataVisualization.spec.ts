@@ -733,9 +733,9 @@ describe('useDataVisStore overlapping plot loads', () => {
     pending.resolve({ id: 'old' })
     await Promise.all([inFlight, queued, reload])
 
+    // The queued rebuild loads the new range once; the stale load doesn't retry.
     const starts = mockFetchObservationsInRange.mock.calls.map((c) => c[1])
-    expect(starts.filter((d) => d === APR)).toHaveLength(2)
-    expect(starts).toHaveLength(3)
+    expect(starts).toEqual([expect.any(Date), APR])
     expect(mockRedraw).not.toHaveBeenCalled()
   })
 

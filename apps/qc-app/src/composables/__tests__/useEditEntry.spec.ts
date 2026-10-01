@@ -9,8 +9,6 @@ const {
   clearEditTarget,
   beginEditing,
   startSession,
-  needsSession,
-  needsHistory,
   currentView,
   selectedDrawer,
   isDrawerOpen,
@@ -35,8 +33,6 @@ const {
     clearEditTarget: vi.fn(),
     beginEditing: vi.fn(),
     startSession: vi.fn(),
-    needsSession: r(false),
-    needsHistory: r(false),
     currentView: r('Select'),
     selectedDrawer: r('Select'),
     isDrawerOpen: r(false),
@@ -96,8 +92,6 @@ vi.mock('@/composables/useEditSession', () => ({
   useEditSession: () => ({
     beginEditing,
     startSession,
-    needsSession,
-    needsHistory,
   }),
 }))
 
@@ -114,8 +108,6 @@ const window = {
 beforeEach(() => {
   createTestPinia()
   vi.clearAllMocks()
-  needsSession.value = false
-  needsHistory.value = false
   currentView.value = 'Select'
   selectedDrawer.value = 'Select'
   isDrawerOpen.value = false
@@ -127,14 +119,13 @@ beforeEach(() => {
   clearEditTarget.mockImplementation(async () => {
     qcDatastream.value = null
   })
-  beginEditing.mockResolvedValue(true)
+  beginEditing.mockResolvedValue('resumed')
   startSession.mockResolvedValue(undefined)
   requestLeave.mockResolvedValue(true)
 })
 
 describe('useEditEntry', () => {
   it('resumes into the editor when a session is in progress', async () => {
-    needsSession.value = false
     const result = await useEditEntry().enterEdit('mgd')
     expect(setEditTarget).toHaveBeenCalledWith('mgd')
     expect(result).toBe('editing')
@@ -143,19 +134,13 @@ describe('useEditEntry', () => {
   })
 
   it('asks for a window when there is no session and none was given', async () => {
-    beginEditing.mockImplementation(async () => {
-      needsSession.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('needs-session')
     expect(await useEditEntry().enterEdit('mgd')).toBe('needs-window')
     expect(startSession).not.toHaveBeenCalled()
   })
 
   it('starts a session over the given window', async () => {
-    beginEditing.mockImplementation(async () => {
-      needsSession.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('needs-session')
     expect(await useEditEntry().enterEdit('mgd', window)).toBe('editing')
     expect(startSession).toHaveBeenCalledWith({
       phenomenonTimeStart: '2025-01-01T00:00:00.000Z',
@@ -164,10 +149,7 @@ describe('useEditEntry', () => {
   })
 
   it('keeps the editor open when starting the session fails', async () => {
-    beginEditing.mockImplementation(async () => {
-      needsSession.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('needs-session')
     startSession.mockRejectedValueOnce(new Error('bad window'))
     expect(await useEditEntry().enterEdit('mgd', window)).toBe('needs-window')
     expect(error).toHaveBeenCalledWith('bad window')
@@ -176,10 +158,7 @@ describe('useEditEntry', () => {
   })
 
   it('leaves the editor when the new session was superseded', async () => {
-    beginEditing.mockImplementation(async () => {
-      needsSession.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('needs-session')
     startSession.mockRejectedValueOnce(new ResumeSupersededError())
     expect(await useEditEntry().enterEdit('mgd', window)).toBe('superseded')
     expect(currentView.value).toBe('Select')
@@ -192,6 +171,27 @@ describe('useEditEntry', () => {
     expect(error).toHaveBeenCalledWith('superseded')
     expect(currentView.value).toBe('Select')
     expect(resumeDatastreamId.value).toBeNull()
+  })
+
+  it('says nothing when the editor was closed while the session opened', async () => {
+    beginEditing.mockImplementationOnce(async () => {
+      qcDatastream.value = null
+      throw new ResumeSupersededError()
+    })
+    expect(await useEditEntry().enterEdit('mgd')).toBe('superseded')
+    expect(error).not.toHaveBeenCalled()
+    expect(currentView.value).toBe('Select')
+  })
+
+  it('says nothing when the editor was closed while a new session started', async () => {
+    beginEditing.mockResolvedValue('needs-session')
+    startSession.mockImplementationOnce(async () => {
+      qcDatastream.value = null
+      throw new ResumeSupersededError()
+    })
+    expect(await useEditEntry().enterEdit('mgd', window)).toBe('superseded')
+    expect(error).not.toHaveBeenCalled()
+    expect(currentView.value).toBe('Select')
   })
 
   it('leaves the editor and rethrows any other resume failure', async () => {
@@ -217,19 +217,16 @@ describe('useEditEntry', () => {
   })
 
   // A newer entry took over while this one awaited; it owns the view state.
-  const takeOverDuringBegin = (flags: () => void) =>
+  const takeOverDuringBegin = (outcome: string) =>
     beginEditing.mockImplementation(async () => {
       qcDatastream.value = { id: 'newer' }
       resumeDatastreamId.value = 'newer'
       currentView.value = 'Edit'
-      flags()
-      return false
+      return outcome
     })
 
   it('stands down when the target changes before a not-managed result', async () => {
-    takeOverDuringBegin(() => {
-      needsHistory.value = true
-    })
+    takeOverDuringBegin('not-managed')
     expect(await useEditEntry().enterEdit('mgd')).toBe('superseded')
     expect(clearEditTarget).not.toHaveBeenCalled()
     expect(resumeDatastreamId.value).toBe('newer')
@@ -238,9 +235,7 @@ describe('useEditEntry', () => {
   })
 
   it('stands down when the target changes before starting a session', async () => {
-    takeOverDuringBegin(() => {
-      needsSession.value = true
-    })
+    takeOverDuringBegin('needs-session')
     expect(await useEditEntry().enterEdit('mgd', window)).toBe('superseded')
     expect(startSession).not.toHaveBeenCalled()
     expect(clearEditTarget).not.toHaveBeenCalled()
@@ -248,10 +243,7 @@ describe('useEditEntry', () => {
   })
 
   it('does not leave a newer target when its own start is superseded', async () => {
-    beginEditing.mockImplementation(async () => {
-      needsSession.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('needs-session')
     startSession.mockImplementationOnce(async () => {
       qcDatastream.value = { id: 'newer' }
       resumeDatastreamId.value = 'newer'
@@ -263,10 +255,7 @@ describe('useEditEntry', () => {
   })
 
   it('backs out when the datastream has no QC history', async () => {
-    beginEditing.mockImplementation(async () => {
-      needsHistory.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('not-managed')
     expect(await useEditEntry().enterEdit('mgd')).toBe('not-managed')
     expect(clearEditTarget).toHaveBeenCalled()
     expect(currentView.value).toBe('Select')
@@ -303,10 +292,7 @@ describe('useEditEntry', () => {
 
   it('still starts a session over a window on its own target', async () => {
     qcDatastream.value = { id: 'mgd' }
-    beginEditing.mockImplementation(async () => {
-      needsSession.value = true
-      return false
-    })
+    beginEditing.mockResolvedValue('needs-session')
     expect(await useEditEntry().enterEdit('mgd', window)).toBe('editing')
     expect(startSession).toHaveBeenCalled()
   })

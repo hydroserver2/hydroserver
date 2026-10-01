@@ -30,6 +30,22 @@ const series = (from: number, to: number, value: (i: number) => number) => {
 const WINDOW_START = 40
 const PEAK = 500
 
+// Committed up to the window, which the managed datastream holds.
+const committed: MockQcSession = {
+  id: 'qcs-before',
+  historyId: QC_HISTORY_ID,
+  status: 'committed',
+  description: null,
+  phenomenonTimeStart: at(0),
+  phenomenonTimeEnd: at(WINDOW_START - 1),
+  sourceChecksum: QC_SOURCE_CHECKSUM,
+  createdAt: at(0),
+  committedAt: at(0),
+  createdBy: { name: 'Test User', email: 'test@example.com' },
+  dependencyIds: [],
+  operations: [],
+}
+
 const session: MockQcSession = {
   id: 'qcs-open',
   historyId: QC_HISTORY_ID,
@@ -50,7 +66,8 @@ test('the edit target is not clipped by a range fitted to other data', async ({
 }) => {
   await installMocks(page, {
     qcHistories: true,
-    qcSessionState: [session],
+    qcCommittedSession: false,
+    qcSessionState: [committed, session],
     observationsById: {
       [DATASTREAM_ID]: series(0, 120, (i) => (i < WINDOW_START ? 10 : PEAK)),
       [MANAGED_DATASTREAM_ID]: series(0, WINDOW_START, () => 10),

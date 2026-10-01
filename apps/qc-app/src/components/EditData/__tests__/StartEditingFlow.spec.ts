@@ -139,10 +139,12 @@ const ChooserStub = stub('StartEditingDialog', 'chooser-stub', [
   'create',
   'cancel',
 ])
-const CreateStub = stub('CreateDatastreamForm', 'create-stub', [
-  'cancel',
-  'confirm',
-])
+const CreateStub = defineComponent({
+  name: 'CreateDatastreamForm',
+  emits: ['cancel', 'confirm'],
+  props: { loading: Boolean },
+  setup: () => () => h('div', { 'data-testid': 'create-stub' }),
+})
 const WindowStub = stub('SessionWindowDialog', 'window-stub', [
   'confirm',
   'cancel',
@@ -546,5 +548,111 @@ describe('StartEditingFlow', () => {
     wrapper.findComponent(WindowStub).vm.$emit('confirm', window)
     await flushPromises()
     expect(enterEdit).toHaveBeenCalledWith('mgd-new', window, 'Select')
+  })
+
+  it('keeps the create form open and busy until the create finishes', async () => {
+    loadForSource.mockResolvedValue([])
+    let finish!: (value: unknown) => void
+    createManaged.mockReturnValue(new Promise((resolve) => (finish = resolve)))
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    const form = wrapper.findComponent(CreateStub)
+    form.vm.$emit('confirm', { source, processingLevelId: 'pl' })
+    await flushPromises()
+
+    expect(dialogOpen(wrapper, 1)).toBe(true)
+    expect(form.props('loading')).toBe(true)
+
+    finish({ managedDatastream: { id: 'mgd-new', name: 'New' }, history: {} })
+    await flushPromises()
+    expect(dialogOpen(wrapper, 1)).toBe(false)
+    expect(form.props('loading')).toBe(false)
+  })
+
+  it('keeps the create form open when the create fails', async () => {
+    loadForSource.mockResolvedValue([])
+    createManaged.mockRejectedValue(new Error('Name already taken'))
+    const { wrapper, flow } = mountFlow()
+    await flow.openFor(source)
+    await flushPromises()
+    const form = wrapper.findComponent(CreateStub)
+    form.vm.$emit('confirm', { source, processingLevelId: 'pl' })
+    await flushPromises()
+
+    expect(error).toHaveBeenCalledWith('Name already taken')
+    expect(dialogOpen(wrapper, 1)).toBe(true)
+    expect(form.props('loading')).toBe(false)
+    expect(present('window-stub')).toBe(false)
+  })
+})
+
+describe('StartEditingFlow deletes', () => {
+  const openChooser = async (option: unknown) => {
+    loadForSource.mockResolvedValue([option])
+    const mounted = mountFlow()
+    await mounted.flow.openFor(source)
+    await flushPromises()
+    return mounted.wrapper.findComponent(ChooserStub)
+  }
+
+  it('leaves the editor after deleting the managed datastream it has open', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    deleteManaged.mockResolvedValue(undefined)
+    const chooser = await openChooser(optionWith([committed]))
+
+    chooser.vm.$emit('delete', optionWith([committed]))
+    await flushPromises()
+
+    expect(removeManagedDatastream).toHaveBeenCalledWith('h', 'mgd')
+    expect(leaveEdit).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the editor when another managed datastream is deleted', async () => {
+    qcDatastream.value = { id: 'other' }
+    deleteManaged.mockResolvedValue(undefined)
+    const chooser = await openChooser(optionWith([committed]))
+
+    chooser.vm.$emit('delete', optionWith([committed]))
+    await flushPromises()
+
+    expect(leaveEdit).not.toHaveBeenCalled()
+  })
+
+  it('leaves the editor after deleting a session of the datastream it has open', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    deleteSession.mockResolvedValue(undefined)
+    const option = optionWith([committed, inProgress])
+    const chooser = await openChooser(option)
+
+    chooser.vm.$emit('deleteSession', option, 's-1')
+    await flushPromises()
+
+    expect(deleteSession).toHaveBeenCalledWith('h', 's-1')
+    expect(leaveEdit).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the editor when the delete fails', async () => {
+    qcDatastream.value = { id: 'mgd' }
+    deleteManaged.mockRejectedValue(new Error('Forbidden'))
+    const chooser = await openChooser(optionWith([committed]))
+
+    chooser.vm.$emit('delete', optionWith([committed]))
+    await flushPromises()
+
+    expect(error).toHaveBeenCalledWith('Forbidden')
+    expect(leaveEdit).not.toHaveBeenCalled()
+  })
+
+  it('shows a failed session delete even when reloading the chooser fails too', async () => {
+    deleteSession.mockRejectedValue(new Error('Has dependents'))
+    const option = optionWith([committed, inProgress])
+    const chooser = await openChooser(option)
+    loadForSource.mockRejectedValue(new Error('Offline'))
+
+    chooser.vm.$emit('deleteSession', option, 's-1')
+    await flushPromises()
+
+    expect(error).toHaveBeenCalledWith('Has dependents')
   })
 })

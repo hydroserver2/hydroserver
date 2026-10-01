@@ -558,9 +558,6 @@ describe('EditHistory.vue actions', () => {
       expect(
         w.find('[data-testid="history-redo-btn"]').attributes('disabled')
       ).toBeDefined()
-      expect(
-        w.find('[data-testid="history-load-btn"]').attributes('disabled')
-      ).toBeDefined()
     })
 
     it('hides reload-from-server, which would wipe the record', async () => {

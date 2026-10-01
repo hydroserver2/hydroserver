@@ -145,12 +145,7 @@ watch(
   background: transparent;
 }
 
-.editable-cell__display--readonly:hover {
-  border-color: transparent;
-  background: transparent;
-}
-
-.editable-cell__display:hover {
+.editable-cell__display:not(.editable-cell__display--readonly):hover {
   border-color: rgba(var(--v-theme-primary), 0.45);
   background-color: rgba(var(--v-theme-primary), 0.06);
 }
