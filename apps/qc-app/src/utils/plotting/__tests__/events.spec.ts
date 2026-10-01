@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { reactive, ref } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 
 const newPlot = vi.fn()
 
@@ -10,6 +11,7 @@ vi.mock('plotly.js-dist', () => ({
     update: vi.fn(),
     restyle: vi.fn(),
     relayout: vi.fn(),
+    purge: vi.fn(),
   },
 }))
 
@@ -101,6 +103,88 @@ describe('handleNewPlot', () => {
     await handleNewPlot(fakeGraphDiv({}) as unknown as HTMLElement)
 
     expect(newPlot.mock.calls[0]?.[2]).toStrictEqual(layout)
+  })
+
+  it('finishes an older draw before drawing the newly loaded edit target', async () => {
+    const { handleNewPlot } = await import('@/utils/plotting/events')
+    const el = fakeGraphDiv({})
+    plotlyRef.value = el
+    let finishFirst!: () => void
+    newPlot.mockImplementationOnce((target, traces) => new Promise((resolve) => {
+      finishFirst = () => {
+        target.data = traces
+        resolve(target)
+      }
+    }))
+    newPlot.mockImplementation((target, traces) => {
+      target.data = traces
+      return Promise.resolve(target)
+    })
+
+    plotlyOptions.value = { traces: [{ id: 'context' }], layout: {}, config: {} }
+    const first = handleNewPlot()
+    plotlyOptions.value = { traces: [{ id: 'edit' }, { id: 'context' }], layout: {}, config: {} }
+    const second = handleNewPlot(undefined, { preserveZoom: true })
+    const callsBeforeFirstFinished = newPlot.mock.calls.length
+    finishFirst()
+    await Promise.all([first, second])
+
+    expect(callsBeforeFirstFinished).toBe(1)
+    expect((el.data as { id: string }[]).map((t) => t.id)).toEqual(['edit', 'context'])
+  })
+
+  it('does not consume a share zoom on an empty draw while data arrives', async () => {
+    const { handleNewPlot } = await import('@/utils/plotting/events')
+    const el = fakeGraphDiv({})
+    let finishFirst!: () => void
+    newPlot.mockImplementationOnce(() => new Promise((resolve) => {
+      finishFirst = () => resolve(el)
+    }))
+    pendingShareZoom.value = { xRange: [1, 2], yRanges: {}, source: 'user' }
+    const first = handleNewPlot(el as unknown as HTMLElement)
+    plotlyOptions.value = { traces: [{ id: 'edit', x: [1, 2] }], layout: {}, config: {} }
+    finishFirst()
+    await first
+
+    expect(pendingShareZoom.value).not.toBeNull()
+    await handleNewPlot()
+    expect(pendingShareZoom.value).toBeNull()
+  })
+
+  it('continues a queued draw after an earlier draw fails', async () => {
+    const { handleNewPlot } = await import('@/utils/plotting/events')
+    plotlyRef.value = fakeGraphDiv({})
+    let failFirst!: (error: Error) => void
+    newPlot.mockImplementationOnce(() => new Promise((_, reject) => {
+      failFirst = reject
+    }))
+    const first = handleNewPlot()
+    const rejected = expect(first).rejects.toThrow('draw failed')
+    const second = handleNewPlot()
+    failFirst(new Error('draw failed'))
+    await rejected
+    await second
+    await flushPromises()
+    expect(newPlot).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not restore an unmounted plot after its pending draw finishes', async () => {
+    const { handleNewPlot, disposePlot } = await import('@/utils/plotting/events')
+    const Plotly = (await import('plotly.js-dist')).default
+    const oldElement = fakeGraphDiv({}) as unknown as HTMLElement
+    const currentElement = fakeGraphDiv({}) as unknown as HTMLElement
+    let finishOld!: () => void
+    newPlot.mockImplementationOnce(() => new Promise((resolve) => {
+      finishOld = () => resolve(oldElement)
+    }))
+    const oldDraw = handleNewPlot(oldElement)
+    const cleanup = disposePlot(oldElement)
+    await handleNewPlot(currentElement)
+    finishOld()
+    await Promise.all([oldDraw, cleanup])
+
+    expect(plotlyRef.value).toBe(currentElement)
+    expect(Plotly.purge).toHaveBeenCalledWith(oldElement)
   })
 
   // A default sort compares as text, which would put 10 before 9.

@@ -391,6 +391,7 @@ import { storeToRefs } from 'pinia'
 import Plotly from 'plotly.js-dist'
 import {
   handleNewPlot,
+  disposePlot,
   handleRelayout,
   zoomXaxisTo,
 } from '@/utils/plotting/plotly'
@@ -737,9 +738,9 @@ onBeforeUnmount(() => {
   isUnmounted = true
   // The store must not keep a detached plot: a rebuild before the next plot's
   // first draw would land on it (and spend a share link's zoom there).
-  if (plot.value && (plotlyRef.value as unknown) === plot.value) {
-    Plotly.purge(plot.value)
-    plotlyRef.value = null
+  // disposePlot also stops a draw still in flight from putting it back.
+  if (plot.value) {
+    void disposePlot(plot.value).catch((e) => console.error('Plot cleanup failed', e))
   }
   if (pendingResizeFrame != null) {
     cancelAnimationFrame(pendingResizeFrame)

@@ -24,6 +24,18 @@ import {
 import type { AppPlotlyTrace } from './options'
 import { withLiveShapes } from './shapes'
 import { toPlotDate } from './plotTime'
+import { queuePlotDraw } from './draw'
+
+const disposedPlots = new WeakSet<HTMLElement>()
+
+/** A pending draw must never put an unmounted graph back into the store. */
+export function disposePlot(target: HTMLElement): Promise<void> {
+  disposedPlots.add(target)
+  const store = usePlotlyStore()
+  if (store.plotlyRef === target) store.plotlyRef = null
+  // Purging during newPlot would tear down the resources it is still using.
+  return queuePlotDraw(target, async () => { Plotly.purge(target) })
+}
 
 const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
@@ -70,14 +82,25 @@ const handleClick = async (eventData: PlotMouseEvent) => {
  * `refitSeriesIds` (its data was replaced). Such an axis was fitted to other
  * data, so it autoranges instead of clipping what arrived.
  */
-export const handleNewPlot = async (
+export const handleNewPlot = (
   element?: HTMLElement,
   opts?: { preserveZoom?: boolean; refitSeriesIds?: string[] }
+): Promise<void> => {
+  const target = element ?? usePlotlyStore().plotlyRef
+  if (!target) return Promise.resolve()
+  return queuePlotDraw(target, () => drawPlot(target, !!element, opts))
+}
+
+const drawPlot = async (
+  target: HTMLElement,
+  firstMount: boolean,
+  opts?: { preserveZoom?: boolean; refitSeriesIds?: string[] }
 ) => {
+  if (disposedPlots.has(target)) return
   const { plotlyOptions, plotlyRef, mainPlotEpoch, pendingShareZoom } =
     storeToRefs(usePlotlyStore())
 
-  if (!element && plotlyRef.value?.data) {
+  if (!firstMount && plotlyRef.value?.data) {
     const visibleBySeriesId: Record<string, boolean | 'legendonly'> = {}
     for (const trace of plotlyRef.value.data) {
       const t = trace as AppPlotlyTrace
@@ -106,7 +129,7 @@ export const handleNewPlot = async (
 
   if (
     opts?.preserveZoom &&
-    !element &&
+    !firstMount &&
     plotlyRef.value?.layout &&
     plotlyRef.value?.data
   ) {
@@ -166,32 +189,35 @@ export const handleNewPlot = async (
 
   // A re-plot keeps the live staged range band, which `createPlotlyOption`
   // doesn't build. A first mount has no live plot to read it from.
-  const layout = element
+  const layout = firstMount
     ? plotlyOptions.value.layout
     : withLiveShapes(plotlyOptions.value.layout, plotlyRef.value?.layout)
 
   // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
   // `plotlyRef` is now typed as `PlotlyHTMLElement | null`
+  const traces = plotlyOptions.value.traces
   const newElement = await Plotly.newPlot(
-    element || plotlyRef.value as Plotly.Root,
-    plotlyOptions.value.traces,
+    target,
+    traces,
     layout,
     plotlyOptions.value.config
   )
+  if (disposedPlots.has(target)) return
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value
 
   // Share-URL zoom: one-shot directive set by the URL hydrator. Apply
   // it via `Plotly.relayout` after `Plotly.newPlot` and clear the
   // ref. The first `handleNewPlot` after mount usually has empty
   // traces (the rebuild is queued behind the catalog fetch), so we
-  // gate on `traces.length` to skip until the rebuild lands with
-  // real data.
+  // gate on the traces passed to THIS draw. Options may have changed while
+  // it was rendering; consuming the zoom on an empty draw would let the
+  // subsequent data draw replace it with the default viewport.
   //
   // Note: this does NOT need to preserve Plotly's `_rangeInitial0/1`
   // for Reset Axes: the custom Reset button in `options.ts`
   // computes the data extent directly from `trace.x` rather than
   // relying on Plotly's internal anchors.
-  if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
+  if (pendingShareZoom.value && traces.some((t) => (t as AppPlotlyTrace).x?.length)) {
     const snap = pendingShareZoom.value
     const update: Record<string, [number, number] | [string, string] | boolean> = {}
     if (snap.xRange) {

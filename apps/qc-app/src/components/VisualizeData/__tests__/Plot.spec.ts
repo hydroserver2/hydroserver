@@ -76,13 +76,15 @@ vi.mock('@/composables/useResizable', () => ({
   usePersistedFlag: (_key: string, initial: boolean) => ref(initial),
 }))
 
-const { handleNewPlot, zoomXaxisTo } = vi.hoisted(() => ({
+const { handleNewPlot, disposePlot, zoomXaxisTo } = vi.hoisted(() => ({
   handleNewPlot: vi.fn(),
+  disposePlot: vi.fn().mockResolvedValue(undefined),
   zoomXaxisTo: vi.fn(),
 }))
 
 vi.mock('@/utils/plotting/plotly', () => ({
   handleNewPlot,
+  disposePlot,
   handleRelayout: vi.fn(),
   zoomXaxisTo,
 }))
@@ -185,6 +187,14 @@ describe('Plot.vue delayed mount', () => {
     wrapper.unmount()
     await vi.advanceTimersByTimeAsync(200)
     expect(handleNewPlot).not.toHaveBeenCalled()
+  })
+
+  it('disposes its graph when unmounted', async () => {
+    const wrapper = mountIt()
+    await flushPromises()
+    const target = wrapper.find('[data-testid="main-plot"]').element
+    wrapper.unmount()
+    expect(disposePlot).toHaveBeenCalledWith(target)
   })
 
   describe('editor zoom to the session window', () => {

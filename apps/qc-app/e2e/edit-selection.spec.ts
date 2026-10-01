@@ -103,11 +103,21 @@ async function typeDateTime(field: Locator, when: Date) {
     [inputs.nth(1), time],
   ] as const) {
     await input.click()
+    // The field selects a date/time segment on the next animation frame.
+    // Let that click handler finish before selecting the entire value.
     await input.evaluate((el: HTMLInputElement) =>
-      el.setSelectionRange(0, el.value.length)
+      new Promise<void>((resolve) => requestAnimationFrame(() => {
+        el.setSelectionRange(0, el.value.length)
+        resolve()
+      }))
     )
     await input.pressSequentially(digits)
+    const formatted = digits.length === 8
+      ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+      : `${digits.slice(0, 2)}:${digits.slice(2)}`
+    await expect(input).toHaveValue(formatted)
     await input.blur()
+    await expect(input).toHaveValue(formatted)
   }
 }
 
@@ -385,11 +395,25 @@ test.describe('edit selection', () => {
     const box = (await page.getByTestId('main-plot').boundingBox())!
     await page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2)
     for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -200)
+    // Plotly moves the range on every wheel tick, and Firefox can deliver the
+    // later ticks after the view has already narrowed, so wait until the range
+    // stops moving before taking it as the user zoom.
+    let last: [number, number] | null = null
     await expect
-      .poll(async () => {
-        const r = await plotXRange(page)
-        return !!r && r[1] - r[0] < (opened[1] - opened[0]) * 0.9
-      })
+      .poll(
+        async () => {
+          const r = await plotXRange(page)
+          const settled =
+            !!r &&
+            !!last &&
+            r[0] === last[0] &&
+            r[1] === last[1] &&
+            r[1] - r[0] < (opened[1] - opened[0]) * 0.9
+          last = r
+          return settled
+        },
+        { intervals: [250] }
+      )
       .toBe(true)
     const zoomed = (await plotXRange(page))!
 
