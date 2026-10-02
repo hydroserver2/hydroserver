@@ -109,4 +109,4 @@ class DataConnection(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "etl-data-connections"
+        return "collections/etl-data-connections/items"

@@ -5,7 +5,7 @@ from tests.core.sta.factories import LinkedResourceTypeFactory
 
 pytestmark = pytest.mark.django_db
 
-LINKED_RESOURCE_TYPES_URL = "/api/data/linked-resource-types"
+LINKED_RESOURCE_TYPES_URL = "/api/ogc/collections/linked-resource-types/items"
 
 
 def _detail_url(linked_resource_type_id):

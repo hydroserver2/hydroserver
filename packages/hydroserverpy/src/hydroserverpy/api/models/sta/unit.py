@@ -24,7 +24,7 @@ class Unit(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "units"
+        return "collections/units/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

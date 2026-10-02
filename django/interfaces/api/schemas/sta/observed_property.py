@@ -12,11 +12,15 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ObservedPropertyFields(Schema):
@@ -81,10 +85,12 @@ class ObservedPropertyItemQueryParameters(ObservedPropertyFilterFields, BaseQuer
     pass
 
 
-class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[ObservedPropertySortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[ObservedPropertySortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ObservedPropertySortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -104,13 +110,11 @@ class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQu
     type: list[str] = Query([], description="Filter observed properties by type")
 
 
-class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields):
-    id: uuid.UUID
+class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields, ItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 
-class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields):
-    id: Optional[uuid.UUID] = None
+class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields, NewItemId):
     workspace_id: Optional[uuid.UUID]
 
 

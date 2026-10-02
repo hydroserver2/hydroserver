@@ -16,7 +16,7 @@ from tests.processing.quality.factories import (
 
 pytestmark = pytest.mark.django_db
 
-QC_HISTORIES_URL = "/api/data/quality-control/histories"
+QC_HISTORIES_URL = "/api/ogc/collections/quality-control-histories/items"
 
 
 def _operations_url(history_id, session_id):

@@ -19,7 +19,7 @@ from hydroserverpy.api.services.sta.unit import UnitService
     (UnitService, {"type": "Length", "symbol": "m"}),
 ])
 def test_create_metadata_without_optional_fields(service_class, fields):
-    client = MagicMock(base_route="api/data")
+    client = MagicMock(base_route="api/ogc")
     uid = str(uuid4())
     payload = {"id": uid, "name": "Name", **fields}
     if service_class != ResultQualifierService:
@@ -55,7 +55,7 @@ def test_create_metadata_without_optional_fields(service_class, fields):
      {"name": "Raw", "description": "Unprocessed", "code": "0"}),
 ])
 def test_metadata_create_argument_mapping(service_class, args, kwargs, expected):
-    client = MagicMock(base_route="api/data")
+    client = MagicMock(base_route="api/ogc")
     uid, workspace_id = str(uuid4()), str(uuid4())
     payload = {"id": uid, "workspaceId": workspace_id, **expected}
     client.request.side_effect = [
@@ -81,7 +81,7 @@ def test_metadata_create_argument_mapping(service_class, args, kwargs, expected)
     (ResultQualifierService, (), {"description": "Ice affected"}, "name"),
 ])
 def test_invalid_metadata_create_calls_fail_before_sending_data(service_class, args, kwargs, error):
-    client = MagicMock(base_route="api/data")
+    client = MagicMock(base_route="api/ogc")
     with pytest.raises(TypeError, match=error):
         service_class(client).create(*args, **kwargs)
     client.request.assert_not_called()
@@ -94,7 +94,7 @@ def test_invalid_metadata_create_calls_fail_before_sending_data(service_class, a
      {"code": "0", "name": "Raw", "description": "Unprocessed", "definition": "https://example.com/raw"}),
 ])
 def test_metadata_update_preserves_positional_argument_mapping(service_class, args, kwargs, expected):
-    client = MagicMock(base_route="api/data")
+    client = MagicMock(base_route="api/ogc")
     uid = str(uuid4())
     payload = {"id": uid, **expected}
     client.request.side_effect = [

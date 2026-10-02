@@ -5,7 +5,7 @@ from tests.core.sta.factories import MethodTypeFactory
 
 pytestmark = pytest.mark.django_db
 
-METHOD_TYPES_URL = "/api/data/method-types"
+METHOD_TYPES_URL = "/api/ogc/collections/method-types/items"
 
 
 def _detail_url(method_type_id):

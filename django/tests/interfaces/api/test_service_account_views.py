@@ -30,7 +30,7 @@ SERVICE_ACCOUNT_FIELDS = {
 
 
 def _service_accounts_url(workspace_id):
-    return f"/api/data/workspaces/{workspace_id}/service-accounts"
+    return f"/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts"
 
 
 def _detail_url(workspace_id, service_account_id):

@@ -32,4 +32,4 @@ class MonitoringRule(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "monitoring-rules"
+        return "collections/monitoring-rules/items"

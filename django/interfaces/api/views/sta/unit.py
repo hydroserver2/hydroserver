@@ -22,7 +22,7 @@ unit_service = UnitAPIService()
 
 
 @unit_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[UnitResponse],
@@ -50,7 +50,7 @@ def get_units(
 
 
 @unit_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -75,7 +75,7 @@ def create_unit(
 
 
 @unit_router.get(
-    "/{unit_id}",
+    "/items/{unit_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[UnitResponse],
@@ -103,7 +103,7 @@ def get_unit(
 
 
 @unit_router.patch(
-    "/{unit_id}",
+    "/items/{unit_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -133,7 +133,7 @@ def update_unit(
 
 
 @unit_router.delete(
-    "/{unit_id}",
+    "/items/{unit_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

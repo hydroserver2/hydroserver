@@ -25,7 +25,7 @@ class ObservedProperty(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "observed-properties"
+        return "collections/observed-properties/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

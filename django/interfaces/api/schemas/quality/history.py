@@ -10,10 +10,14 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId
 
 
 QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS = {
@@ -77,21 +81,22 @@ class QualityControlHistoryItemQueryParameters(
 
 
 class QualityControlHistoryQueryParameters(
-    QualityControlHistoryFilterFields, CollectionQueryParameters
+    QualityControlHistoryFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
-    sortby: Optional[list[QualityControlHistorySortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[QualityControlHistorySortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(QualityControlHistorySortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     managed_datastream_id: list[uuid.UUID] = Query(
         [], description="Filter histories by managed datastream ID."
     )
-    source_datastream_id: list[uuid.UUID] = Query(
+    source_datastream_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter histories by source datastream ID."
     )
 
 
-class QualityControlHistoryResponse(BaseGetResponse):
-    id: uuid.UUID
+class QualityControlHistoryResponse(BaseGetResponse, ItemId):
     managed_datastream_id: uuid.UUID
     source_datastream_id: uuid.UUID
     created_at: ISODatetime

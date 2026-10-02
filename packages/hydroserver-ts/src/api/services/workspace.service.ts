@@ -8,7 +8,7 @@ import {
   UserInfo,
   Workspace as M,
 } from '../../types'
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 import { ApiResponse } from '../responseInterceptor'
 
 type RoleQueryParameters = NonNullable<
@@ -271,10 +271,10 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
     )
 
   getRoles = (params?: RoleQueryParameters) => {
-    const url = this.withQuery(`${this._client.baseRoute}/roles`, params)
+    const url = this.withQuery(`${this._client.baseRoute}/collections/roles/items`, params)
     return apiMethods.paginatedFetch<CollaboratorRole[]>(url)
   }
 
   getRole = (id: string) =>
-    apiMethods.fetch<CollaboratorRole>(`${this._client.baseRoute}/roles/${id}`)
+    apiMethods.fetch<CollaboratorRole>(`${this._client.baseRoute}/collections/roles/items/${id}`)
 }

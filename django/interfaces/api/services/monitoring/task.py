@@ -4,6 +4,7 @@ from typing import Optional, Literal, get_args
 from django.db import transaction
 from django.db.models import Count
 from django.contrib.auth import get_user_model
+from pydantic.alias_generators import to_snake
 
 from core.types import Unset
 from core.iam.models import ServiceAccount
@@ -136,7 +137,7 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         sortby = sortby or []
 
         if "latest_run_status" in filtering or any(
-            term.lstrip("-") in self.latest_run_filter_fields for term in sortby
+            to_snake(term.lstrip("-")) in self.latest_run_filter_fields for term in sortby
         ):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 

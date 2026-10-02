@@ -11,7 +11,7 @@ from interfaces.api.schemas import (
     ObservationResponse,
     ObservationItemQueryParameters,
     ObservationRowResponse,
-    ObservationColumnarResponse,
+    ObservationColumnResponse,
     ObservationQueryParameters,
     ObservationPostBody,
     ObservationBulkPostBody,
@@ -28,12 +28,12 @@ observation_service = ObservationAPIService()
 
 
 @observation_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservationResponse]
-        | ObservationRowResponse
-        | ObservationColumnarResponse,
+        | PaginatedResponse[ObservationRowResponse]
+        | PaginatedResponse[ObservationColumnResponse],
         400: str,
         403: str,
         404: str,
@@ -49,20 +49,25 @@ def get_observations(
     Get Observations.
     """
 
+    profile = getattr(request, "response_profile", None)
+
     return 200, observation_service.list(
         principal=request.principal,
+        profile=profile.key if profile else None,
         response=response,
         offset=query.offset,
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        response_format=query.response_format,
+        properties=query.properties,
         include=query.include,
+        bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 
 @observation_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -131,7 +136,7 @@ def delete_observations(
 
 
 @observation_router.get(
-    "/{observation_id}",
+    "/items/{observation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ObservationResponse],
@@ -157,7 +162,7 @@ def get_observation(
 
 
 @observation_router.delete(
-    "/{observation_id}",
+    "/items/{observation_id}",
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,

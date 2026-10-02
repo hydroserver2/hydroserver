@@ -1,5 +1,3 @@
-import uuid
-
 from typing import Any, Literal, Optional, Annotated
 from pydantic import BeforeValidator, WithJsonSchema
 from ninja import Query, Schema
@@ -14,8 +12,11 @@ from interfaces.api.schemas import (
     UserContactResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
+from interfaces.api.schemas.base import ItemId
 
 OperationType = Literal[
     "SELECTION",
@@ -70,13 +71,14 @@ class QualityControlOperationItemQueryParameters(QualityControlOperationFilterFi
 
 
 class QualityControlOperationQueryParameters(QualityControlOperationFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[QualityControlOperationSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[QualityControlOperationSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(QualityControlOperationSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
 
 
-class QualityControlOperationResponse(BaseGetResponse):
-    id: uuid.UUID
+class QualityControlOperationResponse(BaseGetResponse, ItemId):
     created_by: UserContactResponse
     order: int
     operation_type: OperationType

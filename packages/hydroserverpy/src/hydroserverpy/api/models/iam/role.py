@@ -20,7 +20,7 @@ class Role(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "roles"
+        return "collections/roles/items"
 
     @property
     def workspace(self) -> "Workspace":

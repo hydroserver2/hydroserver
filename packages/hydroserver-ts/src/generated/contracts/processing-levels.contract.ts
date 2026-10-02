@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace ProcessingLevelContract {
-  export const route = 'processing-levels' as const
+  export const route = 'collections/processing-levels/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_processing_level_get_processing_levels']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_processing_level_get_processing_levels']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['ProcessingLevelResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_ProcessingLevelResponse_']

@@ -50,14 +50,14 @@ describe('DataProductTransformationService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/data-product-transformations'
+      'https://hydro.example.com/api/ogc/collections/data-product-transformations/items'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     const sentBody = JSON.parse(fetchMock.mock.calls[0][1].body)
     expect(sentBody.taskId).toBe('task-1')
 
     expect(fetchMock.mock.calls[1][0]).toBe(
-      'https://hydro.example.com/api/data/data-product-transformations/transformation-1'
+      'https://hydro.example.com/api/ogc/collections/data-product-transformations/items/transformation-1'
     )
 
     expect(response.ok).toBe(true)
@@ -95,7 +95,7 @@ describe('DataProductTransformationService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/data-product-transformations/transformation-1'
+      'https://hydro.example.com/api/ogc/collections/data-product-transformations/items/transformation-1'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('PATCH')
     expect(response.ok).toBe(true)

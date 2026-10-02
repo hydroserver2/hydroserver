@@ -5,7 +5,7 @@ from tests.core.sta.factories import SampledMediumFactory
 
 pytestmark = pytest.mark.django_db
 
-SAMPLED_MEDIUMS_URL = "/api/data/sampled-mediums"
+SAMPLED_MEDIUMS_URL = "/api/ogc/collections/sampled-mediums/items"
 
 
 def _detail_url(sampled_medium_id):
