@@ -141,7 +141,7 @@ class ObservationAPIService(APIService):
             if datastream_ids
             else Datastream.objects
         )
-        queryset = DatastreamAPIService.apply_site_bbox(queryset, bbox)
+        queryset = DatastreamAPIService.apply_site_bbox(principal, queryset, bbox)
         queryset = principal.filter_by_permission(queryset, "can_view")
 
         return queryset.aggregate(total=Sum("value_count"))["total"] or 0
@@ -179,7 +179,7 @@ class ObservationAPIService(APIService):
         if bbox is not None:
             queryset = queryset.filter(
                 datastream_id__in=DatastreamAPIService.apply_site_bbox(
-                    Datastream.objects, bbox
+                    principal, Datastream.objects, bbox
                 ).values("id")
             )
 

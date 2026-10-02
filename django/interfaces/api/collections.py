@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Literal, Mapping, Optional
 
-from interfaces.api.geometry import GeometrySource, PointGeometry, SiteExtent
+from interfaces.api.geometry import GeometrySource, PointGeometry, SiteExtent, SiteLocation
 
 ItemType = Literal["feature", "resource"]
 
@@ -85,7 +85,7 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Datastreams",
         description="Time series of observations of one observed property at a monitoring site.",
         router=f"{VIEWS}.sta.datastream.datastream_router",
-        feature=FeatureType(f"{SCHEMAS}.sta.datastream.DatastreamProperties"),
+        feature=FeatureType(f"{SCHEMAS}.sta.datastream.DatastreamProperties", geometry=SiteLocation()),
         formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
@@ -105,7 +105,10 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Observations",
         description="Individual timestamped results recorded in datastreams.",
         router=f"{VIEWS}.sta.observation.observation_router",
-        feature=FeatureType(f"{SCHEMAS}.sta.observation.ObservationProperties"),
+        feature=FeatureType(
+            f"{SCHEMAS}.sta.observation.ObservationProperties",
+            geometry=SiteLocation("datastreamId", site_lookup="datastreams__id"),
+        ),
         formats={"json": ("row", "column"), "geojson": ()},
     ),
     CollectionDefinition(

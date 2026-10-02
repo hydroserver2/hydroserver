@@ -15,14 +15,33 @@ def geometry_fields(collection: Optional[CollectionDefinition]) -> frozenset[str
     return frozenset(source.fields) if source is not None else frozenset()
 
 
-def to_feature(item: dict, collection: CollectionDefinition, resolved: ResolvedGeometry) -> dict:
+def requested_properties(request: HttpRequest) -> Optional[set[str]]:
+    """The properties named by the request's properties parameter, or None without one."""
+
+    requested = {name.strip() for value in request.GET.getlist("properties") for name in value.split(",")} - {""}
+
+    return requested or None
+
+
+def omitted_fields(collection: CollectionDefinition, request: HttpRequest) -> set[str]:
     """
-    Converts an item into a GeoJSON Feature. The id becomes the feature id, and fields holding the geometry aren't
-    repeated as properties.
+    The item fields left out of a feature's properties: the id, which becomes the feature id, fields holding the
+    geometry, and fields the geometry was resolved from that the properties parameter didn't select.
     """
 
     source = collection.feature.geometry if collection.feature else None
-    omitted = {"id", *(source.geometry_fields if source is not None else ())}
+    if source is None:
+        return {"id"}
+
+    requested = requested_properties(request)
+    unrequested = set(source.fields) - requested if requested is not None else set()
+
+    return {"id", *source.geometry_fields, *unrequested}
+
+
+def to_feature(item: dict, omitted: set[str], resolved: ResolvedGeometry) -> dict:
+    """Converts an item into a GeoJSON Feature, leaving the omitted fields out of its properties."""
+
     properties = {key: value for key, value in item.items() if key not in omitted}
 
     feature = {"type": "Feature", "id": str(item["id"]), "geometry": resolved.geometry, "properties": properties}
@@ -41,7 +60,8 @@ def to_geojson(document: ResponseDocument, collection: CollectionDefinition, req
     items = [document.items] if document.is_item else document.items
     source = collection.feature.geometry if collection.feature else None
     geometries = source.resolve(items, request) if source is not None and items else [NO_GEOMETRY] * len(items)
-    features = [to_feature(item, collection, resolved) for item, resolved in zip(items, geometries)]
+    omitted = omitted_fields(collection, request)
+    features = [to_feature(item, omitted, resolved) for item, resolved in zip(items, geometries)]
 
     foreign_members = {"links": document.links}
     if document.included:

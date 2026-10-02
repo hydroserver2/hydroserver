@@ -86,16 +86,6 @@ def test_item_is_a_feature_with_the_path_id(client, observation):
     assert {link["rel"] for link in body["links"]} == {"self", "alternate", "collection"}
 
 
-@pytest.mark.parametrize("collection_id", ["datastreams", "observations"])
-def test_features_without_a_geometry_have_null_geometry(client, observation, collection_id):
-    item = _items(observation)[collection_id]
-
-    response = _get_geojson(client, f"{_items_path(collection_id)}/{item.id}")
-
-    assert response.json()["geometry"] is None
-    assert response.json()["id"] == str(item.id)
-
-
 @pytest.mark.parametrize("collection_id", FEATURE_COLLECTION_IDS)
 def test_responses_match_their_documented_models(client, observation, collection_id):
     collection = get_collection(collection_id)
@@ -228,7 +218,7 @@ def test_documented_models_reject_members_the_documentation_lacks(client, observ
 def test_json_items_are_their_properties_plus_id_and_geometry_fields(client, observation, collection_id):
     collection = get_collection(collection_id)
     properties = feature_properties_schema(collection).model_json_schema(mode="serialization", by_alias=True)
-    geometry = set(collection.feature.geometry.fields) if collection.feature.geometry else set()
+    geometry = set(collection.feature.geometry.geometry_fields) if collection.feature.geometry else set()
     item = _items(observation)[collection_id]
 
     json_item = client.get(f"{_items_path(collection_id)}/{item.id}").json()["data"]

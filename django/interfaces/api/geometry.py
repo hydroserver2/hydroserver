@@ -78,6 +78,36 @@ class SiteExtent(GeometrySource):
         return [extent(extents[str(item["id"])]) if str(item["id"]) in extents else NO_GEOMETRY for item in items]
 
 
+@dataclass(frozen=True)
+class SiteLocation(GeometrySource):
+    """
+    The location of the monitoring site an item references, e.g., a datastream's site, or no geometry when the
+    requester can't view that site.
+    """
+
+    key: str = "monitoringSiteId"
+    site_lookup: str = "id"
+
+    @property
+    def fields(self) -> tuple[str, ...]:
+        return (self.key,)
+
+    def resolve(self, items: list[dict], request: HttpRequest) -> list[ResolvedGeometry]:
+        from core.sta.models import MonitoringSite
+
+        keys = {item[self.key] for item in items if item.get(self.key) is not None}
+        visible_sites = request.principal.filter_by_permission(
+            MonitoringSite.objects.filter(**{f"{self.site_lookup}__in": keys}), "can_view"
+        )
+        locations = {
+            str(row[self.site_lookup]): point(row["longitude"], row["latitude"])
+            for row in visible_sites.values(self.site_lookup, "latitude", "longitude")
+            if row["longitude"] is not None and row["latitude"] is not None
+        }
+
+        return [locations.get(str(item.get(self.key)), NO_GEOMETRY) for item in items]
+
+
 def point(longitude: Any, latitude: Any) -> ResolvedGeometry:
     return ResolvedGeometry({"type": "Point", "coordinates": [float(longitude), float(latitude)]})
 
