@@ -76,6 +76,7 @@ DataProductTransformationSortByFields = Literal[
 
 _property_fields = (
     "id",
+    "taskId",
     "transformationType",
     *(to_camel(name) for name in DataProductTransformationFields.model_fields),
 )

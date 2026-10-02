@@ -21,6 +21,8 @@ OGC_CONFORMANCE_REL = "http://www.opengis.net/def/rel/ogc/1.0/conformance"
 FEATURES_CORE = "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core"
 FEATURES_GEOJSON = "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
 COMMON_PROFILE_PARAMETER = "http://www.opengis.net/spec/ogcapi-common-3/1.0/conf/profile-parameter"
+FEATURES_PROPERTIES = "http://www.opengis.net/spec/ogcapi-features-6/1.0/conf/properties"
+FEATURES_PROPERTIES_FEATURES = "http://www.opengis.net/spec/ogcapi-features-6/1.0/conf/properties-features"
 
 
 def test_landing_page_describes_the_api(client):
@@ -62,7 +64,14 @@ def test_conformance_declares_the_implemented_classes(client):
     assert response.status_code == 200
     assert response.json() == {
         "conformsTo": [
-            COMMON_CORE, COMMON_LANDING_PAGE, FEATURES_CORE, COMMON_JSON, FEATURES_GEOJSON, COMMON_PROFILE_PARAMETER
+            COMMON_CORE,
+            COMMON_LANDING_PAGE,
+            FEATURES_CORE,
+            COMMON_JSON,
+            FEATURES_GEOJSON,
+            COMMON_PROFILE_PARAMETER,
+            FEATURES_PROPERTIES,
+            FEATURES_PROPERTIES_FEATURES,
         ]
     }
 

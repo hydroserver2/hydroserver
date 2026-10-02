@@ -48,6 +48,7 @@ MonitoringRuleSortByFields = Literal[
 
 _property_fields = (
     "id",
+    "taskId",
     "datastreamId",
     "ruleType",
     "lastCheckedAt",

@@ -32,6 +32,7 @@ EtlMappingSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fie
 
 _property_fields = (
     "id",
+    "etlTaskId",
     *(to_camel(name) for name in EtlMappingFields.model_fields),
 )
 EtlMappingPropertyName = Literal[*_property_fields]

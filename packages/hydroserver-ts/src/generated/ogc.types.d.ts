@@ -2762,7 +2762,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
         };
         /** DataProductTransformationPatchBody */
         DataProductTransformationPatchBody: {
@@ -2887,7 +2887,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -3495,7 +3495,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+            properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
         };
         /** EtlMappingPatchBody */
         EtlMappingPatchBody: {
@@ -3560,7 +3560,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+            properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -4740,7 +4740,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+            properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
         };
         /** MonitoringRulePatchBody */
         MonitoringRulePatchBody: {
@@ -4817,7 +4817,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+            properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
             /**
              * Rule Type
              * @description Filter rules by rule type.
@@ -8986,7 +8986,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Number of items to skip. */
@@ -9116,7 +9116,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Response format. Overrides the Accept header. */
@@ -10454,7 +10454,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "targetDatastream"[];
                 /** @description Number of items to skip. */
@@ -10582,7 +10582,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "targetDatastream"[];
                 /** @description Response format. Overrides the Accept header. */
@@ -11945,7 +11945,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "datastream"[];
                 /** @description Number of items to skip. */
@@ -12073,7 +12073,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "datastream"[];
                 /** @description Response format. Overrides the Accept header. */

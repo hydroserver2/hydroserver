@@ -33,6 +33,11 @@ CORE_CONFORMANCE_CLASSES = (
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
 )
 
+PROPERTY_SELECTION_CONFORMANCE_CLASSES = (
+    "http://www.opengis.net/spec/ogcapi-features-6/1.0/conf/properties",
+    "http://www.opengis.net/spec/ogcapi-features-6/1.0/conf/properties-features",
+)
+
 ogc_router = Router(tags=["Collections"])
 
 
@@ -101,7 +106,12 @@ def get_conformance(request: HydroServerHttpRequest):
     Get the OGC API conformance classes the API implements.
     """
 
-    conforms_to = [*CORE_CONFORMANCE_CLASSES, *formats_conformance(COLLECTIONS), *profiles_conformance(COLLECTIONS)]
+    conforms_to = [
+        *CORE_CONFORMANCE_CLASSES,
+        *formats_conformance(COLLECTIONS),
+        *profiles_conformance(COLLECTIONS),
+        *PROPERTY_SELECTION_CONFORMANCE_CLASSES,
+    ]
 
     return 200, ConformanceResponse(conforms_to=conforms_to)
 
