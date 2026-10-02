@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 
-from interfaces.api.http.negotiation import FORMAT_PARAM, PROFILE_PARAM, items_collection, profiles_path_collection
+from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM, items_collection, profiles_path_collection
 from interfaces.api.http.query_params import declared_query_params
 from interfaces.api.urls import api
 from tests.core.sta.factories import DatastreamFactory, ObservationFactory

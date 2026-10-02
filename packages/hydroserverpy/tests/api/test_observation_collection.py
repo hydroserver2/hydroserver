@@ -51,7 +51,6 @@ def test_column_profile_pages_combine_their_datastream_groups():
         "data": [
             {
                 "datastreamId": "ds-1",
-                "workspaceId": "ws-1",
                 "columns": {
                     "id": ["o-1", "o-2"],
                     "phenomenonTime": ["2024-01-01T00:00:00Z", "2024-01-01T01:00:00Z"],
@@ -68,7 +67,6 @@ def test_column_profile_pages_combine_their_datastream_groups():
     assert list(collection.dataframe["result"]) == [1.0, 2.0]
     assert list(collection.dataframe["result_qualifier_codes"]) == [[], ["A"]]
     assert list(collection.dataframe["id"]) == ["o-1", "o-2"]
-    assert list(collection.dataframe["workspace_id"]) == ["ws-1", "ws-1"]
     assert str(collection.dataframe["phenomenon_time"].dt.tz) == "UTC"
     assert collection.total_count == 2
 
@@ -80,4 +78,4 @@ def test_an_empty_column_profile_page_has_the_observation_columns():
     collection = ObservationCollection(datastream=MagicMock(), response=response)
 
     assert collection.dataframe.empty
-    assert list(collection.dataframe.columns) == ["id", "phenomenon_time", "result", "result_qualifier_codes"]
+    assert list(collection.dataframe.columns) == ["phenomenon_time", "result", "result_qualifier_codes"]

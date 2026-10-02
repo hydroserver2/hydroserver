@@ -52,18 +52,14 @@ class ObservationCollection:
         )
         self.datastream = datastream
 
-    COLUMNS = ("id", "phenomenon_time", "result", "result_qualifier_codes")
+    COLUMNS = ("phenomenon_time", "result", "result_qualifier_codes")
 
     @classmethod
     def _columns(cls, groups: list) -> dict[str, list]:
         columns = {column: [] for column in cls.COLUMNS}
         for group in groups:
-            group_columns = {to_snake(key): values for key, values in group.get("columns", {}).items()}
-            for key, values in group_columns.items():
-                columns.setdefault(key, []).extend(values)
-            if "workspaceId" in group:
-                row_count = len(next(iter(group_columns.values()), []))
-                columns.setdefault("workspace_id", []).extend([group["workspaceId"]] * row_count)
+            for key, values in group.get("columns", {}).items():
+                columns.setdefault(to_snake(key), []).extend(values)
 
         return columns
 

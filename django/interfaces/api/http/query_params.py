@@ -4,7 +4,7 @@ from typing import Callable
 from django.http import HttpRequest, HttpResponseBase
 from ninja.operation import Operation
 
-from interfaces.api.http.negotiation import negotiated_query_params
+from interfaces.api.http.content_negotiation import negotiated_query_params
 
 
 def declared_query_params(operation: Operation) -> frozenset[str]:
@@ -34,7 +34,7 @@ def declared_query_params(operation: Operation) -> frozenset[str]:
 def reject_unknown_query_params(run: Callable[..., HttpResponseBase]) -> Callable[..., HttpResponseBase]:
     """
     Ninja view-mode decorator that responds 400 to requests with query parameters the operation
-    doesn't declare (OGC API - Features Core Req 8, /req/core/query-param-unknown).
+    doesn't declare.
 
     Ninja ignores undeclared query parameters, so without this a misspelled filter such as
     '?workspaceId=' silently returns unfiltered results. View-mode decorators wrap the bound

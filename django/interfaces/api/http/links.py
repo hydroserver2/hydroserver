@@ -1,6 +1,7 @@
 import re
 
 from typing import Optional
+from urllib.parse import quote
 
 from django.conf import settings
 from django.http import HttpRequest
@@ -11,7 +12,7 @@ from pydantic import SerializationInfo
 from interfaces.api.collections import get_collection
 from interfaces.api.formats import collection_formats
 from interfaces.api.formats.profiles import collection_profiles
-from interfaces.api.http.negotiation import FORMAT_PARAM, PROFILE_PARAM, items_collection
+from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM
 
 JSON_MEDIA_TYPE = "application/json"
 COLLECTION_ITEM_PATH = re.compile(r"collections/(?P<collection_id>[^/]+)/items/[^/]+")
@@ -61,7 +62,7 @@ def implied_format_key(request: HttpRequest) -> Optional[str]:
     if response_format is None or FORMAT_PARAM in request.GET:
         return None
 
-    collection = items_collection(request.path_info)
+    collection = getattr(request, "response_collection", None)
 
     return response_format.key if collection is not None and response_format.key != collection.default_format else None
 
@@ -91,13 +92,10 @@ def build_self_link(request: HttpRequest, path: Optional[str] = None) -> Link:
 
 
 def build_alternate_links(request: HttpRequest) -> list[Link]:
-    """
-    Builds a link to this response document in every other format its collection serves (OGC API - Features
-    Core Req 28, /req/core/fc-links, and Req 35, /req/core/f-links).
-    """
+    """Builds a link to this response document in every other format its collection serves."""
 
     response_format = getattr(request, "response_format", None)
-    collection = items_collection(request.path_info)
+    collection = getattr(request, "response_collection", None)
 
     if response_format is None or collection is None:
         return []
@@ -155,8 +153,7 @@ def build_page_link(request: HttpRequest, rel: str, offset: int, limit: int) -> 
 
 def build_profile_link(request: HttpRequest) -> Optional[Link]:
     """
-    Builds a link to the profile this response document is in, if any (OGC API - Common Part 3,
-    /req/profile-parameter/profile-param-response).
+    Builds a link to the profile this response document is in.
     """
 
     response_profile = getattr(request, "response_profile", None)
@@ -191,3 +188,32 @@ def get_request(info: SerializationInfo) -> Optional[HttpRequest]:
     """Returns the request Ninja passes in the serialization context, if any."""
 
     return (info.context or {}).get("request") if info.context else None
+
+
+def quoted_string(value: str) -> str:
+    """Quotes a header parameter value, escaping backslashes and double quotes."""
+
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def link_header(links: list[dict]) -> str:
+    """
+    Serializes links as the value of an RFC 8288 Link header. Header values must be ASCII, so non-ASCII titles are
+    sent as title* in RFC 8187 encoding. Hrefs are percent-encoded URLs.
+    """
+
+    def link_value(link: dict) -> str:
+        params = [f"rel={quoted_string(link['rel'])}"]
+
+        if link.get("type"):
+            params.append(f"type={quoted_string(link['type'])}")
+        if link.get("title"):
+            title = link["title"]
+            if title.isascii():
+                params.append(f"title={quoted_string(title)}")
+            else:
+                params.append(f"title*=UTF-8''{quote(title, safe='')}")
+
+        return f"<{link['href']}>; " + "; ".join(params)
+
+    return ", ".join(link_value(link) for link in links)

@@ -73,7 +73,7 @@ class ObservationFilterFields(Schema):
     ] = Query(
         None,
         description="Comma-separated list of properties to include in the response. "
-        "All properties are returned if omitted. Only applies to format=record.",
+        "All properties are returned if omitted.",
     )
     include: Annotated[
         Optional[list[ObservationIncludeRelation]],
@@ -81,8 +81,7 @@ class ObservationFilterFields(Schema):
         WithJsonSchema(comma_array_schema(ObservationIncludeRelation)),
     ] = Query(
         None,
-        description="Comma-separated list of related resources to include in the "
-        "response. Only applies to format=record.",
+        description="Comma-separated list of related resources to include in the response.",
     )
 
 
@@ -137,11 +136,11 @@ def without_unselected(data: dict, keys: tuple[str, ...]) -> dict:
     return {key: value for key, value in data.items() if key not in keys or value is not None}
 
 
-class ObservationRowResponse(BaseGetResponse):
+class ObservationGroup(BaseGetResponse):
+    """A datastream's observations on a page of the row or column profile."""
+
     datastream_id: uuid.UUID
     workspace_id: Optional[uuid.UUID] = None
-    fields: list[ObservationGroupField]
-    rows: list[list]
 
     @model_serializer(mode="wrap")
     def _omit_unselected(self, handler):
@@ -149,18 +148,17 @@ class ObservationRowResponse(BaseGetResponse):
 
     @staticmethod
     def filter_properties(group: dict, requested: set[str]) -> dict:
-        """Applies the properties parameter to a group; datastreamId identifies it, so it's always kept."""
+        """
+        Leaves groups as they are: the observation service reads only the selected properties into them, keeping
+        datastreamId, which identifies a group.
+        """
 
-        positions = [index for index, field in enumerate(group["fields"]) if field in requested]
-        filtered = {
-            "datastreamId": group["datastreamId"],
-            "fields": [group["fields"][index] for index in positions],
-            "rows": [[row[index] for index in positions] for row in group["rows"]],
-        }
-        if "workspaceId" in requested and "workspaceId" in group:
-            filtered["workspaceId"] = group["workspaceId"]
+        return group
 
-        return filtered
+
+class ObservationRowResponse(ObservationGroup):
+    fields: list[ObservationGroupField]
+    rows: list[list]
 
 
 class ObservationColumns(BaseGetResponse):
@@ -174,27 +172,8 @@ class ObservationColumns(BaseGetResponse):
         return without_unselected(handler(self), tuple(OBSERVATION_GROUP_FIELDS))
 
 
-class ObservationColumnResponse(BaseGetResponse):
-    datastream_id: uuid.UUID
-    workspace_id: Optional[uuid.UUID] = None
+class ObservationColumnResponse(ObservationGroup):
     columns: ObservationColumns
-
-    @model_serializer(mode="wrap")
-    def _omit_unselected(self, handler):
-        return without_unselected(handler(self), ("workspaceId",))
-
-    @staticmethod
-    def filter_properties(group: dict, requested: set[str]) -> dict:
-        """Applies the properties parameter to a group; datastreamId identifies it, so it's always kept."""
-
-        filtered = {
-            "datastreamId": group["datastreamId"],
-            "columns": {name: values for name, values in group["columns"].items() if name in requested},
-        }
-        if "workspaceId" in requested and "workspaceId" in group:
-            filtered["workspaceId"] = group["workspaceId"]
-
-        return filtered
 
 
 class ObservationPostBody(BasePostBody, ObservationFields, NewItemId):

@@ -47,21 +47,18 @@ def profiles_path_collection(path: str) -> Optional[CollectionDefinition]:
 
 
 def negotiated_query_params(request: HttpRequest) -> frozenset[str]:
-    """The query parameters negotiate_format reads on the request rather than the view."""
+    """The query parameters negotiate_format read on the request rather than the view."""
 
-    if not hasattr(request, "response_format"):
-        return frozenset()
-
-    return frozenset({FORMAT_PARAM, PROFILE_PARAM} if profiles_path_collection(request.path_info) else {FORMAT_PARAM})
+    return getattr(request, "negotiated_params", frozenset())
 
 
 def response_required_fields(request: HttpRequest) -> frozenset[str]:
     """The item fields the media type of the response's negotiated format requires, if any."""
 
     response_format = getattr(request, "response_format", None)
-    collection = items_collection(request.path_info) if response_format is not None else None
+    collection = getattr(request, "response_collection", None)
 
-    return response_format.required_fields(collection) if collection is not None else frozenset()
+    return response_format.required_fields(collection) if response_format and collection else frozenset()
 
 
 def negotiate(request: HttpRequest, collection: CollectionDefinition) -> Format:
@@ -118,7 +115,8 @@ def negotiate_format(run: Callable[..., HttpResponseBase]) -> Callable[..., Http
     Ninja view-mode decorator that negotiates the response format of GET requests to collection items, and the
     profile of requests to the items of collections with profiles. It stores them on the request as
     response_format, which create_response encodes the response with, and response_profile, which views shape
-    the response by.
+    the response by. The collection the request is for, and the query parameters negotiation read are stored too
+    (response_collection, negotiated_params), so the rest of the request doesn't look them up again.
 
     Registered after reject_unknown_query_params, so it runs first, and a bad format is reported before
     authentication or query parameter validation.
@@ -142,9 +140,11 @@ def negotiate_format(run: Callable[..., HttpResponseBase]) -> Callable[..., Http
             patch_vary_headers(response, ["Accept"])
             return response
 
-        profiles_collection = profiles_path_collection(request.path_info)
+        negotiates_profile = is_items_path(request.path_info) and has_profiles(collection)
+        request.response_collection = collection
+        request.negotiated_params = frozenset({FORMAT_PARAM, PROFILE_PARAM} if negotiates_profile else {FORMAT_PARAM})
         request.response_profile = (
-            negotiate_profile(request, profiles_collection, request.response_format) if profiles_collection else None
+            negotiate_profile(request, collection, request.response_format) if negotiates_profile else None
         )
 
         return run(request, **kwargs)

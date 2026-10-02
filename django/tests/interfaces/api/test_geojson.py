@@ -106,7 +106,7 @@ def test_responses_match_their_documented_models(client, observation, collection
 
     feature_collection_schema(collection).model_validate(items_body)
     feature_schema(collection).model_validate(item_body)
-    assert "id" not in feature_properties_schema(collection_id).model_fields
+    assert "id" not in feature_properties_schema(collection).model_fields
 
 
 def test_accept_header_selects_geojson_and_links_carry_f(client, observation):
@@ -227,7 +227,7 @@ def test_documented_models_reject_members_the_documentation_lacks(client, observ
 @pytest.mark.parametrize("collection_id", FEATURE_COLLECTION_IDS)
 def test_json_items_are_their_properties_plus_id_and_geometry_fields(client, observation, collection_id):
     collection = get_collection(collection_id)
-    properties = feature_properties_schema(collection_id).model_json_schema(mode="serialization", by_alias=True)
+    properties = feature_properties_schema(collection).model_json_schema(mode="serialization", by_alias=True)
     geometry = set(collection.feature.geometry.fields) if collection.feature.geometry else set()
     item = _items(observation)[collection_id]
 

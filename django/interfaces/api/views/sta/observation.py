@@ -49,14 +49,16 @@ def get_observations(
     Get Observations.
     """
 
+    profile = getattr(request, "response_profile", None)
+
     return 200, observation_service.list(
         principal=request.principal,
+        profile=profile.key if profile else None,
         response=response,
         offset=query.offset,
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        profile=request.response_profile.key if request.response_profile else None,
         properties=query.properties,
         include=query.include,
         bbox=query.bbox,

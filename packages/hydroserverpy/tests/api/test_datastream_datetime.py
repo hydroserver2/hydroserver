@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+import pandas as pd
+
 import pytest
 
 from hydroserverpy.api.services.sta.datastream import DatastreamService
@@ -192,3 +194,71 @@ def test_sync_phenomenon_end_time_reloads_it_from_hydroserver():
     assert datastream.phenomenon_end_time == FEB_1
     assert client.request.call_args_list[1].args[0] == "get"
 
+
+
+# --- observation round trip --------------------------------------------------------------------
+
+
+def sent_body(client, call=0):
+    return json.loads(client.request.call_args_list[call].kwargs["data"])
+
+
+def test_get_observations_requests_only_the_properties_load_observations_accepts():
+    service, client = make_service({"data": [], "meta": {"offset": 0, "limit": 100, "totalCount": 0}})
+    service.get = MagicMock()
+
+    service.get_observations(uid="ds-1")
+
+    assert sent_params(client)["properties"] == "phenomenonTime,result,resultQualifierCodes"
+
+
+def test_observations_from_get_observations_load_back_unchanged():
+    page = {
+        "data": [
+            {
+                "datastreamId": "ds-1",
+                "columns": {
+                    "phenomenonTime": ["2024-01-01T00:00:00Z"],
+                    "result": [1.5],
+                    "resultQualifierCodes": [["A"]],
+                },
+            }
+        ],
+        "meta": {"offset": 0, "limit": 100, "totalCount": 1},
+    }
+    service, client = make_service(page, {})
+    service.get = MagicMock()
+
+    dataframe = service.get_observations(uid="ds-1").dataframe
+    service.load_observations(uid="ds-2", observations=dataframe)
+
+    assert sent_body(client, 1)["fields"] == ["phenomenonTime", "result", "resultQualifierCodes"]
+
+
+def test_load_observations_leaves_out_columns_the_server_assigns():
+    service, client = make_service({})
+    dataframe = pd.DataFrame(
+        {
+            "id": ["o-1"],
+            "workspace_id": ["ws-1"],
+            "datastreamId": ["ds-1"],
+            "phenomenon_time": ["2024-01-01T00:00:00Z"],
+            "result": [1.5],
+        }
+    )
+
+    service.load_observations(uid="ds-2", observations=dataframe)
+
+    body = sent_body(client)
+    assert body["fields"] == ["phenomenonTime", "result"]
+    assert body["data"] == [["2024-01-01T00:00:00Z", 1.5]]
+
+
+def test_load_observations_still_sends_columns_it_does_not_recognize():
+    service, client = make_service({})
+    dataframe = pd.DataFrame({"phenomenon_time": ["2024-01-01T00:00:00Z"], "results": [1.5]})
+
+    service.load_observations(uid="ds-2", observations=dataframe)
+
+    # A misspelled column reaches the server, which rejects it, rather than being dropped silently.
+    assert sent_body(client)["fields"] == ["phenomenonTime", "results"]

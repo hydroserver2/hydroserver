@@ -19,7 +19,7 @@ from pydantic import (
 )
 
 from core.types import Unset
-from interfaces.api.http.negotiation import response_required_fields
+from interfaces.api.http.content_negotiation import response_required_fields
 from interfaces.api.http.links import (
     Link,
     build_alternate_links,

@@ -10,7 +10,14 @@ from django.utils.cache import patch_vary_headers
 from interfaces.api.collections import CollectionDefinition
 from interfaces.api.formats import EncodeContext, collection_formats
 from interfaces.api.formats.profiles import collection_profiles
-from interfaces.api.http.negotiation import FORMAT_PARAM, PROFILE_PARAM, items_collection, profiles_path_collection
+from interfaces.api.http.links import link_header
+from interfaces.api.http.content_negotiation import (
+    FORMAT_PARAM,
+    PROFILE_PARAM,
+    is_items_path,
+    items_collection,
+    profiles_path_collection,
+)
 
 PARAMETER_SERIALIZATION_KEYS = ("style", "explode")
 
@@ -48,7 +55,7 @@ class HydroServerNinjaAPI(NinjaAPI):
             response = super().create_response(request, data, status=status, temporal_response=temporal_response)
             response["Content-Type"] = self.get_content_type()
         else:
-            context = EncodeContext(request=request, collection=items_collection(request.path_info), status=status)
+            context = EncodeContext(request=request, collection=request.response_collection, status=status)
             content = response_format.render(data, context)
 
             if temporal_response:
@@ -89,7 +96,7 @@ class HydroServerNinjaAPI(NinjaAPI):
                 if profiles_path_collection(path):
                     path_item["get"]["parameters"].append(profile_parameter(collection))
 
-                kind = "items" if path.rstrip("/").endswith("/items") else "item"
+                kind = "items" if is_items_path(path) else "item"
                 responses = path_item["get"]["responses"]
                 content = (responses.get(200) or responses["200"])["content"]
                 for fmt in collection_formats(collection):
@@ -115,22 +122,6 @@ class HydroServerNinjaAPI(NinjaAPI):
             components.setdefault(name, definition)
 
         return model_schema["properties"]["response"]
-
-
-def link_header(links: list[dict]) -> str:
-    """Serializes links as the value of an RFC 8288 Link header."""
-
-    def link_value(link: dict) -> str:
-        params = [f'rel="{link["rel"]}"']
-
-        if link.get("type"):
-            params.append(f'type="{link["type"]}"')
-        if link.get("title"):
-            params.append(f'title="{link["title"]}"')
-
-        return f"<{link['href']}>; " + "; ".join(params)
-
-    return ", ".join(link_value(link) for link in links)
 
 
 def format_parameter(collection: CollectionDefinition) -> dict:

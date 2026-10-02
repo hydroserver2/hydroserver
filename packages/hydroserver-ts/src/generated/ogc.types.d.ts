@@ -5552,12 +5552,12 @@ export interface components {
         ObservationItemQueryParameters: {
             /**
              * Include
-             * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
+             * @description Comma-separated list of related resources to include in the response.
              */
             include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
              * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
         };
@@ -5622,7 +5622,7 @@ export interface components {
             datetime?: string;
             /**
              * Include
-             * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
+             * @description Comma-separated list of related resources to include in the response.
              */
             include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
@@ -5639,7 +5639,7 @@ export interface components {
             offset: number | null;
             /**
              * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
             /**
@@ -13715,9 +13715,9 @@ export interface operations {
                 bbox?: number[] & (unknown | unknown);
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
-                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
@@ -13833,9 +13833,9 @@ export interface operations {
     interfaces_api_views_sta_observation_get_observation: {
         parameters: {
             query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
-                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";

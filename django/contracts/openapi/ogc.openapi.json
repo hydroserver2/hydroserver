@@ -9369,7 +9369,7 @@
       "ObservationItemQueryParameters": {
         "properties": {
           "include": {
-            "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+            "description": "Comma-separated list of related resources to include in the response.",
             "items": {
               "enum": [
                 "datastream",
@@ -9382,7 +9382,7 @@
             "type": "array"
           },
           "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "items": {
               "enum": [
                 "id",
@@ -9527,7 +9527,7 @@
             "type": "string"
           },
           "include": {
-            "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+            "description": "Comma-separated list of related resources to include in the response.",
             "items": {
               "enum": [
                 "datastream",
@@ -9562,7 +9562,7 @@
             "title": "Offset"
           },
           "properties": {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "items": {
               "enum": [
                 "id",
@@ -30582,13 +30582,13 @@
             "style": "form"
           },
           {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
               "items": {
                 "enum": [
                   "id",
@@ -30606,13 +30606,13 @@
             "style": "form"
           },
           {
-            "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+            "description": "Comma-separated list of related resources to include in the response.",
             "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
-              "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+              "description": "Comma-separated list of related resources to include in the response.",
               "items": {
                 "enum": [
                   "datastream",
@@ -30996,13 +30996,13 @@
             }
           },
           {
-            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
             "explode": false,
             "in": "query",
             "name": "properties",
             "required": false,
             "schema": {
-              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.",
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
               "items": {
                 "enum": [
                   "id",
@@ -31020,13 +31020,13 @@
             "style": "form"
           },
           {
-            "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+            "description": "Comma-separated list of related resources to include in the response.",
             "explode": false,
             "in": "query",
             "name": "include",
             "required": false,
             "schema": {
-              "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
+              "description": "Comma-separated list of related resources to include in the response.",
               "items": {
                 "enum": [
                   "datastream",

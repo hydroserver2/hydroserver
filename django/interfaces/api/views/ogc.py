@@ -5,7 +5,7 @@ from interfaces.api.collections import COLLECTIONS, CollectionDefinition, get_co
 from interfaces.api.http.errors import NotFoundError
 from interfaces.api.formats import collection_formats, formats_conformance
 from interfaces.api.formats.profiles import profiles_conformance
-from interfaces.api.http.negotiation import FORMAT_PARAM
+from interfaces.api.http.content_negotiation import FORMAT_PARAM
 from interfaces.api.http.links import (
     JSON_MEDIA_TYPE,
     Link,
