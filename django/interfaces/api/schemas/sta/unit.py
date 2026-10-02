@@ -20,6 +20,7 @@ from interfaces.api.schemas import (
     sortby_array_schema,
 )
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class UnitFields(Schema):
@@ -102,13 +103,11 @@ class UnitQueryParameters(UnitFilterFields, CollectionQueryParameters, ExtentQue
     type: list[str] = Query([], description="Filter units by type")
 
 
-class UnitResponse(BaseGetResponse, UnitFields):
-    id: uuid.UUID
+class UnitResponse(BaseGetResponse, UnitFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class UnitPostBody(BasePostBody, UnitFields):
-    id: Optional[uuid.UUID] = None
+class UnitPostBody(BasePostBody, UnitFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

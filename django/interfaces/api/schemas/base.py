@@ -10,6 +10,7 @@ from pydantic import (
     AliasChoices,
     BeforeValidator,
     ConfigDict,
+    Field,
     ValidationInfo,
     field_validator,
     model_serializer,
@@ -18,8 +19,10 @@ from pydantic import (
 )
 
 from core.types import Unset
+from interfaces.api.http.negotiation import response_required_fields
 from interfaces.api.http.links import (
     Link,
+    build_alternate_links,
     build_collection_link,
     build_page_links,
     build_self_link,
@@ -291,7 +294,7 @@ def parse_requested_properties(info: SerializationInfo) -> Optional[set[str]]:
     if not parsed:
         return None
 
-    return set(parsed)
+    return set(parsed) | response_required_fields(request)
 
 
 def filter_requested_properties(item: Any, requested: set[str]) -> Any:
@@ -322,15 +325,25 @@ def page_links(info: SerializationInfo, meta: "PaginationMeta", returned: int) -
     ]
 
 
+class ItemId(Schema):
+    """Identifies an item by UUID."""
+
+    id: uuid.UUID = Field(..., description="The item's unique identifier.")
+
+
+class NewItemId(Schema):
+    """Lets a client supply a new item's UUID."""
+
+    id: Optional[uuid.UUID] = Field(None, description="The new item's identifier. Generated if omitted.")
+
+
 class BaseGetResponse(Schema):
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
     )
 
 
-class CreatedResponse(Schema):
-    id: uuid.UUID
-
+class CreatedResponse(ItemId):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
 
@@ -365,17 +378,24 @@ class ItemResponse(Schema, Generic[T]):
 
         request = get_request(info)
         if request is not None:
-            links = [build_self_link(request), build_collection_link(request)]
+            links = [build_self_link(request), *build_alternate_links(request), build_collection_link(request)]
             data["links"] = [link.model_dump(exclude_none=True) for link in links if link is not None]
 
         return data
 
 
 class PaginatedResponse(Schema, Generic[T]):
+    """
+    A page of items. Item schemas whose entries aren't one per item, such as observation groups, set returned to the
+    number of items on the page, which paging follows, and define filter_properties(item, requested) to apply the
+    properties parameter to an entry.
+    """
+
     included: Optional[dict[str, list[Any]]] = None
     data: list[T]
     meta: PaginationMeta
     links: list[Link] = []
+    returned: Optional[int] = Field(None, exclude=True)
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -390,10 +410,16 @@ class PaginatedResponse(Schema, Generic[T]):
 
         requested = parse_requested_properties(info)
         if requested is not None and isinstance(data.get("data"), list):
-            data["data"] = [filter_requested_properties(item, requested) for item in data["data"]]
+            filter_item = getattr(self.item_schema(), "filter_properties", filter_requested_properties)
+            data["data"] = [filter_item(item, requested) for item in data["data"]]
 
-        links = page_links(info, self.meta, len(self.data))
+        links = page_links(info, self.meta, self.returned if self.returned is not None else len(self.data))
         if links is not None:
             data["links"] = links
 
         return data
+
+    @classmethod
+    def item_schema(cls) -> Optional[type]:
+        args = cls.__pydantic_generic_metadata__.get("args") or ()
+        return args[0] if args else None

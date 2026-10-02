@@ -19,6 +19,7 @@ from interfaces.api.schemas import (
     sortby_array_schema,
 )
 from interfaces.api.schemas.products.rating_curve import RatingCurveResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 TransformationType = Literal["rating_curve", "derivation", "aggregation"]
@@ -132,15 +133,13 @@ class DataProductTransformationQueryParameters(
     )
 
 
-class DataProductTransformationResponse(BaseGetResponse, DataProductTransformationFields):
-    id: uuid.UUID
+class DataProductTransformationResponse(BaseGetResponse, DataProductTransformationFields, ItemId):
     task_id: uuid.UUID
     transformation_type: TransformationType
     input_datastreams: list[TransformationInputResponse] = []
 
 
-class DataProductTransformationPostBody(BasePostBody, DataProductTransformationFields):
-    id: Optional[uuid.UUID] = None
+class DataProductTransformationPostBody(BasePostBody, DataProductTransformationFields, NewItemId):
     task_id: uuid.UUID
     transformation_type: TransformationType
 

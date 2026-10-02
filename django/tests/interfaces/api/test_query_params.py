@@ -3,6 +3,7 @@ import uuid
 
 import pytest
 
+from interfaces.api.http.negotiation import FORMAT_PARAM, PROFILE_PARAM, items_collection, profiles_path_collection
 from interfaces.api.http.query_params import declared_query_params
 from interfaces.api.urls import api
 from tests.core.sta.factories import DatastreamFactory, ObservationFactory
@@ -53,7 +54,13 @@ def test_declared_query_parameters_match_the_openapi_document():
             if parameter["in"] == "query"
         }
 
-        assert declared_query_params(operation) == documented, f"{method} {path}"
+        # negotiate_format reads f on collection item GET operations, and profile on the items GET operation of
+        # collections with profiles; the OpenAPI document adds them there.
+        negotiated = {FORMAT_PARAM} if method == "GET" and items_collection(path) else set()
+        if method == "GET" and profiles_path_collection(path):
+            negotiated.add(PROFILE_PARAM)
+
+        assert declared_query_params(operation) | negotiated == documented, f"{method} {path}"
 
 
 def test_unknown_parameter_message_lists_the_allowed_parameters(client):
@@ -101,7 +108,7 @@ def test_aliased_parameters_are_accepted(client):
 
     response = client.get(
         "/api/ogc/collections/observations/items",
-        {"datastream_id": str(datastream.id), "format": "row", "result_qualifier_code": "A"},
+        {"datastream_id": str(datastream.id), "result_qualifier_code": "A"},
     )
 
     assert response.status_code == 200

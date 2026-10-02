@@ -27,6 +27,7 @@ from interfaces.api.schemas.orchestration.schedule import (
     SchedulePatchBody,
     resolve_schedule,
 )
+from interfaces.api.schemas.base import ItemId
 
 
 DATA_CONNECTION_INCLUDE_RELATIONS = {
@@ -258,8 +259,7 @@ class NotificationPatchBody(BasePatchBody):
     schedule: SchedulePatchBody | Unset = Unset
 
 
-class DataConnectionResponse(BaseGetResponse):
-    id: uuid.UUID
+class DataConnectionResponse(BaseGetResponse, ItemId):
     name: str
     description: Optional[str] = None
     source_url: str

@@ -4,6 +4,8 @@ from typing import Callable
 from django.http import HttpRequest, HttpResponseBase
 from ninja.operation import Operation
 
+from interfaces.api.http.negotiation import negotiated_query_params
+
 
 def declared_query_params(operation: Operation) -> frozenset[str]:
     """
@@ -50,11 +52,15 @@ def reject_unknown_query_params(run: Callable[..., HttpResponseBase]) -> Callabl
 
     @wraps(run)
     def wrapper(request: HttpRequest, **kwargs) -> HttpResponseBase:
-        unknown = sorted(set(request.GET) - allowed)
+        request_allowed = allowed | negotiated_query_params(request)
+        unknown = sorted(set(request.GET) - request_allowed)
 
         if unknown:
             message = f"Unknown query parameter(s): {', '.join(unknown)}."
-            message += f" Allowed: {', '.join(sorted(allowed))}." if allowed else " This operation accepts none."
+            message += (
+                f" Allowed: {', '.join(sorted(request_allowed))}."
+                if request_allowed else " This operation accepts none."
+            )
             return operation.api.create_response(request, {"message": message}, status=400)
 
         return run(request, **kwargs)

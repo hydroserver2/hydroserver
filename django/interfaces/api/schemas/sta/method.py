@@ -20,6 +20,7 @@ from interfaces.api.schemas import (
     sortby_array_schema,
 )
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class MethodFields(Schema):
@@ -114,13 +115,11 @@ class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, Exten
     )
 
 
-class MethodResponse(BaseGetResponse, MethodFields):
-    id: uuid.UUID
+class MethodResponse(BaseGetResponse, MethodFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class MethodPostBody(BasePostBody, MethodFields):
-    id: Optional[uuid.UUID] = None
+class MethodPostBody(BasePostBody, MethodFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

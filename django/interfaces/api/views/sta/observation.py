@@ -11,7 +11,7 @@ from interfaces.api.schemas import (
     ObservationResponse,
     ObservationItemQueryParameters,
     ObservationRowResponse,
-    ObservationColumnarResponse,
+    ObservationColumnResponse,
     ObservationQueryParameters,
     ObservationPostBody,
     ObservationBulkPostBody,
@@ -32,8 +32,8 @@ observation_service = ObservationAPIService()
     auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservationResponse]
-        | ObservationRowResponse
-        | ObservationColumnarResponse,
+        | PaginatedResponse[ObservationRowResponse]
+        | PaginatedResponse[ObservationColumnResponse],
         400: str,
         403: str,
         404: str,
@@ -56,7 +56,8 @@ def get_observations(
         limit=query.limit,
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        response_format=query.response_format,
+        profile=request.response_profile.key if request.response_profile else None,
+        properties=query.properties,
         include=query.include,
         bbox=query.bbox,
         datetime_interval=query.datetime,

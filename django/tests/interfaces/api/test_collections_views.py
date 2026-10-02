@@ -53,18 +53,14 @@ def test_collection_describes_the_registered_collection(client, collection):
     assert body["title"] == collection.title
     assert body["description"] == collection.description
     assert body["itemType"] == collection.item_type
-    assert _links(body) == {
-        "self": {
-            "href": f"{BASE_URL}{COLLECTIONS_PATH}/{collection.id}",
-            "rel": "self",
-            "type": "application/json",
-        },
-        "items": {
-            "href": f"{BASE_URL}{COLLECTIONS_PATH}/{collection.id}/items",
-            "rel": "items",
-            "type": "application/json",
-        },
-    }
+    items_href = f"{BASE_URL}{COLLECTIONS_PATH}/{collection.id}/items"
+    items_links = [{"href": items_href, "rel": "items", "type": "application/json"}]
+    if collection.item_type == "feature":
+        items_links.append({"href": f"{items_href}?f=geojson", "rel": "items", "type": "application/geo+json"})
+    assert body["links"] == [
+        {"href": f"{BASE_URL}{COLLECTIONS_PATH}/{collection.id}", "rel": "self", "type": "application/json"},
+        *items_links,
+    ]
 
 
 @pytest.mark.parametrize("collection_id", COLLECTION_IDS)

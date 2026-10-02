@@ -35,10 +35,8 @@ class ObservationCollection:
             self.dataframe = data["dataframe"]
         elif response is not None:
             payload = response.json()
-            payload_meta = payload.pop("meta", {})
-            payload.pop("included", None)
-            columnar = payload.pop("data", payload)
-            self.dataframe = pd.DataFrame({to_snake(k): v for k, v in columnar.items()})
+            payload_meta = payload.get("meta", {})
+            self.dataframe = pd.DataFrame(self._columns(payload.get("data") or []))
             if "phenomenon_time" in self.dataframe.columns:
                 self.dataframe["phenomenon_time"] = pd.to_datetime(
                     self.dataframe["phenomenon_time"], utc=True, format="ISO8601"
@@ -53,6 +51,21 @@ class ObservationCollection:
             "total_count", payload_meta, data, meta_key="totalCount"
         )
         self.datastream = datastream
+
+    COLUMNS = ("id", "phenomenon_time", "result", "result_qualifier_codes")
+
+    @classmethod
+    def _columns(cls, groups: list) -> dict[str, list]:
+        columns = {column: [] for column in cls.COLUMNS}
+        for group in groups:
+            group_columns = {to_snake(key): values for key, values in group.get("columns", {}).items()}
+            for key, values in group_columns.items():
+                columns.setdefault(key, []).extend(values)
+            if "workspaceId" in group:
+                row_count = len(next(iter(group_columns.values()), []))
+                columns.setdefault("workspace_id", []).extend([group["workspaceId"]] * row_count)
+
+        return columns
 
     @staticmethod
     def _resolve_int_metadata(

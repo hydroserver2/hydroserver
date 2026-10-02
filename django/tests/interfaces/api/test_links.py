@@ -196,19 +196,17 @@ def test_following_next_links_returns_every_item_once(client):
     assert sorted(seen) == sorted(str(unit.id) for unit in units)
 
 
-@pytest.mark.parametrize("response_format, key", [("row", "rows"), ("column", "phenomenonTime")])
-def test_observation_formats_link_next_from_their_row_count(client, response_format, key):
+@pytest.mark.parametrize("profile", ["https://hydroserver.org/profiles/observations/row", "https://hydroserver.org/profiles/observations/column"])
+def test_observation_profiles_link_next_from_the_observations_on_the_page(client, profile):
     datastream = DatastreamFactory()
     ObservationFactory.create_batch(3, datastream=datastream)
 
-    response = client.get(
-        OBSERVATIONS_PATH,
-        {"datastream_id": str(datastream.id), "format": response_format, "limit": 2},
-    )
+    response = client.get(OBSERVATIONS_PATH, {"datastream_id": str(datastream.id), "profile": profile, "limit": 2})
 
     assert response.status_code == 200
-    assert len(response.json()["data"][key]) == 2
-    assert set(_links(response)) == {"self", "next"}
+    (group,) = response.json()["data"]
+    assert len(group["rows"] if "rows" in group else group["columns"]["id"]) == 2
+    assert set(_links(response)) == {"self", "alternate", "profile", "next"}
 
 
 def _collection_items_paths():
@@ -227,11 +225,12 @@ def test_every_collection_links_to_itself(client, path):
     assert response.status_code == 200
     links = response.json()["links"]
     assert _links(response)["self"]["href"] == f"{BASE_URL}{path}"
-    assert all({"href", "rel", "type"} <= set(link) for link in links)
+    # Profile links identify a profile rather than a retrievable resource, so they have no media type.
+    assert all({"href", "rel", "type"} <= set(link) for link in links if link["rel"] != "profile")
 
 
 def test_links_are_documented_in_the_openapi_document():
     schemas = api.get_openapi_schema(path_prefix="/api/ogc/")["components"]["schemas"]
 
-    assert schemas["Link"]["required"] == ["href", "rel", "type"]
+    assert schemas["Link"]["required"] == ["href", "rel"]
     assert "links" in schemas["PaginatedResponse_UnitResponse_"]["properties"]

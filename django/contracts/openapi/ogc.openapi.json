@@ -46,6 +46,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -74,6 +75,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -85,8 +87,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "AggregationStatisticResponse",
         "type": "object"
@@ -484,6 +486,7 @@
       "CreatedResponse": {
         "properties": {
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -939,6 +942,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -1544,6 +1548,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -1592,8 +1597,8 @@
           }
         },
         "required": [
-          "name",
           "id",
+          "name",
           "workspaceId",
           "monitoringSiteId"
         ],
@@ -1820,6 +1825,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "inputDatastreams": {
@@ -2134,6 +2140,7 @@
             "title": "Formula"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -2255,8 +2262,8 @@
           }
         },
         "required": [
-          "outputDatastreamId",
           "id",
+          "outputDatastreamId",
           "taskId",
           "transformationType"
         ],
@@ -2487,6 +2494,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "intendedTimeSpacing": {
@@ -2628,6 +2636,232 @@
           "timeAggregationIntervalUnit"
         ],
         "title": "DatastreamPostBody",
+        "type": "object"
+      },
+      "DatastreamProperties": {
+        "properties": {
+          "aggregationStatistic": {
+            "maxLength": 255,
+            "title": "Aggregationstatistic",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "intendedTimeSpacing": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intendedtimespacing"
+          },
+          "intendedTimeSpacingUnit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "seconds",
+                  "minutes",
+                  "hours",
+                  "days"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intendedtimespacingunit"
+          },
+          "isPrivate": {
+            "default": false,
+            "title": "Isprivate",
+            "type": "boolean"
+          },
+          "isVisible": {
+            "default": true,
+            "title": "Isvisible",
+            "type": "boolean"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
+          },
+          "methodId": {
+            "format": "uuid",
+            "title": "Methodid",
+            "type": "string"
+          },
+          "monitoringSiteId": {
+            "format": "uuid",
+            "title": "Monitoringsiteid",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "noDataValue": {
+            "title": "Nodatavalue",
+            "type": "number"
+          },
+          "observationType": {
+            "maxLength": 255,
+            "title": "Observationtype",
+            "type": "string"
+          },
+          "observedPropertyId": {
+            "format": "uuid",
+            "title": "Observedpropertyid",
+            "type": "string"
+          },
+          "phenomenonBeginTime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenonbegintime"
+          },
+          "phenomenonEndTime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenonendtime"
+          },
+          "processingLevelId": {
+            "format": "uuid",
+            "title": "Processinglevelid",
+            "type": "string"
+          },
+          "resultBeginTime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultbegintime"
+          },
+          "resultEndTime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultendtime"
+          },
+          "resultType": {
+            "maxLength": 255,
+            "title": "Resulttype",
+            "type": "string"
+          },
+          "sampledMedium": {
+            "maxLength": 255,
+            "title": "Sampledmedium",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Tags",
+            "type": "object"
+          },
+          "timeAggregationInterval": {
+            "title": "Timeaggregationinterval",
+            "type": "number"
+          },
+          "timeAggregationIntervalUnit": {
+            "enum": [
+              "seconds",
+              "minutes",
+              "hours",
+              "days"
+            ],
+            "title": "Timeaggregationintervalunit",
+            "type": "string"
+          },
+          "unitId": {
+            "format": "uuid",
+            "title": "Unitid",
+            "type": "string"
+          },
+          "valueCount": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuecount"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "monitoringSiteId",
+          "methodId",
+          "observedPropertyId",
+          "processingLevelId",
+          "unitId",
+          "name",
+          "description",
+          "observationType",
+          "sampledMedium",
+          "noDataValue",
+          "aggregationStatistic",
+          "timeAggregationInterval",
+          "resultType",
+          "timeAggregationIntervalUnit",
+          "workspaceId",
+          "linkedResources"
+        ],
+        "title": "DatastreamProperties",
         "type": "object"
       },
       "DatastreamQueryParameters": {
@@ -2969,6 +3203,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -3168,6 +3403,7 @@
           }
         },
         "required": [
+          "id",
           "monitoringSiteId",
           "methodId",
           "observedPropertyId",
@@ -3182,7 +3418,6 @@
           "timeAggregationInterval",
           "resultType",
           "timeAggregationIntervalUnit",
-          "id",
           "workspaceId",
           "linkedResources"
         ],
@@ -3234,6 +3469,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -3262,6 +3498,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -3273,8 +3510,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "DatastreamStatusResponse",
         "type": "object"
@@ -3397,6 +3634,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "sourceIdentifier": {
@@ -3557,6 +3795,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -3572,9 +3811,9 @@
           }
         },
         "required": [
+          "id",
           "sourceIdentifier",
           "targetDatastreamId",
-          "id",
           "etlTaskId"
         ],
         "title": "EtlMappingResponse",
@@ -3963,6 +4202,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -4009,12 +4249,662 @@
           }
         },
         "required": [
-          "name",
           "id",
+          "name",
           "workspaceId",
           "dataConnectionId"
         ],
         "title": "EtlTaskResponse",
+        "type": "object"
+      },
+      "GeoJSONFeatureCollection_DatastreamProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/GeoJSONFeature_DatastreamProperties_"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "numberMatched": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numbermatched"
+          },
+          "numberReturned": {
+            "title": "Numberreturned",
+            "type": "integer"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "features",
+          "numberReturned",
+          "links"
+        ],
+        "title": "GeoJSONFeatureCollection[DatastreamProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureCollection_MonitoringSiteProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/GeoJSONFeature_MonitoringSiteProperties_"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "numberMatched": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numbermatched"
+          },
+          "numberReturned": {
+            "title": "Numberreturned",
+            "type": "integer"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "features",
+          "numberReturned",
+          "links"
+        ],
+        "title": "GeoJSONFeatureCollection[MonitoringSiteProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureCollection_ObservationProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/GeoJSONFeature_ObservationProperties_"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "numberMatched": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numbermatched"
+          },
+          "numberReturned": {
+            "title": "Numberreturned",
+            "type": "integer"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "features",
+          "numberReturned",
+          "links"
+        ],
+        "title": "GeoJSONFeatureCollection[ObservationProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureCollection_WorkspaceProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/GeoJSONFeature_WorkspaceProperties_"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "numberMatched": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numbermatched"
+          },
+          "numberReturned": {
+            "title": "Numberreturned",
+            "type": "integer"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "features",
+          "numberReturned",
+          "links"
+        ],
+        "title": "GeoJSONFeatureCollection[WorkspaceProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureDocument_DatastreamProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/DatastreamProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties",
+          "links"
+        ],
+        "title": "GeoJSONFeatureDocument[DatastreamProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureDocument_MonitoringSiteProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/MonitoringSiteProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties",
+          "links"
+        ],
+        "title": "GeoJSONFeatureDocument[MonitoringSiteProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureDocument_ObservationProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ObservationProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties",
+          "links"
+        ],
+        "title": "GeoJSONFeatureDocument[ObservationProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeatureDocument_WorkspaceProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/WorkspaceProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties",
+          "links"
+        ],
+        "title": "GeoJSONFeatureDocument[WorkspaceProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeature_DatastreamProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/DatastreamProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "GeoJSONFeature[DatastreamProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeature_MonitoringSiteProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/MonitoringSiteProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "GeoJSONFeature[MonitoringSiteProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeature_ObservationProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ObservationProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "GeoJSONFeature[ObservationProperties]",
+        "type": "object"
+      },
+      "GeoJSONFeature_WorkspaceProperties_": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoJSONPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/WorkspaceProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "GeoJSONFeature[WorkspaceProperties]",
+        "type": "object"
+      },
+      "GeoJSONPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "const": "Point",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "GeoJSONPoint",
         "type": "object"
       },
       "ItemResponse_AggregationStatisticResponse_": {
@@ -5282,14 +6172,20 @@
             "title": "Title"
           },
           "type": {
-            "title": "Type",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
           }
         },
         "required": [
           "href",
-          "rel",
-          "type"
+          "rel"
         ],
         "title": "Link",
         "type": "object"
@@ -5308,6 +6204,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -5428,6 +6325,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -5456,6 +6354,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -5467,8 +6366,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "LinkedResourceTypeResponse",
         "type": "object"
@@ -5631,6 +6530,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -5953,6 +6853,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -6017,10 +6918,10 @@
           }
         },
         "required": [
+          "id",
           "name",
           "type",
           "description",
-          "id",
           "workspaceId"
         ],
         "title": "MethodResponse",
@@ -6071,6 +6972,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -6099,6 +7001,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -6110,8 +7013,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "MethodTypeResponse",
         "type": "object"
@@ -6223,6 +7126,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "maxValue": {
@@ -6446,6 +7350,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -6556,12 +7461,12 @@
               "enum": [
                 "id",
                 "workspaceId",
+                "latitude",
+                "longitude",
                 "name",
                 "description",
                 "code",
                 "type",
-                "latitude",
-                "longitude",
                 "elevation_m",
                 "elevationDatum",
                 "adminArea1",
@@ -6614,6 +7519,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -6712,6 +7618,7 @@
       "MonitoringSiteMarkerResponse": {
         "properties": {
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -7000,6 +7907,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "isPrivate": {
@@ -7059,16 +7967,146 @@
           }
         },
         "required": [
+          "latitude",
+          "longitude",
           "name",
           "description",
           "code",
           "type",
-          "latitude",
-          "longitude",
           "isPrivate",
           "workspaceId"
         ],
         "title": "MonitoringSitePostBody",
+        "type": "object"
+      },
+      "MonitoringSiteProperties": {
+        "properties": {
+          "adminArea1": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adminarea1"
+          },
+          "adminArea2": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adminarea2"
+          },
+          "code": {
+            "maxLength": 200,
+            "title": "Code",
+            "type": "string"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "dataDisclaimer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datadisclaimer"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "elevationDatum": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevationdatum"
+          },
+          "elevation_m": {
+            "anyOf": [
+              {
+                "maximum": 99999,
+                "minimum": -99999,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevation M"
+          },
+          "isPrivate": {
+            "title": "Isprivate",
+            "type": "boolean"
+          },
+          "linkedResources": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedResourceGetResponse"
+            },
+            "title": "Linkedresources",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Tags",
+            "type": "object"
+          },
+          "type": {
+            "maxLength": 200,
+            "title": "Type",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "code",
+          "type",
+          "isPrivate",
+          "workspaceId",
+          "linkedResources"
+        ],
+        "title": "MonitoringSiteProperties",
         "type": "object"
       },
       "MonitoringSiteQueryParameters": {
@@ -7197,12 +8235,12 @@
               "enum": [
                 "id",
                 "workspaceId",
+                "latitude",
+                "longitude",
                 "name",
                 "description",
                 "code",
                 "type",
-                "latitude",
-                "longitude",
                 "elevation_m",
                 "elevationDatum",
                 "adminArea1",
@@ -7390,6 +8428,7 @@
             "title": "Elevation M"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -7442,14 +8481,14 @@
           }
         },
         "required": [
+          "id",
+          "latitude",
+          "longitude",
           "name",
           "description",
           "code",
           "type",
-          "latitude",
-          "longitude",
           "isPrivate",
-          "id",
           "workspaceId",
           "linkedResources"
         ],
@@ -7484,6 +8523,7 @@
       "MonitoringSiteTaskSummaryResponse": {
         "properties": {
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -7570,6 +8610,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -7598,6 +8639,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -7609,8 +8651,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "MonitoringSiteTypeResponse",
         "type": "object"
@@ -7942,6 +8984,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -7998,8 +9041,8 @@
           }
         },
         "required": [
-          "name",
           "id",
+          "name",
           "workspaceId",
           "monitoringSiteId"
         ],
@@ -8236,69 +9279,91 @@
         "title": "ObservationBulkPostQueryParameters",
         "type": "object"
       },
-      "ObservationColumnarData": {
+      "ObservationColumnResponse": {
         "properties": {
-          "phenomenonTime": {
-            "items": {},
-            "title": "Phenomenontime",
-            "type": "array"
+          "columns": {
+            "$ref": "#/components/schemas/ObservationColumns"
           },
-          "result": {
-            "items": {},
-            "title": "Result",
-            "type": "array"
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
           },
-          "resultQualifierCodes": {
-            "items": {},
-            "title": "Resultqualifiercodes",
-            "type": "array"
-          }
-        },
-        "required": [
-          "phenomenonTime",
-          "result",
-          "resultQualifierCodes"
-        ],
-        "title": "ObservationColumnarData",
-        "type": "object"
-      },
-      "ObservationColumnarResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ObservationColumnarData"
-          },
-          "included": {
+          "workspaceId": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "items": {},
-                  "type": "array"
-                },
-                "type": "object"
+                "format": "uuid",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Included"
-          },
-          "links": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/Link"
-            },
-            "title": "Links",
-            "type": "array"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/PaginationMeta"
+            "title": "Workspaceid"
           }
         },
         "required": [
-          "data",
-          "meta"
+          "datastreamId",
+          "columns"
         ],
-        "title": "ObservationColumnarResponse",
+        "title": "ObservationColumnResponse",
+        "type": "object"
+      },
+      "ObservationColumns": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "phenomenonTime": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenontime"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "resultQualifierCodes": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultqualifiercodes"
+          }
+        },
+        "title": "ObservationColumns",
         "type": "object"
       },
       "ObservationItemQueryParameters": {
@@ -8353,6 +9418,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "phenomenonTime": {
@@ -8388,6 +9454,45 @@
         "title": "ObservationPostBody",
         "type": "object"
       },
+      "ObservationProperties": {
+        "properties": {
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
+          },
+          "phenomenonTime": {
+            "format": "date-time",
+            "title": "Phenomenontime",
+            "type": "string"
+          },
+          "result": {
+            "title": "Result",
+            "type": "number"
+          },
+          "resultQualifierCodes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Resultqualifiercodes",
+            "type": "array"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phenomenonTime",
+          "result",
+          "workspaceId",
+          "datastreamId"
+        ],
+        "title": "ObservationProperties",
+        "type": "object"
+      },
       "ObservationQueryParameters": {
         "properties": {
           "bbox": {
@@ -8420,23 +9525,6 @@
           "datetime": {
             "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
             "type": "string"
-          },
-          "format": {
-            "anyOf": [
-              {
-                "enum": [
-                  "record",
-                  "row",
-                  "column"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Controls the format of the observations response.",
-            "title": "Format"
           },
           "include": {
             "description": "Comma-separated list of related resources to include in the response. Only applies to format=record.",
@@ -8527,6 +9615,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -8555,20 +9644,26 @@
           }
         },
         "required": [
+          "id",
           "phenomenonTime",
           "result",
-          "id",
           "workspaceId",
           "datastreamId"
         ],
         "title": "ObservationResponse",
         "type": "object"
       },
-      "ObservationRowData": {
+      "ObservationRowResponse": {
         "properties": {
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
+          },
           "fields": {
             "items": {
               "enum": [
+                "id",
                 "phenomenonTime",
                 "result",
                 "resultQualifierCodes"
@@ -8585,50 +9680,24 @@
             },
             "title": "Rows",
             "type": "array"
-          }
-        },
-        "required": [
-          "fields",
-          "rows"
-        ],
-        "title": "ObservationRowData",
-        "type": "object"
-      },
-      "ObservationRowResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ObservationRowData"
           },
-          "included": {
+          "workspaceId": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "items": {},
-                  "type": "array"
-                },
-                "type": "object"
+                "format": "uuid",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Included"
-          },
-          "links": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/Link"
-            },
-            "title": "Links",
-            "type": "array"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/PaginationMeta"
+            "title": "Workspaceid"
           }
         },
         "required": [
-          "data",
-          "meta"
+          "datastreamId",
+          "fields",
+          "rows"
         ],
         "title": "ObservationRowResponse",
         "type": "object"
@@ -8752,6 +9821,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -8990,6 +10060,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -9018,10 +10089,10 @@
           }
         },
         "required": [
+          "id",
           "name",
           "description",
-          "type",
-          "id"
+          "type"
         ],
         "title": "ObservedPropertyResponse",
         "type": "object"
@@ -9071,6 +10142,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -9099,6 +10171,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -9110,8 +10183,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "ObservedPropertyTypeResponse",
         "type": "object"
@@ -9847,6 +10920,49 @@
         "title": "PaginatedResponse[MonitoringTaskResponse]",
         "type": "object"
       },
+      "PaginatedResponse_ObservationColumnResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservationColumnResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservationColumnResponse]",
+        "type": "object"
+      },
       "PaginatedResponse_ObservationResponse_": {
         "properties": {
           "data": {
@@ -9888,6 +11004,49 @@
           "meta"
         ],
         "title": "PaginatedResponse[ObservationResponse]",
+        "type": "object"
+      },
+      "PaginatedResponse_ObservationRowResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ObservationRowResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ObservationRowResponse]",
         "type": "object"
       },
       "PaginatedResponse_ObservedPropertyResponse_": {
@@ -10935,6 +12094,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -11152,6 +12312,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -11175,9 +12336,9 @@
           }
         },
         "required": [
+          "id",
           "name",
           "description",
-          "id",
           "workspaceId"
         ],
         "title": "ProcessingLevelResponse",
@@ -11377,6 +12538,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -11688,6 +12850,7 @@
             "$ref": "#/components/schemas/UserContactResponse"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -12023,6 +13186,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -12186,6 +13350,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "monitoringSiteId": {
@@ -12387,6 +13552,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -12421,9 +13587,9 @@
           }
         },
         "required": [
+          "id",
           "name",
           "fittingMethod",
-          "id",
           "monitoringSiteId"
         ],
         "title": "RatingCurveResponse",
@@ -12505,6 +13671,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -12663,6 +13830,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -12686,8 +13854,8 @@
           }
         },
         "required": [
-          "name",
           "id",
+          "name",
           "workspaceId"
         ],
         "title": "ResultQualifierResponse",
@@ -12836,6 +14004,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -12866,8 +14035,8 @@
           }
         },
         "required": [
-          "name",
           "id",
+          "name",
           "workspaceId",
           "permissions"
         ],
@@ -12919,6 +14088,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -12947,6 +14117,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -12958,8 +14129,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "SampledMediumResponse",
         "type": "object"
@@ -13165,6 +14336,7 @@
       "ServiceAccountCreatedResponse": {
         "properties": {
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -13296,6 +14468,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "isActive": {
@@ -13449,6 +14622,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -13493,12 +14667,12 @@
           }
         },
         "required": [
+          "id",
           "name",
           "isActive",
           "email",
           "createdAt",
           "lastUsedAt",
-          "id",
           "workspaceId"
         ],
         "title": "ServiceAccountResponse",
@@ -13698,6 +14872,7 @@
             "title": "Finishedat"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -13890,6 +15065,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -14115,6 +15291,7 @@
             "title": "Definition"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14148,10 +15325,10 @@
           }
         },
         "required": [
+          "id",
           "name",
           "symbol",
           "type",
-          "id",
           "workspaceId"
         ],
         "title": "UnitResponse",
@@ -14202,6 +15379,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "name": {
@@ -14230,6 +15408,7 @@
             "title": "Description"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14241,8 +15420,8 @@
           }
         },
         "required": [
-          "name",
-          "id"
+          "id",
+          "name"
         ],
         "title": "UnitTypeResponse",
         "type": "object"
@@ -14328,6 +15507,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14487,6 +15667,7 @@
             "type": "string"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14526,6 +15707,7 @@
             "title": "Code"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14546,6 +15728,7 @@
       "VisualizationProcessingLevelResponse": {
         "properties": {
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14744,6 +15927,7 @@
                 "type": "null"
               }
             ],
+            "description": "The new item's identifier. Generated if omitted.",
             "title": "Id"
           },
           "isPrivate": {
@@ -14761,6 +15945,53 @@
           "isPrivate"
         ],
         "title": "WorkspacePostBody",
+        "type": "object"
+      },
+      "WorkspaceProperties": {
+        "properties": {
+          "collaboratorRoleId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collaboratorroleid"
+          },
+          "isPrivate": {
+            "title": "Isprivate",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerEmail": {
+            "title": "Owneremail",
+            "type": "string"
+          },
+          "pendingTransferToEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pendingtransfertoemail"
+          }
+        },
+        "required": [
+          "name",
+          "isPrivate",
+          "ownerEmail"
+        ],
+        "title": "WorkspaceProperties",
         "type": "object"
       },
       "WorkspaceQueryParameters": {
@@ -14909,6 +16140,7 @@
             "title": "Collaboratorroleid"
           },
           "id": {
+            "description": "The item's unique identifier.",
             "format": "uuid",
             "title": "Id",
             "type": "string"
@@ -14939,9 +16171,9 @@
           }
         },
         "required": [
+          "id",
           "name",
           "isPrivate",
-          "id",
           "ownerEmail"
         ],
         "title": "WorkspaceResponse",
@@ -15217,6 +16449,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -15436,6 +16681,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -15782,6 +17040,19 @@
               "title": "Workspace Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -16045,6 +17316,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -16515,6 +17799,19 @@
               "title": "Rating Curve Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -16780,6 +18077,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -17643,6 +18953,19 @@
               "title": "Workspace Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -17937,6 +19260,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -18251,6 +19587,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -18470,6 +19819,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -19081,11 +20443,30 @@
               "description": "Sets the minimum value count of filtered datastreams.",
               "title": "Value Count Min"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection_DatastreamProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaginatedResponse_DatastreamResponse_"
@@ -19352,11 +20733,30 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureDocument_DatastreamProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ItemResponse_DatastreamResponse_"
@@ -20560,6 +21960,19 @@
               "title": "Payload Type",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -20831,6 +22244,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -21186,6 +22612,19 @@
               "title": "Workspace Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -21468,6 +22907,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -21972,6 +23424,19 @@
               "description": "Filter tasks whose latest run finished on or before this datetime.",
               "title": "Latest Run Finished At Max"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -22238,6 +23703,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -23021,6 +24499,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -23240,6 +24731,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -23532,6 +25036,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -23751,6 +25268,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -24203,6 +25733,19 @@
               "title": "Sensor Model Manufacturer",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -24471,6 +26014,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -24834,6 +26390,19 @@
               "title": "Workspace Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -25121,6 +26690,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -25435,6 +27017,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -25654,6 +27249,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -25846,12 +27454,12 @@
                 "enum": [
                   "id",
                   "workspaceId",
+                  "latitude",
+                  "longitude",
                   "name",
                   "description",
                   "code",
                   "type",
-                  "latitude",
-                  "longitude",
                   "elevation_m",
                   "elevationDatum",
                   "adminArea1",
@@ -26125,11 +27733,30 @@
               "description": "Controls whether the returned monitoring sites should be private or public.",
               "title": "Is Private"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection_MonitoringSiteProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaginatedResponse_MonitoringSiteResponse_"
@@ -26325,12 +27952,12 @@
                 "enum": [
                   "id",
                   "workspaceId",
+                  "latitude",
+                  "longitude",
                   "name",
                   "description",
                   "code",
                   "type",
-                  "latitude",
-                  "longitude",
                   "elevation_m",
                   "elevationDatum",
                   "adminArea1",
@@ -26367,11 +27994,30 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureDocument_MonitoringSiteProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ItemResponse_MonitoringSiteResponse_"
@@ -27804,6 +29450,19 @@
               "title": "Rule Type",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -28070,6 +29729,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -29030,29 +30702,6 @@
             "style": "form"
           },
           {
-            "description": "Controls the format of the observations response.",
-            "in": "query",
-            "name": "format",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "record",
-                    "row",
-                    "column"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Controls the format of the observations response.",
-              "title": "Format"
-            }
-          },
-          {
             "description": "Filter observations by result qualifier code.",
             "in": "query",
             "name": "result_qualifier_code",
@@ -29066,11 +30715,48 @@
               "title": "Result Qualifier Code",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json).",
+            "explode": false,
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "items": {
+                "enum": [
+                  "https://hydroserver.org/profiles/observations/row",
+                  "https://hydroserver.org/profiles/observations/column"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection_ObservationProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "anyOf": [
@@ -29078,10 +30764,10 @@
                       "$ref": "#/components/schemas/PaginatedResponse_ObservationResponse_"
                     },
                     {
-                      "$ref": "#/components/schemas/ObservationRowResponse"
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationRowResponse_"
                     },
                     {
-                      "$ref": "#/components/schemas/ObservationColumnarResponse"
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationColumnResponse_"
                     }
                   ],
                   "title": "Response"
@@ -29353,11 +31039,30 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureDocument_ObservationProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ItemResponse_ObservationResponse_"
@@ -29662,6 +31367,19 @@
               "title": "Type",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -29927,6 +31645,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -30230,6 +31961,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -30449,6 +32193,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -30820,6 +32577,19 @@
               "title": "Datastream Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -31083,6 +32853,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -31424,6 +33207,19 @@
               "title": "Source Datastream Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -31701,6 +33497,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -33392,6 +35201,19 @@
               "title": "Workspace Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -33631,6 +35453,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -33931,6 +35766,19 @@
               "title": "Workspace Id",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -34013,6 +35861,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -34222,6 +36083,19 @@
               ],
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
+            }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
             }
           }
         ],
@@ -34442,6 +36316,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -34734,6 +36621,19 @@
               "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
               "title": "Q"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -34953,6 +36853,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -35343,6 +37256,19 @@
               "title": "Type",
               "type": "array"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -35596,6 +37522,19 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -35944,11 +37883,30 @@
               "description": "Whether the returned workspaces should be private or public.",
               "title": "Is Private"
             }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection_WorkspaceProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaginatedResponse_WorkspaceResponse_"
@@ -36184,11 +38142,30 @@
               "type": "array"
             },
             "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureDocument_WorkspaceProperties_"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ItemResponse_WorkspaceResponse_"

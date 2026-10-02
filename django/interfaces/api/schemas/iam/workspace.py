@@ -20,6 +20,7 @@ from interfaces.api.schemas import (
     sortby_array_schema,
     QueryBool,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class WorkspaceFields(Schema):
@@ -108,8 +109,7 @@ class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters,
     )
 
 
-class WorkspaceResponse(BaseGetResponse, WorkspaceFields):
-    id: uuid.UUID
+class WorkspaceProperties(BaseGetResponse, WorkspaceFields):
     owner_email: str
     pending_transfer_to_email: Optional[str] = None
     collaborator_role_id: Optional[uuid.UUID] = None
@@ -140,8 +140,12 @@ class WorkspaceResponse(BaseGetResponse, WorkspaceFields):
         return role.id if role else None
 
 
-class WorkspacePostBody(BasePostBody, WorkspaceFields):
-    id: Optional[uuid.UUID] = None
+class WorkspaceResponse(WorkspaceProperties, ItemId):
+    pass
+
+
+class WorkspacePostBody(BasePostBody, WorkspaceFields, NewItemId):
+    pass
 
 
 class WorkspacePatchBody(BasePatchBody, WorkspaceFields):

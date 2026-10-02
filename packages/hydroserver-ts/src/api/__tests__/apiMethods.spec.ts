@@ -13,31 +13,33 @@ describe('paginatedFetch', () => {
   })
 
   it('merges the `included` buckets across every fetched page', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
-      const offset = new URL(String(input)).searchParams.get('offset')
-      if (offset === '0') {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const offset = new URL(String(input)).searchParams.get('offset')
+        if (offset === '0') {
+          return jsonResponse({
+            data: [{ id: '1', ownerEmail: 'a@example.com' }],
+            meta: { offset: 0, limit: 1, totalCount: 2 },
+            included: { owners: [{ email: 'a@example.com' }] },
+          })
+        }
+        if (offset === '1') {
+          return jsonResponse({
+            data: [{ id: '2', ownerEmail: 'b@example.com' }],
+            meta: { offset: 1, limit: 1, totalCount: 2 },
+            included: { owners: [{ email: 'b@example.com' }] },
+          })
+        }
+        // A real server returns an empty page once past the true end of data -
+        // this is what terminates the "keep going while the last page was
+        // full" check for a totalCount that happens to be exact.
         return jsonResponse({
-          data: [{ id: '1', ownerEmail: 'a@example.com' }],
-          meta: { offset: 0, limit: 1, totalCount: 2 },
-          included: { owners: [{ email: 'a@example.com' }] },
+          data: [],
+          meta: { offset: Number(offset), limit: 1, totalCount: 2 },
+          included: {},
         })
-      }
-      if (offset === '1') {
-        return jsonResponse({
-          data: [{ id: '2', ownerEmail: 'b@example.com' }],
-          meta: { offset: 1, limit: 1, totalCount: 2 },
-          included: { owners: [{ email: 'b@example.com' }] },
-        })
-      }
-      // A real server returns an empty page once past the true end of data -
-      // this is what terminates the "keep going while the last page was
-      // full" check for a totalCount that happens to be exact.
-      return jsonResponse({
-        data: [],
-        meta: { offset: Number(offset), limit: 1, totalCount: 2 },
-        included: {},
       })
-    })
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<
@@ -55,45 +57,95 @@ describe('paginatedFetch', () => {
     })
   })
 
-  it('keeps a single fields list (not duplicated) when merging row-format observation pages', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
-      const offset = new URL(String(input)).searchParams.get('offset')
-      if (offset === '0') {
+  it('merges row-profile groups by datastream across pages', async () => {
+    const fields = ['phenomenonTime', 'result', 'resultQualifierCodes']
+    const pages: Record<string, unknown[]> = {
+      '0': [
+        {
+          datastreamId: 'a',
+          fields,
+          rows: [
+            ['t0', 1, []],
+            ['t1', 2, []],
+          ],
+        },
+      ],
+      '2': [
+        { datastreamId: 'a', fields, rows: [['t2', 3, []]] },
+        { datastreamId: 'b', fields, rows: [['t0', 9, []]] },
+      ],
+    }
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
         return jsonResponse({
-          data: {
-            fields: ['phenomenonTime', 'result'],
-            rows: [['2026-01-01T00:00:00Z', 1]],
-          },
-          meta: { offset: 0, limit: 1, totalCount: 2 },
+          data: pages[offset] ?? [],
+          meta: { offset: Number(offset), limit: 2, totalCount: 4 },
         })
-      }
-      if (offset === '1') {
-        return jsonResponse({
-          data: {
-            fields: ['phenomenonTime', 'result'],
-            rows: [['2026-01-01T00:01:00Z', 2]],
-          },
-          meta: { offset: 1, limit: 1, totalCount: 2 },
-        })
-      }
-      return jsonResponse({
-        data: { fields: ['phenomenonTime', 'result'], rows: [] },
-        meta: { offset: Number(offset), limit: 1, totalCount: 2 },
       })
-    })
     vi.stubGlobal('fetch', fetchMock)
 
-    const response = await apiMethods.paginatedFetch<{
-      fields: string[]
-      rows: unknown[][]
-    }>('https://hydro.example.com/api/ogc/collections/observations/items?format=row&limit=1')
+    const response = await apiMethods.paginatedFetch<
+      { datastreamId: string; fields: string[]; rows: unknown[][] }[]
+    >(
+      'https://hydro.example.com/api/ogc/collections/observations/items?profile=https://hydroserver.org/profiles/observations/row&limit=2'
+    )
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
-    expect(response.data.fields).toEqual(['phenomenonTime', 'result'])
-    expect(response.data.rows).toEqual([
-      ['2026-01-01T00:00:00Z', 1],
-      ['2026-01-01T00:01:00Z', 2],
+    expect(response.data).toEqual([
+      {
+        datastreamId: 'a',
+        fields,
+        rows: [
+          ['t0', 1, []],
+          ['t1', 2, []],
+          ['t2', 3, []],
+        ],
+      },
+      { datastreamId: 'b', fields, rows: [['t0', 9, []]] },
+    ])
+  })
+
+  it('merges column-profile groups and keeps paging while pages are full', async () => {
+    const group = (offset: number) => ({
+      datastreamId: 'a',
+      columns: {
+        phenomenonTime: [`t${offset}`],
+        result: [offset],
+        resultQualifierCodes: [[]],
+      },
+    })
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const offset = Number(new URL(String(input)).searchParams.get('offset'))
+        // No totalCount: paging continues while a page's rows fill the limit.
+        return jsonResponse({
+          data: offset < 2 ? [group(offset)] : [],
+          meta: { offset, limit: 1 },
+        })
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await apiMethods.paginatedFetch<
+      { datastreamId: string; columns: Record<string, unknown[]> }[]
+    >(
+      'https://hydro.example.com/api/ogc/collections/observations/items?profile=https://hydroserver.org/profiles/observations/column&limit=1'
+    )
+
+    expect(response.ok).toBe(true)
+    if (!response.ok) return
+    expect(response.data).toEqual([
+      {
+        datastreamId: 'a',
+        columns: {
+          phenomenonTime: ['t0', 't1'],
+          result: [0, 1],
+          resultQualifierCodes: [[], []],
+        },
+      },
     ])
   })
 
@@ -128,14 +180,16 @@ describe('paginatedFetch', () => {
       '2': [{ id: '3' }, { id: '4' }],
       '4': [{ id: '5' }],
     }
-    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
-      const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
-      const data = pages[offset] ?? []
-      return jsonResponse({
-        data,
-        meta: { offset: Number(offset), limit: 2, totalCount: 2 },
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
+        const data = pages[offset] ?? []
+        return jsonResponse({
+          data,
+          meta: { offset: Number(offset), limit: 2, totalCount: 2 },
+        })
       })
-    })
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(
@@ -159,11 +213,16 @@ describe('paginatedFetch', () => {
       '0': [{ id: '1' }, { id: '2' }],
       '2': [{ id: '3' }],
     }
-    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
-      const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
-      const data = pages[offset] ?? []
-      return jsonResponse({ data, meta: { offset: Number(offset), limit: 2 } })
-    })
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
+        const data = pages[offset] ?? []
+        return jsonResponse({
+          data,
+          meta: { offset: Number(offset), limit: 2 },
+        })
+      })
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(
@@ -177,17 +236,21 @@ describe('paginatedFetch', () => {
 
   describe('when the server clamps the requested limit', () => {
     // 5 records; the client asks for limit=4 but the server caps pages at 2.
-    const mockClampedServer = (meta: (offset: number) => Record<string, unknown>) => {
+    const mockClampedServer = (
+      meta: (offset: number) => Record<string, unknown>
+    ) => {
       const records = ['1', '2', '3', '4', '5'].map((id) => ({ id }))
-      const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
-        const url = new URL(String(input))
-        const offset = Number(url.searchParams.get('offset') ?? '0')
-        const limit = Math.min(Number(url.searchParams.get('limit')), 2)
-        return jsonResponse({
-          data: records.slice(offset, offset + limit),
-          meta: meta(offset),
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async (input: string | URL) => {
+          const url = new URL(String(input))
+          const offset = Number(url.searchParams.get('offset') ?? '0')
+          const limit = Math.min(Number(url.searchParams.get('limit')), 2)
+          return jsonResponse({
+            data: records.slice(offset, offset + limit),
+            meta: meta(offset),
+          })
         })
-      })
       vi.stubGlobal('fetch', fetchMock)
       return fetchMock
     }
@@ -198,7 +261,11 @@ describe('paginatedFetch', () => {
       )
 
     it('pages by the returned meta.limit instead of the requested limit', async () => {
-      const fetchMock = mockClampedServer((offset) => ({ offset, limit: 2, totalCount: 5 }))
+      const fetchMock = mockClampedServer((offset) => ({
+        offset,
+        limit: 2,
+        totalCount: 5,
+      }))
 
       const response = await apiMethods.paginatedFetch<{ id: string }[]>(
         'https://hydro.example.com/api/ogc/collections/observations/items?limit=4'
@@ -207,7 +274,13 @@ describe('paginatedFetch', () => {
       expect(response.ok).toBe(true)
       if (!response.ok) return
       expect(requestedOffsets(fetchMock)).toEqual([0, 2, 4])
-      expect(response.data.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5'])
+      expect(response.data.map((item) => item.id)).toEqual([
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+      ])
       expect(response.meta?.totalCount).toBe(5)
     })
 
@@ -220,7 +293,13 @@ describe('paginatedFetch', () => {
 
       expect(response.ok).toBe(true)
       if (!response.ok) return
-      expect(response.data.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5'])
+      expect(response.data.map((item) => item.id)).toEqual([
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+      ])
     })
   })
 
@@ -229,10 +308,15 @@ describe('paginatedFetch', () => {
       '0': [{ id: '1' }, { id: '2' }],
       '2': [{ id: '3' }],
     }
-    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
-      const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
-      return jsonResponse({ data: pages[offset] ?? [], meta: { offset: Number(offset), totalCount: 3 } })
-    })
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
+        return jsonResponse({
+          data: pages[offset] ?? [],
+          meta: { offset: Number(offset), totalCount: 3 },
+        })
+      })
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(

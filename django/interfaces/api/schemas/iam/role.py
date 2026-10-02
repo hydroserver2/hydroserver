@@ -17,6 +17,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId
 
 RESOURCE_TYPES = Literal["*", *resource_types]
 PERMISSIONS = Literal[*[choice[0] for choice in PERMISSION_CHOICES]]
@@ -71,8 +72,7 @@ class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters, ExtentQue
     )
 
 
-class RoleResponse(BaseGetResponse, RoleFields):
-    id: uuid.UUID
+class RoleResponse(BaseGetResponse, RoleFields, ItemId):
     workspace_id: Optional[uuid.UUID]
     permissions: list[PermissionResponse]
 

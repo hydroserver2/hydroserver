@@ -162,46 +162,38 @@ def test_get_observations_with_multiple_datastream_ids_unions_results(client):
     assert len(ids) == 2
 
 
-def test_get_observations_row_format_returns_field_rows(client):
+def test_get_observations_row_profile_returns_field_rows(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
     ObservationFactory(datastream=datastream, result=99.5)
 
-    response = client.get(_observations_url(datastream.id, format="row"))
+    response = client.get(_observations_url(datastream.id, profile="https://hydroserver.org/profiles/observations/row"))
 
     assert response.status_code == 200
-    body = response.json()["data"]
-    assert "phenomenonTime" in body["fields"]
-    assert any(row[1] == 99.5 for row in body["rows"])
+    (group,) = response.json()["data"]
+    assert group["datastreamId"] == str(datastream.id)
+    assert "phenomenonTime" in group["fields"]
+    result_index = group["fields"].index("result")
+    assert any(row[result_index] == 99.5 for row in group["rows"])
 
 
-def test_get_observations_column_format_returns_columnar_data(client):
+def test_get_observations_column_profile_returns_columnar_data(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
     ObservationFactory(datastream=datastream, result=99.5)
 
-    response = client.get(_observations_url(datastream.id, format="column"))
+    response = client.get(_observations_url(datastream.id, profile="https://hydroserver.org/profiles/observations/column"))
 
     assert response.status_code == 200
-    assert 99.5 in response.json()["data"]["result"]
+    (group,) = response.json()["data"]
+    assert 99.5 in group["columns"]["result"]
 
 
-def test_get_observations_row_format_returns_400_without_datastream_id(client):
+def test_get_observations_format_parameter_is_unknown(client):
     response = client.get(_observations_url(format="row"))
 
     assert response.status_code == 400
-
-
-def test_get_observations_column_format_returns_400_with_multiple_datastream_ids(client):
-    workspace = WorkspaceFactory()
-    datastream_a = _make_datastream(workspace)
-    datastream_b = _make_datastream(workspace)
-
-    response = client.get(
-        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
-    )
-
-    assert response.status_code == 400
+    assert "format" in response.json()["message"]
 
 
 def test_get_observations_total_count_exact_for_no_filter(client):
@@ -1035,13 +1027,13 @@ def test_get_observations_bbox_combines_with_datastream_id(client):
     assert response.json()["meta"]["totalCount"] == 2
 
 
-def test_get_observations_row_format_is_empty_when_the_datastream_is_outside_the_bbox(client):
+def test_get_observations_row_profile_is_empty_when_the_datastream_is_outside_the_bbox(client):
     outside = _datastream_with_observations(-100, 40.5)
 
-    response = client.get(_observations_url(datastream_id=str(outside.id), format="row", bbox="-112,40,-111,41"))
+    response = client.get(_observations_url(datastream_id=str(outside.id), profile="https://hydroserver.org/profiles/observations/row", bbox="-112,40,-111,41"))
 
     assert response.status_code == 200
-    assert response.json()["data"]["rows"] == []
+    assert response.json()["data"] == []
     assert response.json()["meta"]["totalCount"] == 0
 
 

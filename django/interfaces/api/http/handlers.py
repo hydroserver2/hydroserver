@@ -64,11 +64,13 @@ def register(api):
 
     from functools import partial
     from interfaces.api.http.errors import (
-        BadRequestError, UnauthorizedError, PermissionDeniedError, NotFoundError, ConflictError, ServerError
+        BadRequestError, UnauthorizedError, PermissionDeniedError, NotFoundError, NotAcceptableError, ConflictError,
+        ServerError
     )
 
     for exc_class in (
-        BadRequestError, UnauthorizedError, PermissionDeniedError, NotFoundError, ConflictError, ServerError
+        BadRequestError, UnauthorizedError, PermissionDeniedError, NotFoundError, NotAcceptableError, ConflictError,
+        ServerError
     ):
         api.add_exception_handler(exc_class, partial(http_error_handler, api=api))
 

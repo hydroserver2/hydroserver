@@ -19,6 +19,8 @@ if TYPE_CHECKING:
         ProcessingLevel,
     )
 
+COLUMN_PROFILE = "https://hydroserver.org/profiles/observations/column"
+
 
 class DatastreamService(HydroServerBaseService):
     def __init__(self, client: "HydroServer"):
@@ -237,7 +239,7 @@ class DatastreamService(HydroServerBaseService):
             "sortby": ",".join(sortby) if sortby is not ... else sortby,
             "datetime": build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
             "result_qualifier_code": result_qualifier_code,
-            "format": "column"
+            "profile": COLUMN_PROFILE
         }
         params = {
             k: ("null" if v is None else v)

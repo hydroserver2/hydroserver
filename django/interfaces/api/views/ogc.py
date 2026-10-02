@@ -3,6 +3,9 @@ from ninja import Router, Path
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.collections import COLLECTIONS, CollectionDefinition, get_collection
 from interfaces.api.http.errors import NotFoundError
+from interfaces.api.formats import collection_formats, formats_conformance
+from interfaces.api.formats.profiles import profiles_conformance
+from interfaces.api.http.negotiation import FORMAT_PARAM
 from interfaces.api.http.links import (
     JSON_MEDIA_TYPE,
     Link,
@@ -24,9 +27,8 @@ API_DESCRIPTION = (
     "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer."
 )
 
-CONFORMANCE_CLASSES = (
+CORE_CONFORMANCE_CLASSES = (
     "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core",
-    "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json",
     "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
 )
@@ -99,7 +101,9 @@ def get_conformance(request: HydroServerHttpRequest):
     Get the OGC API conformance classes the API implements.
     """
 
-    return 200, ConformanceResponse(conforms_to=list(CONFORMANCE_CLASSES))
+    conforms_to = [*CORE_CONFORMANCE_CLASSES, *formats_conformance(COLLECTIONS), *profiles_conformance(COLLECTIONS)]
+
+    return 200, ConformanceResponse(conforms_to=conforms_to)
 
 
 def build_collection(collection: CollectionDefinition) -> CollectionResponse:
@@ -117,9 +121,25 @@ def build_collection(collection: CollectionDefinition) -> CollectionResponse:
         item_type=collection.item_type,
         links=[
             Link(href=collection_url, rel="self", type=JSON_MEDIA_TYPE),
-            Link(href=f"{collection_url}/items", rel="items", type=JSON_MEDIA_TYPE),
+            *build_items_links(collection, collection_url),
         ],
     )
+
+
+def build_items_links(collection: CollectionDefinition, collection_url: str) -> list[Link]:
+    """
+    Builds a link to the collection's items in each format it serves, the default first and without an f
+    parameter.
+    """
+
+    return [
+        Link(
+            href=f"{collection_url}/items" if index == 0 else f"{collection_url}/items?{FORMAT_PARAM}={fmt.key}",
+            rel="items",
+            type=fmt.media_type,
+        )
+        for index, fmt in enumerate(collection_formats(collection))
+    ]
 
 
 @ogc_router.get(

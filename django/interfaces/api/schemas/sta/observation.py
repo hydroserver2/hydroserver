@@ -1,8 +1,7 @@
 import uuid
 
-from typing import Optional, Any, Literal, Annotated, Generic, TypeVar
-from pydantic import (AliasPath, AliasChoices, BeforeValidator, WithJsonSchema, model_validator, model_serializer,
-                      ConfigDict, SerializationInfo)
+from typing import Optional, Literal, Annotated
+from pydantic import AliasPath, AliasChoices, BeforeValidator, WithJsonSchema, model_validator, model_serializer
 from pydantic.alias_generators import to_camel
 from ninja import Schema, Query, Field
 
@@ -14,7 +13,6 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
     ExtentQueryParameters,
-    PaginationMeta,
     WorkspaceResponse,
     DatastreamResponse,
     split_comma_separated,
@@ -22,9 +20,8 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
-from interfaces.api.schemas.base import page_links
-from interfaces.api.http.links import Link
 from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ObservationFields(Schema):
@@ -102,11 +99,6 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
         BeforeValidator(split_sortby),
         WithJsonSchema(sortby_array_schema(ObservationSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
-    response_format: Optional[Literal["record", "row", "column"]] = Query(
-        None,
-        description="Controls the format of the observations response.",
-        alias="format",
-    )
     result_qualifier_codes: list[str] = Query(
         [],
         description="Filter observations by result qualifier code.",
@@ -114,8 +106,7 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
     )
 
 
-class ObservationResponse(BaseGetResponse, ObservationFields):
-    id: uuid.UUID
+class ObservationProperties(BaseGetResponse, ObservationFields):
     workspace_id: uuid.UUID = Field(
         ...,
         validation_alias=AliasChoices(
@@ -125,62 +116,88 @@ class ObservationResponse(BaseGetResponse, ObservationFields):
     datastream_id: uuid.UUID
 
 
-T = TypeVar("T")
+class ObservationResponse(ObservationProperties, ItemId):
+    pass
 
 
-class ObservationFormatResponse(Schema, Generic[T]):
-    data: T
-    meta: PaginationMeta
-    included: Optional[dict[str, list[Any]]] = None
-    links: list[Link] = []
+OBSERVATION_GROUP_FIELDS = {
+    "id": "id",
+    "phenomenonTime": "phenomenon_time",
+    "result": "result",
+    "resultQualifierCodes": "result_qualifiers",
+}
+OBSERVATION_GROUP_WORKSPACE_FIELD = "datastream__monitoring_site__workspace_id"
 
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    @model_serializer(mode="wrap")
-    def _finalize(self, handler, info: SerializationInfo):
-        data = handler(self)
-        if not isinstance(data, dict):
-            return data
-
-        if not data.get("included"):
-            data.pop("included", None)
-
-        links = page_links(info, self.meta, self.data.row_count)
-        if links is not None:
-            data["links"] = links
-
-        return data
+ObservationGroupField = Literal[*OBSERVATION_GROUP_FIELDS]
 
 
-class ObservationRowData(BaseGetResponse):
-    fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
+def without_unselected(data: dict, keys: tuple[str, ...]) -> dict:
+    """Leaves out the given members when they're absent (None) because the properties parameter didn't select them."""
+
+    return {key: value for key, value in data.items() if key not in keys or value is not None}
+
+
+class ObservationRowResponse(BaseGetResponse):
+    datastream_id: uuid.UUID
+    workspace_id: Optional[uuid.UUID] = None
+    fields: list[ObservationGroupField]
     rows: list[list]
 
-    @property
-    def row_count(self) -> int:
-        return len(self.rows)
+    @model_serializer(mode="wrap")
+    def _omit_unselected(self, handler):
+        return without_unselected(handler(self), ("workspaceId",))
+
+    @staticmethod
+    def filter_properties(group: dict, requested: set[str]) -> dict:
+        """Applies the properties parameter to a group; datastreamId identifies it, so it's always kept."""
+
+        positions = [index for index, field in enumerate(group["fields"]) if field in requested]
+        filtered = {
+            "datastreamId": group["datastreamId"],
+            "fields": [group["fields"][index] for index in positions],
+            "rows": [[row[index] for index in positions] for row in group["rows"]],
+        }
+        if "workspaceId" in requested and "workspaceId" in group:
+            filtered["workspaceId"] = group["workspaceId"]
+
+        return filtered
 
 
-class ObservationColumnarData(BaseGetResponse):
-    phenomenon_time: list
-    result: list
-    result_qualifier_codes: list
+class ObservationColumns(BaseGetResponse):
+    id: Optional[list[uuid.UUID]] = None
+    phenomenon_time: Optional[list] = None
+    result: Optional[list] = None
+    result_qualifier_codes: Optional[list] = None
 
-    @property
-    def row_count(self) -> int:
-        return len(self.phenomenon_time)
-
-
-class ObservationRowResponse(ObservationFormatResponse[ObservationRowData]):
-    pass
+    @model_serializer(mode="wrap")
+    def _omit_unselected(self, handler):
+        return without_unselected(handler(self), tuple(OBSERVATION_GROUP_FIELDS))
 
 
-class ObservationColumnarResponse(ObservationFormatResponse[ObservationColumnarData]):
-    pass
+class ObservationColumnResponse(BaseGetResponse):
+    datastream_id: uuid.UUID
+    workspace_id: Optional[uuid.UUID] = None
+    columns: ObservationColumns
+
+    @model_serializer(mode="wrap")
+    def _omit_unselected(self, handler):
+        return without_unselected(handler(self), ("workspaceId",))
+
+    @staticmethod
+    def filter_properties(group: dict, requested: set[str]) -> dict:
+        """Applies the properties parameter to a group; datastreamId identifies it, so it's always kept."""
+
+        filtered = {
+            "datastreamId": group["datastreamId"],
+            "columns": {name: values for name, values in group["columns"].items() if name in requested},
+        }
+        if "workspaceId" in requested and "workspaceId" in group:
+            filtered["workspaceId"] = group["workspaceId"]
+
+        return filtered
 
 
-class ObservationPostBody(BasePostBody, ObservationFields):
-    id: Optional[uuid.UUID] = None
+class ObservationPostBody(BasePostBody, ObservationFields, NewItemId):
     datastream_id: uuid.UUID
 
 

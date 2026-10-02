@@ -29,6 +29,7 @@ from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
 from core.sta.models import SampledMedium, AggregationStatistic, DatastreamStatus
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class DatastreamFields(Schema):
@@ -238,26 +239,22 @@ class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):
     )
 
 
-class VisualizationMonitoringSiteResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationMonitoringSiteResponse(BaseGetResponse, ItemId):
     workspace_id: uuid.UUID
     name: str = Field(..., max_length=200)
     code: str = Field(..., max_length=200)
 
 
-class VisualizationObservedPropertyResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationObservedPropertyResponse(BaseGetResponse, ItemId):
     name: str = Field(..., max_length=255)
     code: Optional[str] = Field(None, max_length=255)
 
 
-class VisualizationProcessingLevelResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationProcessingLevelResponse(BaseGetResponse, ItemId):
     name: str = Field(..., max_length=255)
 
 
-class VisualizationDatastreamResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationDatastreamResponse(BaseGetResponse, ItemId):
     name: str = Field(..., max_length=255)
     monitoring_site_id: uuid.UUID
     method_id: uuid.UUID
@@ -289,10 +286,9 @@ class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
     processing_levels: list[VisualizationProcessingLevelResponse]
 
 
-class DatastreamResponse(
+class DatastreamProperties(
     BaseGetResponse, DatastreamFields, DatastreamStatisticsFields, DatastreamRelatedFields
 ):
-    id: uuid.UUID
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
@@ -300,8 +296,11 @@ class DatastreamResponse(
     datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
-class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):
-    id: Optional[uuid.UUID] = None
+class DatastreamResponse(DatastreamProperties, ItemId):
+    pass
+
+
+class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields, NewItemId):
     tags: dict[str, str] = {}
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

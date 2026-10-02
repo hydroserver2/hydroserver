@@ -20,6 +20,8 @@ COMMON_JSON = "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json"
 COMMON_LANDING_PAGE = "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page"
 OGC_CONFORMANCE_REL = "http://www.opengis.net/def/rel/ogc/1.0/conformance"
 FEATURES_CORE = "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core"
+FEATURES_GEOJSON = "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+COMMON_PROFILE_PARAMETER = "http://www.opengis.net/spec/ogcapi-common-3/1.0/conf/profile-parameter"
 
 
 @pytest.fixture
@@ -70,7 +72,9 @@ def test_conformance_declares_the_implemented_classes(client):
 
     assert response.status_code == 200
     assert response.json() == {
-        "conformsTo": [COMMON_CORE, COMMON_JSON, COMMON_LANDING_PAGE, FEATURES_CORE]
+        "conformsTo": [
+            COMMON_CORE, COMMON_LANDING_PAGE, FEATURES_CORE, COMMON_JSON, FEATURES_GEOJSON, COMMON_PROFILE_PARAMETER
+        ]
     }
 
 

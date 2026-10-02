@@ -17,6 +17,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId
 
 
 QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS = {
@@ -95,8 +96,7 @@ class QualityControlHistoryQueryParameters(
     )
 
 
-class QualityControlHistoryResponse(BaseGetResponse):
-    id: uuid.UUID
+class QualityControlHistoryResponse(BaseGetResponse, ItemId):
     managed_datastream_id: uuid.UUID
     source_datastream_id: uuid.UUID
     created_at: ISODatetime

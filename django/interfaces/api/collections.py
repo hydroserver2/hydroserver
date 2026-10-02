@@ -1,7 +1,27 @@
-from dataclasses import dataclass
-from typing import Literal, Optional
+from dataclasses import dataclass, field
+from typing import Literal, Mapping, Optional
 
 ItemType = Literal["feature", "resource"]
+
+
+@dataclass(frozen=True)
+class PointGeometry:
+    """The item fields a collection's point geometry is built from, as they appear in its JSON response."""
+
+    longitude: str = "longitude"
+    latitude: str = "latitude"
+
+    @property
+    def fields(self) -> tuple[str, str]:
+        return self.longitude, self.latitude
+
+
+@dataclass(frozen=True)
+class FeatureType:
+    """What makes a collection's items features: the schema of their properties and where their geometry comes from."""
+
+    properties_schema: str
+    geometry: Optional[PointGeometry] = None
 
 
 @dataclass(frozen=True)
@@ -17,10 +37,20 @@ class CollectionDefinition:
     title: str
     description: str
     router: str
-    item_type: ItemType = "resource"
+    feature: Optional[FeatureType] = None
+    formats: Mapping[str, tuple[str, ...]] = field(default_factory=lambda: {"json": ()})
+
+    @property
+    def default_format(self) -> str:
+        return next(iter(self.formats))
+
+    @property
+    def item_type(self) -> ItemType:
+        return "feature" if self.feature is not None else "resource"
 
 
 VIEWS = "interfaces.api.views"
+SCHEMAS = "interfaces.api.schemas"
 
 COLLECTIONS: tuple[CollectionDefinition, ...] = (
     CollectionDefinition(
@@ -29,7 +59,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         description="Workspaces that own monitoring sites, datastreams, and other data, and "
         "control who can access them.",
         router=f"{VIEWS}.iam.workspace.workspace_router",
-        item_type="feature",
+        feature=FeatureType(f"{SCHEMAS}.iam.workspace.WorkspaceProperties"),
+        formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
         id="roles",
@@ -43,7 +74,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Monitoring Sites",
         description="Locations where observations are collected, with WGS 84 coordinates.",
         router=f"{VIEWS}.sta.monitoring_site.monitoring_site_router",
-        item_type="feature",
+        feature=FeatureType(f"{SCHEMAS}.sta.monitoring_site.MonitoringSiteProperties", geometry=PointGeometry()),
+        formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
         id="monitoring-site-types",
@@ -63,7 +95,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Datastreams",
         description="Time series of observations of one observed property at a monitoring site.",
         router=f"{VIEWS}.sta.datastream.datastream_router",
-        item_type="feature",
+        feature=FeatureType(f"{SCHEMAS}.sta.datastream.DatastreamProperties"),
+        formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
         id="datastream-statuses",
@@ -82,7 +115,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Observations",
         description="Individual timestamped results recorded in datastreams.",
         router=f"{VIEWS}.sta.observation.observation_router",
-        item_type="feature",
+        feature=FeatureType(f"{SCHEMAS}.sta.observation.ObservationProperties"),
+        formats={"json": ("row", "column"), "geojson": ()},
     ),
     CollectionDefinition(
         id="observed-properties",

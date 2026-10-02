@@ -18,6 +18,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ResultQualifierFields(Schema):
@@ -91,13 +92,11 @@ class ResultQualifierQueryParameters(
     )
 
 
-class ResultQualifierResponse(BaseGetResponse, ResultQualifierFields):
-    id: uuid.UUID
+class ResultQualifierResponse(BaseGetResponse, ResultQualifierFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class ResultQualifierPostBody(BasePostBody, ResultQualifierFields):
-    id: Optional[uuid.UUID] = None
+class ResultQualifierPostBody(BasePostBody, ResultQualifierFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

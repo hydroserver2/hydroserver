@@ -18,6 +18,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ProcessingLevelFields(Schema):
@@ -95,13 +96,11 @@ class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQuer
     )
 
 
-class ProcessingLevelResponse(BaseGetResponse, ProcessingLevelFields):
-    id: uuid.UUID
+class ProcessingLevelResponse(BaseGetResponse, ProcessingLevelFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields):
-    id: Optional[uuid.UUID] = None
+class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

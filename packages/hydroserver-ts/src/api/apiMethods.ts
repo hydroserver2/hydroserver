@@ -29,17 +29,18 @@ export const apiMethods = {
     originalBody: unknown = null,
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
-    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
-    
+    const isFormData =
+      typeof FormData !== 'undefined' && body instanceof FormData
+
     options.method = 'PATCH'
     options.body = isFormData
       ? body
       : originalBody
-        ? createPatchObject(
-            originalBody as Record<string, unknown>,
-            body as Record<string, unknown>
-          )
-        : body
+      ? createPatchObject(
+          originalBody as Record<string, unknown>,
+          body as Record<string, unknown>
+        )
+      : body
 
     const bodyIsEmpty =
       !isFormData &&
@@ -92,7 +93,8 @@ export const apiMethods = {
 
     if (!url.searchParams.has('limit'))
       url.searchParams.set('limit', String(DEFAULT_PAGE_SIZE))
-    const limitParam = Number(url.searchParams.get('limit')) || DEFAULT_PAGE_SIZE
+    const limitParam =
+      Number(url.searchParams.get('limit')) || DEFAULT_PAGE_SIZE
 
     const res = await interceptedFetch<T>(url.toString(), { method: 'GET' })
 
@@ -125,7 +127,63 @@ export const apiMethods = {
       }
     }
 
+    // Row and column profiles of observations group values by datastream; a
+    // datastream's group can continue on the next page.
+    type Group = Columnar & { datastreamId: string }
+    const isGrouped = (x: unknown): x is Group[] =>
+      Array.isArray(x) &&
+      x.length > 0 &&
+      x.every(
+        (g) =>
+          isColumnar(g) &&
+          typeof g.datastreamId === 'string' &&
+          ('rows' in g || 'columns' in g)
+      )
+
+    // A column group with no selected per-observation property has no column
+    // to count its observations by.
+    const groupRowCount = (group: Group): number => {
+      if (Array.isArray(group.rows)) return group.rows.length
+      const column = isColumnar(group.columns)
+        ? Object.values(group.columns).find(Array.isArray)
+        : undefined
+      return column ? column.length : 0
+    }
+
+    const groupKey = (group: Group) => String(group.datastreamId)
+    const mergeGroups = (target: Map<string, Group>, groups: Group[]) => {
+      for (const group of groups) {
+        const existing = target.get(groupKey(group))
+        if (!existing) {
+          target.set(groupKey(group), {
+            ...group,
+            ...(Array.isArray(group.rows) ? { rows: [...group.rows] } : {}),
+            ...(isColumnar(group.columns)
+              ? {
+                  columns: Object.fromEntries(
+                    Object.entries(group.columns).map(([k, v]) => [
+                      k,
+                      Array.isArray(v) ? [...v] : v,
+                    ])
+                  ),
+                }
+              : {}),
+          })
+          continue
+        }
+        if (Array.isArray(existing.rows) && Array.isArray(group.rows)) {
+          existing.rows.push(...group.rows)
+        }
+        if (isColumnar(existing.columns) && isColumnar(group.columns)) {
+          concatInto(existing.columns, group.columns)
+        }
+      }
+    }
+
     const pageRowCount = (data: unknown): number => {
+      if (isGrouped(data)) {
+        return data.reduce((sum, g) => sum + groupRowCount(g), 0)
+      }
       if (Array.isArray(data)) return data.length
       if (isColumnar(data)) {
         if (Array.isArray((data as Columnar).results)) {
@@ -140,8 +198,9 @@ export const apiMethods = {
     }
 
     // Normalize first page
-    let mode: 'array' | 'columnar'
+    let mode: 'array' | 'columnar' | 'grouped'
     let allArray: T[] = []
+    const allGroups = new Map<string, Group>()
     let allColumnar: Columnar | null = null
     let firstPageMeta = res.meta as Record<string, unknown> | undefined
 
@@ -161,7 +220,10 @@ export const apiMethods = {
     }
     let mergedIncluded = mergeIncluded(undefined, res.included)
 
-    if (Array.isArray(res.data)) {
+    if (isGrouped(res.data)) {
+      mode = 'grouped'
+      mergeGroups(allGroups, res.data)
+    } else if (Array.isArray(res.data)) {
       mode = 'array'
       allArray = [...(res.data as T[])]
     } else if (isColumnar(res.data)) {
@@ -176,6 +238,11 @@ export const apiMethods = {
     }
 
     const mergePageData = (page: ApiResponse<unknown>): boolean => {
+      if (mode === 'grouped') {
+        if (!Array.isArray(page.data)) return false
+        if (isGrouped(page.data)) mergeGroups(allGroups, page.data)
+        return true
+      }
       if (mode === 'array') {
         if (Array.isArray(page.data)) {
           allArray.push(...(page.data as T[]))
@@ -255,7 +322,9 @@ export const apiMethods = {
     }
 
     const merged =
-      mode === 'array'
+      mode === 'grouped'
+        ? ([...allGroups.values()] as unknown as T)
+        : mode === 'array'
         ? (allArray as unknown as T)
         : (allColumnar as unknown as T)
 
