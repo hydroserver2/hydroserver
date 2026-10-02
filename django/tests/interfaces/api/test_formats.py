@@ -5,7 +5,7 @@ from ninja import Schema
 
 from interfaces.api.formats import FORMATS, Format, ResponseDocument
 from tests.core.sta.factories import UnitFactory
-from tests.interfaces.api.conftest import set_collection_formats
+from tests.interfaces.api.helpers import set_collection_formats
 
 pytestmark = pytest.mark.django_db
 

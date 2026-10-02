@@ -7,27 +7,16 @@ from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM,
 from interfaces.api.http.query_params import declared_query_params
 from interfaces.api.urls import api
 from tests.core.sta.factories import DatastreamFactory, ObservationFactory
+from tests.interfaces.api.helpers import API_PREFIX, api_operations
 
 pytestmark = pytest.mark.django_db
 
 # Query parameters an operation doesn't declare get a 400 (OGC API - Features Core Req 8).
 
-API_PREFIX = "/api/ogc/"
 UNITS_URL = "/api/ogc/collections/units/items"
 
 
-def _operations():
-    """Yields (method, OpenAPI-style path, operation) for every operation in the API."""
-
-    for bound_router in api._get_bound_routers():
-        for path, path_view in bound_router.path_operations.items():
-            route = "/".join(part.strip("/") for part in (bound_router.prefix, path) if part.strip("/"))
-            for operation in path_view.operations:
-                for method in operation.methods:
-                    yield method, f"{API_PREFIX}{route}", operation
-
-
-OPERATIONS = list(_operations())
+OPERATIONS = [(method, path, operation) for method, path, _, operation in api_operations()]
 
 
 @pytest.mark.parametrize(

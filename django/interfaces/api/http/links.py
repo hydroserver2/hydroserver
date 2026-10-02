@@ -1,5 +1,3 @@
-import re
-
 from typing import Optional
 from urllib.parse import quote
 
@@ -9,13 +7,11 @@ from django.urls import get_script_prefix, reverse
 from ninja import Schema
 from pydantic import SerializationInfo
 
-from interfaces.api.collections import get_collection
 from interfaces.api.formats import collection_formats
 from interfaces.api.formats.profiles import collection_profiles
-from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM
+from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM, items_route
 
 JSON_MEDIA_TYPE = "application/json"
-COLLECTION_ITEM_PATH = re.compile(r"collections/(?P<collection_id>[^/]+)/items/[^/]+")
 
 
 class Link(Schema):
@@ -122,14 +118,13 @@ def build_alternate_links(request: HttpRequest) -> list[Link]:
 def build_collection_link(request: HttpRequest) -> Optional[Link]:
     """Builds a link to the collection that contains the requested item."""
 
-    path = request.path_info.lstrip("/").removeprefix(api_root_path())
-    match = COLLECTION_ITEM_PATH.fullmatch(path)
+    route = items_route(request.path_info)
 
-    if match is None or get_collection(match["collection_id"]) is None:
+    if route is None or not route.is_item:
         return None
 
     return Link(
-        href=build_api_url(f"collections/{match['collection_id']}"),
+        href=build_api_url(f"collections/{route.collection.id}"),
         rel="collection",
         type=JSON_MEDIA_TYPE,
     )

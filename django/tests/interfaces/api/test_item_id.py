@@ -2,7 +2,7 @@ import pytest
 
 from interfaces.api.collections import COLLECTIONS
 from interfaces.api.schemas.base import ItemId, NewItemId
-from interfaces.api.urls import api
+from tests.interfaces.api.helpers import API_PREFIX, api_operations
 
 # Items identified by UUID share the id field of ItemId (responses) or NewItemId (bodies that create them), subclassed
 # last so id is their first field. GeoJSON features take their id from it (OGC API - Features Core Req 39B).
@@ -19,15 +19,11 @@ def _subclasses(cls):
 def _item_schemas():
     """The item schema of each collection's item GET operation, by collection item path."""
 
-    for bound_router in api._get_bound_routers():
-        for path, path_view in bound_router.path_operations.items():
-            route = "/".join(part.strip("/") for part in (bound_router.prefix, path) if part.strip("/"))
-            if not any(route.startswith(prefix) and route.count("/") == 3 for prefix in ITEM_PATHS):
-                continue
-            for operation in path_view.operations:
-                if "GET" in operation.methods:
-                    item_response = operation.response_models[200].model_fields["response"].annotation
-                    yield route, item_response.__pydantic_generic_metadata__["args"][0]
+    for method, path, _, operation in api_operations():
+        route = path.removeprefix(API_PREFIX)
+        if method == "GET" and any(route.startswith(prefix) and route.count("/") == 3 for prefix in ITEM_PATHS):
+            item_response = operation.response_models[200].model_fields["response"].annotation
+            yield route, item_response.__pydantic_generic_metadata__["args"][0]
 
 
 ITEM_SCHEMAS = list(_item_schemas())

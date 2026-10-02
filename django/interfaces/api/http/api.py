@@ -1,7 +1,6 @@
 from typing import Any, Optional
 from ninja import NinjaAPI
-from ninja.openapi.schema import REF_TEMPLATE, OpenAPISchema
-from ninja.schema import NinjaGenerateJsonSchema
+from ninja.openapi.schema import OpenAPISchema
 from ninja.types import DictStrAny
 from pydantic import BaseModel, create_model
 from django.http import HttpRequest, HttpResponse
@@ -9,15 +8,9 @@ from django.utils.cache import patch_vary_headers
 
 from interfaces.api.collections import CollectionDefinition
 from interfaces.api.formats import EncodeContext, collection_formats
-from interfaces.api.formats.profiles import collection_profiles
+from interfaces.api.formats.profiles import collection_profiles, has_profiles
 from interfaces.api.http.links import link_header
-from interfaces.api.http.content_negotiation import (
-    FORMAT_PARAM,
-    PROFILE_PARAM,
-    is_items_path,
-    items_collection,
-    profiles_path_collection,
-)
+from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM, items_route
 
 PARAMETER_SERIALIZATION_KEYS = ("style", "explode")
 
@@ -89,14 +82,15 @@ class HydroServerNinjaAPI(NinjaAPI):
                         if key in parameter_schema:
                             parameter[key] = parameter_schema.pop(key)
 
-            collection = items_collection(path)
-            if collection is not None and "get" in path_item:
+            route = items_route(path)
+            if route is not None and "get" in path_item:
+                collection = route.collection
                 path_item["get"].setdefault("parameters", []).append(format_parameter(collection))
 
-                if profiles_path_collection(path):
+                if not route.is_item and has_profiles(collection):
                     path_item["get"]["parameters"].append(profile_parameter(collection))
 
-                kind = "items" if is_items_path(path) else "item"
+                kind = "item" if route.is_item else "items"
                 responses = path_item["get"]["responses"]
                 content = (responses.get(200) or responses["200"])["content"]
                 for fmt in collection_formats(collection):
@@ -109,19 +103,14 @@ class HydroServerNinjaAPI(NinjaAPI):
     @staticmethod
     def response_schema(schema: OpenAPISchema, model: type[BaseModel]) -> DictStrAny:
         """
-        A reference to a response model's schema, added to the document's components the way Ninja adds the
-        response models it documents.
+        A reference to a response model's schema, added to the document's components. This deliberately calls
+        Ninja's own (private) response model path, which wraps a model in a single "response" field the way
+        operations' response models are, so these schemas are generated exactly like Ninja's.
         """
 
         wrapper = create_model("Response", response=(model, ...))
-        model_schema = wrapper.model_json_schema(
-            ref_template=REF_TEMPLATE, by_alias=True, schema_generator=NinjaGenerateJsonSchema, mode="serialization"
-        )
-        components = schema.setdefault("components", {}).setdefault("schemas", {})
-        for name, definition in model_schema.get("$defs", {}).items():
-            components.setdefault(name, definition)
 
-        return model_schema["properties"]["response"]
+        return schema._create_schema_from_model(wrapper, mode="serialization")[0]  # noqa
 
 
 def format_parameter(collection: CollectionDefinition) -> dict:
@@ -140,8 +129,7 @@ def format_parameter(collection: CollectionDefinition) -> dict:
 
 def profile_parameter(collection: CollectionDefinition) -> dict:
     """
-    The OpenAPI Parameter Object for the profile parameter of a collection's items GET operation
-    (OGC API - Common Part 3, /req/profile-parameter/profile-param).
+    The OpenAPI Parameter Object for the profile parameter of a collection's items GET operation.
     """
 
     by_format = {fmt.key: collection_profiles(collection, fmt.key) for fmt in collection_formats(collection)}

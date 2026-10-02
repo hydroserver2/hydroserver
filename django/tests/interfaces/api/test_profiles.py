@@ -1,5 +1,5 @@
 from datetime import timedelta
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -15,6 +15,7 @@ from tests.core.sta.factories import (
     ObservationFactory,
     ResultQualifierFactory,
 )
+from tests.interfaces.api.helpers import links_by_rel, query_params
 
 pytestmark = pytest.mark.django_db
 
@@ -40,14 +41,6 @@ def _observations(datastream, count, **kwargs):
         )
         for i in range(count)
     ]
-
-
-def _links(response):
-    return {link["rel"]: link for link in response.json()["links"]}
-
-
-def _query(href):
-    return parse_qs(urlsplit(href).query)
 
 
 def _get(client, **params):
@@ -81,7 +74,7 @@ def test_pages_without_a_profile_hold_records_and_link_no_profile(client):
     response = _get(client, datastream_id=str(datastream.id))
 
     assert "phenomenonTime" in response.json()["data"][0]
-    assert "profile" not in _links(response)
+    assert "profile" not in links_by_rel(response)
 
 
 def test_profile_links_have_no_media_type(client):
@@ -90,7 +83,7 @@ def test_profile_links_have_no_media_type(client):
 
     response = _get(client, datastream_id=str(datastream.id), profile=ROW)
 
-    assert _links(response)["profile"] == {
+    assert links_by_rel(response)["profile"] == {
         "href": ROW,
         "rel": "profile",
         "title": "Observations as rows grouped by datastream",
@@ -104,7 +97,7 @@ def test_profiles_are_selected_by_uri(client):
     response = _get(client, datastream_id=str(datastream.id), profile=ROW)
 
     assert "rows" in response.json()["data"][0]
-    assert _links(response)["profile"]["href"] == ROW
+    assert links_by_rel(response)["profile"]["href"] == ROW
 
 
 @pytest.mark.parametrize("value", ["row", "column", "record", "https://example.org/unknown"])
@@ -116,7 +109,7 @@ def test_values_other_than_profile_uris_fall_back_to_records(client, value):
 
     assert response.status_code == 200
     assert "phenomenonTime" in response.json()["data"][0]
-    assert "profile" not in _links(response)
+    assert "profile" not in links_by_rel(response)
 
 
 def test_the_first_supported_requested_profile_is_used(client):
@@ -135,7 +128,7 @@ def test_formats_without_profiles_ignore_the_profile_parameter(client):
     response = _get(client, datastream_id=str(datastream.id), profile=ROW, f="geojson")
 
     assert response.json()["type"] == "FeatureCollection"
-    assert "profile" not in _links(response)
+    assert "profile" not in links_by_rel(response)
 
 
 def test_profiles_apply_to_pages_of_observations_not_one_observation(client):
@@ -153,11 +146,11 @@ def test_page_links_keep_the_profile_and_alternates_drop_it(client):
 
     response = _get(client, datastream_id=str(datastream.id), profile=COLUMN, limit=2)
 
-    links = _links(response)
-    assert _query(links["next"]["href"])["profile"] == [COLUMN]
-    assert _query(links["self"]["href"])["profile"] == [COLUMN]
-    assert "profile" not in _query(links["alternate"]["href"])
-    assert _query(links["alternate"]["href"])["f"] == ["geojson"]
+    links = links_by_rel(response)
+    assert query_params(links["next"]["href"])["profile"] == [COLUMN]
+    assert query_params(links["self"]["href"])["profile"] == [COLUMN]
+    assert "profile" not in query_params(links["alternate"]["href"])
+    assert query_params(links["alternate"]["href"])["f"] == ["geojson"]
 
 
 @pytest.mark.parametrize("profile", [ROW, COLUMN])
@@ -259,7 +252,7 @@ def test_column_groups_without_selected_columns_still_page(client):
 
     (group,) = response.json()["data"]
     assert group == {"datastreamId": str(datastream.id), "columns": {}}
-    assert "next" in _links(response)
+    assert "next" in links_by_rel(response)
 
 
 def test_grouped_pages_span_datastreams_and_return_every_observation_once(client):
@@ -268,8 +261,8 @@ def test_grouped_pages_span_datastreams_and_return_every_observation_once(client
 
     response = _get(client, datastream_id=[str(first.id), str(second.id)], profile=ROW, limit=2)
     pages = [response]
-    while "next" in _links(pages[-1]):
-        parts = urlsplit(_links(pages[-1])["next"]["href"])
+    while "next" in links_by_rel(pages[-1]):
+        parts = urlsplit(links_by_rel(pages[-1])["next"]["href"])
         pages.append(client.get(f"{parts.path}?{parts.query}"))
 
     seen = [row[0] for page in pages for group in page.json()["data"] for row in group["rows"]]
@@ -292,7 +285,7 @@ def test_an_empty_grouped_page_has_no_groups(client):
 
     assert response.status_code == 200
     assert response.json()["data"] == []
-    assert _links(response)["profile"]["href"] == ROW
+    assert links_by_rel(response)["profile"]["href"] == ROW
 
 
 def test_openapi_documents_profile_uris_on_observation_pages(client):

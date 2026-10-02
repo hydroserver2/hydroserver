@@ -1,6 +1,7 @@
 import inspect
 import re
 
+from dataclasses import dataclass
 from functools import wraps
 from typing import Callable, Optional
 
@@ -19,20 +20,37 @@ PROFILE_PARAM = "profile"
 ITEMS_PATH = re.compile(r"(?:^|/)collections/(?P<collection_id>[^/]+)/items(?P<item>/[^/]+)?/?$")
 
 
+@dataclass(frozen=True)
+class ItemsRoute:
+    """A route to a registered collection's items, or to one of its items."""
+
+    collection: CollectionDefinition
+    is_item: bool
+
+
+def items_route(path: str) -> Optional[ItemsRoute]:
+    """The collection items or item route the path addresses, if any."""
+
+    match = ITEMS_PATH.search(path)
+    collection = get_collection(match["collection_id"]) if match else None
+
+    return ItemsRoute(collection, is_item=match["item"] is not None) if collection is not None else None
+
+
 def items_collection(path: str) -> Optional[CollectionDefinition]:
     """The registered collection whose items or item the path addresses, if any."""
 
-    match = ITEMS_PATH.search(path)
+    route = items_route(path)
 
-    return get_collection(match["collection_id"]) if match else None
+    return route.collection if route is not None else None
 
 
 def is_items_path(path: str) -> bool:
     """Whether the path addresses a collection's items rather than one item."""
 
-    match = ITEMS_PATH.search(path)
+    route = items_route(path)
 
-    return match is not None and match["item"] is None
+    return route is not None and not route.is_item
 
 
 def profiles_path_collection(path: str) -> Optional[CollectionDefinition]:
@@ -41,9 +59,9 @@ def profiles_path_collection(path: str) -> Optional[CollectionDefinition]:
     so they're negotiated for a collection's items, not for one item.
     """
 
-    collection = items_collection(path)
+    route = items_route(path)
 
-    return collection if collection is not None and is_items_path(path) and has_profiles(collection) else None
+    return route.collection if route is not None and not route.is_item and has_profiles(route.collection) else None
 
 
 def negotiated_query_params(request: HttpRequest) -> frozenset[str]:

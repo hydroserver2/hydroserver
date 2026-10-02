@@ -1,14 +1,12 @@
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import urlsplit
 
 import orjson
 import pytest
 
-from django.test import override_settings
-
 from core.sta.models import DatastreamLinkedResource
 from tests.core.iam.factories import WorkspaceFactory
-from tests.interfaces.api.conftest import set_collection_formats
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory, UnitFactory
+from tests.interfaces.api.helpers import BASE_URL, links_with_rel, query_values, set_collection_formats
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 
@@ -17,7 +15,6 @@ pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 # to the default format leave f out. The plain_text_format fixture registers a second format, text/plain
 # (f=text), on units and observations.
 
-BASE_URL = "https://hydroserver.example.org"
 COLLECTIONS_PATH = "/api/ogc/collections"
 UNITS_PATH = f"{COLLECTIONS_PATH}/units/items"
 JSON = "application/json"
@@ -25,28 +22,13 @@ TEXT = "text/plain"
 
 
 @pytest.fixture
-def proxy_base_url():
-    with override_settings(PROXY_BASE_URL=BASE_URL):
-        yield
-
-
-@pytest.fixture
 def text_format(plain_text_format):
     return plain_text_format()
 
 
-def _links(response, rel):
-    body = orjson.loads(response.content)
-    return [link for link in body["links"] if link["rel"] == rel]
-
-
 def _link(response, rel):
-    (link,) = _links(response, rel)
+    (link,) = links_with_rel(response, rel)
     return link
-
-
-def _query(href):
-    return {key: values[0] for key, values in parse_qs(urlsplit(href).query).items()}
 
 
 def _follow(client, href):
@@ -68,9 +50,9 @@ def test_default_format_links_to_itself_without_f_and_to_its_alternates(client):
     assert _link(response, "self") == {"href": f"{BASE_URL}{UNITS_PATH}?limit=1", "rel": "self", "type": JSON}
     alternate = _link(response, "alternate")
     assert alternate["type"] == TEXT
-    assert _query(alternate["href"]) == {"limit": "1", "f": "text"}
+    assert query_values(alternate["href"]) == {"limit": "1", "f": "text"}
     assert _link(response, "next")["type"] == JSON
-    assert "f" not in _query(_link(response, "next")["href"])
+    assert "f" not in query_values(_link(response, "next")["href"])
 
 
 @pytest.mark.usefixtures("text_format")
@@ -83,10 +65,10 @@ def test_format_selected_by_accept_links_with_f(client):
     for rel in ("self", "next"):
         link = _link(response, rel)
         assert link["type"] == TEXT
-        assert _query(link["href"])["f"] == "text"
+        assert query_values(link["href"])["f"] == "text"
     alternate = _link(response, "alternate")
     assert alternate["type"] == JSON
-    assert _query(alternate["href"]) == {"limit": "1", "f": "json"}
+    assert query_values(alternate["href"]) == {"limit": "1", "f": "json"}
 
 
 def test_explicit_f_stays_in_the_self_link(client):
@@ -115,7 +97,7 @@ def test_item_links_to_its_alternates_and_its_json_collection(client):
     response = client.get(f"{UNITS_PATH}/{unit.id}", headers={"Accept": TEXT})
 
     assert _link(response, "self")["type"] == TEXT
-    assert _query(_link(response, "self")["href"]) == {"f": "text"}
+    assert query_values(_link(response, "self")["href"]) == {"f": "text"}
     assert _link(response, "alternate")["type"] == JSON
     assert _link(response, "collection") == {
         "href": f"{BASE_URL}{COLLECTIONS_PATH}/units",
@@ -128,7 +110,7 @@ def test_item_links_to_its_alternates_and_its_json_collection(client):
 def test_collection_links_to_its_items_in_every_format(client):
     response = client.get(f"{COLLECTIONS_PATH}/units")
 
-    assert _links(response, "items") == [
+    assert links_with_rel(response, "items") == [
         {"href": f"{BASE_URL}{COLLECTIONS_PATH}/units/items", "rel": "items", "type": JSON},
         {"href": f"{BASE_URL}{COLLECTIONS_PATH}/units/items?f=text", "rel": "items", "type": TEXT},
     ]
@@ -139,8 +121,8 @@ def test_collection_links_to_its_items_in_every_format(client):
 def test_single_format_responses_have_no_alternates(client):
     UnitFactory(global_=True)
 
-    assert _links(client.get(UNITS_PATH), "alternate") == []
-    assert len(_links(client.get(f"{COLLECTIONS_PATH}/units"), "items")) == 1
+    assert links_with_rel(client.get(UNITS_PATH), "alternate") == []
+    assert len(links_with_rel(client.get(f"{COLLECTIONS_PATH}/units"), "items")) == 1
 
 
 def test_formats_without_links_in_the_body_send_a_link_header(client, plain_text_format):
@@ -164,5 +146,5 @@ def test_routes_outside_collection_items_have_no_alternates(client, monkeypatch,
     response = client.get(f"{COLLECTIONS_PATH}/datastreams/items/{datastream.id}/linked-resources")
 
     assert response.status_code == 200
-    assert _links(response, "alternate") == []
+    assert links_with_rel(response, "alternate") == []
     assert _link(response, "self")["type"] == JSON

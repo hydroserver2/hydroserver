@@ -1,10 +1,9 @@
 import pytest
 
-from django.test import override_settings
-
 from interfaces.api.collections import COLLECTIONS
 from interfaces.api.urls import api
 from tests.core.iam.factories import UserFactory
+from tests.interfaces.api.helpers import BASE_URL, links_by_rel
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 
@@ -12,20 +11,9 @@ pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 # self and items links (OGC API - Features Core Req 11-15, 18-19). Links are built from
 # PROXY_BASE_URL, not the request's Host, which the test client sends as "testserver".
 
-BASE_URL = "https://hydroserver.example.org"
 COLLECTIONS_PATH = "/api/ogc/collections"
 COLLECTION_IDS = [collection.id for collection in COLLECTIONS]
 FEATURE_COLLECTION_IDS = ["workspaces", "monitoring-sites", "datastreams", "observations"]
-
-
-@pytest.fixture
-def proxy_base_url():
-    with override_settings(PROXY_BASE_URL=BASE_URL):
-        yield
-
-
-def _links(body):
-    return {link["rel"]: link for link in body["links"]}
 
 
 def test_get_collections_links_to_itself(client):
@@ -107,7 +95,7 @@ def test_get_collections_declares_an_item_type_for_every_collection(client):
 @pytest.mark.parametrize("collection_id", COLLECTION_IDS)
 def test_collection_items_link_resolves(client, collection_id):
     client.force_login(UserFactory())
-    items_href = _links(client.get(f"{COLLECTIONS_PATH}/{collection_id}").json())["items"]["href"]
+    items_href = links_by_rel(client.get(f"{COLLECTIONS_PATH}/{collection_id}").json())["items"]["href"]
 
     response = client.get(items_href.removeprefix(BASE_URL))
 

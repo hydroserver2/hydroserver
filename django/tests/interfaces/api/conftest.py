@@ -1,12 +1,10 @@
-from dataclasses import replace
-
 import orjson
 import pytest
 
-from interfaces.api import collections
-from interfaces.api.collections import _COLLECTIONS_BY_ID
+from django.test import override_settings
+
 from interfaces.api.formats import FORMATS, Format
-from interfaces.api.views import ogc
+from tests.interfaces.api.helpers import BASE_URL, set_collection_formats
 
 
 class PlainTextFormat(Format):
@@ -20,6 +18,14 @@ class PlainTextFormat(Format):
 
     def render(self, data, context):
         return orjson.dumps(data, default=str)
+
+
+@pytest.fixture
+def proxy_base_url():
+    """Builds links from BASE_URL (tests.interfaces.api.helpers)."""
+
+    with override_settings(PROXY_BASE_URL=BASE_URL):
+        yield
 
 
 @pytest.fixture
@@ -39,20 +45,3 @@ def plain_text_format(monkeypatch):
         return fmt
 
     return register
-
-
-def set_collection_formats(monkeypatch, collection_ids, formats):
-    """
-    Replaces the formats of the given collections everywhere the registry is read. formats maps format keys to
-    profile keys, as CollectionDefinition.formats does.
-    """
-
-    registry = tuple(
-        replace(collection, formats=formats) if collection.id in collection_ids else collection
-        for collection in collections.COLLECTIONS
-    )
-
-    for module in (collections, ogc):
-        monkeypatch.setattr(module, "COLLECTIONS", registry)
-    for collection in registry:
-        monkeypatch.setitem(_COLLECTIONS_BY_ID, collection.id, collection)
