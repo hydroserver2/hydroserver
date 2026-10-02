@@ -414,7 +414,7 @@ class APIService:
         return PaginationMeta(
             limit=limit,
             offset=offset,
-            total_count=count,
+            number_matched=count,
         )
 
     @classmethod

@@ -766,7 +766,7 @@ def test_get_datastream_linked_resources_pages_by_name(client):
     second = client.get(_linked_resources_url(parent.id), {"limit": 2, "offset": 2}).json()
 
     assert [item["name"] for item in first["data"]] == ["A", "B"]
-    assert first["meta"] == {"limit": 2, "offset": 0, "totalCount": 3}
+    assert first["meta"] == {"limit": 2, "offset": 0, "numberMatched": 3, "numberReturned": 2}
     assert "next" in [link["rel"] for link in first["links"]]
     assert [item["name"] for item in second["data"]] == ["C"]
 

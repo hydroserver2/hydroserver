@@ -58,7 +58,7 @@ def test_items_are_a_feature_collection(client, observation):
     assert response["Content-Type"] == f"{GEOJSON}; charset=utf-8"
     body = response.json()
     assert body["type"] == "FeatureCollection"
-    assert body["numberMatched"] == json_body["meta"]["totalCount"]
+    assert body["numberMatched"] == json_body["meta"]["numberMatched"]
     assert body["numberReturned"] == len(body["features"]) == len(json_body["data"])
     (feature,) = body["features"]
     assert feature["type"] == "Feature"

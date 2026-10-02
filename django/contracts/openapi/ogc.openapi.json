@@ -11706,19 +11706,26 @@
             "title": "Limit",
             "type": "integer"
           },
-          "offset": {
-            "title": "Offset",
+          "numberMatched": {
+            "description": "The number of items that match the request's selection parameters.",
+            "title": "Numbermatched",
             "type": "integer"
           },
-          "totalCount": {
-            "title": "Totalcount",
+          "numberReturned": {
+            "description": "The number of items in the response.",
+            "title": "Numberreturned",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
             "type": "integer"
           }
         },
         "required": [
           "limit",
           "offset",
-          "totalCount"
+          "numberMatched",
+          "numberReturned"
         ],
         "title": "PaginationMeta",
         "type": "object"

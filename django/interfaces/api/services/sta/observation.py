@@ -222,7 +222,7 @@ class ObservationAPIService(APIService):
 
         queryset = queryset.select_related(*select_paths)
         queryset, meta = self.apply_pagination(queryset, offset, limit, count=count)
-        response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.total_count)
+        response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.number_matched)
 
         if profile in ("row", "column"):
             return self.grouped_values(queryset, meta, profile, properties, requested_includes)

@@ -14,6 +14,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
     model_serializer,
+    model_validator,
     SerializationInfo,
     WithJsonSchema,
 )
@@ -347,12 +348,26 @@ class CreatedResponse(ItemId):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
 
+def _require_number_returned(schema: dict) -> None:
+    schema["required"] = [*schema.get("required", []), "numberReturned"]
+    schema["properties"]["numberReturned"].pop("default", None)
+
+
 class PaginationMeta(Schema):
     limit: int
     offset: int
-    total_count: int
+    number_matched: int = Field(
+        ...,
+        description="The number of items that match the request's selection parameters."
+    )
+    number_returned: int = Field(
+        default=0,
+        description="The number of items in the response.",
+    )
 
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    model_config = ConfigDict(
+        populate_by_name=True, alias_generator=to_camel, json_schema_extra=_require_number_returned
+    )
 
 
 class ItemResponse(Schema, Generic[T]):
@@ -398,6 +413,11 @@ class PaginatedResponse(Schema, Generic[T]):
     returned: Optional[int] = Field(None, exclude=True)
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_validator(mode="after")
+    def _set_number_returned(self):
+        self.meta.number_returned = self.returned if self.returned is not None else len(self.data)
+        return self
 
     @model_serializer(mode="wrap")
     def _finalize(self, handler, info: SerializationInfo):

@@ -76,7 +76,7 @@ def test_a_format_documents_its_responses_and_conformance(client):
 
 def test_response_document_reads_a_page_of_items():
     document = ResponseDocument.from_json(
-        {"data": [{"id": 1}], "meta": {"limit": 10, "offset": 0, "totalCount": 3}, "links": [{"rel": "self"}]}
+        {"data": [{"id": 1}], "meta": {"limit": 10, "offset": 0, "numberMatched": 3}, "links": [{"rel": "self"}]}
     )
 
     assert document.items == [{"id": 1}]

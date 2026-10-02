@@ -280,14 +280,14 @@ export const apiMethods = {
     const pageSize =
       Number.isInteger(metaLimit) && metaLimit > 0 ? metaLimit : limitParam
 
-    const totalCount =
-      typeof firstPageMeta?.totalCount === 'number'
-        ? firstPageMeta.totalCount
+    const numberMatched =
+      typeof firstPageMeta?.numberMatched === 'number'
+        ? firstPageMeta.numberMatched
         : undefined
 
     const offsets: number[] = []
-    if (totalCount !== undefined) {
-      for (let offset = pageSize; offset < totalCount; offset += pageSize) {
+    if (numberMatched !== undefined) {
+      for (let offset = pageSize; offset < numberMatched; offset += pageSize) {
         offsets.push(offset)
       }
     }
@@ -339,7 +339,8 @@ export const apiMethods = {
         ...(firstPageMeta ?? {}),
         offset: 0,
         limit: mergedCount,
-        totalCount: mergedCount,
+        numberMatched: mergedCount,
+        numberReturned: mergedCount,
       },
       included: mergedIncluded,
     }

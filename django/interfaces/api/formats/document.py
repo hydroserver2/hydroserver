@@ -26,7 +26,7 @@ class ResponseDocument:
 
         return cls(
             items=data["data"],
-            number_matched=meta.get("totalCount"),
+            number_matched=meta.get("numberMatched"),
             links=data.get("links") or [],
             included=data.get("included") or None,
         )

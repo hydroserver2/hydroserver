@@ -59,7 +59,7 @@ def test_column_profile_pages_combine_their_datastream_groups():
                 },
             }
         ],
-        "meta": {"offset": 0, "limit": 100, "totalCount": 2},
+        "meta": {"offset": 0, "limit": 100, "numberMatched": 2},
     }
 
     collection = ObservationCollection(datastream=MagicMock(), response=response)
@@ -73,7 +73,7 @@ def test_column_profile_pages_combine_their_datastream_groups():
 
 def test_an_empty_column_profile_page_has_the_observation_columns():
     response = MagicMock()
-    response.json.return_value = {"data": [], "meta": {"offset": 0, "limit": 100, "totalCount": 0}}
+    response.json.return_value = {"data": [], "meta": {"offset": 0, "limit": 100, "numberMatched": 0}}
 
     collection = ObservationCollection(datastream=MagicMock(), response=response)
 

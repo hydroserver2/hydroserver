@@ -20,23 +20,23 @@ describe('paginatedFetch', () => {
         if (offset === '0') {
           return jsonResponse({
             data: [{ id: '1', ownerEmail: 'a@example.com' }],
-            meta: { offset: 0, limit: 1, totalCount: 2 },
+            meta: { offset: 0, limit: 1, numberMatched: 2 },
             included: { owners: [{ email: 'a@example.com' }] },
           })
         }
         if (offset === '1') {
           return jsonResponse({
             data: [{ id: '2', ownerEmail: 'b@example.com' }],
-            meta: { offset: 1, limit: 1, totalCount: 2 },
+            meta: { offset: 1, limit: 1, numberMatched: 2 },
             included: { owners: [{ email: 'b@example.com' }] },
           })
         }
         // A real server returns an empty page once past the true end of data -
         // this is what terminates the "keep going while the last page was
-        // full" check for a totalCount that happens to be exact.
+        // full" check for a numberMatched that happens to be exact.
         return jsonResponse({
           data: [],
-          meta: { offset: Number(offset), limit: 1, totalCount: 2 },
+          meta: { offset: Number(offset), limit: 1, numberMatched: 2 },
           included: {},
         })
       })
@@ -81,7 +81,7 @@ describe('paginatedFetch', () => {
         const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
         return jsonResponse({
           data: pages[offset] ?? [],
-          meta: { offset: Number(offset), limit: 2, totalCount: 4 },
+          meta: { offset: Number(offset), limit: 2, numberMatched: 4 },
         })
       })
     vi.stubGlobal('fetch', fetchMock)
@@ -121,7 +121,7 @@ describe('paginatedFetch', () => {
       .fn()
       .mockImplementation(async (input: string | URL) => {
         const offset = Number(new URL(String(input)).searchParams.get('offset'))
-        // No totalCount: paging continues while a page's rows fill the limit.
+        // No numberMatched: paging continues while a page's rows fill the limit.
         return jsonResponse({
           data: offset < 2 ? [group(offset)] : [],
           meta: { offset, limit: 1 },
@@ -153,7 +153,7 @@ describe('paginatedFetch', () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({
         data: [{ id: '1', ownerEmail: 'a@example.com' }],
-        meta: { offset: 0, limit: 200, totalCount: 1 },
+        meta: { offset: 0, limit: 200, numberMatched: 1 },
         included: { owners: [{ email: 'a@example.com' }] },
       })
     )
@@ -171,8 +171,8 @@ describe('paginatedFetch', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps fetching past an underestimated totalCount until a short page is seen', async () => {
-    // totalCount reports 2 (e.g., a Postgres row-estimate for a large
+  it('keeps fetching past an underestimated numberMatched until a short page is seen', async () => {
+    // numberMatched reports 2 (e.g., a Postgres row-estimate for a large
     // filtered Observation query), but 5 rows actually exist across 3
     // pages of limit=2.
     const pages: Record<string, { id: string }[]> = {
@@ -187,7 +187,7 @@ describe('paginatedFetch', () => {
         const data = pages[offset] ?? []
         return jsonResponse({
           data,
-          meta: { offset: Number(offset), limit: 2, totalCount: 2 },
+          meta: { offset: Number(offset), limit: 2, numberMatched: 2 },
         })
       })
     vi.stubGlobal('fetch', fetchMock)
@@ -205,10 +205,11 @@ describe('paginatedFetch', () => {
       '4',
       '5',
     ])
-    expect(response.meta?.totalCount).toBe(5)
+    expect(response.meta?.numberMatched).toBe(5)
+    expect(response.meta?.numberReturned).toBe(5)
   })
 
-  it('still paginates past the first page when totalCount is missing entirely', async () => {
+  it('still paginates past the first page when numberMatched is missing entirely', async () => {
     const pages: Record<string, { id: string }[]> = {
       '0': [{ id: '1' }, { id: '2' }],
       '2': [{ id: '3' }],
@@ -264,7 +265,7 @@ describe('paginatedFetch', () => {
       const fetchMock = mockClampedServer((offset) => ({
         offset,
         limit: 2,
-        totalCount: 5,
+        numberMatched: 5,
       }))
 
       const response = await apiMethods.paginatedFetch<{ id: string }[]>(
@@ -281,10 +282,10 @@ describe('paginatedFetch', () => {
         '4',
         '5',
       ])
-      expect(response.meta?.totalCount).toBe(5)
+      expect(response.meta?.numberMatched).toBe(5)
     })
 
-    it('pages by the returned meta.limit when totalCount is missing', async () => {
+    it('pages by the returned meta.limit when numberMatched is missing', async () => {
       mockClampedServer((offset) => ({ offset, limit: 2 }))
 
       const response = await apiMethods.paginatedFetch<{ id: string }[]>(
@@ -314,7 +315,7 @@ describe('paginatedFetch', () => {
         const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
         return jsonResponse({
           data: pages[offset] ?? [],
-          meta: { offset: Number(offset), totalCount: 3 },
+          meta: { offset: Number(offset), numberMatched: 3 },
         })
       })
     vi.stubGlobal('fetch', fetchMock)

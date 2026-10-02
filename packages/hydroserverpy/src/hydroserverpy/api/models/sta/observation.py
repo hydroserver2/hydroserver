@@ -48,7 +48,7 @@ class ObservationCollection:
         self.offset = self._resolve_int_metadata("offset", payload_meta, data)
         self.limit = self._resolve_int_metadata("limit", payload_meta, data)
         self.total_count = self._resolve_int_metadata(
-            "total_count", payload_meta, data, meta_key="totalCount"
+            "total_count", payload_meta, data, meta_key="numberMatched"
         )
         self.datastream = datastream
 

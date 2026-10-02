@@ -196,8 +196,8 @@ def test_get_observations_format_parameter_is_unknown(client):
     assert "format" in response.json()["message"]
 
 
-def test_get_observations_total_count_exact_for_no_filter(client):
-    """Unfiltered total_count comes from summing Datastream.value_count, not a
+def test_get_observations_number_matched_exact_for_no_filter(client):
+    """Unfiltered number_matched comes from summing Datastream.value_count, not a
     COUNT(*) over Observation -- confirm it matches the real row count."""
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -214,10 +214,10 @@ def test_get_observations_total_count_exact_for_no_filter(client):
     response = client.get(_observations_url())
 
     assert response.status_code == 200
-    assert response.json()["meta"]["totalCount"] == 5
+    assert response.json()["meta"]["numberMatched"] == 5
 
 
-def test_get_observations_total_count_exact_for_datastream_id_filter(client):
+def test_get_observations_number_matched_exact_for_datastream_id_filter(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream_a = _make_datastream(workspace)
@@ -233,10 +233,10 @@ def test_get_observations_total_count_exact_for_datastream_id_filter(client):
     response = client.get(_observations_url(datastream_a.id))
 
     assert response.status_code == 200
-    assert response.json()["meta"]["totalCount"] == 2
+    assert response.json()["meta"]["numberMatched"] == 2
 
 
-def test_get_observations_total_count_exact_for_phenomenon_time_filter(client):
+def test_get_observations_number_matched_exact_for_phenomenon_time_filter(client):
     """A phenomenon_time filter isn't reflected in value_count, so this exercises
     the EXPLAIN-estimate/real-count path (resolve_count) instead -- on this small
     test dataset it should still resolve to an exact count."""
@@ -258,7 +258,7 @@ def test_get_observations_total_count_exact_for_phenomenon_time_filter(client):
     )
 
     assert response.status_code == 200
-    assert response.json()["meta"]["totalCount"] == 1
+    assert response.json()["meta"]["numberMatched"] == 1
 
 
 def test_get_observations_default_order_groups_by_datastream_then_time(client):
@@ -995,7 +995,7 @@ def test_get_observations_filters_by_monitoring_site_location(client):
     body = response.json()
     assert {o["datastreamId"] for o in body["data"]} == {str(inside.id)}
     assert len(body["data"]) == 2
-    assert body["meta"]["totalCount"] == 2
+    assert body["meta"]["numberMatched"] == 2
 
 
 def test_get_observations_bbox_count_uses_matched_datastreams_with_a_time_filter(client):
@@ -1011,7 +1011,7 @@ def test_get_observations_bbox_count_uses_matched_datastreams_with_a_time_filter
 
     assert response.status_code == 200
     assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
-    assert response.json()["meta"]["totalCount"] == 2
+    assert response.json()["meta"]["numberMatched"] == 2
 
 
 def test_get_observations_bbox_combines_with_datastream_id(client):
@@ -1024,7 +1024,7 @@ def test_get_observations_bbox_combines_with_datastream_id(client):
 
     assert response.status_code == 200
     assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
-    assert response.json()["meta"]["totalCount"] == 2
+    assert response.json()["meta"]["numberMatched"] == 2
 
 
 def test_get_observations_row_profile_is_empty_when_the_datastream_is_outside_the_bbox(client):
@@ -1034,7 +1034,7 @@ def test_get_observations_row_profile_is_empty_when_the_datastream_is_outside_th
 
     assert response.status_code == 200
     assert response.json()["data"] == []
-    assert response.json()["meta"]["totalCount"] == 0
+    assert response.json()["meta"]["numberMatched"] == 0
 
 
 def test_get_observations_returns_400_for_invalid_bbox(client):
@@ -1063,7 +1063,7 @@ def test_get_observations_filters_by_datetime_interval_including_bounds(client):
     assert response.status_code == 200
     body = response.json()
     assert {o["id"] for o in body["data"]} == {str(on_start.id), str(on_end.id)}
-    assert body["meta"]["totalCount"] == 2
+    assert body["meta"]["numberMatched"] == 2
 
 
 def test_get_observations_filters_by_datetime_instant_and_open_ends(client):

@@ -6392,10 +6392,18 @@ export interface components {
         PaginationMeta: {
             /** Limit */
             limit: number;
+            /**
+             * Numbermatched
+             * @description The number of items that match the request's selection parameters.
+             */
+            numberMatched: number;
+            /**
+             * Numberreturned
+             * @description The number of items in the response.
+             */
+            numberReturned: number;
             /** Offset */
             offset: number;
-            /** Totalcount */
-            totalCount: number;
         };
         /** PayloadPatchBody */
         PayloadPatchBody: {

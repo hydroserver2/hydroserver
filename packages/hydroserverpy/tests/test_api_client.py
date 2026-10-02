@@ -150,7 +150,7 @@ def test_hydroserver_encodes_boolean_query_params_in_lowercase(fake_session_fact
 def test_workspace_list_sends_lowercase_booleans(fake_session_factory):
     hs = client_module.HydroServer(host="https://example.com", apikey="hs_test_api_key")
     fake_session_factory[0].queue(
-        "get", FakeResponse(content=b'{"data": [], "meta": {"limit": 100, "offset": 0, "totalCount": 0}}')
+        "get", FakeResponse(content=b'{"data": [], "meta": {"limit": 100, "offset": 0, "numberMatched": 0}}')
     )
 
     hs.workspaces.list(is_private=True, is_associated=False)
