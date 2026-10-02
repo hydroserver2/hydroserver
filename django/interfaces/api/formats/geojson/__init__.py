@@ -23,7 +23,7 @@ class GeoJSONFormat(Format):
 
     def encode(self, document: ResponseDocument, context: EncodeContext) -> bytes:
         return self._renderer.render(
-            context.request, to_geojson(document, context.collection), response_status=context.status
+            context.request, to_geojson(document, context.collection, context.request), response_status=context.status
         )
 
     def document_schema(self, collection: CollectionDefinition, kind: DocumentKind) -> Optional[type[BaseModel]]:

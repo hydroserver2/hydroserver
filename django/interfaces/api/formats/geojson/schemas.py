@@ -1,14 +1,11 @@
-from typing import Any, Generic, Literal, Optional, TypeVar
+from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
 
 from ninja import Schema
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from interfaces.api.http.links import Link
 
-# GeoJSON response documents of OGC API - Features (Core Req 39), generic over the properties of their features.
-# The models forbid extra members, so validating a response against them catches a member the response has but
-# the documentation doesn't.
 
 P = TypeVar("P")
 
@@ -20,12 +17,23 @@ class GeoJSONPoint(Schema):
     model_config = ConfigDict(extra="forbid")
 
 
+class GeoJSONPolygon(Schema):
+    type: Literal["Polygon"]
+    coordinates: list[list[tuple[float, float]]]
+
+    model_config = ConfigDict(extra="forbid")
+
+
+GeoJSONGeometry = Annotated[Union[GeoJSONPoint, GeoJSONPolygon], Field(discriminator="type")]
+
+
 class GeoJSONFeature(Schema, Generic[P]):
     """A feature of a FeatureCollection."""
 
     type: Literal["Feature"]
     id: str
-    geometry: Optional[GeoJSONPoint]
+    geometry: Optional[GeoJSONGeometry]
+    bbox: Optional[list[float]] = Field(None, min_length=4, max_length=4)
     properties: P
 
     model_config = ConfigDict(extra="forbid")

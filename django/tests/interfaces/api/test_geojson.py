@@ -86,7 +86,7 @@ def test_item_is_a_feature_with_the_path_id(client, observation):
     assert {link["rel"] for link in body["links"]} == {"self", "alternate", "collection"}
 
 
-@pytest.mark.parametrize("collection_id", ["workspaces", "datastreams", "observations"])
+@pytest.mark.parametrize("collection_id", ["datastreams", "observations"])
 def test_features_without_a_geometry_have_null_geometry(client, observation, collection_id):
     item = _items(observation)[collection_id]
 

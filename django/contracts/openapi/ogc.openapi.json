@@ -4512,15 +4512,46 @@
       "GeoJSONFeatureDocument_DatastreamProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4570,15 +4601,46 @@
       "GeoJSONFeatureDocument_MonitoringSiteProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4628,15 +4690,46 @@
       "GeoJSONFeatureDocument_ObservationProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4686,15 +4779,46 @@
       "GeoJSONFeatureDocument_WorkspaceProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4744,15 +4868,46 @@
       "GeoJSONFeature_DatastreamProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4779,15 +4934,46 @@
       "GeoJSONFeature_MonitoringSiteProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4814,15 +5000,46 @@
       "GeoJSONFeature_ObservationProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4849,15 +5066,46 @@
       "GeoJSONFeature_WorkspaceProperties_": {
         "additionalProperties": false,
         "properties": {
-          "geometry": {
+          "bbox": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GeoJSONPoint"
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "Point": "#/components/schemas/GeoJSONPoint",
+                    "Polygon": "#/components/schemas/GeoJSONPolygon"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPoint"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeoJSONPolygon"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "id": {
             "title": "Id",
@@ -4909,6 +5157,42 @@
           "coordinates"
         ],
         "title": "GeoJSONPoint",
+        "type": "object"
+      },
+      "GeoJSONPolygon": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "const": "Polygon",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "GeoJSONPolygon",
         "type": "object"
       },
       "ItemResponse_AggregationStatisticResponse_": {

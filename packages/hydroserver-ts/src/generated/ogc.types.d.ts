@@ -3861,7 +3861,10 @@ export interface components {
         };
         /** GeoJSONFeatureDocument[DatastreamProperties] */
         GeoJSONFeatureDocument_DatastreamProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             /** Included */
@@ -3879,7 +3882,10 @@ export interface components {
         };
         /** GeoJSONFeatureDocument[MonitoringSiteProperties] */
         GeoJSONFeatureDocument_MonitoringSiteProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             /** Included */
@@ -3897,7 +3903,10 @@ export interface components {
         };
         /** GeoJSONFeatureDocument[ObservationProperties] */
         GeoJSONFeatureDocument_ObservationProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             /** Included */
@@ -3915,7 +3924,10 @@ export interface components {
         };
         /** GeoJSONFeatureDocument[WorkspaceProperties] */
         GeoJSONFeatureDocument_WorkspaceProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             /** Included */
@@ -3933,7 +3945,10 @@ export interface components {
         };
         /** GeoJSONFeature[DatastreamProperties] */
         GeoJSONFeature_DatastreamProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             properties: components["schemas"]["DatastreamProperties"];
@@ -3945,7 +3960,10 @@ export interface components {
         };
         /** GeoJSONFeature[MonitoringSiteProperties] */
         GeoJSONFeature_MonitoringSiteProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             properties: components["schemas"]["MonitoringSiteProperties"];
@@ -3957,7 +3975,10 @@ export interface components {
         };
         /** GeoJSONFeature[ObservationProperties] */
         GeoJSONFeature_ObservationProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             properties: components["schemas"]["ObservationProperties"];
@@ -3969,7 +3990,10 @@ export interface components {
         };
         /** GeoJSONFeature[WorkspaceProperties] */
         GeoJSONFeature_WorkspaceProperties_: {
-            geometry: components["schemas"]["GeoJSONPoint"] | null;
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
             /** Id */
             id: string;
             properties: components["schemas"]["WorkspaceProperties"];
@@ -3987,10 +4011,23 @@ export interface components {
                 number
             ];
             /**
-             * Type
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             type: "Point";
+        };
+        /** GeoJSONPolygon */
+        GeoJSONPolygon: {
+            /** Coordinates */
+            coordinates: [
+                number,
+                number
+            ][][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Polygon";
         };
         /** ItemResponse[AggregationStatisticResponse] */
         ItemResponse_AggregationStatisticResponse_: {

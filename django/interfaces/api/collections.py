@@ -1,19 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Literal, Mapping, Optional
 
+from interfaces.api.geometry import GeometrySource, PointGeometry, SiteExtent
+
 ItemType = Literal["feature", "resource"]
-
-
-@dataclass(frozen=True)
-class PointGeometry:
-    """The item fields a collection's point geometry is built from, as they appear in its JSON response."""
-
-    longitude: str = "longitude"
-    latitude: str = "latitude"
-
-    @property
-    def fields(self) -> tuple[str, str]:
-        return self.longitude, self.latitude
 
 
 @dataclass(frozen=True)
@@ -21,7 +11,7 @@ class FeatureType:
     """What makes a collection's items features: the schema of their properties and where their geometry comes from."""
 
     properties_schema: str
-    geometry: Optional[PointGeometry] = None
+    geometry: Optional[GeometrySource] = None
 
 
 @dataclass(frozen=True)
@@ -59,7 +49,7 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         description="Workspaces that own monitoring sites, datastreams, and other data, and "
         "control who can access them.",
         router=f"{VIEWS}.iam.workspace.workspace_router",
-        feature=FeatureType(f"{SCHEMAS}.iam.workspace.WorkspaceProperties"),
+        feature=FeatureType(f"{SCHEMAS}.iam.workspace.WorkspaceProperties", geometry=SiteExtent()),
         formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
