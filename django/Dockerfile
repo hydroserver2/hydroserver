@@ -22,7 +22,7 @@ WORKDIR /build
 COPY apps/qc-app apps/qc-app
 WORKDIR /build/apps/qc-app
 RUN npm ci --workspaces=false && \
-    npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false && \
+    npm install "/tmp/$(npm pack ../../packages/qc-utils --pack-destination /tmp --silent)" --no-save --workspaces=false && \
     printf 'VITE_APP_ROUTE=/qc/\n' > .env && \
     npm run django-build
 

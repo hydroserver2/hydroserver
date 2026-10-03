@@ -12,6 +12,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("accounts/", include("interfaces.account.urls")),
     path("", include("allauth.idp.urls")),
     path("api/", include("interfaces.api.urls")),
+    path("silk/", include("silk.urls", namespace="silk"))
 ]
 
 if settings.E2E_TESTING:
