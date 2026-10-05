@@ -8,7 +8,7 @@ import type {
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
-import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
+import { findFirstGreaterOrEqual, findLastLessOrEqual } from '@uwrl/qc-utils'
 import { handleNewPlot } from './events'
 import { traceXAsNumbers } from './internal'
 import { plotCoord, plotCoordToDate, toPlotDate } from './plotTime'
@@ -229,8 +229,10 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
     // noUncheckedIndexedAccess; default to +/- Infinity so the binary
     // search returns the full range when the live layout is missing
     // an axis range (fresh plot, before the user has touched zoom).
+    // Both ends are inclusive: a fit leaves the last point on the edge, and
+    // the next fit must keep it rather than creep inward.
     const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)
-    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1] ?? Infinity)
+    const endIdx = findLastLessOrEqual(xs, liveXRange?.[1] ?? Infinity) + 1
     if (endIdx - startIdx <= 0) return
 
     // QC always lives on the primary `yaxis` (see `createPlotlyOption`).
@@ -309,7 +311,7 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
 
     const xs = traceXAsNumbers(gd, qcIndex)
     const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)
-    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1] ?? Infinity)
+    const endIdx = findLastLessOrEqual(xs, liveXRange?.[1] ?? Infinity) + 1
     if (endIdx - startIdx <= 0) return
 
     // Points above or below the current view are not visible, so they
